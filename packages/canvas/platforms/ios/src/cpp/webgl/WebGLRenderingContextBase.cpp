@@ -6,28 +6,26 @@
 
 WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
                                                      WebGLRenderingVersion version)
-        : state_(state), version_(version) {
-
-
+: state_(state), version_(version) {
+    
+    
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
     auto raf_callback = new OnRafCallback(
-            ctx_ptr,
-            version == WebGLRenderingVersion::V2 ? 2 : 1);
+                                          ctx_ptr,
+                                          version == WebGLRenderingVersion::V2 ? 2 : 1);
     auto raf_callback_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(raf_callback));
-    auto raf = canvas_native_raf_create(raf_callback_ptr, [](intptr_t callback, int64_t ts){
-                OnRafCallbackOnFrame(callback, ts);
-            });
+    auto raf = canvas_native_raf_create(raf_callback_ptr, OnRafCallbackOnFrame);
     this->SetRaf(
-            std::make_shared<RafImpl>(
-                    raf_callback,
-                    raf_callback_ptr, raf));
-
+                 std::make_shared<RafImpl>(
+                                           raf_callback,
+                                           raf_callback_ptr, raf));
+    
     auto _raf = this->GetRaf();
-
+    
     if (_raf != nullptr) {
         canvas_native_raf_start(_raf->GetRaf());
     }
-
+    
 }
 
 
@@ -112,7 +110,7 @@ WebGLRenderingContextBase::~WebGLRenderingContextBase() {
     auto _raf = this->GetRaf();
     if (_raf != nullptr) {
         canvas_native_raf_stop(
-                _raf->GetRaf());
+                               _raf->GetRaf());
     }
     canvas_native_raf_destroy(_raf->GetRaf());
     this->raf_ = nullptr;

@@ -197,36 +197,6 @@ typedef struct WebGLState WebGLState;
 
 typedef struct WebGLSync WebGLSync;
 
-#if defined(TARGET_OS_ANDROID)
-typedef struct AChoreographer {
-  uint8_t _unused[0];
-} AChoreographer;
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Prototype of the function that is called when a new frame is being rendered.
- * It's passed the time that the frame is being rendered as nanoseconds in the
- * CLOCK_MONOTONIC time base, as well as the data pointer provided by the
- * application that registered a callback. All callbacks that run as part of
- * rendering a frame will observe the same frame time, so it should be used
- * whenever events need to be synchronized (e.g. animations).
- */
-typedef void (*AChoreographer_frameCallback)(long frameTimeNanos, void *data);
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Prototype of the function that is called when a new frame is being rendered.
- * It's passed the time that the frame is being rendered as nanoseconds in the
- * CLOCK_MONOTONIC time base, as well as the data pointer provided by the
- * application that registered a callback. All callbacks that run as part of
- * rendering a frame will observe the same frame time, so it should be used
- * whenever events need to be synchronized (e.g. animations).
- */
-typedef void (*AChoreographer_frameCallback64)(int64_t frameTimeNanos, void *data);
-#endif
-
 void canvas_native_image_filter_destroy(struct ImageFilter *value);
 
 void canvas_native_helper_destroy(struct FileHelper *value);
@@ -2591,55 +2561,6 @@ void canvas_native_image_data_destroy(struct ImageData *value);
 void canvas_native_matrix_destroy(struct Matrix *value);
 
 void canvas_native_path_destroy(struct Path *value);
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Get the AChoreographer instance for the current thread. This must be called
- * on an ALooper thread.
- */
-extern struct AChoreographer *AChoreographer_getInstance(void);
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Deprecated: Use AChoreographer_postFrameCallback64 instead.
- */
-extern void AChoreographer_postFrameCallback(struct AChoreographer *choreographer,
-                                             AChoreographer_frameCallback callback,
-                                             void *data);
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Deprecated: Use AChoreographer_postFrameCallbackDelayed64 instead.
- */
-extern void AChoreographer_postFrameCallbackDelayed(struct AChoreographer *choreographer,
-                                                    AChoreographer_frameCallback callback,
-                                                    void *data,
-                                                    long delayMillis);
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Power a callback to be run on the next frame.  The data pointer provided will
- * be passed to the callback function when it's called.
- */
-extern void AChoreographer_postFrameCallback64(struct AChoreographer *chroreographer,
-                                               AChoreographer_frameCallback64 callback,
-                                               void *data);
-#endif
-
-#if defined(TARGET_OS_ANDROID)
-/**
- * Post a callback to be run on the frame following the specified delay.  The
- * data pointer provided will be passed to the callback function when it's
- * called.
- */
-extern void AChoreographer_postFrameCallbackDelayed64(struct AChoreographer *choreographer,
-                                                      AChoreographer_frameCallback64 callback,
-                                                      void *data,
-                                                      uint32_t delayMillis);
-#endif
 
 const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
 

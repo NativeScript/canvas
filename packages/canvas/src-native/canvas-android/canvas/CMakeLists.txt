@@ -91,17 +91,12 @@ set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
 set(CANVAS_C ${PROJECT_NATIVE_ROOT_DIR}/canvas-c)
 set(CANVAS_ANDROID ${PROJECT_NATIVE_ROOT_DIR}/canvas-android)
 set(CANVAS_INCLUDE ${PROJECT_SOURCE_DIR}/src/main/cpp/include)
-message("CANVAS_ANDROID_LIB " ${CANVAS_ANDROID_LIB})
 
-#add_custom_command(
-#        OUTPUT ${CANVAS_INCLUDE}/canvas_android.h
-#        COMMAND cbindgen --config ${CANVAS_ANDROID}/cbindgen.toml  ${CANVAS_ANDROID}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_android.h
-#        USES_TERMINAL
-#)
-
-
-#add_library( canvasnative STATIC IMPORTED )
-#set_target_properties(canvasnative PROPERTIES IMPORTED_LOCATION ${CANVAS_ANDROID_LIB} )
+add_custom_command(
+        OUTPUT ${CANVAS_INCLUDE}/canvas_android.h
+        COMMAND cbindgen --config ${CANVAS_C}/cbindgen.toml  ${CANVAS_C}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_native.h
+        USES_TERMINAL
+)
 
 
 add_library(
@@ -160,15 +155,15 @@ add_library(
          ${CPP_DIR}/JSIRuntime.cpp
 )
 
-#add_custom_command(
-#        TARGET canvasnativev8 PRE_BUILD
-#        # COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
-#        DEPENDS ${CANVAS_ANDROID_LIB}
-#       # USES_TERMINAL
-#)
+add_custom_command(
+        TARGET canvasnativev8 PRE_BUILD
+        #COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
+        DEPENDS ${CANVAS_ANDROID_LIB}
+       # USES_TERMINAL
+)
 
 
 

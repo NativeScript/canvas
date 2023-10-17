@@ -1,5 +1,5 @@
 declare var com;
-
+import { File } from '@nativescript/core';
 export class FileManager {
 	public static writeFile(bytes: any, path: string, callback: (...args) => void) {
 		const listener = new com.github.triniwiz.async.Async2.FileManager.Callback({
@@ -29,7 +29,7 @@ export class FileManager {
 		if (this._readFile === undefined) {
 			this._readFile = !!global?.CanvasModule?.readFile;
 		}
-		if (global?.CanvasModule?.readFile) {
+		if (this._readFile) {
 			global?.CanvasModule?.readFile(path, (error, buffer: ArrayBuffer) => {
 				if (error) {
 					callback(new Error(error), null);

@@ -1,4 +1,4 @@
-use std::ffi::c_long;
+use std::ffi::{c_long, c_void};
 use std::sync::Arc;
 
 use crate::choreographer::{
@@ -13,6 +13,7 @@ struct RafInner {
     started: bool,
     callback: RafCallback,
     use_deprecated: bool,
+    is_prepared: bool
 }
 pub struct Raf {
     inner: Arc<parking_lot::RwLock<RafInner>>,
@@ -23,8 +24,8 @@ impl Raf {
         if !data.is_null() {
             let data_ptr = data;
             let data = data as *mut Raf;
-            let data = unsafe { &mut *data };
-            let lock = data.inner.read();
+            let data_value = unsafe { &mut *data };
+            let lock = data_value.inner.read();
             let started = lock.started;
             if !started {
                 drop(lock);
@@ -54,6 +55,7 @@ impl Raf {
             inner: Arc::new(parking_lot::RwLock::new(RafInner {
                 started: false,
                 callback,
+                is_prepared: false,
                 use_deprecated: true, //*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
             })),
         }
@@ -62,11 +64,14 @@ impl Raf {
     pub fn start(&mut self) {
         let mut lock = self.inner.write();
         unsafe {
-            ndk::looper::ThreadLooper::prepare();
+            if !lock.is_prepared {
+                ndk::looper::ThreadLooper::prepare();
+                lock.is_prepared = true;
+            }
             let instance = AChoreographer_getInstance();
-            let data = Box::into_raw(Box::new(self.clone()));
+            let data = Box::into_raw(Box::new(self.clone())) as *const c_void;
             if lock.use_deprecated {
-                AChoreographer_postFrameCallback(instance, Some(Raf::callback), data.cast());
+                AChoreographer_postFrameCallback(instance, Some(Raf::callback), data);
             } else {
                 //   #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                 //    AChoreographer_postFrameCallback64(instance, Some(Raf::callback), data.cast());

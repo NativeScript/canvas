@@ -101,7 +101,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
     auto len = count - 1;
     auto cb = args[count - 1];
 
-    if (len == 1 && !image->IsObject() || image->IsFunction()) {
+    if ((len == 1 && !image->IsObject()) || image->IsFunction()) {
         isolate->ThrowError("Illegal constructor");
         return;
     }
@@ -295,6 +295,158 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
 
 #ifdef __APPLE__
+
+                auto current_queue = new NSOperationQueueWrapper(true);
+
+
+                if (isArrayBuffer) {
+                    auto arrayBuffer = imageObject.As<v8::ArrayBuffer>();
+                    auto store = arrayBuffer->GetBackingStore();
+                    auto dataBuffer = (uint8_t *) store->Data();
+                    v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
+                    
+                    std::thread thread(
+                            [&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue](
+                                    v8::Global<v8::ArrayBuffer> ab, size_t size
+                            ) {
+
+                                auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                        dataBuffer, size,
+                                        options.flipY,
+                                        options.premultiplyAlpha,
+                                        options.colorSpaceConversion,
+                                        options.resizeQuality,
+                                        options.resizeWidth,
+                                        options.resizeHeight,
+                                        shared_asset);
+
+                                canvas_native_image_asset_destroy(shared_asset);
+
+
+                                auto main_task = [jsi_callback, current_queue, done]() {
+
+                                    
+                                    v8::Isolate *isolate = jsi_callback->isolate_;
+                                    v8::Locker locker(isolate);
+                                    v8::Isolate::Scope isolate_scope(isolate);
+                                    v8::HandleScope handle_scope(isolate);
+                                    v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                                    v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                            isolate).As<v8::External>();
+                                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                    v8::Context::Scope context_scope(context);
+
+                                    auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
+                                            context).ToLocalChecked()->NewInstance(
+                                            context).ToLocalChecked();
+
+                                    SetNativeType(isolate, ret, NativeType::ImageBitmap);
+
+                                    ret->SetInternalField(0, cbData);
+
+                                    v8::Local<v8::Value> args[2];
+
+                                    if (done) {
+                                        args[0] = v8::Null(isolate);
+                                        args[1] = ret;
+
+                                    } else {
+                                        args[0] = v8::Exception::Error(
+                                                ConvertToV8String(isolate, "Failed to load image"));
+                                        args[1] = v8::Null(isolate);
+                                    }
+
+
+                                    callback->Call(context, context->Global(), 2, args);
+                                    
+
+                                    delete jsi_callback;
+                                    delete current_queue;
+
+                                };
+                                current_queue->addOperation(main_task);
+
+                            }, std::move(ab), arrayBuffer->ByteLength());
+
+                    thread.detach();
+
+                    return;
+                }
+
+                auto ta = imageObject.As<v8::TypedArray>();
+
+
+                auto array = ta->Buffer();
+                auto offset = ta->ByteOffset();
+                auto size = ta->Length();
+                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+
+
+                v8::Global<v8::TypedArray> ab(isolate, ta);
+
+
+                std::thread thread(
+                        [jsi_callback, &options, shared_asset, data_ptr, size, current_queue](
+                                v8::Global<v8::TypedArray> ab
+                        ) {
+
+                            auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                    data_ptr, size,
+                                    options.flipY,
+                                    options.premultiplyAlpha,
+                                    options.colorSpaceConversion,
+                                    options.resizeQuality,
+                                    options.resizeWidth,
+                                    options.resizeHeight,
+                                    shared_asset);
+
+                            canvas_native_image_asset_destroy(shared_asset);
+
+                            auto main_task = [jsi_callback, current_queue, done]() {
+
+
+                                v8::Isolate *isolate = jsi_callback->isolate_;
+                                v8::Locker locker(isolate);
+                                v8::Isolate::Scope isolate_scope(isolate);
+                                v8::HandleScope handle_scope(isolate);
+                                v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                                v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                        isolate).As<v8::External>();
+                                v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                v8::Context::Scope context_scope(context);
+
+                                auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
+                                        context).ToLocalChecked()->NewInstance(
+                                        context).ToLocalChecked();
+
+                                SetNativeType(isolate, ret, NativeType::ImageBitmap);
+
+                                ret->SetInternalField(0, cbData);
+
+                                v8::Local<v8::Value> args[2];
+
+                                if (done) {
+                                    args[0] = v8::Null(isolate);
+                                    args[1] = ret;
+                                } else {
+                                    args[0] = v8::Exception::Error(
+                                            ConvertToV8String(isolate, "Failed to load image"));
+                                    args[1] = v8::Null(isolate);
+                                }
+
+                                callback->Call(context, context->Global(), 2, args);
+
+
+                                delete jsi_callback;
+                                delete current_queue;
+
+                            };
+                            current_queue->addOperation(main_task);
+
+
+
+                        }, std::move(ab));
+                thread.detach();
 
 #endif
 

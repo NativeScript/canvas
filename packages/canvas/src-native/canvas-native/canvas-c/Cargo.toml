@@ -3,6 +3,9 @@ name = "canvas-c"
 version = "0.1.0"
 edition = "2021"
 
+[build]
+rustflags = ["-Cpanic=abort", "-C target-cpu=native", "-C target-feature=-outline-atomics"]
+
 [features]
 2d = ["dep:canvas-2d"]
 webgl = ["dep:canvas-webgl"]

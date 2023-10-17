@@ -16,6 +16,7 @@ public:
     ~RafImpl(){
         canvas_native_raf_destroy(this->GetRaf());
         this->raf_ = nullptr;
+        delete rafCallback_;
     }
 
     Raf *GetRaf() {

@@ -5,7 +5,7 @@ const DEFAULT_CLANG_VERSION: &str = "14.0.7";
 
 fn main() {
     setup_aarch64_android_workaround();
-    setup_x86_64_android_workaround();
+   // setup_x86_64_android_workaround();
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/mod.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCCanvas.rs");

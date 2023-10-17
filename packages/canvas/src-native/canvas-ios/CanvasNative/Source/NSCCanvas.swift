@@ -178,7 +178,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             isOpaque = false
             (glkView.layer as! CAEAGLLayer).isOpaque = false
         }else {
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
             isOpaque = true
             (glkView.layer as! CAEAGLLayer).isOpaque = true
         }

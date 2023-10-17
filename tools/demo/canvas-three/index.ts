@@ -76,7 +76,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
-		
+
 		//this.geoColors(canvas);
 		// setTimeout(()=>{
 		// 	console.log(canvas.toDataURL());
@@ -87,12 +87,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		//this.threeCar(this.canvas);
+		this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		
+
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
@@ -102,7 +102,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 	}
-
 
 	gtlfLoader(canvas) {
 		var container, controls, context, width, height;
@@ -156,8 +155,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					render();
 				});
 			});
-			
-	
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
@@ -1274,8 +1271,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			scene.add(mesh);
 			const gl = canvas.getContext('webgl2', { antialias: false }) as WebGL2RenderingContext;
 
-	
-
 			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false });
 			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
@@ -1482,7 +1477,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			window.addEventListener('resize', onWindowResize, false);
 
 			//
-			camera = new THREE.PerspectiveCamera(75,width / height, 0.1, 1000);
+			camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
 			camera.position.set(4.25, 1.4, -7);
 
 			controls = new OrbitControls(camera, canvas);
@@ -1592,7 +1587,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				scene.add(carModel);
 			});
-
 
 			renderer.setAnimationLoop(render);
 
@@ -2577,7 +2571,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	*/
 
 	skinningAndMorphing(canvas) {
-		const context = canvas.getContext('webgl2', {antialias: true}) as WebGL2RenderingContext;
+		const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = context;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;

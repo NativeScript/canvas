@@ -43,7 +43,7 @@ export class Canvas extends CanvasBase {
 
 	constructor() {
 		super();
-		const activity = Application.android.foregroundActivity || Application.android.startActivity;
+		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
 	}
@@ -304,7 +304,7 @@ export class Canvas extends CanvasBase {
 					this._layoutNative();
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, true, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';
@@ -320,7 +320,7 @@ export class Canvas extends CanvasBase {
 					this._layoutNative();
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

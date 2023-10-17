@@ -22,4 +22,4 @@ parking_lot = "0.12.0"
 once_cell = "1.10.0"
 utf16string = "0.2.0"
 log = "0.4.17"
-#icrate = { version = "0.0.2", features = ["Foundation_NSString", "Foundation", "Foundation_NSData"] }
+icrate = { version = "0.0.2", features = ["Foundation_NSString", "Foundation", "Foundation_NSData"] }

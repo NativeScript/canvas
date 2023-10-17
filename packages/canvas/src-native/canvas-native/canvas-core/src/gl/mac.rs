@@ -506,29 +506,27 @@ impl GLContext {
 
                                     return cconfig;
                                 }
-                            } else {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
+                            } else if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
+                                && context_attrs.get_stencil()
+                                && cconfig.stencil_size() == stencil_size
+                                && context_attrs.get_depth()
+                                && cconfig.depth_size() >= depth_size
+                                && cconfig.num_samples() == 0
+                            {
+                                if accum.supports_transparency().unwrap_or(false)
+                                    == alpha_requested
+                                    && accum.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
+                                    && accum.stencil_size() == stencil_size
                                     && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() == 0
+                                    && accum.depth_size() >= depth_size
+                                    && accum.num_samples() == 0
                                 {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() == 0
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
+                                    return accum;
                                 }
+
+                                return cconfig;
                             }
 
                             accum

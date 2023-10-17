@@ -204,7 +204,6 @@ void WebGL2RenderingContext::BindVertexArray(const v8::FunctionCallbackInfo<v8::
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
     if (value->IsNull()) {
@@ -317,8 +316,8 @@ void WebGL2RenderingContext::ClearBufferfv(const v8::FunctionCallbackInfo<v8::Va
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<float *>((void*) data_ptr);
-  
-    
+
+
             canvas_native_webgl2_clear_bufferfv(
                     buffer->GetBuffer(),
                     drawbuffer,
@@ -359,7 +358,7 @@ void WebGL2RenderingContext::ClearBufferiv(const v8::FunctionCallbackInfo<v8::Va
                 );
             }
 
-            
+
             canvas_native_webgl2_clear_bufferiv(
                     buffer->GetBuffer(),
                     drawbuffer,
@@ -370,16 +369,16 @@ void WebGL2RenderingContext::ClearBufferiv(const v8::FunctionCallbackInfo<v8::Va
 
         } else if (values->IsInt32Array()) {
             auto buf = values.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<int32_t *>((void*) data_ptr);
-            
-            
-            
-            
+
+
+
+
             canvas_native_webgl2_clear_bufferiv(
                     buffer->GetBuffer(),
                     drawbuffer,
@@ -448,7 +447,7 @@ void WebGL2RenderingContext::ClearBufferuiv(const v8::FunctionCallbackInfo<v8::V
                 );
             }
 
-           
+
             canvas_native_webgl2_clear_bufferuiv(
                     buffer->GetBuffer(),
                     drawbuffer,
@@ -464,9 +463,9 @@ void WebGL2RenderingContext::ClearBufferuiv(const v8::FunctionCallbackInfo<v8::V
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
-            
+
+
+
             canvas_native_webgl2_clear_bufferuiv(
                     buffer->GetBuffer(),
                     drawbuffer,
@@ -659,7 +658,6 @@ void WebGL2RenderingContext::CreateQuery(const v8::FunctionCallbackInfo<v8::Valu
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl2_create_query(
             ptr->GetState());
@@ -676,7 +674,6 @@ void WebGL2RenderingContext::CreateSampler(const v8::FunctionCallbackInfo<v8::Va
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl2_create_sampler(
             ptr->GetState());
@@ -694,7 +691,6 @@ WebGL2RenderingContext::CreateTransformFeedback(const v8::FunctionCallbackInfo<v
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl2_create_transform_feedback(
             ptr->GetState());
@@ -713,7 +709,6 @@ void WebGL2RenderingContext::CreateVertexArray(const v8::FunctionCallbackInfo<v8
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl2_create_vertex_array(
             ptr->GetState());
@@ -731,7 +726,6 @@ void WebGL2RenderingContext::DeleteQuery(const v8::FunctionCallbackInfo<v8::Valu
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto queryValue = args[0];
     auto type = GetNativeType(isolate, queryValue);
@@ -754,7 +748,7 @@ void WebGL2RenderingContext::DeleteSampler(const v8::FunctionCallbackInfo<v8::Va
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
+    
 
     auto samplerValue = args[0];
     auto type = GetNativeType(isolate, samplerValue);
@@ -778,7 +772,7 @@ void WebGL2RenderingContext::DeleteSync(const v8::FunctionCallbackInfo<v8::Value
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
+    
 
     auto syncValue = args[0];
     auto type = GetNativeType(isolate, syncValue);
@@ -802,7 +796,7 @@ WebGL2RenderingContext::DeleteTransformFeedback(const v8::FunctionCallbackInfo<v
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
+    
 
     auto transformFeedbackValue = args[0];
     auto type = GetNativeType(isolate, transformFeedbackValue);
@@ -826,7 +820,7 @@ void WebGL2RenderingContext::DeleteVertexArray(const v8::FunctionCallbackInfo<v8
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
+    
 
     auto vertexArrayValue = args[0];
     auto type = GetNativeType(isolate, vertexArrayValue);
@@ -889,7 +883,7 @@ void WebGL2RenderingContext::DrawBuffers(const v8::FunctionCallbackInfo<v8::Valu
             buf.emplace_back(
                     (uint32_t) item->NumberValue(context).ToChecked());
         }
-        
+
         canvas_native_webgl2_draw_buffers(
                                           buf.data(), buf.size(),
                 ptr->GetState());
@@ -978,7 +972,7 @@ void WebGL2RenderingContext::EndTransformFeedback(const v8::FunctionCallbackInfo
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
+    
 
     canvas_native_webgl2_end_transform_feedback(
             ptr->GetState());
@@ -1127,16 +1121,16 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(
 
                     auto arraybuffer = v8::ArrayBuffer::New(isolate, std::move(store));
                     args.GetReturnValue().Set(v8::Uint32Array::New(arraybuffer, 0, size));
-                    
+
                     canvas_native_webgl_WebGLResult_destroy(ret);
-                    
+
                     return;
                 }
                 case GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER:
                 case GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER:
                     args.GetReturnValue().Set(canvas_native_webgl_result_get_bool(
                             ret));
-                    
+
                     canvas_native_webgl_WebGLResult_destroy(ret);
                     return;
                 default:
@@ -1176,7 +1170,7 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
                         context, j).ToLocalChecked()->NumberValue(context).ToChecked();
                 buf.emplace_back(item);
             }
-            
+
             auto ret = canvas_native_webgl2_get_active_uniforms(
                     program->GetProgram(),
                                                                 buf.data(), buf.size(),
@@ -1191,7 +1185,7 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
                             ret);
                     auto len = canvas_native_u32_buffer_get_length(value);
                     auto buf = canvas_native_u32_buffer_get_bytes(value);
-                    
+
                     auto array = v8::Array::New(
                             isolate, (int) len);
 
@@ -1281,13 +1275,13 @@ void WebGL2RenderingContext::GetBufferSubData(const v8::FunctionCallbackInfo<v8:
         if (dstDataObject->IsTypedArray()) {
 
             auto array = dstDataObject.As<v8::TypedArray>();
-     
+
             auto buf = array->Buffer();
             auto offset = array->ByteOffset();
             auto size = buf->ByteLength();
             auto data = reinterpret_cast<uint8_t *>(buf->GetBackingStore()->Data()) + offset;
-   
-        
+
+
 
             auto BYTES_PER_ELEMENT = (ssize_t) array->Get(
                     context,
@@ -1439,7 +1433,7 @@ void WebGL2RenderingContext::GetInternalformatParameter(
             case GL_RGBA32I: {
                 // empty
                 auto arraybuffer = v8::ArrayBuffer::New(isolate, 0);
-                
+
                 args.GetReturnValue().Set(v8::Int32Array::New(arraybuffer, 0, 0));
                 return;
             }
@@ -1530,13 +1524,13 @@ void WebGL2RenderingContext::GetParameter(const v8::FunctionCallbackInfo<v8::Val
             case GL_DRAW_FRAMEBUFFER_BINDING:
                 args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
                         result));
-                
+
                 canvas_native_webgl_WebGLResult_destroy(result);
                 return;
             default: {
                 auto ret = ptr->GetParameterInternal(
                         isolate, pname,result);
-                
+
                 canvas_native_webgl_WebGLResult_destroy(result);
 
                 args.GetReturnValue().Set(ret);
@@ -1585,7 +1579,7 @@ void WebGL2RenderingContext::GetQueryParameter(const v8::FunctionCallbackInfo<v8
                 }
                 //clean up
                 canvas_native_webgl_WebGLResult_destroy(ret);
-            
+
             }
         }
 
@@ -1705,7 +1699,7 @@ void WebGL2RenderingContext::GetSyncParameter(const v8::FunctionCallbackInfo<v8:
                 case GL_SYNC_FLAGS:
                     args.GetReturnValue().Set(canvas_native_webgl_result_get_i32(
                             ret));
-                    
+
                     canvas_native_webgl_WebGLResult_destroy(ret);
                     return;
                 default:
@@ -1811,30 +1805,30 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
                 uniformNamesObject->IsArray()) {
                 auto uniformNames = uniformNamesObject.As<v8::Array>();
                 auto len = uniformNames->Length();
-                
+
                 std::vector<std::string> store;
                 store.reserve(len);
-                
+
                 for (int j = 0; j < len; ++j) {
                     auto name = ConvertFromV8String(isolate, uniformNames->Get(
                             context, j).ToLocalChecked());
-                    
+
                     store.push_back(name);
                 }
-                
-                
+
+
                     const char* cStrings[store.size()];
                     for (size_t i = 0; i < store.size(); ++i) {
                         cStrings[i] = store[i].c_str();
                     }
-                
-                
+
+
                 auto ret = canvas_native_webgl2_get_uniform_indices(
                         program->GetProgram(),
                                cStrings,
                                 store.size(),
                         ptr->GetState());
-            
+
 
                 auto retSize = canvas_native_u32_buffer_get_length(ret);
                 auto buf = canvas_native_u32_buffer_get_bytes(ret);
@@ -1918,7 +1912,7 @@ WebGL2RenderingContext::InvalidateSubFramebuffer(const v8::FunctionCallbackInfo<
                         context, j).ToLocalChecked()->NumberValue(context).ToChecked();
                 buf.push_back(item);
             }
-           
+
             canvas_native_webgl2_invalidate_sub_framebuffer(
                     target,
                                                             buf.data(), buf.size(),
@@ -2238,14 +2232,14 @@ void WebGL2RenderingContext::TexImage3D(const v8::FunctionCallbackInfo<v8::Value
 
         if (imageOrPixelsOrOffset->IsTypedArray()) {
             auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint8_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_tex_image3d(
                     target,
                     level,
@@ -2344,13 +2338,13 @@ void WebGL2RenderingContext::TexImage3D(const v8::FunctionCallbackInfo<v8::Value
 
         if (imageOrPixelsOrOffset->IsTypedArray()) {
             auto buf = imageOrPixelsOrOffset.As<v8::TypedArray>();
-   
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint8_t *>((void*) data_ptr);
-           
+
             srcOffsetValue =
                     srcOffsetValue * size;
             if (srcOffsetValue >
@@ -2499,15 +2493,15 @@ void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Va
 
         if (imageOrPixelsOrOffsetObject->IsTypedArray()) {
             auto buf = imageOrPixelsOrOffsetObject.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint8_t *>((void*) data_ptr);
-           
-            
-        
+
+
+
             canvas_native_webgl2_tex_sub_image3d(
                     target,
                     level,
@@ -2584,14 +2578,14 @@ void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Va
 
         if (imageOrPixelsOrOffsetObject->IsTypedArray()) {
             auto buf = imageOrPixelsOrOffsetObject.As<v8::TypedArray>();
-          
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint8_t *>((void*) data_ptr);
-            
-            
+
+
             srcOffsetValue =
                     srcOffsetValue * size;
             if (srcOffsetValue > size) {
@@ -2640,24 +2634,24 @@ WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbackInfo
             varyingsObject->IsArray()) {
             auto varyings = varyingsObject.As<v8::Array>();
             auto len = varyings->Length();
-            
-            
+
+
             std::vector<std::string> store;
             store.reserve(len);
-            
+
             for (int j = 0; j < len; ++j) {
                 auto name = ConvertFromV8String(isolate, varyings->Get(
                         context, j).ToLocalChecked());
-                
+
                 store.push_back(name);
             }
-            
-            
+
+
                 const char* cStrings[store.size()];
                 for (size_t i = 0; i < store.size(); ++i) {
                     cStrings[i] = store[i].c_str();
                 }
-            
+
             canvas_native_webgl2_transform_feedback_varyings(
                     program->GetProgram(),
                     cStrings, store.size(),
@@ -2838,8 +2832,8 @@ void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Valu
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_uniform1uiv(
                     location->GetUniformLocation(),
                     data, size,
@@ -2857,7 +2851,7 @@ void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Valu
                         context).ToChecked();
                 buf.push_back(item);
             }
-            
+
             canvas_native_webgl2_uniform1uiv(
                     location->GetUniformLocation(),
                     buf.data(), buf.size(),
@@ -2896,9 +2890,9 @@ void WebGL2RenderingContext::Uniform2uiv(const v8::FunctionCallbackInfo<v8::Valu
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
-            
+
+
+
             canvas_native_webgl2_uniform2uiv(
                     location->GetUniformLocation(),
                     data, size,
@@ -2949,14 +2943,14 @@ void WebGL2RenderingContext::Uniform3uiv(const v8::FunctionCallbackInfo<v8::Valu
         if (location != nullptr &&
             data->IsUint32Array()) {
             auto buf = data.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_uniform3uiv(
                     location->GetUniformLocation(),
                     data, size,
@@ -3007,14 +3001,14 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
         if (location != nullptr &&
             data->IsUint32Array()) {
             auto buf = data.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_uniform4uiv(
                     location->GetUniformLocation(),
                     data, size,
@@ -3032,7 +3026,7 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
                         context).ToChecked();
                 buf.push_back(item);
             }
-            
+
             canvas_native_webgl2_uniform4uiv(
                     location->GetUniformLocation(),
                     buf.data(), buf.size(),
@@ -3103,8 +3097,8 @@ void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
-                
+
+
                 canvas_native_webgl2_uniform_matrix2x3fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3128,7 +3122,7 @@ void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-            
+
                 canvas_native_webgl2_uniform_matrix2x3fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3163,14 +3157,14 @@ void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v
 
             if (data->IsFloat32Array()) {
                 auto buf = data.As<v8::TypedArray>();
-                
+
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
-                
+
+
                 canvas_native_webgl2_uniform_matrix2x4fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3194,7 +3188,7 @@ void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-               
+
 
                 canvas_native_webgl2_uniform_matrix2x4fv(
                         location->GetUniformLocation(),
@@ -3230,15 +3224,15 @@ void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v
 
             if (data->IsFloat32Array()) {
                 auto buf = data.As<v8::TypedArray>();
-               
-                
+
+
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
-                
+
+
                 canvas_native_webgl2_uniform_matrix3x2fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3262,7 +3256,7 @@ void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-               
+
 
                 canvas_native_webgl2_uniform_matrix3x2fv(
                         location->GetUniformLocation(),
@@ -3303,8 +3297,8 @@ void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
-                
+
+
                 canvas_native_webgl2_uniform_matrix3x4fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3328,7 +3322,7 @@ void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-                
+
 
                 canvas_native_webgl2_uniform_matrix3x4fv(
                         location->GetUniformLocation(),
@@ -3364,13 +3358,13 @@ void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v
 
             if (data->IsFloat32Array()) {
                 auto buf = data.As<v8::TypedArray>();
-                
+
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
+
                 canvas_native_webgl2_uniform_matrix4x2fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3394,7 +3388,7 @@ void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-            
+
 
                 canvas_native_webgl2_uniform_matrix4x2fv(
                         location->GetUniformLocation(),
@@ -3435,7 +3429,7 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
                 auto size = buf->Length();
                 auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
                 auto data = static_cast<float *>((void*) data_ptr);
-                
+
                 canvas_native_webgl2_uniform_matrix4x3fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3459,7 +3453,7 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
                     }
                 }
 
-         
+
                 canvas_native_webgl2_uniform_matrix4x3fv(
                         location->GetUniformLocation(),
                         transpose,
@@ -3547,14 +3541,14 @@ void WebGL2RenderingContext::VertexAttribI4iv(const v8::FunctionCallbackInfo<v8:
         auto value = args[1];
         if (value->IsInt32Array()) {
             auto buf = value.As<v8::TypedArray>();
-            
+
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<int32_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_vertex_attrib_i4iv(
                     index,
                     data, size,
@@ -3573,7 +3567,7 @@ void WebGL2RenderingContext::VertexAttribI4iv(const v8::FunctionCallbackInfo<v8:
                 buf.push_back(item);
             }
 
-           
+
             canvas_native_webgl2_vertex_attrib_i4iv(
                     index,
                     buf.data(), buf.size(),
@@ -3640,8 +3634,8 @@ void WebGL2RenderingContext::VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8
             auto size = buf->Length();
             auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
             auto data = static_cast<uint32_t *>((void*) data_ptr);
-            
-            
+
+
             canvas_native_webgl2_vertex_attrib_i4uiv(
                     index,
                     data, size,
@@ -3660,7 +3654,7 @@ void WebGL2RenderingContext::VertexAttribI4uiv(const v8::FunctionCallbackInfo<v8
                 buf.push_back(item);
             }
 
-            
+
             canvas_native_webgl2_vertex_attrib_i4uiv(
                     index,
                                                      buf.data(), buf.size(),

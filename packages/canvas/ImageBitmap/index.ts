@@ -115,12 +115,14 @@ export class ImageBitmap {
 				}
 			}
 
-			global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
-				if (value) {
-					resolve(ImageBitmap.fromNative(value));
-				} else {
-					reject(new Error(error));
-				}
+			setTimeout(() => {
+				global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
+					if (value) {
+						resolve(ImageBitmap.fromNative(value));
+					} else {
+						reject(new Error(error));
+					}
+				});
 			});
 		});
 	}

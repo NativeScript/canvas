@@ -45,13 +45,12 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
-	public static isDebug = false;
+	public static isDebug = true;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	_context;
 
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasModule.createWebGLContext;
 	}
 
 	constructor(context, contextOptions?) {
@@ -79,7 +78,8 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				//direction = 1;
 			}
 
-			this._context = ctor(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
+			
+			this._context = global.CanvasModule.createWebGLContext(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
 		} else {
 			this._context = context;
 		}

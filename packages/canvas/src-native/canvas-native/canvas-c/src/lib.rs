@@ -4036,7 +4036,6 @@ pub extern "C" fn canvas_native_text_decoder_decode(
         .unwrap()
         .into_raw()
 }
-
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_get_encoding(
     decoder: *const TextDecoder,

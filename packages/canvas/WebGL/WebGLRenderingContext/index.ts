@@ -45,7 +45,7 @@ import { Helpers } from '../../helpers';
 let ctor;
 
 export class WebGLRenderingContext extends WebGLRenderingContextBase {
-	public static isDebug = true;
+	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	_context;
 

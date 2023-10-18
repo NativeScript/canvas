@@ -109,6 +109,7 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
     auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
 
     if (args.Length() == 1) {
         auto value = args[0];
@@ -142,13 +143,28 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
         }
 
 
-        if (buf->IsTypedArray()) {
+        if (buf->IsArrayBufferView()) {
 
-            auto buffer = buf.As<v8::TypedArray>();
+            auto buffer = buf.As<v8::ArrayBufferView>();
+            
 
             auto store = buffer->Buffer()->GetBackingStore();
-            auto buffer_data = static_cast<u_int8_t *>(store->Data()) + buffer->ByteOffset();
-            auto len = buffer->Length();
+            auto buffer_data = static_cast<uint8_t *>(store->Data()) + buffer->ByteOffset();
+            
+            auto len = buffer->ByteLength();
+            
+//            v8::Local<v8::Value> size;
+//
+//            buf->Get(context, ConvertToV8String(isolate, "BYTES_PER_ELEMENT")).ToLocal(&size);
+//
+//            size_t len = 0;
+//
+//            if(!size.IsEmpty()){
+//                len =  buffer->Length() * (size_t)size->NumberValue(context).FromMaybe(0);
+//            }
+            
+          //  auto len = buffer->ByteLength();
+            
             auto decoded = canvas_native_text_decoder_decode(
                     ptr->GetTextDecoder(),
                                                              buffer_data, len);

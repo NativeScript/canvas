@@ -27,11 +27,10 @@ import { webgl_shadowmap } from './examples/webgl_shadowmap';
 import { webgl_shadowmap_performance } from './examples/webgl_shadowmap_performance';
 import { webgl_shadowmap_pointlight } from './examples/webgl_shadowmap_pointlight';
 import { webgl_shadowmap_vsm } from './examples/webgl_shadowmap_vsm';
-import { setTimeout } from '@nativescript/core/timer';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
-		super(new THREE.BoxBufferGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
+		super(new THREE.BoxGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
 	}
 }
 
@@ -73,10 +72,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
-
+		
 		//this.geoColors(canvas);
 		// setTimeout(()=>{
 		// 	console.log(canvas.toDataURL());
@@ -87,9 +86,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		this.threeCar(this.canvas);
+		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-
+		
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -102,6 +101,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 	}
+
 
 	gtlfLoader(canvas) {
 		var container, controls, context, width, height;
@@ -140,14 +140,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				var loader = new GLTFLoader().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
 				loader.load('DamagedHelmet.gltf', function (gltf) {
-					gltf.scene.traverse(function (child) {
-						// @ts-ignore
-						if (child.isMesh) {
-							// TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
-							// roughnessMipmapper.generateMipmaps( child.material );
-						}
-					});
-
+					
 					scene.add(gltf.scene);
 
 					//	roughnessMipmapper.dispose();
@@ -155,13 +148,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					render();
 				});
 			});
-
+			
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.toneMappingExposure = 1;
-			renderer.outputEncoding = THREE.sRGBEncoding;
 
 			var pmremGenerator = new THREE.PMREMGenerator(renderer);
 			pmremGenerator.compileEquirectangularShader();
@@ -282,12 +274,16 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// model
 
-			gltf.scene.traverse(function (child) {
-				if (child.isMesh) {
-					mesh = child;
-					scene.add(mesh);
-				}
-			});
+
+			mesh = gltf.scene.getObjectByName( 'node_damagedHelmet_-6514' );
+			scene.add( mesh );
+
+			// gltf.scene.traverse(function (child) {
+			// 	if (child.isMesh) {
+			// 		mesh = child;
+			// 		scene.add(mesh);
+			// 	}
+			// });
 
 			render();
 
@@ -358,7 +354,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		scene = new THREE.Scene();
 
-		const ring = new THREE.TorusBufferGeometry(5, 0.5, 64, 64);
+		const ring = new THREE.TorusGeometry(5, 0.5, 64, 64);
 		const ringMaterial = new THREE.MeshStandardMaterial({
 			transparent: true,
 			color: 'blue',
@@ -368,7 +364,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			depthWrite: true,
 		});
 		const ringMesh = new THREE.Mesh(ring, ringMaterial);
-		const cylinder = new THREE.CylinderBufferGeometry(5, 5, 1, 64);
+		const cylinder = new THREE.CylinderGeometry(5, 5, 1, 64);
 		cylinder.rotateX(Math.PI / 2);
 		cylinder.rotateZ(-Math.PI / 2);
 		const cylinderMaterial = new THREE.MeshStandardMaterial({
@@ -740,7 +736,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			var sphereGeometry = new THREE.SphereBufferGeometry(0.1, 32, 32);
+			var sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
 			var sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
 			for (var i = 0; i < 40; i++) {
@@ -854,7 +850,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// ground
 			var mesh = new THREE.Mesh(
-				new THREE.PlaneBufferGeometry(2000, 2000),
+				new THREE.PlaneGeometry(2000, 2000),
 				new THREE.MeshPhongMaterial({
 					color: 0x999999,
 					depthWrite: false,
@@ -1072,7 +1068,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				var shapes = font.generateShapes(message, 100);
 
-				var geometry = new THREE.ShapeBufferGeometry(shapes);
+				var geometry = new THREE.ShapeGeometry(shapes);
 
 				geometry.computeBoundingBox();
 
@@ -1109,7 +1105,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					var shape = shapes[i];
 
 					var points = shape.getPoints();
-					var geometry = new THREE.BufferGeometry().setFromPoints(points);
+					const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
 					geometry.translate(xMid, 0, 0);
 
@@ -1193,7 +1189,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var shadowTexture = new THREE.CanvasTexture(shadow);
 
 			var shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture });
-			var shadowGeo = new THREE.PlaneBufferGeometry(300, 300, 1, 1);
+			var shadowGeo = new THREE.PlaneGeometry(300, 300, 1, 1);
 
 			var shadowMesh;
 
@@ -1216,7 +1212,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			var radius = 200;
 
-			var geometry1 = new THREE.IcosahedronBufferGeometry(radius, 1);
+			var geometry1 = new THREE.IcosahedronGeometry(radius, 1);
 
 			var count = geometry1.attributes.position.count;
 			geometry1.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
@@ -1270,6 +1266,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh.add(wireframe);
 			scene.add(mesh);
 			const gl = canvas.getContext('webgl2', { antialias: false }) as WebGL2RenderingContext;
+
+	
 
 			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false });
 			//renderer.setPixelRatio(window.devicePixelRatio);
@@ -1477,7 +1475,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			window.addEventListener('resize', onWindowResize, false);
 
 			//
-			camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+			camera = new THREE.PerspectiveCamera(75,width / height, 0.1, 1000);
 			camera.position.set(4.25, 1.4, -7);
 
 			controls = new OrbitControls(camera, canvas);
@@ -1574,7 +1572,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				// shadow
 				const mesh = new THREE.Mesh(
-					new THREE.PlaneBufferGeometry(0.655 * 4, 1.3 * 4),
+					new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
 					new THREE.MeshBasicMaterial({
 						map: shadow,
 						toneMapped: false,
@@ -1587,6 +1585,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				scene.add(carModel);
 			});
+
 
 			renderer.setAnimationLoop(render);
 
@@ -1761,7 +1760,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				}
 			}
 
-			textureAnimation = new THREE.DataTexture(tData, tWidth, tHeight, THREE.RGBFormat, THREE.FloatType);
+			textureAnimation = new THREE.DataTexture(tData, tWidth, tHeight, THREE.RGBAFormat, THREE.FloatType);
 			textureAnimation.needsUpdate = true;
 
 			const vertices = [],
@@ -2340,13 +2339,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const posAttr1 = new THREE.GLBufferAttribute(pos, gl.FLOAT, 3, 4, particles);
 			// @ts-ignore
 			const posAttr2 = new THREE.GLBufferAttribute(pos2, gl.FLOAT, 3, 4, particles);
-			geometry.setAttribute('position', posAttr1);
+			geometry.setAttribute('position', posAttr1 as never);
 
 			setInterval(function () {
 				const attr = geometry.getAttribute('position');
 
-				geometry.setAttribute('position', attr === posAttr1 ? posAttr2 : posAttr1);
+				geometry.setAttribute('position', (attr === posAttr1 as never ? posAttr2 : posAttr1) as never);
 			}, 2000);
+			
 
 			// @ts-ignore
 			geometry.setAttribute('color', new THREE.GLBufferAttribute(rgb, gl.FLOAT, 3, 4, particles));
@@ -2571,7 +2571,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	*/
 
 	skinningAndMorphing(canvas) {
-		const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
+		const context = canvas.getContext('webgl2', {antialias: true}) as WebGL2RenderingContext;
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = context;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;
@@ -2603,7 +2603,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// ground
 
 			var mesh = new THREE.Mesh(
-				new THREE.PlaneBufferGeometry(2000, 2000),
+				new THREE.PlaneGeometry(2000, 2000),
 				new THREE.MeshPhongMaterial({
 					color: 0x999999,
 					depthWrite: false,
@@ -2857,6 +2857,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const pmremGenerator = new THREE.PMREMGenerator(renderer);
 			let renderTarget;
 
+			const sceneEnv = new THREE.Scene();
+
 			function updateSun() {
 				const phi = THREE.MathUtils.degToRad(90 - parameters.elevation);
 				const theta = THREE.MathUtils.degToRad(parameters.azimuth);
@@ -2868,8 +2870,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				if (renderTarget !== undefined) renderTarget.dispose();
 
-				renderTarget = pmremGenerator.fromScene(sky);
-
+				sceneEnv.add( sky );
+				renderTarget = pmremGenerator.fromScene(sceneEnv);
+				scene.add( sky );
 				scene.environment = renderTarget.texture;
 			}
 
@@ -2958,7 +2961,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			var texture = new THREE.TextureLoader().load(this.root + '/textures/crate.gif');
 			// texture.flipY = false;
-			var geometry = new THREE.BoxBufferGeometry(200, 200, 200);
+			var geometry = new THREE.BoxGeometry(200, 200, 200);
 			var material = new THREE.MeshBasicMaterial({ map: texture });
 
 			mesh = new THREE.Mesh(geometry, material);
@@ -3030,7 +3033,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		scene.add(shadowHelper);
 
 		// Create a plane that receives shadows (but does not cast them).
-		const planeGeometry = new THREE.PlaneBufferGeometry(10, 10, 32, 32);
+		const planeGeometry = new THREE.PlaneGeometry(10, 10, 32, 32);
 		const planeMaterial = new THREE.MeshStandardMaterial({
 			color: 0x00ff00,
 			side: THREE.DoubleSide,

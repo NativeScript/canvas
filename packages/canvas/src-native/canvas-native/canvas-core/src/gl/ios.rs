@@ -1,16 +1,14 @@
 use std::cell::RefCell;
-use std::ffi::{c_int, c_long, c_void};
-use std::fmt::{Debug, Formatter};
+use std::ffi::{c_long, c_void};
+use std::fmt::Debug;
 use std::ptr::NonNull;
 use std::rc::Rc;
 use core_foundation::base::TCFType;
 use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
 use core_foundation::string::CFString;
-use icrate::objc2::ffi::{objc_class, BOOL};
-use icrate::objc2::rc::{Allocated, Owned};
-use icrate::objc2::Encoding::Void;
+use icrate::objc2::ffi::BOOL;
 use icrate::objc2::{
-    class, extern_class, msg_send, msg_send_id, rc::Id, rc::Shared, runtime::Object, sel,
+    class, msg_send, msg_send_id, rc::Id, runtime::AnyObject,
     ClassType, Encode, Encoding,
 };
 use icrate::Foundation::{NSData, NSInteger, NSObject, NSUInteger};
@@ -67,14 +65,14 @@ unsafe impl Encode for EAGLRenderingAPI {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EAGLSharegroup(Id<Object, Shared>);
+pub(crate) struct EAGLSharegroup(Id<NSObject>);
 
 impl EAGLSharegroup {
     pub fn new() -> Self {
         unsafe {
             let cls = class!(EAGLSharegroup);
             let sharegroup = msg_send_id![cls, alloc];
-            let sharegroup: Id<Object, Shared> =
+            let sharegroup: Id<NSObject> =
                 msg_send_id![sharegroup, initWithAPI: EAGLRenderingAPI::GLES3];
 
             Self(sharegroup)
@@ -89,14 +87,15 @@ impl Default for EAGLSharegroup {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EAGLContext(Id<Object, Shared>);
+pub(crate) struct EAGLContext(Id<NSObject>);
+
 
 impl EAGLContext {
     pub fn new_with_api(api: EAGLRenderingAPI) -> Option<Self> {
         unsafe {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
-            let mut context: Option<Id<Object, Shared>> = msg_send_id![context, initWithAPI: api];
+            let mut context: Option<Id<NSObject>> = msg_send_id![context, initWithAPI: api];
             context.map(EAGLContext)
         }
     }
@@ -108,7 +107,7 @@ impl EAGLContext {
         unsafe {
             let cls = class!(EAGLContext);
             let context = msg_send_id![cls, alloc];
-            let context: Option<Id<Object, Shared>> =
+            let context: Option<Id<NSObject>> =
                 msg_send_id![context, initWithAPI: api, sharegroup: &*sharegroup.0];
             context.map(EAGLContext)
         }
@@ -122,7 +121,7 @@ impl EAGLContext {
                 instance
             },
             None => unsafe {
-                let nil: *mut Object = std::ptr::null_mut();
+                let nil: *mut NSObject = std::ptr::null_mut();
                 let instance: BOOL = msg_send![cls, setCurrentContext: nil];
                 instance
             },
@@ -132,7 +131,7 @@ impl EAGLContext {
     pub fn get_current_context() -> Option<Self> {
         unsafe {
             let cls = class!(EAGLContext);
-            let context: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+            let context: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
 
             context.map(EAGLContext)
         }
@@ -141,7 +140,7 @@ impl EAGLContext {
     pub fn remove_if_current(&self) -> bool {
         unsafe {
             let cls = class!(EAGLContext);
-            let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+            let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
 
             match current {
                 Some(current) => {
@@ -150,7 +149,7 @@ impl EAGLContext {
                         unsafe {
                             gl_bindings::Flush();
                         }
-                        let nil: *mut Object = std::ptr::null_mut();
+                        let nil: *mut NSObject = std::ptr::null_mut();
                         return msg_send![cls, setCurrentContext: nil];
                     }
                     false
@@ -265,7 +264,7 @@ impl TryFrom<i32> for GLKViewDrawableMultisample {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct GLKView(Id<Object, Shared>);
+pub(crate) struct GLKView(Id<NSObject>);
 
 impl GLKView {
     pub fn new() -> Self {
@@ -326,12 +325,12 @@ impl GLKView {
     }
 
     pub fn set_alpha(&self, alpha: bool) {
-        let layer: Id<Object, Shared> = unsafe { msg_send_id![&self.0, layer] };
+        let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
         let _: () = unsafe { msg_send![&layer, setOpaque: alpha] };
     }
 
     pub fn get_alpha(&self) -> bool {
-        let layer: Id<Object, Shared> = unsafe { msg_send_id![&self.0, layer] };
+        let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
         let ret: bool = unsafe { msg_send![&layer, isOpaque] };
         ret
     }
@@ -370,14 +369,14 @@ impl GLKView {
                 let _: () = unsafe { msg_send![&self.0, setContext: &*context.0] };
             }
             None => {
-                let nil: *mut Object = std::ptr::null_mut();
+                let nil: *mut NSObject = std::ptr::null_mut();
                 let _: () = unsafe { msg_send![&self.0, setContext: nil] };
             }
         }
     }
 
     pub fn get_context(&self) -> Option<EAGLContext> {
-        let context: Option<Id<Object, Shared>> = unsafe { msg_send_id![&self.0, context] };
+        let context: Option<Id<NSObject>> = unsafe { msg_send_id![&self.0, context] };
         context.map(EAGLContext)
     }
 
@@ -393,7 +392,7 @@ impl GLKView {
 
 impl GLContext {
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
-        let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::new(view.as_ptr() as _) };
         match glview {
             None => false,
             Some(glview) => {
@@ -409,7 +408,7 @@ impl GLContext {
         view: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<GLContext> {
-        let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::new(view.as_ptr() as _) };
         match glview {
             None => None,
             Some(glview) => {
@@ -423,7 +422,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
     ) -> Option<GLContext> {
-        let glview = unsafe { Id::<Object, Shared>::new(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::new(view.as_ptr() as _) };
         match glview {
             None => None,
             Some(glview) => {
@@ -522,7 +521,7 @@ impl GLContext {
         if let Some(context) = inner.context.as_ref() {
             unsafe {
                 let cls = class!(EAGLContext);
-                let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+                let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
 
                 match current {
                     Some(current) => {
@@ -537,7 +536,7 @@ impl GLContext {
 
             // unsafe {
             //     let cls = class!(EAGLContext);
-            //     let current: Option<Id<Object, Shared>> = msg_send_id![cls, currentContext];
+            //     let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
             //
             //     match current {
             //         Some(current) => {

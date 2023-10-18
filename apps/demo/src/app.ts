@@ -49,7 +49,7 @@ Application.on('uncaughtError', (args) => {
 	console.log('uncaughtError: platform error', args.android ?? args.ios);
 });
 Application.on('launch', (args) => {
-	require('@nativescript/canvas-polyfill');
+	//require('@nativescript/canvas-polyfill');
 	if (global.isAndroid) {
 		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
 	} else {

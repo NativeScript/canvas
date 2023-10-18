@@ -69,7 +69,7 @@ impl Raf {
                 lock.is_prepared = true;
             }
             let instance = AChoreographer_getInstance();
-            let data = Box::into_raw(Box::new(self.clone())) as *const c_void;
+            let data = Box::into_raw(Box::new(self.clone())) as *mut c_void;
             if lock.use_deprecated {
                 AChoreographer_postFrameCallback(instance, Some(Raf::callback), data);
             } else {

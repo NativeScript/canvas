@@ -43,7 +43,7 @@ class NSCCanvas : FrameLayout {
 	var upscale: Boolean = false
 		set(value) {
 			field = value
-			//updateParams(width, height)
+			updateParams(width, height)
 		}
 
 	var ignorePixelScaling: Boolean

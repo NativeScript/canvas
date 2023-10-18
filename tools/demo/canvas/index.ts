@@ -56,7 +56,7 @@ import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, envi
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
-import { issue54 } from './issues';
+import { issue54, issue93 } from './issues';
 var Chart;
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
@@ -646,12 +646,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.decoder()
 		//this.context2DTest(this.canvas);
+
+		issue93(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {

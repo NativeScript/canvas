@@ -663,12 +663,12 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
             auto sizeOrBuf = args[1];
             if (sizeOrBuf->IsArrayBufferView()) {
                 if (sizeOrBuf->IsUint16Array()) {
-                    auto buf = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = sizeOrBuf.As<v8::Uint16Array>();
 
                     auto array = buf->Buffer();
                     auto offset = buf->ByteOffset();
                     auto size = buf->Length();
-                    auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                    auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                     auto data = static_cast<uint16_t *>((void *) data_ptr);
 
                     canvas_native_webgl_buffer_data_u16(
@@ -678,12 +678,12 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
                             ptr->GetState()
                     );
                 } else if (sizeOrBuf->IsFloat32Array()) {
-                    auto buf = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = sizeOrBuf.As<v8::Float32Array>();
 
                     auto array = buf->Buffer();
                     auto offset = buf->ByteOffset();
                     auto size = buf->Length();
-                    auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                    auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                     auto data = static_cast<float *>((void *) data_ptr);
 
                     canvas_native_webgl_buffer_data_f32(
@@ -693,12 +693,12 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
                             ptr->GetState()
                     );
                 } else {
-                    auto buf = sizeOrBuf.As<v8::TypedArray>();
+                    auto buf = sizeOrBuf.As<v8::ArrayBufferView>();
 
                     auto array = buf->Buffer();
                     auto offset = buf->ByteOffset();
-                    auto size = buf->Length();
-                    auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                    auto size = buf->ByteLength();
+                    auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                     auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -762,13 +762,13 @@ void WebGLRenderingContext::BufferSubData(const v8::FunctionCallbackInfo<v8::Val
         if (args[2]->IsObject()) {
             auto buf = args[2];
 
-            if (buf->IsTypedArray()) {
-                auto buff = buf.As<v8::TypedArray>();
+            if (buf->IsArrayBufferView()) {
+                auto buff = buf.As<v8::ArrayBufferView>();
 
                 auto array = buff->Buffer();
                 auto os = buff->ByteOffset();
-                auto size = buff->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + os;
+                auto size = buff->ByteLength();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + os;
                 auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -995,13 +995,13 @@ void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<
         auto border = (int32_t) args[5]->NumberValue(context).ToChecked();
         auto pixels = args[6];
         if (pixels->IsObject()) {
-            if (pixels->IsTypedArray()) {
-                auto buf = pixels.As<v8::TypedArray>();
+            if (pixels->IsArrayBufferView()) {
+                auto buf = pixels.As<v8::ArrayBufferView>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
-                auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto size = buf->ByteLength();
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -1060,12 +1060,12 @@ WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8
         auto format = (uint32_t) args[6]->NumberValue(context).ToChecked();
         if (args[7]->IsObject()) {
             auto pixels = args[7];
-            if (pixels->IsTypedArray()) {
-                auto buf = pixels.As<v8::TypedArray>();
+            if (pixels->IsArrayBufferView()) {
+                auto buf = pixels.As<v8::ArrayBufferView>();
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
-                auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto size = array->ByteLength();
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<uint8_t *>((void *) data_ptr);
 
                 canvas_native_webgl_compressed_tex_sub_image2d(
@@ -3447,13 +3447,13 @@ WebGLRenderingContext::ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &arg
                 context).ToChecked();
 
         auto pixels = args[6];
-        if (pixels->IsTypedArray()) {
-            auto buf = pixels.As<v8::TypedArray>();
+        if (pixels->IsArrayBufferView()) {
+            auto buf = pixels.As<v8::ArrayBufferView>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
-            auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto size = array->ByteLength();
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -3945,13 +3945,13 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                     type,
                     ptr->GetState()
             );
-        } else if (value->IsTypedArray()) {
-            auto buf = value.As<v8::TypedArray>();
+        } else if (value->IsArrayBufferView()) {
+            auto buf = value.As<v8::ArrayBufferView>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
-            auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto size = array->ByteLength();
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -4170,13 +4170,13 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
         auto pixels = args[8];
 
 
-        if (pixels->IsTypedArray()) {
-            auto buf = pixels.As<v8::TypedArray>();
+        if (pixels->IsArrayBufferView()) {
+            auto buf = pixels.As<v8::ArrayBufferView>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
-            auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto size = array->ByteLength();
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
@@ -4332,12 +4332,12 @@ WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::Value>
 
         auto value = args[1];
         if (value->IsFloat32Array()) {
-            auto buf = value.As<v8::TypedArray>();
+            auto buf = value.As<v8::Float32Array>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4364,12 +4364,12 @@ WebGLRenderingContext::VertexAttrib2fv(const v8::FunctionCallbackInfo<v8::Value>
 
         auto value = args[1];
         if (value->IsFloat32Array()) {
-            auto buf = value.As<v8::TypedArray>();
+            auto buf = value.As<v8::Float32Array>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4396,12 +4396,12 @@ WebGLRenderingContext::VertexAttrib3fv(const v8::FunctionCallbackInfo<v8::Value>
 
         auto value = args[1];
         if (value->IsFloat32Array()) {
-            auto buf = value.As<v8::TypedArray>();
+            auto buf = value.As<v8::Float32Array>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4428,12 +4428,12 @@ WebGLRenderingContext::VertexAttrib4fv(const v8::FunctionCallbackInfo<v8::Value>
 
         auto value = args[1];
         if (value->IsFloat32Array()) {
-            auto buf = value.As<v8::TypedArray>();
+            auto buf = value.As<v8::Float32Array>();
 
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = buf->Length();
-            auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+            auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
             auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4619,12 +4619,12 @@ WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsFloat32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4681,12 +4681,12 @@ WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsFloat32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4743,12 +4743,12 @@ WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsFloat32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4804,12 +4804,12 @@ WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsFloat32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
 
@@ -4992,12 +4992,12 @@ WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsInt32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Int32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<int32_t *>((void *) data_ptr);
 
 
@@ -5050,12 +5050,12 @@ WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsInt32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Int32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<int32_t *>((void *) data_ptr);
 
                 canvas_native_webgl_uniform2iv(
@@ -5107,11 +5107,11 @@ WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsInt32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Int32Array>();
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<int32_t *>((void *) data_ptr);
 
 
@@ -5165,11 +5165,11 @@ WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (location != nullptr) {
             if (v0Value->IsInt32Array()) {
-                auto buf = v0Value.As<v8::TypedArray>();
+                auto buf = v0Value.As<v8::Int32Array>();
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<int32_t *>((void *) data_ptr);
 
 
@@ -5222,11 +5222,11 @@ WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::Value
 
         if (location != nullptr) {
             if (value->IsFloat32Array()) {
-                auto buf = value.As<v8::TypedArray>();
+                auto buf = value.As<v8::Float32Array>();
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
                 canvas_native_webgl_uniform_matrix2fv(
@@ -5283,12 +5283,12 @@ WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value
 
         if (location != nullptr) {
             if (value->IsFloat32Array()) {
-                auto buf = value.As<v8::TypedArray>();
+                auto buf = value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
                 canvas_native_webgl_uniform_matrix3fv(
@@ -5346,12 +5346,12 @@ WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value
 
         if (location != nullptr) {
             if (value->IsFloat32Array()) {
-                auto buf = value.As<v8::TypedArray>();
+                auto buf = value.As<v8::Float32Array>();
 
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
                 auto data = static_cast<float *>((void *) data_ptr);
 
 

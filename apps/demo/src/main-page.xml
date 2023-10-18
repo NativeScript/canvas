@@ -13,6 +13,7 @@
         <Button text="canvas-pixi" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
         <Button text="canvas-polyfill" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
         <Button text="canvas-three" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+<Button text="canvas-chartjs" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
       </StackLayout>
     </ScrollView>
   </StackLayout>

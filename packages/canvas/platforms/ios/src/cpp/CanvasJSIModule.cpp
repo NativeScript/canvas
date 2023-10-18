@@ -150,8 +150,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
     if (image->IsObject()) {
         auto imageObject = image.As<v8::Object>();
         auto isArrayBuffer = imageObject->IsArrayBuffer();
-        auto isTypedArray = imageObject->IsTypedArray();
-        if (isArrayBuffer || isTypedArray) {
+        auto IsArrayBufferView = imageObject->IsArrayBufferView();
+        if (isArrayBuffer || IsArrayBufferView) {
 
             if (len == 1 || len == 2) {
                 if (len == 2) {
@@ -256,20 +256,20 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                 }
 
 
-                auto ta = imageObject.As<v8::TypedArray>();
+                auto ta = imageObject.As<v8::ArrayBufferView>();
 
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
-                auto size = ta->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto size = ta->ByteLength();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
-                v8::Global<v8::TypedArray> ab(isolate, ta);
+                v8::Global<v8::ArrayBufferView> ab(isolate, ta);
 
                 std::thread thread(
                         [jsi_callback, &options, shared_asset, data_ptr, size](
-                                v8::Global<v8::TypedArray> ab) {
+                                v8::Global<v8::ArrayBufferView> ab) {
 
                             auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
                                     data_ptr, size,
@@ -373,21 +373,21 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     return;
                 }
 
-                auto ta = imageObject.As<v8::TypedArray>();
+                auto ta = imageObject.As<v8::ArrayBufferView>();
 
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
-                auto size = ta->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto size = ta->ByteLength();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
-                v8::Global<v8::TypedArray> ab(isolate, ta);
+                v8::Global<v8::ArrayBufferView> ab(isolate, ta);
 
 
                 std::thread thread(
                         [jsi_callback, &options, shared_asset, data_ptr, size, current_queue](
-                                v8::Global<v8::TypedArray> ab
+                                v8::Global<v8::ArrayBufferView> ab
                         ) {
 
                             auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -564,22 +564,22 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     return;
                 }
 
-                auto ta = bufferValue.As<v8::TypedArray>();
+                auto ta = bufferValue.As<v8::ArrayBufferView>();
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
-                auto size = ta->Length();
-                auto data_ptr = (uint8_t *) array->GetBackingStore()->Data() + offset;
+                auto size = ta->ByteLength();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
-                v8::Global<v8::TypedArray> ab(isolate, ta);
+                v8::Global<v8::ArrayBufferView> ab(isolate, ta);
                 std::thread thread(
                         [jsi_callback, &options, shared_asset, data_ptr, size](
                                 float sx_or_options,
                                 float sy,
                                 float sw,
                                 float sh,
-                                v8::Global<v8::TypedArray> ab
+                                v8::Global<v8::ArrayBufferView> ab
                         ) {
 
                             auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
@@ -702,23 +702,23 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     return;
                 }
 
-                auto ta = bufferValue.As<v8::TypedArray>();
+                auto ta = bufferValue.As<v8::ArrayBufferView>();
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
-                auto size = ta->Length();
-                auto data_ptr = (uint8_t*) array->GetBackingStore()->Data() + offset;
+                auto size = ta->ByteLength();
+                auto data_ptr = static_cast<uint8_t*>(array->GetBackingStore()->Data()) + offset;
 
 
 
-                v8::Global<v8::TypedArray> ab(isolate, ta);
+                v8::Global<v8::ArrayBufferView> ab(isolate, ta);
                 std::thread thread(
                         [jsi_callback, &options, data_ptr, size, shared_asset, current_queue](
                                 float sx_or_options,
                                 float sy,
                                 float sw,
                                 float sh,
-                                v8::Global<v8::TypedArray> ab
+                                v8::Global<v8::ArrayBufferView> ab
                         ) {
 
                             auto done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(

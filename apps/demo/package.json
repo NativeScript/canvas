@@ -1,32 +1,33 @@
 {
-	"main": "./src/app.ts",
-	"description": "NativeScript Application",
-	"license": "SEE LICENSE IN <your-license-filename>",
-	"repository": "<fill-your-repository-here>",
-	"dependencies": {
-		"@nativescript/canvas": "file:../../packages/canvas",
-		"@nativescript/canvas-babylon": "file:../../packages/canvas-babylon",
-		"@nativescript/canvas-media": "file:../../packages/canvas-media",
-		"@nativescript/canvas-phaser": "file:../../packages/canvas-phaser",
-		"@nativescript/canvas-phaser-ce": "file:../../packages/canvas-phaser-ce",
-		"@nativescript/canvas-pixi": "file:../../packages/canvas-pixi",
-		"@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
-		"@nativescript/canvas-three": "file:../../packages/canvas-three",
-		"@nativescript/core": "file:../../node_modules/@nativescript/core",
-		"babylonjs": "file:../../node_modules/babylonjs",
-		"babylonjs-materials": "file:../../node_modules/babylonjs-materials",
-		"chart.js": "file:../../node_modules/chart.js",
-		"d3": "file:../../node_modules/d3",
-		"matter-js": "file:../../node_modules/matter-js",
-		"phaser": "file:../../node_modules/phaser",
-		"phaser-ce": "file:../../node_modules/phaser-ce",
-		"pixi.js": "file:../../node_modules/pixi.js",
-		"three": "file:../../node_modules/three",
-		"vexflow": "file:../../node_modules/vexflow",
-		"zen-3d": "file:../../node_modules/zen-3d"
-	},
-	"devDependencies": {
-		"@nativescript/android": "8.5.4",
-		"@nativescript/ios": "8.5.2"
-	}
+  "main": "./src/app.ts",
+  "description": "NativeScript Application",
+  "license": "SEE LICENSE IN <your-license-filename>",
+  "repository": "<fill-your-repository-here>",
+  "dependencies": {
+    "@nativescript/canvas": "file:../../packages/canvas",
+    "@nativescript/canvas-babylon": "file:../../packages/canvas-babylon",
+    "@nativescript/canvas-media": "file:../../packages/canvas-media",
+    "@nativescript/canvas-phaser": "file:../../packages/canvas-phaser",
+    "@nativescript/canvas-phaser-ce": "file:../../packages/canvas-phaser-ce",
+    "@nativescript/canvas-pixi": "file:../../packages/canvas-pixi",
+    "@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
+    "@nativescript/canvas-three": "file:../../packages/canvas-three",
+    "@nativescript/core": "file:../../node_modules/@nativescript/core",
+    "babylonjs": "file:../../node_modules/babylonjs",
+    "babylonjs-materials": "file:../../node_modules/babylonjs-materials",
+    "chart.js": "file:../../node_modules/chart.js",
+    "d3": "file:../../node_modules/d3",
+    "matter-js": "file:../../node_modules/matter-js",
+    "phaser": "file:../../node_modules/phaser",
+    "phaser-ce": "file:../../node_modules/phaser-ce",
+    "pixi.js": "file:../../node_modules/pixi.js",
+    "three": "file:../../node_modules/three",
+    "vexflow": "file:../../node_modules/vexflow",
+    "zen-3d": "file:../../node_modules/zen-3d",
+    "@nativescript/canvas-chartjs": "file:../../packages/canvas-chartjs"
+  },
+  "devDependencies": {
+    "@nativescript/android": "8.6.2",
+    "@nativescript/ios": "8.6.1"
+  }
 }

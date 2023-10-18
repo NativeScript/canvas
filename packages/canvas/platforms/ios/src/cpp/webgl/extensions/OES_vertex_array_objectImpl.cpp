@@ -18,7 +18,6 @@ void OES_vertex_array_objectImpl::CreateVertexArrayOES(
         return;
     }
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl_oes_vertex_array_object_create_vertex_array_oes(
             ptr->GetVertexArrayObject());

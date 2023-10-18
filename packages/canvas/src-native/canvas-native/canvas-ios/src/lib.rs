@@ -1,27 +1,17 @@
 use std::cell::RefCell;
-use std::ffi::{c_float, c_int, c_long, c_longlong, c_uchar, c_void, CStr, CString};
+use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use std::sync::Once;
-
-use icrate::objc2::declare::ClassBuilder;
-use icrate::objc2::ffi::BOOL;
-use icrate::objc2::rc::{autoreleasepool, Id, Owned, Shared};
-use icrate::objc2::runtime::{Bool, Class, Object, Sel};
-use icrate::objc2::{declare_class, sel, ClassType, Encoding, Message, RefEncode};
-use icrate::Foundation::{NSData, NSObject, NSString};
-use raw_window_handle::HasRawWindowHandle;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
+pub use canvas_c::*;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
-use canvas_c::CanvasRenderingContext2D;
-use canvas_c::PaintStyle;
-
-pub use canvas_c::*;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {

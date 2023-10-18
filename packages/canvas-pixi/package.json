@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-pixi",
-  "version": "2.0.0-alpha.20",
+  "version": "2.0.0-alpha.21",
   "description": "Plugin for using pixi.js in NativeScript",
   "main": "index",
   "typings": "index.d.ts",
@@ -33,9 +33,7 @@
   "readmeFilename": "README.md",
   "bootstrapper": "nativescript-plugin-seed",
   "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha"
-  },
-  "peerDependencies": {
-    "pixi.js": "^7.2.3"
+    "@nativescript/canvas-polyfill": "alpha",
+    "pixi.js": "~7.3.1"
   }
 }

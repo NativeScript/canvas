@@ -78,7 +78,6 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 				//direction = 1;
 			}
 
-			
 			this._context = global.CanvasModule.createWebGLContext(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
 		} else {
 			this._context = context;

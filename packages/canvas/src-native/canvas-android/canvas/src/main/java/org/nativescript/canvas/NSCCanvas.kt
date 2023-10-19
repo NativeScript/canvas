@@ -39,10 +39,11 @@ class NSCCanvas : FrameLayout {
 		Surface
 	}
 
-
+	private var didUpscale = false
 	var upscale: Boolean = false
 		set(value) {
 			field = value
+			didUpscale = true;
 			updateParams(width, height)
 		}
 
@@ -406,6 +407,9 @@ class NSCCanvas : FrameLayout {
 	}
 
 	private fun updateParams(w: Int, h: Int) {
+		if (!didUpscale) {
+			return
+		}
 		if (upscale) {
 			val density = resources.displayMetrics.density
 			if (surfaceType == SurfaceType.Surface) {
@@ -428,9 +432,10 @@ class NSCCanvas : FrameLayout {
 					ViewGroup.LayoutParams.MATCH_PARENT
 				)
 			}
-			clipChildren = false
-			clipToPadding = false
+			clipChildren = true
+			clipToPadding = true
 			ignorePixelScaling = false
+			didUpscale = false
 		}
 	}
 
@@ -454,11 +459,11 @@ class NSCCanvas : FrameLayout {
 					nativeUpdate2DSurface(it, native2DContext)
 				}
 			} ?: run {
-				nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferWidth, nativeGL)
+				nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferHeight, nativeGL)
 				if (is2D) {
 					nativeUpdate2DSurfaceNoSurface(
 						this.drawingBufferWidth,
-						this.drawingBufferWidth,
+						this.drawingBufferHeight,
 						native2DContext
 					)
 				}

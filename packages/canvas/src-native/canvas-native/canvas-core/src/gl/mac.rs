@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
@@ -14,7 +14,6 @@ use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use once_cell::sync::Lazy;
 use raw_window_handle::{
     AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
 };
@@ -475,13 +474,13 @@ impl GLContext {
 
                             let alpha_requested = context_attrs.get_alpha();
 
-                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let mut stencil_size = if context_attrs.get_stencil() {
+                            let alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let stencil_size = if context_attrs.get_stencil() {
                                 8u8
                             } else {
                                 0u8
                             };
-                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+                            let depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
 
                             if multi_sample {
                                 if supports_transparency == alpha_requested

@@ -281,12 +281,8 @@ export class Canvas extends CanvasBase {
 
 					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
 
-					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
-
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
-
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
 					// @ts-ignore
@@ -304,7 +300,7 @@ export class Canvas extends CanvasBase {
 					this._layoutNative();
 					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
 
-					this._canvas.initContext(type, true, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';

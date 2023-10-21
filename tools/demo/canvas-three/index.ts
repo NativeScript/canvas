@@ -33,6 +33,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_of_the_valorous_rabbit';
+import { ghost_card } from './examples/ghost_card';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -107,7 +108,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		ghost_card(this.canvas);
 	}
 
 	webgl_postprocessing_unreal_bloom(canvas) {

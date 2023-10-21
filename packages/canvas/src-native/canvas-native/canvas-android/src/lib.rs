@@ -14,7 +14,6 @@ use android_logger::Config;
 use once_cell::sync::OnceCell;
 
 use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
-
 mod jni_compat;
 pub mod utils;
 

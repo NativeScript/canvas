@@ -1327,39 +1327,35 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 		fieldTitle.color = new Color('#ffa873');
 		fieldTitle.verticalAlignment = 'top';
 		fieldTitle.horizontalAlignment = 'center';
-        fieldTitle.className = 'distanceTitle';
+		fieldTitle.className = 'distanceTitle';
 
 		fieldDistance = new Label();
-        fieldDistance.verticalAlignment = 'top';
+		fieldDistance.verticalAlignment = 'top';
 		fieldDistance.horizontalAlignment = 'center';
 		fieldDistance.text = '000';
 		fieldDistance.color = new Color('#dc5f45');
-        fieldDistance.className = 'distanceValue';
-
+		fieldDistance.className = 'distanceValue';
 
 		fieldGameOver = new Label();
-        fieldGameOver.color = new Color('#ffc5a2');
-        fieldGameOver.text = 'Game Over'
-        fieldGameOver.className = 'gameover';
-        fieldGameOver.horizontalAlignment = 'center';
-        fieldGameOver.textAlignment = 'center';
+		fieldGameOver.color = new Color('#ffc5a2');
+		fieldGameOver.text = 'Game Over';
+		fieldGameOver.className = 'gameover';
+		fieldGameOver.horizontalAlignment = 'center';
+		fieldGameOver.textAlignment = 'center';
 
-        const fieldInfo = new StackLayout();
-       
-        fieldInfo.orientation = 'vertical';
-        
+		const fieldInfo = new StackLayout();
+
+		fieldInfo.orientation = 'vertical';
 
 		fieldInfo.addChild(fieldTitle);
 		fieldInfo.addChild(fieldDistance);
-        containerLayout.addChild(fieldInfo);
-        containerLayout.addChild(fieldGameOver);
+		containerLayout.addChild(fieldInfo);
+		containerLayout.addChild(fieldGameOver);
 
-        GridLayout.setRow(fieldDistance, 1);
-        GridLayout.setRowSpan(fieldGameOver, 2);
-        
+		GridLayout.setRow(fieldDistance, 1);
+		GridLayout.setRowSpan(fieldGameOver, 2);
 
-        parent.addChild(containerLayout);
-        
+		parent.addChild(containerLayout);
 	}
 
 	////////////////////////////////////////////////

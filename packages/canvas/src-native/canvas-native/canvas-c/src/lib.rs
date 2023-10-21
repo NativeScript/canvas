@@ -5973,6 +5973,7 @@ pub extern "C" fn canvas_native_webgl_check_frame_buffer_status(
     )
 }
 
+#[inline(always)]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_clear(mask: u32, state: *mut WebGLState) {
     let state = unsafe { &mut *state };

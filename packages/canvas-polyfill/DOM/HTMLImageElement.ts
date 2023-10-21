@@ -153,7 +153,7 @@ export class HTMLImageElement extends Element {
 				let async = this.decoding !== 'sync';
 				if (this.src.startsWith('http')) {
 					if (!async) {
-						const loaded = this._asset.loadUrlSync(this.src);
+						const loaded = this._asset.fromUrlSync(this.src);
 						if (loaded) {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
@@ -163,7 +163,7 @@ export class HTMLImageElement extends Element {
 						}
 					} else {
 						this._asset
-							.loadUrlAsync(this.src)
+							.fromUrl(this.src)
 							.then(() => {
 								this.width = this._asset.width;
 								this.height = this._asset.height;

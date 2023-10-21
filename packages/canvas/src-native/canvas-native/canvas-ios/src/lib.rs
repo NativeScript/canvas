@@ -12,7 +12,6 @@ use canvas_c::PaintStyle;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
-
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
     OffScreen,

@@ -108,8 +108,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
-		ghost_card(this.canvas);
+		the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		//ghost_card(this.canvas);
 	}
 
 	webgl_postprocessing_unreal_bloom(canvas) {

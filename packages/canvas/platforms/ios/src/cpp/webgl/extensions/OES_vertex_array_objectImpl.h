@@ -33,7 +33,7 @@ public:
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "OES_vertex_array_object"));
         tmpl->Set(ConvertToV8String(isolate, "VERTEX_ARRAY_BINDING_OES"),
-                  v8::Number::New(isolate, (double) GL_VERTEX_ARRAY_BINDING_OES));
+                  v8::Integer::NewFromUnsigned(isolate,  GL_VERTEX_ARRAY_BINDING_OES));
         tmpl->Set(ConvertToV8String(isolate, "createVertexArrayOES"),
                   v8::FunctionTemplate::New(isolate, &CreateVertexArrayOES));
         tmpl->Set(ConvertToV8String(isolate, "deleteVertexArrayOES"),

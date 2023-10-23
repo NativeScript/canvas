@@ -28,11 +28,11 @@ public:
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WEBGL_compressed_texture_atc"));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_ATC_WEBGL"),
-                  v8::Number::New(isolate, (double) GL_ATC_RGB_AMD));
+                  v8::Integer::NewFromUnsigned(isolate, GL_ATC_RGB_AMD));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA_WEBGL"),
-                  v8::Number::New(isolate, (double) GL_ATC_RGBA_EXPLICIT_ALPHA_AMD));
+                  v8::Integer::NewFromUnsigned(isolate,  GL_ATC_RGBA_EXPLICIT_ALPHA_AMD));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_ATC_INTERPOLATED_ALPHA_WEBGL"),
-                  v8::Number::New(isolate, (double) GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD));
+                  v8::Integer::NewFromUnsigned(isolate, GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD));
 
         cache->WEBGL_compressed_texture_atcTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);

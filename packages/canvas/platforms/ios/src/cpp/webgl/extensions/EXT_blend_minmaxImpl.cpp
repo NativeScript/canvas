@@ -21,10 +21,10 @@ v8::Local<v8::FunctionTemplate> EXT_blend_minmaxImpl::GetCtor(v8::Isolate *isola
     tmpl->SetInternalFieldCount(1);
 
     tmpl->Set(ConvertToV8String(isolate, "MIN_EXT"),
-              v8::Number::New(isolate, 0x8007));
+              v8::Integer::NewFromUnsigned(isolate, 0x8007));
 
     tmpl->Set(ConvertToV8String(isolate, "MAX_EXT"),
-              v8::Number::New(isolate, 0x8008));
+              v8::Integer::NewFromUnsigned(isolate, 0x8008));
 
     tmpl->Set(ConvertToV8String(isolate, "ext_name"),
               ConvertToV8String(isolate, "EXT_blend_minmax"));

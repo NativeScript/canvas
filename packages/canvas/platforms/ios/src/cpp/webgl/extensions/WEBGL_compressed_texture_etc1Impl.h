@@ -30,7 +30,7 @@ public:
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WEBGL_compressed_texture_etc1"));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_ETC1_WEBGL"),
-                  v8::Number::New(isolate, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
 
         cache->WEBGL_compressed_texture_etc1Tmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);

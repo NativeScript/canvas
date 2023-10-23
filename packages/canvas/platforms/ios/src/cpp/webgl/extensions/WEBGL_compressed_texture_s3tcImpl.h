@@ -27,13 +27,13 @@ public:
         tmpl->SetInternalFieldCount(1);
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_S3TC_DXT1_EXT"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGB_S3TC_DXT1_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGB_S3TC_DXT1_EXT));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_S3TC_DXT1_EXT"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGBA_S3TC_DXT1_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_S3TC_DXT3_EXT"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGBA_S3TC_DXT3_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT));
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_S3TC_DXT5_EXT"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGBA_S3TC_DXT5_EXT));
+                  v8::Integer::NewFromUnsigned(isolate,  GL_COMPRESSED_RGBA_S3TC_DXT5_EXT));
 
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc"));

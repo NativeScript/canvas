@@ -26,7 +26,7 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
         tmpl->Set(ConvertToV8String(isolate, "FRAGMENT_SHADER_DERIVATIVE_HINT_OES"),
-                  v8::Number::New(isolate, GL_FRAGMENT_SHADER_DERIVATIVE_HINT_OES));
+                  v8::Integer::NewFromUnsigned(isolate, GL_FRAGMENT_SHADER_DERIVATIVE_HINT_OES));
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "OES_standard_derivatives"));
         cache->OES_standard_derivativesTmpl =

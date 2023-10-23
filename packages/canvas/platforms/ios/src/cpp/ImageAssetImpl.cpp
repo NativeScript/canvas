@@ -173,8 +173,8 @@ void ImageAssetImpl::Scale(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
 
     if (args.Length() > 1) {
-        auto x = (uint32_t) args[0]->NumberValue(context).ToChecked();
-        auto y = (uint32_t) args[1]->NumberValue(context).ToChecked();
+        auto x = args[0]->Uint32Value(context).ToChecked();
+        auto y = args[1]->Uint32Value(context).ToChecked();
         if (x > 0 && y > 0) {
             canvas_native_image_asset_scale(
                     ptr->GetImageAsset(), x,
@@ -663,7 +663,7 @@ void ImageAssetImpl::SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto path = ConvertFromV8String(isolate, args[0]);
-    auto format = (uint32_t) args[1]->NumberValue(context).ToChecked();
+    auto format = args[1]->Uint32Value(context).ToChecked();
     auto done = canvas_native_image_asset_save_path(ptr->GetImageAsset(), path.c_str(), format);
 
     args.GetReturnValue().Set(done);
@@ -683,7 +683,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto path = ConvertFromV8String(isolate, args[0]);
 
-    auto format = (uint32_t) args[1]->NumberValue(context).ToChecked();
+    auto format = args[1]->Uint32Value(context).ToChecked();
 
     auto asset = canvas_native_image_asset_shared_clone(
             ptr->GetImageAsset());

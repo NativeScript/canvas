@@ -63,7 +63,6 @@ void
 WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
-    auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto size = canvas_native_webgl_active_info_get_size(ptr->GetWebGLActiveInfo());
         info.GetReturnValue().Set(size);
@@ -77,7 +76,6 @@ void
 WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
-    auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto type = canvas_native_webgl_active_info_get_type(ptr->GetWebGLActiveInfo());
         info.GetReturnValue().Set(type);

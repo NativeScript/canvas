@@ -26,7 +26,7 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
         tmpl->Set(ConvertToV8String(isolate, "ext_name"), ConvertToV8String(isolate, "OES_texture_half_float"));
-        tmpl->Set(ConvertToV8String(isolate, "HALF_FLOAT_OES"), v8::Number::New(isolate, (double ) GL_HALF_FLOAT_OES));
+        tmpl->Set(ConvertToV8String(isolate, "HALF_FLOAT_OES"), v8::Integer::New(isolate, GL_HALF_FLOAT_OES));
         cache->OES_texture_half_floatTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
         return ctorTmpl;

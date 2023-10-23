@@ -25,13 +25,13 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
         tmpl->Set(ConvertToV8String(isolate, "SRGB_EXT"),
-                  v8::Number::New(isolate, (double) GL_SRGB_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_SRGB_EXT));
         tmpl->Set(ConvertToV8String(isolate, "SRGB_ALPHA_EXT"),
-                  v8::Number::New(isolate, (double) GL_SRGB_ALPHA_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_SRGB_ALPHA_EXT));
         tmpl->Set(ConvertToV8String(isolate, "SRGB8_ALPHA8_EXT"),
-                  v8::Number::New(isolate, (double) GL_SRGB8_ALPHA8_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_SRGB8_ALPHA8_EXT));
         tmpl->Set(ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT"),
-                  v8::Number::New(isolate, (double) GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING_EXT));
         tmpl->Set(ConvertToV8String(isolate, "ext_name"), ConvertToV8String(isolate, "EXT_sRGB"));
 
         cache->EXT_sRGBTmpl =

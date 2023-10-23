@@ -21,16 +21,16 @@ v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Iso
     tmpl->SetInternalFieldCount(1);
 
     tmpl->Set(ConvertToV8String(isolate, "RGBA16F_EXT"),
-              v8::Number::New(isolate, 0x881A));
+              v8::Integer::NewFromUnsigned(isolate, 0x881A));
 
     tmpl->Set(ConvertToV8String(isolate, "RGB16F_EXT"),
-              v8::Number::New(isolate, 0x881B));
+              v8::Integer::NewFromUnsigned(isolate, 0x881B));
 
     tmpl->Set(ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT"),
-              v8::Number::New(isolate, 0x8211));
+              v8::Integer::NewFromUnsigned(isolate, 0x8211));
 
     tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_NORMALIZED_EXT"),
-              v8::Number::New(isolate, 0x8C17));
+              v8::Integer::NewFromUnsigned(isolate, 0x8C17));
 
     tmpl->Set(ConvertToV8String(isolate, "ext_name"),
               ConvertToV8String(isolate, "EXT_color_buffer_half_float"));

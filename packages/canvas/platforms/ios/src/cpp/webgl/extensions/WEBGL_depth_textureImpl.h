@@ -27,7 +27,7 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
 
-        tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"), v8::Number::New(isolate, 0x84FA));
+        tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"), v8::Integer::NewFromUnsigned(isolate, 0x84FA));
 
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WEBGL_depth_texture"));

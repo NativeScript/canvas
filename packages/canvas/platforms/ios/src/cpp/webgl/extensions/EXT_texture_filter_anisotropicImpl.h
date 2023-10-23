@@ -26,9 +26,9 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
         tmpl->Set(ConvertToV8String(isolate, "MAX_TEXTURE_MAX_ANISOTROPY_EXT"),
-                  v8::Number::New(isolate, (double) GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));
         tmpl->Set(ConvertToV8String(isolate, "TEXTURE_MAX_ANISOTROPY_EXT"),
-                  v8::Number::New(isolate, (double) GL_TEXTURE_MAX_ANISOTROPY_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_TEXTURE_MAX_ANISOTROPY_EXT));
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "EXT_texture_filter_anisotropic"));
 

@@ -4,12 +4,12 @@
 
 #include "WEBGL_draw_buffersImpl.h"
 
-WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(WEBGL_draw_buffers* buffers) : buffers_(buffers) {
+WEBGL_draw_buffersImpl::WEBGL_draw_buffersImpl(WEBGL_draw_buffers *buffers) : buffers_(buffers) {
 
 }
 
 void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(
-        const v8::FunctionCallbackInfo <v8::Value> &args) {
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
     WEBGL_draw_buffersImpl *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -25,18 +25,10 @@ void WEBGL_draw_buffersImpl::DrawBuffersWEBGL(
         buf.reserve(len);
         for (int j = 0; j < len; ++j) {
             auto item = buffers->Get(context, j).ToLocalChecked();
-            if (!item->IsNumber()) {
-                // todo verify
-                buf.push_back(0);
-            } else {
-                buf.push_back(
-                        (uint32_t) item->NumberValue(context).ToChecked());
-            }
-
+            buf.push_back(item->Uint32Value(context).ToChecked());
         }
-        
-        
-        canvas_native_webgl_draw_buffers_draw_buffers_webgl(buf.data(), buf.size(),ptr->GetDrawBuffers());
+        canvas_native_webgl_draw_buffers_draw_buffers_webgl(buf.data(), buf.size(),
+                                                            ptr->GetDrawBuffers());
 
     }
 

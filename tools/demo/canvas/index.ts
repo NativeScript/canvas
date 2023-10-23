@@ -646,14 +646,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		//this.zen3dGeometryLoaderGltf(this.canvas);
+		this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
 		//this.decoder()
 		//this.context2DTest(this.canvas);
 
-		issue93(this.canvas);
+		//issue93(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {

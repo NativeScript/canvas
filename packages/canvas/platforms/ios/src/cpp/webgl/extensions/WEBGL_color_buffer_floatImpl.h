@@ -29,13 +29,13 @@ public:
                   ConvertToV8String(isolate, "WEBGL_color_buffer_float"));
 
         tmpl->Set(ConvertToV8String(isolate, "RGBA32F_EXT"),
-                  v8::Number::New(isolate, (double) GL_RGBA32F_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_RGBA32F_EXT));
         tmpl->Set(ConvertToV8String(isolate, "RGB32F_EXT"),
-                  v8::Number::New(isolate, (double) GL_RGB32F_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_RGB32F_EXT));
         tmpl->Set(ConvertToV8String(isolate, "FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT"),
-                  v8::Number::New(isolate, (double) GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE_EXT));
         tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_NORMALIZED_EXT"),
-                  v8::Number::New(isolate, (double) GL_UNSIGNED_NORMALIZED_EXT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_UNSIGNED_NORMALIZED_EXT));
         cache->WEBGL_color_buffer_floatTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
         return ctorTmpl;

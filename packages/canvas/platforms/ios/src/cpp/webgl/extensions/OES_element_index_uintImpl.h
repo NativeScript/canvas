@@ -27,7 +27,7 @@ public:
         tmpl->SetInternalFieldCount(1);
 
         tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_INT"),
-                  v8::Number::New(isolate, (double) GL_UNSIGNED_INT));
+                  v8::Integer::NewFromUnsigned(isolate, GL_UNSIGNED_INT));
 
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "OES_element_index_uint"));

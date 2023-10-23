@@ -28,16 +28,16 @@ public:
         tmpl->SetInternalFieldCount(1);
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_PVRTC_4BPPV1_IMG"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_PVRTC_4BPPV1_IMG"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG));
+                  v8::Integer::NewFromUnsigned(isolate,  GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG));
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_PVRTC_2BPPV1_IMG"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG));
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGBA_PVRTC_2BPPV1_IMG"),
-                  v8::Number::New(isolate, (double) GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG));
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG));
 
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WEBGL_compressed_texture_pvrtc"));

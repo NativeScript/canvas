@@ -5,7 +5,7 @@
 #include "ANGLE_instanced_arraysImpl.h"
 #include "Caches.h"
 
-ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays * arrays)
+ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays *arrays)
         : arrays_(arrays) {}
 
 ANGLE_instanced_arraysImpl *
@@ -26,10 +26,10 @@ void ANGLE_instanced_arraysImpl::DrawArraysInstancedANGLE(
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto mode = (uint32_t) args[0]->NumberValue(context).ToChecked();
-    auto first = (int32_t) args[1]->NumberValue(context).ToChecked();
-    auto count_ = (int32_t) args[2]->NumberValue(context).ToChecked();
-    auto primcount = (int32_t) args[3]->NumberValue(context).ToChecked();
+    auto mode = args[0]->Uint32Value(context).ToChecked();
+    auto first = args[1]->Int32Value(context).ToChecked();
+    auto count_ = args[2]->Int32Value(context).ToChecked();
+    auto primcount = args[3]->Int32Value(context).ToChecked();
 
     canvas_native_webgl_angle_instanced_arrays_draw_arrays_instanced_angle(
             mode,
@@ -49,11 +49,11 @@ void ANGLE_instanced_arraysImpl::DrawElementsInstancedANGLE(
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto mode = (uint32_t) args[0]->NumberValue(context).ToChecked();
-    auto count_ = (int32_t) args[1]->NumberValue(context).ToChecked();
-    auto type = (uint32_t) args[2]->NumberValue(context).ToChecked();
-    auto offset = (int32_t) args[3]->NumberValue(context).ToChecked();
-    auto primcount = (int32_t) args[4]->NumberValue(context).ToChecked();
+    auto mode = args[0]->Uint32Value(context).ToChecked();
+    auto count_ = args[1]->Int32Value(context).ToChecked();
+    auto type = args[2]->Uint32Value(context).ToChecked();
+    auto offset = args[3]->Int32Value(context).ToChecked();
+    auto primcount = args[4]->Int32Value(context).ToChecked();
     canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
             mode,
             count_,
@@ -73,8 +73,8 @@ void ANGLE_instanced_arraysImpl::VertexAttribDivisorANGLE(
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto index = (u_int32_t) args[0]->NumberValue(context).ToChecked();
-    auto divisor = (u_int32_t) args[1]->NumberValue(context).ToChecked();
+    auto index = args[0]->Uint32Value(context).ToChecked();
+    auto divisor = args[1]->Uint32Value(context).ToChecked();
     canvas_native_webgl_angle_instanced_arrays_vertex_attrib_divisor_angle(
             index,
             divisor,
@@ -98,7 +98,7 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
     tmpl->SetInternalFieldCount(1);
 
     tmpl->Set(ConvertToV8String(isolate, "VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE"),
-              v8::Number::New(isolate, 0x88FE));
+              v8::Integer::NewFromUnsigned(isolate, 0x88FE));
 
     tmpl->Set(ConvertToV8String(isolate, "ext_name"),
               ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
@@ -121,6 +121,6 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
     return ctorTmpl;
 }
 
-ANGLE_instanced_arrays* ANGLE_instanced_arraysImpl::GetArrays() {
+ANGLE_instanced_arrays *ANGLE_instanced_arraysImpl::GetArrays() {
     return this->arrays_;
 }

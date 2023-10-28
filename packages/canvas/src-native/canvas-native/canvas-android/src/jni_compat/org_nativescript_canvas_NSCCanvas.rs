@@ -397,6 +397,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPat
         region.line_to(270f32, 90f32);
         region.close_path();
 
+
         // Fill path
         ctx.set_fill_style_with_color("green");
         ctx.fill_rule(Some(&mut region), canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd);

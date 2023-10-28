@@ -49,6 +49,7 @@ export class Canvas extends CanvasBase {
 	constructor() {
 		super();
 		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
+		this._canvas.userInteractionEnabled = true;
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend(
 			{
@@ -81,7 +82,10 @@ export class Canvas extends CanvasBase {
 			}
 			this.native.__startRaf();
 		};
-		
+
+		this._canvas.touchEventListener = (event, recognizer) => {
+			this._handleEvents(event);
+		};
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
@@ -285,11 +289,10 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 
-
 				if (!this._webgl2Context) {
 					this._layoutNative();
 					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
-					
+
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);

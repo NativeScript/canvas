@@ -9,8 +9,11 @@ let camera, scene, renderer, clock; //stats;
 let dirLight, spotLight;
 let torusKnot, dirGroup;
 let context;
+let width , height = 0;
 function init(canvas) {
 	context = canvas.getContext('webgl2') as WebGLRenderingContext;
+	width = canvas.width;
+	height = canvas.height;
 
 	initScene();
 	initMisc();
@@ -165,7 +168,7 @@ function initMisc() {
 
 	renderer = new THREE.WebGLRenderer({ context, antialias: true });
 	renderer.setPixelRatio(window.devicePixelRatio);
-	renderer.setSize(drawingBufferWidth, drawingBufferHeight);
+	renderer.setSize(width, height);
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.VSMShadowMap;
 

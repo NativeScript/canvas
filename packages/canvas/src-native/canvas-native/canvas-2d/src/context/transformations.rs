@@ -1,5 +1,5 @@
 use std::f32::consts::PI;
-use std::os::raw::{c_double, c_float};
+use std::os::raw::c_float;
 
 use skia_safe::{Matrix, Point, M44};
 
@@ -9,7 +9,15 @@ const DEG: f32 = 180.0 / PI;
 
 impl Context {
     pub fn get_transform(&mut self) -> Matrix {
-        self.surface.canvas().local_to_device_as_3x3()
+        let mut matrix = self.surface.canvas().local_to_device_as_3x3();
+
+        // return a non density scaled matrix
+
+        let x = matrix.scale_x() / self.device.density;
+        let y = matrix.scale_y() / self.device.density;
+        matrix.set_scale((x, y), None);
+
+        matrix
     }
 
     pub fn rotate(&mut self, angle: c_float) {
@@ -17,7 +25,8 @@ impl Context {
     }
 
     pub fn scale(&mut self, x: c_float, y: c_float) {
-        self.surface.canvas().scale((x, y));
+        let density = self.device.density;
+        self.surface.canvas().scale((density * x, density * y));
     }
 
     pub fn translate(&mut self, x: c_float, y: c_float) {
@@ -34,13 +43,23 @@ impl Context {
         f: c_float,
     ) {
         let affine = [a, b, c, d, e, f];
-        let transform = Matrix::from_affine(&affine);
+        let mut transform = Matrix::from_affine(&affine);
+
+        let scale_x = transform.scale_x();
+        let scale_y = transform.scale_y();
+        transform.set_scale((scale_x, scale_y), None);
+
         self.surface.canvas().concat(&transform);
     }
 
     pub fn transform_with_matrix(&mut self, matrix: &Matrix) {
         let mut current = self.surface.canvas().local_to_device_as_3x3();
         current.pre_concat(matrix);
+
+        let scale_x = matrix.scale_x();
+        let scale_y = matrix.scale_y();
+        current.set_scale((scale_x, scale_y), None);
+
         let m = M44::from(&current);
         self.surface.canvas().set_matrix(&m);
     }
@@ -55,7 +74,10 @@ impl Context {
         f: c_float,
     ) {
         let affine = [a, b, c, d, e, f];
-        let matrix = Matrix::from_affine(&affine);
+        let mut matrix = Matrix::from_affine(&affine);
+        let scale_x = matrix.scale_x();
+        let scale_y = matrix.scale_y();
+        matrix.set_scale((scale_x, scale_y), None);
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
     }

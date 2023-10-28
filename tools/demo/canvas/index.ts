@@ -535,7 +535,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//     console.log('error', msg);
 		// }
 		// swarm(this.canvas);
-		// touchParticles(this.canvas);
+		 //touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -863,8 +863,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 
 		const { drawingBufferWidth, drawingBufferHeight } = gl;
-		let width = drawingBufferWidth;
-		let height = drawingBufferHeight;
+		let width = canvas.width;
+		let height = canvas.height;
 		var scene = new zen3d.Scene();
 
 		var file = '~/assets/three/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
@@ -937,8 +937,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		loop(0);
 
 		function onWindowResize() {
-			width = drawingBufferWidth;
-			height = drawingBufferHeight;
+			width = canvas.width;
+			height = canvas.height;
 
 			camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 8000);
 
@@ -1767,7 +1767,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+		//ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 
 		//ctx.scale(3, 3);
 		function init() {

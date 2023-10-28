@@ -5,6 +5,7 @@ import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
 import android.util.Log
+import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener

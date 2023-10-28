@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 import GLKit
-
+import WebKit
 
 @objcMembers
 @objc(NSCCanvas)
@@ -95,7 +95,6 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             return Float(glkView.frame.size.height)
         }
     }
-    
     
     @objc public func initContext(
         _ type: String,
@@ -327,25 +326,34 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
+    private var handler: NSCTouchHandler?
+    
+    public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
+    
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.panRecognizer!)
     }
-    
     
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
         super.init(frame: frame)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.panRecognizer!)
     }
     
     

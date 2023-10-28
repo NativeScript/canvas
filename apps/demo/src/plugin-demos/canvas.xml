@@ -4,7 +4,7 @@
         </ActionBar>
     </Page.actionBar>
 
-  <GridLayout backgroundColor="red" rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" width="100%" height="100%">
+  <GridLayout rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" width="100%" height="100%">
   
   <!-- <ui:Dom rowSpan="2" colSpan="2"> -->
 

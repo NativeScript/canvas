@@ -46,6 +46,18 @@ export class Canvas extends CanvasBase {
 		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
+		const ref = new WeakRef(this);
+		this._canvas.setTouchEventListener(
+			new org.nativescript.canvas.NSCCanvas.TouchEvents({
+				onEvent(event: string, nativeEvent: android.view.MotionEvent) {
+					const owner = ref.get();
+					if (!owner) {
+						return;
+					}
+					owner._handleEvents(event);
+				},
+			})
+		);
 	}
 
 	[upscaleProperty.setNative](value: boolean) {
@@ -86,18 +98,18 @@ export class Canvas extends CanvasBase {
 	}
 
 	// @ts-ignore
-	get width() {
+	get width(): any {
 		if (this.getMeasuredWidth() > 0) {
-			return this.getMeasuredWidth();
+			return this.getMeasuredWidth() / Screen.mainScreen.scale;
 		}
 		const width = this._canvas.getWidth();
 		if (width === 0) {
 			let rootParams = this._canvas.getLayoutParams();
 			if (rootParams) {
-				return rootParams.width;
+				return rootParams.width / Screen.mainScreen.scale;
 			}
 		}
-		return width;
+		return width / Screen.mainScreen.scale;
 	}
 
 	set width(value) {
@@ -107,18 +119,18 @@ export class Canvas extends CanvasBase {
 	}
 
 	// @ts-ignore
-	get height() {
+	get height(): any {
 		if (this.getMeasuredHeight() > 0) {
-			return this.getMeasuredHeight();
+			return this.getMeasuredHeight() / Screen.mainScreen.scale;
 		}
 		const height = this._canvas.getHeight();
 		if (height === 0) {
 			let rootParams = this._canvas.getLayoutParams();
 			if (rootParams) {
-				return rootParams.height;
+				return rootParams.height / Screen.mainScreen.scale;
 			}
 		}
-		return height;
+		return height / Screen.mainScreen.scale;
 	}
 
 	set height(value) {

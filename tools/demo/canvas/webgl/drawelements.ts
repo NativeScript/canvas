@@ -138,7 +138,6 @@ export function drawElements(canvas, drawingBufferWidth?, drawingBufferHeight?, 
 		// bind the buffer containing the indices
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
-    console.log('uniform2f');
 
 		// set the resolution
 		gl.uniform2f(resolutionUniformLocation, drawingBufferWidth, drawingBufferHeight);

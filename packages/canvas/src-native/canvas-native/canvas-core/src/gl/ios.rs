@@ -17,6 +17,11 @@ use skia_safe::wrapper::PointerWrapper;
 
 use crate::context_attributes::ContextAttributes;
 
+use once_cell::sync::OnceCell;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
+
+
 #[derive(Debug, Default)]
 pub struct GLContextInner {
     context: Option<EAGLContext>,
@@ -437,7 +442,12 @@ impl GLContext {
         mut view: GLKView,
         shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
-        gl_bindings::load_with(|symbol| view.get_proc_address(symbol).cast());
+
+        let gl_view = view.clone();
+        IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+            gl_bindings::load_with(|symbol| gl_view.get_proc_address(symbol).cast());
+            true
+        });
 
         let api = if context_attrs.get_is_canvas() {
             EAGLRenderingAPI::GLES3

@@ -10,6 +10,7 @@ import GLKit
 import OpenGLES
 import Swift
 import UIKit
+import WebKit
 import _Concurrency
 import _StringProcessing
 @objc(NSCCanvasListener) public protocol NSCCanvasListener {
@@ -75,6 +76,7 @@ import _StringProcessing
   @_Concurrency.MainActor(unsafe) public func render() -> Swift.Bool
   @objc @_Concurrency.MainActor(unsafe) public func context2DTest(_ context: Swift.Int64)
   @objc @_Concurrency.MainActor(unsafe) public func context2DTestToDataURL(_ context: Swift.Int64) -> Swift.String
+  @objc @_Concurrency.MainActor(unsafe) public var touchEventListener: ((Swift.String, UIKit.UIGestureRecognizer) -> Swift.Void)?
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()

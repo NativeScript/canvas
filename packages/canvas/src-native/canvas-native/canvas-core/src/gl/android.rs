@@ -21,6 +21,10 @@ use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle}
 
 use crate::context_attributes::ContextAttributes;
 
+use once_cell::sync::OnceCell;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
+
 #[derive(Debug)]
 pub(crate) enum SurfaceHelper {
     Window(Surface<WindowSurface>),
@@ -412,9 +416,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -584,9 +592,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -719,9 +731,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -794,9 +810,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();

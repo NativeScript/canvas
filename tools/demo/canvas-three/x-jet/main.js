@@ -30,10 +30,10 @@ const root = '~/assets/x-jet/';
 let context;
 export function init(canvas) {
 	context = canvas.getContext('webgl2');
-	width = context.drawingBufferWidth;
-	height = context.drawingBufferHeight;
+	width = canvas.width;//context.drawingBufferWidth;
+	height = canvas.height;//context.drawingBufferHeight;
 	renderer = new THREE.WebGLRenderer({ context, antialias: false });
-	renderer.setPixelRatio(1); // reduce this value for better quality 1 is original too heavy and not needed for mobile
+	renderer.setPixelRatio(window.devicePixelRatio); // reduce this value for better quality 1 is original too heavy and not needed for mobile
 	renderer.setSize(width, height);
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.outputEncoding = THREE.sRGBEncoding;

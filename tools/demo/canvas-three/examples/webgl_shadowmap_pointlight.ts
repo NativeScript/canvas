@@ -12,9 +12,9 @@ let context;
 function init(canvas) {
 	context = canvas.getContext('webgl2') as WebGLRenderingContext;
 
-	const { drawingBufferWidth, drawingBufferHeight } = context;
+//	const { drawingBufferWidth, drawingBufferHeight } = context;
 
-	camera = new THREE.PerspectiveCamera(45, drawingBufferWidth / drawingBufferHeight, 1, 1000);
+	camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 1000);
 	camera.position.set(0, 10, 40);
 
 	scene = new THREE.Scene();
@@ -99,8 +99,8 @@ function init(canvas) {
 }
 
 function onWindowResize() {
-	const width = context.drawingBufferWidth; //window.innerWidth;
-	const height = context.drawingBufferHeight; //window.innerHeight;
+	const width = window.innerWidth;
+	const height = window.innerHeight;
 
 	camera.aspect = width / height;
 

@@ -5,9 +5,11 @@ import { Application } from '@nativescript/core';
 */
 
 const scale = Screen.mainScreen.scale;
-const screenWidth = Screen.mainScreen.widthPixels;
-const screenHeight = Screen.mainScreen.heightPixels;
-(global as any).window.devicePixelRatio = (global as any).devicePixelRatio = 1;
+// const screenWidth = Screen.mainScreen.widthPixels;
+// const screenHeight = Screen.mainScreen.heightPixels;
+const screenWidth = Screen.mainScreen.widthDIPs;
+const screenHeight = Screen.mainScreen.heightDIPs;
+(global as any).window.devicePixelRatio = (global as any).devicePixelRatio = scale; //1;
 (global as any).window.innerWidth = (global as any).innerWidth = screenWidth;
 (global as any).window.clientWidth = (global as any).clientWidth = screenWidth;
 (global as any).window.innerHeight = (global as any).innerHeight = screenHeight;
@@ -24,7 +26,7 @@ if (!(global as any).__TNS_BROWSER_POLYFILL_RESIZE) {
 		const width = portrait ? screenWidth : screenHeight;
 		const height = portrait ? screenHeight : screenWidth;
 
-		(global as any).window.devicePixelRatio = (global as any).devicePixelRatio = 1;
+		(global as any).window.devicePixelRatio = (global as any).devicePixelRatio = scale; //1;
 		(global as any).window.innerWidth = (global as any).innerWidth = width;
 		(global as any).window.clientWidth = (global as any).clientWidth = width;
 		(global as any).window.innerHeight = (global as any).innerHeight = height;

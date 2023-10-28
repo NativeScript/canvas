@@ -1,7 +1,10 @@
+use once_cell::sync::OnceCell;
 use std::cell::RefCell;
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
@@ -287,9 +290,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -299,8 +306,6 @@ impl GLContext {
                     .find_configs(cfg)
                     .map(|mut c| {
                         c.reduce(|accum, cconfig| {
-                            println!("accum {:?}", &accum);
-                            println!("cconfig {:?}", &cconfig);
                             if is_2d {
                                 let transparency_check =
                                     cconfig.supports_transparency().unwrap_or(false)
@@ -443,9 +448,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -513,8 +522,7 @@ impl GLContext {
                                 && cconfig.depth_size() >= depth_size
                                 && cconfig.num_samples() == 0
                             {
-                                if accum.supports_transparency().unwrap_or(false)
-                                    == alpha_requested
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
                                     && accum.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
                                     && accum.stencil_size() == stencil_size

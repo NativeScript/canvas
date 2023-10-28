@@ -319,11 +319,11 @@ const fragskull = `
 `;
 export function ghost_card(canvas) {
 	const context = canvas.getContext('webgl2');
-	width = context.drawingBufferWidth;
-	height = context.drawingBufferHeight;
-	camera = new THREE.PerspectiveCamera(30, width / 2 / height, 1, 10000);
+	width = canvas.width;
+	height = canvas.height;
+	camera = new THREE.PerspectiveCamera(30, width / height, 1, 10000);
 	camera.position.z = 100;
-	cameraRTT = new THREE.PerspectiveCamera(30, width / 2 / height, 1, 10000);
+	cameraRTT = new THREE.PerspectiveCamera(30, width / height, 1, 10000);
 	// cameraRTT.position.z = 70;
 	// cameraRTT.position.y = -14.5;
 	cameraRTT.position.z = 30;
@@ -332,9 +332,9 @@ export function ghost_card(canvas) {
 	scene = new THREE.Scene();
 	sceneRTT = new THREE.Scene();
 	renderer = new THREE.WebGLRenderer({ context });
-	//renderer.setPixelRatio(2);
-	//renderer.setSize(width / 2, height);
-	renderer.autoClear = false;
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(width, height);
+	renderer.autoClear = true;
 	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	renderer.interpolateneMapping = THREE.ACESFilmicToneMapping;
 	//renderer.outputEncoding = THREE.sRGBEncoding;
@@ -374,7 +374,7 @@ function plane() {
 				value: composer.readBuffer.texture,
 			},
 			resolution: {
-				value: new THREE.Vector2(width / 2, height),
+				value: new THREE.Vector2(width, height),
 			},
 			noiseTex: {
 				value: new THREE.TextureLoader().load(voronoi),
@@ -410,7 +410,7 @@ function planeback() {
 				value: new THREE.TextureLoader().load(flower),
 			},
 			resolution: {
-				value: new THREE.Vector2(width / 2, height),
+				value: new THREE.Vector2(width, height),
 			},
 			noiseTex: {
 				value: new THREE.TextureLoader().load(voronoi),
@@ -526,12 +526,12 @@ function animate(deltaTime: number = 0) {
 	renderer.render(scene, camera);
 }
 function handleResize() {
-	camera.aspect = width / 2 / height;
+	camera.aspect = width / height;
 	camera.updateProjectionMatrix();
-	frontcard.material.uniforms.resolution.value = new THREE.Vector2(width / 2, height);
+	frontcard.material.uniforms.resolution.value = new THREE.Vector2(width , height);
 	skullmaterial.uniforms.resolution.value = new THREE.Vector2(width, height);
-	renderer.setPixelRatio(2);
-	renderer.setSize(width / 2, height);
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(width, height);
 }
 //window.addEventListener("load", init, false);
 window.addEventListener('resize', handleResize, false);

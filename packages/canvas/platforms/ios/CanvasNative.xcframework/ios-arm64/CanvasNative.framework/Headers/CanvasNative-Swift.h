@@ -352,6 +352,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 @end
 
 @class NSMutableDictionary;
+@class UIGestureRecognizer;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
@@ -375,6 +376,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (BOOL)render;
 - (void)context2DTest:(int64_t)context;
 - (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic, copy) void (^ _Nullable touchEventListener)(NSString * _Nonnull, UIGestureRecognizer * _Nonnull);
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;

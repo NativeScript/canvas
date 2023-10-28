@@ -14,8 +14,8 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 	GridLayout.setRowSpan(containerLayout, 2);
 
 	const context = canvas.getContext('webgl2');
-	const width = context.drawingBufferWidth;
-	const height = context.drawingBufferHeight;
+	const width = canvas.width;
+	const height = canvas.height;
 	const Back = TweenMax.Back;
 	const Power4 = TweenMax.Power4;
 	const Power2 = TweenMax.Power2;
@@ -123,8 +123,8 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 
 		aspectRatio = WIDTH / HEIGHT;
 		fieldOfView = 50;
-		nearPlane = 0.1;
-		farPlane = 1000;
+		nearPlane = 1;
+		farPlane = 2000;
 		camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
 		camera.position.x = 0;
 		camera.position.z = cameraPosGame;

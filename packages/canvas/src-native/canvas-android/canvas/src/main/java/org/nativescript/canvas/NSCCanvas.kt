@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap
 import android.graphics.Matrix
 import android.opengl.GLES20
 import android.util.Log
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.ViewGroup
 import java.nio.ByteBuffer
 
@@ -38,6 +40,19 @@ class NSCCanvas : FrameLayout {
 		Texture,
 		Surface
 	}
+
+	private val handler = NSCTouchHandler(this)
+
+	interface TouchEvents {
+		fun onEvent(event: String, motionEvent: MotionEvent)
+	}
+
+	override fun onTouchEvent(event: MotionEvent): Boolean {
+		handler.handle(event)
+		return true
+	}
+
+	var touchEventListener: TouchEvents? = null
 
 	private var didUpscale = false
 	var upscale: Boolean = false
@@ -374,7 +389,7 @@ class NSCCanvas : FrameLayout {
 			xrCompatible
 		)
 
-		val density = resources.displayMetrics.densityDpi.toFloat()
+		val density = resources.displayMetrics.density
 
 		val samples = if (antialias) {
 			4
@@ -385,7 +400,7 @@ class NSCCanvas : FrameLayout {
 
 		native2DContext = nativeCreate2DContext(
 			nativeGL, this.drawingBufferWidth, this.drawingBufferHeight,
-			alpha, density, samples, fontColor, density * 160, direction
+			alpha, density, samples, fontColor, (resources.displayMetrics.densityDpi * 160).toFloat(), direction
 		)
 
 		return native2DContext

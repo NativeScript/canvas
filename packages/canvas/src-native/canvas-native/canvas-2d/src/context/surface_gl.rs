@@ -67,8 +67,10 @@ impl Context {
             Some(&surface_props),
         );
 
+        let mut surface = surface_holder.unwrap();
+        surface.canvas().scale((density, density));
         Context {
-            surface: surface_holder.unwrap(),
+            surface,
             path: Path::default(),
             state: State::from_device(device, direction),
             state_stack: vec![],
@@ -127,7 +129,7 @@ impl Context {
             color_type = ColorType::RGB565;
         }
 
-        if let Some(surface) = gpu::surfaces::wrap_backend_render_target(
+        if let Some(mut surface) = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
             &target,
             skia_safe::gpu::SurfaceOrigin::BottomLeft,
@@ -135,6 +137,7 @@ impl Context {
             None,
             Some(&surface_props),
         ) {
+            surface.canvas().scale((density, density));
             context.surface = surface;
             context.device = device;
             context.path = Path::default();

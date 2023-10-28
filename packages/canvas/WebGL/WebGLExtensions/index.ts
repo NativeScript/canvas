@@ -2,22 +2,27 @@ import { WebGLVertexArrayObject, WebGLQuery } from '../../WebGL2';
 import { WebGLRenderingContext } from '../../WebGL/WebGLRenderingContext';
 
 export class EXT_blend_minmax {
-	MAX_EXT: number;
-	MIN_EXT: number;
+	private nativeInstance;
+	get MAX_EXT(): number {
+		return this.nativeInstance.MAX_EXT;
+	}
+	get MIN_EXT(): number {
+		return this.nativeInstance.MIN_EXT;
+	}
 
 	constructor(nativeInstance) {
-		this.MAX_EXT = nativeInstance.MAX_EXT;
-		this.MIN_EXT = nativeInstance.MIN_EXT;
+		this.nativeInstance = nativeInstance;
 	}
 }
 
 export class ANGLE_instanced_arrays {
-	VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE: number;
+	get VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE(): number {
+		return this.nativeInstance.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
+	}
 	private nativeInstance;
 
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
-		this.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE = nativeInstance.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
 	}
 
 	public drawArraysInstancedANGLE(mode: number, first: number, count: number, primcount: number) {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.22.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(canvasnativev8)
@@ -155,14 +155,15 @@ add_library(
          ${CPP_DIR}/JSIRuntime.cpp
 )
 
+
 add_custom_command(
-        TARGET canvasnativev8 PRE_BUILD
+        TARGET canvasnativev8
         #COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
         #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
         DEPENDS ${CANVAS_ANDROID_LIB}
-       # USES_TERMINAL
+        #USES_TERMINAL
 )
 
 

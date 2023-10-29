@@ -629,7 +629,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//imageFilter(this.canvas);
-		//interactiveCube(this.canvas);
+		interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -646,7 +646,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.multiCanvas(this.canvas);
 		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
-		this.zen3dGeometryLoaderGltf(this.canvas);
+		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);

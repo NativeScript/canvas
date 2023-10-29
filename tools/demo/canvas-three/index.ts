@@ -34,6 +34,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_of_the_valorous_rabbit';
 import { ghost_card } from './examples/ghost_card';
+import { tiny_poly_world } from './games/tiny_poly_world';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -94,7 +95,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// }, 10000);
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
-		this.threeKeyframes(this.canvas);
+		//this.threeKeyframes(this.canvas);
+		tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);

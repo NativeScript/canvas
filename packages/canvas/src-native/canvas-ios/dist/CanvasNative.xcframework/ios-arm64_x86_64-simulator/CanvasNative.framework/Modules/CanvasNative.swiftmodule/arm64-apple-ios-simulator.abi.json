@@ -5982,126 +5982,126 @@
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 10618,
+      "offset": 10620,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 10739,
+      "offset": 10741,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 11099,
+      "offset": 11103,
       "length": 5,
       "value": "false"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11160,
+      "offset": 11164,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11337,
+      "offset": 11341,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11340,
+      "offset": 11344,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11723,
+      "offset": 11727,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11750,
+      "offset": 11754,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 11782,
+      "offset": 11786,
       "length": 4,
       "value": "true"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11886,
+      "offset": 11890,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 11914,
+      "offset": 11918,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 12034,
+      "offset": 12038,
       "length": 4,
       "value": "true"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 12145,
+      "offset": 12149,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 12278,
+      "offset": 12282,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 12368,
+      "offset": 12372,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 12403,
+      "offset": 12407,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 12476,
+      "offset": 12480,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 13044,
+      "offset": 13048,
       "length": 1,
       "value": "0"
     },
@@ -6542,387 +6542,730 @@
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 728,
+      "offset": 774,
+      "length": 2,
+      "value": "10"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 856,
+      "length": 2,
+      "value": "10"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 1089,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 768,
+      "offset": 1111,
       "length": 1,
       "value": "1"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 772,
+      "offset": 1115,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 1441,
-      "length": 2,
-      "value": "-1"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "FloatLiteral",
-      "offset": 1448,
-      "length": 3,
-      "value": "0.0"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "FloatLiteral",
-      "offset": 1456,
-      "length": 3,
-      "value": "0.0"
+      "offset": 1380,
+      "length": 1,
+      "value": "1"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 1666,
-      "length": 2,
-      "value": "-3"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "FloatLiteral",
-      "offset": 1673,
-      "length": 3,
-      "value": "0.0"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "FloatLiteral",
-      "offset": 1681,
-      "length": 3,
-      "value": "0.0"
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 1871,
-      "length": 3,
-      "value": "\"{\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 1890,
-      "length": 7,
-      "value": "\"event\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 1899,
-      "length": 19,
-      "value": "\"mouseMoveCallback\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 1940,
-      "length": 7,
-      "value": "\"ptrId\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 1976,
-      "length": 3,
-      "value": "\"x\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2004,
-      "length": 3,
-      "value": "\"y\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2055,
-      "length": 15,
-      "value": "\",\"press\": {\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2090,
-      "length": 7,
-      "value": "\"event\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2099,
-      "length": 19,
-      "value": "\"mouseDownCallback\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2144,
-      "length": 7,
-      "value": "\"ptrId\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2183,
-      "length": 3,
-      "value": "\"}\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2237,
-      "length": 17,
-      "value": "\",\"release\": {\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2274,
-      "length": 7,
-      "value": "\"event\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2283,
-      "length": 17,
-      "value": "\"mouseUpCallback\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2326,
-      "length": 7,
-      "value": "\"ptrId\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2365,
-      "length": 3,
-      "value": "\"}\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2394,
-      "length": 3,
-      "value": "\"}\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2603,
-      "length": 3,
-      "value": "\"{\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2622,
-      "length": 7,
-      "value": "\"event\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2631,
-      "length": 26,
-      "value": "\"touchCoordinatesCallback\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2679,
-      "length": 7,
-      "value": "\"ptrId\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2715,
-      "length": 3,
-      "value": "\"x\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2743,
-      "length": 3,
-      "value": "\"y\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 2770,
-      "length": 3,
-      "value": "\"}\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "IntegerLiteral",
-      "offset": 3013,
+      "offset": 2351,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 3081,
+      "offset": 2413,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2478,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2497,
+      "length": 7,
+      "value": "\"event\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2506,
+      "length": 7,
+      "value": "\"scale\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2538,
+      "length": 8,
+      "value": "\"deltaX\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2576,
+      "length": 8,
+      "value": "\"deltaY\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2642,
+      "length": 8,
+      "value": "\"deltaZ\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 2652,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2675,
+      "length": 11,
+      "value": "\"deltaMode\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 2688,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 2711,
+      "length": 14,
+      "value": "\"isInProgress\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 2782,
       "length": 1,
       "value": "1"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3100,
-      "length": 3,
-      "value": "\"[\""
+      "offset": 2802,
+      "length": 17,
+      "value": "\"\"pointers\": [\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
-      "offset": 3121,
+      "offset": 2838,
       "length": 1,
       "value": "0"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3208,
+      "offset": 2899,
       "length": 3,
       "value": "\"{\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3231,
-      "length": 7,
-      "value": "\"event\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 3240,
-      "length": 26,
-      "value": "\"touchCoordinatesCallback\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 3292,
+      "offset": 2922,
       "length": 7,
       "value": "\"ptrId\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3330,
+      "offset": 3057,
       "length": 3,
       "value": "\"x\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3429,
+      "offset": 3101,
       "length": 3,
       "value": "\"y\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 3126,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3559,
+      "offset": 3182,
       "length": 4,
       "value": "\"},\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3607,
+      "offset": 3230,
       "length": 3,
       "value": "\"}\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3649,
+      "offset": 3272,
       "length": 3,
       "value": "\"]\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3808,
-      "length": 27,
+      "offset": 3299,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3529,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3548,
+      "length": 7,
+      "value": "\"event\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3557,
+      "length": 6,
+      "value": "\"down\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3585,
+      "length": 7,
+      "value": "\"ptrId\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3621,
+      "length": 3,
+      "value": "\"x\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3649,
+      "length": 3,
+      "value": "\"y\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 3662,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3683,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3908,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3927,
+      "length": 7,
+      "value": "\"event\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3936,
+      "length": 4,
+      "value": "\"up\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3962,
+      "length": 7,
+      "value": "\"ptrId\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 3998,
+      "length": 3,
+      "value": "\"x\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4026,
+      "length": 3,
+      "value": "\"y\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 4039,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4060,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4279,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4298,
+      "length": 7,
+      "value": "\"event\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4307,
+      "length": 8,
+      "value": "\"cancel\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4337,
+      "length": 7,
+      "value": "\"ptrId\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4373,
+      "length": 3,
+      "value": "\"x\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4401,
+      "length": 3,
+      "value": "\"y\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 4414,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4434,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4705,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4728,
+      "length": 7,
+      "value": "\"event\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4737,
+      "length": 6,
+      "value": "\"move\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 4789,
+      "length": 1,
+      "value": "1"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4813,
+      "length": 17,
+      "value": "\"\"pointers\": [\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "IntegerLiteral",
+      "offset": 4853,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4922,
+      "length": 3,
+      "value": "\"{\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 4949,
+      "length": 7,
+      "value": "\"ptrId\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5092,
+      "length": 3,
+      "value": "\"x\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5140,
+      "length": 3,
+      "value": "\"y\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 5165,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5229,
+      "length": 4,
+      "value": "\"},\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5285,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5339,
+      "length": 3,
+      "value": "\"]\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 5374,
+      "length": 3,
+      "value": "\"}\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 7591,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7614,
+      "length": 46,
       "value": "\"\"\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3817,
+      "offset": 7623,
       "length": 1,
       "value": "\"\": \"\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3831,
+      "offset": 7637,
       "length": 1,
-      "value": "\"\",\""
-    },
-    {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
-      "kind": "StringLiteral",
-      "offset": 3932,
-      "length": 23,
       "value": "\"\"\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3941,
+      "offset": 7650,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7655,
+      "length": 3,
+      "value": "\",\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7659,
+      "length": 1,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 7758,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7781,
+      "length": 44,
+      "value": "\"\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7790,
       "length": 1,
       "value": "\"\": \""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 3953,
+      "offset": 7802,
       "length": 1,
+      "value": "\" \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7814,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7819,
+      "length": 3,
       "value": "\",\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 4056,
-      "length": 23,
+      "offset": 7824,
+      "length": 1,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 7927,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7950,
+      "length": 44,
       "value": "\"\"\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 4065,
+      "offset": 7959,
       "length": 1,
       "value": "\"\": \""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
-      "offset": 4077,
+      "offset": 7971,
       "length": 1,
+      "value": "\" \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7983,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7988,
+      "length": 3,
       "value": "\",\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 7993,
+      "length": 1,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 8098,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8121,
+      "length": 44,
+      "value": "\"\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8130,
+      "length": 1,
+      "value": "\"\": \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8142,
+      "length": 1,
+      "value": "\" \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8154,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8159,
+      "length": 3,
+      "value": "\",\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8164,
+      "length": 1,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "BooleanLiteral",
+      "offset": 8268,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8291,
+      "length": 44,
+      "value": "\"\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8300,
+      "length": 1,
+      "value": "\"\": \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8312,
+      "length": 1,
+      "value": "\" \""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8324,
+      "length": 2,
+      "value": "\"\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8329,
+      "length": 3,
+      "value": "\",\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "kind": "StringLiteral",
+      "offset": 8334,
+      "length": 1,
+      "value": "\"\""
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",

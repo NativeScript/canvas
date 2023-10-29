@@ -340,7 +340,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.panRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     public override init(frame: CGRect) {
@@ -353,7 +353,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.panRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     

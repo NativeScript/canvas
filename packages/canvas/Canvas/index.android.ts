@@ -164,12 +164,12 @@ export class Canvas extends CanvasBase {
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
 					get: function () {
-						return parent.getMeasuredWidth();
+						return parent.getMeasuredWidth() / Screen.mainScreen.scale;
 					},
 				});
 				Object.defineProperty(parent, 'clientHeight', {
 					get: function () {
-						return parent.getMeasuredHeight();
+						return parent.getMeasuredHeight() / Screen.mainScreen.scale;
 					},
 				});
 			}

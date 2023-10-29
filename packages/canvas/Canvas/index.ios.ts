@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { ImageSource, Utils, profile } from '@nativescript/core';
+import { ImageSource, Utils, profile, Screen } from '@nativescript/core';
 declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
@@ -109,7 +109,7 @@ export class Canvas extends CanvasBase {
 	get width() {
 		const measuredWidth = this.getMeasuredWidth();
 		if (measuredWidth !== 0) {
-			return measuredWidth;
+			return measuredWidth / Screen.mainScreen.scale;
 		}
 		return this._realSize.width;
 	}
@@ -124,7 +124,7 @@ export class Canvas extends CanvasBase {
 	get height() {
 		const measuredHeight = this.getMeasuredHeight();
 		if (measuredHeight !== 0) {
-			return measuredHeight;
+			return measuredHeight / Screen.mainScreen.scale;
 		}
 		return this._realSize.height;
 	}
@@ -144,7 +144,7 @@ export class Canvas extends CanvasBase {
 
 	set iosOverflowSafeArea(value: boolean) {
 		const window = UIApplication.sharedApplication.windows[0];
-		const topPadding = window.safeAreaInsets.top;
+		//const topPadding = window.safeAreaInsets.top;
 		const bottomPadding = window.safeAreaInsets.bottom;
 		if (bottomPadding === 0) {
 			this._iosOverflowSafeArea = false;
@@ -169,12 +169,12 @@ export class Canvas extends CanvasBase {
 		if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 			Object.defineProperty(parent, 'clientWidth', {
 				get: function () {
-					return parent.getMeasuredWidth();
+					return parent.getMeasuredWidth() / Screen.mainScreen.scale;
 				},
 			});
 			Object.defineProperty(parent, 'clientHeight', {
 				get: function () {
-					return parent.getMeasuredHeight();
+					return parent.getMeasuredHeight() / Screen.mainScreen.scale;
 				},
 			});
 		}
@@ -247,17 +247,11 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					this._layoutNative();
-					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
-
-					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
-
-					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-
-					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
 
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
@@ -274,7 +268,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -291,7 +285,7 @@ export class Canvas extends CanvasBase {
 
 				if (!this._webgl2Context) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 

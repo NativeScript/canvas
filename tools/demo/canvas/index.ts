@@ -629,7 +629,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//imageFilter(this.canvas);
-		interactiveCube(this.canvas);
+		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -650,7 +650,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
-		//this.decoder()
+		this.decoder()
 		//this.context2DTest(this.canvas);
 
 		//issue93(this.canvas);

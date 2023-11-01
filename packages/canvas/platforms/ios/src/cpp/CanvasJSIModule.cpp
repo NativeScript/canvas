@@ -193,13 +193,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                   v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                   v8::Context::Scope context_scope(context);
 
-                                  auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                          context).ToLocalChecked()->NewInstance(
-                                          context).ToLocalChecked();
-
-                                  SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                  ret->SetInternalField(0, cbData);
+                                  auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                   v8::Local<v8::Value> args[2];
 
@@ -304,7 +298,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     auto store = arrayBuffer->GetBackingStore();
                     auto dataBuffer = (uint8_t *) store->Data();
                     v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
-                    
+
                     std::thread thread(
                             [&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue](
                                     v8::Global<v8::ArrayBuffer> ab, size_t size
@@ -325,7 +319,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                                 auto main_task = [jsi_callback, current_queue, done]() {
 
-                                    
+
                                     v8::Isolate *isolate = jsi_callback->isolate_;
                                     v8::Locker locker(isolate);
                                     v8::Isolate::Scope isolate_scope(isolate);
@@ -336,13 +330,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                     v8::Context::Scope context_scope(context);
 
-                                    auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                            context).ToLocalChecked()->NewInstance(
-                                            context).ToLocalChecked();
-
-                                    SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                    ret->SetInternalField(0, cbData);
+                                    auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                     v8::Local<v8::Value> args[2];
 
@@ -358,7 +346,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
 
                                     callback->Call(context, context->Global(), 2, args);
-                                    
+
 
                                     delete jsi_callback;
                                     delete current_queue;
@@ -415,13 +403,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                 v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                 v8::Context::Scope context_scope(context);
 
-                                auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                        context).ToLocalChecked()->NewInstance(
-                                        context).ToLocalChecked();
-
-                                SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                ret->SetInternalField(0, cbData);
+                                 auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                 v8::Local<v8::Value> args[2];
 
@@ -489,13 +471,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                   v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                   v8::Context::Scope context_scope(context);
 
-                                  auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                          context).ToLocalChecked()->NewInstance(
-                                          context).ToLocalChecked();
-
-                                  SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                  ret->SetInternalField(0, cbData);
+                                  auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                   v8::Local<v8::Value> args[2];
 
@@ -749,13 +725,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                 v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                 v8::Context::Scope context_scope(context);
 
-                                auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                        context).ToLocalChecked()->NewInstance(
-                                        context).ToLocalChecked();
-
-                                SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                ret->SetInternalField(0, cbData);
+                                 auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                 v8::Local<v8::Value> args[2];
 
@@ -821,12 +791,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto bitmap = new ImageBitmapImpl(ret);
                 auto data = v8::External::New(isolate, bitmap);
-                auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                        context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-                object->SetInternalField(0, data);
-
-                SetNativeType(isolate, object, NativeType::ImageBitmap);
+                auto object = ImageBitmapImpl::NewInstance(isolate, data);
 
                 retArgs[1] = object;
             }
@@ -845,12 +811,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto bitmap = new ImageBitmapImpl(ret);
                 auto data = v8::External::New(isolate, bitmap);
-                auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                        context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-
-                object->SetInternalField(0, data);
-
-                SetNativeType(isolate, object, NativeType::ImageBitmap);
+                auto object = ImageBitmapImpl::NewInstance(isolate, data);
 
                 retArgs[1] = object;
 
@@ -892,12 +853,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto bitmap = new ImageBitmapImpl(ret);
                 auto data = v8::External::New(isolate, bitmap);
-                auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                        context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-
-                object->SetInternalField(0, data);
-
-                SetNativeType(isolate, object, NativeType::ImageBitmap);
+                auto object = ImageBitmapImpl::NewInstance(isolate, data);
 
                 retArgs[1] = object;
             }
@@ -920,12 +876,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto bitmap = new ImageBitmapImpl(ret);
                 auto data = v8::External::New(isolate, bitmap);
-                auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                        context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-
-                object->SetInternalField(0, data);
-
-                SetNativeType(isolate, object, NativeType::ImageBitmap);
+                auto object = ImageBitmapImpl::NewInstance(isolate, data);
 
                 retArgs[1] = object;
 
@@ -1130,7 +1081,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
 
                 auto buf = (void*)canvas_native_u8_buffer_get_bytes_mut(vec);
-                
+
                 auto size = (size_t)canvas_native_u8_buffer_get_length(vec);
 
                 auto store = v8::ArrayBuffer::NewBackingStore(buf, size,

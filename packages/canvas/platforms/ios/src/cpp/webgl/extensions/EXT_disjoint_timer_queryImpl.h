@@ -11,14 +11,14 @@
 
 class EXT_disjoint_timer_queryImpl {
 public:
-    EXT_disjoint_timer_queryImpl(EXT_disjoint_timer_query* query);
-    
-    ~EXT_disjoint_timer_queryImpl(){
+    EXT_disjoint_timer_queryImpl(EXT_disjoint_timer_query *query);
+
+    ~EXT_disjoint_timer_queryImpl() {
         canvas_native_webgl_EXT_disjoint_timer_query_destroy(this->GetQuery());
         this->query_ = nullptr;
     }
 
-    EXT_disjoint_timer_query* GetQuery();
+    EXT_disjoint_timer_query *GetQuery();
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -58,5 +58,5 @@ public:
 
 
 private:
-    EXT_disjoint_timer_query* query_;
+    EXT_disjoint_timer_query *query_;
 };

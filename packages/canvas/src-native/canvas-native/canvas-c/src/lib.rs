@@ -4030,11 +4030,76 @@ pub extern "C" fn canvas_native_text_decoder_decode(
 ) -> *const c_char {
     assert!(!decoder.is_null());
     assert!(!data.is_null());
-    let data = unsafe { std::slice::from_raw_parts(data, size) };
     let decoder = unsafe { &*decoder };
-    CString::new(decoder.0.decode_to_string(data))
-        .unwrap()
-        .into_raw()
+
+    decoder.0.decode(data, size).into_raw()
+}
+
+#[derive(Clone)]
+pub struct CCow(Cow<'static, str>);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_ccow_destroy(cow: *mut CCow) {
+    if cow.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(cow) };
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_ccow_get_bytes(cow: *const CCow) -> *const u8 {
+    assert!(!cow.is_null());
+    let cow = unsafe { &*cow };
+    cow.0.as_ptr()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_ccow_get_length(cow: *const CCow) -> usize {
+    assert!(!cow.is_null());
+    let cow = unsafe { &*cow };
+    cow.0.len()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_decoder_decode_as_cow(
+    decoder: *const TextDecoder,
+    data: *const u8,
+    size: usize,
+) -> *mut CCow {
+    assert!(!decoder.is_null());
+    assert!(!data.is_null());
+    let decoder = unsafe { &*decoder };
+
+    let bytes = decoder.0.decode_as_cow(data, size);
+
+    Box::into_raw(Box::new(CCow(bytes)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_decoder_decode_as_bytes(
+    decoder: *const TextDecoder,
+    data: *const u8,
+    size: usize,
+) -> *mut U8Buffer {
+    assert!(!decoder.is_null());
+    assert!(!data.is_null());
+    let decoder = unsafe { &*decoder };
+
+    let bytes = decoder.0.decode_as_bytes(data, size);
+
+    Box::into_raw(Box::new(U8Buffer::new_with_vec(bytes)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_text_decoder_decode_c_string(
+    decoder: *const TextDecoder,
+    data: *const c_char,
+) -> *const c_char {
+    assert!(!decoder.is_null());
+    assert!(!data.is_null());
+    let decoder = unsafe { &*decoder };
+
+    decoder.0.decode_c_string(data).into_raw()
 }
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_get_encoding(

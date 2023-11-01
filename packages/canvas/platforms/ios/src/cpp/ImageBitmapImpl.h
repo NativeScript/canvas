@@ -20,12 +20,24 @@ struct Options {
 
 class ImageBitmapImpl {
 public:
-    ImageBitmapImpl(ImageAsset* asset);
+    ImageBitmapImpl(ImageAsset *asset);
+
     ~ImageBitmapImpl();
+
+
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, v8::Local<v8::External> asset) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::ImageBitmap);
+        object->SetInternalField(0, asset);
+        return scope.Escape(object);
+    }
 
     static Options HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> &options);
 
-    ImageAsset* GetImageAsset();
+    ImageAsset *GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -42,6 +54,6 @@ public:
     static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    ImageAsset* bitmap_;
+    ImageAsset *bitmap_;
     bool closed_ = false;
 };

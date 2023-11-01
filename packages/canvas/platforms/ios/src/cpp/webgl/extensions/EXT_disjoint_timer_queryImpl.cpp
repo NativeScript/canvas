@@ -88,7 +88,6 @@ void EXT_disjoint_timer_queryImpl::CreateQueryExt(
         return;
     }
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto ret = canvas_native_webgl_ext_disjoint_timer_query_create_query_ext(
             ptr->GetQuery());
@@ -96,10 +95,7 @@ void EXT_disjoint_timer_queryImpl::CreateQueryExt(
     auto object = new WebGLQuery(
             ret);
 
-    auto value = WebGLQuery::GetCtor(isolate)->GetFunction(context).ToLocalChecked()->NewInstance(
-            context).ToLocalChecked();
-    value->SetInternalField(0, v8::External::New(isolate, object));
-    SetNativeType(isolate, value, NativeType::WebGLQuery);
+    auto value = WebGLQuery::NewInstance(isolate, object);
     args.GetReturnValue().Set(value);
 }
 

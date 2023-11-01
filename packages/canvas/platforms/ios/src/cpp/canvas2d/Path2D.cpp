@@ -118,7 +118,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         if (value->IsString()) {
             auto d = ConvertFromV8String(isolate, value);
             auto path = canvas_native_path_create_with_string(d.c_str());
-            auto object = new Path2D(std::move(path));
+            auto object = new Path2D(path);
 
             auto ext = v8::External::New(isolate, object);
 

@@ -6,7 +6,7 @@
 #include "MatrixImpl.h"
 #include "Caches.h"
 
-MatrixImpl::MatrixImpl(Matrix* matrix) : matrix_(matrix) {}
+MatrixImpl::MatrixImpl(Matrix *matrix) : matrix_(matrix) {}
 
 void MatrixImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -218,6 +218,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetInternalField(0, ext);
 
+                SetNativeType(isolate, ret, NativeType::Matrix);
+
                 args.GetReturnValue().Set(ret);
 
                 return;
@@ -241,6 +243,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetInternalField(0, ext);
 
+                SetNativeType(isolate, ret, NativeType::Matrix);
+
                 args.GetReturnValue().Set(ret);
                 return;
             }
@@ -253,6 +257,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto ext = v8::External::New(isolate, object);
 
         ret->SetInternalField(0, ext);
+
+        SetNativeType(isolate, ret, NativeType::Matrix);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -795,6 +801,6 @@ void MatrixImpl::SetM44(v8::Local<v8::String> property,
     canvas_native_matrix_set_m44(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
 }
 
-Matrix* MatrixImpl::GetMatrix() {
+Matrix *MatrixImpl::GetMatrix() {
     return this->matrix_;
 }

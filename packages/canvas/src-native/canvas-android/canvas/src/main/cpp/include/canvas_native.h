@@ -89,6 +89,8 @@ typedef enum WebGLResultType {
 
 typedef struct ANGLE_instanced_arrays ANGLE_instanced_arrays;
 
+typedef struct CCow CCow;
+
 typedef struct CanvasRenderingContext2D CanvasRenderingContext2D;
 
 typedef struct ContextAttributes ContextAttributes;
@@ -1098,6 +1100,30 @@ struct TextDecoder *canvas_native_text_decoder_create(const char *decoding);
 const char *canvas_native_text_decoder_decode(const struct TextDecoder *decoder,
                                               const uint8_t *data,
                                               uintptr_t size);
+
+void canvas_native_ccow_destroy(struct CCow *cow);
+
+const uint8_t *canvas_native_ccow_get_bytes(const struct CCow *cow);
+
+uintptr_t canvas_native_ccow_get_length(const struct CCow *cow);
+
+struct CCow *canvas_native_text_decoder_decode_as_cow(const struct TextDecoder *decoder,
+                                                      const uint8_t *data,
+                                                      uintptr_t size);
+
+const char *canvas_native_text_decoder_decode_c_string(const struct TextDecoder *decoder,
+                                                       const char *data);
+
+struct U8Buffer *canvas_native_text_decoder_decode_as_bytes(const struct TextDecoder *decoder,
+                                                            const uint8_t *data,
+                                                            uintptr_t size);
+
+
+void canvas_native_ccow_destroy(struct CCow *cow);
+
+const uint8_t *canvas_native_ccow_get_bytes(const struct CCow *cow);
+
+uintptr_t canvas_native_ccow_get_length(const struct CCow *cow);
 
 const char *canvas_native_text_decoder_get_encoding(const struct TextDecoder *decoder);
 

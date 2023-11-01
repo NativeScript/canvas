@@ -109,7 +109,6 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     if (args.Length() == 1) {
         auto value = args[0];
@@ -146,13 +145,13 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
         if (buf->IsArrayBufferView()) {
 
             auto buffer = buf.As<v8::ArrayBufferView>();
-            
+
 
             auto store = buffer->Buffer()->GetBackingStore();
             auto buffer_data = static_cast<uint8_t *>(store->Data()) + buffer->ByteOffset();
-            
+
             auto len = buffer->ByteLength();
-            
+
 //            v8::Local<v8::Value> size;
 //
 //            buf->Get(context, ConvertToV8String(isolate, "BYTES_PER_ELEMENT")).ToLocal(&size);
@@ -162,16 +161,16 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
 //            if(!size.IsEmpty()){
 //                len =  buffer->Length() * (size_t)size->NumberValue(context).FromMaybe(0);
 //            }
-            
+
           //  auto len = buffer->ByteLength();
-            
-            auto decoded = canvas_native_text_decoder_decode(
+
+            auto decoded = canvas_native_text_decoder_decode_as_cow(
                     ptr->GetTextDecoder(),
                                                              buffer_data, len);
-        
+
 
             // args.GetReturnValue().Set(ConvertToV8String(isolate, decoded.c_str()));
-            auto returnValue = new OneByteStringResource((char*) decoded);
+            auto returnValue = new OneByteStringResource(decoded);
             auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
             args.GetReturnValue().Set(ret.ToLocalChecked());
             return;

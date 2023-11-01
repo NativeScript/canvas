@@ -3,15 +3,16 @@
 //
 
 #pragma once
+
 #include "Helpers.h"
 #include <vector>
 
 
 class ANGLE_instanced_arraysImpl {
 public:
-    ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays* arrays);
+    ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays *arrays);
 
-    ANGLE_instanced_arrays* GetArrays();
+    ANGLE_instanced_arrays *GetArrays();
 
     static ANGLE_instanced_arraysImpl *GetPointer(const v8::Local<v8::Object> &object);
 
@@ -36,6 +37,6 @@ public:
     static void VertexAttribDivisorANGLE(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    ANGLE_instanced_arrays* arrays_;
+    ANGLE_instanced_arrays *arrays_;
 };
 

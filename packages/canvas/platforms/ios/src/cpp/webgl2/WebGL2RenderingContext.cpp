@@ -84,13 +84,11 @@ WebGL2RenderingContext::BeginTransformFeedback(const v8::FunctionCallbackInfo<v8
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto value = args[0];
-    if (value->IsNumber()) {
-        canvas_native_webgl2_begin_transform_feedback(
-                args[0]->Uint32Value(context).ToChecked(),
-                ptr->GetState()
-        );
-    }
+    auto value = args[0]->Uint32Value(context).ToChecked();
+    canvas_native_webgl2_begin_transform_feedback(
+            value,
+            ptr->GetState()
+    );
 }
 
 void WebGL2RenderingContext::BindBufferBase(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -131,7 +129,7 @@ void WebGL2RenderingContext::BindBufferRange(const v8::FunctionCallbackInfo<v8::
 
     auto bufferValue = args[2];
     auto type = GetNativeType(isolate, bufferValue);
-    if (args.Length() > 4 && type == NativeType::WebGLBuffer) {
+    if (type == NativeType::WebGLBuffer) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto index = args[1]->Uint32Value(context).ToChecked();
         auto offset = args[3]->NumberValue(context).ToChecked();
@@ -236,35 +234,33 @@ void WebGL2RenderingContext::BlitFramebuffer(const v8::FunctionCallbackInfo<v8::
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    if (args.Length() > 9) {
-        auto srcX0 = args[0]->Int32Value(context).ToChecked();
-        auto srcY0 = args[1]->Int32Value(context).ToChecked();
+    auto srcX0 = args[0]->Int32Value(context).ToChecked();
+    auto srcY0 = args[1]->Int32Value(context).ToChecked();
 
-        auto srcX1 = args[2]->Int32Value(context).ToChecked();
-        auto srcY1 = args[3]->Int32Value(context).ToChecked();
+    auto srcX1 = args[2]->Int32Value(context).ToChecked();
+    auto srcY1 = args[3]->Int32Value(context).ToChecked();
 
-        auto dstX0 = args[4]->Int32Value(context).ToChecked();
-        auto dstY0 = args[5]->Int32Value(context).ToChecked();
+    auto dstX0 = args[4]->Int32Value(context).ToChecked();
+    auto dstY0 = args[5]->Int32Value(context).ToChecked();
 
-        auto dstX1 = args[6]->Int32Value(context).ToChecked();
-        auto dstY1 = args[7]->Int32Value(context).ToChecked();
+    auto dstX1 = args[6]->Int32Value(context).ToChecked();
+    auto dstY1 = args[7]->Int32Value(context).ToChecked();
 
-        auto mask = args[8]->Uint32Value(context).ToChecked();
-        auto filter = args[9]->Uint32Value(context).ToChecked();
-        canvas_native_webgl2_blit_framebuffer(
-                srcX0,
-                srcY0,
-                srcX1,
-                srcY1,
-                dstX0,
-                dstY0,
-                dstX1,
-                dstY1,
-                mask,
-                filter,
-                ptr->GetState()
-        );
-    }
+    auto mask = args[8]->Uint32Value(context).ToChecked();
+    auto filter = args[9]->Uint32Value(context).ToChecked();
+    canvas_native_webgl2_blit_framebuffer(
+            srcX0,
+            srcY0,
+            srcX1,
+            srcY1,
+            dstX0,
+            dstY0,
+            dstX1,
+            dstY1,
+            mask,
+            filter,
+            ptr->GetState()
+    );
 }
 
 void WebGL2RenderingContext::ClearBufferfv(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -573,21 +569,19 @@ void WebGL2RenderingContext::CopyBufferSubData(const v8::FunctionCallbackInfo<v8
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    if (args.Length() > 4) {
-        auto readTarget = args[0]->Uint32Value(context).ToChecked();
-        auto writeTarget = args[1]->Uint32Value(context).ToChecked();
-        auto readOffset = args[2]->NumberValue(context).ToChecked();
-        auto writeOffset = args[3]->NumberValue(context).ToChecked();
-        auto size = args[4]->NumberValue(context).ToChecked();
-        canvas_native_webgl2_copy_buffer_sub_data(
-                readTarget,
-                writeTarget,
-                static_cast<ssize_t>(readOffset),
-                static_cast<ssize_t>(writeOffset),
-                static_cast<ssize_t>(size),
-                ptr->GetState()
-        );
-    }
+    auto readTarget = args[0]->Uint32Value(context).ToChecked();
+    auto writeTarget = args[1]->Uint32Value(context).ToChecked();
+    auto readOffset = args[2]->NumberValue(context).ToChecked();
+    auto writeOffset = args[3]->NumberValue(context).ToChecked();
+    auto size = args[4]->NumberValue(context).ToChecked();
+    canvas_native_webgl2_copy_buffer_sub_data(
+            readTarget,
+            writeTarget,
+            static_cast<ssize_t>(readOffset),
+            static_cast<ssize_t>(writeOffset),
+            static_cast<ssize_t>(size),
+            ptr->GetState()
+    );
 }
 
 void WebGL2RenderingContext::CopyTexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -599,29 +593,27 @@ void WebGL2RenderingContext::CopyTexSubImage3D(const v8::FunctionCallbackInfo<v8
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    if (args.Length() > 8) {
-        auto target = args[0]->Uint32Value(context).ToChecked();
-        auto level = args[1]->Int32Value(context).ToChecked();
-        auto xoffset = args[2]->Int32Value(context).ToChecked();
-        auto yoffset = args[3]->Int32Value(context).ToChecked();
-        auto zoffset = args[4]->Int32Value(context).ToChecked();
-        auto x = args[5]->Int32Value(context).ToChecked();
-        auto y = args[6]->Int32Value(context).ToChecked();
-        auto width = args[7]->Int32Value(context).ToChecked();
-        auto height = args[8]->Int32Value(context).ToChecked();
-        canvas_native_webgl2_copy_tex_sub_image3d(
-                target,
-                level,
-                xoffset,
-                yoffset,
-                zoffset,
-                x,
-                y,
-                width,
-                height,
-                ptr->GetState()
-        );
-    }
+    auto target = args[0]->Uint32Value(context).ToChecked();
+    auto level = args[1]->Int32Value(context).ToChecked();
+    auto xoffset = args[2]->Int32Value(context).ToChecked();
+    auto yoffset = args[3]->Int32Value(context).ToChecked();
+    auto zoffset = args[4]->Int32Value(context).ToChecked();
+    auto x = args[5]->Int32Value(context).ToChecked();
+    auto y = args[6]->Int32Value(context).ToChecked();
+    auto width = args[7]->Int32Value(context).ToChecked();
+    auto height = args[8]->Int32Value(context).ToChecked();
+    canvas_native_webgl2_copy_tex_sub_image3d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            zoffset,
+            x,
+            y,
+            width,
+            height,
+            ptr->GetState()
+    );
 }
 
 void WebGL2RenderingContext::CreateQuery(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -900,14 +892,14 @@ void WebGL2RenderingContext::DrawRangeElements(const v8::FunctionCallbackInfo<v8
     auto mode = args[0]->Uint32Value(context).ToChecked();
     auto start = args[1]->Uint32Value(context).ToChecked();
     auto end = args[2]->Uint32Value(context).ToChecked();
-    auto count_ = args[3]->Int32Value(context).ToChecked();
+    auto count = args[3]->Int32Value(context).ToChecked();
     auto type = args[4]->Uint32Value(context).ToChecked();
     auto offset = args[5]->NumberValue(context).ToChecked();
     canvas_native_webgl2_draw_range_elements(
             mode,
             start,
             end,
-            count_,
+            count,
             type,
             static_cast<ssize_t>(offset),
             ptr->GetState()
@@ -925,11 +917,9 @@ void WebGL2RenderingContext::EndQuery(const v8::FunctionCallbackInfo<v8::Value> 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    if (args[0]->IsNumber()) {
-        auto target = args[0]->Uint32Value(context).ToChecked();
-        canvas_native_webgl2_end_query(target,
-                                       ptr->GetState());
-    }
+    auto target = args[0]->Uint32Value(context).ToChecked();
+    canvas_native_webgl2_end_query(target,
+                                   ptr->GetState());
 }
 
 void WebGL2RenderingContext::EndTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -2898,42 +2888,42 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto dataValue = args[1];
-        if (location != nullptr &&
-            dataValue->IsUint32Array()) {
-            auto buf = dataValue.As<v8::Uint32Array>();
+        if(location != nullptr){
+            if (dataValue->IsUint32Array()) {
+                auto buf = dataValue.As<v8::Uint32Array>();
 
-            auto array = buf->Buffer();
-            auto offset = buf->ByteOffset();
-            auto size = buf->Length();
-            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-            auto data = static_cast<uint32_t *>((void *) data_ptr);
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->Length();
+                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<uint32_t *>((void *) data_ptr);
 
 
-            canvas_native_webgl2_uniform4uiv(
-                    location->GetUniformLocation(),
-                    data, size,
-                    ptr->GetState()
-            );
-        } else {
-            std::vector<uint32_t> buf;
-            auto array = dataValue.As<v8::Array>();
-            auto len = array->Length();
-            buf.reserve(len);
-            for (int i = 0; i < len; i++) {
-                auto item = array->Get(
-                        context,
-                        i).ToLocalChecked()->Uint32Value(
-                        context).ToChecked();
-                buf.push_back(item);
+                canvas_native_webgl2_uniform4uiv(
+                        location->GetUniformLocation(),
+                        data, size,
+                        ptr->GetState()
+                );
+            } else {
+                std::vector<uint32_t> buf;
+                auto array = dataValue.As<v8::Array>();
+                auto len = array->Length();
+                buf.reserve(len);
+                for (int i = 0; i < len; i++) {
+                    auto item = array->Get(
+                            context,
+                            i).ToLocalChecked()->Uint32Value(
+                            context).ToChecked();
+                    buf.push_back(item);
+                }
+
+                canvas_native_webgl2_uniform4uiv(
+                        location->GetUniformLocation(),
+                        buf.data(), buf.size(),
+                        ptr->GetState()
+                );
             }
-
-            canvas_native_webgl2_uniform4uiv(
-                    location->GetUniformLocation(),
-                    buf.data(), buf.size(),
-                    ptr->GetState()
-            );
         }
-
     }
 
 }

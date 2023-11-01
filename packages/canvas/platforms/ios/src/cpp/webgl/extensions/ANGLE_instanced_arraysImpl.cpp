@@ -50,13 +50,13 @@ void ANGLE_instanced_arraysImpl::DrawElementsInstancedANGLE(
     auto context = isolate->GetCurrentContext();
 
     auto mode = args[0]->Uint32Value(context).ToChecked();
-    auto count_ = args[1]->Int32Value(context).ToChecked();
+    auto count = args[1]->Int32Value(context).ToChecked();
     auto type = args[2]->Uint32Value(context).ToChecked();
     auto offset = args[3]->Int32Value(context).ToChecked();
     auto primcount = args[4]->Int32Value(context).ToChecked();
     canvas_native_webgl_angle_instanced_arrays_draw_elements_instanced_angle(
             mode,
-            count_,
+            count,
             type,
             offset,
             primcount,

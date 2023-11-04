@@ -34,7 +34,7 @@ fn main() {
     Registry::new(
         Api::Gles2,
         (4, 0),
-        Profile::Core,
+        Profile::Compatibility,
         Fallbacks::All,
         [
             "GL_AMD_compressed_ATC_texture",

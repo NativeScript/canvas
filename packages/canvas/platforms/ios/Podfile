@@ -5,3 +5,6 @@ platform :ios, '11.0'
 
 #pod 'NativeScript', path: "../../node_modules/@nativescript/canvas/pods/NativeScript.podspec"
 
+
+# Exposes NativeScript v8 headers to our module sources
+pod 'NativeScript', path: "../../node_modules/@nativescript/canvas/src-native/ios/NativeScript.podspec"

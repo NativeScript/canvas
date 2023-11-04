@@ -35,9 +35,9 @@ let plane, blurPlane, fillPlane;
 function init(canvas) {
 	const context = canvas.getContext('webgl2') as WebGLRenderingContext;
 
-	const { drawingBufferWidth, drawingBufferHeight } = context;
+	//const { drawingBufferWidth, drawingBufferHeight } = context;
 
-	camera = new THREE.PerspectiveCamera(50, drawingBufferWidth / drawingBufferHeight, 0.1, 100);
+	camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 100);
 	camera.position.set(0.5, 1, 2);
 
 	scene = new THREE.Scene();

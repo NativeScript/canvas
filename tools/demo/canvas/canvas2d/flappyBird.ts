@@ -142,8 +142,9 @@ export function flappyBird(canvas){
 
         };
 
-    function onpress(evt) {
+    function onpress(evt:) {
 
+        console.log('onpress', currentstate, states.Splash, states.Game, states.Score)
         switch (currentstate) {
             case states.Splash:
                 currentstate = states.Game;
@@ -156,8 +157,8 @@ export function flappyBird(canvas){
                 var mx = evt.offsetX, my = evt.offsetY;
 
                 if(mx == null || my == null) {
-                    mx = evt.touches[0].clientX;
-                    my = evt.touches[0].clientY;
+                    mx = evt.changedTouches[0].clientX;
+                    my = evt.changedTouches[0].clientY;
                 }
 
                 if(okbtn.x < mx && mx < okbtn.x + okbtn.width &&
@@ -172,8 +173,10 @@ export function flappyBird(canvas){
     }
 
     function main() {
-        width = canvas.getMeasuredWidth();
-        height = canvas.getMeasuredHeight();
+        width = canvas.width;
+        height = canvas.height;
+
+        canvas.addEventListener('touchstart', onpress);
 
         var evt = "touchstart";
         if(width >= 500) {
@@ -183,15 +186,16 @@ export function flappyBird(canvas){
             evt = "mousedown";
         }
 
-        canvas.width = width;
-        canvas.height = height;
+       // canvas.width = width;
+       // canvas.height = height;
         ctx = canvas.getContext("2d");
 
         currentstate = states.Splash;
 
-        var img = ImageSource.fromUrl('https://raw.githubusercontent.com/maxwihlborg/youtube-tutorials/master/flappy/starter/res/sheet.png');
-        img.then((data)=>{
-                initSprites(this);
+        var img = new global.ImageAsset()
+        img.fromUrl('https://raw.githubusercontent.com/maxwihlborg/youtube-tutorials/master/flappy/starter/res/sheet.png')
+        .then((done)=>{
+                initSprites(img);
                 ctx.fillStyle = s_bg.color;
 
                 okbtn = {

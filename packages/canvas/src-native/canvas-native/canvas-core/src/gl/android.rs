@@ -8,7 +8,7 @@ use glutin::api::egl::{
     config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
 use glutin::config::{
-    Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
+    Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig, ColorBufferType,
 };
 use glutin::context::{AsRawContext, ContextApi, GlContext, RawContext, Version};
 use glutin::display::{AsRawDisplay, DisplayApiPreference};
@@ -20,6 +20,10 @@ use once_cell::sync::Lazy;
 use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
 use crate::context_attributes::ContextAttributes;
+
+use once_cell::sync::OnceCell;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
 #[derive(Debug)]
 pub(crate) enum SurfaceHelper {
@@ -93,6 +97,19 @@ impl Into<ConfigTemplate> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(if self.get_alpha() {
+                ColorBufferType::Rgb {
+                    r_size: 8,
+                    g_size: 8,
+                    b_size: 8,
+                }
+            } else {
+                ColorBufferType::Rgb {
+                    r_size: 5,
+                    g_size: 6,
+                    b_size: 5,
+                }
+            })
             .with_transparency(self.get_alpha());
 
         if !self.get_is_canvas() && self.get_antialias() {
@@ -115,6 +132,19 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(if value.get_alpha() {
+                ColorBufferType::Rgb {
+                    r_size: 8,
+                    g_size: 8,
+                    b_size: 8,
+                }
+            } else {
+                ColorBufferType::Rgb {
+                    r_size: 5,
+                    g_size: 6,
+                    b_size: 5,
+                }
+            })
             .with_transparency(value.get_alpha());
 
         if !value.get_is_canvas() && value.get_antialias() {
@@ -137,6 +167,19 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(if self.get_alpha() {
+                ColorBufferType::Rgb {
+                    r_size: 8,
+                    g_size: 8,
+                    b_size: 8,
+                }
+            } else {
+                ColorBufferType::Rgb {
+                    r_size: 5,
+                    g_size: 6,
+                    b_size: 5,
+                }
+            })
             .with_transparency(self.get_alpha());
 
         if !self.get_is_canvas() && self.get_antialias() {
@@ -159,6 +202,19 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(if value.get_alpha() {
+                ColorBufferType::Rgb {
+                    r_size: 8,
+                    g_size: 8,
+                    b_size: 8,
+                }
+            } else {
+                ColorBufferType::Rgb {
+                    r_size: 5,
+                    g_size: 6,
+                    b_size: 5,
+                }
+            })
             .with_transparency(value.get_alpha());
 
         if !value.get_is_canvas() && value.get_antialias() {
@@ -225,41 +281,40 @@ impl GLContext {
                     .flatten();
 
 
-              if config.is_none() {
-                  let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+                if config.is_none() {
+                    let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
 
-                  cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+                    cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
 
-                  let cfg = cfg.build();
+                    let cfg = cfg.build();
 
-                  config = display
-                      .find_configs(cfg)
-                      .map(|c| {
-                          c.reduce(|accum, cconfig| {
-                              if is_2d {
-                                  let transparency_check =
-                                      cconfig.supports_transparency().unwrap_or(false)
-                                          & !accum.supports_transparency().unwrap_or(false);
-                                  return if transparency_check
-                                      || cconfig.num_samples() < accum.num_samples()
-                                  {
-                                      cconfig
-                                  } else {
-                                      accum
-                                  };
-                              }
+                    config = display
+                        .find_configs(cfg)
+                        .map(|c| {
+                            c.reduce(|accum, cconfig| {
+                                if is_2d {
+                                    let transparency_check =
+                                        cconfig.supports_transparency().unwrap_or(false)
+                                            & !accum.supports_transparency().unwrap_or(false);
+                                    return if transparency_check
+                                        || cconfig.num_samples() < accum.num_samples()
+                                    {
+                                        cconfig
+                                    } else {
+                                        accum
+                                    };
+                                }
 
-                              return if cconfig.num_samples() > accum.num_samples() {
-                                  cconfig
-                              } else {
-                                  accum
-                              };
-                          })
-                      })
-                      .ok()
-                      .flatten();
-              }
-
+                                return if cconfig.num_samples() > accum.num_samples() {
+                                    cconfig
+                                } else {
+                                    accum
+                                };
+                            })
+                        })
+                        .ok()
+                        .flatten();
+                }
 
 
                 if config.is_none() && multi_sample {
@@ -361,9 +416,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -398,9 +457,8 @@ impl GLContext {
                     .flatten();
 
 
-
                 if config.is_none() {
-                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+                    let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
 
                     cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
 
@@ -433,7 +491,6 @@ impl GLContext {
                         .ok()
                         .flatten();
                 }
-
 
 
                 if config.is_none() && multi_sample {
@@ -535,9 +592,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -572,7 +633,7 @@ impl GLContext {
 
 
                 if config.is_none() {
-                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+                    let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
 
                     cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
 
@@ -604,7 +665,6 @@ impl GLContext {
                         })
                         .ok()
                         .flatten();
-
                 }
 
                 if config.is_none() && multi_sample {
@@ -671,9 +731,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -746,9 +810,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -791,7 +859,7 @@ impl GLContext {
                     .flatten();
 
                 if config.is_none() {
-                    let mut cfg: ConfigTemplateBuilder  = context_attrs.clone().into();
+                    let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
 
                     cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
 

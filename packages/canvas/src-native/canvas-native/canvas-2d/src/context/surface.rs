@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
-use skia_safe::{
-    AlphaType, Color, ColorType, surfaces, ISize, ImageInfo, Rect, Surface,
-};
+use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect, Surface};
 
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
@@ -38,8 +36,10 @@ impl Context {
             None,
         );
 
+        let mut surface = surfaces::raster(&info, None, None).unwrap();
+        surface.canvas().scale((density, density));
         Context {
-            surface: surfaces::raster(&info, None, None).unwrap(),
+            surface,
             path: Path::default(),
             state: State::from_device(device, direction),
             state_stack: vec![],
@@ -73,7 +73,8 @@ impl Context {
             None,
         );
 
-        if let Some(surface) = surfaces::raster(&info, None, None) {
+        if let Some(mut surface) = surfaces::raster(&info, None, None) {
+            surface.canvas().scale((density, density));
             context.surface = surface;
             context.device = device;
             context.path = Path::default();

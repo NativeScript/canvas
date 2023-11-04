@@ -523,7 +523,7 @@ pub fn canvas_native_webgl2_get_active_uniform_block_parameter(
                 )
             }
 
-            let mut indices: Vec<i32> = vec![0i32;uniform_count[0] as usize];
+            let mut indices: Vec<i32> = vec![0i32; uniform_count[0] as usize];
             unsafe {
                 gl_bindings::GetActiveUniformBlockiv(
                     program,
@@ -560,7 +560,7 @@ pub fn canvas_native_webgl2_get_active_uniforms(
     state: &mut WebGLState,
 ) -> WebGLResult {
     state.make_current();
-    let mut params: Vec<i32> = vec![0i32;uniform_indices.len()];
+    let mut params: Vec<i32> = vec![0i32; uniform_indices.len()];
 
     unsafe {
         gl_bindings::GetActiveUniformsiv(
@@ -619,7 +619,7 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
         new_size = length;
     }
 
-    if dst_offset != 0  {
+    if dst_offset != 0 {
         new_size = new_size - dst_offset;
     }
 
@@ -632,7 +632,7 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
             target,
             src_byte_offset.try_into().unwrap(),
             new_size.try_into().unwrap(),
-            gl_bindings::MAP_READ_BIT
+            gl_bindings::MAP_READ_BIT,
         );
         if !data.is_null() {
             std::ptr::copy_nonoverlapping(data, ptr as *mut _, new_size);
@@ -772,7 +772,7 @@ pub fn canvas_native_webgl2_get_internalformat_parameter(
         if length[0] <= 0 {
             return WebGLResult::I32Array(Vec::with_capacity(0));
         }
-        let mut values: Vec<i32> = vec![0i32;length[0] as usize];
+        let mut values: Vec<i32> = vec![0i32; length[0] as usize];
         unsafe {
             gl_bindings::GetInternalformativ(
                 target,
@@ -964,15 +964,15 @@ pub fn canvas_native_webgl2_get_uniform_block_index(
 
 pub fn canvas_native_webgl2_get_uniform_indices(
     program: u32,
-    uniform_names: &[String],
+    uniform_names: &[&str],
     state: &mut WebGLState,
 ) -> Vec<u32> {
     state.make_current();
     // TODO improve performance
-    let mut count: Vec<u32> = vec![0;uniform_names.len()];
+    let mut count: Vec<u32> = vec![0; uniform_names.len()];
     let mut buffer: Vec<CString> = Vec::with_capacity(uniform_names.len());
-    for name in uniform_names.into_iter() {
-        let name = CString::new(name.as_str()).unwrap();
+    for name in uniform_names.iter() {
+        let name = CString::new(*name).unwrap();
         buffer.push(name);
     }
 
@@ -987,6 +987,28 @@ pub fn canvas_native_webgl2_get_uniform_indices(
     }
 
     count
+}
+
+pub fn canvas_native_webgl2_get_uniform_indices_raw(
+    program: u32,
+    uniform_names: *const *const c_char,
+    count: usize,
+    state: &mut WebGLState,
+) -> Vec<u32> {
+    state.make_current();
+    // TODO improve performance
+    let mut ret: Vec<u32> = vec![0; count];
+
+    unsafe {
+        gl_bindings::GetUniformIndices(
+            program,
+            count.try_into().unwrap(),
+            uniform_names,
+            ret.as_mut_ptr(),
+        )
+    }
+
+    ret
 }
 
 pub fn canvas_native_webgl2_invalidate_framebuffer(
@@ -1198,9 +1220,9 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                     height,
                     depth,
                     border,
-                   // format,
+                    // format,
                     gl_bindings::RGBA as _,
-                   // type_,
+                    // type_,
                     gl_bindings::UNSIGNED_BYTE as _,
                     buffer.as_ptr() as *const c_void,
                 );
@@ -1211,7 +1233,7 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
             gl_bindings::TexImage3D(
                 target,
                 level,
-               // internalformat,
+                // internalformat,
                 gl_bindings::RGBA as _,
                 width,
                 height,
@@ -1469,7 +1491,6 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     depth as usize,
                 );
 
-
                 gl_bindings::TexSubImage3D(
                     target,
                     level,
@@ -1479,7 +1500,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     width,
                     height,
                     depth,
-                   // format,
+                    // format,
                     gl_bindings::RGBA as _,
                     //type_,
                     gl_bindings::UNSIGNED_BYTE as _,
@@ -1498,9 +1519,9 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                 width,
                 height,
                 depth,
-               // format,
+                // format,
                 gl_bindings::RGBA as _,
-               // type_,
+                // type_,
                 gl_bindings::UNSIGNED_BYTE as _,
                 bytes.as_ptr() as *const c_void,
             );
@@ -1557,6 +1578,26 @@ pub fn canvas_native_webgl2_transform_feedback_varyings(
             program,
             buffer.len().try_into().unwrap(),
             buffer.as_ptr(),
+            buffer_mode,
+        );
+    }
+}
+
+
+
+pub fn canvas_native_webgl2_transform_feedback_varyings_raw(
+    program: u32,
+    varyings: *const *const c_char,
+    count: usize,
+    buffer_mode: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::TransformFeedbackVaryings(
+            program,
+            count.try_into().unwrap(),
+            varyings,
             buffer_mode,
         );
     }

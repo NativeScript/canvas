@@ -11,171 +11,202 @@ import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONArray
+import org.json.JSONObject
 
 import org.nativescript.canvas.*
 import java.io.*
+import java.lang.Exception
 import java.net.URL
 import java.util.concurrent.Executors
 
 
 class MainActivity : AppCompatActivity() {
-    var canvas: NSCCanvas? = null
-    var svg: NSCSVG? = null
-    val executor = Executors.newSingleThreadExecutor()
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        canvas = findViewById(R.id.canvasView)
-        //svg = findViewById(R.id.svgView)
-        svg?.ignorePixelScaling = false
+	var canvas: NSCCanvas? = null
+	var svg: NSCSVG? = null
+	val executor = Executors.newSingleThreadExecutor()
+	override fun onCreate(savedInstanceState: Bundle?) {
+		super.onCreate(savedInstanceState)
+		setContentView(R.layout.activity_main)
+		canvas = findViewById(R.id.canvasView)
+		//svg = findViewById(R.id.svgView)
+		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
 
 //		System.loadLibrary("canvasnative")
-        canvas?.ignorePixelScaling = false
+		//  canvas?.ignorePixelScaling = false
 
-        canvas?.listener = object : NSCCanvas.Listener {
-            override fun contextReady() {
-                Log.d("com.test", "Is Ready")
-                canvas?.let { canvas ->
-//                    val params = canvas.layoutParams
-//                    val context = canvas.create2DContext(
-//                        true,
-//                        true,
-//                        true,
-//                        false,
-//                        "default",
-//                        true,
-//                        false,
-//                        false,
-//                        false,
-//                        false,
-//                        Color.BLACK
-//                    )
+		canvas?.touchEventListener = object : NSCCanvas.TouchEvents {
+			override fun onEvent(event: String, motionEvent: MotionEvent) {
+				try {
+					val json = JSONObject(event)
+					Log.d("CANVAS", json.toString())
+				}catch (e: Exception){
+					val array = JSONArray(event)
+					Log.d("CANVAS", array.toString())
+				}
+
+			}
+		}
+
+		canvas?.listener = object : NSCCanvas.Listener {
+			override fun contextReady() {
+				Log.d("com.test", "Is Ready")
+				canvas?.let { canvas ->
+					val params = canvas.layoutParams
+					val context = canvas.create2DContext(
+						true,
+						true,
+						true,
+						false,
+						"default",
+						true,
+						false,
+						false,
+						false,
+						false,
+						Color.BLACK
+					)
+					NSCCanvas.context2DPathTest(context)
 //
 //                    Log.d("com.test", "windows $context")
 
 
-                    //canvas?.initContext("2d")
+					//canvas?.initContext("2d")
 //                    params.width = 300
 //
 //                    canvas.layoutParams = params
 //                    canvas.requestLayout()
 
-                    /*
+					/*
 
-                    executor.execute {
-                        try {
-                            val file = File(filesDir, "canvas_createpattern.svg")
-                            if (file.exists()) {
-                                file.delete()
-                            }
+					executor.execute {
+							try {
+									val file = File(filesDir, "canvas_createpattern.svg")
+									if (file.exists()) {
+											file.delete()
+									}
 
-                            val url =
-                                URL("https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png")
-                            val fs = FileOutputStream(file)
-                            url.openStream().use { input ->
-                                fs.use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            val bm = BitmapFactory.decodeFile(file.absolutePath)
-                            runOnUiThread {
-                                NSCCanvasRenderingContext2D.drawImage(context, bm, 0F, 0F)
-                            }
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
+									val url =
+											URL("https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png")
+									val fs = FileOutputStream(file)
+									url.openStream().use { input ->
+											fs.use { output ->
+													input.copyTo(output)
+											}
+									}
+									val bm = BitmapFactory.decodeFile(file.absolutePath)
+									runOnUiThread {
+											NSCCanvasRenderingContext2D.drawImage(context, bm, 0F, 0F)
+									}
+							} catch (e: IOException) {
+									e.printStackTrace()
+							}
+					}
 
-                    */
+					*/
 
-                }
-
-
-                //	draw2D()
-                //drawPatterWithCanvas(canvas!!)
-                //drawText(canvas!!)
+				}
 
 
-            }
-
-            override fun surfaceResize(width: Int, height: Int) {
-                Log.d("com.test", "surfaceResize $width $height")
-            }
-        }
+				//	draw2D()
+				//drawPatterWithCanvas(canvas!!)
+				//drawText(canvas!!)
 
 
-        /*
-        val count = 500
+			}
 
-        for (i in 0 until count){
-            val offscreen = NSCCanvas(this)
-
-            //offscreen.setBackgroundColor(Color.GRAY)
-            NSCCanvas.layoutView(1, 1, offscreen)
-            offscreen.initContext("webgl", antialias = false)
-
-         //   Log.d("com.test", "ctx ${offscreen.nativeGL}")
-        }
-
-        System.gc()
-
-        */
+			override fun surfaceResize(width: Int, height: Int) {
+				Log.d("com.test", "surfaceResize $width $height")
+			}
+		}
 
 
+		/*
+		val count = 500
 
-        val offscreen = NSCCanvas(this)
+		for (i in 0 until count){
+				val offscreen = NSCCanvas(this)
 
-        offscreen.listener = object : NSCCanvas.Listener {
-            override fun contextReady() {
-                Log.d("com.test", "offscreen ready")
-            }
+				//offscreen.setBackgroundColor(Color.GRAY)
+				NSCCanvas.layoutView(1, 1, offscreen)
+				offscreen.initContext("webgl", antialias = false)
 
-            override fun surfaceResize(width: Int, height: Int) {
-                Log.d("com.test", "offscreen surfaceResize: " + width + " : " +  height)
-            }
-        }
+		 //   Log.d("com.test", "ctx ${offscreen.nativeGL}")
+		}
 
-        //offscreen.setBackgroundColor(Color.GRAY)
-        NSCCanvas.layoutView(500, 500, offscreen)
+		System.gc()
 
-
-
-        val ctx = offscreen.create2DContext(
-            false,
-            false,
-            false,
-            false,
-            "default",
-            false,
-            false,
-            false,
-            false,
-            false,
-            Color.BLACK
-        )
-
-        NSCCanvas.context2DTest(ctx)
-
-        /*
-
-        val root = findViewById<ViewGroup>(android.R.id.content)
-
-        root.addView(offscreen)
+		*/
 
 
-        Log.d("com.test", "offscreen.surfaceTexture " + offscreen.textureView.surfaceTexture)
+		/*
+						val offscreen = NSCCanvas(this)
+						offscreen.listener = object : NSCCanvas.Listener {
+								override fun contextReady() {
+										Log.d("com.test", "offscreen ready")
+								}
 
-        NSCCanvas.layoutView(1000, 1000, offscreen)
+								override fun surfaceResize(width: Int, height: Int) {
+										Log.d("com.test", "offscreen surfaceResize: " + width + " : " +  height)
+								}
+						}
+
+						//offscreen.setBackgroundColor(Color.GRAY)
+						NSCCanvas.layoutView(500, 500, offscreen)
+
+						val ctx = offscreen.create2DContext(
+								true,
+								true,
+							true,
+							true,
+								"default",
+							true,
+							true,
+							true,
+							true,
+							true,
+								Color.BLACK
+						)
+
+					Log.d("com.test", "ctx $ctx")
+
+					NSCCanvas.context2DPathTest(ctx)
+
+					val ss = offscreen.snapshot()?.let {
+						Log.d("com.test", "ctx ${it.width} ${it.height}")
+						val image = ImageView(this)
+						image.setImageBitmap(it)
+
+						val root = findViewById<ViewGroup>(android.R.id.content)
+
+						root.addView(image)
+					}
+
+					*/
 
 
-        */
-        //offscreen.initContext("webgl")
+		/*
+						val root = findViewById<ViewGroup>(android.R.id.content)
+
+						root.addView(offscreen)
+
+
+						Log.d("com.test", "offscreen.surfaceTexture " + offscreen.textureView.surfaceTexture)
+
+						NSCCanvas.layoutView(1000, 1000, offscreen)
+
+
+					NSCCanvas.context2DTest(ctx)
+					*/
+		//offscreen.initContext("webgl")
 
 
 //        val ctx = offscreen.create2DContext(
@@ -191,15 +222,15 @@ class MainActivity : AppCompatActivity() {
 //            false,
 //            Color.BLACK
 //        )
-        // NSCCanvas.context2DTest(ctx)
-        //val root = findViewById<ViewGroup>(android.R.id.content)
-        // root.addView(offscreen)
-        //  NSCCanvas.layoutView(400, 400, offscreen)
+		// NSCCanvas.context2DTest(ctx)
+		//val root = findViewById<ViewGroup>(android.R.id.content)
+		// root.addView(offscreen)
+		//  NSCCanvas.layoutView(400, 400, offscreen)
 
-        // Log.d("com.test", "Help ${offscreen.nativeContext}")
+		// Log.d("com.test", "Help ${offscreen.nativeContext}")
 
-        //   Log.d("com.test", "" + offscreen.snapshot())
-        //drawTransformPathSvg()
+		//   Log.d("com.test", "" + offscreen.snapshot())
+		//drawTransformPathSvg()
 //		svg?.setSrc(
 //			"""
 //				<svg width="100" height="100" xmlns="svg">
@@ -267,7 +298,7 @@ class MainActivity : AppCompatActivity() {
 //			""".trimIndent()
 //		)
 
-        //	init()
+		//	init()
 
 //				svg?.setSrc(
 //			"""
@@ -294,30 +325,30 @@ class MainActivity : AppCompatActivity() {
 //				</svg>
 //			""".trimIndent()
 //		)
-/*
+		/*
 
-						svg?.setSrc(
-			"""
-	<svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink">
-  <!-- Our symbol in its own coordinate system -->
-  <symbol id="myDot" width="10" height="10" viewBox="0 0 2 2">
-    <circle cx="1" cy="1" r="1" />
-  </symbol>
+								svg?.setSrc(
+					"""
+			<svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg"
+				 xmlns:xlink="http://www.w3.org/1999/xlink">
+			<!-- Our symbol in its own coordinate system -->
+			<symbol id="myDot" width="10" height="10" viewBox="0 0 2 2">
+				<circle cx="1" cy="1" r="1" />
+			</symbol>
 
-   <!-- A grid to materialize our symbol positioning -->
-  <path d="M0,10 h80 M10,0 v20 M25,0 v20 M40,0 v20 M55,0 v20 M70,0 v20" fill="none" stroke="pink" />
+			 <!-- A grid to materialize our symbol positioning -->
+			<path d="M0,10 h80 M10,0 v20 M25,0 v20 M40,0 v20 M55,0 v20 M70,0 v20" fill="none" stroke="pink" />
 
-  <!-- All instances of our symbol -->
-  <use xlink:href="#myDot" x="5"  y="5" style="opacity:1.0" />
-  <use xlink:href="#myDot" x="20" y="5" style="opacity:0.8" />
-  <use xlink:href="#myDot" x="35" y="5" style="opacity:0.6" />
-  <use xlink:href="#myDot" x="50" y="5" style="opacity:0.4" />
-  <use xlink:href="#myDot" x="65" y="5" style="opacity:0.2" />
-</svg>
-			""".trimIndent()
-		)
-*/
+			<!-- All instances of our symbol -->
+			<use xlink:href="#myDot" x="5"  y="5" style="opacity:1.0" />
+			<use xlink:href="#myDot" x="20" y="5" style="opacity:0.8" />
+			<use xlink:href="#myDot" x="35" y="5" style="opacity:0.6" />
+			<use xlink:href="#myDot" x="50" y="5" style="opacity:0.4" />
+			<use xlink:href="#myDot" x="65" y="5" style="opacity:0.2" />
+		</svg>
+					""".trimIndent()
+				)
+		*/
 
 //		svg?.setSrc("""
 //<svg width="200" height="100" style="border: 1px solid #cccccc;">
@@ -380,22 +411,22 @@ class MainActivity : AppCompatActivity() {
 ////			</svg>
 ////		""".trimIndent())
 
-        //drawTransformMatrixSvg()
-        //drawTransformRotateSvg()
-        //drawTransformScaleSvg()
-        //drawTransformTranslateSvg()
-        //	drawTransformSkewX()
-        //drawTransformSkewY()
+		//drawTransformMatrixSvg()
+		//drawTransformRotateSvg()
+		//drawTransformScaleSvg()
+		//drawTransformTranslateSvg()
+		//	drawTransformSkewX()
+		//drawTransformSkewY()
 
-        //drawLinearGradientSvg()
-        //drawLinearGradientCircleSvg()
+		//drawLinearGradientSvg()
+		//drawLinearGradientCircleSvg()
 
-        //drawRadialGradientCircleSvg()
+		//drawRadialGradientCircleSvg()
 
-        //	drawTransformGradientSvg()
+		//	drawTransformGradientSvg()
 
-        //	drawClipPathUnitsSvg()
-        //	downloadSvg()
+		//	drawClipPathUnitsSvg()
+		//	downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
 //			  <!-- Using g to inherit presentation attributes -->
@@ -406,8 +437,8 @@ class MainActivity : AppCompatActivity() {
 //			</svg>
 //		""".trimIndent())
 
-        //	drawTransformPathSvg()
-        //drawUsePathSvg()
+		//	drawTransformPathSvg()
+		//drawUsePathSvg()
 
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
@@ -439,46 +470,46 @@ class MainActivity : AppCompatActivity() {
 //			</svg>
 //		""".trimIndent())
 
-        /*	svg?.setSrc("""
-                <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-                        <defs>
-                                <marker id="marker_circle" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-6 -6 12 12">
-                                        <path d="M 0, 0  m -5, 0  a 5,5 0 1,0 10,0  a 5,5 0 1,0 -10,0" fill="#1f77b4"/>
-                                </marker>
-                                <marker id="marker_square" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-5 -5 10 10">
-                                        <path d="M 0,0 m -5,-5 L 5,-5 L 5,5 L -5,5 Z" fill="#ff7f0e"/>
-                                </marker>
-                                <marker id="marker_arrow" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-5 -5 10 10">
-                                        <path d="M 0,0 m -5,-5 L 5,0 L -5,5 Z" fill="#2ca02c"/>
-                                </marker>
-                                <marker id="marker_stub" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-1 -5 2 10">
-                                        <path d="M 0,0 m -1,-5 L 1,-5 L 1,5 L -1,5 Z" fill="#d62728"/>
-                                </marker>
-                        </defs>
-                        <rect width="100%" height="100%" fill="green"/>
-                        <line fill="none" stroke="#000000" stroke-width="9" x1="25%" x2="60%" y1="40%" y2="60%" id="svg_3" marker-end="url(#marker_circle)" marker-start="url(#marker_circle)"/>
-                </svg>
+		/*	svg?.setSrc("""
+						<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+										<defs>
+														<marker id="marker_circle" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-6 -6 12 12">
+																		<path d="M 0, 0  m -5, 0  a 5,5 0 1,0 10,0  a 5,5 0 1,0 -10,0" fill="#1f77b4"/>
+														</marker>
+														<marker id="marker_square" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-5 -5 10 10">
+																		<path d="M 0,0 m -5,-5 L 5,-5 L 5,5 L -5,5 Z" fill="#ff7f0e"/>
+														</marker>
+														<marker id="marker_arrow" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-5 -5 10 10">
+																		<path d="M 0,0 m -5,-5 L 5,0 L -5,5 Z" fill="#2ca02c"/>
+														</marker>
+														<marker id="marker_stub" markerHeight="5" markerWidth="5" markerUnits="strokeWidth" orient="auto" refX="0" refY="0" viewBox="-1 -5 2 10">
+																		<path d="M 0,0 m -1,-5 L 1,-5 L 1,5 L -1,5 Z" fill="#d62728"/>
+														</marker>
+										</defs>
+										<rect width="100%" height="100%" fill="green"/>
+										<line fill="none" stroke="#000000" stroke-width="9" x1="25%" x2="60%" y1="40%" y2="60%" id="svg_3" marker-end="url(#marker_circle)" marker-start="url(#marker_circle)"/>
+						</svg>
 
-            """.trimIndent())
-            */
-
-
-    }
-
-    fun goToVideo(view: View) {
-        val intent = Intent(this, VideoActivity::class.java)
-        startActivity(intent)
-    }
+				""".trimIndent())
+				*/
 
 
-    fun goToWebGl(view: View) {
-        val intent = Intent(this, WebGLActivity::class.java)
-        startActivity(intent)
-    }
+	}
 
-    fun drawUsePathSvg() {
-        svg?.setSrc(
-            """
+	fun goToVideo(view: View) {
+		val intent = Intent(this, VideoActivity::class.java)
+		startActivity(intent)
+	}
+
+
+	fun goToWebGl(view: View) {
+		val intent = Intent(this, WebGLActivity::class.java)
+		startActivity(intent)
+	}
+
+	fun drawUsePathSvg() {
+		svg?.setSrc(
+			"""
 			<svg viewBox="0 0 80 20" xmlns="http://www.w3.org/2000/svg"
 			     xmlns:xlink="http://www.w3.org/1999/xlink">
 			  <!-- Our symbol in its own coordinate system -->
@@ -497,12 +528,12 @@ class MainActivity : AppCompatActivity() {
 			  <use xlink:href="#myDot" x="65" y="5" style="opacity:0.2" />
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformPathSvg() {
-        svg?.setSrc(
-            """
+	fun drawTransformPathSvg() {
+		svg?.setSrc(
+			"""
   <svg version="1.1"
         xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
         width="128" height="128">
@@ -510,12 +541,12 @@ class MainActivity : AppCompatActivity() {
             xlink:href="https://www.rust-lang.org/logos/rust-logo-128x128.png"/>
         </svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawRadialGradientCircleSvg() {
-        svg?.setSrc(
-            """
+	fun drawRadialGradientCircleSvg() {
+		svg?.setSrc(
+			"""
 <svg  viewBox="0 0 1200 800" version="1.1"
      xmlns="http://www.w3.org/2000/svg">
   <desc>Example radgrad01 - fill a rectangle by referencing a
@@ -540,12 +571,12 @@ class MainActivity : AppCompatActivity() {
   </g>
 </svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawLinearGradientCircleSvg() {
-        svg?.setSrc(
-            """
+	fun drawLinearGradientCircleSvg() {
+		svg?.setSrc(
+			"""
 			<svg he=>
 			  <defs>
 			    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -557,12 +588,12 @@ class MainActivity : AppCompatActivity() {
 			  Sorry, your browser does not support inline SVG.
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawLinearGradientSvg() {
-        svg?.setSrc(
-            """
+	fun drawLinearGradientSvg() {
+		svg?.setSrc(
+			"""
 			<svg width="400" height="550">
 			  <defs>
 			    <linearGradient id="MyGradient" gradientUnits="userSpaceOnUse" x1="100" y1="0" x2="300" y2="0">
@@ -600,69 +631,69 @@ class MainActivity : AppCompatActivity() {
 			  Sorry, your browser does not support inline SVG.
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    // https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg
-    // https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg
+	// https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg
+	// https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/b/b1/Cluse_de_Chamb%C3%A9ry_-_Carte_de_l%27occupation_des_sols_%28CORINE%29.svg
+	// https://upload.wikimedia.org/wikipedia/commons/b/b1/Cluse_de_Chamb%C3%A9ry_-_Carte_de_l%27occupation_des_sols_%28CORINE%29.svg
 
 
-    //https://upload.wikimedia.org/wikipedia/commons/b/b6/Moldova_%281483%29-en.svg
+	//https://upload.wikimedia.org/wikipedia/commons/b/b6/Moldova_%281483%29-en.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/a/a0/Location_map_San_Francisco_Bay_Area.svg // 40mb
+	// https://upload.wikimedia.org/wikipedia/commons/a/a0/Location_map_San_Francisco_Bay_Area.svg // 40mb
 
-    // https://upload.wikimedia.org/wikipedia/commons/c/c1/Propane_flame_contours-en.svg
+	// https://upload.wikimedia.org/wikipedia/commons/c/c1/Propane_flame_contours-en.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/9/95/Kaiserstandarte_Version1.svg
+	// https://upload.wikimedia.org/wikipedia/commons/9/95/Kaiserstandarte_Version1.svg
 
-    // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg
+	// https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg
 
-    // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/lineargradient1.svg
+	// https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/lineargradient1.svg
 
-    //http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg
+	//http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg
 
-    // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/AJ_Digital_Camera.svg
+	// https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/AJ_Digital_Camera.svg
 
-    // https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg
+	// https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/f/ff/1_42_polytope_7-cube.svg
+	// https://upload.wikimedia.org/wikipedia/commons/f/ff/1_42_polytope_7-cube.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg
+	// https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg
+	// https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg
 
-    // https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg
+	// https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg
 
-    // https://raw.githubusercontent.com/RazrFalcon/resvg/7b26adbcc9698dcca687214c84d216794f60a5be/tests/svg/e-radialGradient-013.svg
-    fun downloadSvg() {
-        executor.execute {
-            try {
-                val svgFile = File(filesDir, "svg_file.svg")
-                if (svgFile.exists()) {
-                    //svg?.setSrcPath(svgFile.absolutePath)
-                    svgFile.delete()
-                }
+	// https://raw.githubusercontent.com/RazrFalcon/resvg/7b26adbcc9698dcca687214c84d216794f60a5be/tests/svg/e-radialGradient-013.svg
+	fun downloadSvg() {
+		executor.execute {
+			try {
+				val svgFile = File(filesDir, "svg_file.svg")
+				if (svgFile.exists()) {
+					//svg?.setSrcPath(svgFile.absolutePath)
+					svgFile.delete()
+				}
 
-                val url =
-                    URL("https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg")
-                val fs = FileOutputStream(svgFile)
-                url.openStream().use { input ->
-                    fs.use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                svg?.setSrcPath(svgFile.absolutePath)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-    }
+				val url =
+					URL("https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg")
+				val fs = FileOutputStream(svgFile)
+				url.openStream().use { input ->
+					fs.use { output ->
+						input.copyTo(output)
+					}
+				}
+				svg?.setSrcPath(svgFile.absolutePath)
+			} catch (e: IOException) {
+				e.printStackTrace()
+			}
+		}
+	}
 
-    fun drawClipPathUnitsSvg() {
-        svg?.setSrc(
-            """<?xml version="1.0"?>
+	fun drawClipPathUnitsSvg() {
+		svg?.setSrc(
+			"""<?xml version="1.0"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
@@ -672,12 +703,12 @@ class MainActivity : AppCompatActivity() {
       fill="none" stroke="blue" stroke-width="10" />
 </svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformGradientSvg() {
-        svg?.setSrc(
-            """
+	fun drawTransformGradientSvg() {
+		svg?.setSrc(
+			"""
 		<svg width="500" height="500" viewBox="0 0 500 500" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <defs>
         <linearGradient id="user-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="100" gradientTransform="scale(2, 1)">
@@ -693,13 +724,13 @@ class MainActivity : AppCompatActivity() {
     <rect x="250" y="0" width="200" height="100" fill="url(#box-grad)"/>
 </svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformMatrixSvg() {
+	fun drawTransformMatrixSvg() {
 
-        svg?.setSrc(
-            """
+		svg?.setSrc(
+			"""
 			<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
 		<rect x="10" y="10" width="30" height="20" fill="green" />
 
@@ -730,14 +761,14 @@ class MainActivity : AppCompatActivity() {
 
 		</svg>
 			""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformTranslateSvg() {
-        /// translate transform
+	fun drawTransformTranslateSvg() {
+		/// translate transform
 
-        svg?.setSrc(
-            """
+		svg?.setSrc(
+			"""
 		<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <!-- No translation -->
   <rect x="5" y="5" width="40" height="40" fill="green" />
@@ -755,12 +786,12 @@ class MainActivity : AppCompatActivity() {
          transform="translate(50,50)" />
 </svg>
 			""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformScaleSvg() {
-        svg?.setSrc(
-            """
+	fun drawTransformScaleSvg() {
+		svg?.setSrc(
+			"""
 				<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
 				  <!-- uniform scale -->
 				  <circle cx="0" cy="0" r="10" fill="red"
@@ -778,12 +809,12 @@ class MainActivity : AppCompatActivity() {
 				  <circle cx="0" cy="0" r="10" fill="black" />
 				</svg>
 			""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformRotateSvg() {
-        svg?.setSrc(
-            """
+	fun drawTransformRotateSvg() {
+		svg?.setSrc(
+			"""
 			<svg viewBox="-12 -2 34 14" xmlns="http://www.w3.org/2000/svg">
 			  <rect x="0" y="0" width="10" height="10" />
 
@@ -796,12 +827,12 @@ class MainActivity : AppCompatActivity() {
 			        transform="rotate(100,10,10)" />
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformSkewX() {
-        svg?.setSrc(
-            """
+	fun drawTransformSkewX() {
+		svg?.setSrc(
+			"""
 			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
 			  <rect x="-3" y="-3" width="6" height="6" />
 
@@ -809,12 +840,12 @@ class MainActivity : AppCompatActivity() {
 			        transform="skewX(30)" />
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    fun drawTransformSkewY() {
-        svg?.setSrc(
-            """
+	fun drawTransformSkewY() {
+		svg?.setSrc(
+			"""
 			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
 			  <rect x="-3" y="-3" width="6" height="6" />
 
@@ -822,109 +853,109 @@ class MainActivity : AppCompatActivity() {
 			        transform="skewY(30)" />
 			</svg>
 		""".trimIndent()
-        )
-    }
+		)
+	}
 
-    internal class ByteArrayOutputStream2 : ByteArrayOutputStream {
-        constructor() : super() {}
-        constructor(size: Int) : super(size) {}
+	internal class ByteArrayOutputStream2 : ByteArrayOutputStream {
+		constructor() : super() {}
+		constructor(size: Int) : super(size) {}
 
-        /**
-         * Returns the internal buffer of this ByteArrayOutputStream, without copying.
-         */
-        @Synchronized
-        fun buf(): ByteArray {
-            return buf
-        }
-    }
+		/**
+		 * Returns the internal buffer of this ByteArrayOutputStream, without copying.
+		 */
+		@Synchronized
+		fun buf(): ByteArray {
+			return buf
+		}
+	}
 
-    var t0 = 0.0
-    var rr = 0.0 // the radius that changes over time
-    var a = 0.0 // angle
-    private val PI2 = Math.PI * 2
-    private var lastTime = 0L
-    var timeToCall = 0L
-    var handler = Handler(Looper.getMainLooper())
+	var t0 = 0.0
+	var rr = 0.0 // the radius that changes over time
+	var a = 0.0 // angle
+	private val PI2 = Math.PI * 2
+	private var lastTime = 0L
+	var timeToCall = 0L
+	var handler = Handler(Looper.getMainLooper())
 
 
-    companion object {
-        @JvmStatic
-        fun init() {
-            val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
-            StrictMode.setThreadPolicy(policy)
-        }
-    }
+	companion object {
+		@JvmStatic
+		fun init() {
+			val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+			StrictMode.setThreadPolicy(policy)
+		}
+	}
 
-    var CanvasXSize = 800;
-    var CanvasYSize = 200;
-    var speed = 30; // lower is faster
-    var scale = 1.05;
-    var y = -4.5; // vertical offset
+	var CanvasXSize = 800;
+	var CanvasYSize = 200;
+	var speed = 30; // lower is faster
+	var scale = 1.05;
+	var y = -4.5; // vertical offset
 
 // Main program
 
-    var dx = 0.75;
-    var imgW = 0
-    var imgH = 0
-    var x = 0;
-    var clearX = 0
-    var clearY = 0
+	var dx = 0.75;
+	var imgW = 0
+	var imgH = 0
+	var x = 0;
+	var clearX = 0
+	var clearY = 0
 
 
-    fun log(message: Any) {
-        println("${message}")
-    }
+	fun log(message: Any) {
+		println("${message}")
+	}
 
-    @SafeVarargs
-    fun log(vararg message: Any) {
-        var msg = "";
-        message.forEach {
-            msg += ":$it:"
-        }
-        println(msg)
-    }
+	@SafeVarargs
+	fun log(vararg message: Any) {
+		var msg = "";
+		message.forEach {
+			msg += ":$it:"
+		}
+		println(msg)
+	}
 
-    val circle = "<svg height=\"100\" width=\"100\">" +
-            "<circle cx=\"50\" cy=\"50\" r=\"40\" stroke=\"black\" stroke-width=\"3\" fill=\"red\" />\n" +
-            "  Sorry, your browser does not support inline SVG.  \n" +
-            "</svg> "
-    val rect = "<svg width=\"400\" height=\"110\">\n" +
-            "  <rect width=\"300\" height=\"100\" style=\"fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)\" />\n" +
-            "  Sorry, your browser does not support inline SVG.  \n" +
-            "</svg>"
+	val circle = "<svg height=\"100\" width=\"100\">" +
+		"<circle cx=\"50\" cy=\"50\" r=\"40\" stroke=\"black\" stroke-width=\"3\" fill=\"red\" />\n" +
+		"  Sorry, your browser does not support inline SVG.  \n" +
+		"</svg> "
+	val rect = "<svg width=\"400\" height=\"110\">\n" +
+		"  <rect width=\"300\" height=\"100\" style=\"fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)\" />\n" +
+		"  Sorry, your browser does not support inline SVG.  \n" +
+		"</svg>"
 
 
-    val alphaRect = "<svg width=\"400\" height=\"180\">\n" +
-            "  <rect x=\"50\" y=\"20\" width=\"150\" height=\"150\" style=\"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9\" />\n" +
-            "  Sorry, your browser does not support inline SVG.  \n" +
-            "</svg>"
+	val alphaRect = "<svg width=\"400\" height=\"180\">\n" +
+		"  <rect x=\"50\" y=\"20\" width=\"150\" height=\"150\" style=\"fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9\" />\n" +
+		"  Sorry, your browser does not support inline SVG.  \n" +
+		"</svg>"
 
-    var path = "<svg height=\"400\" width=\"450\">\n" +
-            "  <path id=\"lineAB\" d=\"M 100 350 l 150 -300\" stroke=\"red\"\n" +
-            "  stroke-width=\"3\" fill=\"none\" />\n" +
-            "  <path id=\"lineBC\" d=\"M 250 50 l 150 300\" stroke=\"red\"\n" +
-            "  stroke-width=\"3\" fill=\"none\" />\n" +
-            "  <path d=\"M 175 200 l 150 0\" stroke=\"green\" stroke-width=\"3\"\n" +
-            "  fill=\"none\" />\n" +
-            "  <path d=\"M 100 350 q 150 -300 300 0\" stroke=\"blue\"\n" +
-            "  stroke-width=\"5\" fill=\"none\" />\n" +
-            "  <!-- Mark relevant points -->\n" +
-            "  <g stroke=\"black\" stroke-width=\"3\" fill=\"black\">\n" +
-            "    <circle id=\"pointA\" cx=\"100\" cy=\"350\" r=\"3\" />\n" +
-            "    <circle id=\"pointB\" cx=\"250\" cy=\"50\" r=\"3\" />\n" +
-            "    <circle id=\"pointC\" cx=\"400\" cy=\"350\" r=\"3\" />\n" +
-            "  </g>\n" +
-            "  <!-- Label the points -->\n" +
-            "  <g font-size=\"30\" font-family=\"sans-serif\" fill=\"black\" stroke=\"none\"\n" +
-            "  text-anchor=\"middle\">\n" +
-            "    <text x=\"100\" y=\"350\" dx=\"-30\">A</text>\n" +
-            "    <text x=\"250\" y=\"50\" dy=\"-10\">B</text>\n" +
-            "    <text x=\"400\" y=\"350\" dx=\"30\">C</text>\n" +
-            "  </g>\n" +
-            "</svg>"
+	var path = "<svg height=\"400\" width=\"450\">\n" +
+		"  <path id=\"lineAB\" d=\"M 100 350 l 150 -300\" stroke=\"red\"\n" +
+		"  stroke-width=\"3\" fill=\"none\" />\n" +
+		"  <path id=\"lineBC\" d=\"M 250 50 l 150 300\" stroke=\"red\"\n" +
+		"  stroke-width=\"3\" fill=\"none\" />\n" +
+		"  <path d=\"M 175 200 l 150 0\" stroke=\"green\" stroke-width=\"3\"\n" +
+		"  fill=\"none\" />\n" +
+		"  <path d=\"M 100 350 q 150 -300 300 0\" stroke=\"blue\"\n" +
+		"  stroke-width=\"5\" fill=\"none\" />\n" +
+		"  <!-- Mark relevant points -->\n" +
+		"  <g stroke=\"black\" stroke-width=\"3\" fill=\"black\">\n" +
+		"    <circle id=\"pointA\" cx=\"100\" cy=\"350\" r=\"3\" />\n" +
+		"    <circle id=\"pointB\" cx=\"250\" cy=\"50\" r=\"3\" />\n" +
+		"    <circle id=\"pointC\" cx=\"400\" cy=\"350\" r=\"3\" />\n" +
+		"  </g>\n" +
+		"  <!-- Label the points -->\n" +
+		"  <g font-size=\"30\" font-family=\"sans-serif\" fill=\"black\" stroke=\"none\"\n" +
+		"  text-anchor=\"middle\">\n" +
+		"    <text x=\"100\" y=\"350\" dx=\"-30\">A</text>\n" +
+		"    <text x=\"250\" y=\"50\" dy=\"-10\">B</text>\n" +
+		"    <text x=\"400\" y=\"350\" dx=\"30\">C</text>\n" +
+		"  </g>\n" +
+		"</svg>"
 
-    fun drawSVG(view: View) {
+	fun drawSVG(view: View) {
 
-    }
+	}
 
 }

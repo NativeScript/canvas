@@ -1,5 +1,5 @@
-use std::os::raw::c_float;
 use skia_safe::{Point, Size};
+use std::os::raw::c_float;
 
 use crate::context::drawing_text::text_metrics::TextMetrics;
 use crate::context::drawing_text::typography::{get_font_baseline, to_real_text_align};
@@ -110,7 +110,9 @@ impl Context {
             .canvas()
             .draw_str(text, (location.x, location.y), &font, paint);
 
-        self.surface.canvas().restore();
+        if use_max_width {
+            self.surface.canvas().restore();
+        }
     }
 
     pub fn measure_text(&self, text: &str) -> TextMetrics {

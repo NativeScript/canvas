@@ -1,7 +1,10 @@
-use std::cell::{Ref, RefCell, RefMut};
+use once_cell::sync::OnceCell;
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
@@ -14,7 +17,6 @@ use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use once_cell::sync::Lazy;
 use raw_window_handle::{
     AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
 };
@@ -288,9 +290,13 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -300,8 +306,6 @@ impl GLContext {
                     .find_configs(cfg)
                     .map(|mut c| {
                         c.reduce(|accum, cconfig| {
-                            println!("accum {:?}", &accum);
-                            println!("cconfig {:?}", &cconfig);
                             if is_2d {
                                 let transparency_check =
                                     cconfig.supports_transparency().unwrap_or(false)
@@ -444,9 +448,13 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
@@ -475,13 +483,13 @@ impl GLContext {
 
                             let alpha_requested = context_attrs.get_alpha();
 
-                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let mut stencil_size = if context_attrs.get_stencil() {
+                            let alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let stencil_size = if context_attrs.get_stencil() {
                                 8u8
                             } else {
                                 0u8
                             };
-                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+                            let depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
 
                             if multi_sample {
                                 if supports_transparency == alpha_requested
@@ -506,29 +514,26 @@ impl GLContext {
 
                                     return cconfig;
                                 }
-                            } else {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
+                            } else if supports_transparency == alpha_requested
+                                && cconfig.alpha_size() == alpha_size
+                                && context_attrs.get_stencil()
+                                && cconfig.stencil_size() == stencil_size
+                                && context_attrs.get_depth()
+                                && cconfig.depth_size() >= depth_size
+                                && cconfig.num_samples() == 0
+                            {
+                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
+                                    && accum.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
+                                    && accum.stencil_size() == stencil_size
                                     && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() == 0
+                                    && accum.depth_size() >= depth_size
+                                    && accum.num_samples() == 0
                                 {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() == 0
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
+                                    return accum;
                                 }
+
+                                return cconfig;
                             }
 
                             accum

@@ -1,20 +1,8 @@
 export class CanvasGradient {
-	_native;
-	_addColorStop;
-
-	_getMethod(name: string) {
-		if (this._addColorStop === undefined) {
-			const ret = this.native[name];
-			this._addColorStop = ret;
-			return ret;
-		}
-
-		return this._addColorStop;
-	}
+	private _native;
 
 	constructor(nativeInstance?: any) {
 		this._native = nativeInstance;
-		this._getMethod('addColorStop');
 	}
 
 	get native() {
@@ -26,6 +14,6 @@ export class CanvasGradient {
 	}
 
 	public addColorStop(offset: number, color: any): void {
-		this._addColorStop(offset, color);
+		this.native.addColorStop(offset, color);
 	}
 }

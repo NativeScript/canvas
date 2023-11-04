@@ -13,7 +13,7 @@ impl TextEncoder {
         Self { inner: encoder }
     }
 
-    pub fn encode(&mut self, text: &str) -> Vec<u8> {
+    pub fn encode(&self, text: &str) -> Vec<u8> {
         let result = self.inner.encode(text);
         Vec::from(result.0)
     }

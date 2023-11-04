@@ -4,9 +4,8 @@ use jni::JNIEnv;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_core::image_asset::ImageAsset;
-use canvas_cxx::CanvasRenderingContext2D;
-use canvas_cxx::PaintStyle;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_nativeCreatePattern(

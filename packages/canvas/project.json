@@ -21,6 +21,11 @@
 						"output": "./platforms/"
 					},
 					{
+						"glob": "**/*",
+						"input": "packages/canvas/src-native/ios",
+						"output": "./src-native/ios/"
+					},
+					{
 						"glob": "**/*.d.ts",
 						"input": "packages/canvas/Canvas/",
 						"output": "./Canvas/"

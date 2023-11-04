@@ -2,50 +2,39 @@ import { WebGLVertexArrayObject, WebGLQuery } from '../../WebGL2';
 import { WebGLRenderingContext } from '../../WebGL/WebGLRenderingContext';
 
 export class EXT_blend_minmax {
-	MAX_EXT: number;
-	MIN_EXT: number;
-
-	constructor(nativeInstance) {
-		this.MAX_EXT = nativeInstance.MAX_EXT;
-		this.MIN_EXT = nativeInstance.MIN_EXT;
-	}
-}
-
-export class ANGLE_instanced_arrays {
-	VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE: number;
 	private nativeInstance;
-
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.nativeInstance[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
+	get MAX_EXT(): number {
+		return this.nativeInstance.MAX_EXT;
+	}
+	get MIN_EXT(): number {
+		return this.nativeInstance.MIN_EXT;
 	}
 
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
-		this.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE = nativeInstance.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
+	}
+}
+
+export class ANGLE_instanced_arrays {
+	get VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE(): number {
+		return this.nativeInstance.VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE;
+	}
+	private nativeInstance;
+
+	constructor(nativeInstance) {
+		this.nativeInstance = nativeInstance;
 	}
 
 	public drawArraysInstancedANGLE(mode: number, first: number, count: number, primcount: number) {
-		const drawArraysInstancedANGLE = this._getMethod('drawArraysInstancedANGLE');
-		drawArraysInstancedANGLE(mode, first, count, primcount);
+		this.nativeInstance.drawArraysInstancedANGLE(mode, first, count, primcount);
 	}
 
 	public drawElementsInstancedANGLE(mode: number, count: number, type: number, offset: number, primcount: number) {
-		const drawElementsInstancedANGLE = this._getMethod('drawElementsInstancedANGLE');
-		drawElementsInstancedANGLE(mode, count, type, offset, primcount);
+		this.nativeInstance.drawElementsInstancedANGLE(mode, count, type, offset, primcount);
 	}
 
 	public vertexAttribDivisorANGLE(index: number, divisor: number) {
-		const vertexAttribDivisorANGLE = this._getMethod('vertexAttribDivisorANGLE');
-		vertexAttribDivisorANGLE(index, divisor);
+		this.nativeInstance.vertexAttribDivisorANGLE(index, divisor);
 	}
 }
 
@@ -164,45 +153,28 @@ export class OES_vertex_array_object {
 	VERTEX_ARRAY_BINDING_OES;
 	private nativeInstance;
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.nativeInstance[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.VERTEX_ARRAY_BINDING_OES = nativeInstance.VERTEX_ARRAY_BINDING_OES;
 	}
 
 	createVertexArrayOES(): WebGLVertexArrayObject {
-		const createVertexArrayOES = this._getMethod('createVertexArrayOES');
-		return new WebGLVertexArrayObject(createVertexArrayOES());
+		return new WebGLVertexArrayObject(this.nativeInstance.createVertexArrayOES());
 	}
 
 	deleteVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
-		const deleteVertexArrayOES = this._getMethod('deleteVertexArrayOES');
 		const value = arrayObject ? arrayObject.native : 0;
-		deleteVertexArrayOES(value);
+		this.nativeInstance.deleteVertexArrayOES(value);
 	}
 
 	isVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
-		const isVertexArrayOES = this._getMethod('isVertexArrayOES');
 		const value = arrayObject ? arrayObject.native : 0;
-		return isVertexArrayOES(value);
+		return this.nativeInstance.isVertexArrayOES(value);
 	}
 
 	bindVertexArrayOES(arrayObject: WebGLVertexArrayObject) {
-		const bindVertexArrayOES = this._getMethod('bindVertexArrayOES');
 		const value = arrayObject ? arrayObject.native : null;
-		bindVertexArrayOES(value);
+		this.nativeInstance.bindVertexArrayOES(value);
 	}
 }
 
@@ -294,31 +266,16 @@ export class WEBGL_depth_texture {
 export class WEBGL_lose_context {
 	private nativeInstance: any;
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.nativeInstance[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 	}
 
 	public loseContext() {
-		const loseContext = this._getMethod('loseContext');
-		loseContext();
+		this.nativeInstance.loseContext();
 	}
 
 	public restoreContext() {
-		const restoreContext = this._getMethod('restoreContext');
-		restoreContext();
+		this.nativeInstance.restoreContext();
 	}
 }
 
@@ -332,19 +289,6 @@ export class EXT_disjoint_timer_query {
 	GPU_DISJOINT_EXT;
 	private nativeInstance: any;
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.nativeInstance[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.QUERY_COUNTER_BITS_EXT = nativeInstance.QUERY_COUNTER_BITS_EXT;
@@ -357,31 +301,26 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public createQueryEXT(): WebGLQuery {
-		const createQueryEXT = this._getMethod('createQueryEXT');
-		return new WebGLQuery(createQueryEXT());
+		return new WebGLQuery(this.nativeInstance.createQueryEXT());
 	}
 
 	public deleteQueryEXT(query: WebGLQuery) {
-		const deleteQueryEXT = this._getMethod('deleteQueryEXT');
 		const value = query ? query.native : 0;
-		deleteQueryEXT(value);
+		this.nativeInstance.deleteQueryEXT(value);
 	}
 
 	public isQueryEXT(query: WebGLQuery): boolean {
-		const isQueryEXT = this._getMethod('isQueryEXT');
 		const value = query ? query.native : 0;
-		return isQueryEXT(value);
+		return this.nativeInstance.isQueryEXT(value);
 	}
 
 	public beginQueryEXT(target: number, query: WebGLQuery) {
-		const beginQueryEXT = this._getMethod('beginQueryEXT');
 		const value = query ? query.native : null;
-		beginQueryEXT(target, value);
+		this.nativeInstance.beginQueryEXT(target, value);
 	}
 
 	public endQueryEXT(target: number) {
-		const endQueryEXT = this._getMethod('endQueryEXT');
-		endQueryEXT(target);
+		this.nativeInstance.endQueryEXT(target);
 	}
 
 	public queryCounterEXT(query: WebGLQuery, target: number) {
@@ -391,8 +330,7 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public getQueryEXT(target: number, pname: number) {
-		const getQueryEXT = this._getMethod('getQueryEXT');
-		const value = getQueryEXT(target, pname);
+		const value = this.nativeInstance.getQueryEXT(target, pname);
 		if (!!value) {
 			return null;
 		}
@@ -405,9 +343,8 @@ export class EXT_disjoint_timer_query {
 	}
 
 	public getQueryObjectEXT(query: WebGLQuery, pname: number) {
-		const getQueryObjectEXT = this._getMethod('getQueryObjectEXT');
 		const id = query ? query.native : 0;
-		const value = getQueryObjectEXT(id, pname);
+		const value = this.nativeInstance.getQueryObjectEXT(id, pname);
 		return value;
 	}
 }
@@ -493,7 +430,6 @@ export class WEBGL_draw_buffers {
 
 	private nativeInstance: any;
 
-	_drawBuffersWEBGL;
 	constructor(nativeInstance) {
 		this.nativeInstance = nativeInstance;
 		this.COLOR_ATTACHMENT0_WEBGL = nativeInstance.COLOR_ATTACHMENT0_EXT;
@@ -530,10 +466,9 @@ export class WEBGL_draw_buffers {
 		this.DRAW_BUFFER15_WEBGL = nativeInstance.DRAW_BUFFER15_EXT;
 		this.MAX_COLOR_ATTACHMENTS_WEBGL = nativeInstance.MAX_COLOR_ATTACHMENTS_EXT;
 		this.MAX_DRAW_BUFFERS_WEBGL = nativeInstance.MAX_DRAW_BUFFERS_EXT;
-		this._drawBuffersWEBGL = nativeInstance.drawBuffersWEBGL;
 	}
 
 	public drawBuffersWEBGL(buffers: number[]) {
-		this._drawBuffersWEBGL(buffers);
+		this.nativeInstance.drawBuffersWEBGL(buffers);
 	}
 }

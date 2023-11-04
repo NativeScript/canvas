@@ -5,28 +5,16 @@ let ctor;
 export class TextDecoder {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.TextDecoder;
+		ctor = global.CanvasModule.TextDecoder;
 	}
 
 	_native;
 	get native() {
 		return this._native;
 	}
-	_decode;
-
-	_getMethod(name: string) {
-		if (this._decode === undefined) {
-			const ret = this.native[name];
-			this._decode = ret;
-			return ret;
-		}
-
-		return this._decode;
-	}
 
 	constructor(encoding: string = 'utf-8') {
-		this._native = ctor(encoding);
-		this._getMethod('decode');
+		this._native = new ctor(encoding);
 	}
 
 	get encoding(): string {
@@ -39,7 +27,7 @@ export class TextDecoder {
 			if (buffer.byteLength === 0) {
 				return '';
 			}
-			return this._decode(buffer);
+			return this.native.decode(buffer);
 		} else {
 			return '';
 		}

@@ -4,8 +4,8 @@ let LAF;
 
 export function colorRain(canvas) {
 	//initial
-	var w = canvas.getMeasuredWidth(),
-		h = canvas.getMeasuredHeight(),
+	var w = canvas.width,
+		h = canvas.height,
 		ctx = canvas.getContext('2d'),
 		//parameters
 		total = w / 2,

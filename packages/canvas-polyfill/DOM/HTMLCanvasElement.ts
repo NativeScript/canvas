@@ -50,4 +50,8 @@ export class HTMLCanvasElement extends Element {
 	getContext(contextType, contextOptions) {
 		return this._canvas.getContext(contextType, contextOptions);
 	}
+
+	setPointerCapture(id) {}
+
+	releasePointerCapture(id) {}
 }

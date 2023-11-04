@@ -4,25 +4,34 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
-#include "VecMutableBuffer.h"
 #include <vector>
+#include "Common.h"
 
-using namespace facebook;
-using namespace org::nativescript::canvas;
 
-class JSI_EXPORT TextEncoderImpl : public jsi::HostObject {
+class TextEncoderImpl {
 
 public:
-    TextEncoderImpl(rust::Box<TextEncoder> encoder);
+    TextEncoderImpl(TextEncoder* encoder);
+    ~TextEncoderImpl() {
+        canvas_native_text_encoder_destroy(this->GetTextEncoder());
+        this->encoder_ = nullptr;
+    }
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+    TextEncoder* GetTextEncoder();
 
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
+    static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
-    TextEncoder &GetTextEncoder();
+    static TextEncoderImpl *GetPointer(v8::Local<v8::Object> object);
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void Ctor(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Encode(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
-    rust::Box<TextEncoder> encoder_;
+    TextEncoder* encoder_;
 };

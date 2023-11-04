@@ -39,8 +39,8 @@ function init(canvas) {
 
 	const { drawingBufferWidth, drawingBufferHeight } = context;
 
-	SCREEN_WIDTH = drawingBufferWidth;
-	SCREEN_HEIGHT = drawingBufferHeight;
+	SCREEN_WIDTH = canvas.width; //drawingBufferWidth;
+	SCREEN_HEIGHT = canvas.height; //drawingBufferHeight;
 	// container = document.createElement('div');
 	// document.body.appendChild(container);
 

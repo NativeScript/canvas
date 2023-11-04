@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use lazy_static::lazy_static;
-
+// https://github.com/Clafou/DevicePpi/blob/master/Sources/DevicePpi/Ppi.swift
 lazy_static! {
     static ref IPHONE_NAME_TO_PPI: HashMap<Vec<&'static str>, i32> = {
             [
@@ -16,6 +16,20 @@ lazy_static! {
             ),
                 (
                     vec![
+                     // iPhone 15
+                "iPhone15,4",
+                // iPhone 15 Plus
+                "iPhone15,5",
+                // iPhone 15 Pro
+                "iPhone16,1",
+                // iPhone 15 Pro Max
+                "iPhone16,2",
+                // iPhone 14
+                "iPhone14,7",
+                // iPhone 14 Pro
+                "iPhone15,2",
+                // iPhone 14 Pro Max
+                "iPhone15,3",
                         // iPhone 13
                         "iPhone14,5",
                         // iPhone 13 Pro
@@ -29,6 +43,8 @@ lazy_static! {
                 ),
                 (
                     vec![
+                       // iPhone 14 Plus
+                "iPhone14,8",
                      // iPhone 13 Pro Max
                     "iPhone14,3",
                     // iPhone 12 Pro Max
@@ -110,6 +126,16 @@ lazy_static! {
                 ),
                 (
                     vec![
+                    // iPad (10th generation)
+                "iPad13,18", "iPad13,19",
+                // iPad Pro (11″, 4th generation)
+                "iPad14,3", "iPad14,4",
+                "iPad14,3-A", "iPad14,3-B", "iPad14,4-A", "iPad14,4-B",
+                // iPad Pro (12.9″, 6th generation)
+                "iPad14,5", "iPad14,6",
+                "iPad14,5-A", "iPad14,5-B", "iPad14,6-A", "iPad14,6-B",
+                // iPad Air (5th generation)
+                "iPad13,16", "iPad13,17",
                           // iPad (9th generation)
                 "iPad12,1", "iPad12,2",
                 // iPad Pro (12.9″, 5th generation)

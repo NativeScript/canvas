@@ -1,2 +1,31 @@
 @import 'nativescript-theme-core/scss/light';
-  @import 'nativescript-theme-core/scss/index';
+@import 'nativescript-theme-core/scss/index';
+
+.gameover {
+	font-weight: bold;
+	text-transform: uppercase;
+	font-size: 40;
+	//transform: translate(-100%, -100%);
+	opacity: 0;
+	transition: all 500ms ease-in-out;
+	text-align: center;
+	color: #ffc5a2;
+	&.show {
+		opacity: 1;
+		transform: translate(0%, 0%);
+		transition: all 500ms ease-in-out;
+	}
+}
+
+
+.distanceTitle {
+  text-transform:uppercase;
+  color:#ffa873;//100707;
+  font-size:12px;
+  letter-spacing:0.1px;
+  text-align:center;
+}
+
+.distanceValue {
+  font-size:40px;
+}

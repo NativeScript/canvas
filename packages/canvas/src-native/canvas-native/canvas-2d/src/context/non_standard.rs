@@ -64,7 +64,7 @@ impl TryFrom<&str> for PointMode {
 impl Context {
     pub fn draw_paint(&mut self, color: &str) {
         if let Some(color) = color::parse_color(color) {
-            let mut paint = skia_safe::Paint::default();
+            let mut paint = Paint::default();
             paint.set_anti_alias(true);
             paint.set_color(color);
             self.surface.canvas().draw_paint(&paint);

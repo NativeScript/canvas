@@ -1,9 +1,9 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty, upscaleProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils } from '@nativescript/core';
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
 }
@@ -41,31 +41,35 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 
-	_methodCache = new Map();
-
-	_getMethod(name: string) {
-		if (this.__native__context === undefined) {
-			return undefined;
-		}
-		const cached = this._methodCache.get(name);
-		if (cached === undefined) {
-			const ret = this.__native__context[name];
-			this._methodCache.set(name, ret);
-			return ret;
-		}
-
-		return cached;
-	}
-
 	constructor() {
 		super();
-		const activity = Application.android.foregroundActivity || Application.android.startActivity;
+		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 		(global as any).__canvasLoaded = true;
+		const ref = new WeakRef(this);
+		this._canvas.setTouchEventListener(
+			new org.nativescript.canvas.NSCCanvas.TouchEvents({
+				onEvent(event: string, nativeEvent: android.view.MotionEvent) {
+					const owner = ref.get();
+					if (!owner) {
+						return;
+					}
+					owner._handleEvents(event);
+				},
+			})
+		);
+	}
+
+	[upscaleProperty.setNative](value: boolean) {
+		this._canvas.setUpscale(value);
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.setIgnorePixelScaling(value);
+	}
+
+	[ignoreTouchEventsProperty.setNative](value: boolean) {
+		this._canvas.setIgnoreTouchEvents = value;
 	}
 
 	// @ts-ignore
@@ -98,18 +102,18 @@ export class Canvas extends CanvasBase {
 	}
 
 	// @ts-ignore
-	get width() {
+	get width(): any {
 		if (this.getMeasuredWidth() > 0) {
-			return this.getMeasuredWidth();
+			return this.getMeasuredWidth() / Screen.mainScreen.scale;
 		}
 		const width = this._canvas.getWidth();
 		if (width === 0) {
 			let rootParams = this._canvas.getLayoutParams();
 			if (rootParams) {
-				return rootParams.width;
+				return rootParams.width / Screen.mainScreen.scale;
 			}
 		}
-		return width;
+		return width / Screen.mainScreen.scale;
 	}
 
 	set width(value) {
@@ -119,18 +123,18 @@ export class Canvas extends CanvasBase {
 	}
 
 	// @ts-ignore
-	get height() {
+	get height(): any {
 		if (this.getMeasuredHeight() > 0) {
-			return this.getMeasuredHeight();
+			return this.getMeasuredHeight() / Screen.mainScreen.scale;
 		}
 		const height = this._canvas.getHeight();
 		if (height === 0) {
 			let rootParams = this._canvas.getLayoutParams();
 			if (rootParams) {
-				return rootParams.height;
+				return rootParams.height / Screen.mainScreen.scale;
 			}
 		}
-		return height;
+		return height / Screen.mainScreen.scale;
 	}
 
 	set height(value) {
@@ -164,12 +168,38 @@ export class Canvas extends CanvasBase {
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
 					get: function () {
-						return parent.getMeasuredWidth();
+						return parent.getMeasuredWidth() / Screen.mainScreen.scale;
 					},
 				});
 				Object.defineProperty(parent, 'clientHeight', {
 					get: function () {
-						return parent.getMeasuredHeight();
+						return parent.getMeasuredHeight() / Screen.mainScreen.scale;
+					},
+				});
+			}
+			if (parent && typeof parent.getBoundingClientRect !== 'function') {
+				parent.getBoundingClientRect = function () {
+					const view = this;
+					const nativeView = view.android;
+					const width = this.width;
+					const height = this.height;
+					return {
+						bottom: nativeView.getBottom() / Screen.mainScreen.scale,
+						height: height,
+						left: nativeView.getLeft() / Screen.mainScreen.scale,
+						right: nativeView.getRight() / Screen.mainScreen.scale,
+						top: nativeView.getTop() / Screen.mainScreen.scale,
+						width: width,
+						x: nativeView.getX() / Screen.mainScreen.scale,
+						y: nativeView.getY() / Screen.mainScreen.scale,
+					};
+				};
+			}
+
+			if (parent && parent.ownerDocument === undefined) {
+				Object.defineProperty(parent, 'ownerDocument', {
+					get: function () {
+						return window?.document ?? doc;
 					},
 				});
 			}
@@ -222,13 +252,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		const toDataURL = this._getMethod('__toDataURL');
-
-		if (toDataURL === undefined) {
-			return 'data:,';
-		}
-
-		return toDataURL(type, encoderOptions);
+		return this.native.__toDataURL(type, encoderOptions);
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {
@@ -295,18 +319,10 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					this._layoutNative();
-					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
-
-					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
-
-					//	this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.desynchronized, opts.xrCompatible);
+					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
-
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-
-					//this._2dContext = new (CanvasRenderingContext2D as any)(this._canvas, opts);
-
 					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
 					// @ts-ignore
@@ -322,10 +338,8 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
-
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
-
+					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';
@@ -339,9 +353,9 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webgl2Context) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
-					this._canvas.initContext(type, opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;
@@ -369,14 +383,14 @@ export class Canvas extends CanvasBase {
 		const width = this.width;
 		const height = this.height;
 		return {
-			bottom: nativeView.getBottom(),
+			bottom: nativeView.getBottom() / Screen.mainScreen.scale,
 			height: height,
-			left: nativeView.getLeft(),
-			right: nativeView.getRight(),
-			top: nativeView.getTop(),
+			left: nativeView.getLeft() / Screen.mainScreen.scale,
+			right: nativeView.getRight() / Screen.mainScreen.scale,
+			top: nativeView.getTop() / Screen.mainScreen.scale,
 			width: width,
-			x: nativeView.getX(),
-			y: nativeView.getY(),
+			x: nativeView.getX() / Screen.mainScreen.scale,
+			y: nativeView.getY() / Screen.mainScreen.scale,
 		};
 	}
 

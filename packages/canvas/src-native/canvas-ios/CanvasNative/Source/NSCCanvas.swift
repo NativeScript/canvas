@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 import GLKit
-
+import WebKit
 
 @objcMembers
 @objc(NSCCanvas)
@@ -96,7 +96,6 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
-    
     @objc public func initContext(
         _ type: String,
         _ alpha: Bool = true,
@@ -178,7 +177,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             isOpaque = false
             (glkView.layer as! CAEAGLLayer).isOpaque = false
         }else {
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
             isOpaque = true
             (glkView.layer as! CAEAGLLayer).isOpaque = true
         }
@@ -327,25 +326,46 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
+    private var handler: NSCTouchHandler?
+    
+    public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
+    
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
     }
-    
     
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
         super.init(frame: frame)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
+    }
+    
+    var ignoreTouchEvents = false {
+        didSet {
+            if(ignoreTouchEvents){
+                removeGestureRecognizer(handler!.gestureRecognizer!)
+                removeGestureRecognizer(handler!.pinchRecognizer!)
+            }else {
+                addGestureRecognizer(handler!.gestureRecognizer!)
+                addGestureRecognizer(handler!.pinchRecognizer!)
+            }
+        }
     }
     
     

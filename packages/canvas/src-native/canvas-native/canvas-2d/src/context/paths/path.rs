@@ -169,7 +169,6 @@ impl Path {
     }
 
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
-        self.scoot(x1, y1);
         self.path
             .arc_to_tangent(Point::new(x1, y1), Point::new(x2, y2), radius);
     }
@@ -184,7 +183,6 @@ impl Path {
     }
 
     pub fn line_to(&mut self, x: c_float, y: c_float) {
-        self.scoot(x, y);
         self.path.line_to(Point::new(x, y));
     }
 
@@ -201,7 +199,6 @@ impl Path {
         x: c_float,
         y: c_float,
     ) {
-        self.scoot(x, y);
         self.path.cubic_to(
             Point::new(cp1x, cp1y),
             Point::new(cp2x, cp2y),
@@ -210,7 +207,6 @@ impl Path {
     }
 
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
-        self.scoot(x, y);
         self.path.quad_to(Point::new(cpx, cpy), Point::new(x, y));
     }
 

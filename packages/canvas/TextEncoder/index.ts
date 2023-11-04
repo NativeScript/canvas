@@ -5,28 +5,16 @@ let ctor;
 export class TextEncoder {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.TextEncoder;
+		ctor = global.CanvasModule.TextEncoder;
 	}
 
 	_native;
 	get native() {
 		return this._native;
 	}
-	_encode;
-
-	_getMethod(name: string) {
-		if (this._encode === undefined) {
-			const ret = this.native[name];
-			this._encode = ret;
-			return ret;
-		}
-
-		return this._encode;
-	}
 
 	constructor(encoding: string = 'utf8') {
-		this._native = ctor(encoding);
-		this._getMethod('encode');
+		this._native = new ctor(encoding);
 	}
 
 	get encoding(): string {
@@ -38,8 +26,8 @@ export class TextEncoder {
 		if (text === undefined) {
 			return new Uint8Array(0);
 		} else if (text === null) {
-			text = this._encode('null');
+			text = this.native.encode('null');
 		}
-		return this._encode(text);
+		return this.native.encode(text);
 	}
 }

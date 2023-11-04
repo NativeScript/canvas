@@ -63,5 +63,4 @@ Application.on('launch', (args) => {
 		monitor.deviceVersionHidden = true;
 	}
 });
-
 Application.run({ moduleName: 'app-root' });

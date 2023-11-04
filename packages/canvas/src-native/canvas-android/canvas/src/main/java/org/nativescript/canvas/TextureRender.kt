@@ -128,11 +128,15 @@ class TextureRender {
 		GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0)
 
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, previousTexture[0])
-
-
 	}
 
 	companion object {
+		@JvmStatic
+		fun updateTexImageAndGetTransformMatrix(surfaceTexture: SurfaceTexture, matrix: FloatArray) {
+			surfaceTexture.updateTexImage()
+			surfaceTexture.getTransformMatrix(matrix)
+		}
+
 		@JvmStatic
 		private external fun nativeDrawFrame(
 			surfaceTexture: SurfaceTexture,

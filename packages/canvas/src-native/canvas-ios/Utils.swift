@@ -41,4 +41,45 @@ public class Utils: NSObject {
         render.drawFrame(buffer: pixel_buffer, width: Int(videoSize.width), height: Int(videoSize.height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
     }
     
+    
+    private static func getParent(_ path: String) -> String {
+        let fileManager = FileManager.default
+        let nsString = NSString(string: path)
+        let parentPath = nsString.deletingLastPathComponent
+        let name = fileManager.displayName(atPath: parentPath)
+        return parentPath
+    }
+    
+    enum TNSError: Error {
+        case customError(String)
+    }
+    
+    private static func getFile(_ path: String) throws -> String {
+        let fileManager = FileManager.default
+        let exists = fileManager.fileExists(atPath: path)
+        if (!exists) {
+            let parentPath = getParent(path)
+            var failed = false
+            
+            do {
+                try fileManager.createDirectory(atPath: parentPath, withIntermediateDirectories: true)
+            }catch {
+                failed = true
+            }
+            
+            
+            if(failed && !fileManager.createFile(atPath: path, contents: nil, attributes: nil)){
+                throw TNSError.customError("Failed to create file at path '" + path + "'")
+            }
+        }
+        
+        return path;
+    }
+    
+    
+    @objc public static func writeToFile(_ data: NSData, _ path: String) throws {
+        let newPath = try getFile(path)
+        data.write(to: URL(fileURLWithPath: newPath), atomically: true)
+    }
+    
 }

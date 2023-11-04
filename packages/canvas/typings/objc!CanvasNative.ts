@@ -196,6 +196,7 @@ declare var ICanvasColorStyle: {
 	prototype: ICanvasColorStyle;
 };
 
+// @ts-ignore
 declare const enum ImageSmoothingQuality {
 
 	Low = 0,
@@ -280,6 +281,8 @@ declare class TNSCanvas extends UIView {
 
 	static getViews(): NSMapTable<string, TNSCanvas>;
 
+	static layoutView(view: UIView, width: number, height: number): void;
+
 	static new(): TNSCanvas; // inherited from NSObject
 
 	context: number;
@@ -306,7 +309,11 @@ declare class TNSCanvas extends UIView {
 
 	getContext(type: string): TNSCanvasRenderingContext;
 
-	getContextContextAttributes(type: string, contextAttributes: NSDictionary<any, any>): TNSCanvasRenderingContext;
+	getContextContextAttributes(type: string, contextAttributes: NSDictionary<string, any>): TNSCanvasRenderingContext;
+
+	getContextWithTypeAttributes(type: string, attributes: string): TNSCanvasRenderingContext;
+
+	getContextWithTypeContextAttributes(type: string, contextAttributes: TNSContextAttributes): TNSCanvasRenderingContext;
 
 	getId(): number;
 
@@ -329,6 +336,8 @@ declare class TNSCanvas extends UIView {
 	setListener(listener: TNSCanvasListener): void;
 
 	snapshot(): NSArray<number>;
+
+	snapshotEncoded(): NSArray<number>;
 
 	toDataURL(): string;
 
@@ -413,9 +422,11 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	clearRect(x: number, y: number, width: number, height: number): void;
 
-	clip(): void;
+	clip(path: TNSPath2D, rule: TNSFillRule): void;
 
 	closePath(): void;
+
+	createConicGradient(startAngle: number, x: number, y: number): TNSConicGradient;
 
 	createImageData(imageData: TNSImageData): TNSImageData;
 
@@ -443,11 +454,12 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	getLineDash(): NSArray<number>;
 
+	// @ts-ignore
 	init(canvas: TNSCanvas): this;
 
-	isPointInPath(x: number, y: number): boolean;
+	isPointInPath(path: TNSPath2D, x: number, y: number, fillRule: TNSFillRule): boolean;
 
-	isPointInStroke(x: number, y: number): boolean;
+	isPointInStroke(path: TNSPath2D, x: number, y: number): boolean;
 
 	lineTo(x: number, y: number): void;
 
@@ -467,15 +479,25 @@ declare class TNSCanvasRenderingContext2D extends TNSCanvasRenderingContext {
 
 	rotate(angle: number): void;
 
+	roundRect(x: number, y: number, width: number, height: number, radii: NSArray<number> | number[]): void;
+
+	roundRectWithXYWidthHeightRadii(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRectWithXYWidthHeightTopLeftTopRightBottomRightBottomLeft(x: number, y: number, width: number, height: number, topLeft: number, topRight: number, bottomRight: number, bottomLeft: number): void;
+
 	save(): void;
 
 	scale(x: number, y: number): void;
 
+	setFillStyleWithString(color: string): void;
+
 	setLineDash(segments: NSArray<number> | number[]): void;
+
+	setStrokeStyleWithString(color: string): void;
 
 	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
 
-	stroke(path: TNSPath2D): void;
+	stroke(): void;
 
 	strokeRect(x: number, y: number, width: number, height: number): void;
 
@@ -498,6 +520,7 @@ declare class TNSColor extends NSObject implements ICanvasColorStyle {
 
 	getStyleType(): CanvasColorStyleType;
 
+	// @ts-ignore
 	init(color: string): this;
 }
 
@@ -561,6 +584,20 @@ declare const enum TNSCompositeOperationType {
 	Color = 24,
 
 	Luminosity = 25
+}
+
+declare class TNSConicGradient extends TNSGradient {
+
+	static alloc(): TNSConicGradient; // inherited from NSObject
+
+	static new(): TNSConicGradient; // inherited from NSObject
+}
+
+declare class TNSContextAttributes extends NSObject {
+
+	static alloc(): TNSContextAttributes; // inherited from NSObject
+
+	static new(): TNSContextAttributes; // inherited from NSObject
 }
 
 declare class TNSDOMMatrix extends NSObject {
@@ -670,6 +707,10 @@ declare class TNSImageAsset extends NSObject {
 	flipY(): void;
 
 	getRawBytes(): string;
+
+	loadImageFromBuffer(buffer: NSData): boolean;
+
+	loadImageFromBufferAsyncCallback(buffer: NSData, callback: (p1: string) => void): void;
 
 	loadImageFromBytesAsyncWithArrayCallback(array: NSArray<number> | number[], callback: (p1: string) => void): void;
 
@@ -875,6 +916,12 @@ declare class TNSPath2D extends NSObject {
 	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
 
 	rect(x: number, y: number, width: number, height: number): void;
+
+	roundRect(x: number, y: number, width: number, height: number, topLeft: number, topRight: number, bottomRight: number, bottomLeft: number): void;
+
+	roundRectWithRadii(x: number, y: number, width: number, height: number, radii: number): void;
+
+	roundRectWithXYWidthHeightRadii(x: number, y: number, width: number, height: number, radii: NSArray<number> | number[]): void;
 }
 
 declare class TNSPattern extends NSObject implements ICanvasColorStyle {
@@ -938,6 +985,10 @@ declare class TNSSVG extends UIView {
 	src: string;
 
 	srcPath: string;
+
+	toData(): NSData;
+
+	toImage(): UIImage;
 }
 
 declare const enum TNSTextAlignment {
@@ -2698,6 +2749,7 @@ declare class TNSWebGLRenderingContext extends TNSCanvasRenderingContext {
 
 	hint(target: number, mode: number): void;
 
+	// @ts-ignore
 	init(canvas: TNSCanvas): this;
 
 	isBuffer(buffer: number): boolean;
@@ -3328,6 +3380,8 @@ declare function context_clip_rule(context: number, rule: FillRule): void;
 
 declare function context_close_path(context: number): void;
 
+declare function context_create_conic_gradient(context: number, start_angle: number, x: number, y: number): number;
+
 declare function context_create_image_data(width: number, height: number): number;
 
 declare function context_create_linear_gradient(context: number, x0: number, y0: number, x1: number, y1: number): number;
@@ -3448,6 +3502,8 @@ declare function context_restore(context: number): void;
 
 declare function context_rotate(context: number, angle: number): void;
 
+declare function context_round_rect(context: number, x: number, y: number, width: number, height: number, top_left: number, top_right: number, bottom_right: number, bottom_left: number): void;
+
 declare function context_save(context: number): void;
 
 declare function context_scale(context: number, x: number, y: number): void;
@@ -3501,6 +3557,8 @@ declare function context_set_transform(context: number, a: number, b: number, c:
 declare function context_set_transform_matrix(context: number, matrix: number): void;
 
 declare function context_snapshot_canvas(context: number): interop.Pointer | interop.Reference<U8Array>;
+
+declare function context_snapshot_canvas_encoded(context: number): interop.Pointer | interop.Reference<U8Array>;
 
 declare function context_stroke(context: number, path: number): void;
 
@@ -3598,25 +3656,9 @@ declare function gradient_add_color_stop(style: number, stop: number, color: str
 
 declare function image_asset_create(): number;
 
-declare function image_asset_flip_x(asset: number): boolean;
-
-declare function image_asset_flip_x_in_place(asset: number): boolean;
-
-declare function image_asset_flip_x_in_place_owned(buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
-
-declare function image_asset_flip_y(asset: number): boolean;
-
-declare function image_asset_flip_y_in_place(asset: number): boolean;
-
-declare function image_asset_flip_y_in_place_owned(buf: string | interop.Pointer | interop.Reference<any>, length: number): void;
-
 declare function image_asset_get_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
 
 declare function image_asset_get_error(asset: number): string;
-
-declare function image_asset_get_rgb_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
-
-declare function image_asset_get_rgba_bytes(asset: number): interop.Pointer | interop.Reference<U8Array>;
 
 declare function image_asset_has_error(asset: number): boolean;
 
@@ -3799,6 +3841,8 @@ declare function path_move_to(path: number, x: number, y: number): void;
 declare function path_quadratic_curve_to(path: number, cpx: number, cpy: number, x: number, y: number): void;
 
 declare function path_rect(path: number, x: number, y: number, width: number, height: number): void;
+
+declare function path_round_rect(path: number, x: number, y: number, width: number, height: number, top_left: number, top_right: number, bottom_right: number, bottom_left: number): void;
 
 declare function pattern_set_transform(pattern: number, matrix: number): void;
 

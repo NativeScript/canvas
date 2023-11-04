@@ -1,7 +1,7 @@
 import {DemoSharedBase} from '../utils';
 import {Screen, Utils} from "@nativescript/core";
 import {func, images} from "./games/utils";
-
+//import { canvasLoaded } from './games/monster-wants-candy/mwc';
 declare let Phaser: any, UIDevice;
 
 interface AccelerometerData {
@@ -324,6 +324,8 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		});
 
 	}
+
+	mwc(){}
 
 }
 
@@ -693,7 +695,7 @@ export class Playable {
 		const {world} = game;
 		const {height} = world;
 
-		console.log("Loop");
+		//console.log("Loop");
 		this.aliens.y += height * 0.0166666667;
 	}
 

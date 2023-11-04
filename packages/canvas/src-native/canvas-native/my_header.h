@@ -482,6 +482,11 @@ struct PaintStyle *canvas_native_context_create_linear_gradient(struct CanvasRen
                                                                 float x1,
                                                                 float y1);
 
+struct PaintStyle *canvas_native_context_create_conic_gradient(struct CanvasRenderingContext2D *context,
+                                                               float start_angle,
+                                                               float x,
+                                                               float y);
+
 struct PaintStyle *canvas_native_context_create_pattern(struct CanvasRenderingContext2D *context,
                                                         const uint8_t *data,
                                                         uintptr_t size,
@@ -1116,7 +1121,7 @@ struct U8Buffer *canvas_native_text_decoder_decode_as_bytes(const struct TextDec
                                                             uintptr_t size);
 
 const char *canvas_native_text_decoder_decode_c_string(const struct TextDecoder *decoder,
-                                                       const int8_t *data);
+                                                       const char *data);
 
 const char *canvas_native_text_decoder_get_encoding(const struct TextDecoder *decoder);
 

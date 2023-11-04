@@ -49,6 +49,7 @@ import {
 	shadowOffsetX,
 	strokeStyle,
 	circle_demo,
+	createConicGradient,
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
@@ -552,7 +553,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-		circle_demo(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -612,6 +613,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
+		createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');

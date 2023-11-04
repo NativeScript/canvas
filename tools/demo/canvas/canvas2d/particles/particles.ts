@@ -128,13 +128,11 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	// Click listener
 	if (!nativeCanvas) {
 		canvas.parent.on(GestureTypes.tap as any, (args) => {});
-		canvas.addEventListener('touchstart', (args) => {
-			const touches = args.changedTouches;
-			if (Array.isArray(touches)) {
-				const first = touches[0];
-				cleanUpArray();
-				initParticles(first.clientX, first.clientY);
-			}
+		canvas.addEventListener('touchstart', (args: TouchEvent) => {
+			const touches = args.touches.item(0);
+			const first = touches;
+			cleanUpArray();
+			initParticles(first.clientX, first.clientY);
 		});
 
 		canvas.addEventListener('touchmove', (args) => {

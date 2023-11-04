@@ -438,6 +438,8 @@ SWIFT_CLASS_NAMED("NSCSVG")
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (void)drawRect:(CGRect)rect;
+- (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
+- (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
 @end
 
 @class AVPlayer;
@@ -449,6 +451,7 @@ SWIFT_CLASS_NAMED("Utils")
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
 + (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
 + (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

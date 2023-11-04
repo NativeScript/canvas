@@ -1559,6 +1559,23 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
     ))))
 }
 
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_create_conic_gradient(
+    context: *mut CanvasRenderingContext2D,
+    start_angle: f32,
+    x: f32,
+    y: f32,
+) -> *mut PaintStyle {
+    assert!(!context.is_null());
+    let context = unsafe { &mut *context };
+    Box::into_raw(Box::new(PaintStyle(Some(
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
+            context.get_context().create_conic_gradient(start_angle, x, y)
+        ),
+    ))))
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern(
     context: *mut CanvasRenderingContext2D,

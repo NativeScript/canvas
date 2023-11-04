@@ -369,6 +369,10 @@ export class CanvasRenderingContext2D {
 		return CanvasGradient.fromNative(this.context.createRadialGradient(x0, y0, r0, x1, y1, r1));
 	}
 
+	createConicGradient(startAngle: number, x: number, y: number) {
+		return CanvasGradient.fromNative(this.context.createConicGradient(startAngle, x, y));
+	}
+
 	drawPaint(color: string) {
 		this.context.drawPaint(color);
 	}
@@ -432,7 +436,6 @@ export class CanvasRenderingContext2D {
 				this.context.__makeDirty();
 			}
 		};
-		
 
 		let image = args[0];
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {

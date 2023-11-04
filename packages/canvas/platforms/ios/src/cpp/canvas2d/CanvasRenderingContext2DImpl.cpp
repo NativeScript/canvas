@@ -122,6 +122,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &CreatePattern));
     tmpl->Set(ConvertToV8String(isolate, "createLinearGradient"),
               v8::FunctionTemplate::New(isolate, &CreateLinearGradient));
+    tmpl->Set(ConvertToV8String(isolate, "createConicGradient"),
+              v8::FunctionTemplate::New(isolate, &CreateConicGradient));
     tmpl->Set(ConvertToV8String(isolate, "__createPatternWithNative"),
               v8::FunctionTemplate::New(isolate, &__CreatePatternWithNative));
     tmpl->Set(ConvertToV8String(isolate, "createRadialGradient"),
@@ -1294,6 +1296,40 @@ CanvasRenderingContext2DImpl::CreateLinearGradient(
         auto gradient = canvas_native_context_create_linear_gradient(
                 ptr->GetContext(), x0, y0, x1,
                 y1);
+
+        auto data = CanvasGradient::NewInstance(isolate, new CanvasGradient(
+                gradient));
+
+        args.GetReturnValue().Set(data);
+
+        return;
+    }
+
+    args.GetReturnValue().SetNull();
+}
+
+
+void CanvasRenderingContext2DImpl::CreateConicGradient(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 3) {
+
+        auto startAngle = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+
+
+        auto gradient = canvas_native_context_create_conic_gradient(
+                ptr->GetContext(), startAngle, x, y);
 
         auto data = CanvasGradient::NewInstance(isolate, new CanvasGradient(
                 gradient));

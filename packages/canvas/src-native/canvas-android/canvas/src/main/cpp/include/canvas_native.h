@@ -482,6 +482,11 @@ struct PaintStyle *canvas_native_context_create_linear_gradient(struct CanvasRen
                                                                 float x1,
                                                                 float y1);
 
+struct PaintStyle *canvas_native_context_create_conic_gradient(struct CanvasRenderingContext2D *context,
+                                                               float start_angle,
+                                                               float x,
+                                                               float y);
+
 struct PaintStyle *canvas_native_context_create_pattern(struct CanvasRenderingContext2D *context,
                                                         const uint8_t *data,
                                                         uintptr_t size,

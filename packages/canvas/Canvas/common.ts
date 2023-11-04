@@ -606,15 +606,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			delete this._lastPointerEventById[pointerId];
 		}
 
-		if (this._touchEndCallbacks.size > 0) {
-			const length = this._touches.length;
-			for (var i = 0; i < length; i++) {
-				if (this._touches[i].identifier == ptrId) {
-					this._touches.splice(i, 1);
-					break;
-				}
+		const length = this._touches.length;
+		for (let i = 0; i < length; i++) {
+			if (this._touches[i].identifier == ptrId) {
+				this._touches.splice(i, 1);
+				break;
 			}
+		}
 
+		if (this._touchEndCallbacks.size > 0) {
 			const touches = TouchList.fromList(this._touches);
 
 			const changedTouches = [
@@ -760,13 +760,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				pageX: x,
 				pageY: y,
 			});
-			this._touches.push(touch);
-			this._touchesById[ptrid] = touch;
-			const touches = TouchList.fromList(this._touches);
+			const touchesList = [touch];
+			const touchesById = [];
+			touchesById[ptrid] = touch;
+			const touches = TouchList.fromList(touchesList);
 			const touchEvent = new TouchEvent('touchcancel', {
 				touches,
 				targetTouches: touches,
-				changedTouches: this._touches,
+				changedTouches: touchesList,
 			});
 
 			for (const callback of this._touchCancelCallbacks) {

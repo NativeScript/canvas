@@ -218,6 +218,9 @@ public:
     static void CreateLinearGradient(
             const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void CreateConicGradient(
+            const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void __CreatePatternWithNative(
             const v8::FunctionCallbackInfo<v8::Value> &args);
 

@@ -3474,6 +3474,68 @@
               "AccessControl"
             ],
             "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "toImage",
+            "printedName": "toImage()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "UIKit.UIImage?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "UIImage",
+                    "printedName": "UIKit.UIImage",
+                    "usr": "c:objc(cs)UIImage"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSSVG(im)toImage",
+            "mangledName": "$s12CanvasNative6NSCSVGC7toImageSo7UIImageCSgyF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "toData",
+            "printedName": "toData()",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Optional",
+                "printedName": "Foundation.NSData?",
+                "children": [
+                  {
+                    "kind": "TypeNominal",
+                    "name": "NSData",
+                    "printedName": "Foundation.NSData",
+                    "usr": "c:objc(cs)NSData"
+                  }
+                ],
+                "usr": "s:Sq"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)TNSSVG(im)toData",
+            "mangledName": "$s12CanvasNative6NSCSVGC6toDataSo6NSDataCSgyF",
+            "moduleName": "CanvasNative",
+            "declAttributes": [
+              "Custom",
+              "AccessControl",
+              "ObjC"
+            ],
+            "funcSelfKind": "NonMutating"
           }
         ],
         "declKind": "Class",
@@ -3985,6 +4047,42 @@
               "AccessControl",
               "ObjC"
             ],
+            "funcSelfKind": "NonMutating"
+          },
+          {
+            "kind": "Function",
+            "name": "writeToFile",
+            "printedName": "writeToFile(_:_:)",
+            "children": [
+              {
+                "kind": "TypeNominal",
+                "name": "Void",
+                "printedName": "()"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "NSData",
+                "printedName": "Foundation.NSData",
+                "usr": "c:objc(cs)NSData"
+              },
+              {
+                "kind": "TypeNominal",
+                "name": "String",
+                "printedName": "Swift.String",
+                "usr": "s:SS"
+              }
+            ],
+            "declKind": "Func",
+            "usr": "c:@M@CanvasNative@objc(cs)Utils(cm)writeToFile::error:",
+            "mangledName": "$s12CanvasNative5UtilsC11writeToFileyySo6NSDataC_SStKFZ",
+            "moduleName": "CanvasNative",
+            "static": true,
+            "declAttributes": [
+              "Final",
+              "AccessControl",
+              "ObjC"
+            ],
+            "throwing": true,
             "funcSelfKind": "NonMutating"
           },
           {
@@ -7429,6 +7527,27 @@
       "value": "4"
     },
     {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCSVG.swift",
+      "kind": "IntegerLiteral",
+      "offset": 5218,
+      "length": 1,
+      "value": "0"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCSVG.swift",
+      "kind": "IntegerLiteral",
+      "offset": 5440,
+      "length": 1,
+      "value": "8"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCSVG.swift",
+      "kind": "IntegerLiteral",
+      "offset": 5464,
+      "length": 1,
+      "value": "4"
+    },
+    {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCImageBitmap.swift",
       "kind": "StringLiteral",
       "offset": 233,
@@ -7448,6 +7567,48 @@
       "offset": 242,
       "length": 1,
       "value": "4"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "BooleanLiteral",
+      "offset": 2553,
+      "length": 5,
+      "value": "false"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "BooleanLiteral",
+      "offset": 2686,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "BooleanLiteral",
+      "offset": 2738,
+      "length": 4,
+      "value": "true"
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "StringLiteral",
+      "offset": 2923,
+      "length": 33,
+      "value": "\"Failed to create file at path '\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "StringLiteral",
+      "offset": 2966,
+      "length": 3,
+      "value": "\"'\""
+    },
+    {
+      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "kind": "BooleanLiteral",
+      "offset": 3229,
+      "length": 4,
+      "value": "true"
     },
     {
       "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",

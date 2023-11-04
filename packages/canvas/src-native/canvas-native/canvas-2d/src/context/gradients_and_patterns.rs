@@ -49,7 +49,7 @@ impl Context {
         x: c_float,
         y: c_float,
     ) -> Gradient {
-        let angle = crate::common::utils::geometry::to_degrees(start_angle) - 90.0;
+        let angle = crate::utils::geometry::to_degrees(start_angle) - 90.0;
         Gradient::Conic {
             center: Point::new(x, y),
             angle,

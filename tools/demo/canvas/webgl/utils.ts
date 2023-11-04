@@ -10,7 +10,6 @@ export function createProgramFromScripts(gl, shaderSources) {
         if (element.type === "vertex") {
             // Create the shader object
             const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-
             // Load the shader source
             gl.shaderSource(vertexShader, element.src);
 
@@ -22,6 +21,8 @@ export function createProgramFromScripts(gl, shaderSources) {
                 vertexShader,
                 gl.COMPILE_STATUS
             );
+
+
             if (!compiled) {
                 // Something went wrong during compilation; get the error
                 const lastError = gl.getShaderInfoLog(vertexShader);

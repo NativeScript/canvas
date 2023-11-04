@@ -43,3 +43,4 @@ Thumbs.db
 *.tgz
 packages/**/angular/dist
 apps/demo/times.html
+rust-skia

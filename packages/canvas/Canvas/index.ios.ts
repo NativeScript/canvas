@@ -1,15 +1,35 @@
-import { CanvasBase, ignorePixelScalingProperty, scalingProperty } from './common';
+import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Utils, profile, ImageSource } from '@nativescript/core';
-declare var TNSCanvas, TNSCanvasListener;
+import { ImageSource, Utils, profile, Screen } from '@nativescript/core';
+declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
 
 export function createSVGMatrix(): DOMMatrix {
-	return new DOMMatrix(TNSCanvas.createSVGMatrix());
+	return new DOMMatrix();
+}
+
+const defaultOpts = {
+	alpha: true,
+	antialias: true,
+	depth: true,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
+
+enum ContextType {
+	None,
+	Canvas,
+	WebGL,
+	WebGL2,
 }
 
 export class Canvas extends CanvasBase {
@@ -21,9 +41,15 @@ export class Canvas extends CanvasBase {
 	private _isReady: boolean = false;
 	private _readyListener: any;
 
-	constructor(useCpu = false) {
+	private _contextType = ContextType.None;
+	private _is2D = false;
+
+	_didLayout = false;
+
+	constructor() {
 		super();
-		this._canvas = TNSCanvas.alloc().initWithFrameUseCpu(CGRectZero, useCpu);
+		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
+		this._canvas.userInteractionEnabled = true;
 		const ref = new WeakRef(this);
 		const listener = (NSObject as any).extend(
 			{
@@ -38,19 +64,36 @@ export class Canvas extends CanvasBase {
 				},
 			},
 			{
-				protocols: [TNSCanvasListener],
+				protocols: [NSCCanvasListener],
 			}
 		);
 		this._readyListener = listener.new();
 		this._canvas.setListener(this._readyListener);
+		this._canvas.enterBackgroundListener = () => {
+			if (!this.native) {
+				return;
+			}
+			this.native.__stopRaf();
+		};
+
+		this._canvas.becomeActiveListener = () => {
+			if (!this.native) {
+				return;
+			}
+			this.native.__startRaf();
+		};
+
+		this._canvas.touchEventListener = (event, recognizer) => {
+			this._handleEvents(event);
+		};
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.ignorePixelScaling = value;
 	}
 
-	[scalingProperty.setNative](value: boolean) {
-		this._canvas.scaling = value;
+	[ignoreTouchEventsProperty.setNative](value: boolean) {
+		this._canvas.ignoreTouchEvents = value;
 	}
 
 	// @ts-ignore
@@ -69,33 +112,31 @@ export class Canvas extends CanvasBase {
 	//@ts-ignore
 	get width() {
 		const measuredWidth = this.getMeasuredWidth();
-		if (measuredWidth > 0) {
-			return measuredWidth;
+		if (measuredWidth !== 0) {
+			return measuredWidth / Screen.mainScreen.scale;
 		}
 		return this._realSize.width;
 	}
 
 	set width(value) {
 		this.style.width = value;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._didLayout = false;
+		this._layoutNative();
 	}
 
 	//@ts-ignore
 	get height() {
 		const measuredHeight = this.getMeasuredHeight();
-		if (measuredHeight > 0) {
-			return measuredHeight;
+		if (measuredHeight !== 0) {
+			return measuredHeight / Screen.mainScreen.scale;
 		}
 		return this._realSize.height;
 	}
 
 	set height(value) {
 		this.style.height = value;
-		if (this._isCustom) {
-			this._layoutNative();
-		}
+		this._didLayout = false;
+		this._layoutNative();
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -107,7 +148,7 @@ export class Canvas extends CanvasBase {
 
 	set iosOverflowSafeArea(value: boolean) {
 		const window = UIApplication.sharedApplication.windows[0];
-		const topPadding = window.safeAreaInsets.top;
+		//const topPadding = window.safeAreaInsets.top;
 		const bottomPadding = window.safeAreaInsets.bottom;
 		if (bottomPadding === 0) {
 			this._iosOverflowSafeArea = false;
@@ -121,6 +162,7 @@ export class Canvas extends CanvasBase {
 		canvas.width = 300;
 		canvas.height = 150;
 		canvas._isCustom = true;
+		canvas._layoutNative();
 		return canvas;
 	}
 
@@ -131,12 +173,39 @@ export class Canvas extends CanvasBase {
 		if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 			Object.defineProperty(parent, 'clientWidth', {
 				get: function () {
-					return parent.getMeasuredWidth();
+					return parent.getMeasuredWidth() / Screen.mainScreen.scale;
 				},
 			});
 			Object.defineProperty(parent, 'clientHeight', {
 				get: function () {
-					return parent.getMeasuredHeight();
+					return parent.getMeasuredHeight() / Screen.mainScreen.scale;
+				},
+			});
+		}
+
+		if (parent && typeof parent.getBoundingClientRect !== 'function') {
+			parent.getBoundingClientRect = function () {
+				const view = this;
+				const frame = view.ios.frame as CGRect;
+				const width = view.width;
+				const height = view.height;
+				return {
+					bottom: height,
+					height: height,
+					left: frame.origin.x,
+					right: width,
+					top: frame.origin.y,
+					width: width,
+					x: frame.origin.x,
+					y: frame.origin.y,
+				};
+			};
+		}
+
+		if (parent && parent.ownerDocument === undefined) {
+			Object.defineProperty(parent, 'ownerDocument', {
+				get: function () {
+					return window?.document ?? doc;
 				},
 			});
 		}
@@ -148,19 +217,11 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		if (this.scaling) {
-			this._canvas.scaling = this.scaling;
-		}
-	}
-
-	flush() {
-		if (this.ios) {
-			this.ios.flush();
-		}
+		this._canvas.ignorePixelScaling = this.ignorePixelScaling;
 	}
 
 	onUnloaded() {
-		this.ios.pause();
+		//	this.ios.pause();
 		this._didPause = true;
 		super.onUnloaded();
 	}
@@ -169,7 +230,7 @@ export class Canvas extends CanvasBase {
 	onLoaded() {
 		super.onLoaded();
 		if (this._didPause) {
-			this.ios.resume();
+			//	this.ios.resume();
 			this._didPause = false;
 		}
 	}
@@ -181,22 +242,27 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (!this._isCustom) {
+			return;
+		}
+
+		if (this._didLayout) {
+			return;
+		}
+
 		if (!this.parent) {
 			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
 			}
-			if (!this._isCustom) {
-				return;
-			}
 
 			const size = this._realSize;
-			if (!(size.width || 0) && !(size.height || 0)) {
-				return;
-			}
-			const width = Utils.layout.toDeviceIndependentPixels(size.width || 0);
-			const height = Utils.layout.toDeviceIndependentPixels(size.height || 0);
 
-			TNSCanvas.layoutView(this._canvas, width, height);
+			const width = Utils.layout.toDeviceIndependentPixels(size.width || 1);
+			const height = Utils.layout.toDeviceIndependentPixels(size.height || 1);
+
+			this._canvas.forceLayout(width, height);
+
+			this._didLayout = true;
 		}
 	}
 
@@ -204,65 +270,91 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
-		if (type && type === '2d') {
-			if (this._webglContext || this._webgl2Context) {
-				return null;
-			}
-			if (!this._2dContext) {
-				if (!options) {
-					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContext(type));
-				} else {
-					this._2dContext = new CanvasRenderingContext2D(this._canvas.getContextWithTypeAttributes(type, JSON.stringify(this._handleContextOptions(type, options))));
+		if (typeof type === 'string') {
+			if (type === '2d') {
+				if (this._webglContext || this._webgl2Context) {
+					return null;
 				}
-				this._2dContext._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes(type, this._handleContextOptions(type, JSON.stringify(this._handleContextOptions(type, options))));
-			}
-			this._2dContext._type = '2d';
-			return this._2dContext;
-		} else if (type && (type === 'webgl' || type === 'experimental-webgl')) {
-			if (this._2dContext || this._webgl2Context) {
-				return null;
-			}
-			if (!this._webglContext) {
-				if (!options) {
-					this._webglContext = new WebGLRenderingContext(this._canvas.getContext('webgl'));
-				} else {
-					this._webglContext = new WebGLRenderingContext(this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options)));
+
+				if (!this._2dContext) {
+					this._layoutNative();
+					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
+
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
+
+					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
+
+					// // @ts-ignore
+					(this._2dContext as any)._canvas = this;
+
+					this._contextType = ContextType.Canvas;
+					// @ts-ignore
+					this._2dContext._type = '2d';
 				}
-				this._webglContext._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes('webgl', this._handleContextOptions(type, options));
-			}
-			this._webglContext._type = 'webgl';
-			return this._webglContext;
-		} else if (type && (type === 'webgl2' || type === 'experimental-webgl2')) {
-			if (this._2dContext || this._webglContext) {
-				return null;
-			}
-			if (!this._webgl2Context) {
-				if (!options) {
-					this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContext('webgl2'));
-				} else {
-					this._webgl2Context = new WebGL2RenderingContext(this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options)));
+
+				return this._2dContext;
+			} else if (type === 'webgl' || type === 'experimental-webgl') {
+				if (this._2dContext || this._webgl2Context) {
+					return null;
 				}
-				(this._webgl2Context as any)._canvas = this;
-			} else {
-				this._canvas.getContextContextAttributes('webgl2', this._handleContextOptions(type, options));
+				if (!this._webglContext) {
+					this._layoutNative();
+					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
+
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+
+					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
+					(this._webglContext as any)._canvas = this;
+					this._webglContext._type = 'webgl';
+					this._contextType = ContextType.WebGL;
+				}
+				return this._webglContext;
+			} else if (type === 'webgl2') {
+				if (this._2dContext || this._webglContext) {
+					return null;
+				}
+
+				if (!this._webgl2Context) {
+					this._layoutNative();
+					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
+
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+
+					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
+					(this._webgl2Context as any)._canvas = this;
+					(this._webgl2Context as any)._type = 'webgl2';
+					this._contextType = ContextType.WebGL2;
+				}
+				return this._webgl2Context;
 			}
-			(this._webgl2Context as any)._type = 'webgl';
-			return this._webgl2Context;
 		}
 		return null;
 	}
 
-	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		return this._canvas.toDataURL(type, encoderOptions);
+	get __native__context() {
+		switch (this._contextType) {
+			case ContextType.Canvas:
+				return this._2dContext.native;
+			case ContextType.WebGL:
+				return this._webglContext.native;
+			case ContextType.Canvas:
+				return this._webgl2Context.native;
+			default:
+				return null;
+		}
 	}
 
-	public snapshot(flip: boolean = false): ImageSource | null {
+	get native() {
+		return this.__native__context;
+	}
+
+	toDataURL(type = 'image/png', encoderOptions = 0.92) {
+		return this.native.toDataURL(type, encoderOptions);
+	}
+
+	snapshot(flip: boolean = false): ImageSource | null {
 		if (this._canvas) {
-			const bm = this._canvas.getImage?.(flip ?? false);
+			const bm = this._canvas.snapshot?.(flip ?? false);
 			if (bm) {
 				return new ImageSource(bm);
 			}

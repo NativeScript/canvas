@@ -1,0 +1,18 @@
+[package]
+name = "playground"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+canvas-core = { path = "../canvas-core" }
+canvas-webgl = { path = "../canvas-webgl" }
+canvas-2d = { path = "../canvas-2d", features = ["gl"] }
+raw-window-handle = "0.5.0"
+rand = "0.8.5"
+reqwest = { version = "0.11.14", features = ["blocking"] }
+chrono = "0.4.23"
+
+#[target.'cfg(any(target_os = "macos", target_os = "android"))'.dependencies]
+#glutin = "0.30.4"
+#winit = "0.28.1"
+#glutin-winit = "0.3.0"

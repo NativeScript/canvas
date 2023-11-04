@@ -1,4 +1,5 @@
 import { Canvas } from '@nativescript/canvas';
+import { Screen } from '@nativescript/core';
 import { Element } from './Element';
 
 export class HTMLCanvasElement extends Element {
@@ -12,11 +13,16 @@ export class HTMLCanvasElement extends Element {
 		if (canvas instanceof Canvas) {
 			this._canvas = canvas;
 		} else {
-			this._canvas = Canvas.createCustomView();
+			this._canvas = (Canvas as any).createCustomView(true);
 		}
 	}
 
 	set width(value) {
+		// if (global.isIOS) {
+		// 	this._canvas.width = value / Screen.mainScreen.scale;
+		// } else {
+		// 	this._canvas.width = value;
+		// }
 		this._canvas.width = value;
 	}
 
@@ -25,6 +31,11 @@ export class HTMLCanvasElement extends Element {
 	}
 
 	set height(value) {
+		// if (global.isIOS) {
+		// 	this._canvas.height = value / Screen.mainScreen.scale;
+		// } else {
+		// 	this._canvas.height = value;
+		// }
 		this._canvas.height = value;
 	}
 
@@ -39,4 +50,8 @@ export class HTMLCanvasElement extends Element {
 	getContext(contextType, contextOptions) {
 		return this._canvas.getContext(contextType, contextOptions);
 	}
+
+	setPointerCapture(id) {}
+
+	releasePointerCapture(id) {}
 }

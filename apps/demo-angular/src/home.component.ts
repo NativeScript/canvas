@@ -9,34 +9,32 @@ export class HomeComponent {
 	constructor(private router: RouterExtensions){}
 
 	demos = [
-		{
-			name: 'canvas',
-		},
-		{
-			name: 'canvas-babylon',
-		},
-		{
-			name: 'canvas-media',
-		},
-		{
-			name: 'canvas-phaser',
-		},
-		{
-			name: 'canvas-phaser-ce',
-		},
-		{
-			name: 'canvas-pixi',
-		},
-		{
-			name: 'canvas-polyfill',
-		},
-		{
-			name: 'canvas-three',
-		},
-	];
-
-	onTap(event){
-		const item = this.demos[event.index];
-		this.router.navigate(['/' + item.name]);
+	{
+		name: 'canvas'
+	},
+	{
+		name: 'canvas-babylon'
+	},
+	{
+		name: 'canvas-chartjs'
+	},
+	{
+		name: 'canvas-media'
+	},
+	{
+		name: 'canvas-phaser'
+	},
+	{
+		name: 'canvas-phaser-ce'
+	},
+	{
+		name: 'canvas-pixi'
+	},
+	{
+		name: 'canvas-polyfill'
+	},
+	{
+		name: 'canvas-three'
 	}
+];
 }

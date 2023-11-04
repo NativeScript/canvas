@@ -1,13 +1,21 @@
 export class WebGLShaderPrecisionFormat {
-	readonly rangeMin: number;
-	readonly rangeMax: number;
-	readonly precision: number;
+	readonly native: any;
 	[Symbol.toStringTag] = 'WebGLShaderPrecisionFormat';
 
-	constructor(rangeMin: number, rangeMax: number, precision: number) {
-		this.rangeMin = rangeMin;
-		this.rangeMax = rangeMax;
-		this.precision = precision;
+	constructor(native) {
+		this.native = native;
+	}
+
+	get rangeMin() {
+		return this.native.rangeMin;
+	}
+
+	get rangeMax(): number {
+		return this.native.rangeMax;
+	}
+
+	get precision(): number {
+		return this.native.precision;
 	}
 
 	public toString() {

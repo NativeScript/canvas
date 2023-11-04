@@ -93,3 +93,4 @@ onmessage = ev => {
 onerror = error =>{
     console.log('Worker: Error', error)
 }
+

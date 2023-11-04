@@ -7,15 +7,15 @@ export default function Game({ canvas, width = null, height = null, renderer = 2
 	(global as any).document.readyState = 'complete';
 
 	const config = {
-		width: width || realWidth,
-		height: height || realHeight,
+		width: (width || realWidth) * window.devicePixelRatio,
+		height: (height || realHeight) * window.devicePixelRatio,
 		renderer: renderer || 2,
 		title: title || 'tns-phaser-game',
 		state: state || null,
 		transparent: transparent || false,
 		antialias: antialias || true,
 		physicsConfig: physicsConfig || null,
-		canvas,
+		canvas
 	};
 
 	const game = new Phaser.Game(config);

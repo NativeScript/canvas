@@ -19,7 +19,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		const gl = this.canvas.getContext('webgl2', {antialias: false});
+		const gl = this.canvas.getContext('webgl2', { antialias: false });
 
 		const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
 		var engine: BABYLON.Engine = null;
@@ -33,9 +33,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		// You must at least define a camera
 		engine = createDefaultEngine();
 		if (!engine) throw 'engine should not be null.';
-		// this.createMDN(engine)
-
-		engine.inputElement = this.canvas;
+		//this.createMDN(engine)
 
 		sceneToRender = this.createChart(engine);
 		//sceneToRender = this.createWaterScene(engine);
@@ -80,10 +78,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		camera.setPosition(new BABYLON.Vector3(20, 70, -100));
 		light.position = new BABYLON.Vector3(0, 25, -50);
 
-
-		camera.attachControl();
-
-		//camera.attachControl();
+		camera.attachControl(this.canvas, true);
 
 		// Data
 		var scale = 0.6;

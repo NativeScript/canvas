@@ -1,0 +1,32 @@
+[package]
+name = "canvas-android"
+version = "0.1.0"
+edition = "2021"
+
+[build]
+rustflags = ["-Cpanic=abort", "-C target-cpu=native", "-C target-feature=-outline-atomics"]
+
+[lib]
+name = "canvasandroid"
+crate-type = ["cdylib"]
+
+[build-dependencies]
+bindgen = "0.64.0"
+
+[dependencies]
+canvas-core = { path = "../canvas-core", features = ["2d"] }
+canvas-2d = { path = "../canvas-2d", features = ["gl"] }
+canvas-webgl = { path = "../canvas-webgl" }
+canvas-c = { path = "../canvas-c", features = ["2d", "webgl"] }
+gl-bindings = { path = "../gl-bindings" }
+raw-window-handle = "0.5.2"
+ureq = "2.8.0"
+parking_lot = "0.12.1"
+jni = "0.21.0"
+once_cell = "1.10.0"
+ndk = { version = "0.7.0", features = ["bitmap"] }
+#openssl = { version = "0.10.57", features = ["vendored"] }
+libloading = "0.8.1"
+log = "0.4.17"
+android_logger = "0.13.1"
+skia-safe = { version = "0.66.3" }

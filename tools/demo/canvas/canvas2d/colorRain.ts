@@ -1,61 +1,64 @@
+import { func } from 'canvas-phaser-ce/games/utils';
+
 let LAF;
 
 export function colorRain(canvas) {
-  //initial
-  var w = canvas.getMeasuredWidth(),
-    h = canvas.getMeasuredHeight(),
-    ctx = canvas.getContext('2d'),
+	//initial
+	var w = canvas.width,
+		h = canvas.height,
+		ctx = canvas.getContext('2d'),
+		//parameters
+		total = w / 2,
+		accelleration = 0.05,
+		//afterinitial calculations
+		size = w / total,
+		occupation = w / total,
+		repaintColor = 'black';
+	var colors: number[] = [],
+		dots = [],
+		dotsVel = [],
+		parsedColors = [];
 
-    //parameters
-    total = w,
-    accelleration = .05,
+	//setting the colors' hue
+	//and y level for all dots
+	var portion = 360 / total;
+	for (var i = 0; i < total; ++i) {
+		colors[i] = portion * i;
 
-    //afterinitial calculations
-    size = w / total,
-    occupation = w / total,
-    repaintColor = 'rgba(0, 0, 0, 1)';
-  var colors = [],
-    dots = [],
-    dotsVel = [];
+		dots[i] = h;
+		dotsVel[i] = 10;
+	}
 
-//setting the colors' hue
-//and y level for all dots
-  var portion = 360 / total;
-  for (var i = 0; i < total; ++i) {
-    colors[i] = portion * i;
+	var buf = {};
+	function anim() {
+		LAF = requestAnimationFrame(anim);
 
-    dots[i] = h;
-    dotsVel[i] = 10;
-  }
+		ctx.fillStyle = repaintColor;
+		ctx.fillRect(0, 0, w, h);
 
-  function anim() {
-    LAF = requestAnimationFrame(anim);
+		for (var i = 0; i < total; ++i) {
+			var currentY = dots[i] - 1;
+			dots[i] += dotsVel[i] += accelleration;
+			//const randomColor = Math.floor(Math.random()*16777215).toString(16);
+			// let parsedColor = parsedColors[i];
+			// if(!parsedColor){
+			// 	parsedColor = `hsl(${colors[i]}, 80%, 50%)`;
+			// }
+			ctx.fillStyle = `hsl(${colors[i]}, 80%, 50%)`; //`hsl(${color}, 80%, 50%, 1)`;
+			ctx.fillRect(occupation * i, currentY, size, dotsVel[i] + 1);
 
+			if (dots[i] > h && Math.random() < 0.01) {
+				dots[i] = dotsVel[i] = 0;
+			}
 
-    console.time('start');
+			//	parsedColors[i] = parsedColor;
+		}
+	}
 
-    ctx.fillStyle = repaintColor;
-    ctx.fillRect(0, 0, w, h);
-
-    for (var i = 0; i < total; ++i) {
-      var currentY = dots[i] - 1;
-      dots[i] += dotsVel[i] += accelleration;
-
-      ctx.fillStyle = 'hsl(' + colors[i] + ', 80%, 50%)';
-      ctx.fillRect(occupation * i, currentY, size, dotsVel[i] + 1);
-
-      if (dots[i] > h && Math.random() < .01) {
-        dots[i] = dotsVel[i] = 0;
-      }
-    }
-
-    console.timeEnd('start');
-  }
-
-  anim();
+	anim();
 }
 
 export function cancelRain() {
-  cancelAnimationFrame(LAF);
-  LAF = 0;
+	cancelAnimationFrame(LAF);
+	LAF = 0;
 }

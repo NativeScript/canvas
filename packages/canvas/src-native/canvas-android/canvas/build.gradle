@@ -10,22 +10,55 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
-
-import org.apache.tools.ant.taskdefs.condition.Os
 
 project.ext {
 	RELEASE_REPOSITORY_URL = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
 	SNAPSHOT_REPOSITORY_URL = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 }
 
+def computeKotlinVersion = { -> project.hasProperty("kotlin_version") ? kotlin_version : "1.7.10" }
+
+def NDK_PATH = ""
+def hasNdkDirectory = project.hasProperty("ndkDirectory")
+if (!hasNdkDirectory) {
+	println "No ndkDirectory set, checking environment \$ANDROID_NDK..."
+
+	NDK_PATH = "$System.env.ANDROID_NDK"
+	if (NDK_PATH == null || NDK_PATH == "null") {
+		println "No ndkDirectory set, checking environment \$ANDROID_NDK_ROOT..."
+		NDK_PATH = "$System.env.ANDROID_NDK_ROOT"
+	}
+
+	if (NDK_PATH == null || NDK_PATH == "null") {
+		println "No ndkDirectory set, checking environment \$ANDROID_NDK_HOME..."
+		NDK_PATH = "$System.env.ANDROID_NDK_HOME"
+	}
+} else {
+	NDK_PATH = ndkDirectory
+}
+println "Runtime using NDK_PATH: " + NDK_PATH
+
+
 android {
-	namespace = 'org.nativescript.canvas'
 	compileSdkVersion 33
 	defaultConfig {
-		minSdkVersion 17
+		minSdkVersion 19
 		targetSdkVersion 33
+		versionCode 1
+		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+		externalNativeBuild {
+			cmake {
+				cppFlags "-std=c++17"
+				arguments "-DANDROID_TOOLCHAIN=clang",
+					"-DANDROID_STL=c++_static",
+					"-DANDROID_NDK_ROOT=${System.getenv("ANDROID_NDK_ROOT")}"
+			}
+		}
+		ndk {
+			abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+		}
 	}
 
 	buildTypes {
@@ -43,18 +76,27 @@ android {
 	kotlinOptions {
 		jvmTarget = "1.8"
 	}
-	buildToolsVersion '33.0.0'
-	ndkVersion '22.1.7171670'
+
+	externalNativeBuild {
+		cmake {
+			path "CMakeLists.txt"
+		}
+	}
+
+	ndkVersion '25.2.9519653'
+
 }
 
 dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	implementation 'androidx.appcompat:appcompat:1.5.1'
 	testImplementation 'junit:junit:4.13.2'
-	androidTestImplementation 'androidx.test:runner:1.5.2'
-	androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-	implementation "androidx.core:core-ktx:1.9.0"
-	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+	androidTestImplementation 'androidx.test:runner:1.4.0'
+	androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+	//noinspection KtxExtensionAvailable
+	implementation "androidx.core:core:1.9.0"
+//	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$computeKotlinVersion"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib:$computeKotlinVersion"
 }
 
 tasks.withType(Javadoc) {
@@ -68,69 +110,4 @@ repositories {
 	mavenCentral()
 }
 
-apply from: 'publish.gradle'
-
-cargo {
-	prebuiltToolchains = true
-	module = "../../canvas-native"
-	libname = "canvasnative"
-	targets = ["arm", "arm64", "x86", "x86_64"]
-	apiLevels = [
-		"arm"   : 17,
-		"arm64" : 21,
-		"x86"   : 17,
-		"x86_64": 21
-	]
-	profile = 'release'
-
-	extraCargoBuildArguments = ['-Z', "build-std=std,panic_abort", '-Z', 'build-std-features=panic_immediate_abort']
-	rustupChannel = "nightly"
-}
-
-
-tasks.whenTaskAdded { task ->
-	if ((task.name == 'javaPreCompileDebug' || task.name == 'javaPreCompileRelease')) {
-		task.dependsOn 'cargoBuild'
-	}
-
-	for (target in cargo.targets) {
-		if (task.name == "cargoBuild${target.capitalize()}") {
-			task.dependsOn "copy_libc++_shared${target.capitalize()}"
-		}
-	}
-}
-
-for (target in cargo.targets) {
-	tasks.register("copy_libc++_shared${target.capitalize()}", Copy) {
-		def ndkDir = android.ndkDirectory
-		// hostTag, abi and archTriple from: https://developer.android.com/ndk/guides/other_build_systems
-
-		def hostTag
-		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-			if (Os.isArch("x86_64") || Os.isArch("amd64")) {
-				hostTag = "windows-x86_64"
-			} else {
-				hostTag = "windows"
-			}
-		} else if (Os.isFamily(Os.FAMILY_MAC)) {
-			hostTag = "darwin-x86_64"
-		} else {
-			hostTag = "linux-x86_64"
-		}
-
-		def (abi, archTriple) = [
-			arm   : ['armeabi-v7a', 'arm-linux-androideabi'],
-			arm64 : ['arm64-v8a', 'aarch64-linux-android'],
-			x86   : ['x86', 'i686-linux-android'],
-			x86_64: ['x86_64', 'x86_64-linux-android'],
-		][target]
-
-		def from_path = "$ndkDir/toolchains/llvm/prebuilt/$hostTag/sysroot/usr/lib/$archTriple/libc++_shared.so"
-		def into_path = layout.buildDirectory.dir("rustJniLibs/android/$abi")
-
-		assert file(from_path).exists()
-
-		from from_path
-		into into_path
-	}
-}
+//apply from: 'publish.gradle'

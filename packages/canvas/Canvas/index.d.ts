@@ -42,8 +42,11 @@ export declare class Canvas extends CanvasBase {
 
 
 	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
-	getContext(type: 'webgl' | 'experimental-webgl', options?: any): WebGLRenderingContext | null;
+
+	getContext(type: 'webgl', options?: any): WebGLRenderingContext | null;
+
 	getContext(type: 'webgl2', options?: any): WebGL2RenderingContext | null;
+
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null;
 
 	getBoundingClientRect(): {
@@ -56,4 +59,9 @@ export declare class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	};
+
+
+	snapshot(): ImageSource | null;
+	
+	snapshot(flip?: boolean): ImageSource | null;
 }

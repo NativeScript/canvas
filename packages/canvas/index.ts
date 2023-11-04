@@ -4,6 +4,7 @@ export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
+import { ImageAsset } from './ImageAsset';
 
 import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './Canvas2D';
 
@@ -19,7 +20,6 @@ export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
 export * from './SVG';
-
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,
@@ -87,7 +87,6 @@ Object.defineProperty(global, 'ImageBitmap', {
 	writable: true,
 });
 
-
 Object.defineProperty(global, 'TouchEvent', {
 	value: TouchEvent,
 	configurable: true,
@@ -100,7 +99,13 @@ Object.defineProperty(global, 'PointerEvent', {
 	writable: true,
 });
 
-export { ImageBitmap } from './ImageBitmap'
+Object.defineProperty(global, 'ImageAsset', {
+	value: ImageAsset,
+	configurable: true,
+	writable: true,
+});
+
+export { ImageBitmap } from './ImageBitmap';
 export { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';

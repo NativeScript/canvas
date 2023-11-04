@@ -7,8 +7,14 @@ export class Element extends Node {
 	nativeElement: any;
 	private _width: number;
 	private _height: number;
+	_instance;
 	constructor(tagName) {
-		super(tagName.toUpperCase());
+		if (typeof tagName === 'object') {
+			super(tagName.tagName);
+			this._instance = tagName;
+		} else {
+			super(tagName.toUpperCase());
+		}
 
 		this.doc = {
 			body: {
@@ -26,17 +32,25 @@ export class Element extends Node {
 		return this.nodeName;
 	}
 
+	getAttribute(key) {
+		return this._instance?.getAttribute?.(key) ?? null;
+	}
+
 	setAttribute(key, value) {
-		console.log(this.className,'setAttribute', key, value);
+		this._instance?.setAttribute?.(key, value);
 	}
 
 	removeAttribute(key, value) {
-		console.log(this.className,'removeAttribute', key, value);
+		console.log(this.className, 'removeAttribute', key, value);
 	}
 
 	setAttributeNS() {}
 
 	removeAttributeNS() {}
+
+	get attributes(){
+		return this._instance?.attributes ?? [];
+	}
 
 	get clientWidth() {
 		return this.innerWidth;
@@ -80,15 +94,5 @@ export class Element extends Node {
 
 	get ontouchstart() {
 		return {};
-	}
-
-	querySelectorAll(selector) {
-		console.log('querySelectorAll', 'selector', selector);
-		return [];
-	}
-
-	querySelector(selector) {
-	///	return new Element(selector);
-	console.log(this.__internalElement._dom);
 	}
 }

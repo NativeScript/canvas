@@ -1,5 +1,5 @@
-import { Device, ImageSource } from '@nativescript/core';
-import { Canvas, ImageAsset, Path2D } from '@nativescript/canvas';
+import { ImageSource } from '@nativescript/core';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
 import { doesNotReject } from 'assert';
 export function fillStyle(canvas) {
@@ -35,40 +35,6 @@ export function createConicGradient(canvas) {
 	ctx.fillRect(20, 20, 200, 200);
 }
 
-export function roundRect(canvas) {
-	const ctx = canvas.getContext('2d');
-
-	// Rounded rectangle with zero radius (specified as a number)
-	ctx.strokeStyle = 'red';
-	ctx.beginPath();
-	ctx.roundRect(10, 20, 150, 100, 0);
-	ctx.stroke();
-
-	// Rounded rectangle with 40px radius (single element list)
-	ctx.strokeStyle = 'blue';
-	ctx.beginPath();
-	ctx.roundRect(10, 20, 150, 100, [40]);
-	ctx.stroke();
-
-	// Rounded rectangle with 2 different radii
-	ctx.strokeStyle = 'orange';
-	ctx.beginPath();
-	ctx.roundRect(10, 150, 150, 100, [10, 40]);
-	ctx.stroke();
-
-	// Rounded rectangle with four different radii
-	ctx.strokeStyle = 'green';
-	ctx.beginPath();
-	ctx.roundRect(400, 20, 200, 100, [0, 30, 50, 60]);
-	ctx.stroke();
-
-	// Same rectangle drawn backwards
-	ctx.strokeStyle = 'magenta';
-	ctx.beginPath();
-	ctx.roundRect(400, 150, -200, 100, [0, 30, 50, 60]);
-	ctx.stroke();
-}
-
 export function font(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.font = 'bold 48px serif';
@@ -101,8 +67,8 @@ export function imageSmoothingEnabled(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.font = '16px sans-serif';
 	ctx.textAlign = 'center';
-	const src = ImageSource.fromUrl('https://interactive-examples.mdn.mozilla.net/media/examples/star.png');
-	src.then((img) => {
+	const img = new global.ImageAsset();
+	img.fromUrl('https://interactive-examples.mdn.mozilla.net/media/examples/star.png').then((done) => {
 		const w = img.width,
 			h = img.height;
 
@@ -121,17 +87,17 @@ export function imageSmoothingEnabled(canvas) {
 
 export function imageSmoothingQuality(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+	ImageSource.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (img) {
 		ctx.imageSmoothingQuality = 'low';
-		ctx.drawImage(img.ios, 0, 0, 300, 150);
+		ctx.drawImage(img, 0, 0, 300, 150);
 	});
 }
 
 export function imageBlock(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.save();
-	const asset = new ImageAsset();
-	asset.loadFromUrlAsync('https://source.unsplash.com/random').then((done) => {
+	const asset = new global.ImageAsset();
+	asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
 		for (var i = 0; i < 4; i++) {
 			for (var j = 0; j < 3; j++) {
 				ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
@@ -182,7 +148,10 @@ export function lineJoin(canvas) {
 }
 
 export function lineWidth(canvas) {
-	const ctx = canvas.getContext('2d');
+	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+	console.log(ctx.getContextAttributes());
+
 	ctx.lineWidth = 15;
 
 	ctx.beginPath();
@@ -461,7 +430,8 @@ export function ellipse(canvas) {
 export function fill(ctx) {}
 
 export function fillPath(canvas) {
-	const ctx = canvas.getContext('2d');
+	const context = canvas.getContext('2d');
+
 	// Create path
 	let region = new Path2D();
 	region.moveTo(30, 90);
@@ -473,8 +443,8 @@ export function fillPath(canvas) {
 	region.closePath();
 
 	// Fill path
-	ctx.fillStyle = 'green';
-	ctx.fill(region, 'evenodd');
+	context.fillStyle = 'green';
+	context.fill(region, 'evenodd');
 }
 
 export function createLinearGradient(canvas) {
@@ -546,7 +516,8 @@ export function scale(canvas) {
 
 export function pattern(canvas) {
 	const ctx = canvas.getContext('2d');
-	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
+	const img = new ImageAsset();
+	img.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (done) {
 		ctx.fillStyle = ctx.createPattern(img, 'repeat');
 		ctx.fillRect(0, 0, 300, 300);
 	});
@@ -554,6 +525,7 @@ export function pattern(canvas) {
 
 export function patternWithCanvas(canvas) {
 	const patternCanvas = Canvas.createCustomView();
+
 	const patternContext = patternCanvas.getContext('2d') as any;
 
 	// Give the pattern a width and height of 50
@@ -562,19 +534,19 @@ export function patternWithCanvas(canvas) {
 
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
-
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-	patternContext.arc(0, 0, 50 * Screen.mainScreen.scale, 0, 0.5 * Math.PI);
+	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
 	patternContext.stroke();
+
+	//const url = patternCanvas.toDataURL('image/png', 92);
+	//console.log('toDataURL', url);
 
 	const ctx = canvas.getContext('2d');
 
-	const pattern = ctx.createPattern(patternCanvas, 'repeat');
-
 	// Create our primary canvas and fill it with the pattern
+	const pattern = ctx.createPattern(patternContext, 'repeat');
 	ctx.fillStyle = pattern;
-
-	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 export function clip(canvas) {
@@ -586,6 +558,7 @@ export function clip(canvas) {
 
 	// Draw stuff that gets clipped
 	ctx.fillStyle = 'blue';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = 'orange';
 	ctx.fillRect(0, 0, 100, 100);

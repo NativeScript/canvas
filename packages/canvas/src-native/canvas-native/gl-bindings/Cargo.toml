@@ -1,19 +1,10 @@
 [package]
 name = "gl-bindings"
-version = "0.1.0"
+version = "2.0.0"
 authors = ["triniwiz <fortune.osei@yahoo.com>"]
-edition = "2018"
+edition = "2021"
+
 
 [build-dependencies]
-bindgen = "0.61.0"
-cmake = "0.1.45"
-cc = "1.0.68"
-regex = "1.5.6"
-
-[dependencies]
-
-
-[target.'cfg(target_os="ios")'.dependencies]
-cocoa = { version = "0.24"}
-objc = { version = "0.2.7"}
-block = "0.1.6"
+gl_generator = "0.14"
+cfg_aliases = "0.1.1"

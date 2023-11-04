@@ -1,10 +1,10 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application, Utils, Image as NSImage, GridLayout } from '@nativescript/core';
-import Chart from 'chart.js';
+import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
 
 let Matter;
-import { Canvas, ImageAsset } from '@nativescript/canvas';
+import { Canvas } from '@nativescript/canvas';
 import {
+	arcToAnimation,
 	flappyBird,
 	arc,
 	arcTo,
@@ -39,25 +39,27 @@ import {
 	swarm,
 	textAlign,
 	touchParticles,
-	roundRect,
-	createConicGradient,
 	globalCompositeOperation,
-	shadowOffsetX,
-	shadowOffsetY,
-	strokeStyle,
-	arcToAnimation,
+	pattern,
 	font,
+	fillStyle,
+	globalAlpha,
+	lineCap,
+	lineDashOffset,
+	shadowOffsetX,
+	strokeStyle,
+	circle_demo,
+	createConicGradient,
 } from './canvas2d';
-
-declare var NSData, interop, NSString, malloc, TNSCanvas;
+const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import Vex from 'vexflow';
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
-declare var com, java;
+// declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
-import { issue54 } from './issues';
+import { issue54, issue93 } from './issues';
+var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 	private svg: Svg.Svg;
@@ -65,11 +67,15 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	private svg3: Svg.Svg;
 	private svg4: Svg.Svg;
 
+	constructor() {
+		super();
+		Vex = require('vexflow');
+	}
+
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
 		this.draw();
-		console.log('done');
 	}
 
 	svgViewLoaded(args) {
@@ -465,10 +471,30 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(url.username); // Logs "anonymous"
 	}
 
+	drawHouse(canvas) {
+		const ctx = canvas.getContext('2d');
+		// Set line width
+		ctx.lineWidth = 10;
+
+		// Wall
+		ctx.strokeRect(75, 140, 150, 110);
+
+		// Door
+		ctx.fillRect(130, 190, 40, 60);
+
+		// Roof
+		ctx.beginPath();
+		ctx.moveTo(50, 140);
+		ctx.lineTo(150, 60);
+		ctx.lineTo(250, 140);
+		ctx.closePath();
+		ctx.stroke();
+	}
+
 	draw() {
+		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
-		// const ctx = this.canvas.getContext('2d');
 		// ctx.font = '50px serif';
 		// ctx.fillText('Hello world', 50, 90);
 		/*	const ctx = this.canvas.getContext('2d');
@@ -508,8 +534,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
-		// swarm(canvas);
-		// touchParticles(canvas);
+		// swarm(this.canvas);
+		 //touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -517,16 +543,17 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
-		//	fillRule(this.canvas);
-		//const ctx = this.canvas.getContext('2d');
+		//fillRule(this.canvas);
+		//fillStyle(this.canvas);
+		//ctx.setLineDash([1,2]);
+		//console.log(ctx.getLineDash());
 		//clip(this.canvas);
-		//roundRect(this.canvas);
-		//createConicGradient(this.canvas);
 		//fillStyle(this.canvas);
 		//font(this.canvas);
-		// globalAlpha(this.canvas);
+		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -537,15 +564,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowColor(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
-		// strokeStyle(this.canvas);
+		//strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
 		//textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
 		//arcToAnimation(this.canvas);
-		//ellipse(this.canvas);
+		// ellipse(this.canvas);
 		//fillPath(this.canvas);
+		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
@@ -566,6 +594,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
 		//swarm(this.canvas);
+		//this.drawHouse(this.canvas);
 		//this.bubbleChart(this.canvas);
 		//this.donutChart(this.canvas);
 		//canvas.page.actionBarHidden = true;
@@ -584,9 +613,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
+		createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
-		//drawModes(this.canvas,'triangles')
+		//drawModes(this.canvas,'triangles');
 		//drawElements(this.canvas)
 		// ctx = canvas.getContext("2d") as any;
 		//swarm(this.canvas);
@@ -594,12 +624,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
+
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
-		// imageFilter(this.canvas);
-		// interactiveCube(this.canvas);
+		//imageFilter(this.canvas);
+		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
 		//drawModes(this.canvas,'triangles')
@@ -607,242 +638,59 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// }, 1000);
 		//cubeRotation(this.canvas);
 		//},3000)
-		// drawModes(this.canvas,'triangles')
+		//drawModes(this.canvas,'triangles');
 		//cubeRotation(this.canvas);
 		//main(this.canvas)
 		//this.pointStyle(this.canvas);
-		// this.matterJSExample(this.canvas);
+		//this.matterJSExample(this.canvas);
 		//this.matterJSCar(this.canvas);
 		//this.multiCanvas(this.canvas);
-		// triangle(this.canvas);
+		//triangle(this.canvas);
 		//this.zen3dCube(this.canvas);
 		//this.zen3dGeometryLoaderGltf(this.canvas);
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
-		//this.drawHouse(this.canvas);
-		//this.bitmapExample(this.canvas);
-		//this.sourceIn(this.canvas);
-		this.clipTest(this.canvas);
-		//this.roundClipTest(this.canvas);
-		//this.timeExample(this.canvas);
-		//this.canvasToImage();
+		//this.decoder()
+		//this.context2DTest(this.canvas);
+
+		//issue93(this.canvas);
 	}
 
-	timeExample(canvas) {
-		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		ctx.rect(50, 20, 200, 120);
-		ctx.strokeRect(50, 20, 200, 120);
-		ctx.fillStyle = 'red';
-		setTimeout(() => {
-			ctx.fillRect(0, 0, 150, 100);
-		}, 2000);
-		console.log('timeExampleEnd');
-	}
-
-	canvasToImage() {
-		const canvas = Canvas.createCustomView();
-
-		canvas.width = Screen.mainScreen.widthDIPs;
-		canvas.height = Screen.mainScreen.heightDIPs;
-
-		this._image.colSpan = 2;
-		this._image.rowSpan = 2;
-		this._image.stretch = 'aspectFit';
-		if (!this._image.parent) {
-			this._image.width = { value: 1, unit: '%' };
-			this._image.height = { value: 1, unit: '%' };
-			this._grid.addChild(this._image);
-		}
-
-		//	const ctx = canvas.getContext('2d') as any;
-		//	ctx.fillStyle = 'red';
-		//	ctx.fillRect(0, 0, 300, 300);
-
-		// const gl = canvas.getContext('webgl2');
-
-		// gl.clearColor(0, 1,0,1);
-		// gl.clear(gl.COLOR_BUFFER_BIT);
-
-		// const ss = canvas.snapshot();
-
-		// 	console.log('ss',ss);
-
-		// 	this._image.imageSource = ss;
-
-		draw_image_space(canvas).then(() => {
-			const ss = canvas.snapshot();
-			this._image.imageSource = ss;
-		});
-
-		// this.drawRandomFullscreenImage(canvas).then(() => {
-		// 	const ss = canvas.snapshot();
-		// 	this._image.imageSource = ss;
-		// });
-	}
-
-	_image = new NSImage();
-
-	roundClipTest(canvas) {
-		var ctx = canvas.getContext('2d');
-		const HALF_PI = Math.PI / 2;
-		const x = 50;
-		const y = 20;
-		const w = 200;
-		const h = 120;
-		const radius = {
-			topLeft: 40,
-			bottomLeft: 40,
-			bottomRight: 40,
-			topRight: 40,
-		};
-
-		ctx.arc(x + radius.topLeft, y + radius.topLeft, radius.topLeft, -HALF_PI, Math.PI, true);
-		ctx.lineTo(x, y + h - radius.bottomLeft);
-		ctx.arc(x + radius.bottomLeft, y + h - radius.bottomLeft, radius.bottomLeft, Math.PI, HALF_PI, true);
-		ctx.lineTo(x + w - radius.bottomRight, y + h);
-		ctx.arc(x + w - radius.bottomRight, y + h - radius.bottomRight, radius.bottomRight, HALF_PI, 0, true);
-		ctx.lineTo(x + w, y + radius.topRight);
-		ctx.arc(x + w - radius.topRight, y + radius.topRight, radius.topRight, 0, -HALF_PI, true);
-		ctx.lineTo(x + radius.topLeft, y);
-		ctx.strokeStyle = 'red';
-		ctx.stroke();
-
-		ctx.clip();
-
-		// Draw red rectangle
-		ctx.fillStyle = 'red';
-		ctx.fillRect(0, 0, 150, 100);
-	}
-
-	clipTest(canvas) {
-		var ctx = canvas.getContext('2d');
-		// Clip a rectangular area
-		ctx.rect(50, 20, 200, 120);
-		ctx.stroke();
-		ctx.clip();
-		// Draw red rectangle after clip()
-		ctx.fillStyle = 'red';
-		ctx.fillRect(0, 0, 150, 100);
-	}
-
-	sourceIn(canvas) {
-		var ctx = canvas.getContext('2d');
-		ctx.fillStyle = 'blue';
-		ctx.fillRect(10, 10, 50, 50);
-		ctx.globalCompositeOperation = 'source-in';
-		ctx.beginPath();
-		ctx.fillStyle = 'red';
-		ctx.arc(50, 50, 30, 0, 2 * Math.PI);
-		ctx.fill();
-	}
-
-	drawHouse(canvas) {
+	drawRandomFullscreenImage(canvas) {
+		const width = Screen.mainScreen.widthPixels;
+		const height = Screen.mainScreen.heightPixels;
 		const ctx = canvas.getContext('2d');
-		// Set line width
-		ctx.lineWidth = 10;
+		ctx.fillRect(300, 300, 300, 300);
+		const asset = new global.ImageAsset();
 
-		// Wall
-		ctx.strokeRect(75, 140, 150, 110);
-
-		// Door
-		ctx.fillRect(130, 190, 40, 60);
-
-		// Roof
-		ctx.beginPath();
-		ctx.moveTo(50, 140);
-		ctx.lineTo(150, 60);
-		ctx.lineTo(250, 140);
-		ctx.closePath();
-		ctx.stroke();
-	}
-
-	bitmapExample(canvas) {
-		const text = 'hello osei fortune, please fix the bitmap issue, you are the one, you will fix it';
-		const fontWidth = 54;
-		const fontHeight = 71;
-		const letters = 40;
-		let x = [];
-		let char = [];
-		let position = letters;
-		let bitmap = new Image();
-		let context;
-		let wiggle, counter;
-
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
-
-		context = canvas.getContext('2d');
-
-		bitmap.onload = () => {
-			initScroll();
-		};
-
-		bitmap.src = '~/assets/file-assets/2d/fontinlined.png';
-
-		x = [];
-		char = [];
-		wiggle = 30;
-		counter = 0;
-
-		function initScroll() {
-			for (let n = 0; n < letters; n++) {
-				char[n] = text.charCodeAt(n) - 97;
-				x[n] = n * fontWidth;
+		let realPath = '~/assets/file-assets/webgl/svh.jpeg';
+		//let realPath = '~/assets/file-assets/webgl/Canvas_sun.png';
+		if (typeof realPath === 'string') {
+			if (realPath.startsWith('~/')) {
+				realPath = filePath.join(knownFolders.currentApp().path, realPath.replace('~/', ''));
 			}
-
-			scroll();
 		}
-		const width = canvas.width;
-		const height = canvas.height;
-		function scroll() {
-			context.clearRect(0, 0, width, height);
-			for (let n = 0; n < letters; n++) {
-				for (let xC = 0; xC < fontWidth; xC++) {
-					let y = 200 + wiggle * Math.sin((x[n] + xC) / (width / 10) + counter / 4.0 / 6.28) * 2;
-					context.drawImage(bitmap, char[n] * fontWidth + xC, 0, 1, fontHeight, x[n] + xC, y, 1, fontHeight);
-				}
-				x[n] -= 4;
-				if (x[n] < -fontWidth) {
-					x[n] = (letters - 1) * fontWidth;
-					char[n] = text.charCodeAt(position) - 97;
-					position++;
-					if (position > text.length) position = 0;
-				}
-			}
-			counter += 2.5;
-			requestAnimationFrame(scroll);
+
+		asset.fromFileSync(realPath);
+		//asset.loadFromUrlSync('https://i0.wp.com/www.printmag.com/wp-content/uploads/2021/02/4cbe8d_f1ed2800a49649848102c68fc5a66e53mv2.gif?fit=476%2C280&ssl=1');
+		//asset.loadFromUrl('https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=png&name=large')
+		//asset.loadFromUrlSync(`https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=jpg&name=large`);
+		//asset.loadFromUrlSync('https://upload.wikimedia.org/wikipedia/en/0/00/Spider-Man_No_Way_Home_poster.jpg');
+		//asset.loadFromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		console.log(asset.error);
+		console.log(asset.width, asset.height);
+		function draw() {
+			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale, 300 * Screen.mainScreen.scale);
+			requestAnimationFrame(draw);
 		}
-	}
+		draw();
 
-	drawRandomFullscreenImage(canvas: Canvas) {
-		return new Promise<void>((resolve, reject) => {
-			const ctx = canvas.getContext('2d', { alpha: false });
-			// const width = Screen.mainScreen.widthPixels;
-			// const height = Screen.mainScreen.heightPixels;
-
-			const width = canvas.width as any;
-			const height = canvas.height as any;
-			/*
-			 
-			*/
-
-			// ImageSource.fromUrl(`https://source.unsplash.com/random/${width}x${height}`)
-			// .then(source =>{
-			// 	console.time('drawImage');
-			// 	ctx.drawImage(source, 0, 0);
-			// 	console.timeEnd('drawImage');
-			// })
-
-			const image = new Image();
-			image.onload = () => {
-				console.time('drawImage');
-				ctx.drawImage(image, 0, 0);
-				console.timeEnd('drawImage');
-				resolve();
-			};
-			image.src = 'https://www.crunchyroll.com/imgsrv/display/thumbnail/1200x675/catalog/crunchyroll/0273e80242d80b0218f640e038269c18.jpeg'; //`https://source.unsplash.com/random/${width}x${height}`;
-		});
+		// const image = new Image();
+		// image.onload = () => {
+		// 	ctx.drawImage(image, 0, 0);
+		// };
+		// image.src = `https://source.unsplash.com/random/${width}x${height}`;
 	}
 
 	playCanvas(canvas) {
@@ -884,10 +732,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		app.start();
 	}
 
-	_grid: GridLayout;
 	gridLoaded(args) {
-		this._grid = args.object;
-		this.removeClipping(this._grid);
+		const grid = args.object;
+		this.removeClipping(grid);
 
 		// d3 example
 		/*
@@ -1017,8 +864,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 
 		const { drawingBufferWidth, drawingBufferHeight } = gl;
-		let width = drawingBufferWidth;
-		let height = drawingBufferHeight;
+		let width = canvas.width;
+		let height = canvas.height;
 		var scene = new zen3d.Scene();
 
 		var file = '~/assets/three/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
@@ -1091,8 +938,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		loop(0);
 
 		function onWindowResize() {
-			width = drawingBufferWidth;
-			height = drawingBufferHeight;
+			width = canvas.width;
+			height = canvas.height;
 
 			camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 8000);
 
@@ -1121,11 +968,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		let i16arr = new Int16Array([-24336, -18514]);
 		let i32arr = new Int32Array([-1213292304]);
 
-		console.log(utf8decoder.decode(u8arr));
-		console.log(utf8decoder.decode(i8arr));
-		console.log(utf8decoder.decode(u16arr));
-		console.log(utf8decoder.decode(i16arr));
-		console.log(utf8decoder.decode(i32arr));
+		console.log(utf8decoder.decode(u8arr)); // 𠮷
+		console.log(utf8decoder.decode(i8arr)); // 𠮷
+		console.log(utf8decoder.decode(u16arr)); // 𠮷
+		console.log(utf8decoder.decode(i16arr)); // 𠮷
+		console.log(utf8decoder.decode(i32arr)); // 𠮷
 
 		let win1251decoder = new TextDecoder('windows-1251');
 		let bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
@@ -1167,7 +1014,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	coloredParticles(canvas) {
 		var ctx = canvas.getContext('2d'),
 			particles = [],
-			patriclesNum = 10,
+			patriclesNum = 100,
 			w = canvas.width,
 			h = canvas.height,
 			colors = ['#f35d4f', '#f36849', '#c0d988', '#6ddaf1', '#f1e85b'];
@@ -1438,7 +1285,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	multiCanvas(canvas) {
 		if (canvas.id === 'canvas1') {
-			swarm(canvas);
+			//swarm(canvas);
+			this.zen3dCube(canvas);
 		}
 		if (canvas.id === 'canvas2') {
 			this.clock(canvas);
@@ -1448,7 +1296,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			this.solar(canvas);
 		}
 		if (canvas.id === 'canvas4') {
-			main(this.canvas);
+			main(canvas);
 		}
 	}
 
@@ -1632,26 +1480,49 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	drawPatternWithCanvas(canvas) {
-		const patternCanvas = Canvas.createCustomView();
+		const patternCanvas = Canvas.createCustomView() as any;
 
-		const patternContext = patternCanvas.getContext('2d') as any;
+		//const patternContext = patternCanvas.getContext('webgl') as any;
 
-		// Give the pattern a width and height of 50
-		patternCanvas.width = 50;
-		patternCanvas.height = 50;
-
-		//  patternCanvas.getContext('2d') as any;
+		// if(patternContext instanceof WebGLRenderingContext){
+		// 	patternContext.clearColor(0,1,0,1);
+		// 	patternContext.clear(patternContext.COLOR_BUFFER_BIT);
+		// }
 
 		const scale = Screen.mainScreen.scale;
+
+		const size = 50 * scale;
+		const patternContext = patternCanvas.getContext('2d') as any;
+
+		//glViewport(0,0,50,50);
+		// Give the pattern a width and height of 50
+		patternCanvas.width = size;
+		patternCanvas.height = size;
+
+		//  patternCanvas.getContext('2d') as any;
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
-		patternContext.fillRect(0, 0, patternCanvas.width * scale, patternCanvas.height * scale);
-		patternContext.arc(0, 0, 50 * scale, 0, 0.5 * Math.PI);
+
+		patternContext.fillRect(0, 0, size, size);
+		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
+		if (global.isIOS) {
+			var vp = interop.alloc(16);
+
+			glGetIntegerv(0x0ba2, vp);
+
+			const x = new interop.Reference<number>(interop.types.int32, vp);
+			const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
+			const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
+			const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
+
+			console.log(x.value, y.value, w.value, h.value);
+		}
+
 		// Create our primary canvas and fill it with the pattern
-		const ctx = canvas.getContext('2d');
-		ctx.fillStyle = ctx.createPattern(patternCanvas, 'repeat');
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.fillStyle = ctx.createPattern(patternContext, 'repeat');
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}
 
@@ -1771,11 +1642,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	clock(canvas) {
+		let scale = false;
 		var ctx = canvas.getContext('2d');
+		ctx.scale(3, 3);
 
 		function clock() {
-			const now = new Date();
-			const ctx = canvas.getContext('2d');
+			var now = new Date();
 			ctx.save();
 			ctx.clearRect(0, 0, 150, 150);
 			ctx.translate(75, 75);
@@ -1788,7 +1660,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			// Hour marks
 			ctx.save();
-			for (let i = 0; i < 12; i++) {
+			for (var i = 0; i < 12; i++) {
 				ctx.beginPath();
 				ctx.rotate(Math.PI / 6);
 				ctx.moveTo(100, 0);
@@ -1800,8 +1672,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			// Minute marks
 			ctx.save();
 			ctx.lineWidth = 5;
-			for (let i = 0; i < 60; i++) {
-				if (i % 5 !== 0) {
+			for (i = 0; i < 60; i++) {
+				if (i % 5 != 0) {
 					ctx.beginPath();
 					ctx.moveTo(117, 0);
 					ctx.lineTo(120, 0);
@@ -1811,18 +1683,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			}
 			ctx.restore();
 
-			const sec = now.getSeconds();
-			const min = now.getMinutes();
-			const hr = now.getHours() % 12;
+			var sec = now.getSeconds();
+			var min = now.getMinutes();
+			var hr = now.getHours();
+			hr = hr >= 12 ? hr - 12 : hr;
 
 			ctx.fillStyle = 'black';
 
-			// Write image description
-			//canvas.innerText = `The time is: ${hr}:${min}`;
-
-			// Write Hours
+			// write Hours
 			ctx.save();
-			ctx.rotate((Math.PI / 6) * hr + (Math.PI / 360) * min + (Math.PI / 21600) * sec);
+			ctx.rotate(hr * (Math.PI / 6) + (Math.PI / 360) * min + (Math.PI / 21600) * sec);
 			ctx.lineWidth = 14;
 			ctx.beginPath();
 			ctx.moveTo(-20, 0);
@@ -1830,7 +1700,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.stroke();
 			ctx.restore();
 
-			// Write Minutes
+			// write Minutes
 			ctx.save();
 			ctx.rotate((Math.PI / 30) * min + (Math.PI / 1800) * sec);
 			ctx.lineWidth = 10;
@@ -1876,21 +1746,33 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async solar(canvas) {
-		var sun = new ImageAsset();
-		var moon = new ImageAsset();
-		var earth = new ImageAsset();
-		try {
-			await sun.loadFromUrlAsync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
-			await moon.loadFromUrlAsync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
-			await earth.loadFromUrlAsync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
-		} catch (e) {
-			console.log('solar error:', e);
-		}
-		var ctx = canvas.getContext('2d');
-		//ctx.scale(3, 3);
+		var sun = new global.ImageAsset();
+		var moon = new global.ImageAsset();
+		var earth = new global.ImageAsset();
 
+		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
+		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
+		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
+
+		// sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png')
+		// .then(done =>{
+		// 	console.log('sun', done);
+		// 	return moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png')
+		// }).then(done =>{
+		// 	console.log('moon', done);
+		// 	return earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
+		// }).then(done =>{
+		// 	console.log('earth', done);
+		// })
+
+		//console.log(sun.width, moon.width, earth.width);
+		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		//ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+
+		//ctx.scale(3, 3);
 		function init() {
-			window.requestAnimationFrame(draw);
+			requestAnimationFrame(draw);
 		}
 
 		let didScale = false;
@@ -1902,7 +1784,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			ctx.globalCompositeOperation = 'destination-over';
 			ctx.clearRect(0, 0, 300, 300); // clear canvas
-
 			ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
 			ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
 			ctx.save();
@@ -1921,21 +1802,17 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.translate(0, 28.5);
 			ctx.drawImage(moon, -3.5, -3.5);
 			ctx.restore();
-
 			ctx.restore();
-
 			ctx.beginPath();
 			ctx.arc(150, 150, 105, 0, Math.PI * 2, false); // Earth orbit
 			ctx.stroke();
-
 			ctx.drawImage(sun, 0, 0, 300, 300);
 
-			// if (!didScale) {
-			//     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
-			//     didScale = true;
-			// }
-
-			window.requestAnimationFrame(draw);
+			// // if (!didScale) {
+			// //     ctx.scale(canvas.clientWidth / 300, canvas.clientHeight / 300);
+			// //     didScale = true;
+			// // }
+			requestAnimationFrame(draw);
 		}
 
 		init();
@@ -2881,5 +2758,75 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		};
 
 		loop(0);
+	}
+
+	context2DTest(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		let numCircles = 0;
+		// Measure performance outside requestAnimationFrame
+		const width = canvas.width;
+		const height = canvas.height;
+
+		let fillStyle = 0;
+		let beginPath = 0;
+		let arc = 0;
+		let closePath = 0;
+		let fill = 0;
+		let nonRafStartTime = performance.now();
+		for (let i = 0; i < 100000; i++) {
+			const x = Math.random() * width;
+			const y = Math.random() * height;
+			const radius = Math.random() * 20;
+			const color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+			const a = Date.now();
+			ctx.fillStyle = color;
+			fillStyle += Date.now() - a;
+
+			const b = Date.now();
+			ctx.beginPath();
+			beginPath += Date.now() - b;
+
+			const c = Date.now();
+			ctx.arc(x, y, radius, 0, 2 * Math.PI);
+			arc += Date.now() - c;
+
+			const d = Date.now();
+			ctx.closePath();
+			closePath += Date.now() - d;
+
+			const e = Date.now();
+			ctx.fill();
+			fill += Date.now() - e;
+		}
+		const nonRafEndTime = performance.now();
+		console.log('Drawing 100000 circles without RAF took', nonRafEndTime - nonRafStartTime, 'milliseconds');
+
+		console.log('fillStyle', fillStyle, 'beginPath', beginPath, 'arc', arc, 'closePath', closePath, 'fill', fill);
+		const draw = () => {
+			const x = Math.random() * width;
+			const y = Math.random() * height;
+			const radius = Math.random() * 20;
+			const color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+			ctx.fillStyle = color;
+			ctx.beginPath();
+			ctx.arc(x, y, radius, 0, 2 * Math.PI);
+			ctx.closePath();
+			ctx.fill();
+
+			numCircles++;
+
+			if (numCircles < 200) {
+				requestAnimationFrame(draw);
+			} else {
+				const rafEndTime = performance.now();
+				console.log('Drawing 200 circles with RAF took', rafEndTime - rafStartTime, 'milliseconds');
+			}
+		};
+
+		// Measure performance inside requestAnimationFrame
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		let rafStartTime = performance.now();
+		requestAnimationFrame(draw);
 	}
 }

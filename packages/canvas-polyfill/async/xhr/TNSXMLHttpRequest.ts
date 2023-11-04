@@ -2,7 +2,7 @@ import { CancellablePromise, Http } from '../http/http';
 import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
 import { FileManager } from '../file/file';
 import { isNullOrUndefined, isObject, isFunction } from '@nativescript/core/utils/types';
-import { knownFolders, path as filePath, File as fsFile, encoding } from '@nativescript/core';
+import { knownFolders, path as filePath, File as fsFile } from '@nativescript/core';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -290,18 +290,23 @@ export class TNSXMLHttpRequest {
 		const encodings = ['UTF-8', 'US-ASCII', 'ISO-8859-1', null];
 		let value;
 		const count = encodings.length;
+
+		try {
+			const decoder = new TextDecoder();
+			const ret = decoder.decode(data);
+			return ret;
+		} catch (error) {}
+
 		for (let i = 0; i < count; i++) {
 			let encodingType = encodings[i];
 			// let java decide :D
 			if (encodingType === null) {
-				//value = new java.lang.String(data).toString();
-				value = (com as any).github.triniwiz.async.Async2.Http.decodeBuffer(data);
+				value = java.nio.charset.Charset.defaultCharset().decode(data).toString();
 				break;
 			}
 			try {
-				//let encoding = java.nio.charset.Charset.forName(encodingType);
-				//value = new java.lang.String(data, encoding).toString();
-				value = (com as any).github.triniwiz.async.Async2.Http.decodeBuffer(data, encodingType);
+				const encoding = java.nio.charset.Charset.forName(encodingType);
+				value = encoding.decode(data).toString();
 				break;
 			} catch (e) {}
 		}
@@ -341,6 +346,7 @@ export class TNSXMLHttpRequest {
 		}
 		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
+			let isBlob = false;
 			if (this._request.url.startsWith('file://')) {
 				path = this._request.url.replace('file://', '');
 			} else if (this._request.url.startsWith('~/')) {
@@ -348,7 +354,122 @@ export class TNSXMLHttpRequest {
 			} else if (this._request.url.startsWith('/')) {
 				path = this._request.url;
 			} else if (this._request.url.startsWith('blob:nativescript')) {
-				path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
+				//path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
+				path = (URL as any)?.InternalAccessor?.getData?.(this._request.url).blob;
+				isBlob = true;
+			}
+			if (isBlob) {
+				const buf = (Blob as any).InternalAccessor.getBuffer(path) as Uint8Array;
+				const responseURL = this._request.url;
+
+				let contentLength = -1;
+
+				this._lastProgress = {
+					lengthComputable: contentLength > -1,
+					loaded: 0,
+					total: contentLength,
+					target: this,
+				};
+
+				const startEvent = new ProgressEvent('loadstart', this._lastProgress);
+
+				if (this.onloadstart) {
+					this.onloadstart(startEvent);
+				}
+
+				this.emitEvent('loadstart', startEvent);
+
+				this._updateReadyStateChange(this.LOADING);
+
+				if (!buf) {
+					this._status = 404;
+					const errorEvent = new ProgressEvent('error', this._lastProgress);
+					this._responseText = 'Invalid URL';
+
+					if (this.onerror) {
+						this.onerror(errorEvent);
+					}
+
+					this.emitEvent('error', errorEvent);
+
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+					if (this.onloadend) {
+						this.onloadend(loadendEvent);
+					}
+
+					this.emitEvent('loadend', loadendEvent);
+
+					this._updateReadyStateChange(this.DONE);
+				} else {
+					if (!this._didUserSetResponseType) {
+						this._setResponseType();
+					}
+					this._status = 200;
+					const data = buf.buffer;
+					this._httpContent = data;
+					this._responseURL = responseURL;
+
+					if (this.responseType === XMLHttpRequestResponseType.json) {
+						try {
+							this._responseText = this._toJSString(data);
+							this._response = JSON.parse(this._responseText);
+						} catch (e) {
+							console.error('json parse error', e);
+							// this should probably be caught before the promise resolves
+						}
+					} else if (this.responseType === XMLHttpRequestResponseType.text) {
+						const response = this._toJSString(data);
+						this._responseText = this._response = response ? response : '';
+					} else if (this.responseType === XMLHttpRequestResponseType.document) {
+						let response = this._toJSString(data);
+						this._responseText = this._response = response ? response : '';
+					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
+						this._response = data;
+					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
+						let buffer: ArrayBuffer = data;
+						this._response = new Blob([buffer]);
+					}
+
+					const size = data?.byteLength ?? 0;
+
+					contentLength = size;
+
+					this._lastProgress = {
+						lengthComputable: contentLength > -1,
+						loaded: size,
+						total: contentLength,
+						target: this,
+					};
+
+					const progressEvent = new ProgressEvent('progress', this._lastProgress);
+					if (this.onprogress) {
+						this.onprogress(progressEvent);
+					}
+					this.emitEvent('progress', progressEvent);
+
+					this._addToStringOnResponse();
+
+					const loadEvent = new ProgressEvent('load', this._lastProgress);
+
+					if (this.onload) {
+						this.onload(loadEvent);
+					}
+
+					this.emitEvent('load', loadEvent);
+
+					const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+					if (this.onloadend) {
+						this.onloadend(loadendEvent);
+					}
+
+					this.emitEvent('loadend', loadendEvent);
+
+					this._updateReadyStateChange(this.DONE);
+				}
+
+				return;
 			}
 
 			const responseURL = `file://${path}`;
@@ -404,82 +525,101 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
-					let size = 0;
+					const fastRead = (FileManager as any)._readFile !== undefined;
 
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
-							if ((global as any).isAndroid) {
+							if (fastRead) {
 								this._responseText = this._toJSString(data);
 								this._response = JSON.parse(this._responseText);
 							} else {
-								this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
-								if (!this._responseText) {
-									this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
+								if ((global as any).isAndroid) {
+									this._responseText = this._toJSString(data);
+									this._response = JSON.parse(this._responseText);
+								} else {
+									this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
+									if (!this._responseText) {
+										this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
+									}
+									this._response = JSON.parse(this._responseText);
 								}
-								this._response = JSON.parse(this._responseText);
 							}
 						} catch (e) {
-							console.log('json parse error', e);
+							console.error('json parse error', e);
 							// this should probably be caught before the promise resolves
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.text) {
-						if ((global as any).isIOS) {
-							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
-
-							// If UTF8 string encoding fails try with ISO-8859-1
-							if (!encodedString) {
-								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(data, code);
-							}
-							this._responseText = this._response = encodedString.toString();
-						} else {
+						if (fastRead) {
 							const response = this._toJSString(data);
-							this._responseText = this._response = response ? response.toString() : '';
+							this._responseText = this._response = response ? response : '';
+						} else {
+							if ((global as any).isIOS) {
+								let code = NSUTF8StringEncoding; // long:4
+								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+
+								// If UTF8 string encoding fails try with ISO-8859-1
+								if (!encodedString) {
+									code = NSISOLatin1StringEncoding; // long:5
+									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								}
+								this._responseText = this._response = encodedString.toString();
+							} else {
+								const response = this._toJSString(data);
+								this._responseText = this._response = response ? response.toString() : '';
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.document) {
-						if ((global as any).isIOS) {
-							let code = NSUTF8StringEncoding; // long:4
-							let encodedString = NSString.alloc().initWithDataEncoding(data, code);
-
-							// If UTF8 string encoding fails try with ISO-8859-1
-							if (!encodedString) {
-								code = NSISOLatin1StringEncoding; // long:5
-								encodedString = NSString.alloc().initWithDataEncoding(data, code);
-							}
-
-							this._responseText = this._response = encodedString.toString();
-						} else {
+						if (fastRead) {
 							let response = this._toJSString(data);
 							this._responseText = this._response = response ? response : '';
+						} else {
+							if ((global as any).isIOS) {
+								let code = NSUTF8StringEncoding; // long:4
+								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+
+								// If UTF8 string encoding fails try with ISO-8859-1
+								if (!encodedString) {
+									code = NSISOLatin1StringEncoding; // long:5
+									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								}
+
+								this._responseText = this._response = encodedString.toString();
+							} else {
+								let response = this._toJSString(data);
+								this._responseText = this._response = response ? response : '';
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-						if ((global as any).isIOS) {
-							this._response = interop.bufferFromData(data);
-						} else {
-							this._response = (ArrayBuffer as any).from(data);
-							size = data.byteLength;
+						this._response = data;
+						if (!fastRead) {
+							if ((global as any).isIOS) {
+								this._response = interop.bufferFromData(data);
+							} else {
+								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data).rewind());
+							}
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						let buffer: ArrayBuffer;
-						if ((global as any).isIOS) {
-							buffer = interop.bufferFromData(data);
-						} else {
-							buffer = (ArrayBuffer as any).from(data);
-							size = buffer.byteLength;
-						}
+						let buffer: ArrayBuffer = data;
 
+						if (!fastRead) {
+							if ((global as any).isIOS) {
+								buffer = interop.bufferFromData(data);
+							} else {
+								//	buffer = data;
+								const buf = java.nio.ByteBuffer.wrap(data).rewind();
+								buffer = (ArrayBuffer as any).from(buf);
+							}
+						}
 						this._response = new Blob([buffer]);
 					}
 
-					if (size === 0) {
-						if ((global as any).isIOS) {
-							if (data instanceof NSData) {
-								size = data.length;
-							}
-						} else {
-							size = data ? data?.length : 0;
+					let size = 0;
+					if ((global as any).isIOS) {
+						if (data instanceof NSData) {
+							size = data.length;
 						}
+					} else {
+						size = data?.length ?? data?.byteLength ?? 0;
 					}
 
 					this._lastProgress = {
@@ -691,8 +831,25 @@ export class TNSXMLHttpRequest {
 						this._response = (ArrayBuffer as any).from(res.content);
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-					const buffer = (ArrayBuffer as any).from(res.content);
-					this._response = new Blob([buffer]);
+					if ((global as any).isIOS) {
+						if (typeof res.content === 'string') {
+							const encoder = new TextEncoder();
+							const buffer = encoder.encode(res.content);
+							this._response = new Blob([buffer]);
+						} else {
+							const buffer = interop.bufferFromData(res.content);
+							this._response = new Blob([buffer]);
+						}
+					} else {
+						if (typeof res.content === 'string') {
+							const encoder = new TextEncoder();
+							const buffer = encoder.encode(res.content);
+							this._response = new Blob([buffer]);
+						} else {
+							const buffer = (ArrayBuffer as any).from(res.content);
+							this._response = new Blob([buffer]);
+						}
+					}
 				}
 
 				this._addToStringOnResponse();
@@ -890,7 +1047,7 @@ export class Blob {
 		}
 
 		const size = dataChunks.reduce((size, chunk) => size + chunk.byteLength, 0);
-		let buffer = new Uint8Array(size);
+		const buffer = new Uint8Array(size);
 		let offset = 0;
 		for (let i = 0; i < dataChunks.length; i++) {
 			const chunk = dataChunks[i];

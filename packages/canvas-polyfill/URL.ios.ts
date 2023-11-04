@@ -4,14 +4,22 @@ const BLOB_DIR = 'ns_blobs';
 const BLOB_KEYS = 'org.nativescript.canvas.blob.keys';
 
 let sharedPreferences;
-declare const Utils;
+
+interface BlobItem {
+	blob: Blob;
+	path?: string;
+	type?: string;
+	ext?: string;
+}
+const BLOB_STORE = new Map<string, BlobItem>();
+
 export class URL {
-	#native: NSURLComponents;
+	_native: NSURLComponents;
 	constructor(url: string, base?: string | URL) {
 		let baseUrl: NSURL;
 		let nativeURL: NSURL;
 		if (base instanceof URL) {
-			baseUrl = base.#native.URL;
+			baseUrl = base._native.URL;
 		} else {
 			baseUrl = NSURL.URLWithString(base);
 		}
@@ -22,11 +30,11 @@ export class URL {
 			nativeURL = NSURL.URLWithString(url);
 		}
 
-		this.#native = NSURLComponents.componentsWithString(nativeURL.absoluteString);
+		this._native = NSURLComponents.componentsWithString(nativeURL.absoluteString);
 	}
 
 	get native() {
-		return this.#native.URL;
+		return this._native.URL;
 	}
 
 	get hash() {
@@ -35,7 +43,7 @@ export class URL {
 	}
 
 	set hash(value: string) {
-		this.#native.fragment = value;
+		this._native.fragment = value;
 	}
 
 	get host() {
@@ -43,7 +51,7 @@ export class URL {
 	}
 
 	set host(value: string) {
-		this.#native.host = value;
+		this._native.host = value;
 	}
 
 	get hostname() {
@@ -51,15 +59,15 @@ export class URL {
 	}
 
 	set hostname(value: string) {
-		this.#native.host = value;
+		this._native.host = value;
 	}
 
 	get href() {
-		return this.#native.URL.absoluteString;
+		return this._native.URL.absoluteString;
 	}
 
 	set href(value: string) {
-		this.#native = NSURLComponents.componentsWithString(value);
+		this._native = NSURLComponents.componentsWithString(value);
 	}
 
 	get origin() {
@@ -71,7 +79,7 @@ export class URL {
 	}
 
 	set password(value: string) {
-		this.#native.password = value;
+		this._native.password = value;
 	}
 
 	get pathname() {
@@ -79,7 +87,7 @@ export class URL {
 	}
 
 	set pathname(value: string) {
-		this.#native.path = value;
+		this._native.path = value;
 	}
 
 	get port() {
@@ -87,7 +95,7 @@ export class URL {
 	}
 
 	set port(value: string) {
-		this.#native.port = +value;
+		this._native.port = +value;
 	}
 
 	get protocol() {
@@ -95,7 +103,7 @@ export class URL {
 	}
 
 	set protocol(value: string) {
-		this.#native.scheme = value;
+		this._native.scheme = value;
 	}
 
 	get search() {
@@ -104,7 +112,7 @@ export class URL {
 	}
 
 	set search(value: string) {
-		this.#native.query = value;
+		this._native.query = value;
 	}
 
 	get username() {
@@ -112,7 +120,7 @@ export class URL {
 	}
 
 	set username(value: string) {
-		this.#native.user = value;
+		this._native.user = value;
 	}
 
 	toJSON() {
@@ -124,24 +132,58 @@ export class URL {
 	}
 
 	public static createObjectURL(object: any, options = null): string {
-		const buf = (Blob as any).InternalAccessor.getBuffer(object);
-		if (!!buf || object instanceof Blob || object instanceof File) {
+		//	const buf = (Blob as any).InternalAccessor.getBuffer(object);
+		if (object instanceof Blob || object instanceof File) {
 			const id = this.getUUID();
+			const ret = `blob:nativescript/${id}`;
+			BLOB_STORE.set(ret, {
+				blob: object,
+				type: object?.type,
+				ext: options?.ext,
+			});
+			return ret;
+
+			// const id = this.getUUID();
+			// const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
+			// if (!exists) {
+			// 	Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+			// }
+			// let fileName = id;
+			// // todo get type from magic bytes
+			// if (options?.appendExt) {
+			// 	fileName = `${fileName}.${options.ext}`;
+			// }
+
+			// const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+
+			// NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
+
+			// URL.putItem(id, fileName);
+			// return `${BLOB_PATH}${id}`;
+		}
+		return null;
+	}
+
+	public static createObjectURLLegacy(object: any, options = null): string {
+		return this.createObjectURLLegacyWithId(this.getUUID(), object, options);
+	}
+
+	static createObjectURLLegacyWithId(id: string, object: any, options = null): string {
+		const buf = (Blob as any).InternalAccessor.getBuffer(object);
+		if (buf || object instanceof Blob || object instanceof File) {
 			const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
 			if (!exists) {
 				Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
 			}
 			let fileName = id;
 			// todo get type from magic bytes
-			if (options?.appendExt) {
+			if (options?.ext) {
 				fileName = `${fileName}.${options.ext}`;
 			}
 
 			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
 
-			try {
-				Utils.writeToFileError(buf, filePath);
-			} catch (error) {}
+			NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
 
 			URL.putItem(id, fileName);
 			return `${BLOB_PATH}${id}`;
@@ -151,68 +193,99 @@ export class URL {
 
 	public static revokeObjectURL(url: string) {
 		if (typeof url === 'string') {
-			const id = url.replace(BLOB_PATH, '');
-			const realPath = URL.getItem(id);
-			if (NSFile.exists(realPath)) {
-				const file = NSFile.fromPath(realPath);
-				file.removeSync();
+			const blob = BLOB_STORE.get(url);
+			if (blob.path) {
+				if (NSFile.exists(blob.path)) {
+					const file = NSFile.fromPath(blob.path);
+					file.removeSync();
+				}
 			}
+			BLOB_STORE.delete(url);
+
+			// const id = url.replace(BLOB_PATH, '');
+			// const realPath = URL.getItem(id);
+			// if (NSFile.exists(realPath)) {
+			// 	const file = NSFile.fromPath(realPath);
+			// 	file.removeSync();
+			// }
 		}
 	}
 
 	public static InternalAccessor = class {
 		public static getPath(url: string) {
-			if (typeof url === 'string') {
-				const id = url.replace(BLOB_PATH, '');
-				return URL.getItem(id);
+			const blob = BLOB_STORE.get(url);
+			if (!blob) {
+				return '';
 			}
-			return '';
+			if (blob.path) {
+				return blob.path;
+			}
+			//const buf = (Blob as any).InternalAccessor.getBuffer(blob.blob);
+
+			const id = url.replace(BLOB_PATH, '');
+
+			if (id === '') {
+				return '';
+			}
+
+			const created = URL.createObjectURLLegacyWithId(id, blob.blob, {
+				type: blob?.type,
+				ext: blob?.ext,
+			});
+
+			if (!created) {
+				return '';
+			}
+
+			let fileName = id;
+
+			if (blob?.ext) {
+				fileName = `${fileName}.${blob?.ext}`;
+			}
+
+			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+
+			blob.path = filePath;
+			BLOB_STORE.set(url, blob);
+			return filePath;
+
+			// if (typeof url === 'string') {
+			// 	const id = url.replace(BLOB_PATH, '');
+			// 	return URL.getItem(id);
+			// }
+			// return '';
+		}
+
+		public static getData(url: string) {
+			return BLOB_STORE.get(url);
 		}
 	};
 
 	private static getUUID() {
-		if (isIOS) {
-			return NSUUID.UUID().UUIDString;
-		}
-		return java.util.UUID.randomUUID().toString();
+		return NSUUID.UUID().UUIDString;
 	}
 
 	private static putItem(key: string, value: string) {
-		if (global.isAndroid) {
-			if (!sharedPreferences) {
-				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
-			}
-
-			(<android.content.SharedPreferences>sharedPreferences).edit().putString(key, value).apply();
-		} else {
-			if (!sharedPreferences) {
-				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
-			}
-
-			(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
+		if (!sharedPreferences) {
+			sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 		}
+
+		(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
 	}
 
 	private static getItem(key: string) {
 		const fileDir = Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
 		let fileName = null;
-		if (global.isAndroid) {
-			if (!sharedPreferences) {
-				sharedPreferences = (<android.app.Application>Application.getNativeApplication()).getApplicationContext().getSharedPreferences(BLOB_KEYS, 0);
-			}
 
-			fileName = (<android.content.SharedPreferences>sharedPreferences).getString(key, null);
-		} else {
-			if (!sharedPreferences) {
-				sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
-			}
-
-			if (!(<NSUserDefaults>sharedPreferences).objectForKey(key)) {
-				return null;
-			}
-
-			fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
+		if (!sharedPreferences) {
+			sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
 		}
+
+		if (!(<NSUserDefaults>sharedPreferences).objectForKey(key)) {
+			return null;
+		}
+
+		fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
 
 		if (fileName) {
 			return path.join(fileDir.path, fileName);

@@ -7,8 +7,19 @@ allprojects {
 }
 
 dependencies {
-  implementation 'org.nativescript:canvas:1.1.0'
+
+constraints {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20") {
+            because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
+        }
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20") {
+            because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
+        }
+    }
+
+ // implementation 'org.nativescript:canvas:1.0.0'
   implementation "androidx.multidex:multidex:2.0.1"
+  implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.20'
 }
 
 
@@ -16,7 +27,6 @@ android {
   defaultConfig {
     multiDexEnabled true
   }      
-  
       packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE'
@@ -27,9 +37,13 @@ android {
         exclude 'META-INF/notice.txt'
         exclude 'META-INF/ASL2.0'
         exclude("META-INF/*.kotlin_module") 
-        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
-        pickFirst 'lib/arm64-v8a/libc++_shared.so'
-        pickFirst 'lib/x86_64/libc++_shared.so'
-        pickFirst 'lib/x86/libc++_shared.so'
+          pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+    pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    pickFirst 'lib/x86_64/libc++_shared.so'
+    pickFirst 'lib/x86/libc++_shared.so'
+    pickFirst 'lib/arm64-v8a/libNativeScript.so'
+    pickFirst 'lib/armeabi-v7a/libNativeScript.so'
+    pickFirst 'lib/x86/libNativeScript.so'
+    pickFirst 'lib/x86_64/libNativeScript.so'
       }          
 }

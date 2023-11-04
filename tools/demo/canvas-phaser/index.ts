@@ -16,9 +16,9 @@ export class DemoSharedCanvasPhaser extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		 this.initFlappyBird();
+		 //this.initFlappyBird();
 		//this.initBreakOut();
-		//this.initMuyBridge();
+		this.initMuyBridge();
 	}
 
 	initFlappyBird() {

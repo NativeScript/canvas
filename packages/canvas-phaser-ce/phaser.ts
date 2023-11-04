@@ -85,6 +85,7 @@ function initPhaser() {
 		// return texture._glTextures[gl.id];
 		return true;
 	};
+	
 
 
 	return (global as any).Phaser;

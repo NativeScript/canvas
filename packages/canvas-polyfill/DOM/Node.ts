@@ -24,13 +24,13 @@ export class Node {
 	__internalElement: any;
 	_styleMap = new Map();
 	_id;
-	set id(value){
+	set id(value) {
 		this._id = value;
-		if(this.__internalElement){
+		if (this.__internalElement) {
 			this.__internalElement._dom.documentElement.setAttribute('id', value);
 		}
 	}
-	get id(){
+	get id() {
 		return this._id;
 	}
 	constructor(nodeName) {
@@ -112,6 +112,24 @@ export class Node {
 	}
 
 	setAttributeNS() {}
+
+	querySelectorAll(selector) {
+		return (this as any)._instance?.querySelectorAll?.(selector) ?? [];
+	}
+
+	querySelector(selector) {
+		const ret = (this as any)._instance?.querySelectorAll?.(selector);
+		let element = ret?.[0] ?? null;
+		if (ret === undefined) {
+			const items = (this as any)._instance.getElementsByTagName(selector);
+			element = items[0];
+		}
+
+		if (element) {
+			return new (Element as any)(element);
+		}
+		return null;
+	}
 
 	getBoundingClientRect() {
 		if (this._canvas) {

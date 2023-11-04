@@ -14,7 +14,7 @@ ANDROID_AARCH_64_OUTPUT_DIR="$NATIVE_SRC/target/aarch64-linux-android"
 ANDROID_x86_64_OUTPUT_DIR="$NATIVE_SRC/target/x86_64-linux-android"
 OUTPUT_LIB_NAME="libcanvasnative.so"
 IS_RELEASE=false
-BUILD_FLAG=""
+BUILD_FLAG="-p canvas-android --features gl"
 ANDROID_ARMEABI_V7A_OUTPUT="$ANDROID_ARMEABI_V7A_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
 ANDROID_x86_OUTPUT="$ANDROID_x86_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
 ANDROID_AARCH_64_OUTPUT="$ANDROID_AARCH_64_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
@@ -70,14 +70,12 @@ LIBCPLUSPLUS_SHARED_x86="$ANDROID_NDK_SYSROOT_LIB/i686-linux-android/$LIBCPLUSPL
 LIBCPLUSPLUS_SHARED_x86_64="$ANDROID_NDK_SYSROOT_LIB/x86_64-linux-android/$LIBCPLUSPLUS_NAME"
 LIBCPLUSPLUS_SHARED_AARCH_64="$ANDROID_NDK_SYSROOT_LIB/aarch64-linux-android/$LIBCPLUSPLUS_NAME"
 
-
-
 export RUSTFLAGS="$CARGO_FLAGS"
 
 cd "$NATIVE_SRC"
 
 # Build arm
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target armv7-linux-androideabi  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features='panic_immediate_abort' --target armv7-linux-androideabi -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_ARMEABI_V7A_DIR/$OUTPUT_LIB_NAME"
@@ -92,7 +90,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_ARMEABI_V7A" "$ANDROID_ARMEABI_V7A_DIR/$LIBCPLUSPLUS
 
 
 # Build arm64
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target aarch64-linux-android  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target aarch64-linux-android -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_AARCH_64_DIR/$OUTPUT_LIB_NAME"
@@ -109,7 +107,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_AARCH_64" "$ANDROID_AARCH_64_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86
 
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target i686-linux-android $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target i686-linux-android -p canvas-android  $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_DIR/$OUTPUT_LIB_NAME"
@@ -126,7 +124,7 @@ ln -s "$LIBCPLUSPLUS_SHARED_x86" "$ANDROID_x86_DIR/$LIBCPLUSPLUS_NAME"
 
 # Build x86_64
 
-cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target x86_64-linux-android  $BUILD_FLAG
+cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target x86_64-linux-android -p canvas-android   $BUILD_FLAG
 
 if [[ -f "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME" ]];then
 rm "$ANDROID_x86_64_DIR/$OUTPUT_LIB_NAME"

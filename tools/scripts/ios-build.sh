@@ -50,10 +50,6 @@ if ! cargo --version >/dev/null 2>&1; then
   exit
 fi
 
-# if ! cargo lipo --version >/dev/null 2>&1; then
-#   echo "Lipo not found"
-#   exit
-# fi
 
 for arg in "$@"; do
   if [[ "$arg" == "--help" ]] || [[ "$arg" == "-h" ]]; then
@@ -73,12 +69,12 @@ export RUSTFLAGS="$CARGO_FLAGS"
 
 cd canvas-native
 
-if [[ -f "$IOS_LIB_INCLUDE/canvas_native.h" ]]; then
-  rm "$IOS_LIB_INCLUDE/canvas_native.h"
-fi
+# if [[ -f "$IOS_LIB_INCLUDE/canvas_native.h" ]]; then
+#   rm "$IOS_LIB_INCLUDE/canvas_native.h"
+# fi
 
 # TODO fix header generation .... ignore android
-cbindgen --config "$CWD/canvas-native/canvas-core/cbindgen.toml"  "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
+# cbindgen --config "$CWD/canvas-native/canvas-core/cbindgen.toml"  "$CWD/canvas-native/canvas-core/src/lib.rs" -l c >"$IOS_LIB_INCLUDE/canvas_native.h"
 
 
 if [[ -f "$IOS_LIB_ARM_64_PHONE/$OUTPUT_LIB_NAME" ]]; then
@@ -133,30 +129,30 @@ if [[ -f "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME" ]]; then
   rm "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME"
 fi
 
-# if [[ $IS_RELEASE == true ]]; then
-#   cd "$NATIVE_SRC"
-#  RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort' --target aarch64-apple-ios-macabi $BUILD_FLAG $FEATURE_FLAGS
-#  cp "$IOS_ARM_64_MACCATALYST_OUTPUT_RELEASE_DIR" "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME"
-# else
-#   cd "$NATIVE_SRC"
-#  RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target aarch64-apple-ios-macabi $FEATURE_FLAGS
-#  cp "$IOS_ARM_64_MACCATALYST_OUTPUT_DEBUG_DIR" "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME"
-# fi
+if [[ $IS_RELEASE == true ]]; then
+  cd "$NATIVE_SRC"
+ RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort' --target aarch64-apple-ios-macabi $BUILD_FLAG $FEATURE_FLAGS
+ cp "$IOS_ARM_64_MACCATALYST_OUTPUT_RELEASE_DIR" "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME"
+else
+  cd "$NATIVE_SRC"
+ RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target aarch64-apple-ios-macabi $FEATURE_FLAGS
+ cp "$IOS_ARM_64_MACCATALYST_OUTPUT_DEBUG_DIR" "$IOS_LIB_ARM_64_MACCATALYST/$OUTPUT_LIB_NAME"
+fi
 
 
-# if [[ -f "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME" ]]; then
-#   rm "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
-# fi
+if [[ -f "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME" ]]; then
+  rm "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
+fi
 
-# if [[ $IS_RELEASE == true ]]; then
-#   cd "$NATIVE_SRC"
-#  RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target x86_64-apple-ios-macabi $BUILD_FLAG $FEATURE_FLAGS
-#  cp "$IOS_x86_64_MACCATALYST_OUTPUT_RELEASE_DIR" "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
-# else
-#   cd "$NATIVE_SRC"
-#  RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target x86_64-apple-ios-macabi $FEATURE_FLAGS
-#  cp "$IOS_x86_64_MACCATALYST_OUTPUT_DEBUG_DIR" "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
-# fi
+if [[ $IS_RELEASE == true ]]; then
+  cd "$NATIVE_SRC"
+ RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target x86_64-apple-ios-macabi $BUILD_FLAG $FEATURE_FLAGS
+ cp "$IOS_x86_64_MACCATALYST_OUTPUT_RELEASE_DIR" "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
+else
+  cd "$NATIVE_SRC"
+ RUST_BACKTRACE=1 cargo +nightly build -Z build-std='std,panic_abort'  --target x86_64-apple-ios-macabi $FEATURE_FLAGS
+ cp "$IOS_x86_64_MACCATALYST_OUTPUT_DEBUG_DIR" "$IOS_LIB_X86_64_MACCATALYST/$OUTPUT_LIB_NAME"
+fi
 
 
 

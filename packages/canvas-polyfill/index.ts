@@ -13,7 +13,8 @@ import { Document } from './DOM/Document';
 import './window';
 import './resize';
 import './process';
-import { TextDecoder, TextEncoder, ImageBitmap} from '@nativescript/canvas';
+import './localStorage';
+import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import { URL } from './URL';
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 
@@ -41,6 +42,16 @@ import { URL } from './URL';
 		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh, args[5]);
 	}
 };
+
+(global as any).Intl = (global as any).window.Intl = (global as any).Intl || {}; // pixijs
+
+import { MutationObserver } from './MutationObserver';
+
+Object.defineProperty(global, 'MutationObserver', {
+	value: MutationObserver,
+	configurable: true,
+	writable: true,
+});
 
 Object.defineProperty(global, 'Element', {
 	value: Element,

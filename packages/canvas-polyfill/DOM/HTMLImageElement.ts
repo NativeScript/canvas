@@ -1,9 +1,7 @@
 import { Element } from './Element';
-import { knownFolders, path, File } from '@nativescript/core';
+import { knownFolders, path, File, Utils } from '@nativescript/core';
 import { ImageAsset } from '@nativescript/canvas';
-declare const qos_class_t;
-const background_queue = global.isIOS ? dispatch_get_global_queue(qos_class_t.QOS_CLASS_DEFAULT, 0) : undefined;
-const main_queue = global.isIOS ? dispatch_get_current_queue() : undefined;
+declare const NSSCanvasHelpers;
 declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	'/': 'jpg',
@@ -41,7 +39,7 @@ export class HTMLImageElement extends Element {
 	private _onload: any;
 	private _complete: any;
 	private _base64: string;
-	_asset: ImageAsset;
+	_asset;
 	_imageSource: any;
 	__id: any;
 
@@ -80,7 +78,7 @@ export class HTMLImageElement extends Element {
 		super('img');
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
-		this._onload = () => { };
+		this._onload = () => {};
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -88,7 +86,6 @@ export class HTMLImageElement extends Element {
 			this._load();
 		}
 	}
-
 
 	_load() {
 		if (this.src) {
@@ -104,22 +101,15 @@ export class HTMLImageElement extends Element {
 						const MIME = getMIMEforBase64String(base64result);
 						const dir = knownFolders.documents().path;
 						if (global.isIOS) {
-							dispatch_async(background_queue, () => {
-								this.localUri = path.join(dir, `${getUUID()}-b64image.${MIME}`);
-								const file = File.fromPath(this.localUri);
-								const toWrite = NSData.alloc().initWithBase64EncodedStringOptions(base64result, 0);
-								let hasError = false;
-								file.writeSync(toWrite, (error) => {
-									hasError = true;
+							NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
+								if (error) {
 									if ((global as any).__debug_browser_polyfill_image) {
 										console.log(`nativescript-browser-polyfill: Error:`, error.message);
 									}
 									this.emitter.emit('error', { target: this, error });
-								});
-								if (!hasError) {
-									dispatch_async(main_queue, () => {
-										this._load();
-									});
+								} else {
+									this.localUri = localUri;
+									this._load();
 								}
 							});
 						}
@@ -159,10 +149,11 @@ export class HTMLImageElement extends Element {
 			}
 
 			if (typeof this.src === 'string') {
+				this.emitter.emit('loading', { target: this });
 				let async = this.decoding !== 'sync';
 				if (this.src.startsWith('http')) {
 					if (!async) {
-						const loaded = this._asset.loadFromUrl(this.src);
+						const loaded = this._asset.fromUrlSync(this.src);
 						if (loaded) {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
@@ -171,19 +162,22 @@ export class HTMLImageElement extends Element {
 							this.emitter.emit('error', { target: this });
 						}
 					} else {
-						this._asset.loadFromUrlAsync(this.src).then(() => {
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = true;
-						}).catch(e => {
-							this.emitter.emit('error', { target: this });
-						})
+						this._asset
+							.fromUrl(this.src)
+							.then(() => {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+							})
+							.catch((e) => {
+								this.emitter.emit('error', { target: this });
+							});
 					}
 				} else {
 					if (!this.width || !this.height) {
 						this.complete = false;
 						if (!async) {
-							const loaded = this._asset.loadFile(this.src);
+							const loaded = this._asset.fromFileSync(this.src);
 							if (loaded) {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
@@ -193,8 +187,8 @@ export class HTMLImageElement extends Element {
 							}
 						} else {
 							this._asset
-								.loadFileAsync(this.src)
-								.then(() => {
+								.fromFile(this.src)
+								.then((done) => {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
 									this.complete = true;

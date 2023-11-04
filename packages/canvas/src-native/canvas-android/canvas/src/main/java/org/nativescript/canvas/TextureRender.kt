@@ -8,7 +8,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 class TextureRender {
-	private var mProgram = 0
+	var mProgram = 0
 	var rbo = -1
 	var fbo = -1
 	var textureId = -1

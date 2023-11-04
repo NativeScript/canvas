@@ -3,159 +3,114 @@ package org.nativescript.canvas
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
-import android.os.Handler
-import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
+import android.view.MotionEvent
+import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
-import java.lang.ref.WeakReference
-import java.time.LocalDate
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import android.view.ViewGroup
 
 /**
  * Created by triniwiz on 6/9/20
  */
-internal class GLView : TextureView, SurfaceTextureListener {
-	private var isCreated = false
-	private var isCreatedWithZeroSized = false
+class GLView : TextureView, SurfaceTextureListener {
+    internal var isCreated = false
+    internal var isCreatedWithZeroSized = false
+    internal var canvas: NSCCanvas? = null
+    internal var surface: Surface? = null
 
-	var gLContext: GLContext? = null
-		private set
-	private var mListener: TNSCanvas.Listener? = null
+    constructor(context: Context) : super(context) {
+        init()
+    }
 
-	@JvmField
-	var drawingBufferWidth = 0
+    private fun setScaling() {
+        val matrix = Matrix()
+        val density = resources.displayMetrics.density
+        if (ignorePixelScaling) {
+            matrix.setScale(density, density)
+        }
+        setTransform(matrix)
+    }
 
-	@JvmField
-	var drawingBufferHeight = 0
+    var ignorePixelScaling: Boolean = false
+        set(value) {
+            field = value
+            setScaling()
+        }
 
-	constructor(context: Context?) : super(context!!) {
-		init()
-	}
+    internal var isReady = false
 
-	private fun setScaling() {
-		val matrix = Matrix()
-		val density = resources.displayMetrics.density
-		if (ignorePixelScaling) {
-			matrix.postScale(density, density)
-		}
-		setTransform(matrix)
-	}
+    constructor(context: Context, attrs: AttributeSet?) : super(
+        context, attrs
+    ) {
+        init()
+    }
 
-	var ignorePixelScaling: Boolean = false
-		set(value) {
-			field = value
-			setScaling()
-		}
+    fun init() {
+        isOpaque = false
+        surfaceTextureListener = this
+    }
 
-	fun resize(width: Int, height: Int) {
-		drawingBufferWidth = width
-		drawingBufferHeight = height
-		gLContext!!.resize(width, height)
-	}
-
-	constructor(context: Context?, attrs: AttributeSet?) : super(
-		context!!, attrs
-	) {
-		init()
-	}
-
-	fun init() {
-		isOpaque = false
-		surfaceTextureListener = this
-		gLContext = GLContext()
-		gLContext!!.glView = WeakReference(this)
-	}
-
-	var starting = false
-	var startupLock: CountDownLatch? = null
-	fun setupContext() {
-		if (gLContext!!.mGLThread != null && gLContext!!.mGLThread!!.isStarted) {
-			return
-		}
-		if (gLContext!!.mGLThread == null) {
-			gLContext!!.init(null)
-		}
-		if (!starting) {
-			starting = true
-			startupLock = CountDownLatch(1)
-			gLContext!!.startGLThread()
-			try {
-				startupLock!!.await(1500, TimeUnit.MILLISECONDS)
-			} catch (ignore: InterruptedException) {
-			} finally {
-				starting = false
-				startupLock = null
-			}
-		}
-	}
-
-	fun flush() {
-		gLContext!!.flush()
-	}
+    private fun resize() {
+        canvas?.resize()
+    }
 
 
-	fun queueEvent(runnable: Runnable?) {
-		gLContext!!.queueEvent(runnable!!)
-	}
+    override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+        if (isReady) {
+            return
+        }
+        if (!isCreated) {
+            if (width == 0 || height == 0) {
+                isCreatedWithZeroSized = true
+            }
+            if (!isCreatedWithZeroSized) {
+                this.surface = Surface(surface)
+                canvas?.let {
+                    if (!isReady) {
+                        isReady = true
+                        it.listener?.contextReady()
+                    } else {
+                        resize()
+                    }
+                }
+            }
+            isCreated = true
+        }
+    }
 
-	fun setListener(listener: TNSCanvas.Listener?) {
-		mListener = listener
-	}
 
-	@Synchronized
-	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-		drawingBufferHeight = height
-		drawingBufferWidth = width
-		if (!isCreated) {
-			if (width == 0 || height == 0) {
-				isCreatedWithZeroSized = true
-			}
-			if (!isCreatedWithZeroSized) {
-				gLContext?.let {
-					if (it.usingOffscreenTexture && it.didInit) {
-						it.usingOffscreenTexture = false
-						it.mGLThread!!.mSurface = surface
-						it.resize(width, height, true)
-					} else {
-						it.init(surface)
-					}
-					mListener?.let {
-						handler.post {
-							it.contextReady()
-						}
-					}
-				}
-			}
-			isCreated = true
-		}
-	}
+    override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+        if (isReady || surface == this.surface) {
+            return
+        }
+        if (!isCreatedWithZeroSized) {
+            // resize
+            resize()
+            return
+        }
+        if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
+            this.surface = Surface(surface)
+            isCreatedWithZeroSized = false
+            canvas?.let {
+                if (!isReady) {
+                    isReady = true
+                    it.listener?.contextReady()
+                } else {
+                    resize()
+                }
+            }
+        }
+    }
 
-	@Synchronized
-	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		drawingBufferHeight = height
-		drawingBufferWidth = width
-		if (!isCreatedWithZeroSized) {
-			// resize
-		}
-		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
-			gLContext!!.init(surface)
-			isCreatedWithZeroSized = false
-			mListener?.let {
-				handler.post {
-					it.contextReady()
-				}
-			}
-		}
-	}
 
-	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-		//mGLContext.destroy();
-		isCreated = false
-		return true
-	}
+    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+        isCreated = false
+        return true
+    }
 
-	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+
+    override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+
 }

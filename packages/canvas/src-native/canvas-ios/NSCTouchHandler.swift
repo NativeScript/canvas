@@ -10,19 +10,74 @@ import UIKit
 class NSCTouchHandler: NSObject {
 
     private let view: NSCCanvas
-    var gestureRecognizer: UIGestureRecognizer?
+    var gestureRecognizer: TouchGestureRecognizer?
     var panRecognizer: UIPanGestureRecognizer?
     var pinchRecognizer: UIPinchGestureRecognizer?
+    
     init(canvas: NSCCanvas) {
         view = canvas
         super.init()
-        self.gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(handle))
+        self.gestureRecognizer = TouchGestureRecognizer(target: self, action: nil)
+        self.gestureRecognizer?.handler = self
         self.panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handle))
         self.pinchRecognizer = UIPinchGestureRecognizer(target: self, action: #selector(handle))
     }
 
     var pointers: [CGPoint] = Array(repeating: CGPointZero, count: 10)
     var lastPointerPosition: [CGPoint] = Array(repeating: CGPointZero, count: 10)
+    
+    class TouchGestureRecognizer: UIGestureRecognizer {
+        var handler: NSCTouchHandler?
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
+            let location = touches.first?.location(in: view)
+            
+            guard let location = touches.first?.location(in: view), let handler = handler else {
+                view?.touchesBegan(touches, with: event)
+                return
+            }
+            
+            handler.pointers[ptridx] = location
+            handler.onPress(ptridx, location.x, location.y, self)
+            
+            view?.touchesBegan(touches, with: event)
+        }
+        
+        override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+            handler?.onMove(self)
+            view?.touchesMoved(touches, with: event)
+        }
+        
+        override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
+            let location = touches.first?.location(in: view)
+            
+            guard let location = touches.first?.location(in: view), let handler = handler else {
+                view?.touchesBegan(touches, with: event)
+                return
+            }
+            
+            handler.onRelease(ptridx, location.x, location.y, self)
+            handler.pointers[ptridx] = CGPointZero
+            
+            view?.touchesEnded(touches, with: event)
+        }
+        
+        override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
+            let location = touches.first?.location(in: view)
+            
+            guard let location = touches.first?.location(in: view), let handler = handler else {
+                view?.touchesBegan(touches, with: event)
+                return
+            }
+            
+            handler.onCancel(ptridx, location.x, location.y, self)
+            handler.pointers[ptridx] = CGPointZero
+            
+            view?.touchesCancelled(touches, with: event)
+        }
+    }
     
     @objc func handle(_ gestureRecognizer: UIGestureRecognizer) {
         
@@ -38,11 +93,10 @@ class NSCTouchHandler: NSObject {
         
     
     
-        let location = numberOfTouches <= 1 ?  gestureRecognizer.location(in: gestureRecognizer.view) : gestureRecognizer.location(ofTouch: ptridx, in: gestureRecognizer.view)
+        let location = numberOfTouches > 1 ?  gestureRecognizer.location(in: gestureRecognizer.view) : gestureRecognizer.location(ofTouch: ptridx, in: gestureRecognizer.view)
                 
         let x = location.x
         let y = location.y
-        
         
         guard let me = gestureRecognizer as? UIPinchGestureRecognizer else {
             if(press){
@@ -185,74 +239,6 @@ class NSCTouchHandler: NSObject {
 
         }
     
-    
-/*
-    private func onTouchEvent(_ ptrid: Int, x: CGFloat, y: CGFloat, press: Bool, release: Bool, gestureRecognizer: UIGestureRecognizer) {
-        var sb = "{"
-        append("event", "mouseMoveCallback", &sb)
-        append("ptrId", ptrid, &sb)
-        append("x", x, &sb)
-        append("y", y, &sb, true)
-
-        if press {
-            sb += ",\"press\": {"
-            append("event", "mouseDownCallback", &sb)
-            append("ptrId", ptrid, &sb, true)
-            sb += "}"
-        }
-
-        if release {
-            sb += ",\"release\": {"
-            append("event", "mouseUpCallback", &sb)
-            append("ptrId", ptrid, &sb, true)
-            sb += "}"
-        }
-
-        sb += "}"
-
-        view.touchEventListener?(sb, gestureRecognizer)
-    }
-
-    private func onMultitouchCoordinates(_ ptrid: Int, x: CGFloat, y: CGFloat, gestureRecognizer: UIPanGestureRecognizer) {
-        var sb = "{"
-        append("event", "touchCoordinatesCallback", &sb)
-        append("ptrId", ptrid, &sb)
-        append("x", x, &sb)
-        append("y", y, &sb, true)
-        sb += "}"
-
-        view.touchEventListener?(sb, gestureRecognizer)
-    }
-
-    private func onMultitouchCoordinates(gestureRecognizer: UIPanGestureRecognizer) {
-        let pointerCount = gestureRecognizer.numberOfTouches
-
-        if pointerCount == 0 {
-            return
-        }
-
-        let last = pointerCount - 1
-        var sb = "["
-        for p in 0..<pointerCount {
-            let pid = gestureRecognizer.hashValue
-            sb += "{"
-            append("event", "touchCoordinatesCallback", &sb)
-            append("ptrId", pid, &sb)
-            append("x", gestureRecognizer.location(ofTouch: p, in: gestureRecognizer.view).x, &sb)
-            append("y", gestureRecognizer.location(ofTouch: p, in: gestureRecognizer.view).y, &sb, true)
-
-            if p != last {
-                sb += "},"
-            } else {
-                sb += "}"
-            }
-        }
-        sb += "]"
-        view.touchEventListener?(sb, gestureRecognizer)
-    }
- 
- */
-
     private func append(_ key: String, _ value: String, _ sb: inout String, _ isLast: Bool = false) {
         sb += "\"\(key)\": \"\(value)\"\(isLast ? "" : ",")"
     }

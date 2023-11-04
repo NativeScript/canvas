@@ -45,6 +45,14 @@ import { URL } from './URL';
 
 (global as any).Intl = (global as any).window.Intl = (global as any).Intl || {}; // pixijs
 
+import { MutationObserver } from './MutationObserver';
+
+Object.defineProperty(global, 'MutationObserver', {
+	value: MutationObserver,
+	configurable: true,
+	writable: true,
+});
+
 Object.defineProperty(global, 'Element', {
 	value: Element,
 	configurable: true,

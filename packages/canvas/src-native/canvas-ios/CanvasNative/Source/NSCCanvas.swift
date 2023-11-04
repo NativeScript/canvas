@@ -356,6 +356,18 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
+    var ignoreTouchEvents = false {
+        didSet {
+            if(ignoreTouchEvents){
+                removeGestureRecognizer(handler!.gestureRecognizer!)
+                removeGestureRecognizer(handler!.pinchRecognizer!)
+            }else {
+                addGestureRecognizer(handler!.gestureRecognizer!)
+                addGestureRecognizer(handler!.pinchRecognizer!)
+            }
+        }
+    }
+    
     
     var readyListener: NSCCanvasListener?
     public func setListener(_ listener: NSCCanvasListener?){

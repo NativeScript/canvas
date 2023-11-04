@@ -185,7 +185,7 @@ impl ContextWrapper {
         let mut context = self.get_context_mut();
         let device = context.device;
 
-        let mut ctx = &mut *context;
+        let ctx = &mut *context;
 
         let mut fb = [0];
 
@@ -212,7 +212,7 @@ impl ContextWrapper {
         let mut context = self.get_context_mut();
         let device = context.device;
 
-        let mut ctx = &mut *context;
+        let ctx = &mut *context;
 
         Context::resize(ctx, width, height, device.density, device.alpha, device.ppi);
     }

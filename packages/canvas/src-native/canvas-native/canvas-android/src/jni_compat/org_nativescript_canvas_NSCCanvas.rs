@@ -1,13 +1,11 @@
-use std::cell::RefCell;
-use std::ffi::c_void;
-use std::rc::Rc;
-
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use raw_window_handle::HasRawWindowHandle;
 use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
+use std::cell::RefCell;
+use std::ffi::c_void;
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -369,7 +367,6 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
     context.render();
 }
 
-
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPathTest(
     _env: JNIEnv,
@@ -397,14 +394,15 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPat
         region.line_to(270f32, 90f32);
         region.close_path();
 
-
         // Fill path
         ctx.set_fill_style_with_color("green");
-        ctx.fill_rule(Some(&mut region), canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd);
+        ctx.fill_rule(
+            Some(&mut region),
+            canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd,
+        );
     }
     context.render();
 }
-
 
 #[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrentGLContextToBitmap(

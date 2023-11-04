@@ -1116,7 +1116,7 @@ struct U8Buffer *canvas_native_text_decoder_decode_as_bytes(const struct TextDec
                                                             uintptr_t size);
 
 const char *canvas_native_text_decoder_decode_c_string(const struct TextDecoder *decoder,
-                                                       const int8_t *data);
+                                                       const char *data);
 
 const char *canvas_native_text_decoder_get_encoding(const struct TextDecoder *decoder);
 

@@ -47,7 +47,12 @@ class NSCCanvas : FrameLayout {
 		fun onEvent(event: String, motionEvent: MotionEvent)
 	}
 
+	var ignoreTouchEvents = false
+
 	override fun onTouchEvent(event: MotionEvent): Boolean {
+		if (ignoreTouchEvents) {
+			return false
+		}
 		handler.handle(event)
 		return true
 	}
@@ -399,8 +404,15 @@ class NSCCanvas : FrameLayout {
 
 
 		native2DContext = nativeCreate2DContext(
-			nativeGL, this.drawingBufferWidth, this.drawingBufferHeight,
-			alpha, density, samples, fontColor, (resources.displayMetrics.densityDpi * 160).toFloat(), direction
+			nativeGL,
+			this.drawingBufferWidth,
+			this.drawingBufferHeight,
+			alpha,
+			density,
+			samples,
+			fontColor,
+			(resources.displayMetrics.densityDpi * 160).toFloat(),
+			direction
 		)
 
 		return native2DContext

@@ -96,7 +96,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		//tiny_poly_world(this.canvas);
+		tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -108,7 +108,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.birds(this.canvas);
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
-		this.webgl_postprocessing_unreal_bloom(this.canvas);
+		//this.webgl_postprocessing_unreal_bloom(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
@@ -1013,7 +1013,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			if (mixer) mixer.update(delta);
 
 			renderer.render(scene, camera);
-
 		}
 
 		init();
@@ -1562,32 +1561,40 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		function init(root) {
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setAnimationLoop(render);
 			renderer.setSize(width, height);
 
 			grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000);
 			grid.material.opacity = 0.1;
 			grid.material.depthWrite = false;
 			grid.material.transparent = true;
-			//	renderer.outputEncoding = THREE.sRGBEncoding;
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.toneMappingExposure = 0.85;
 
 			window.addEventListener('resize', onWindowResize, false);
 
 			//
-			camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-			camera.position.set(4.25, 1.4, -7);
+			camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+			camera.position.set(4.25, 1.4, -4.5);
 
 			controls = new OrbitControls(camera, canvas);
+			controls.maxDistance = 9;
+			controls.maxPolarAngle = THREE.MathUtils.degToRad(90);
 			controls.target.set(0, 0.5, 0);
 
-			const environment = new RoomEnvironment();
-			const pmremGenerator = new THREE.PMREMGenerator(renderer);
+			controls.update();
 
 			scene = new THREE.Scene();
-			scene.background = new THREE.Color(0xeeeeee);
-			scene.environment = pmremGenerator.fromScene(environment).texture;
-			scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
+			scene.background = new THREE.Color(0x333333);
+			scene.environment = new RGBELoader().load(root + '/textures/equirectangular/venice_sunset_1k.hdr');
+			scene.environment.mapping = THREE.EquirectangularReflectionMapping;
+			scene.fog = new THREE.Fog(0x333333, 10, 15);
+
+			grid = new THREE.GridHelper(20, 40, 0xffffff, 0xffffff);
+			grid.material.opacity = 0.2;
+			grid.material.depthWrite = false;
+			grid.material.transparent = true;
+			scene.add(grid);
 
 			const light = new THREE.SpotLight('white', 1);
 			light.position.set(4.25, 10, -10);
@@ -1598,10 +1605,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			const bodyMaterial = new THREE.MeshPhysicalMaterial({
 				color: 0xff0000,
-				metalness: 0.6,
-				roughness: 0.4,
-				clearcoat: 0.05,
-				clearcoatRoughness: 0.05,
+				metalness: 1.0,
+				roughness: 0.5,
+				clearcoat: 1.0,
+				clearcoatRoughness: 0.03,
 			});
 
 			const detailsMaterial = new THREE.MeshStandardMaterial({
@@ -1612,10 +1619,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			const glassMaterial = new THREE.MeshPhysicalMaterial({
 				color: 0xffffff,
-				metalness: 0,
-				roughness: 0.1,
-				transmission: 0.9,
-				transparent: true,
+				metalness: 0.25,
+				roughness: 0,
+				transmission: 1.0,
 			});
 
 			bodyMaterial.color.set(bodyColor);
@@ -1685,10 +1691,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 				scene.add(carModel);
 			});
-
-			renderer.setAnimationLoop(render);
-
-			controls.update();
 		}
 
 		function onWindowResize() {
@@ -1724,21 +1726,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		const renderer = new THREE.WebGLRenderer({ context, antialias: true });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(width, height);
-		//renderer.outputEncoding = THREE.sRGBEncoding;
 
 		const pmremGenerator = new THREE.PMREMGenerator(renderer);
 
 		const scene = new THREE.Scene();
-
-		const light = new THREE.SpotLight();
-		light.position.set(-1.8, 0.6, 2.7 * 1.2);
-		scene.add(light);
-
 		scene.background = new THREE.Color(0xbfe3dd);
+		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04).texture;
 
-		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-		const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+		const camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
 		camera.position.set(5, 2, 8);
 
 		const controls = new OrbitControls(camera, canvas);

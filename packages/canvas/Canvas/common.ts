@@ -321,11 +321,26 @@ export const upscaleProperty = new Property<CanvasBase, boolean>({
 	valueConverter: booleanConverter,
 });
 
+export const ignoreTouchEventsProperty = new Property<CanvasBase, boolean>({
+	name: 'ignoreTouchEvents',
+	defaultValue: false,
+	valueConverter: booleanConverter,
+});
+
+export const doc = {
+	defaultView: {
+		getComputedStyle: function () {
+			return null;
+		},
+	},
+};
+
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
 	ignorePixelScaling: boolean;
 	upscaleProperty: boolean;
+	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;
 	_classList: Set<any>;
 
@@ -354,6 +369,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	protected constructor() {
 		super();
 		this._classList = new Set();
+	}
+
+	get ownerDocument() {
+		return window?.document ?? doc;
 	}
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
@@ -464,7 +483,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_moveCallback(pointers: { ptrId: number; x: number; y: number }[]) {
+	private _moveCallback(pointers: { ptrId: number; x: number; y: number }[]) {
 		const hasPointerCallbacks = this._pointerMoveCallbacks.size > 0;
 		const hasMouseCallbacks = this._mouseMoveCallbacks.size > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
@@ -545,7 +564,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_upCallback(ptrId, x, y) {
+	private _upCallback(ptrId, x, y) {
 		const hasPointerCallbacks = this._pointerUpCallbacks.size > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.size > 0;
 
@@ -598,10 +617,23 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 			const touches = TouchList.fromList(this._touches);
 
+			const changedTouches = [
+				new Touch({
+					identifier: ptrId,
+					target: null,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					pageX: x,
+					pageY: y,
+				}),
+			];
+
 			const event = new TouchEvent('touchend', {
 				touches,
 				targetTouches: touches,
-				changedTouches: this._touches,
+				changedTouches,
 			});
 
 			for (const callback of this._touchEndCallbacks) {
@@ -610,7 +642,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_downCallback(ptrId, x, y) {
+	private _downCallback(ptrId, x, y) {
 		const hasPointerCallbacks = this._pointerDownCallbacks.size > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.size > 0;
 
@@ -679,7 +711,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_cancelCallback(ptrid, x, y) {
+	private _cancelCallback(ptrid, x, y) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.size > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.size > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
@@ -743,7 +775,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
+	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
 		// move callback
 
 		const hasPointerCallbacks = this._pointerMoveCallbacks.size > 0;

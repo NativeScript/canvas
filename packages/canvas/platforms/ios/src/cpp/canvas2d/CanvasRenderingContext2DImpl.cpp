@@ -2122,22 +2122,19 @@ CanvasRenderingContext2DImpl::SetLineDash(const v8::FunctionCallbackInfo<v8::Val
 
     auto value = args[0];
 
-    if (args.Length() == 1 &&
-        args[0]->IsObject()) {
-        if (value->IsArray()) {
-            auto segments = value.As<v8::Array>();
-            auto len = segments->Length();
-            std::vector<float> data;
-            for (int i = 0; i < len; ++i) {
-                auto item = segments->Get(
-                        context, i).ToLocalChecked()->NumberValue(context).ToChecked();
-                data.push_back(
-                        static_cast<float>(item));
-            }
-
-            canvas_native_context_set_line_dash(
-                    ptr->GetContext(), data.data(), data.size());
+    if (value->IsArray()) {
+        auto segments = value.As<v8::Array>();
+        auto len = segments->Length();
+        std::vector<float> data;
+        for (int i = 0; i < len; ++i) {
+            auto item = segments->Get(
+                    context, i).ToLocalChecked()->NumberValue(context).ToChecked();
+            data.push_back(
+                    static_cast<float>(item));
         }
+
+        canvas_native_context_set_line_dash(
+                ptr->GetContext(), data.data(), data.size());
     }
 }
 

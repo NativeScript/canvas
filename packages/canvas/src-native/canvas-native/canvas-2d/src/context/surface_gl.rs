@@ -1,7 +1,5 @@
 use skia_safe::gpu::gl::Interface;
-use skia_safe::{
-    Color, ColorType, PixelGeometry, surfaces, gpu, Surface,
-};
+use skia_safe::{gpu, surfaces, Color, ColorType, PixelGeometry, Surface};
 
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
@@ -33,11 +31,11 @@ impl Context {
             ppi,
         };
         let interface = Interface::new_native();
-        let mut ctx = skia_safe::gpu::DirectContext::new_gl(interface, None).unwrap();
+        let mut ctx = gpu::DirectContext::new_gl(interface, None).unwrap();
 
         ctx.reset(None);
 
-        let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
+        let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
         if alpha {
             frame_buffer.format = GR_GL_RGBA8;
         } else {
@@ -61,14 +59,16 @@ impl Context {
         let surface_holder = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
             &target,
-            skia_safe::gpu::SurfaceOrigin::BottomLeft,
+            gpu::SurfaceOrigin::BottomLeft,
             color_type,
             None,
             Some(&surface_props),
         );
 
         let mut surface = surface_holder.unwrap();
+
         surface.canvas().scale((density, density));
+
         Context {
             surface,
             path: Path::default(),
@@ -90,7 +90,7 @@ impl Context {
         ppi: f32,
     ) {
         let interface = Interface::new_native();
-        let ctx = skia_safe::gpu::DirectContext::new_gl(interface, None);
+        let ctx = gpu::DirectContext::new_gl(interface, None);
         if ctx.is_none() {
             return;
         }
@@ -105,7 +105,7 @@ impl Context {
             alpha,
             ppi,
         };
-        let mut frame_buffer = skia_safe::gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
+        let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
         if alpha {
             frame_buffer.format = GR_GL_RGBA8;
@@ -113,7 +113,7 @@ impl Context {
             frame_buffer.format = GR_GL_RGB565;
         }
 
-        let target = skia_safe::gpu::BackendRenderTarget::new_gl(
+        let target = gpu::BackendRenderTarget::new_gl(
             (width as i32, height as i32),
             Some(samples as usize),
             0,
@@ -132,7 +132,7 @@ impl Context {
         if let Some(mut surface) = gpu::surfaces::wrap_backend_render_target(
             &mut ctx,
             &target,
-            skia_safe::gpu::SurfaceOrigin::BottomLeft,
+            gpu::SurfaceOrigin::BottomLeft,
             color_type,
             None,
             Some(&surface_props),

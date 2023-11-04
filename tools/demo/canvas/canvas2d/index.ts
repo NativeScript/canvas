@@ -13,3 +13,4 @@ export * from './particles/particlesColor';
 export * from './particles/particlesLarge';
 export * from './particles/swarm';
 export * from './mdn';
+export * from './circles';

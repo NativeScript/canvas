@@ -1,4 +1,4 @@
-import { CanvasBase, ignorePixelScalingProperty, upscaleProperty } from './common';
+import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty, upscaleProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -66,6 +66,10 @@ export class Canvas extends CanvasBase {
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
 		this._canvas.setIgnorePixelScaling(value);
+	}
+
+	[ignoreTouchEventsProperty.setNative](value: boolean) {
+		this._canvas.setIgnoreTouchEvents = value;
 	}
 
 	// @ts-ignore
@@ -170,6 +174,32 @@ export class Canvas extends CanvasBase {
 				Object.defineProperty(parent, 'clientHeight', {
 					get: function () {
 						return parent.getMeasuredHeight() / Screen.mainScreen.scale;
+					},
+				});
+			}
+			if (parent && typeof parent.getBoundingClientRect !== 'function') {
+				parent.getBoundingClientRect = function () {
+					const view = this;
+					const nativeView = view.android;
+					const width = this.width;
+					const height = this.height;
+					return {
+						bottom: nativeView.getBottom() / Screen.mainScreen.scale,
+						height: height,
+						left: nativeView.getLeft() / Screen.mainScreen.scale,
+						right: nativeView.getRight() / Screen.mainScreen.scale,
+						top: nativeView.getTop() / Screen.mainScreen.scale,
+						width: width,
+						x: nativeView.getX() / Screen.mainScreen.scale,
+						y: nativeView.getY() / Screen.mainScreen.scale,
+					};
+				};
+			}
+
+			if (parent && parent.ownerDocument === undefined) {
+				Object.defineProperty(parent, 'ownerDocument', {
+					get: function () {
+						return window?.document ?? doc;
 					},
 				});
 			}
@@ -289,9 +319,7 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					this._layoutNative();
-					const opts = Object.assign(defaultOpts, this._handleContextOptions(type, options));
-
-					opts['fontColor'] = this.parent?.style?.color?.android || -16777216;
+					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
@@ -310,8 +338,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v1' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
-
+					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -326,7 +353,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webgl2Context) {
 					this._layoutNative();
-					const opts = Object.assign({ version: 'v2' }, Object.assign(defaultOpts, this._handleContextOptions(type, options)));
+					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -356,14 +383,14 @@ export class Canvas extends CanvasBase {
 		const width = this.width;
 		const height = this.height;
 		return {
-			bottom: nativeView.getBottom(),
+			bottom: nativeView.getBottom() / Screen.mainScreen.scale,
 			height: height,
-			left: nativeView.getLeft(),
-			right: nativeView.getRight(),
-			top: nativeView.getTop(),
+			left: nativeView.getLeft() / Screen.mainScreen.scale,
+			right: nativeView.getRight() / Screen.mainScreen.scale,
+			top: nativeView.getTop() / Screen.mainScreen.scale,
 			width: width,
-			x: nativeView.getX(),
-			y: nativeView.getY(),
+			x: nativeView.getX() / Screen.mainScreen.scale,
+			y: nativeView.getY() / Screen.mainScreen.scale,
 		};
 	}
 

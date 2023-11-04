@@ -1,4 +1,4 @@
-import { CanvasBase, ignorePixelScalingProperty } from './common';
+import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -92,6 +92,10 @@ export class Canvas extends CanvasBase {
 		this._canvas.ignorePixelScaling = value;
 	}
 
+	[ignoreTouchEventsProperty.setNative](value: boolean) {
+		this._canvas.ignoreTouchEvents = value;
+	}
+
 	// @ts-ignore
 	get ios() {
 		return this._canvas;
@@ -175,6 +179,33 @@ export class Canvas extends CanvasBase {
 			Object.defineProperty(parent, 'clientHeight', {
 				get: function () {
 					return parent.getMeasuredHeight() / Screen.mainScreen.scale;
+				},
+			});
+		}
+
+		if (parent && typeof parent.getBoundingClientRect !== 'function') {
+			parent.getBoundingClientRect = function () {
+				const view = this;
+				const frame = view.ios.frame as CGRect;
+				const width = view.width;
+				const height = view.height;
+				return {
+					bottom: height,
+					height: height,
+					left: frame.origin.x,
+					right: width,
+					top: frame.origin.y,
+					width: width,
+					x: frame.origin.x,
+					y: frame.origin.y,
+				};
+			};
+		}
+
+		if (parent && parent.ownerDocument === undefined) {
+			Object.defineProperty(parent, 'ownerDocument', {
+				get: function () {
+					return window?.document ?? doc;
 				},
 			});
 		}

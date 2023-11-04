@@ -48,8 +48,9 @@ import {
 	lineDashOffset,
 	shadowOffsetX,
 	strokeStyle,
+	circle_demo,
 } from './canvas2d';
-
+const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
@@ -57,7 +58,6 @@ import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, envi
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54, issue93 } from './issues';
-var Chart;
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -68,7 +68,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	constructor() {
 		super();
-		Chart = require('chart.js');
 		Vex = require('vexflow');
 	}
 
@@ -553,7 +552,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -650,7 +649,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.playCanvas(this.canvas);
 		//this.drawRandomFullscreenImage(this.canvas);
 		//issue54(this.canvas);
-		this.decoder()
+		//this.decoder()
 		//this.context2DTest(this.canvas);
 
 		//issue93(this.canvas);

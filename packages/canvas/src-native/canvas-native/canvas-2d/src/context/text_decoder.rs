@@ -53,7 +53,7 @@ impl TextDecoder {
         let (res, _) = self.inner.decode_with_bom_removal(txt);
         res
     }
-    
+
     pub fn decode_c_string(&self, data: *const c_char) -> CString {
         let txt = unsafe { CStr::from_ptr(data) };
         let txt = txt.to_bytes();

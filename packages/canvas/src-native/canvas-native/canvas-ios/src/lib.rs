@@ -1,27 +1,17 @@
 use std::cell::RefCell;
-use std::ffi::{c_float, c_int, c_long, c_longlong, c_uchar, c_void, CStr, CString};
+use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use std::sync::Once;
-
-use icrate::objc2::declare::ClassBuilder;
-use icrate::objc2::ffi::BOOL;
-use icrate::objc2::rc::{autoreleasepool, Id, Owned, Shared};
-use icrate::objc2::runtime::{Bool, Class, Object, Sel};
-use icrate::objc2::{declare_class, sel, ClassType, Encoding, Message, RefEncode};
-use icrate::Foundation::{NSData, NSObject, NSString};
-use raw_window_handle::HasRawWindowHandle;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
+pub use canvas_c::*;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
-use canvas_cxx::CanvasRenderingContext2D;
-use canvas_cxx::PaintStyle;
-
-
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
     OffScreen,
@@ -260,9 +250,6 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
 }
 
 
-
-
-
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
     if context == 0 {
@@ -325,7 +312,7 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = CanvasRenderingContext2D::new(
+    let ctx_2d = CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -369,7 +356,7 @@ pub extern "C" fn canvas_native_release_ios_gl(context: i64) {
     if context == 0 {
         return;
     }
-    let context = context as *mut GLContext;
+    let context = context as *mut iOSGLContext;
     let _ = unsafe { Box::from_raw(context) };
 }
 
@@ -452,8 +439,9 @@ pub extern "C" fn canvas_native_imageasset_load_from_bytes(
     asset.load_from_bytes(bytes)
 }
 
+
 #[no_mangle]
-pub extern "C" fn canvas_native_context_create_pattern(
+pub extern "C" fn canvas_native_context_create_pattern_raw(
     context: i64,
     width: i32,
     height: i32,

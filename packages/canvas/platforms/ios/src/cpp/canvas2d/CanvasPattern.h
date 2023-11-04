@@ -3,27 +3,40 @@
 //
 
 #pragma once
-
-#include "rust/cxx.h"
-#include "canvas-cxx/src/lib.rs.h"
-#import <NativeScript/JSIRuntime.h>
 #include "MatrixImpl.h"
 #include <vector>
 
-using namespace facebook;
-using namespace org::nativescript::canvas;
-
-class JSI_EXPORT CanvasPattern : public jsi::HostObject {
+class CanvasPattern {
 public:
-    CanvasPattern(rust::Box<PaintStyle> style);
+    CanvasPattern(PaintStyle* style);
+    
+    ~CanvasPattern() {
+        canvas_native_paint_style_destroy(this->GetPaintStyle());
+        this->style_ = nullptr;
+    }
 
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+    PaintStyle* GetPaintStyle();
 
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
+    static void Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate);
 
-    PaintStyle &GetPaintStyle();
+    static CanvasPattern *GetPointer(const v8::Local<v8::Object> &object);
+
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pattern) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::CanvasPattern);
+        auto ext = v8::External::New(isolate, pattern);
+        object->SetInternalField(0, ext);
+        return scope.Escape(object);
+    }
+
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
+
+    static void SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    rust::Box<PaintStyle> style_;
+    PaintStyle* style_;
 };
 

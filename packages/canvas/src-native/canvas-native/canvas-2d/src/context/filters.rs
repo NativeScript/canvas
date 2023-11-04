@@ -1,8 +1,6 @@
 use std::f32::consts::PI;
-use skia_bindings::SkColorChannel;
 
-use skia_safe::{color_filters, image_filters, table_color_filter, Point};
-use skia_safe::perlin_noise_shader::turbulence;
+use skia_safe::{color_filters, image_filters, Point};
 use skia_safe::wrapper::NativeTransmutableWrapper;
 
 use crate::context::Context;

@@ -40,7 +40,7 @@ impl Context {
         };
         let mut context = skia_safe::gpu::DirectContext::new_metal(backend, None).unwrap();
         let surface_props = SurfaceProps::new(SurfacePropsFlags::default(), PixelGeometry::Unknown);
-        let surface_holder = Surface::from_mtk_view(
+        let surface_holder = unsafe { gpu::surfaces::wrap_mtk_view(
             &mut context,
             view as skia_safe::gpu::mtl::Handle,
             gpu::SurfaceOrigin::TopLeft,
@@ -48,12 +48,12 @@ impl Context {
             ColorType::BGRA8888,
             None,
             Some(&surface_props),
-        );
+        )};
 
         Context {
             surface: surface_holder.unwrap(),
             path: Path::default(),
-            state: State::from_device(context_device, TextDirection::from(direction)),
+            state: State::from_device(context_device, TextDirection::from(direction as u32)),
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
             device: context_device,

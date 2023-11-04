@@ -9,6 +9,7 @@ const routes: Routes = [
    { path: 'home', component: HomeComponent },
 	{ path: 'canvas', loadChildren: () => import('./plugin-demos/canvas.module').then(m => m.CanvasModule) },
 	{ path: 'canvas-babylon', loadChildren: () => import('./plugin-demos/canvas-babylon.module').then(m => m.CanvasBabylonModule) },
+	{ path: 'canvas-chartjs', loadChildren: () => import('./plugin-demos/canvas-chartjs.module').then(m => m.CanvasChartjsModule) },
 	{ path: 'canvas-media', loadChildren: () => import('./plugin-demos/canvas-media.module').then(m => m.CanvasMediaModule) },
 	{ path: 'canvas-phaser', loadChildren: () => import('./plugin-demos/canvas-phaser.module').then(m => m.CanvasPhaserModule) },
 	{ path: 'canvas-phaser-ce', loadChildren: () => import('./plugin-demos/canvas-phaser-ce.module').then(m => m.CanvasPhaserCeModule) },

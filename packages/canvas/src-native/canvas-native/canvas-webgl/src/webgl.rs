@@ -2060,7 +2060,7 @@ pub fn canvas_native_webgl_tex_image2d(
     border: i32,
     format: i32,
     image_type: i32,
-    buf: &mut [u8],
+    buf: &[u8],
     state: &WebGLState,
 ) {
     state.make_current();

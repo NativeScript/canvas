@@ -1,0 +1,73 @@
+{
+  "name": "canvas-chartjs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/canvas-chartjs",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/js:tsc",
+      "options": {
+        "outputPath": "dist/packages/canvas-chartjs",
+        "tsConfig": "packages/canvas-chartjs/tsconfig.json",
+        "packageJson": "packages/canvas-chartjs/package.json",
+        "main": "packages/canvas-chartjs/index.d.ts",
+        "assets": [
+          "packages/canvas-chartjs/*.md",
+          "packages/canvas-chartjs/index.d.ts",
+          "LICENSE",
+          {
+            "glob": "**/*",
+            "input": "packages/canvas-chartjs/platforms/",
+            "output": "./platforms/"
+          }
+        ],
+        "dependsOn": [
+          {
+            "target": "build.all",
+            "projects": "dependencies"
+          }
+        ]
+      }
+    },
+    "build.all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node tools/scripts/build-finish.ts canvas-chartjs"
+        ],
+        "parallel": false
+      },
+      "outputs": [
+        "dist/packages/canvas-chartjs"
+      ],
+      "dependsOn": [
+        {
+          "target": "build.all",
+          "projects": "dependencies"
+        },
+        {
+          "target": "build",
+          "projects": "self"
+        }
+      ]
+    },
+    "focus": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx g @nativescript/plugin-tools:focus-packages canvas-chartjs"
+        ],
+        "parallel": false
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "packages/canvas-chartjs/**/*.ts"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

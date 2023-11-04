@@ -1,13 +1,11 @@
-use std::cell::RefCell;
-use std::ffi::c_void;
-
 use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_TRUE};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
-use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
 use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
+use std::cell::RefCell;
+use std::ffi::c_void;
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -155,7 +153,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = canvas_cxx::CanvasRenderingContext2D::new(
+    let ctx_2d = canvas_c::CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -203,6 +201,65 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurf
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurface(
+    env: JNIEnv,
+    _: JClass,
+    surface: jobject,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+
+    unsafe {
+        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            context.resize(window.width() as f32, window.height() as f32)
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurfaceNoSurface(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+
+    context.resize(width as f32, height as f32)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLNoSurface(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut AndroidGLContext;
+    let context = unsafe { &mut *context };
+    context
+        .gl_context
+        .resize_pbuffer(&mut context.contextAttributes, width, height);
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
     _env: JNIEnv,
     _: JClass,
@@ -211,7 +268,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
     if context == 0 {
         return;
     }
-    let context = context as *mut GLContext;
+    let context = context as *mut AndroidGLContext;
     let _ = unsafe { Box::from_raw(context) };
 }
 
@@ -230,6 +287,44 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGetGLPointer
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeMakeGLCurrent(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jboolean {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *mut AndroidGLContext;
+    let gl_context = unsafe { &*gl_context };
+    if gl_context.gl_context.make_current() {
+        return JNI_TRUE;
+    }
+    JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGLPointerRefCount(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jlong {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    if gl_context.is_null() {
+        return 0;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+    let count = ctx.get_strong_count();
+    let _ = ctx.as_raw_inner();
+
+    count as i64
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPointer(
     _env: JNIEnv,
     _: JClass,
@@ -239,7 +334,15 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
         return;
     }
     let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
-    let _ = GLContext::from_raw_inner(gl_context);
+    if gl_context.is_null() {
+        return;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+
+    if ctx.get_strong_count() <= 1 {
+        ctx.increment_strong_count();
+    }
 }
 
 #[no_mangle]
@@ -252,7 +355,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
         return;
     }
 
-    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     context.make_current();
@@ -260,6 +363,43 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
         let mut ctx = context.get_context_mut();
         ctx.set_fill_style_with_color("red");
         ctx.fill_rect_xywh(0., 0., 300., 300.);
+    }
+    context.render();
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPathTest(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let mut ctx = context.get_context_mut();
+
+        // Create path
+        let mut region = canvas_2d::context::paths::path::Path::default();
+        region.move_to(30f32, 90f32);
+        region.line_to(110f32, 20f32);
+        region.line_to(240f32, 130f32);
+        region.line_to(60f32, 130f32);
+        region.line_to(190f32, 20f32);
+        region.line_to(270f32, 90f32);
+        region.close_path();
+
+        // Fill path
+        ctx.set_fill_style_with_color("green");
+        ctx.fill_rule(
+            Some(&mut region),
+            canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd,
+        );
     }
     context.render();
 }
@@ -332,7 +472,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
                         AlphaType::Premul,
                         None,
                     );
-                    let context = context as *mut canvas_cxx::CanvasRenderingContext2D;
+                    let context = context as *mut canvas_c::CanvasRenderingContext2D;
                     let context = unsafe { &mut *context };
                     let mut context = context.get_context_mut();
 

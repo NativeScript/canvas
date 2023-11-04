@@ -21,7 +21,7 @@ pub(crate) fn inflate_stroke_rect(rect: &mut (Point, Size), paint: &Paint) {
     // Fast approximation of the stroke's bounding rect.
     // This yields a slightly oversized rect but is very fast
     // compared to Path::strokeBoundingRect().
-    let root_2 = (2.0 as f32).sqrt();
+    let root_2 = 2.0f32.sqrt();
     let mut delta: f32 = paint.stroke_width() / 2.0;
     if paint.stroke_join() == Join::Miter {
         delta *= paint.stroke_miter();

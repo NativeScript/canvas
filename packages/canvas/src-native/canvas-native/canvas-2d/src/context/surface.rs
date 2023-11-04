@@ -1,10 +1,6 @@
 #![allow(dead_code)]
 
-use skia_safe::gpu::gl::Interface;
-use skia_safe::image::CachingHint;
-use skia_safe::{
-    AlphaType, Color, ColorType, EncodedImageFormat, ISize, ImageInfo, PixelGeometry, Rect, Surface,
-};
+use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect, Surface};
 
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
@@ -40,8 +36,10 @@ impl Context {
             None,
         );
 
+        let mut surface = surfaces::raster(&info, None, None).unwrap();
+        surface.canvas().scale((density, density));
         Context {
-            surface: Surface::new_raster(&info, None, None).unwrap(),
+            surface,
             path: Path::default(),
             state: State::from_device(device, direction),
             state_stack: vec![],
@@ -75,7 +73,8 @@ impl Context {
             None,
         );
 
-        if let Some(surface) = Surface::new_raster(&info, None, None) {
+        if let Some(mut surface) = surfaces::raster(&info, None, None) {
+            surface.canvas().scale((density, density));
             context.surface = surface;
             context.device = device;
             context.path = Path::default();
@@ -90,7 +89,7 @@ impl Context {
             AlphaType::Premul,
             None,
         );
-        let mut surface = Surface::new_raster_direct(&info, buffer, None, None).unwrap();
+        let mut surface = surfaces::wrap_pixels(&info, buffer, None, None).unwrap();
         let canvas = surface.canvas();
         let mut paint = skia_safe::Paint::default();
         paint.set_anti_alias(true);

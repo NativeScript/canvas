@@ -1,5 +1,6 @@
 {
-	"root": "packages/canvas",
+	"name": "canvas",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "packages/canvas",
 	"projectType": "library",
 	"generators": {},
@@ -18,6 +19,11 @@
 						"glob": "**/*",
 						"input": "packages/canvas/platforms/",
 						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*",
+						"input": "packages/canvas/src-native/ios",
+						"output": "./src-native/ios/"
 					},
 					{
 						"glob": "**/*.d.ts",
@@ -105,12 +111,12 @@
 			]
 		},
 		"build.all": {
-			"outputs": ["dist/packages/canvas"],
+			"outputs": ["{workspaceRoot}/dist/packages/canvas"],
 			"options": {
 				"commands": ["node tools/scripts/build-finish.ts canvas"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands",
+			"executor": "nx:run-commands",
 			"dependsOn": [
 				{
 					"target": "build.all",
@@ -123,65 +129,65 @@
 			]
 		},
 		"build.native.ios.framework.release": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh canvas-build.sh"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"build.native.ios.framework.debug": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh canvas-build-debug.sh"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"build.native.ios.debug": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh ios-build.sh"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"build.native.ios.release": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh ios-build.sh --release"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"build.native.android.debug": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh android-build.sh"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"build.native.android.release": {
-			"outputs": ["dist/packages"],
+			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
 				"commands": ["sh android-build.sh --release"],
 				"cwd": "tools/scripts",
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"focus": {
 			"options": {
 				"commands": ["nx workspace-schematic focus-packages canvas"],
 				"parallel": false
 			},
-			"executor": "@nrwl/workspace:run-commands"
+			"executor": "nx:run-commands"
 		},
 		"lint": {
 			"executor": "@nrwl/linter:eslint",

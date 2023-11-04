@@ -10,17 +10,20 @@
       <w>coord</w>
       <w>coords</w>
       <w>desynchronized</w>
+      <w>dfactor</w>
       <w>internalformat</w>
       <w>minmax</w>
       <w>multisample</w>
       <w>nativescript</w>
       <w>osei</w>
       <w>parameterf</w>
+      <w>parameteri</w>
       <w>pname</w>
       <w>premultiplied</w>
       <w>premultiply</w>
       <w>primcount</w>
       <w>renderbuffer</w>
+      <w>sfactor</w>
       <w>shaders</w>
       <w>triniwiz</w>
       <w>uint</w>

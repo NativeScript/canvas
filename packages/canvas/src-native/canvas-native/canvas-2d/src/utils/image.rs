@@ -1,7 +1,7 @@
-use std::ffi::{c_void, CString};
+use std::ffi::{c_void};
 use std::os::raw::c_int;
 
-use skia_safe::{AlphaType, Bitmap, ColorSpace, ColorType, Data, ISize, Image, ImageInfo, Pixmap};
+use skia_safe::{AlphaType, Bitmap, images, ColorType, Data, ISize, Image, ImageInfo, Pixmap};
 
 use canvas_core::image_asset::ImageAsset;
 

@@ -1,5 +1,6 @@
 {
-	"root": "apps/demo/",
+	"name": "demo",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
 	"sourceRoot": "apps/demo/src",
 	"projectType": "application",
 	"prefix": "demo",
@@ -11,7 +12,7 @@
 				"production": true,
 				"uglify": true,
 				"release": true,
-				"forDevice": true
+				"forDevice": true,
 			},
 			"dependsOn": [
 				{
@@ -37,7 +38,8 @@
 			"executor": "@nativescript/nx:build",
 			"options": {
 				"platform": "android",
-				"noHmr": true
+				"noHmr": true,
+				"flags": "--env.watchNodeModules"
 			},
 			"dependsOn": [
 				{

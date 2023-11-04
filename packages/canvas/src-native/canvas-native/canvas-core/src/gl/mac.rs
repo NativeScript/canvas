@@ -1,11 +1,13 @@
-use std::cell::{Ref, RefCell, RefMut};
+use once_cell::sync::OnceCell;
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::rc::Rc;
 
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
+
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-
 use glutin::config::{
     Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
 };
@@ -15,8 +17,9 @@ use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use once_cell::sync::Lazy;
-use raw_window_handle::{AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle};
+use raw_window_handle::{
+    AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+};
 use winit::event_loop::EventLoop;
 use winit::window::Window;
 
@@ -35,7 +38,7 @@ pub struct GLContextInner {
     context: Option<PossiblyCurrentContext>,
     display: Option<Display>,
     window: Option<Window>,
-    event: Option<EventLoop<()>>
+    event: Option<EventLoop<()>>,
 }
 
 unsafe impl Sync for GLContextInner {}
@@ -70,47 +73,67 @@ impl Clone for GLContext {
 
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
-        ConfigTemplateBuilder::new()
+        let mut builder = ConfigTemplateBuilder::new()
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_transparency(self.get_alpha())
-            .build()
+            .with_transparency(self.get_alpha());
+
+        if !self.get_is_canvas() && self.get_antialias() {
+            builder = builder.with_multisampling(4)
+        }
+        builder.build()
     }
 }
 
 impl From<&mut ContextAttributes> for ConfigTemplate {
     fn from(value: &mut ContextAttributes) -> Self {
-        ConfigTemplateBuilder::new()
+        let mut builder = ConfigTemplateBuilder::new()
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
             .with_transparency(value.get_alpha())
-            .build()
+            .build();
+
+        if !value.get_is_canvas() && value.get_antialias() {
+            builder = builder.with_multisampling(4)
+        }
+        builder.build()
     }
 }
 
 impl Into<ConfigTemplateBuilder> for ContextAttributes {
     fn into(self) -> ConfigTemplateBuilder {
-        ConfigTemplateBuilder::new()
+        let mut builder = ConfigTemplateBuilder::new()
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_transparency(self.get_alpha())
+            .with_transparency(self.get_alpha());
+
+        if !value.get_is_canvas() && value.get_antialias() {
+            builder = builder.with_multisampling(4)
+        }
+        builder
     }
 }
 
 impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
     fn from(value: &mut ContextAttributes) -> Self {
-        ConfigTemplateBuilder::new()
+        let mut builder = ConfigTemplateBuilder::new()
             .prefer_hardware_accelerated(Some(true))
+            .with_multisampling(if value.get_antialias() { 4 } else { 0 })
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_transparency(value.get_alpha())
+            .with_transparency(value.get_alpha());
+
+        if !value.get_is_canvas() && value.get_antialias() {
+            builder = builder.with_multisampling(4)
+        }
+        builder
     }
 }
 
@@ -137,6 +160,7 @@ impl GLContext {
         window: RawWindowHandle,
     ) -> bool {
         let is_2d = context_attrs.get_is_canvas();
+        let multi_sample = context_attrs.get_antialias();
         let cfg = context_attrs.into();
         unsafe {
             if let Some(display) = self.display() {
@@ -161,8 +185,6 @@ impl GLContext {
                             let supports_transparency =
                                 cconfig.supports_transparency().unwrap_or(false);
 
-                            let num_samples = cconfig.num_samples();
-
                             let alpha_requested = context_attrs.get_alpha();
 
                             let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
@@ -173,27 +195,53 @@ impl GLContext {
                             };
                             let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
 
-                            if supports_transparency == alpha_requested
-                                && cconfig.alpha_size() == alpha_size
-                                && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == stencil_size
-                                && context_attrs.get_depth()
-                                && cconfig.depth_size() == depth_size
-                            {
-                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
-                                    && accum.alpha_size() == alpha_size
+                            if multi_sample {
+                                if supports_transparency == alpha_requested
+                                    && cconfig.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
-                                    && accum.stencil_size() == stencil_size
+                                    && cconfig.stencil_size() == stencil_size
                                     && context_attrs.get_depth()
-                                    && accum.depth_size() == depth_size
-                                    && accum.num_samples() > num_samples
+                                    && cconfig.depth_size() >= depth_size
+                                    && cconfig.num_samples() > 0
                                 {
-                                    return accum;
+                                    if accum.supports_transparency().unwrap_or(false)
+                                        == alpha_requested
+                                        && accum.alpha_size() == alpha_size
+                                        && context_attrs.get_stencil()
+                                        && accum.stencil_size() == stencil_size
+                                        && context_attrs.get_depth()
+                                        && accum.depth_size() >= depth_size
+                                        && accum.num_samples() > cconfig.num_samples()
+                                    {
+                                        return accum;
+                                    }
+
+                                    return cconfig;
                                 }
+                            } else {
+                                if supports_transparency == alpha_requested
+                                    && cconfig.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && cconfig.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && cconfig.depth_size() >= depth_size
+                                    && cconfig.num_samples() == 0
+                                {
+                                    if accum.supports_transparency().unwrap_or(false)
+                                        == alpha_requested
+                                        && accum.alpha_size() == alpha_size
+                                        && context_attrs.get_stencil()
+                                        && accum.stencil_size() == stencil_size
+                                        && context_attrs.get_depth()
+                                        && accum.depth_size() >= depth_size
+                                        && accum.num_samples() == 0
+                                    {
+                                        return accum;
+                                    }
 
-                                return cconfig;
+                                    return cconfig;
+                                }
                             }
-
                             accum
                         })
                     })
@@ -242,16 +290,21 @@ impl GLContext {
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
             Ok(display) => unsafe {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
+                let multi_sample = context_attrs.get_antialias();
                 let cfg = context_attrs.into();
                 let config = display
                     .find_configs(cfg)
-                    .map(|c| {
+                    .map(|mut c| {
                         c.reduce(|accum, cconfig| {
                             if is_2d {
                                 let transparency_check =
@@ -270,8 +323,6 @@ impl GLContext {
                             let supports_transparency =
                                 cconfig.supports_transparency().unwrap_or(false);
 
-                            let num_samples = cconfig.num_samples();
-
                             let alpha_requested = context_attrs.get_alpha();
 
                             let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
@@ -282,27 +333,53 @@ impl GLContext {
                             };
                             let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
 
-                            if supports_transparency == alpha_requested
-                                && cconfig.alpha_size() == alpha_size
-                                && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == stencil_size
-                                && context_attrs.get_depth()
-                                && cconfig.depth_size() == depth_size
-                            {
-                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
-                                    && accum.alpha_size() == alpha_size
+                            if multi_sample {
+                                if supports_transparency == alpha_requested
+                                    && cconfig.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
-                                    && accum.stencil_size() == stencil_size
+                                    && cconfig.stencil_size() == stencil_size
                                     && context_attrs.get_depth()
-                                    && accum.depth_size() == depth_size
-                                    && accum.num_samples() > num_samples
+                                    && cconfig.depth_size() == depth_size
+                                    && cconfig.num_samples() > 0
                                 {
-                                    return accum;
+                                    if accum.supports_transparency().unwrap_or(false)
+                                        == alpha_requested
+                                        && accum.alpha_size() == alpha_size
+                                        && context_attrs.get_stencil()
+                                        && accum.stencil_size() == stencil_size
+                                        && context_attrs.get_depth()
+                                        && accum.depth_size() == depth_size
+                                        && accum.num_samples() > cconfig.num_samples()
+                                    {
+                                        return accum;
+                                    }
+
+                                    return cconfig;
                                 }
+                            } else {
+                                if supports_transparency == alpha_requested
+                                    && cconfig.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && cconfig.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && cconfig.depth_size() >= depth_size
+                                    && cconfig.num_samples() == 0
+                                {
+                                    if accum.supports_transparency().unwrap_or(false)
+                                        == alpha_requested
+                                        && accum.alpha_size() == alpha_size
+                                        && context_attrs.get_stencil()
+                                        && accum.stencil_size() == stencil_size
+                                        && context_attrs.get_depth()
+                                        && accum.depth_size() >= depth_size
+                                        && accum.num_samples() == 0
+                                    {
+                                        return accum;
+                                    }
 
-                                return cconfig;
+                                    return cconfig;
+                                }
                             }
-
                             accum
                         })
                     })
@@ -362,7 +439,6 @@ impl GLContext {
         }
     }
 
-
     pub fn set_window_surface(
         &mut self,
         context_attrs: &mut ContextAttributes,
@@ -372,13 +448,18 @@ impl GLContext {
     ) {
         unsafe {
             if let Some(display) = self.display() {
-                gl_bindings::load_with(|symbol| {
-                    let symbol = CString::new(symbol).unwrap();
-                    display.get_proc_address(symbol.as_c_str()).cast()
+                let dsply = display.clone();
+                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                    gl_bindings::load_with(|symbol| {
+                        let symbol = CString::new(symbol).unwrap();
+                        dsply.get_proc_address(symbol.as_c_str()).cast()
+                    });
+                    true
                 });
 
                 let is_2d = context_attrs.get_is_canvas();
                 let cfg = context_attrs.clone().into();
+                let multi_sample = context_attrs.get_antialias();
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
@@ -400,32 +481,54 @@ impl GLContext {
                             let supports_transparency =
                                 cconfig.supports_transparency().unwrap_or(false);
 
-                            let num_samples = cconfig.num_samples();
-
                             let alpha_requested = context_attrs.get_alpha();
 
-                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let mut stencil_size = if context_attrs.get_stencil() {
+                            let alpha_size = if alpha_requested { 8u8 } else { 0u8 };
+                            let stencil_size = if context_attrs.get_stencil() {
                                 8u8
                             } else {
                                 0u8
                             };
-                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
+                            let depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
 
-                            if supports_transparency == alpha_requested
+                            if multi_sample {
+                                if supports_transparency == alpha_requested
+                                    && cconfig.alpha_size() == alpha_size
+                                    && context_attrs.get_stencil()
+                                    && cconfig.stencil_size() == stencil_size
+                                    && context_attrs.get_depth()
+                                    && cconfig.depth_size() >= depth_size
+                                    && cconfig.num_samples() > 0
+                                {
+                                    if accum.supports_transparency().unwrap_or(false)
+                                        == alpha_requested
+                                        && accum.alpha_size() == alpha_size
+                                        && context_attrs.get_stencil()
+                                        && accum.stencil_size() == stencil_size
+                                        && context_attrs.get_depth()
+                                        && accum.depth_size() >= depth_size
+                                        && accum.num_samples() > cconfig.num_samples()
+                                    {
+                                        return accum;
+                                    }
+
+                                    return cconfig;
+                                }
+                            } else if supports_transparency == alpha_requested
                                 && cconfig.alpha_size() == alpha_size
                                 && context_attrs.get_stencil()
                                 && cconfig.stencil_size() == stencil_size
                                 && context_attrs.get_depth()
-                                && cconfig.depth_size() == depth_size
+                                && cconfig.depth_size() >= depth_size
+                                && cconfig.num_samples() == 0
                             {
                                 if accum.supports_transparency().unwrap_or(false) == alpha_requested
                                     && accum.alpha_size() == alpha_size
                                     && context_attrs.get_stencil()
                                     && accum.stencil_size() == stencil_size
                                     && context_attrs.get_depth()
-                                    && accum.depth_size() == depth_size
-                                    && accum.num_samples() > num_samples
+                                    && accum.depth_size() >= depth_size
+                                    && accum.num_samples() == 0
                                 {
                                     return accum;
                                 }
@@ -469,11 +572,9 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-
         use winit::event::{Event, WindowEvent};
         use winit::event_loop::EventLoop;
         use winit::window::WindowBuilder;
-
 
         let event_loop = EventLoop::new();
         let window_builder = WindowBuilder::new();
@@ -485,15 +586,17 @@ impl GLContext {
 
         let raw_window_handle = window.raw_window_handle();
 
-        GLContext::create_window_context(context_attrs, width, height, raw_window_handle)
-            .map(|ctx| {
-                let context = ctx.inner.borrow_mut();
-                context.window = Some(window);
-                context.event = Some(event_loop);
+        GLContext::create_window_context(context_attrs, width, height, raw_window_handle).map(
+            |ctx| {
+                {
+                    let mut context = ctx.inner.borrow_mut();
+                    context.window = Some(window);
+                    context.event = Some(event_loop);
+                }
                 ctx
-            })
+            },
+        )
     }
-
 
     fn has_extension(extensions: &str, name: &str) -> bool {
         !extensions.split(' ').into_iter().any(|s| s == name)

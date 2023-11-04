@@ -48,7 +48,7 @@ fn main() {
 
     let size = window.inner_size();
 
-    let context = GLContext::create_window_surface(
+    let context = GLContext::create_window_context(
         &mut attrs,
         size.width as i32,
         size.height as i32,
@@ -59,7 +59,6 @@ fn main() {
 
     let webgl = context.unwrap();
 
-    webgl.set_swap_interval();
 
     let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
 

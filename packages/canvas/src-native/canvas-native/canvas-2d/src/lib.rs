@@ -1,14 +1,11 @@
 extern crate core;
 
-use std::os::raw::c_int;
-
+use std::ffi::c_uint;
 use base64::Engine;
 use image::EncodableLayout;
 use skia_safe::image::CachingHint;
 use skia_safe::wrapper::NativeTransmutableWrapper;
-use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface,
-};
+use skia_safe::{AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface, images, surfaces};
 
 use context::filter_quality::FilterQuality;
 use context::{Context, ContextWrapper};
@@ -22,11 +19,12 @@ pub mod utils;
 
 pub mod ios;
 
-pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) -> String {
+pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_uint) -> String {
+    let mut ctx = context.surface.direct_context();
     let image = context
         .surface
         .image_snapshot()
-        .to_raster_image(Some(CachingHint::Allow));
+        .make_raster_image(&mut ctx, Some(CachingHint::Allow));
 
     if let Some(image) = image {
         let mut quality = quality;
@@ -40,7 +38,8 @@ pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) 
         encoded_prefix.push_str("data:");
         encoded_prefix.push_str(format);
         encoded_prefix.push_str(";base64,");
-        let data = image.encode_to_data_with_quality(
+        let data = image.encode(
+            &mut ctx,
             match format {
                 "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
                 "image/webp" => EncodedImageFormat::WEBP,
@@ -71,12 +70,13 @@ pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_int) 
     "data:,".to_string()
 }
 
-pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -> String {
+pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_uint) -> String {
     let mut context = context.get_context_mut();
+    let mut ctx = context.surface.direct_context();
     let image = context
         .surface
         .image_snapshot()
-        .to_raster_image(Some(CachingHint::Allow));
+        .make_raster_image(&mut ctx, Some(CachingHint::Allow));
 
     if let Some(image) = image {
         let mut quality = quality;
@@ -90,7 +90,8 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_int) -
         encoded_prefix.push_str("data:");
         encoded_prefix.push_str(format);
         encoded_prefix.push_str(";base64,");
-        let data = image.encode_to_data_with_quality(
+        let data = image.encode(
+            &mut ctx,
             match format {
                 "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
                 "image/webp" => EncodedImageFormat::WEBP,
@@ -126,7 +127,7 @@ pub fn bytes_to_data_url(
     height: i32,
     bytes: &[u8],
     format: &str,
-    quality: c_int,
+    quality: c_uint,
 ) -> String {
     let data = unsafe { skia_safe::Data::new_bytes(bytes) };
     let mut encoded_prefix = String::new();
@@ -139,7 +140,7 @@ pub fn bytes_to_data_url(
         skia_bindings::SkAlphaType::Unpremul,
         None,
     );
-    if let Some(image) = skia_safe::Image::from_raster_data(&image_info, data, (width * 4) as usize)
+    if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize)
     {
         let mut quality = quality;
         if quality > 100 || quality < 0 {
@@ -152,7 +153,8 @@ pub fn bytes_to_data_url(
         encoded_prefix.push_str("data:");
         encoded_prefix.push_str(format);
         encoded_prefix.push_str(";base64,");
-        let data = image.encode_to_data_with_quality(
+        let data = image.encode(
+            None,
             match format {
                 "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
                 "image/webp" => EncodedImageFormat::WEBP,
@@ -236,7 +238,9 @@ pub(crate) fn flush_custom_surface(
 ) {
     unsafe {
         let mut context = context.get_context_mut();
-        context.surface.flush();
+        if let Some(mut context) = context.surface.direct_context() {
+            context.flush_and_submit();
+        }
         let info = ImageInfo::new(
             ISize::new(width, height),
             ColorType::RGBA8888,
@@ -244,13 +248,19 @@ pub(crate) fn flush_custom_surface(
             None,
         );
 
-        if let Some(mut dst_surface) = Surface::new_raster_direct(&info, dst, None, None) {
+        if let Some(mut dst_surface) = surfaces::wrap_pixels(&info, dst, None, None) {
             let dst_canvas = dst_surface.canvas();
             context
                 .surface
                 .draw(dst_canvas, Point::new(0., 0.), FilterQuality::High, None);
-            context.surface.flush_and_submit();
-            dst_surface.flush_and_submit();
+
+            if let Some(mut context) = context.surface.direct_context() {
+                context.flush_and_submit();
+            }
+
+            if let Some(mut context) = dst_surface.direct_context() {
+                context.flush_and_submit();
+            }
         }
     }
 }
@@ -258,9 +268,13 @@ pub(crate) fn flush_custom_surface(
 pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
     unsafe {
         let mut context = context.get_context_mut();
-        context.surface.flush_and_submit();
+        if let Some(mut context) = context.surface.direct_context() {
+            context.flush_and_submit();
+        }
+
         let snapshot = context.surface.image_snapshot();
-        if let Some(data) = snapshot.encode_to_data(EncodedImageFormat::PNG) {
+        let mut ctx = context.surface.direct_context();
+        if let Some(data) = snapshot.encode(&mut ctx,EncodedImageFormat::PNG, None) {
             return Some(data.as_bytes().to_vec());
         }
         return None;
@@ -279,13 +293,20 @@ pub(crate) fn snapshot_canvas_raw(context: &mut ContextWrapper) -> Vec<u8> {
         let len: usize = info.min_row_bytes() * (info.height() as usize);
         let mut bytes = vec![0u8; len];
         let mut dst_surface =
-            Surface::new_raster_direct(&info, bytes.as_mut_slice(), None, None).unwrap();
+            surfaces::wrap_pixels(&info, bytes.as_mut_slice(), None, None).unwrap();
         let dst_canvas = dst_surface.canvas();
         context
             .surface
             .draw(dst_canvas, Point::new(0., 0.), FilterQuality::High, None);
-        context.surface.flush_and_submit();
-        dst_surface.flush_and_submit();
+
+        if let Some(mut context) = context.surface.direct_context() {
+            context.flush_and_submit();
+        }
+
+        if let Some(mut context) = dst_surface.direct_context() {
+            context.flush_and_submit();
+        }
+        
         bytes
     }
 }

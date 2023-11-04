@@ -26,7 +26,7 @@ export class FileManager {
 
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
 		if (this._readFile === undefined) {
-			this._readFile = global?.CanvasJSIModule?.readFile;
+			this._readFile = global?.CanvasModule?.readFile;
 		}
 
 		if (this._readFile) {

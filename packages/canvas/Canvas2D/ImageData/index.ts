@@ -3,7 +3,7 @@ let ctor;
 export class ImageData {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasJSIModule.ImageData;
+		ctor = global.CanvasModule.ImageData;
 	}
 	_native;
 	constructor(width: number, height: number);
@@ -34,19 +34,19 @@ export class ImageData {
 				throw Error("Failed to construct 'ImageData': The input data length is not a multiple of (4 * width");
 			}
 			if (length == 2) {
-				this._native = ctor(data, width, data.length / row);
+				this._native = new ctor(data, width, data.length / row);
 			} else if (length > 2) {
 				// TODO support colorSpace
-				this._native = ctor(data, width, arguments[2]);
+				this._native = new ctor(data, width, arguments[2]);
 			}
 		} else if (typeof arguments[0] === 'number') {
 			const width = arguments[0];
 			const height = arguments[1];
 			if (length == 2) {
-				this._native = ctor(width, height);
+				this._native = new ctor(width, height);
 			} else if (length > 2) {
 				// TODO support colorSpace
-				this._native = ctor(width, height);
+				this._native = new ctor(width, height);
 			}
 		}
 

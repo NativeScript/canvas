@@ -1,5 +1,5 @@
-OTHER_LDFLAGS[sdk=*] = $(inherited) -framework CanvasNative -framework OpenGLES -framework GLKit
+OTHER_LDFLAGS[sdk=*] = $(inherited) -framework Foundation -framework CanvasNative -framework OpenGLES -framework GLKit
 
-HEADER_SEARCH_PATHS = $(inherited) "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers" "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers/include" "$(SRCROOT)/../../node_modules/@nativescript/canvas/platforms/ios/src/cpp"/**
+HEADER_SEARCH_PATHS = $(inherited) "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers" "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers/include"
 
 CLANG_CXX_LANGUAGE_STANDARD = c++17

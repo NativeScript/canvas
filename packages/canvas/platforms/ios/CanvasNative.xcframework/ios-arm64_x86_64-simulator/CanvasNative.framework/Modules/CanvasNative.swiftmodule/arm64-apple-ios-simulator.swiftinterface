@@ -1,5 +1,5 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.7 (swiftlang-5.7.0.127.4 clang-1400.0.29.50)
+// swift-compiler-version: Apple Swift version 5.8.1 (swiftlang-5.8.0.124.5 clang-1403.0.22.11.100)
 // swift-module-flags: -target arm64-apple-ios11.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
 // swift-module-flags-ignorable: -enable-bare-slash-regex
 import AVFoundation
@@ -10,6 +10,7 @@ import GLKit
 import OpenGLES
 import Swift
 import UIKit
+import WebKit
 import _Concurrency
 import _StringProcessing
 @objc(NSCCanvasListener) public protocol NSCCanvasListener {
@@ -75,8 +76,9 @@ import _StringProcessing
   @_Concurrency.MainActor(unsafe) public func render() -> Swift.Bool
   @objc @_Concurrency.MainActor(unsafe) public func context2DTest(_ context: Swift.Int64)
   @objc @_Concurrency.MainActor(unsafe) public func context2DTestToDataURL(_ context: Swift.Int64) -> Swift.String
+  @objc @_Concurrency.MainActor(unsafe) public var touchEventListener: ((Swift.String, UIKit.UIGestureRecognizer) -> Swift.Void)?
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
-  @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: CanvasNative.NSCCanvasListener?)
+  @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
 }

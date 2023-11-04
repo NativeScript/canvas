@@ -5,19 +5,15 @@ extern crate core;
 #[macro_use]
 extern crate log;
 
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int, c_void};
-use std::pin::Pin;
+use std::os::raw::c_void;
 
+use ::jni::JavaVM;
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
-use ::jni::JavaVM;
 use android_logger::Config;
-use log::LevelFilter;
 use once_cell::sync::OnceCell;
 
-use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
-
+use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
 mod jni_compat;
 pub mod utils;
 
@@ -30,7 +26,7 @@ pub(crate) const BUILD_VERSION_CLASS: &str = "android/os/Build$VERSION";
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
     if let Ok(mut env) = vm.get_env() {
-        android_logger::init_once(Config::default().with_max_level(LevelFilter::Trace));
+        android_logger::init_once(Config::default());
 
         API_LEVEL.get_or_init(|| {
             let clazz = env.find_class(BUILD_VERSION_CLASS).unwrap();
@@ -45,7 +41,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
             let ret = sdk_int.unwrap().i().unwrap();
 
-            canvas_cxx::API_LEVEL.get_or_init(|| ret);
+            canvas_c::API_LEVEL.get_or_init(|| ret);
 
             ret
         });

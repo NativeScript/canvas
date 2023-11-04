@@ -4,16 +4,69 @@
 
 #pragma once
 
-#include "rust/cxx.h"
-#import <NativeScript/JSIRuntime.h>
 #include "gl.h"
 #include <vector>
+#include "Caches.h"
+#include "Common.h"
+#include "Helpers.h"
 
-using namespace facebook;
+class WEBGL_compressed_texture_s3tc_srgbImpl {
+public:
+    static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
+        auto cache = Caches::Get(isolate);
+        auto ctor = cache->WEBGL_compressed_texture_s3tc_srgbTmpl.get();
+        if (ctor != nullptr) {
+            return ctor->Get(isolate);
+        }
 
-class JSI_EXPORT WEBGL_compressed_texture_s3tc_srgbImpl : public jsi::HostObject {
-    jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+        v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->SetClassName(ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
 
-    std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
+        auto tmpl = ctorTmpl->InstanceTemplate();
+        tmpl->SetInternalFieldCount(1);
+
+        tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_SRGB_S3TC_DXT1_EXT"),
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_SRGB_S3TC_DXT1_EXT));
+
+        tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT"),
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT));
+
+        tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT"),
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT));
+
+        tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT"),
+                  v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT));
+
+        tmpl->Set(ConvertToV8String(isolate, "ext_name"),
+                  ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
+
+        cache->WEBGL_compressed_texture_s3tc_srgbTmpl =
+                std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+        return ctorTmpl;
+    }
+
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate,
+                WEBGL_compressed_texture_s3tc_srgbImpl *compressedTextureS3TcSrgb) {
+        auto context = isolate->GetCurrentContext();
+        v8::EscapableHandleScope scope(isolate);
+        auto object = WEBGL_compressed_texture_s3tc_srgbImpl::GetCtor(isolate)->GetFunction(
+                context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+        SetNativeType(isolate, object, NativeType::WEBGL_compressed_texture_s3tc_srgb);
+        auto ext = v8::External::New(isolate, compressedTextureS3TcSrgb);
+        object->SetInternalField(0, ext);
+        object->Set(context, ConvertToV8String(isolate, "ext_name"),
+                    ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
+        return scope.Escape(object);
+    }
+
+    static WEBGL_compressed_texture_s3tc_srgbImpl *GetPointer(const v8::Local<v8::Object> &object) {
+        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+        return static_cast<WEBGL_compressed_texture_s3tc_srgbImpl *>(ptr);
+    }
 };
 

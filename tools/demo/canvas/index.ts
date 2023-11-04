@@ -1,6 +1,5 @@
 import { DemoSharedBase } from '../utils';
 import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
-import Chart from 'chart.js';
 
 let Matter;
 import { Canvas } from '@nativescript/canvas';
@@ -49,22 +48,28 @@ import {
 	lineDashOffset,
 	shadowOffsetX,
 	strokeStyle,
+	circle_demo,
 } from './canvas2d';
-
+const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import Vex from 'vexflow';
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
-import { issue54 } from './issues';
+import { issue54, issue93 } from './issues';
+var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
 	private svg: Svg.Svg;
 	private svg2: Svg.Svg;
 	private svg3: Svg.Svg;
 	private svg4: Svg.Svg;
+
+	constructor() {
+		super();
+		Vex = require('vexflow');
+	}
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
@@ -529,7 +534,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//     console.log('error', msg);
 		// }
 		// swarm(this.canvas);
-		// touchParticles(this.canvas);
+		 //touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -537,7 +542,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
-		//	fillRule(this.canvas);
+		//fillRule(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -547,7 +552,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -571,7 +576,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
-		patternWithCanvas(this.canvas);
+		//patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
@@ -584,7 +589,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.drawPatternWithCanvas(this.canvas);
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
-
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
@@ -610,7 +614,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//touchParticles(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
-		//drawModes(this.canvas,'triangles')
+		//drawModes(this.canvas,'triangles');
 		//drawElements(this.canvas)
 		// ctx = canvas.getContext("2d") as any;
 		//swarm(this.canvas);
@@ -623,7 +627,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
-		// imageFilter(this.canvas);
+		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);
 		//textures(this.canvas);
 		//drawElements(this.canvas)
@@ -647,6 +651,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//issue54(this.canvas);
 		//this.decoder()
 		//this.context2DTest(this.canvas);
+
+		//issue93(this.canvas);
 	}
 
 	drawRandomFullscreenImage(canvas) {
@@ -673,7 +679,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		console.log(asset.error);
 		console.log(asset.width, asset.height);
 		function draw() {
-			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale,300 * Screen.mainScreen.scale);
+			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale, 300 * Screen.mainScreen.scale);
 			requestAnimationFrame(draw);
 		}
 		draw();
@@ -856,8 +862,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 
 		const { drawingBufferWidth, drawingBufferHeight } = gl;
-		let width = drawingBufferWidth;
-		let height = drawingBufferHeight;
+		let width = canvas.width;
+		let height = canvas.height;
 		var scene = new zen3d.Scene();
 
 		var file = '~/assets/three/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
@@ -930,8 +936,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		loop(0);
 
 		function onWindowResize() {
-			width = drawingBufferWidth;
-			height = drawingBufferHeight;
+			width = canvas.width;
+			height = canvas.height;
 
 			camera.setPerspective((45 / 180) * Math.PI, width / height, 1, 8000);
 
@@ -1488,8 +1494,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		//glViewport(0,0,50,50);
 		// Give the pattern a width and height of 50
-		patternCanvas.width = 50;
-		patternCanvas.height = 50;
+		patternCanvas.width = size;
+		patternCanvas.height = size;
 
 		//  patternCanvas.getContext('2d') as any;
 		// Give the pattern a background color and draw an arc
@@ -1499,18 +1505,18 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
-		var vp = interop.alloc(16);
+		if (global.isIOS) {
+			var vp = interop.alloc(16);
 
-		glGetIntegerv(0x0ba2, vp);
+			glGetIntegerv(0x0ba2, vp);
 
-		const x = new interop.Reference<number>(interop.types.int32, vp);
-		const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
-		const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
-		const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
+			const x = new interop.Reference<number>(interop.types.int32, vp);
+			const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
+			const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
+			const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
 
-		console.log(x.value, y.value, w.value, h.value);
-
-		console.log(patternCanvas.toDataURL());
+			console.log(x.value, y.value, w.value, h.value);
+		}
 
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -1743,25 +1749,24 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		var earth = new global.ImageAsset();
 
 		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
-
 		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
 		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
 		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
 
-		// sun.loadFromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png')
+		// sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png')
 		// .then(done =>{
 		// 	console.log('sun', done);
-		// 	return moon.loadFromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png')
+		// 	return moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png')
 		// }).then(done =>{
 		// 	console.log('moon', done);
-		// 	return earth.loadFromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+		// 	return earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
 		// }).then(done =>{
 		// 	console.log('earth', done);
 		// })
 
 		//console.log(sun.width, moon.width, earth.width);
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+		//ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 
 		//ctx.scale(3, 3);
 		function init() {

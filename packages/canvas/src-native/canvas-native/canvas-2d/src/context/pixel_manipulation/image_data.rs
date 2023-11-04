@@ -1,61 +1,46 @@
+use bytes::BytesMut;
 use std::os::raw::c_int;
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ImageDataInner {
-    pub(crate) data: *mut u8,
-    pub(crate) data_len: usize,
-    pub(crate) data_cap: usize,
+    pub(crate) data: BytesMut,
     pub(crate) width: c_int,
     pub(crate) height: c_int,
     pub(crate) scale: f32,
 }
 
-#[derive(Debug)]
-pub struct ImageData(Arc<ImageDataInner>);
-
-impl Clone for ImageData {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.0 = Arc::clone(&source.0)
-    }
-}
+#[derive(Debug, Clone)]
+pub struct ImageData(ImageDataInner);
 
 impl ImageData {
-    fn to_raw(mut data: Vec<u8>) -> (*mut u8, usize, usize) {
-        let ptr = data.as_mut_ptr();
-        let len = data.len();
-        let cap = data.capacity();
-        std::mem::forget(data);
-        (ptr, len, cap)
-    }
-
     pub fn new(width: c_int, height: c_int) -> Self {
-        let data = vec![0u8; (width * height * 4) as usize];
-        let (data, data_len, data_cap) = Self::to_raw(data);
-        Self(Arc::new(ImageDataInner {
+        let data = BytesMut::zeroed((width * height * 4) as usize);
+        Self(ImageDataInner {
             width,
             height,
             data,
-            data_len,
-            data_cap,
             scale: 1.,
-        }))
+        })
     }
 
-    pub fn new_with_data(width: c_int, height: c_int, data: Vec<u8>) -> Self {
-        let (data, data_len, data_cap) = Self::to_raw(data);
-        Self(Arc::new(ImageDataInner {
+    pub fn new_with_data(width: c_int, height: c_int, data: &[u8]) -> Self {
+        let data = BytesMut::from(data);
+        Self(ImageDataInner {
             width,
             height,
             data,
-            data_len,
-            data_cap,
             scale: 1.,
-        }))
+        })
+    }
+
+    pub fn new_with_buffer(width: c_int, height: c_int, data: BytesMut) -> Self {
+        Self(ImageDataInner {
+            width,
+            height,
+            data,
+            scale: 1.,
+        })
     }
 
     pub fn width(&self) -> i32 {
@@ -67,30 +52,28 @@ impl ImageData {
     }
 
     pub fn data(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts_mut(self.0.data, self.0.data_len) }
+        self.0.data.as_ref()
     }
 
-    pub fn data_mut(&self) -> &mut [u8] {
-        unsafe { std::slice::from_raw_parts_mut(self.0.data, self.0.data_len) }
+    pub fn data_mut(&mut self) -> &mut [u8] {
+        self.0.data.as_mut()
     }
 
     pub fn data_len(&self) -> usize {
-        self.0.data_len
+        self.0.data.len()
     }
 
-    pub unsafe fn data_raw(&self) -> *mut u8 {
-        self.0.data
+    pub unsafe fn data_raw(&mut self) -> *mut u8 {
+        self.0.data.as_mut_ptr()
+    }
+
+    pub fn bytes_mut(&self) -> BytesMut {
+        self.0.data.clone()
     }
 }
 
 impl From<&ImageData> for ImageData {
     fn from(data: &ImageData) -> Self {
         Self::new(data.0.width, data.0.height)
-    }
-}
-
-impl Drop for ImageDataInner {
-    fn drop(&mut self) {
-        let _ = unsafe { Vec::from_raw_parts(self.data, self.data_len, self.data_cap) };
     }
 }

@@ -1,5 +1,7 @@
 [workspace]
 
+resolver = "2"
+
 members = [
     "gl-bindings",
     "canvas-core",
@@ -9,10 +11,12 @@ members = [
     "canvas-ios",
 #    "canvas-ffi",
     "playground",
-    "canvas-cxx"
+    "canvas-cxx",
+    "canvas-c"
 ]
 
 [profile.release]
+panic = "abort"
 codegen-units = 1
 lto = true
 opt-level = 3

@@ -1,5 +1,3 @@
-const npsUtils = require('nps-utils');
-
 module.exports = {
 	message: 'NativeScript Plugins ~ made with ❤️  Choose a command to start...',
 	pageSize: 32,
@@ -119,6 +117,13 @@ module.exports = {
 					description: '@nativescript/canvas-media: Build',
 				},
 			},
+			// @nativescript/canvas-chartjs
+			'canvas-chartjs': {
+				build: {
+					script: 'nx run canvas-chartjs:build.all',
+					description: '@nativescript/canvas-chartjs: Build',
+				},
+			},
 			'build-all': {
 				script: 'nx run-many --target=build.all --all',
 				description: 'Build all packages',
@@ -170,6 +175,10 @@ module.exports = {
 			'canvas-media': {
 				script: 'nx run canvas-media:focus',
 				description: 'Focus on @nativescript/canvas-media',
+			},
+			'canvas-chartjs': {
+				script: 'nx run canvas-chartjs:focus',
+				description: 'Focus on @nativescript/canvas-chartjs',
 			},
 			reset: {
 				script: 'nx g @nativescript/plugin-tools:focus-packages',

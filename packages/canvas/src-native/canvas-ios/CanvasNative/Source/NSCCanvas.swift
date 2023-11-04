@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 import GLKit
-
+import WebKit
 
 @objcMembers
 @objc(NSCCanvas)
@@ -96,7 +96,6 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
-    
     @objc public func initContext(
         _ type: String,
         _ alpha: Bool = true,
@@ -178,7 +177,7 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             isOpaque = false
             (glkView.layer as! CAEAGLLayer).isOpaque = false
         }else {
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
             isOpaque = true
             (glkView.layer as! CAEAGLLayer).isOpaque = true
         }
@@ -201,10 +200,9 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             glkView.drawableStencilFormat = .format8
         }
         
+        // antialias fails in 2D
         if(useWebGL && antialias){
-            // glkView.drawableMultisample = .multisample4X
-        }else if(isCanvas) {
-         //   glkView.drawableMultisample = .multisample4X
+             glkView.drawableMultisample = .multisample4X
         }
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
@@ -328,25 +326,46 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
+    private var handler: NSCTouchHandler?
+    
+    public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
+    
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
         super.init(coder: coder)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
     }
-    
     
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
         super.init(frame: frame)
+        handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.contentScaleFactor = UIScreen.main.nativeScale
         addSubview(glkView)
         self.isOpaque = false
+        addGestureRecognizer(handler!.gestureRecognizer!)
+        addGestureRecognizer(handler!.pinchRecognizer!)
+    }
+    
+    var ignoreTouchEvents = false {
+        didSet {
+            if(ignoreTouchEvents){
+                removeGestureRecognizer(handler!.gestureRecognizer!)
+                removeGestureRecognizer(handler!.pinchRecognizer!)
+            }else {
+                addGestureRecognizer(handler!.gestureRecognizer!)
+                addGestureRecognizer(handler!.pinchRecognizer!)
+            }
+        }
     }
     
     
@@ -424,14 +443,5 @@ extension String {
         let idx1 = index(startIndex, offsetBy: max(0, range.lowerBound))
         let idx2 = index(startIndex, offsetBy: min(self.count, range.upperBound))
         return String(self[idx1..<idx2])
-    }
-}
-
-extension EAGLContext {
-    
-    @objc(initWithAPI:sharegroup_:) convenience init?(version: EAGLRenderingAPI, sharegroup: EAGLSharegroup){
-        print("sharegroup_", version.rawValue, sharegroup)
-        self.init(api: version, sharegroup: sharegroup)
-        print("help", self)
     }
 }

@@ -2,8 +2,8 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::os::raw::c_float;
 use std::rc::Rc;
 
-use skia_safe::{Color, Data, Image, Point, Surface};
 use skia_safe::gpu::BackendTexture;
+use skia_safe::{images, Color, Data, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use drawing_text::typography::Font;
@@ -185,7 +185,7 @@ impl ContextWrapper {
         let mut context = self.get_context_mut();
         let device = context.device;
 
-        let mut ctx = &mut *context;
+        let ctx = &mut *context;
 
         let mut fb = [0];
 
@@ -212,7 +212,7 @@ impl ContextWrapper {
         let mut context = self.get_context_mut();
         let device = context.device;
 
-        let mut ctx = &mut *context;
+        let ctx = &mut *context;
 
         Context::resize(ctx, width, height, device.density, device.alpha, device.ppi);
     }
@@ -242,32 +242,43 @@ impl Context {
 
     pub fn clear_canvas(&mut self) {
         self.surface.canvas().clear(Color::TRANSPARENT);
-        self.flush();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush(None);
+        }
     }
 
     pub fn flush(&mut self) {
-        self.surface.flush_and_submit();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_and_submit();
+        }
     }
 
     pub fn flush_and_sync_cpu(&mut self) {
-        self.surface.flush_submit_and_sync_cpu()
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_submit_and_sync_cpu();
+        }
     }
 
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
         self.flush();
-        let info = self.surface.image_info();
-        let size = (info.width() * info.height() * 4) as usize;
-        let mut buf = vec![0_u8; size];
         let ss = self.surface.image_snapshot();
-        match ss.to_raster_image(skia_safe::image::CachingHint::Allow){
+
+        let info = ss.image_info();
+        let row_bytes = info.min_row_bytes();
+        let size = info.height() as usize * row_bytes;
+        let mut buf = vec![0_u8; size];
+
+        match ss.make_raster_image(
+            &mut self.surface.direct_context(),
+            skia_safe::image::CachingHint::Allow,
+        ) {
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
-                    skia_safe::ISize::new(ss.width(), ss.height()),
+                    info.dimensions(),
                     skia_safe::ColorType::RGBA8888,
-                    skia_safe::AlphaType::Unpremul,
-                    None,
+                    ss.image_info().alpha_type(),
+                    ss.image_info().color_space(),
                 );
-                let row_bytes = info.width() * 4;
                 let _read = image.read_pixels(
                     &mut info,
                     buf.as_mut_slice(),
@@ -285,11 +296,16 @@ impl Context {
     pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
         self.flush_and_sync_cpu();
         let ss = self.surface.image_snapshot();
-        ss.to_raster_image(skia_safe::image::CachingHint::Allow)
+        ss.make_raster_image(
+            &mut self.surface.direct_context(),
+            skia_safe::image::CachingHint::Allow,
+        )
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {
-        self.flush_and_sync_cpu();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_submit_and_sync_cpu();
+        }
         let info = self.surface.image_info();
         let size = info.height() as usize * info.min_row_bytes();
         let mut buf = vec![0_u8; size];
@@ -311,7 +327,9 @@ impl Context {
     }
 
     pub fn read_pixels_into_bitmap(&mut self) -> skia_safe::Bitmap {
-        self.flush_and_sync_cpu();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_submit_and_sync_cpu();
+        }
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
@@ -321,13 +339,15 @@ impl Context {
     }
 
     pub fn read_pixels_into_image(&mut self) -> Option<Image> {
-        self.flush_and_sync_cpu();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_submit_and_sync_cpu();
+        }
         let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
         bm.alloc_pixels_flags(&info);
         self.surface
             .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
-        Image::from_bitmap(&bm)
+        images::raster_from_bitmap(&bm)
     }
 
     pub fn image_snapshot(&mut self) -> Image {
@@ -335,16 +355,22 @@ impl Context {
     }
 
     pub fn image_snapshot_to_non_texture_image(&mut self) -> Option<Image> {
-        self.surface.image_snapshot().to_non_texture_image()
+        let mut context = self.surface.direct_context();
+        self.surface
+            .image_snapshot()
+            .make_non_texture_image(&mut context)
     }
 
     pub fn read_pixels_to_encoded_data(&mut self) -> Option<Data> {
         let image = self.surface.image_snapshot();
-        image.encode_to_data_with_quality(skia_safe::EncodedImageFormat::PNG, 100)
+        let mut ctx = self.surface.direct_context();
+        image.encode(&mut ctx, skia_safe::EncodedImageFormat::PNG, 100)
     }
 
     pub fn snapshot(&mut self) -> Image {
-        self.flush_and_sync_cpu();
+        if let Some(mut context) = self.surface.direct_context() {
+            context.flush_submit_and_sync_cpu();
+        }
         self.surface.image_snapshot()
     }
 

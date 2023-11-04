@@ -831,8 +831,25 @@ export class TNSXMLHttpRequest {
 						this._response = (ArrayBuffer as any).from(res.content);
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-					const buffer = (ArrayBuffer as any).from(res.content);
-					this._response = new Blob([buffer]);
+					if ((global as any).isIOS) {
+						if (typeof res.content === 'string') {
+							const encoder = new TextEncoder();
+							const buffer = encoder.encode(res.content);
+							this._response = new Blob([buffer]);
+						} else {
+							const buffer = interop.bufferFromData(res.content);
+							this._response = new Blob([buffer]);
+						}
+					} else {
+						if (typeof res.content === 'string') {
+							const encoder = new TextEncoder();
+							const buffer = encoder.encode(res.content);
+							this._response = new Blob([buffer]);
+						} else {
+							const buffer = (ArrayBuffer as any).from(res.content);
+							this._response = new Blob([buffer]);
+						}
+					}
 				}
 
 				this._addToStringOnResponse();

@@ -33,9 +33,7 @@ pub(crate) fn init_with_custom_surface(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitContextWithCustomSurface(
-    _: JNIEnv,
-    _: JClass,
+pub extern "system" fn nativeInitContextWithCustomSurface(
     width: jfloat,
     height: jfloat,
     density: jfloat,
@@ -48,9 +46,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitContextW
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeResizeCustomSurface(
-    _: JNIEnv,
-    _: JClass,
+pub extern "system" fn nativeResizeCustomSurface(
     context: jlong,
     width: jfloat,
     height: jfloat,
@@ -102,11 +98,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
 */
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeDestroyContext(
-    _: JNIEnv,
-    _: JClass,
-    context: jlong,
-) {
+pub extern "system" fn nativeDestroyContext(context: jlong) {
     unsafe {
         if context == 0 {
             return;
@@ -118,7 +110,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeDestroyConte
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeDataURL(
+pub extern "system" fn nativeDataURL(
     mut env: JNIEnv,
     _: JClass,
     context: jlong,

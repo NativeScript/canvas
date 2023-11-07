@@ -1,8 +1,8 @@
 use once_cell::sync::OnceCell;
-use std::cell::RefCell;
+use parking_lot::RwLock;
 use std::ffi::CString;
 use std::num::NonZeroU32;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -47,18 +47,18 @@ unsafe impl Send for GLContextInner {}
 
 #[derive(Debug, Default)]
 pub struct GLContext {
-    inner: Rc<RefCell<GLContextInner>>,
+    inner: Arc<RwLock<GLContextInner>>,
 }
 
 impl GLContext {
     // pointer has to
-    pub fn as_raw_inner(&self) -> *const RefCell<GLContextInner> {
-        Rc::into_raw(Rc::clone(&self.inner))
+    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
+        Arc::into_raw(Arc::clone(&self.inner))
     }
 
-    pub fn from_raw_inner(raw: *const RefCell<GLContextInner>) -> Self {
+    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
         Self {
-            inner: unsafe { Rc::from_raw(raw) },
+            inner: unsafe { Arc::from_raw(raw) },
         }
     }
 }
@@ -66,7 +66,7 @@ impl GLContext {
 impl Clone for GLContext {
     fn clone(&self) -> Self {
         Self {
-            inner: Rc::clone(&self.inner),
+            inner: Arc::clone(&self.inner),
         }
     }
 }
@@ -162,8 +162,9 @@ impl GLContext {
         let is_2d = context_attrs.get_is_canvas();
         let multi_sample = context_attrs.get_antialias();
         let cfg = context_attrs.into();
+        let mut inner = self.inner.write();
         unsafe {
-            if let Some(display) = self.display() {
+            if let Some(display) = inner.display.as_ref() {
                 let config = display
                     .find_configs(cfg)
                     .map(|c| {
@@ -271,7 +272,7 @@ impl GLContext {
 
                         let ret = surface.is_some();
 
-                        self.inner.borrow_mut().surface = surface;
+                        inner.surface = surface;
 
                         ret
                     }
@@ -423,7 +424,7 @@ impl GLContext {
                             .ok();
 
                         Some(GLContext {
-                            inner: Rc::new(RefCell::new(GLContextInner {
+                            inner: Arc::new(RwLock::new(GLContextInner {
                                 surface,
                                 context,
                                 display: Some(display),
@@ -447,7 +448,8 @@ impl GLContext {
         window: RawWindowHandle,
     ) {
         unsafe {
-            if let Some(display) = self.display() {
+            let mut inner = self.inner.write();
+            if let Some(display) = inner.display.as_ref() {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
                     gl_bindings::load_with(|symbol| {
@@ -561,7 +563,7 @@ impl GLContext {
                         .map(SurfaceHelper::Window)
                         .ok();
 
-                    self.inner.borrow_mut().surface = surface;
+                    inner.surface = surface;
                 }
             }
         }
@@ -589,7 +591,7 @@ impl GLContext {
         GLContext::create_window_context(context_attrs, width, height, raw_window_handle).map(
             |ctx| {
                 {
-                    let mut context = ctx.inner.borrow_mut();
+                    let mut context = ctx.inner.write();
                     context.window = Some(window);
                     context.event = Some(event_loop);
                 }
@@ -617,21 +619,11 @@ impl GLContext {
         }
     }
 
-    pub(crate) fn surface(&self) -> Option<&SurfaceHelper> {
-        unsafe { (*self.inner.as_ptr()).surface.as_ref() }
-    }
 
-    pub(crate) fn context(&self) -> Option<&PossiblyCurrentContext> {
-        unsafe { (*self.inner.as_ptr()).context.as_ref() }
-    }
-
-    pub(crate) fn display(&self) -> Option<&Display> {
-        unsafe { (*self.inner.as_ptr()).display.as_ref() }
-    }
 
     #[inline(always)]
     pub fn set_vsync(&self, sync: bool) -> bool {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         let vsync = if sync {
             SwapInterval::Wait(NonZeroU32::new(1).unwrap())
         } else {
@@ -649,7 +641,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn make_current(&self) -> bool {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
@@ -662,7 +654,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn remove_if_current(&self) {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.is_current(context),
@@ -679,7 +671,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
@@ -692,7 +684,8 @@ impl GLContext {
 
     #[inline(always)]
     pub fn get_surface_width(&self) -> i32 {
-        self.surface()
+        let inner = self.inner.read();
+        inner.surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
@@ -704,7 +697,8 @@ impl GLContext {
 
     #[inline(always)]
     pub fn get_surface_height(&self) -> i32 {
-        self.surface()
+        let inner = self.inner.read();
+        inner.surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,

@@ -1,6 +1,6 @@
-use std::cell::{Ref, RefCell, RefMut};
 use std::os::raw::c_float;
-use std::rc::Rc;
+use std::sync::Arc;
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use skia_safe::gpu::BackendTexture;
 use skia_safe::{images, Color, Data, Image, Point, Surface};
@@ -142,7 +142,7 @@ pub struct Context {
 }
 
 pub struct ContextWrapper {
-    inner: Rc<RefCell<Context>>,
+    inner: Arc<RwLock<Context>>,
 }
 
 unsafe impl Send for ContextWrapper {}
@@ -152,16 +152,16 @@ unsafe impl Sync for ContextWrapper {}
 impl ContextWrapper {
     pub fn new(context: Context) -> ContextWrapper {
         Self {
-            inner: Rc::new(RefCell::new(context)),
+            inner: Arc::new(RwLock::new(context)),
         }
     }
 
-    pub fn get_context(&self) -> Ref<Context> {
-        Ref::map(self.inner.borrow(), |v| v)
+    pub fn get_context(&self) -> MappedRwLockReadGuard<Context> {
+        RwLockReadGuard::map(self.inner.read(), |v| v)
     }
 
-    pub fn get_context_mut(&self) -> RefMut<Context> {
-        RefMut::map(self.inner.borrow_mut(), |v| v)
+    pub fn get_context_mut(&self) -> MappedRwLockWriteGuard<Context> {
+        RwLockWriteGuard::map(self.inner.write(), |v| v)
     }
 
     pub fn into_box(self) -> Box<ContextWrapper> {
@@ -172,11 +172,11 @@ impl ContextWrapper {
         Box::into_raw(self.into_box())
     }
 
-    pub fn get_inner(&self) -> &Rc<RefCell<Context>> {
+    pub fn get_inner(&self) -> &Arc<RwLock<Context>> {
         &self.inner
     }
 
-    pub fn from_inner(inner: Rc<RefCell<Context>>) -> ContextWrapper {
+    pub fn from_inner(inner: Arc<RwLock<Context>>) -> ContextWrapper {
         Self { inner }
     }
 
@@ -221,12 +221,12 @@ impl ContextWrapper {
 impl Clone for ContextWrapper {
     fn clone(&self) -> Self {
         Self {
-            inner: Rc::clone(&self.inner),
+            inner: Arc::clone(&self.inner),
         }
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.inner = Rc::clone(&source.inner)
+        self.inner = Arc::clone(&source.inner)
     }
 }
 

@@ -1,10 +1,11 @@
 use jni::objects::{JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
+use log::Level;
 use ndk::native_window::NativeWindow;
+use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
 use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
-use std::cell::RefCell;
 use std::ffi::c_void;
 
 use canvas_core::context_attributes::ContextAttributes;
@@ -18,7 +19,7 @@ pub(crate) struct AndroidGLContext {
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
+pub extern "system" fn nativeInitGL(
     mut env: JNIEnv,
     _: JClass,
     surface: jobject,
@@ -36,7 +37,8 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
     is_canvas: jboolean,
 ) -> jlong {
     unsafe {
-        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+        let interface = env.get_native_interface();
+        if let Some(window) = NativeWindow::from_surface(interface, surface) {
             if version == 2 && !GLContext::has_gl2support() {
                 return 0;
             }
@@ -64,11 +66,13 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
                 window.height(),
                 window.raw_window_handle(),
             ) {
-                return Box::into_raw(Box::new(AndroidGLContext {
+                let context = AndroidGLContext {
                     android_window: Some(window),
                     gl_context,
                     contextAttributes: attrs,
-                })) as jlong;
+                };
+                drop(env);
+                return Box::into_raw(Box::new(context)) as jlong;
             }
         }
     }
@@ -76,7 +80,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGL(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurface(
+pub extern "system" fn nativeInitGLNoSurface(
     mut env: JNIEnv,
     _: JClass,
     width: jint,
@@ -116,6 +120,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurf
         is_canvas == JNI_TRUE,
     );
 
+    drop(env);
     if let Some(gl_context) = GLContext::create_pbuffer(&mut attrs, width, height) {
         return Box::into_raw(Box::new(AndroidGLContext {
             android_window: None,
@@ -127,9 +132,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeInitGLNoSurf
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DContext(
-    _env: JNIEnv,
-    _: JClass,
+pub extern "system" fn nativeCreate2DContext(
     context: jlong,
     width: jint,
     height: jint,
@@ -176,7 +179,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCreate2DCont
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurface(
+pub extern "system" fn nativeUpdateGLSurface(
     env: JNIEnv,
     _: JClass,
     surface: jobject,
@@ -196,12 +199,13 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLSurf
                 window.raw_window_handle(),
             );
             context.android_window = Some(window);
+            drop(env);
         }
     }
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurface(
+pub extern "system" fn nativeUpdate2DSurface(
     env: JNIEnv,
     _: JClass,
     surface: jobject,
@@ -219,17 +223,12 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurf
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             context.resize(window.width() as f32, window.height() as f32)
         }
+        drop(env);
     }
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurfaceNoSurface(
-    _env: JNIEnv,
-    _: JClass,
-    width: jint,
-    height: jint,
-    context: jlong,
-) {
+pub extern "system" fn nativeUpdate2DSurfaceNoSurface(width: jint, height: jint, context: jlong) {
     if context == 0 {
         return;
     }
@@ -242,13 +241,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdate2DSurf
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLNoSurface(
-    _env: JNIEnv,
-    _: JClass,
-    width: jint,
-    height: jint,
-    context: jlong,
-) {
+pub extern "system" fn nativeUpdateGLNoSurface(width: jint, height: jint, context: jlong) {
     if context == 0 {
         return;
     }
@@ -260,11 +253,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeUpdateGLNoSu
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
-    _env: JNIEnv,
-    _: JClass,
-    context: jlong,
-) {
+pub extern "system" fn nativeReleaseGL(context: jlong) {
     if context == 0 {
         return;
     }
@@ -273,11 +262,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGL(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGetGLPointer(
-    _env: JNIEnv,
-    _: JClass,
-    gl_context: jlong,
-) -> jlong {
+pub extern "system" fn nativeGetGLPointer(gl_context: jlong) -> jlong {
     if gl_context == 0 {
         return 0;
     }
@@ -287,11 +272,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGetGLPointer
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeMakeGLCurrent(
-    _env: JNIEnv,
-    _: JClass,
-    gl_context: jlong,
-) -> jboolean {
+pub extern "system" fn nativeMakeGLCurrent(gl_context: jlong) -> jboolean {
     if gl_context == 0 {
         return 0;
     }
@@ -304,15 +285,11 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeMakeGLCurren
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGLPointerRefCount(
-    _env: JNIEnv,
-    _: JClass,
-    gl_context: jlong,
-) -> jlong {
+pub extern "system" fn nativeGLPointerRefCount(gl_context: jlong) -> jlong {
     if gl_context == 0 {
         return 0;
     }
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     if gl_context.is_null() {
         return 0;
     }
@@ -325,15 +302,11 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeGLPointerRef
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPointer(
-    _env: JNIEnv,
-    _: JClass,
-    gl_context: jlong,
-) {
+pub extern "system" fn nativeReleaseGLPointer(gl_context: jlong) {
     if gl_context == 0 {
         return;
     }
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     if gl_context.is_null() {
         return;
     }
@@ -346,11 +319,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeReleaseGLPoi
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTest(
-    _env: JNIEnv,
-    _: JClass,
-    context: jlong,
-) {
+pub extern "system" fn nativeContext2DTest(context: jlong) {
     if context == 0 {
         return;
     }
@@ -368,11 +337,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DTes
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPathTest(
-    _env: JNIEnv,
-    _: JClass,
-    context: jlong,
-) {
+pub extern "system" fn nativeContext2DPathTest(context: jlong) {
     if context == 0 {
         return;
     }
@@ -405,7 +370,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeContext2DPat
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrentGLContextToBitmap(
+pub extern "system" fn nativeWriteCurrentGLContextToBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -441,10 +406,12 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeWriteCurrent
             }),
         )
     }
+
+    drop(env);
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBitmapFlush(
+pub extern "system" fn nativeCustomWithBitmapFlush(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -495,6 +462,8 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvas_nativeCustomWithBi
                     context.draw_on_surface(&mut surface);
                 }
             }),
-        )
+        );
+
+        drop(env);
     }
 }

@@ -5,7 +5,7 @@ use jni::sys::jint;
 use jni::JNIEnv;
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_org_nativescript_canvas_TextureRender_nativeDrawFrame(
+pub unsafe extern "system" fn nativeDrawFrame(
     mut env: JNIEnv,
     _: JClass,
     surface_texture_object: JObject,

@@ -8,7 +8,7 @@ use canvas_c::CanvasRenderingContext2D;
 use canvas_c::PaintStyle;
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_nativeCreatePattern(
+pub extern "system" fn nativeCreatePattern(
     mut env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -84,7 +84,7 @@ fn draw_image(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_nativeDrawImageDxDyWithBitmap(
+pub extern "system" fn nativeDrawImageDxDyWithBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -115,7 +115,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_nativeDrawImageDxDyDwDhWithBitmap(
+pub extern "system" fn nativeDrawImageDxDyDwDhWithBitmap(
     env: JNIEnv,
     _: JClass,
     context: jlong,
@@ -149,7 +149,7 @@ pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCCanvasRenderingContext2D_nativeDrawImageWithBitmap(
+pub extern "system" fn nativeDrawImageWithBitmap(
     env: &JNIEnv,
     _: JClass,
     context: jlong,

@@ -96,7 +96,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		tiny_poly_world(this.canvas);
+		//tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);

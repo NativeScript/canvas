@@ -18,6 +18,8 @@ import dalvik.annotation.optimization.CriticalNative
 import dalvik.annotation.optimization.FastNative
 import org.json.JSONObject
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -57,6 +59,8 @@ class NSCCanvas : FrameLayout {
 	}
 
 	var touchEventListener: TouchEvents? = null
+
+	var boundsBuffer: FloatBuffer? = null
 
 	private var didUpscale = false
 	var upscale: Boolean = false
@@ -659,6 +663,46 @@ class NSCCanvas : FrameLayout {
 				canvas.measure(w, h)
 				canvas.layout(0, 0, width, height)
 			}
+		}
+
+		@JvmStatic
+		fun getBoundingClientRect(canvas: NSCCanvas) {
+			canvas.boundsBuffer?.let { buffer ->
+				val density = canvas.context.resources.displayMetrics.density
+				buffer.put(0, canvas.top / density)
+				buffer.put(1, canvas.right / density)
+				buffer.put(2, canvas.bottom / density)
+				buffer.put(3, canvas.left / density)
+				buffer.put(4, canvas.width / density)
+				buffer.put(5, canvas.height / density)
+				buffer.put(6, canvas.x / density)
+				buffer.put(7, canvas.y / density)
+			}
+		}
+
+		@JvmStatic
+		fun getBoundingClientRectJSON(canvas: NSCCanvas): String {
+			val density = canvas.context.resources.displayMetrics.density
+
+			val sb = StringBuilder()
+			sb.append("{")
+
+			append("top", canvas.top / density, sb)
+			append("right", canvas.right / density, sb)
+			append("bottom", canvas.bottom / density, sb)
+			append("left", canvas.left / density, sb)
+			append("width", canvas.width / density, sb)
+			append("height", canvas.height / density, sb)
+			append("x", canvas.x / density, sb)
+			append("y", canvas.y / density, sb, true)
+
+			sb.append("}")
+
+			return sb.toString()
+		}
+
+		private fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
+			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
 		}
 
 		@JvmStatic

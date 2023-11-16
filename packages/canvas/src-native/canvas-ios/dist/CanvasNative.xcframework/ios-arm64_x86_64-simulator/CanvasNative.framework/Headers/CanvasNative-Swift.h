@@ -381,6 +381,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
 - (void)layoutSubviews;
++ (void)getBoundingClientRect:(NSCCanvas * _Nonnull)canvas :(void * _Nonnull)buffer;
 @end
 
 
@@ -846,6 +847,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
 - (void)layoutSubviews;
++ (void)getBoundingClientRect:(NSCCanvas * _Nonnull)canvas :(void * _Nonnull)buffer;
 @end
 
 

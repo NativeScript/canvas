@@ -2,6 +2,7 @@
 Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
+require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor;
 let monitor;
@@ -43,6 +44,39 @@ JSI
 // eval(call);
 
 // : CONSOLE TIME: data: 4.250ms image data
+
+/*
+
+let url = new URL("https://example.com?foo=1&bar=2");
+let params = new URLSearchParams(url.search);
+
+//Add a second foo parameter.
+params.append("foo", 4 as any);
+//Query string is now: 'foo=1&bar=2&foo=4'
+
+console.log(url.search);
+
+url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
+params =  url.searchParams;
+
+const name = params.get("name"); // is the string "Jonathan Smith".
+const age = parseInt(params.get("age") as any); // is the number 18
+
+
+*/
+// url: 5804.647ms
+
+// other url: 648.170ms
+
+console.time('url');
+for (let i = 0; i < 1_000_000; i++) {
+	const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
+}
+console.timeEnd('url');
+
+const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
+
+console.log('canParse', URL.canParse('asdasd'), URL.canParse('https://example.com/?name=Jonathan%20Smith&age=18'));
 
 Application.on('uncaughtError', (args) => {
 	console.log('uncaughtError: error', args.error);

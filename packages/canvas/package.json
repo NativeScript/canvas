@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas",
-  "version": "2.0.0-alpha.30",
+  "version": "2.0.0-alpha.31",
   "description": "DOM Canvas API for NativeScript",
   "main": "index",
   "typings": "index.d.ts",

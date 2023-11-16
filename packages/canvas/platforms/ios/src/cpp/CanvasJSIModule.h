@@ -19,6 +19,7 @@
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 
+#include "URLImpl.h"
 
 class CanvasJSIModule {
 public:

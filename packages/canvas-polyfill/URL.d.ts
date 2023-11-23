@@ -27,6 +27,8 @@ declare export class URL {
     username: string;
 
     toJSON(): string;
+
+    static canParse(url, base?): boolean;
     
     static createObjectURL(object: any, options = null): string;
 

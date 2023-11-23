@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import dalvik.annotation.optimization.FastNative
 import java.util.concurrent.Executors
 
 /**
@@ -32,6 +33,7 @@ class NSCImageAsset {
         }
 
         @JvmStatic
+				@FastNative
         private external fun nativeLoadFromBitmap(asset: Long, bitmap: Bitmap): Boolean
 
         private val executorService = Executors.newFixedThreadPool(10)

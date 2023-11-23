@@ -81,6 +81,7 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
+  @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ canvas: CanvasNative.NSCCanvas, _ buffer: Swift.UnsafeMutableRawPointer)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(TNSRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()

@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 				try {
 					val json = JSONObject(event)
 					Log.d("CANVAS", json.toString())
-				}catch (e: Exception){
+				} catch (e: Exception) {
 					val array = JSONArray(event)
 					Log.d("CANVAS", array.toString())
 				}
@@ -74,6 +74,7 @@ class MainActivity : AppCompatActivity() {
 						false,
 						Color.BLACK
 					)
+
 					NSCCanvas.context2DPathTest(context)
 //
 //                    Log.d("com.test", "windows $context")

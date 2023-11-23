@@ -535,7 +535,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//     console.log('error', msg);
 		// }
 		// swarm(this.canvas);
-		 //touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -613,7 +613,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
-		createConicGradient(this.canvas);
+		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -655,6 +655,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.context2DTest(this.canvas);
 
 		//issue93(this.canvas);
+
+		// const canvas = this.canvas;
+
+		// console.time('getBoundingClientRect');
+		// for(let i = 0; i < 100000;i++){
+		// 	canvas.getBoundingClientRect();
+		// }
+		// console.timeEnd('getBoundingClientRect');
 	}
 
 	drawRandomFullscreenImage(canvas) {

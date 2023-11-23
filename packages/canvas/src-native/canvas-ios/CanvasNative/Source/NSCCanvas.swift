@@ -436,6 +436,22 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         }
     }
     
+    @objc public static func getBoundingClientRect(_ canvas: NSCCanvas, _ buffer: UnsafeMutableRawPointer) {
+        var bytes = buffer.assumingMemoryBound(to: Float.self)
+        let x = canvas.frame.origin.x
+        let y = canvas.frame.origin.y
+        let width = canvas.frame.size.width
+        let height = canvas.frame.size.height
+        bytes.pointee =  Float(y)
+        bytes.advanced(by: 1).pointee = Float(x + width)
+        bytes.advanced(by: 2).pointee = Float(y + height)
+        bytes.advanced(by: 3).pointee = Float(x)
+        bytes.advanced(by: 4).pointee = Float(width)
+        bytes.advanced(by: 5).pointee = Float(height)
+        bytes.advanced(by: 6).pointee = Float(x)
+        bytes.advanced(by: 7).pointee = Float(y)
+    }
+    
 }
 
 extension String {

@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
 
 use std::borrow::Cow;
-use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
 use std::os::raw::{c_char, c_int, c_uint};
-use std::rc::Rc;
+use std::sync::Arc;
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
@@ -41,6 +41,8 @@ pub mod choreographer;
 mod buffers;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
+
+pub mod url;
 
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -271,11 +273,11 @@ impl CanvasRenderingContext2D {
         self.gl_context.swap_buffers();
     }
 
-    pub fn get_context(&self) -> Ref<Context> {
+    pub fn get_context(&self) -> MappedRwLockReadGuard<Context> {
         self.context.get_context()
     }
 
-    pub fn get_context_mut(&self) -> RefMut<Context> {
+    pub fn get_context_mut(&self) -> MappedRwLockWriteGuard<Context> {
         self.context.get_context_mut()
     }
 
@@ -465,14 +467,14 @@ pub extern "C" fn canvas_native_context_create_with_wrapper(
     let wrapper = context as *mut ContextWrapper;
     let wrapper = unsafe { &mut *wrapper };
 
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
     let alpha;
     {
         let lock = wrapper.get_context();
         alpha = lock.device().alpha;
     }
-    let clone = ContextWrapper::from_inner(Rc::clone(wrapper.get_inner()));
+    let clone = ContextWrapper::from_inner(Arc::clone(wrapper.get_inner()));
     Box::into_raw(Box::new(CanvasRenderingContext2D {
         context: clone,
         gl_context,
@@ -527,7 +529,7 @@ pub extern "C" fn canvas_native_context_create_gl(
     ppi: f32,
     direction: u32,
 ) -> *mut CanvasRenderingContext2D {
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
 
     gl_context.make_current();
@@ -5644,7 +5646,7 @@ pub extern "C" fn canvas_native_webgl_create(
         WebGLVersion::NONE
     };
 
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
 
     let inner = WebGLState::new_with_context(

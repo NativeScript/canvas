@@ -5,7 +5,7 @@ use jni::JNIEnv;
 use canvas_core::image_asset::ImageAsset;
 
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_NSCImageAsset_nativeLoadFromBitmap(
+pub extern "system" fn nativeLoadFromBitmap(
     env: &JNIEnv,
     _: JClass,
     asset: jlong,

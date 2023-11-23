@@ -1,16 +1,11 @@
-use jni::JNIEnv;
+use canvas_2d::context::Context;
 use jni::objects::{JClass, JString};
 use jni::sys::jlong;
-use canvas_2d::context::Context;
+use jni::JNIEnv;
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(
-    mut env: JNIEnv,
-    _: JClass,
-    context: jlong,
-    svg: JString,
-) {
+pub extern "system" fn nativeDrawSVG(mut env: JNIEnv, _: JClass, context: jlong, svg: JString) {
     unsafe {
         let context: *mut Context = context as _;
         let context = &mut *context;
@@ -23,7 +18,7 @@ pub extern "system" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVG(
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_org_nativescript_canvas_TNSSVG_nativeDrawSVGFromPath(
+pub extern "system" fn nativeDrawSVGFromPath(
     mut env: JNIEnv,
     _: JClass,
     context: jlong,

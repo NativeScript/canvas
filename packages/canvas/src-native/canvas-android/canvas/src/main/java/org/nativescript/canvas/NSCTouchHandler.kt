@@ -199,30 +199,6 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 		scale: Float = 1f
 	) {
 
-		/*		val ret = JSONObject()
-				ret.put("event", "move")
-				val array = JSONArray()
-
-				val pointerCount = me.pointerCount
-
-				for (p in 0 until pointerCount) {
-					try {
-						val pid: Int = me.getPointerId(p)
-						val json = JSONObject()
-						json.put("event", "touchCoordinatesCallback")
-						json.put("ptrId", pid)
-						json.put("x", me.getX(p) / scale)
-						json.put("y", me.getY(p) / scale)
-						array.put(json)
-					} catch (_: IllegalArgumentException) {
-					}
-				}
-
-				ret.put("pointers", array)
-
-		 */
-
-
 		val sb = StringBuilder()
 		sb.append("{")
 
@@ -250,122 +226,8 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 		sb.append("}")
 
-
-
-
 		canvas.touchEventListener?.onEvent(sb.toString(), me)
 	}
-	/*
-		private fun onTouchEvent(
-			ptrId: Int, x: Float, y: Float,
-			press: Boolean, release: Boolean,
-			me: MotionEvent,
-			scale: Float = 1f
-		) {
-
-			val sb = StringBuilder()
-			sb.append("{")
-
-			sb.append("\"move\": {")
-			append("event", "mouseMoveCallback", sb)
-			append("ptrId", ptrId, sb)
-			append("x", x / scale, sb)
-			append("y", y / scale, sb, true)
-			sb.append("}")
-
-			val pointerCount = me.pointerCount
-			sb.append(",\"pointers\": [")
-			val last = pointerCount - 1
-			for (p in 0 until pointerCount) {
-				try {
-					val pid: Int = me.getPointerId(p)
-					sb.append("{")
-					append("event", "touchCoordinatesCallback", sb)
-					append("ptrId", pid, sb)
-					append("x", me.getX(p) / scale, sb)
-					append("y", me.getY(p) / scale, sb, true)
-
-					if (p != last) {
-						sb.append("},")
-					} else {
-						sb.append("}")
-					}
-				} catch (_: IllegalArgumentException) {
-				}
-			}
-			sb.append("]")
-
-			if (press) {
-				sb.append(",\"press\": {")
-				append("event", "mouseDownCallback", sb)
-				append("ptrId", ptrid, sb, true)
-				sb.append("}")
-			}
-
-			if (release) {
-				sb.append(",\"release\": {")
-				append("event", "mouseUpCallback", sb)
-				append("ptrId", ptrid, sb, true)
-				sb.append("}")
-			}
-
-			sb.append("}")
-
-			canvas.touchEventListener?.onEvent(sb.toString(), me)
-
-		}
-
-
-		private fun onMultitouchCoordinates(
-			ptrid: Int,
-			x: Float,
-			y: Float,
-			me: MotionEvent,
-			scale: Float = 1f
-		) {
-			val sb = StringBuilder()
-			sb.append("{")
-			append("event", "touchCoordinatesCallback", sb)
-			append("ptrId", ptrid, sb)
-			append("x", x / scale, sb)
-			append("y", y / scale, sb, true)
-			sb.append("}")
-
-			canvas.touchEventListener?.onEvent(sb.toString(), me)
-		}
-
-		private fun onMultitouchCoordinates(me: MotionEvent, scale: Float = 1f) {
-
-			val pointerCount = me.pointerCount
-
-			if (pointerCount == 0) {
-				return
-			}
-			val last = pointerCount - 1
-			val sb = StringBuilder()
-			sb.append("[")
-			for (p in 0 until pointerCount) {
-				try {
-					val pid: Int = me.getPointerId(p)
-					sb.append("{")
-					append("event", "touchCoordinatesCallback", sb)
-					append("ptrId", pid, sb)
-					append("x", me.getX(p) / scale, sb)
-					append("y", me.getY(p) / scale, sb, true)
-
-					if (p != last) {
-						sb.append("},")
-					} else {
-						sb.append("}")
-					}
-				} catch (_: IllegalArgumentException) {
-				}
-			}
-			sb.append("]")
-			canvas.touchEventListener?.onEvent(sb.toString(), me)
-		}
-
-	 */
 
 	private fun append(key: String, value: String, sb: StringBuilder, isLast: Boolean = false) {
 		sb.append("\"${key}\": \"${value}\"${if (isLast) "" else ","}")

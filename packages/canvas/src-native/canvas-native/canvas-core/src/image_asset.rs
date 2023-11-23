@@ -2,16 +2,15 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{BufRead, Read, Seek, SeekFrom};
 use std::os::raw::{c_char, c_int, c_uint};
-use std::ptr::{null, null_mut};
+use std::ptr::null;
 use std::sync::Arc;
 
+use image::{
+    DynamicImage, EncodableLayout, GenericImageView, ImageFormat, Pixel,
+};
 use image::imageops::FilterType;
-use image::{DynamicImage, EncodableLayout, GenericImage, ImageFormat, Pixel, RgbImage, RgbaImage, GenericImageView};
-use image::buffer::ConvertBuffer;
 use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::RawRwLock;
-use skia_safe::image_filters::image;
-
 
 struct ImageAssetInner {
     image: Option<DynamicImage>,
@@ -233,23 +232,17 @@ impl ImageAsset {
                 match image::guess_format(&bytes) {
                     Ok(mime) => match image::load(reader, mime) {
                         Ok(mut data) => {
-
                             data = DynamicImage::ImageRgba8(match data {
-                                DynamicImage::ImageRgba8(image) => {
-                                    image
-                                }
-                                _ =>{
-                                    data.into_rgba8()
-                                }
+                                DynamicImage::ImageRgba8(image) => image,
+                                _ => data.into_rgba8(),
                             });
-
-
 
                             #[cfg(feature = "2d")]
                             {
                                 if let Some(image) = data.as_rgba8() {
                                     let width = image.width() as i32;
                                     let height = image.height() as i32;
+
 
                                     let info = skia_safe::ImageInfo::new(
                                         skia_safe::ISize::new(width, height),
@@ -265,7 +258,7 @@ impl ImageAsset {
                                         )
                                     };
                                     lock.skia_image = skia_image;
-                                }else if let Some(image) = data.as_rgb8() {
+                                } else if let Some(image) = data.as_rgb8() {
                                     let width = image.width() as i32;
                                     let height = image.height() as i32;
 
@@ -286,14 +279,10 @@ impl ImageAsset {
                                 }
                             }
 
-
                             let mut image = data.grayscale();
                             image.invert();
-                            lock.luma_image = Some(
-                                image
-                            );
+                            lock.luma_image = Some(image);
                             lock.image = Some(data);
-
 
                             true
                         }
@@ -352,12 +341,8 @@ impl ImageAsset {
                 let mut lock = self.get_lock();
 
                 data = DynamicImage::ImageRgba8(match data {
-                    DynamicImage::ImageRgba8(image) => {
-                       image.clone()
-                    }
-                    _ =>{
-                        data.into_rgba8()
-                    }
+                    DynamicImage::ImageRgba8(image) => image.clone(),
+                    _ => data.into_rgba8(),
                 });
 
                 #[cfg(feature = "2d")]
@@ -380,7 +365,7 @@ impl ImageAsset {
                             )
                         };
                         lock.skia_image = skia_image;
-                    }else if let Some(image) = data.as_rgb8() {
+                    } else if let Some(image) = data.as_rgb8() {
                         let width = image.width() as i32;
                         let height = image.height() as i32;
 
@@ -401,12 +386,9 @@ impl ImageAsset {
                     }
                 }
 
-
                 let mut image = data.grayscale();
                 image.invert();
-                lock.luma_image = Some(
-                    image
-                );
+                lock.luma_image = Some(image);
                 lock.image = Some(data);
 
                 true
@@ -429,7 +411,7 @@ impl ImageAsset {
 
                 let data = DynamicImage::ImageRgba8(match data {
                     DynamicImage::ImageRgba8(data) => data,
-                    _ => data.into_rgba8()
+                    _ => data.into_rgba8(),
                 });
 
                 let width = data.width() as i32;

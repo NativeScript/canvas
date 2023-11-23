@@ -1,26 +1,23 @@
-use std::cell::RefCell;
-use std::ffi::{c_long, c_void};
-use std::fmt::Debug;
-use std::ptr::NonNull;
-use std::rc::Rc;
 use core_foundation::base::TCFType;
 use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
 use core_foundation::string::CFString;
 use icrate::objc2::ffi::BOOL;
 use icrate::objc2::{
-    class, msg_send, msg_send_id, rc::Id, runtime::AnyObject,
-    ClassType, Encode, Encoding,
+    class, msg_send, msg_send_id, rc::Id, runtime::AnyObject, ClassType, Encode, Encoding,
 };
 use icrate::Foundation::{NSData, NSInteger, NSObject, NSUInteger};
 use skia_safe::wrapper::PointerWrapper;
-
+use std::ffi::{c_long, c_void};
+use std::fmt::Debug;
+use std::ptr::NonNull;
+use std::sync::Arc;
 
 use crate::context_attributes::ContextAttributes;
 
 use once_cell::sync::OnceCell;
+use parking_lot::RwLock;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
-
 
 #[derive(Debug, Default)]
 pub struct GLContextInner {
@@ -35,18 +32,18 @@ unsafe impl Send for GLContextInner {}
 
 #[derive(Debug, Default)]
 pub struct GLContext {
-    inner: Rc<RefCell<GLContextInner>>,
+    inner: Arc<RwLock<GLContextInner>>,
 }
 
 impl GLContext {
     // pointer has to
-    pub fn as_raw_inner(&self) -> *const RefCell<GLContextInner> {
-        Rc::into_raw(Rc::clone(&self.inner))
+    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
+        Arc::into_raw(Arc::clone(&self.inner))
     }
 
-    pub fn from_raw_inner(raw: *const RefCell<GLContextInner>) -> Self {
+    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
         Self {
-            inner: unsafe { Rc::from_raw(raw) },
+            inner: unsafe { Arc::from_raw(raw) },
         }
     }
 }
@@ -54,7 +51,7 @@ impl GLContext {
 impl Clone for GLContext {
     fn clone(&self) -> Self {
         Self {
-            inner: Rc::clone(&self.inner),
+            inner: Arc::clone(&self.inner),
         }
     }
 }
@@ -93,7 +90,6 @@ impl Default for EAGLSharegroup {
 
 #[derive(Clone, Debug)]
 pub(crate) struct EAGLContext(Id<NSObject>);
-
 
 impl EAGLContext {
     pub fn new_with_api(api: EAGLRenderingAPI) -> Option<Self> {
@@ -244,7 +240,6 @@ impl TryFrom<i32> for GLKViewDrawableStencilFormat {
     }
 }
 
-
 #[derive(Debug)]
 #[repr(i32)]
 pub enum GLKViewDrawableMultisample {
@@ -358,7 +353,6 @@ impl GLKView {
         GLKViewDrawableStencilFormat::try_from(stencil).unwrap()
     }
 
-
     pub fn set_drawable_multisample(&self, sample: GLKViewDrawableMultisample) {
         let _: () = unsafe { msg_send![&self.0, drawableMultisample: sample] };
     }
@@ -403,7 +397,7 @@ impl GLContext {
             Some(glview) => {
                 let id = glview.clone();
                 let glview = GLKView(id);
-                self.inner.borrow_mut().view = Some(glview);
+                self.inner.write().view = Some(glview);
                 true
             }
         }
@@ -442,7 +436,6 @@ impl GLContext {
         mut view: GLKView,
         shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
-
         let gl_view = view.clone();
         IS_GL_SYMBOLS_LOADED.get_or_init(move || {
             gl_bindings::load_with(|symbol| gl_view.get_proc_address(symbol).cast());
@@ -457,7 +450,7 @@ impl GLContext {
 
         let share_group = match shared_context {
             Some(context) => {
-                let inner = context.inner.borrow();
+                let inner = context.inner.read();
                 inner.sharegroup.clone()
             }
             _ => EAGLSharegroup::new(),
@@ -482,7 +475,7 @@ impl GLContext {
         };
 
         Some(GLContext {
-            inner: Rc::new(RefCell::new(inner)),
+            inner: Arc::new(RwLock::new(inner)),
         })
     }
 
@@ -515,7 +508,7 @@ impl GLContext {
     }
 
     pub fn snapshot(&self) -> Option<Vec<u8>> {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         inner.view.as_ref().map(|view| view.snapshot())
     }
 
@@ -526,7 +519,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn make_current(&self) -> bool {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
 
         if let Some(context) = inner.context.as_ref() {
             unsafe {
@@ -569,7 +562,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn remove_if_current(&self) {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         if let Some(context) = inner.context.as_ref() {
             context.remove_if_current();
         }
@@ -577,7 +570,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn bind_drawable(&self) {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         if let Some(view) = inner.view.as_ref() {
             view.bind_drawable();
         }
@@ -585,7 +578,7 @@ impl GLContext {
 
     #[inline(always)]
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.inner.borrow();
+        let inner = self.inner.read();
         if let Some(view) = inner.view.as_ref() {
             view.display();
             // // Testing
@@ -600,7 +593,7 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_width(&self) -> i32 {
         self.inner
-            .borrow()
+            .read()
             .view
             .as_ref()
             .map(|v| v.drawable_width().try_into().unwrap_or_default())
@@ -610,7 +603,7 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_height(&self) -> i32 {
         self.inner
-            .borrow()
+            .read()
             .view
             .as_ref()
             .map(|v| v.drawable_height().try_into().unwrap_or_default())

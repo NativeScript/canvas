@@ -3,24 +3,25 @@ package org.nativescript.canvas
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.SurfaceTexture
+import android.graphics.Matrix
 import android.os.*
 import android.util.AttributeSet
+import android.util.Log
+import android.view.MotionEvent
 import android.view.Surface
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.drawToBitmap
+import dalvik.annotation.optimization.CriticalNative
+import dalvik.annotation.optimization.FastNative
 import org.json.JSONObject
+import java.nio.ByteBuffer
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import android.graphics.Matrix
-import android.opengl.GLES20
-import android.util.Log
-import android.view.MotionEvent
-import android.view.ScaleGestureDetector
-import android.view.ViewGroup
-import java.nio.ByteBuffer
 
 
 /**
@@ -58,6 +59,8 @@ class NSCCanvas : FrameLayout {
 	}
 
 	var touchEventListener: TouchEvents? = null
+
+	var boundsBuffer: FloatBuffer? = null
 
 	private var didUpscale = false
 	var upscale: Boolean = false
@@ -335,7 +338,9 @@ class NSCCanvas : FrameLayout {
 				version,
 				is2D
 			)
+
 			nativeContext = nativeGetGLPointer(nativeGL)
+
 		} ?: run {
 			nativeGL = nativeInitGLNoSurface(
 				this.drawingBufferWidth,
@@ -402,6 +407,7 @@ class NSCCanvas : FrameLayout {
 			0
 		}
 
+		val start = System.currentTimeMillis()
 
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
@@ -414,6 +420,8 @@ class NSCCanvas : FrameLayout {
 			(resources.displayMetrics.densityDpi * 160).toFloat(),
 			direction
 		)
+
+		Log.d("com.test", "ts ${System.currentTimeMillis() - start}")
 
 		return native2DContext
 	}
@@ -618,6 +626,7 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib() {
 			if (!isLibraryLoaded) {
+				System.loadLibrary("canvasandroid")
 				System.loadLibrary("canvasnativev8")
 				isLibraryLoaded = true
 			}
@@ -628,8 +637,8 @@ class NSCCanvas : FrameLayout {
 		var enableDebug = false
 
 		@JvmStatic
-		fun layoutView(width: Float, height: Float, NSCCanvas: NSCCanvas) {
-			layoutView(width.toInt(), height.toInt(), NSCCanvas)
+		fun layoutView(width: Float, height: Float, canvas: NSCCanvas) {
+			layoutView(width.toInt(), height.toInt(), canvas)
 		}
 
 		@JvmStatic
@@ -657,6 +666,47 @@ class NSCCanvas : FrameLayout {
 		}
 
 		@JvmStatic
+		fun getBoundingClientRect(canvas: NSCCanvas) {
+			canvas.boundsBuffer?.let { buffer ->
+				val density = canvas.context.resources.displayMetrics.density
+				buffer.put(0, canvas.top / density)
+				buffer.put(1, canvas.right / density)
+				buffer.put(2, canvas.bottom / density)
+				buffer.put(3, canvas.left / density)
+				buffer.put(4, canvas.width / density)
+				buffer.put(5, canvas.height / density)
+				buffer.put(6, canvas.x / density)
+				buffer.put(7, canvas.y / density)
+			}
+		}
+
+		@JvmStatic
+		fun getBoundingClientRectJSON(canvas: NSCCanvas): String {
+			val density = canvas.context.resources.displayMetrics.density
+
+			val sb = StringBuilder()
+			sb.append("{")
+
+			append("top", canvas.top / density, sb)
+			append("right", canvas.right / density, sb)
+			append("bottom", canvas.bottom / density, sb)
+			append("left", canvas.left / density, sb)
+			append("width", canvas.width / density, sb)
+			append("height", canvas.height / density, sb)
+			append("x", canvas.x / density, sb)
+			append("y", canvas.y / density, sb, true)
+
+			sb.append("}")
+
+			return sb.toString()
+		}
+
+		private fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
+			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
+		}
+
+		@JvmStatic
+		@FastNative
 		external fun nativeInitGL(
 			surface: Surface,
 			alpha: Boolean,
@@ -674,6 +724,7 @@ class NSCCanvas : FrameLayout {
 		): Long
 
 		@JvmStatic
+		@FastNative
 		external fun nativeInitGLNoSurface(
 			width: Int,
 			height: Int,
@@ -693,6 +744,7 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeCreate2DContext(
 			context: Long,
 			width: Int,
@@ -700,24 +752,27 @@ class NSCCanvas : FrameLayout {
 			alpha: Boolean,
 			density: Float,
 			samples: Int,
-			font_color: Int,
+			fontColor: Int,
 			ppi: Float,
 			direction: Int
 		): Long
 
 		@JvmStatic
+		@FastNative
 		external fun nativeUpdateGLSurface(
 			surface: Surface,
 			context: Long
 		)
 
 		@JvmStatic
+		@FastNative
 		external fun nativeUpdate2DSurface(
 			surface: Surface,
 			context: Long
 		)
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeUpdate2DSurfaceNoSurface(
 			width: Int,
 			height: Int,
@@ -726,6 +781,7 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeUpdateGLNoSurface(
 			width: Int,
 			height: Int,
@@ -734,34 +790,41 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeReleaseGL(
 			context: Long
 		)
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeMakeGLCurrent(
 			context: Long
 		): Boolean
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeGLPointerRefCount(
 			context: Long
 		): Long
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeGetGLPointer(
 			context: Long
 		): Long
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeReleaseGLPointer(
 			gl: Long
 		)
 
 		@JvmStatic
+		@FastNative
 		external fun nativeWriteCurrentGLContextToBitmap(context: Long, bitmap: Bitmap)
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeInitContextWithCustomSurface(
 			width: Float,
 			height: Float,
@@ -774,6 +837,7 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeResizeCustomSurface(
 			context: Long,
 			width: Float,
@@ -785,13 +849,16 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
+		@FastNative
 		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)
 
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeContext2DTest(context: Long)
 
 		@JvmStatic
+		@CriticalNative
 		external fun nativeContext2DPathTest(context: Long)
 
 		@JvmStatic

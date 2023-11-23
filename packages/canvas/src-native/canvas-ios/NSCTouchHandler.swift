@@ -29,18 +29,23 @@ class NSCTouchHandler: NSObject {
     class TouchGestureRecognizer: UIGestureRecognizer {
         var handler: NSCTouchHandler?
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
-            let location = touches.first?.location(in: view)
-            
-            guard let location = touches.first?.location(in: view), let handler = handler else {
+
+            for (ptridx, touch) in touches.enumerated() {
+                
+               let location = touch.location(in: view)
+                
+                
+                guard let handler = handler else {
+                    view?.touchesBegan(touches, with: event)
+                    return
+                }
+                
+                handler.pointers[ptridx] = location
+                handler.onPress(ptridx, location.x, location.y, self)
+                
                 view?.touchesBegan(touches, with: event)
-                return
+                
             }
-            
-            handler.pointers[ptridx] = location
-            handler.onPress(ptridx, location.x, location.y, self)
-            
-            view?.touchesBegan(touches, with: event)
         }
         
         override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -49,33 +54,43 @@ class NSCTouchHandler: NSObject {
         }
         
         override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
-            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
-            let location = touches.first?.location(in: view)
-            
-            guard let location = touches.first?.location(in: view), let handler = handler else {
-                view?.touchesBegan(touches, with: event)
-                return
+        
+            for (ptridx, touch) in touches.enumerated() {
+                
+               let location = touch.location(in: view)
+                
+                
+                guard let handler = handler else {
+                    view?.touchesEnded(touches, with: event)
+                    return
+                }
+                
+                handler.onRelease(ptridx, location.x, location.y, self)
+                handler.pointers[ptridx] = CGPointZero
+                
+                view?.touchesEnded(touches, with: event)
+                
             }
-            
-            handler.onRelease(ptridx, location.x, location.y, self)
-            handler.pointers[ptridx] = CGPointZero
-            
-            view?.touchesEnded(touches, with: event)
         }
         
         override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
-            let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
-            let location = touches.first?.location(in: view)
+            for (ptridx, touch) in touches.enumerated() {
+                
+               let location = touch.location(in: view)
             
-            guard let location = touches.first?.location(in: view), let handler = handler else {
-                view?.touchesBegan(touches, with: event)
-                return
+                guard let handler = handler else {
+                    view?.touchesCancelled(touches, with: event)
+                    return
+                }
+                handler.onCancel(ptridx, location.x, location.y, self)
+                handler.pointers[ptridx] = CGPointZero
+                
+                view?.touchesCancelled(touches, with: event)
+                
             }
             
-            handler.onCancel(ptridx, location.x, location.y, self)
-            handler.pointers[ptridx] = CGPointZero
             
-            view?.touchesCancelled(touches, with: event)
+            
         }
     }
     

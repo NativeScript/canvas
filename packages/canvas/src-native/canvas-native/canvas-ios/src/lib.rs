@@ -3,6 +3,7 @@ use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
+use parking_lot::RwLock;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
@@ -375,7 +376,7 @@ pub extern "C" fn canvas_native_release_gl_pointer(gl_context: i64) {
     if gl_context == 0 {
         return;
     }
-    let gl_context = gl_context as *const RefCell<canvas_core::gl::GLContextInner>;
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
     let _ = GLContext::from_raw_inner(gl_context);
 }
 

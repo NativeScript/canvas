@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty } from './common';
+import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty, DOMRect } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -257,10 +257,10 @@ export class Canvas extends CanvasBase {
 
 			const size = this._realSize;
 
-			const width = Utils.layout.toDeviceIndependentPixels(size.width || 1);
-			const height = Utils.layout.toDeviceIndependentPixels(size.height || 1);
+			/*const width = Utils.layout.toDeviceIndependentPixels(size.width || 1);
+			const height = Utils.layout.toDeviceIndependentPixels(size.height || 1);*/
 
-			this._canvas.forceLayout(width, height);
+			this._canvas.forceLayout(size.width, size.height);
 
 			this._didLayout = true;
 		}
@@ -349,7 +349,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		return this.native.toDataURL(type, encoderOptions);
+		return this.native.__toDataURL(type, encoderOptions);
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {
@@ -362,6 +362,8 @@ export class Canvas extends CanvasBase {
 		return null;
 	}
 
+	private _boundingClientRect = new Float32Array(8);
+
 	getBoundingClientRect(): {
 		x: number;
 		y: number;
@@ -372,19 +374,61 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		const view = this;
-		const frame = view.ios.frame as CGRect;
-		const width = view.width;
-		const height = view.height;
-		return {
-			bottom: height,
-			height: height,
-			left: frame.origin.x,
-			right: width,
-			top: frame.origin.y,
-			width: width,
-			x: frame.origin.x,
-			y: frame.origin.y,
-		};
+		//  console.time('getBoundingClientRect');
+
+		/*
+		getBoundingClientRect: 0.033ms
+  getBoundingClientRect: 0.026ms
+  getBoundingClientRect: 0.008ms 
+		*/
+
+		NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
+
+		const ret = new DOMRect(
+			this._boundingClientRect[6],
+			this._boundingClientRect[7],
+			this._boundingClientRect[4],
+			this._boundingClientRect[5],
+			this._boundingClientRect[0],
+			this._boundingClientRect[1],
+			this._boundingClientRect[2],
+			this._boundingClientRect[3],
+		);
+
+		// const ret = {
+		// 	bottom: this._boundingClientRect[2],
+		// 	height: this._boundingClientRect[5],
+		// 	left: this._boundingClientRect[3],
+		// 	right: this._boundingClientRect[1],
+		// 	top: this._boundingClientRect[0],
+		// 	width: this._boundingClientRect[4],
+		// 	x: this._boundingClientRect[6],
+		// 	y: this._boundingClientRect[7],
+		// };
+
+		/*
+		 getBoundingClientRect: 0.064ms
+  getBoundingClientRect: 0.049ms
+  getBoundingClientRect: 0.036ms
+		*/
+
+		// const view = this;
+		// const frame = view.ios.frame as CGRect;
+		// const width = view.width;
+		// const height = view.height;
+		// const ret = {
+		// 	bottom: height,
+		// 	height: height,
+		// 	left: frame.origin.x,
+		// 	right: width,
+		// 	top: frame.origin.y,
+		// 	width: width,
+		// 	x: frame.origin.x,
+		// 	y: frame.origin.y,
+		// };
+
+		//  console.timeEnd('getBoundingClientRect');
+
+		return ret;
 	}
 }

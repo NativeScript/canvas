@@ -36,6 +36,34 @@ interface EventOptions {
 	cancelable?: boolean;
 	composed?: boolean;
 }
+
+export class DOMRectReadOnly {
+	readonly bottom: number;
+	readonly height: number;
+	readonly left: number;
+	readonly right: number;
+	readonly top: number;
+	readonly width: number;
+	readonly x: number;
+	readonly y: number;
+	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		this.left = left ?? x;
+		this.top = top ?? y;
+		this.right = right ?? x + width;
+		this.bottom = bottom ?? y + height;
+	}
+}
+
+export class DOMRect extends DOMRectReadOnly {
+	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
+		super(x, y, width, height, top, right, bottom, left);
+	}
+}
+
 export class Event {
 	readonly type: string;
 	readonly bubbles: boolean = false;

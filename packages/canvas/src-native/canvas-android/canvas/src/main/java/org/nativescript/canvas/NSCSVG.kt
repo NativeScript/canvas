@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.util.AttributeSet
 import android.view.View
+import dalvik.annotation.optimization.FastNative
 import java.util.concurrent.Executors
 
 /**
@@ -213,9 +214,11 @@ class NSCSVG : View {
 		}
 
 		@JvmStatic
+		@FastNative
 		private external fun nativeDrawSVG(svgCanvas: Long, svg: String)
 
 		@JvmStatic
+		@FastNative
 		private external fun nativeDrawSVGFromPath(svgCanvas: Long, svg: String)
 	}
 }

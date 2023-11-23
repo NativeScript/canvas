@@ -54,4 +54,8 @@ export class HTMLCanvasElement extends Element {
 	setPointerCapture(id) {}
 
 	releasePointerCapture(id) {}
+
+	getBoundingClientRect() {
+		return this._canvas.getBoundingClientRect();
+	}
 }

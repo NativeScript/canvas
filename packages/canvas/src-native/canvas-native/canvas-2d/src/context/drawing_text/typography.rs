@@ -1,347 +1,605 @@
-#![allow(dead_code)]
+use std::panic::panic_any;
+use std::str::FromStr;
 
-use std::collections::VecDeque;
+use once_cell::sync::OnceCell;
+use regex::Regex;
+use skia_bindings::SkFontStyle_Slant;
+use skia_safe::font_style::Width;
 
-use skia_safe::{
-    font_style::{Slant, Weight, Width},
-    typeface::Typeface,
-    FontMetrics, FontMgr, FontStyle,
-};
+pub(crate) static FONT_REGEXP: OnceCell<Regex> = OnceCell::new();
 
-use crate::context::{
-    text_styles::text_align::TextAlign, text_styles::text_baseline::TextBaseLine,
-    text_styles::text_direction::TextDirection, Device,
-};
-use crate::utils::dimensions::parse_size;
+const DEFAULT_FONT: &str = "sans-serif";
 
-const XX_SMALL: &str = "9px";
-const X_SMALL: &str = "10px";
-const SMALL: &str = "13px";
-const MEDIUM: &str = "16px";
-const LARGE: &str = "18px";
-const X_LARGE: &str = "24px";
-const XX_LARGE: &str = "32px";
+/// The minimum font-weight value per:
+///
+/// https://drafts.csswg.org/css-fonts-4/#font-weight-numeric-values
+pub const MIN_FONT_WEIGHT: f32 = 1.;
 
-pub(crate) fn get_font_baseline(metrics: FontMetrics, baseline: TextBaseLine) -> f32 {
-    match baseline {
-        TextBaseLine::TOP => metrics.ascent,
-        TextBaseLine::HANGING => {
-            // According to http://wiki.apache.org/xmlgraphics-fop/LineLayout/AlignmentHandling
-            // "FOP (Formatting Objects Processor) puts the hanging baseline at 80% of the ascender height"
-            (metrics.ascent * 4.0) / 5.0
-        }
-        TextBaseLine::MIDDLE => -metrics.descent + metrics.cap_height / 2.0,
-        TextBaseLine::IDEOGRAPHIC | TextBaseLine::BOTTOM => -metrics.descent,
-        TextBaseLine::ALPHABETIC => 0.0,
-    }
-}
+/// The maximum font-weight value per:
+///
+/// https://drafts.csswg.org/css-fonts-4/#font-weight-numeric-values
+pub const MAX_FONT_WEIGHT: f32 = 1000.;
 
-pub(crate) fn to_text_align(align: &str) -> Option<TextAlign> {
-    match align {
-        "start" => Some(TextAlign::START),
-        "left" => Some(TextAlign::LEFT),
-        "center" => Some(TextAlign::CENTER),
-        "end" => Some(TextAlign::END),
-        "right" => Some(TextAlign::RIGHT),
-        _ => None,
-    }
-}
+/// The default font size.
+pub const FONT_MEDIUM_PX: f32 = 16.0;
 
-pub(crate) fn to_real_text_align(align: TextAlign, direction: TextDirection) -> TextAlign {
-    match align {
-        TextAlign::START => {
-            if direction == TextDirection::RTL {
-                TextAlign::RIGHT
-            } else {
-                TextAlign::LEFT
-            }
-        }
-        TextAlign::END => {
-            if direction == TextDirection::RTL {
-                TextAlign::LEFT
-            } else {
-                TextAlign::RIGHT
-            }
-        }
-        TextAlign::RIGHT | TextAlign::CENTER | TextAlign::LEFT => align,
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Font {
-    pub(crate) font_details: String,
-    pub(crate) font: ParsedFont,
-    pub(crate) device: Device,
+    pub size: f32,
+    pub style: FontStyle,
+    pub family: String,
+    pub variant: FontVariant,
+    pub stretch: FontStretch,
+    pub weight: u32,
 }
 
-impl Font {
-    pub fn new(font_details: &str, device: Device) -> Self {
-        Self {
-            font_details: font_details.to_string(),
-            font: parse_font(font_details),
-            device,
-        }
-    }
-
-    pub fn get_font_details(&self) -> &str {
-        self.font_details.as_ref()
-    }
-
-    pub fn get_font(&self) -> &ParsedFont {
-        &self.font
-    }
-
-    pub fn set_font(&mut self, font_details: &str) {
-        if font_details.is_empty() {
-            return;
-        }
-
-        self.font_details = font_details.to_string();
-        self.font = parse_font(font_details);
-    }
-
-    fn to_font(&self) -> skia_safe::Font {
-        let style = to_font_style(self.font.font_weight(), self.font.font_style());
-        let families: Vec<String> = parse_font_family(self.font.font_family());
-        let mut default_typeface =
-            Typeface::from_name("sans-serif", style).unwrap_or(Typeface::default());
-        let mgr = FontMgr::default();
-        let families_count = mgr.count_families();
-        for i in 0..families_count {
-            let name = mgr.family_name(i);
-            if families.contains(&name) {
-                if let Some(typeface) = mgr.match_family_style(&name, style) {
-                    default_typeface = typeface;
-                    break;
-                }
-            }
-        }
-
-        skia_safe::Font::from_typeface(
-            default_typeface,
-            Some(parse_size(self.font.font_size(), self.device)),
-        )
-    }
-
-    pub fn to_skia(&self) -> skia_safe::Font {
-        self.to_font()
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ParsedFont {
-    font_style: ParsedFontStyle,
-    font_variant: String,
-    font_weight: ParsedFontWeight,
-    line_height: Option<String>,
-    font_size: Option<String>,
-    font_family: Option<String>,
-}
-
-impl ParsedFont {
-    pub fn font_style(&self) -> ParsedFontStyle {
-        self.font_style
-    }
-    pub fn font_variant(&self) -> &str {
-        &self.font_variant
-    }
-    pub fn font_weight(&self) -> ParsedFontWeight {
-        self.font_weight
-    }
-    pub fn line_height(&self) -> &str {
-        self.line_height.as_ref().map_or("1.4px", |v| v)
-    }
-    pub fn font_size(&self) -> &str {
-        self.font_size.as_ref().map_or("10px", |v| v)
-    }
-    pub fn font_family(&self) -> &str {
-        self.font_family.as_ref().map_or("sans-serif", |v| v)
-    }
-}
-
-impl Default for ParsedFont {
+impl Default for Font {
     fn default() -> Self {
-        Self {
-            font_style: ParsedFontStyle::Normal,
-            font_variant: "normal".to_string(),
-            font_weight: ParsedFontWeight::Normal,
-            line_height: None,
-            font_size: None,
-            font_family: None,
+        Font {
+            size: 10.0,
+            style: FontStyle::Normal,
+            family: DEFAULT_FONT.to_owned(),
+            variant: FontVariant::Normal,
+            stretch: FontStretch::Normal,
+            weight: 400,
         }
     }
 }
 
-const NORMAL: &str = "normal";
-const ITALIC: &str = "italic";
-const OBLIQUE: &str = "oblique";
+/*
+#[error("[`{0}`] is not valid font style")]
+ InvalidFontStyle(String),
+ #[error("[`{0}`] is not valid font variant")]
+*/
+impl Font {
+    pub fn new(font_rules: &str) -> Result<Font, String> {
+        let font_regexp = FONT_REGEXP.get_or_init(init_font_regexp);
+        let default_font = Font::default();
+        if let Some(cap) = font_regexp.captures(font_rules) {
+            let size_str = cap.get(7).or_else(|| cap.get(5)).unwrap().as_str();
+            let size = if size_str.ends_with('%') {
+                size_str
+                    .parse::<f32>()
+                    .map(|v| v / 100.0 * FONT_MEDIUM_PX)
+                    .ok()
+            } else {
+                size_str.parse::<f32>().ok()
+            };
+            let family = cap.get(9).map(|c| c.as_str()).unwrap_or(DEFAULT_FONT);
+            // return if no valid size
+            if let Some(size) = size {
+                let style = cap
+                    .get(2)
+                    .and_then(|m| FontStyle::from_str(m.as_str()).ok())
+                    .unwrap_or(default_font.style);
+                let variant = cap
+                    .get(3)
+                    .and_then(|m| FontVariant::from_str(m.as_str()).ok())
+                    .unwrap_or(default_font.variant);
+                let weight = cap
+                    .get(4)
+                    .and_then(|m| parse_font_weight(m.as_str()))
+                    .unwrap_or(default_font.weight);
+                // treat stretch as size
+                // the `20%` of '20% Arial' is treated as `stretch` but it's size actually
+                let stretch = if cap.get(6).is_none() {
+                    default_font.stretch
+                } else {
+                    cap.get(5)
+                        .and_then(|m| parse_font_stretch(m.as_str()))
+                        .unwrap_or(default_font.stretch)
+                };
+                let size_px = parse_size_px(size, cap.get(8).map(|m| m.as_str()).unwrap_or("px"));
+                Ok(Font {
+                    style,
+                    variant,
+                    weight,
+                    size: size_px,
+                    stretch,
+                    family: family
+                        .split(',')
+                        .map(|string| string.trim())
+                        .map(|s| {
+                            if s.starts_with('"') || s.starts_with('\'') {
+                                unsafe { s.get_unchecked(1..s.len() - 1) }
+                            } else {
+                                s
+                            }
+                        })
+                        .collect::<Vec<&str>>()
+                        .join(","),
+                })
+            } else {
+                Err(format!(
+                    "[`{0}`] is not valid font style",
+                    font_rules.to_owned()
+                ))
+            }
+        } else {
+            Err(format!(
+                "[`{0}`] is not valid font style",
+                font_rules.to_owned()
+            ))
+        }
+    }
+}
 
-#[derive(Copy, Clone, Debug)]
-pub enum ParsedFontStyle {
+// [ [ <'font-style'> || <font-variant-css21> || <'font-weight'> || <'font-stretch'> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ] | caption | icon | menu | message-box | small-caption | status-barwhere <font-variant-css21> = [ normal | small-caps ]
+pub(crate) fn init_font_regexp() -> Regex {
+    Regex::new(
+        r#"(?x)
+    (
+      (italic|oblique|normal){0,1}\s+              |  # style
+      (small-caps|normal){0,1}\s+                  |  # variant
+      (bold|bolder|lighter|[1-9]00|normal){0,1}\s+ |  # weight
+      (ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded|[\d\.]+%){0,1}\s+ # stretch
+    ){0,4}               
+    (
+      ([\d\.]+)                                       # size
+      (%|px|pt|pc|in|cm|mm|%|em|ex|ch|rem|q)?\s*      # unit
+    )
+    # line-height is ignored here, as per the spec
+    # Borrowed from https://github.com/Automattic/node-canvas/blob/master/lib/parse-font.js#L21
+    ((?:'([^']+)'|"([^"]+)"|[\w\s-]+)(\s*,\s*(?:'([^']+)'|"([^"]+)"|[\w\s-]+))*)?                                            # family
+  "#,
+    )
+        .unwrap()
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FontStyle {
     Normal,
     Italic,
     Oblique,
 }
 
-impl ParsedFontStyle {
-    pub fn value(&self) -> &str {
-        match self {
-            ParsedFontStyle::Normal => NORMAL,
-            ParsedFontStyle::Italic => ITALIC,
-            ParsedFontStyle::Oblique => OBLIQUE,
-        }
-    }
-
-    pub fn is_supported(value: &str) -> bool {
-        NORMAL == value || ITALIC == value || OBLIQUE == value
-    }
-
-    pub fn into_skia(&self) -> Slant {
-        match self {
-            ParsedFontStyle::Italic => Slant::Italic,
-            ParsedFontStyle::Oblique => Slant::Oblique,
-            _ => Slant::Upright,
+impl FontStyle {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            Self::Italic => "italic",
+            Self::Normal => "normal",
+            Self::Oblique => "oblique",
         }
     }
 }
 
-#[repr(u32)]
-#[derive(Copy, Clone, Debug)]
-pub enum ParsedFontWeight {
-    Thin = 100,
-    ExtraLight = 200,
-    Light = 300,
-    Normal = 400,
-    Medium = 500,
-    SemiBold = 600,
-    Bold = 700,
-    ExtraBold = 800,
-    Black = 900,
+impl FromStr for FontStyle {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<FontStyle, String> {
+        match s {
+            "normal" => Ok(Self::Normal),
+            "italic" => Ok(Self::Italic),
+            "oblique" => Ok(Self::Oblique),
+            _ => Err(format!("[`{0}`] is not valid font style", s.to_owned())),
+        }
+    }
 }
 
-impl ParsedFontWeight {
-    pub fn is_supported(value: &str) -> bool {
+impl From<skia_safe::font_style::Slant> for FontStyle {
+    fn from(value: skia_safe::font_style::Slant) -> Self {
         match value {
-            "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | "lighter"
-            | "bold" | "bolder" | "normal" => true,
-            _ => false,
+            skia_safe::font_style::Slant::Upright => Self::Normal,
+            skia_safe::font_style::Slant::Italic => Self::Italic,
+            skia_safe::font_style::Slant::Oblique => Self::Oblique,
         }
     }
+}
 
-    // todo parse relative values
-    pub fn parse(value: &str) -> Option<Self> {
+impl Into<skia_safe::font_style::Slant> for FontStyle {
+    fn into(self) -> skia_safe::font_style::Slant {
+        match self {
+            Self::Normal => skia_safe::font_style::Slant::Upright,
+            Self::Italic => skia_safe::font_style::Slant::Italic,
+            Self::Oblique => skia_safe::font_style::Slant::Oblique,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FontVariant {
+    Normal,
+    SmallCaps,
+}
+
+impl FromStr for FontVariant {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<FontVariant, String> {
+        match s {
+            "normal" => Ok(Self::Normal),
+            "small-caps" => Ok(Self::SmallCaps),
+            _ => Err(format!("[`{0}`] is not valid font variant", s.to_owned())),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FontStretch {
+    UltraCondensed = 1,
+    ExtraCondensed = 2,
+    Condensed = 3,
+    SemiCondensed = 4,
+    Normal = 5,
+    SemiExpanded = 6,
+    Expanded = 7,
+    ExtraExpanded = 8,
+    UltraExpanded = 9,
+}
+
+impl From<i32> for FontStretch {
+    fn from(value: i32) -> Self {
         match value {
-            "100" => Option::from(ParsedFontWeight::Thin),
-            "200" => Option::from(ParsedFontWeight::ExtraLight),
-            "300" => Option::from(ParsedFontWeight::Light),
-            "400" | "normal" => Option::from(ParsedFontWeight::Normal),
-            "500" => Option::from(ParsedFontWeight::Medium),
-            "600" => Option::from(ParsedFontWeight::SemiBold),
-            "700" | "bold" => Option::from(ParsedFontWeight::Bold),
-            "800" => Option::from(ParsedFontWeight::ExtraBold),
-            "900" => Option::from(ParsedFontWeight::Black),
-            _ => None,
+            1 => FontStretch::UltraCondensed,
+            2 => FontStretch::ExtraCondensed,
+            3 => FontStretch::Condensed,
+            4 => FontStretch::SemiCondensed,
+            5 => FontStretch::Normal,
+            6 => FontStretch::SemiExpanded,
+            7 => FontStretch::Expanded,
+            8 => FontStretch::ExtraExpanded,
+            9 => FontStretch::UltraExpanded,
+            _ => unreachable!(),
         }
     }
+}
 
-    pub fn into_skia(&self) -> Weight {
-        (*self).into()
+impl FontStretch {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            FontStretch::UltraCondensed => "ultra-condensed",
+            FontStretch::ExtraCondensed => "extra-condensed",
+            FontStretch::Condensed => "condensed",
+            FontStretch::SemiCondensed => "semi-condensed",
+            FontStretch::Normal => "normal",
+            FontStretch::SemiExpanded => "semi-expanded",
+            FontStretch::Expanded => "expanded",
+            FontStretch::ExtraExpanded => "extra-expanded",
+            FontStretch::UltraExpanded => "ultra-expanded",
+        }
     }
 }
 
-impl Into<Weight> for ParsedFontWeight {
-    fn into(self) -> Weight {
-        Weight::from(*&self as i32)
+impl From<Width> for FontStretch {
+    fn from(value: Width) -> Self {
+        match value {
+            Width::ULTRA_CONDENSED => FontStretch::UltraCondensed,
+            Width::EXTRA_CONDENSED => FontStretch::ExtraCondensed,
+            Width::CONDENSED => FontStretch::Condensed,
+            Width::SEMI_CONDENSED => FontStretch::SemiCondensed,
+            Width::NORMAL => FontStretch::Normal,
+            Width::SEMI_EXPANDED => FontStretch::SemiExpanded,
+            Width::EXPANDED => FontStretch::Expanded,
+            Width::EXTRA_EXPANDED => FontStretch::ExtraExpanded,
+            Width::ULTRA_EXPANDED => FontStretch::UltraExpanded,
+            _ => panic!("Failed to convert Width"),
+        }
     }
 }
 
-pub fn parse_font(font: &str) -> ParsedFont {
-    let pat = regex::Regex::new(r"\s+").unwrap();
-    let res = pat.split(font);
+impl Into<Width> for FontStretch {
+    fn into(self) -> Width {
+        match self {
+            FontStretch::UltraCondensed => Width::ULTRA_CONDENSED,
+            FontStretch::ExtraCondensed => Width::EXTRA_CONDENSED,
+            FontStretch::Condensed => Width::CONDENSED,
+            FontStretch::SemiCondensed => Width::SEMI_CONDENSED,
+            FontStretch::Normal => Width::NORMAL,
+            FontStretch::SemiExpanded => Width::SEMI_EXPANDED,
+            FontStretch::Expanded => Width::EXPANDED,
+            FontStretch::ExtraExpanded => Width::EXTRA_EXPANDED,
+            FontStretch::UltraExpanded => Width::ULTRA_EXPANDED,
+        }
+    }
+}
 
-    let mut parsed_font = ParsedFont::default();
-
-    let mut res: VecDeque<_> = res.collect();
-
-    for _ in 0..res.len() {
-        if let Some(part) = res.pop_front() {
-            if part.eq("normal") {
-            } else if part.eq("small-caps") {
-                parsed_font.font_variant = part.into();
-            } else if ParsedFontStyle::is_supported(part) {
-                match part {
-                    NORMAL => {
-                        parsed_font.font_style = ParsedFontStyle::Normal;
-                    }
-                    ITALIC => {
-                        parsed_font.font_style = ParsedFontStyle::Italic;
-                    }
-                    OBLIQUE => {
-                        parsed_font.font_style = ParsedFontStyle::Oblique;
-                    }
-                    _ => {}
-                }
-            } else if ParsedFontWeight::is_supported(part) {
-                parsed_font.font_weight =
-                    ParsedFontWeight::parse(part).unwrap_or(ParsedFontWeight::Normal);
-            } else if parsed_font.font_size.is_none() {
-                let sizes = part.split('/');
-                for (j, size) in sizes.enumerate() {
-                    if j == 0 {
-                        parsed_font.font_size = Some(size.into());
-                    }
-
-                    if j == 1 {
-                        parsed_font.line_height = Some(size.into());
-                    }
-                }
+// https://drafts.csswg.org/css-fonts-4/#propdef-font-weight
+fn parse_font_weight(weight: &str) -> Option<u32> {
+    match weight {
+        "lighter" | "100" => Some(100),
+        "200" => Some(200),
+        "300" => Some(300),
+        "normal" | "400" => Some(400),
+        "500" => Some(500),
+        "600" => Some(600),
+        "bold" | "bolder" | "700" => Some(700),
+        _ => weight.parse::<f32>().ok().and_then(|w| {
+            if (MIN_FONT_WEIGHT..=MAX_FONT_WEIGHT).contains(&w) {
+                Some(w as u32)
             } else {
-                parsed_font.font_family = Some(part.into());
-                if !res.is_empty() {
-                    let mut current = parsed_font.font_family.unwrap_or_default();
-                    for item in res.iter() {
-                        current.push_str(&format!(" {}", *item));
-                    }
-                    parsed_font.font_family = Some(current);
-                }
-                break;
+                None
             }
+        }),
+    }
+}
+
+fn parse_font_stretch(stretch: &str) -> Option<FontStretch> {
+    match stretch {
+        "ultra-condensed" | "50%" => Some(FontStretch::UltraCondensed),
+        "extra-condensed" | "62.5%" => Some(FontStretch::ExtraCondensed),
+        "condensed" | "75%" => Some(FontStretch::Condensed),
+        "semi-condensed" | "87.5%" => Some(FontStretch::SemiCondensed),
+        "normal" | "100%" => Some(FontStretch::Normal),
+        "semi-expanded" | "112.5%" => Some(FontStretch::SemiExpanded),
+        "expanded" | "125%" => Some(FontStretch::Expanded),
+        "extra-expanded" | "150%" => Some(FontStretch::ExtraExpanded),
+        "ultra-expanded" | "200%" => Some(FontStretch::UltraExpanded),
+        _ => None,
+    }
+}
+
+pub fn parse_size_px(size: f32, unit: &str) -> f32 {
+    let mut size_px = size;
+    match unit {
+        "em" | "rem" | "pc" => {
+            size_px = size * FONT_MEDIUM_PX;
         }
-    }
-
-    parsed_font
-}
-
-fn parse_font_family(value: &str) -> Vec<String> {
-    let mut result = Vec::new();
-    if value.is_empty() {
-        return result;
-    }
-
-    let regex = regex::Regex::new(r#"/['"]+/g"#).unwrap();
-
-    let split = value.split(',');
-    for item in split {
-        let s = regex.replace(item.trim(), "");
-        if !s.is_empty() {
-            result.push(s.to_string());
+        "pt" => {
+            size_px = size * 4.0 / 3.0;
         }
+        "px" => {
+            size_px = size;
+        }
+        "in" => {
+            size_px = size * 96.0;
+        }
+        "cm" => {
+            size_px = size * 96.0 / 2.54;
+        }
+        "mm" => {
+            size_px = size * 96.0 / 25.4;
+        }
+        "q" => {
+            size_px = size * 96.0 / 25.4 / 4.0;
+        }
+        "%" => {
+            size_px = size * FONT_MEDIUM_PX / 100.0;
+        }
+        _ => {}
+    };
+    size_px
+}
+
+#[test]
+fn font_stretch() {
+    assert_eq!(
+        parse_font_stretch("ultra-condensed"),
+        Some(FontStretch::UltraCondensed)
+    );
+    assert_eq!(parse_font_stretch("50%"), Some(FontStretch::UltraCondensed));
+    assert_eq!(
+        parse_font_stretch("extra-condensed"),
+        Some(FontStretch::ExtraCondensed)
+    );
+    assert_eq!(
+        parse_font_stretch("62.5%"),
+        Some(FontStretch::ExtraCondensed)
+    );
+    assert_eq!(
+        parse_font_stretch("condensed"),
+        Some(FontStretch::Condensed)
+    );
+    assert_eq!(parse_font_stretch("75%"), Some(FontStretch::Condensed));
+    assert_eq!(
+        parse_font_stretch("semi-condensed"),
+        Some(FontStretch::SemiCondensed)
+    );
+    assert_eq!(
+        parse_font_stretch("87.5%"),
+        Some(FontStretch::SemiCondensed)
+    );
+    assert_eq!(parse_font_stretch("normal"), Some(FontStretch::Normal));
+    assert_eq!(parse_font_stretch("100%"), Some(FontStretch::Normal));
+    assert_eq!(
+        parse_font_stretch("semi-expanded"),
+        Some(FontStretch::SemiExpanded)
+    );
+    assert_eq!(
+        parse_font_stretch("112.5%"),
+        Some(FontStretch::SemiExpanded)
+    );
+    assert_eq!(parse_font_stretch("expanded"), Some(FontStretch::Expanded));
+    assert_eq!(parse_font_stretch("125%"), Some(FontStretch::Expanded));
+    assert_eq!(
+        parse_font_stretch("extra-expanded"),
+        Some(FontStretch::ExtraExpanded)
+    );
+    assert_eq!(parse_font_stretch("150%"), Some(FontStretch::ExtraExpanded));
+    assert_eq!(
+        parse_font_stretch("ultra-expanded"),
+        Some(FontStretch::UltraExpanded)
+    );
+    assert_eq!(parse_font_stretch("200%"), Some(FontStretch::UltraExpanded));
+    assert_eq!(parse_font_stretch("52%"), None);
+    assert_eq!(parse_font_stretch("-50%"), None);
+    assert_eq!(parse_font_stretch("50"), None);
+    assert_eq!(parse_font_stretch("ultra"), None);
+}
+
+#[test]
+fn test_parse_font_weight() {
+    assert_eq!(parse_font_weight("lighter"), Some(100));
+    assert_eq!(parse_font_weight("normal"), Some(400));
+    assert_eq!(parse_font_weight("bold"), Some(700));
+    assert_eq!(parse_font_weight("bolder"), Some(700));
+    assert_eq!(parse_font_weight("100"), Some(100));
+    assert_eq!(parse_font_weight("100.1"), Some(100));
+    assert_eq!(parse_font_weight("120"), Some(120));
+    assert_eq!(parse_font_weight("0.01"), None);
+    assert_eq!(parse_font_weight("-20"), None);
+    assert_eq!(parse_font_weight("whatever"), None);
+}
+
+#[allow(clippy::float_cmp)]
+#[test]
+fn test_parse_size_px() {
+    assert_eq!(parse_size_px(12.0, "px"), 12.0f32);
+    assert_eq!(parse_size_px(2.0, "em"), 32.0f32);
+}
+
+#[test]
+fn test_font_regexp() {
+    let reg = init_font_regexp();
+    let caps = reg.captures("1.2em \"Fira Sans\"");
+    assert!(caps.is_some());
+    let caps = caps.unwrap();
+    for i in 1usize..=5usize {
+        assert_eq!(caps.get(i), None);
     }
-
-    return result;
+    // size
+    assert_eq!(caps.get(7).map(|m| m.as_str()), Some("1.2"));
+    // unit
+    assert_eq!(caps.get(8).map(|m| m.as_str()), Some("em"));
+    // family
+    assert_eq!(caps.get(9).map(|m| m.as_str()), Some("\"Fira Sans\""));
 }
 
-fn is_size_length(value: &str) -> bool {
-    return value.contains("pc")
-        || value.contains("pt")
-        || value.contains("vh")
-        || value.contains("vw")
-        || value.contains("px")
-        || value.contains("em")
-        || value.contains("cm")
-        || value.contains("%");
+#[test]
+fn test_font_regexp_order1() {
+    let reg = init_font_regexp();
+    let caps = reg.captures("bold italic 50px Arial, sans-serif");
+    assert!(caps.is_some());
+    let caps = caps.unwrap();
+    assert_eq!(caps.get(2).map(|m| m.as_str()), Some("italic")); // style
+    assert_eq!(caps.get(3), None); // variant
+    assert_eq!(caps.get(4).map(|m| m.as_str()), Some("bold")); // weight
+    assert_eq!(caps.get(5), None); // stretch
+    assert_eq!(caps.get(7).map(|m| m.as_str()), Some("50")); // size
+    assert_eq!(caps.get(8).map(|m| m.as_str()), Some("px")); // unit
+    assert_eq!(caps.get(9).map(|m| m.as_str()), Some("Arial, sans-serif")); // family
 }
 
-fn to_font_style(weight: ParsedFontWeight, style: ParsedFontStyle) -> FontStyle {
-    FontStyle::new(weight.into_skia(), Width::NORMAL, style.into_skia())
+#[test]
+fn test_font_new() {
+    let fixtures: Vec<(&'static str, Font)> = vec![
+        (
+            "20px Arial",
+            Font {
+                size: 20.0,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "20pt Arial",
+            Font {
+                size: 26.666_666,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "20.5pt Arial",
+            Font {
+                size: 27.333_334,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "50% Arial",
+            Font {
+                size: 8.0,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "62.5% 50% Arial",
+            Font {
+                size: 8.0,
+                family: "Arial".to_owned(),
+                stretch: FontStretch::ExtraCondensed,
+                ..Default::default()
+            },
+        ),
+        (
+            "20mm Arial",
+            Font {
+                size: 75.590_55,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "20px sans-serif",
+            Font {
+                size: 20.0,
+                family: "sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "20px monospace",
+            Font {
+                size: 20.0,
+                family: "monospace".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "50px Arial, sans-serif",
+            Font {
+                size: 50.0,
+                family: "Arial,sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "bold italic 50px Arial, sans-serif",
+            Font {
+                size: 50.0,
+                weight: 700,
+                style: FontStyle::Italic,
+                family: "Arial,sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "50px Helvetica ,  Arial, sans-serif",
+            Font {
+                size: 50.0,
+                family: "Helvetica,Arial,sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "50px \"Helvetica Neue\", sans-serif",
+            Font {
+                size: 50.0,
+                family: "Helvetica Neue,sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "100px 'Microsoft YaHei'",
+            Font {
+                size: 100.0,
+                family: "Microsoft YaHei".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "300 20px Arial",
+            Font {
+                size: 20.0,
+                weight: 300,
+                family: "Arial".to_owned(),
+                ..Default::default()
+            },
+        ),
+        (
+            "50px",
+            Font {
+                size: 50.0,
+                family: "sans-serif".to_owned(),
+                ..Default::default()
+            },
+        ),
+    ];
+
+    for (rule, expect) in fixtures.into_iter() {
+        assert_eq!(Font::new(rule).unwrap(), expect);
+    }
 }

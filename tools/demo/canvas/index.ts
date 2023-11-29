@@ -566,7 +566,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
-		//textAlign(this.canvas)
+		textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);

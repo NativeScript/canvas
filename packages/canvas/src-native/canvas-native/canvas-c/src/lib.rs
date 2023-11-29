@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
@@ -7,7 +8,6 @@ use std::os::raw::c_ulong;
 use std::os::raw::c_void;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
-use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
@@ -129,6 +129,33 @@ pub extern "C" fn canvas_native_image_filter_destroy(value: *mut ImageFilter) {
 }
 
 /* Helpers */
+
+#[no_mangle]
+pub extern "C" fn canvas_native_font_add_family(
+    alias: *const c_char,
+    filenames: *const *const c_char,
+    length: usize,
+) {
+    let names = unsafe { std::slice::from_raw_parts(filenames, length) };
+    let names = names
+        .iter()
+        .map(|value| unsafe { CStr::from_ptr(*value).to_string_lossy().to_string() })
+        .collect::<Vec<_>>();
+    let tmp = names.iter().map(String::as_ref).collect::<Vec<&str>>();
+    if alias.is_null() {
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family(
+            None,
+            tmp.as_slice(),
+        );
+    } else {
+        let alias = unsafe { CStr::from_ptr(alias) };
+        let alias = alias.to_string_lossy();
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family(
+            Some(alias.as_ref()),
+            tmp.as_slice(),
+        );
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct FileHelper {
@@ -1561,7 +1588,6 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
     ))))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_conic_gradient(
     context: *mut CanvasRenderingContext2D,
@@ -1573,7 +1599,9 @@ pub extern "C" fn canvas_native_context_create_conic_gradient(
     let context = unsafe { &mut *context };
     Box::into_raw(Box::new(PaintStyle(Some(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
-            context.get_context().create_conic_gradient(start_angle, x, y)
+            context
+                .get_context()
+                .create_conic_gradient(start_angle, x, y),
         ),
     ))))
 }
@@ -2189,6 +2217,26 @@ pub extern "C" fn canvas_native_context_fill_text(
     text: *const c_char,
     x: f32,
     y: f32,
+) {
+    if text.is_null() {
+        return;
+    }
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .fill_text(text.as_ref(), x, y, None);
+}
+
+#[inline]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_fill_text_width(
+    context: *mut CanvasRenderingContext2D,
+    text: *const c_char,
+    x: f32,
+    y: f32,
     width: f32,
 ) {
     if text.is_null() {
@@ -2200,7 +2248,7 @@ pub extern "C" fn canvas_native_context_fill_text(
     context.make_current();
     context
         .get_context_mut()
-        .fill_text(text.as_ref(), x, y, width);
+        .fill_text(text.as_ref(), x, y, Some(width));
 }
 
 #[no_mangle]
@@ -2330,7 +2378,7 @@ pub extern "C" fn canvas_native_context_measure_text(
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
     Box::into_raw(Box::new(TextMetrics(
-        context.get_context().measure_text(text.as_ref()),
+        context.get_context_mut().measure_text(text.as_ref()),
     )))
 }
 
@@ -2544,6 +2592,25 @@ pub extern "C" fn canvas_native_context_stroke_text(
     text: *const c_char,
     x: f32,
     y: f32,
+) {
+    if text.is_null() {
+        return;
+    }
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .stroke_text(text.as_ref(), x, y, None);
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_stroke_text_width(
+    context: *mut CanvasRenderingContext2D,
+    text: *const c_char,
+    x: f32,
+    y: f32,
     width: f32,
 ) {
     if text.is_null() {
@@ -2555,7 +2622,7 @@ pub extern "C" fn canvas_native_context_stroke_text(
     context.make_current();
     context
         .get_context_mut()
-        .stroke_text(text.as_ref(), x, y, width);
+        .stroke_text(text.as_ref(), x, y, Some(width));
 }
 
 #[no_mangle]

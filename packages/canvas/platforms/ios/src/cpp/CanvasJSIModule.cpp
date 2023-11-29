@@ -34,7 +34,7 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         CanvasPattern::Init(canvasMod, isolate);
         MatrixImpl::Init(canvasMod, isolate);
         TextMetricsImpl::Init(canvasMod, isolate);
-                URLImpl::Init(canvasMod, isolate);
+        URLImpl::Init(canvasMod, isolate);
         v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod);
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),
                        v8::FunctionTemplate::New(isolate, &Create2DContext)->GetFunction(
@@ -57,12 +57,48 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
                        v8::FunctionTemplate::New(isolate, &CreateWebGL2Context)->GetFunction(
                                context).ToLocalChecked());
 
+
+        canvasMod->Set(context, ConvertToV8String(isolate, "__addFontFamily"),
+                       v8::FunctionTemplate::New(isolate, &AddFontFamily)->GetFunction(
+                               context).ToLocalChecked());
+
         global->Set(context,
                     ConvertToV8String(isolate, "CanvasModule"), canvasMod);
 
     }
 }
 
+
+void CanvasJSIModule::AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto aliasValue = args[0];
+    auto familyValue = args[1];
+
+    // todo improve
+    if (familyValue->IsArray()) {
+        auto family = familyValue.As<v8::Array>();
+        auto len = family->Length();
+        std::vector<std::string> buf;
+        std::vector<const char *> buffer;
+        buf.reserve(len);
+
+        for (uint32_t i = 0; i < len; i++) {
+            buf.emplace_back(
+                    ConvertFromV8String(isolate, family->Get(context, i).ToLocalChecked()));
+            buffer.emplace_back(buf[0].c_str());
+        }
+
+        if (aliasValue->IsString()) {
+            auto alias = ConvertFromV8String(isolate, aliasValue);
+            canvas_native_font_add_family(alias.c_str(), buffer.data(), buffer.size());
+        } else {
+            canvas_native_font_add_family(nullptr, buffer.data(), buffer.size());
+        }
+
+    }
+
+}
 
 void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();

@@ -115,6 +115,8 @@ export class Canvas extends CanvasBase {
 			}
 		}
 		return width / Screen.mainScreen.scale;
+
+		//return this._realSize.width;
 	}
 
 	set width(value) {
@@ -136,6 +138,7 @@ export class Canvas extends CanvasBase {
 			}
 		}
 		return height / Screen.mainScreen.scale;
+		//return this._realSize.height;
 	}
 
 	set height(value) {

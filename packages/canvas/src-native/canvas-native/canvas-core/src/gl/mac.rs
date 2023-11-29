@@ -94,8 +94,8 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_transparency(value.get_alpha())
-            .build();
+            .with_transparency(value.get_alpha());
+
 
         if !value.get_is_canvas() && value.get_antialias() {
             builder = builder.with_multisampling(4)
@@ -113,7 +113,7 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
             .with_transparency(self.get_alpha());
 
-        if !value.get_is_canvas() && value.get_antialias() {
+        if !self.get_is_canvas() && self.get_antialias() {
             builder = builder.with_multisampling(4)
         }
         builder
@@ -619,8 +619,6 @@ impl GLContext {
         }
     }
 
-
-
     #[inline(always)]
     pub fn set_vsync(&self, sync: bool) -> bool {
         let inner = self.inner.read();
@@ -685,7 +683,8 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_width(&self) -> i32 {
         let inner = self.inner.read();
-        inner.surface
+        inner
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
@@ -698,7 +697,8 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_height(&self) -> i32 {
         let inner = self.inner.read();
-        inner.surface
+        inner
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,

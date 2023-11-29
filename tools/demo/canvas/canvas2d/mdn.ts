@@ -273,16 +273,18 @@ export function multiStrokeStyle(canvas) {
 }
 
 export function textAlign(canvas) {
-	const ctx = canvas.getContext('2d');
 	canvas.width = 350;
+	const ctx = canvas.getContext('2d');
+
 	const x = canvas.width / 2;
 
+	ctx.strokeStyle = 'red';
 	ctx.beginPath();
 	ctx.moveTo(x, 0);
 	ctx.lineTo(x, canvas.height);
 	ctx.stroke();
 
-	ctx.font = '30px serif';
+	ctx.font = '30px creepster';
 
 	ctx.textAlign = 'left';
 	ctx.fillText('left-aligned', x, 40);

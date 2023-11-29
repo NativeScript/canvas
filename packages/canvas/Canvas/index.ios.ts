@@ -111,32 +111,33 @@ export class Canvas extends CanvasBase {
 
 	//@ts-ignore
 	get width() {
-		const measuredWidth = this.getMeasuredWidth();
-		if (measuredWidth !== 0) {
-			return measuredWidth / Screen.mainScreen.scale;
-		}
+		// const measuredWidth = this.getMeasuredWidth();
+		// console.log(measuredWidth);
+		// if (measuredWidth !== 0) {
+		// 	return measuredWidth / Screen.mainScreen.scale;
+		// }
 		return this._realSize.width;
 	}
 
 	set width(value) {
 		this.style.width = value;
 		this._didLayout = false;
-		this._layoutNative();
+		this._layoutNative(true);
 	}
 
 	//@ts-ignore
 	get height() {
-		const measuredHeight = this.getMeasuredHeight();
-		if (measuredHeight !== 0) {
-			return measuredHeight / Screen.mainScreen.scale;
-		}
+		// const measuredHeight = this.getMeasuredHeight();
+		// if (measuredHeight !== 0) {
+		// 	return measuredHeight / Screen.mainScreen.scale;
+		// }
 		return this._realSize.height;
 	}
 
 	set height(value) {
 		this.style.height = value;
 		this._didLayout = false;
-		this._layoutNative();
+		this._layoutNative(true);
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -241,26 +242,30 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	_layoutNative() {
-		if (!this._isCustom) {
+	_layoutNative(force: boolean = false) {
+		if (!this._isCustom && !force) {
 			return;
 		}
 
-		if (this._didLayout) {
+		if (this._didLayout && !force) {
 			return;
 		}
 
-		if (!this.parent) {
-			if ((typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
+		if (!this.parent || force) {
+			if (!force || (typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
 			}
 
 			const size = this._realSize;
 
-			/*const width = Utils.layout.toDeviceIndependentPixels(size.width || 1);
-			const height = Utils.layout.toDeviceIndependentPixels(size.height || 1);*/
+			const width = Utils.layout.toDevicePixels(size.width || 1);
+			const height = Utils.layout.toDevicePixels(size.height || 1);
 
 			this._canvas.forceLayout(size.width, size.height);
+
+			if (this._is2D) {
+				this._2dContext.native.__resize(width, height);
+			}
 
 			this._didLayout = true;
 		}
@@ -384,16 +389,7 @@ export class Canvas extends CanvasBase {
 
 		NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
 
-		const ret = new DOMRect(
-			this._boundingClientRect[6],
-			this._boundingClientRect[7],
-			this._boundingClientRect[4],
-			this._boundingClientRect[5],
-			this._boundingClientRect[0],
-			this._boundingClientRect[1],
-			this._boundingClientRect[2],
-			this._boundingClientRect[3],
-		);
+		const ret = new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 
 		// const ret = {
 		// 	bottom: this._boundingClientRect[2],

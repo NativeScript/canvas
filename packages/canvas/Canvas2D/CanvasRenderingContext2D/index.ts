@@ -160,7 +160,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	set textAlign(alignment: string) {
-		this.context.setTextAlign = alignment;
+		this.context.textAlign = alignment;
 	}
 
 	get globalCompositeOperation() {

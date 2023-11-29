@@ -26,6 +26,7 @@ use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::{Context, ContextWrapper};
+use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
@@ -35,7 +36,6 @@ fn main() {
     let event_loop = EventLoop::new();
     let window_builder = WindowBuilder::new();
     let mut asset = ImageAsset::new();
-
 
     let window = window_builder
         .with_title("CanvasNative Demo")
@@ -55,14 +55,11 @@ fn main() {
         raw_window_handle,
     );
 
-
-
     let webgl = context.unwrap();
-
 
     let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
 
-    /*let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
+    let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
         WebGLResult::U32(value) => value as i32,
         WebGLResult::I32(value) => value,
         _ => 0,
@@ -81,7 +78,6 @@ fn main() {
         0.,
         canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
     ));
-    */
 
     // {
     //     let mut ctx = ctx_2d.get_context_mut();
@@ -145,8 +141,6 @@ fn main() {
 
     //  triangle(&mut gl_state);
 
-
-
     event_loop.run(move |event, target, control_flow| {
         control_flow.set_wait();
         match event {
@@ -154,7 +148,13 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 match event {
                     WindowEvent::Resized(resized) => {
-                         canvas_webgl::webgl::canvas_native_webgl_viewport(0, 0, resized.width as i32, resized.height as i32, &gl_state);
+                        canvas_webgl::webgl::canvas_native_webgl_viewport(
+                            0,
+                            0,
+                            resized.width as i32,
+                            resized.height as i32,
+                            &gl_state,
+                        );
 
                         // window.request_redraw();
                         //
@@ -169,14 +169,14 @@ fn main() {
                 }
             }
             Event::RedrawEventsCleared => {
-                 //  canvas_webgl::webgl::canvas_native_webgl_clear_color(
-                 //     1., 0.2, 0.3, 1., &mut gl_state,
-                 // );
-                 //
-                 //
-                 // canvas_webgl::webgl::canvas_native_webgl_clear(
-                 //     16384, &mut gl_state,
-                 // );
+                //  canvas_webgl::webgl::canvas_native_webgl_clear_color(
+                //     1., 0.2, 0.3, 1., &mut gl_state,
+                // );
+                //
+                //
+                // canvas_webgl::webgl::canvas_native_webgl_clear(
+                //     16384, &mut gl_state,
+                // );
 
                 window.request_redraw();
 
@@ -186,20 +186,58 @@ fn main() {
                 //     solar(&ctx_2d, earth, moon, sun, fill.clone(), stroke.clone())
                 // }
 
-               // clock(&mut ctx_2d);
+                // {
+                //     clock(&mut ctx_2d);
+                // }
 
                 //swarm(&mut ctx_2d, &mut particles, particle_count);
 
                 // colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
 
-                // if let Some(color) = PaintStyle::new_color_str("red") {
-                //     ctx_2d.set_fill_style(color);
-                //     ctx_2d.set_font("100px san-serif");
-                //     ctx_2d.fill_text("Look Some red text", 350., 300., -1.);
-                // }
+                if let Some(color) = PaintStyle::new_color_str("red") {
+
+                    {
+                        let mut ctx = ctx_2d.get_context_mut();
+                        //  colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
+                        let bg = PaintStyle::new_color_str("white").unwrap();
+                        let black = PaintStyle::new_color_str("black").unwrap();
+                        ctx.set_fill_style(bg);
+                        let device = *ctx.device();
+                        ctx.rect(0.,0., device.width, device.height);
+                        ctx.fill(None);
+                        ctx.set_fill_style(black);
+
+
+                        // Create a red line in position 150
+                        ctx.set_stroke_style(color);
+                        ctx.move_to(150., 20.);
+                        ctx.line_to(150., 170.);
+                        ctx.stroke(None);
+
+                        ctx.set_font("15px Arial");
+
+// Show the different textAlign values
+                        ctx.set_text_align(TextAlign::START);
+                        ctx.fill_text("textAlign = start", 150., 60., None);
+                        ctx.set_text_align(TextAlign::END);
+                        ctx.fill_text("textAlign = end", 150., 80.,None);
+                        ctx.set_text_align(TextAlign::LEFT);
+                        ctx.fill_text("textAlign = left", 150., 100.,None);
+                        ctx.set_text_align(TextAlign::CENTER);
+                        ctx.fill_text("textAlign = center", 150., 120., None);
+                        ctx.set_text_align(TextAlign::RIGHT);
+                        ctx.fill_text("textAlign = right", 150., 140.,None);
+
+
+                        ctx.flush();
+                    }
+
+                  //  println!("{}", canvas_2d::to_data_url(&mut ctx_2d, "image/jpg", 100))
+
+                }
                 //
                 // ctx_2d.fill_rect_xywh(0., 0., 300., 300.);
-              //  ctx_2d.get_context_mut().flush();
+                //  ctx_2d.get_context_mut().flush();
                 //ctx_2d.flush();
 
                 //   canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 0.0, 1.0, &mut gl_state);
@@ -219,8 +257,6 @@ fn main() {
             _ => {}
         }
     });
-
-
 
     /*
 

@@ -68,15 +68,25 @@ const age = parseInt(params.get("age") as any); // is the number 18
 
 // other url: 648.170ms
 
-console.time('url');
-for (let i = 0; i < 1_000_000; i++) {
-	const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
-}
-console.timeEnd('url');
+// try loading our custom font
 
-const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
 
-console.log('canParse', URL.canParse('asdasd'), URL.canParse('https://example.com/?name=Jonathan%20Smith&age=18'));
+const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regular.ttf');
+
+global.CanvasModule.__addFontFamily('creepster', [font]);
+
+
+
+
+// console.time('url');
+// for (let i = 0; i < 1_000_000; i++) {
+// 	const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
+// }
+// console.timeEnd('url');
+
+// const url = new URL('https://example.com/?name=Jonathan%20Smith&age=18');
+
+// console.log('canParse', URL.canParse('asdasd'), URL.canParse('https://example.com/?name=Jonathan%20Smith&age=18'));
 
 Application.on('uncaughtError', (args) => {
 	console.log('uncaughtError: error', args.error);

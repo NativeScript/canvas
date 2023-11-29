@@ -1,23 +1,26 @@
 extern crate core;
 
-use std::ffi::c_uint;
 use base64::Engine;
 use image::EncodableLayout;
+use once_cell::sync::Lazy;
 use skia_safe::image::CachingHint;
 use skia_safe::wrapper::NativeTransmutableWrapper;
-use skia_safe::{AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point, Surface, images, surfaces};
+use skia_safe::{
+    images, surfaces, AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point,
+    Surface,
+};
+use std::ffi::c_uint;
 
 use context::filter_quality::FilterQuality;
 use context::{Context, ContextWrapper};
-
+use parking_lot::Mutex;
 pub mod context;
 pub mod ffi;
 pub mod image_bitmap;
+pub mod ios;
 pub mod prelude;
 pub mod svg;
 pub mod utils;
-
-pub mod ios;
 
 pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_uint) -> String {
     let mut ctx = context.surface.direct_context();
@@ -140,8 +143,7 @@ pub fn bytes_to_data_url(
         skia_bindings::SkAlphaType::Unpremul,
         None,
     );
-    if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize)
-    {
+    if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize) {
         let mut quality = quality;
         if quality > 100 || quality < 0 {
             quality = 92;
@@ -274,7 +276,7 @@ pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
 
         let snapshot = context.surface.image_snapshot();
         let mut ctx = context.surface.direct_context();
-        if let Some(data) = snapshot.encode(&mut ctx,EncodedImageFormat::PNG, None) {
+        if let Some(data) = snapshot.encode(&mut ctx, EncodedImageFormat::PNG, None) {
             return Some(data.as_bytes().to_vec());
         }
         return None;
@@ -306,7 +308,7 @@ pub(crate) fn snapshot_canvas_raw(context: &mut ContextWrapper) -> Vec<u8> {
         if let Some(mut context) = dst_surface.direct_context() {
             context.flush_and_submit();
         }
-        
+
         bytes
     }
 }

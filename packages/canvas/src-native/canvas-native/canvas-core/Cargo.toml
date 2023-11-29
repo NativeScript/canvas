@@ -26,8 +26,8 @@ glutin = "0.30.10"
 #glutin = { git = "https://github.com/triniwiz/glutin", rev = "1b2cbbe" }
 android_log = "0.1.3"
 
-#[target.'cfg(target_os = "macos")'.dependencies]
-#winit = "0.28.1"
-#glutin-winit = "0.3.0"
-#glutin = "0.30.10"
+[target.'cfg(target_os = "macos")'.dependencies]
+winit = "0.28.1"
+glutin-winit = "0.3.0"
+glutin = "0.30.10"
 #glutin = { git = "https://github.com/triniwiz/glutin", rev = "1b2cbbe" }

@@ -1700,13 +1700,18 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
 
     auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
     auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-    float width = -1;
+
     if (args[3]->IsNumber()) {
-        width = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        float width = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_fill_text_width(
+                ptr->GetContext(), text.c_str(), x,
+                y, width);
+    }else {
+        canvas_native_context_fill_text(
+                ptr->GetContext(), text.c_str(), x,
+                y);
     }
-    canvas_native_context_fill_text(
-            ptr->GetContext(), text.c_str(), x,
-            y, width);
+    
     ptr->UpdateInvalidateState();
 
 }
@@ -2270,15 +2275,18 @@ CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Valu
         auto text = ConvertFromV8String(isolate, args[0]);
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-        float maxWidth = -1;
-
         if (count > 3) {
-            maxWidth = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+            float maxWidth = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+            canvas_native_context_stroke_text_width(
+                    ptr->GetContext(), text.c_str(),
+                    x, y,maxWidth);
+        }else {
+            canvas_native_context_stroke_text(
+                    ptr->GetContext(), text.c_str(),
+                    x, y);
         }
 
-        canvas_native_context_stroke_text(
-                ptr->GetContext(), text.c_str(),
-                x, y, maxWidth);
+        
         ptr->UpdateInvalidateState();
     }
 }

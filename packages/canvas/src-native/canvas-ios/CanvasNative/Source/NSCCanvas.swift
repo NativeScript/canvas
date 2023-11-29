@@ -280,6 +280,9 @@ public class NSCCanvas: UIView, GLKViewDelegate {
 //        }
         
         frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
+        glkView.frame = bounds
+        
+        setNeedsLayout()
         layoutIfNeeded()
     }
     

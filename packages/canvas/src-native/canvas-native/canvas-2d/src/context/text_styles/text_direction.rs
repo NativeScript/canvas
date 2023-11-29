@@ -5,6 +5,17 @@ pub enum TextDirection {
     RTL = 1,
 }
 
+impl From<skia_safe::textlayout::TextDirection> for TextDirection {
+    fn from(value: skia_safe::textlayout::TextDirection) -> Self {
+        match value {
+            skia_safe::textlayout::TextDirection::LTR => Self::LTR,
+            skia_safe::textlayout::TextDirection::RTL => Self::RTL,
+        }
+    }
+}
+
+
+
 impl From<u32> for TextDirection {
     fn from(value: u32) -> Self {
         match value {

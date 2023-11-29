@@ -1,5 +1,6 @@
 pub use text_direction::*;
 
+use crate::context::drawing_text::typography::Font;
 use crate::{
     context::text_styles::text_align::TextAlign, context::text_styles::text_baseline::TextBaseLine,
     context::text_styles::text_direction::TextDirection, context::Context,
@@ -19,11 +20,14 @@ impl Context {
     }
 
     pub fn set_font(&mut self, font: &str) {
-        self.state.font.set_font(font);
+        if let Ok(value) = Font::new(font) {
+            self.state.font = font.to_owned();
+            self.state.font_style = value;
+        }
     }
 
     pub fn font(&self) -> &str {
-        self.state.font.get_font_details()
+        self.state.font.as_str()
     }
 
     pub fn set_text_align(&mut self, align: TextAlign) {

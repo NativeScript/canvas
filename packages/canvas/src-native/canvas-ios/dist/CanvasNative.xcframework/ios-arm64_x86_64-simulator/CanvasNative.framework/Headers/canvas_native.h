@@ -203,6 +203,10 @@ typedef struct WebGLSync WebGLSync;
 
 void canvas_native_image_filter_destroy(struct ImageFilter *value);
 
+void canvas_native_font_add_family(const char *alias,
+                                   const char *const *filenames,
+                                   uintptr_t length);
+
 void canvas_native_helper_destroy(struct FileHelper *value);
 
 struct FileHelper *canvas_native_helper_read_file(const char *path);
@@ -655,8 +659,13 @@ void canvas_native_context_fill_rect(struct CanvasRenderingContext2D *context,
 void canvas_native_context_fill_text(struct CanvasRenderingContext2D *context,
                                      const char *text,
                                      float x,
-                                     float y,
-                                     float width);
+                                     float y);
+
+void canvas_native_context_fill_text_width(struct CanvasRenderingContext2D *context,
+                                           const char *text,
+                                           float x,
+                                           float y,
+                                           float width);
 
 struct ImageData *canvas_native_context_get_image_data(struct CanvasRenderingContext2D *context,
                                                        float sx,
@@ -767,8 +776,13 @@ void canvas_native_context_stroke_rect(struct CanvasRenderingContext2D *context,
 void canvas_native_context_stroke_text(struct CanvasRenderingContext2D *context,
                                        const char *text,
                                        float x,
-                                       float y,
-                                       float width);
+                                       float y);
+
+void canvas_native_context_stroke_text_width(struct CanvasRenderingContext2D *context,
+                                             const char *text,
+                                             float x,
+                                             float y,
+                                             float width);
 
 void canvas_native_context_transform(struct CanvasRenderingContext2D *context,
                                      float a,

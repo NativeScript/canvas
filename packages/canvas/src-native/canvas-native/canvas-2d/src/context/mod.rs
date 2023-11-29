@@ -2,11 +2,9 @@ use std::os::raw::c_float;
 use std::sync::Arc;
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use skia_safe::gpu::BackendTexture;
 use skia_safe::{images, Color, Data, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
-use drawing_text::typography::Font;
 use fill_and_stroke_styles::paint::Paint;
 use filter_quality::FilterQuality;
 use image_smoothing::ImageSmoothingQuality;
@@ -16,6 +14,8 @@ use paths::path::Path;
 use text_styles::{
     text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
 };
+use crate::context::drawing_text::typography::Font;
+
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -73,7 +73,8 @@ impl Device {
 pub struct State {
     pub(crate) direction: TextDirection,
     pub(crate) paint: Paint,
-    pub(crate) font: Font,
+    pub(crate) font: String,
+    pub(crate) font_style: Font,
     pub(crate) text_align: TextAlign,
     pub(crate) text_baseline: TextBaseLine,
     pub(crate) shadow_color: Color,
@@ -101,7 +102,7 @@ impl State {
         }
     }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
-        let font = Font::new("10px sans-serif", device);
+        let font = "10px sans-serif".to_owned();
         let mut paint = Paint::default();
         paint
             .stroke_paint_mut()
@@ -111,6 +112,7 @@ impl State {
             direction,
             paint,
             font,
+            font_style: Font::default(),
             text_align: TextAlign::default(),
             text_baseline: TextBaseLine::default(),
             shadow_color: Color::TRANSPARENT,

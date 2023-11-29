@@ -1046,13 +1046,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 				return value.value || 0;
 			} else if (value.unit === '%') {
-				const orientation = Application.orientation();
-				if (orientation === 'portrait' || orientation === 'landscape') {
-					if (global.isAndroid) {
-						return (measuredSize ?? (type === 'width' ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels)) * value.value ?? 0;
-					}
-					return (measuredSize ?? (type === 'width' ? Screen.mainScreen.widthDIPs : Screen.mainScreen.heightDIPs)) * value.value ?? 0;
-				}
+				return Utils.layout.toDeviceIndependentPixels(measuredSize * value.value ?? 0);
 			}
 		}
 

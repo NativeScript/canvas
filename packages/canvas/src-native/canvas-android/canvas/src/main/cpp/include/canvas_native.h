@@ -244,6 +244,10 @@ void canvas_native_raf_stop(struct Raf *raf);
 bool canvas_native_raf_get_started(const struct Raf *raf);
 #endif
 
+void canvas_native_font_add_family(const char *alias,
+                                   const char *const *filenames,
+                                   uintptr_t length);
+
 struct CanvasRenderingContext2D *canvas_native_context_create_with_wrapper(int64_t context,
                                                                            int64_t gl_context);
 
@@ -655,6 +659,11 @@ void canvas_native_context_fill_rect(struct CanvasRenderingContext2D *context,
 void canvas_native_context_fill_text(struct CanvasRenderingContext2D *context,
                                      const char *text,
                                      float x,
+                                     float y);
+
+void canvas_native_context_fill_text_width(struct CanvasRenderingContext2D *context,
+                                     const char *text,
+                                     float x,
                                      float y,
                                      float width);
 
@@ -765,6 +774,11 @@ void canvas_native_context_stroke_rect(struct CanvasRenderingContext2D *context,
                                        float height);
 
 void canvas_native_context_stroke_text(struct CanvasRenderingContext2D *context,
+                                       const char *text,
+                                       float x,
+                                       float y);
+
+void canvas_native_context_stroke_text_width(struct CanvasRenderingContext2D *context,
                                        const char *text,
                                        float x,
                                        float y,

@@ -901,6 +901,13 @@ pub mod ffi {
             alignment: &str,
         );
 
+        fn canvas_native_context_get_text_baseline(context: &CanvasRenderingContext2D) -> &str;
+
+        fn canvas_native_context_set_text_baseline(
+            context: &mut CanvasRenderingContext2D,
+            baseline: &str,
+        );
+
         fn canvas_native_context_get_global_composition(context: &CanvasRenderingContext2D)
             -> &str;
 
@@ -3617,6 +3624,42 @@ pub fn canvas_native_context_set_text_align(
         "center" => context.get_context_mut().set_text_align(TextAlign::CENTER),
         "right" => context.get_context_mut().set_text_align(TextAlign::RIGHT),
         "end" => context.get_context_mut().set_text_align(TextAlign::END),
+        _ => {}
+    }
+}
+
+pub fn canvas_native_context_get_text_baseline(context: &CanvasRenderingContext2D) -> &str {
+    match context.get_context().text_baseline() {
+        TextBaseline::Alphabetic => "alphabetic",
+        TextBaseline::Top => "top",
+        TextBaseline::Hanging => "hanging",
+        TextBaseline::Middle => "middle",
+        TextBaseline::Ideographic => "ideographic",
+        TextBaseline::Bottom => "bottom",
+    }
+}
+
+pub fn canvas_native_context_set_text_baseline(
+    context: &mut CanvasRenderingContext2D,
+    baseline: &str,
+) {
+    match baseline {
+        "alphabetic" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Alphabetic),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseline::Top),
+        "hanging" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Hanging),
+        "middle" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Middle),
+        "ideographic" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Ideographic),
+        "bottom" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Bottom),
         _ => {}
     }
 }

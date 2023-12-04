@@ -75,7 +75,26 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		this.draw();
+		this.textBaseLine();
+		// this.draw();
+	}
+
+	textBaseLine() {
+		const ctx = this.canvas.getContext('2d');
+
+		const baselines = ['top', 'hanging', 'middle', 'alphabetic', 'ideographic', 'bottom'];
+		ctx.font = '24px serif';
+		ctx.strokeStyle = 'red';
+
+		baselines.forEach((baseline, index) => {
+			ctx.textBaseline = baseline;
+			const y = 75 + index * 75;
+			ctx.beginPath();
+			ctx.moveTo(0, y + 0.5);
+			ctx.lineTo(550, y + 0.5);
+			ctx.stroke();
+			ctx.fillText(`Abcdefghijklmnop (${baseline})`, 0, y);
+		});
 	}
 
 	svgViewLoaded(args) {
@@ -624,7 +643,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
@@ -653,11 +671,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//issue54(this.canvas);
 		//this.decoder()
 		//this.context2DTest(this.canvas);
-
 		//issue93(this.canvas);
-
 		// const canvas = this.canvas;
-
 		// console.time('getBoundingClientRect');
 		// for(let i = 0; i < 100000;i++){
 		// 	canvas.getBoundingClientRect();

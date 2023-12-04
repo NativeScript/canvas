@@ -986,6 +986,47 @@ pub extern "C" fn canvas_native_context_set_text_align(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_context_get_text_baseline(
+    context: *const CanvasRenderingContext2D,
+) -> *const c_char {
+    let context = unsafe { &*context };
+    let ret = match context.get_context().text_baseline() {
+        TextBaseline::Alphabetic => "alphabetic",
+        TextBaseline::Bottom => "bottom",
+        TextBaseline::Hanging => "hanging",
+        TextBaseline::Ideographic => "ideographic",
+        TextBaseline::Middle => "middle",
+        TextBaseline::Top => "top",
+    };
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_text_baseline(
+    context: *mut CanvasRenderingContext2D,
+    baseline: *const c_char,
+) {
+    if baseline.is_null() {
+        return;
+    }
+    let context = unsafe { &mut *context };
+    let baseline = unsafe { CStr::from_ptr(baseline) };
+    match baseline.to_string_lossy().as_ref() {
+        "alphabetic" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Alphabetic),
+        "bottom" => context.get_context_mut().set_text_baseline(TextBaseline::Bottom),
+        "hanging" => context.get_context_mut().set_text_baseline(TextBaseline::Hanging),
+        "ideographic" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::Ideographic),
+        "middle" => context.get_context_mut().set_text_baseline(TextBaseline::Middle),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseline::Top),
+        _ => {}
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_get_global_composition(
     context: *const CanvasRenderingContext2D,
 ) -> *const c_char {

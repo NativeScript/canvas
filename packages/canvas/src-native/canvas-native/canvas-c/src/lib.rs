@@ -991,12 +991,12 @@ pub extern "C" fn canvas_native_context_get_text_baseline(
 ) -> *const c_char {
     let context = unsafe { &*context };
     let ret = match context.get_context().text_baseline() {
-        TextBaseline::Alphabetic => "alphabetic",
-        TextBaseline::Bottom => "bottom",
-        TextBaseline::Hanging => "hanging",
-        TextBaseline::Ideographic => "ideographic",
-        TextBaseline::Middle => "middle",
-        TextBaseline::Top => "top",
+        TextBaseline::ALPHABETIC => "alphabetic",
+        TextBaseline::BOTTOM => "bottom",
+        TextBaseline::HANGING => "hanging",
+        TextBaseline::IDEOGRAPHIC => "ideographic",
+        TextBaseline::MIDDLE => "middle",
+        TextBaseline::TOP => "top",
     };
     CString::new(ret).unwrap().into_raw()
 }
@@ -1014,14 +1014,14 @@ pub extern "C" fn canvas_native_context_set_text_baseline(
     match baseline.to_string_lossy().as_ref() {
         "alphabetic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Alphabetic),
-        "bottom" => context.get_context_mut().set_text_baseline(TextBaseline::Bottom),
-        "hanging" => context.get_context_mut().set_text_baseline(TextBaseline::Hanging),
+            .set_text_baseline(TextBaseline::ALPHABETIC),
+        "bottom" => context.get_context_mut().set_text_baseline(TextBaseline::BOTTOM),
+        "hanging" => context.get_context_mut().set_text_baseline(TextBaseline::HANGING),
         "ideographic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Ideographic),
-        "middle" => context.get_context_mut().set_text_baseline(TextBaseline::Middle),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseline::Top),
+            .set_text_baseline(TextBaseline::IDEOGRAPHIC),
+        "middle" => context.get_context_mut().set_text_baseline(TextBaseline::MIDDLE),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseline::TOP),
         _ => {}
     }
 }

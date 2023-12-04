@@ -3630,12 +3630,12 @@ pub fn canvas_native_context_set_text_align(
 
 pub fn canvas_native_context_get_text_baseline(context: &CanvasRenderingContext2D) -> &str {
     match context.get_context().text_baseline() {
-        TextBaseline::Alphabetic => "alphabetic",
-        TextBaseline::Top => "top",
-        TextBaseline::Hanging => "hanging",
-        TextBaseline::Middle => "middle",
-        TextBaseline::Ideographic => "ideographic",
-        TextBaseline::Bottom => "bottom",
+        TextBaseline::ALPHABETIC => "alphabetic",
+        TextBaseline::TOP => "top",
+        TextBaseline::HANGING => "hanging",
+        TextBaseline::MIDDLE => "middle",
+        TextBaseline::IDEOGRAPHIC => "ideographic",
+        TextBaseline::BOTTOM => "bottom",
     }
 }
 
@@ -3646,20 +3646,20 @@ pub fn canvas_native_context_set_text_baseline(
     match baseline {
         "alphabetic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Alphabetic),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseline::Top),
+            .set_text_baseline(TextBaseline::ALPHABETIC),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseline::TOP),
         "hanging" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Hanging),
+            .set_text_baseline(TextBaseline::HANGING),
         "middle" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Middle),
+            .set_text_baseline(TextBaseline::MIDDLE),
         "ideographic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Ideographic),
+            .set_text_baseline(TextBaseline::IDEOGRAPHIC),
         "bottom" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::Bottom),
+            .set_text_baseline(TextBaseline::BOTTOM),
         _ => {}
     }
 }

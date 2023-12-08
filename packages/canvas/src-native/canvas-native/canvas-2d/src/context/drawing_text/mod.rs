@@ -192,7 +192,7 @@ impl Context {
                     - font_metrics.ascent * HANGING_AS_PERCENT_OF_ASCENT / 100.0;
             }
             TextBaseLine::MIDDLE => {
-                baseline_offset = paragraph.height() / 2.;
+                baseline_offset = -paragraph.height() / 2.;
             }
             TextBaseLine::ALPHABETIC => {
                 baseline_offset = -alphabetic_baseline;

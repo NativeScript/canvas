@@ -1,9 +1,14 @@
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 use std::os::raw::c_float;
 use std::sync::Arc;
-use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use log::log;
 
+use skia_safe::gpu::gl::TextureInfo;
 use skia_safe::{images, Color, Data, Image, Point, Surface};
 
+use crate::context::drawing_text::typography::Font;
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
 use filter_quality::FilterQuality;
@@ -14,8 +19,6 @@ use paths::path::Path;
 use text_styles::{
     text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
 };
-use crate::context::drawing_text::typography::Font;
-
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -43,6 +46,27 @@ pub mod surface_gl;
 pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
+
+const VERTEX_SHADER: &str = "
+    precision highp float;
+    attribute vec4 aPosition;
+    uniform mat4 uTextureMatrix;
+    varying vec2 TexCoord;
+    void main(){
+    vec2 clipSpace = (1.0 - 2.0 * aPosition.xy);
+    TexCoord = aPosition.xy;
+    gl_Position = vec4(clipSpace, 0.0, 1.0);
+    }
+    ";
+
+const FRAGMENT_SHADER: &str = "
+    precision highp float;
+    varying vec2 TexCoord;
+    uniform sampler2D uSampler;
+    void main(){
+    gl_FragColor = texture2D(uSampler, TexCoord);
+    }
+    ";
 
 #[derive(Copy, Clone, Debug)]
 pub struct Device {
@@ -91,6 +115,12 @@ pub struct State {
     pub(crate) filter: String,
     pub(crate) global_alpha: f32,
     pub(crate) global_composite_operation: CompositeOperationType,
+    pub(crate) use_device_scale: bool,
+    pub(crate) did_use_device_scale: bool,
+    pub(crate) word_spacing_value: String,
+    pub(crate) word_spacing: f32,
+    pub(crate) letter_spacing_value: String,
+    pub(crate) letter_spacing: f32,
 }
 
 impl State {
@@ -129,6 +159,12 @@ impl State {
             filter: "none".into(),
             global_alpha: 1.0,
             global_composite_operation: CompositeOperationType::default(),
+            use_device_scale: true,
+            did_use_device_scale: true,
+            word_spacing_value: "0px".to_string(),
+            word_spacing: 0.,
+            letter_spacing_value: "0px".to_string(),
+            letter_spacing: 0.
         }
     }
 }
@@ -245,13 +281,13 @@ impl Context {
     pub fn clear_canvas(&mut self) {
         self.surface.canvas().clear(Color::TRANSPARENT);
         if let Some(mut context) = self.surface.direct_context() {
-            context.flush(None);
+            context.flush_submit_and_sync_cpu();
         }
     }
 
     pub fn flush(&mut self) {
         if let Some(mut context) = self.surface.direct_context() {
-            context.flush_and_submit();
+            context.flush(None);
         }
     }
 
@@ -261,14 +297,18 @@ impl Context {
         }
     }
 
+    pub fn reset(&mut self) {
+        if let Some(mut context) = self.surface.direct_context() {
+            context.reset(None);
+        }
+    }
+
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
-        self.flush();
         let ss = self.surface.image_snapshot();
 
         let info = ss.image_info();
         let row_bytes = info.min_row_bytes();
-        let size = info.height() as usize * row_bytes;
-        let mut buf = vec![0_u8; size];
+        let mut buf = vec![0_u8; info.compute_byte_size(row_bytes)];
 
         match ss.make_raster_image(
             &mut self.surface.direct_context(),
@@ -277,14 +317,15 @@ impl Context {
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
                     info.dimensions(),
-                    skia_safe::ColorType::RGBA8888,
-                    ss.image_info().alpha_type(),
-                    ss.image_info().color_space(),
+                    ss.image_info().color_type(),
+                    skia_safe::AlphaType::Unpremul,
+                    None,
                 );
+
                 let _read = image.read_pixels(
                     &mut info,
                     buf.as_mut_slice(),
-                    row_bytes as usize,
+                    row_bytes,
                     skia_safe::IPoint::new(0, 0),
                     skia_safe::image::CachingHint::Allow,
                 );
@@ -296,7 +337,6 @@ impl Context {
     }
 
     pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
-        self.flush_and_sync_cpu();
         let ss = self.surface.image_snapshot();
         ss.make_raster_image(
             &mut self.surface.direct_context(),
@@ -304,17 +344,89 @@ impl Context {
         )
     }
 
+    pub fn to_raster_image(&mut self, image: Image) -> Option<Image> {
+        image.make_raster_image(
+            &mut self.surface.direct_context(),
+            skia_safe::image::CachingHint::Allow,
+        )
+    }
+
+    pub fn to_raster_pixels(
+        &mut self,
+        image: Image,
+        is_alpha: bool,
+        premultiply: bool,
+    ) -> Option<Vec<u8>> {
+        if let Some(image) = image.make_raster_image(
+            &mut self.surface.direct_context(),
+            skia_safe::image::CachingHint::Disallow,
+        ) {
+            let info = image.image_info();
+
+            let mut info = skia_safe::ImageInfo::new(
+                info.dimensions(),
+                if is_alpha {
+                    skia_safe::ColorType::RGBA8888
+                } else {
+                    skia_safe::ColorType::RGB565
+                },
+                if premultiply {
+                    skia_safe::AlphaType::Premul
+                } else {
+                    skia_safe::AlphaType::Unpremul
+                },
+                None,
+            );
+
+            let mut buf = vec![0_u8; info.compute_byte_size(info.min_row_bytes())];
+
+            image.read_pixels(
+                &info,
+                &mut buf,
+                info.min_row_bytes(),
+                skia_safe::IPoint::new(0, 0),
+                skia_safe::image::CachingHint::Disallow,
+            );
+            return Some(buf);
+        }
+
+        None
+    }
+
+    pub fn snapshot_with_texture_id(&mut self) -> (Image, u32) {
+        let ss = self.surface.image_snapshot();
+        if let Some((texture, _)) =
+            skia_safe::gpu::images::get_backend_texture_from_image(&ss, false)
+        {
+            return (
+                ss,
+                texture
+                    .gl_texture_info()
+                    .map(|info| info.id)
+                    .unwrap_or_default(),
+            );
+        }
+        (ss, 0)
+    }
+
     pub fn read_pixels(&mut self) -> Vec<u8> {
         if let Some(mut context) = self.surface.direct_context() {
             context.flush_submit_and_sync_cpu();
         }
         let info = self.surface.image_info();
-        let size = info.height() as usize * info.min_row_bytes();
-        let mut buf = vec![0_u8; size];
+
+        let mut info = skia_safe::ImageInfo::new(
+            info.dimensions(),
+            info.color_type(),
+            info.alpha_type(),
+            info.color_space(),
+        );
+
+        let mut buf = vec![0_u8; info.compute_byte_size(info.min_row_bytes())];
 
         self.surface.read_pixels(
             &info,
-            buf.as_mut_slice(),
+            &mut buf,
             info.min_row_bytes(),
             skia_safe::IPoint::new(0, 0),
         );

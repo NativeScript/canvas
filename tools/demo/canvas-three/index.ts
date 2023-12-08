@@ -72,7 +72,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		//this.geoColors(this.canvas);
+		this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
@@ -1275,10 +1275,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// shadow
 
 			var shadow = document.createElement('canvas');
-			shadow.width = 128;
-			shadow.height = 128;
+			shadow.width = 256;
+			shadow.height = 256;
 
 			var context = shadow.getContext('2d', { alpha: true });
+			
 			var gradient = context.createRadialGradient(shadow.width / 2, shadow.height / 2, 0, shadow.width / 2, shadow.height / 2, shadow.width / 2);
 			gradient.addColorStop(0.1, 'rgba(210,210,210,1)');
 			gradient.addColorStop(1, 'rgba(255,255,255,1)');
@@ -1286,10 +1287,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			context.fillStyle = gradient;
 			context.fillRect(0, 0, shadow.width, shadow.height);
 
+		
+
 			var shadowTexture = new THREE.CanvasTexture(shadow);
 
 			var shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture });
-			var shadowGeo = new THREE.PlaneGeometry(300, 300, 1, 1);
+			var shadowGeo = new THREE.PlaneGeometry(600, 600, 1, 1);
 
 			var shadowMesh;
 
@@ -1309,6 +1312,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			shadowMesh.position.x = 400;
 			shadowMesh.rotation.x = -Math.PI / 2;
 			scene.add(shadowMesh);
+		
 
 			var radius = 200;
 
@@ -1365,9 +1369,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var wireframe = new THREE.Mesh(geometry3, wireframeMaterial);
 			mesh.add(wireframe);
 			scene.add(mesh);
-			const gl = canvas.getContext('webgl2', { antialias: false }) as WebGL2RenderingContext;
+			const gl = canvas.getContext('webgl2', { alpha: true, antialias: false }) as WebGL2RenderingContext;
 
-			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false });
+			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false, alpha: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 

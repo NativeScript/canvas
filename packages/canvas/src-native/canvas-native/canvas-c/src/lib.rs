@@ -25,6 +25,7 @@ use canvas_2d::utils::image::{
 };
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
+use log::log;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
@@ -290,6 +291,10 @@ impl CanvasRenderingContext2D {
             gl_context,
             alpha,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.context.get_context_mut().reset();
     }
 
     pub fn render(&self) {
@@ -700,6 +705,55 @@ pub extern "C" fn canvas_native_context_set_font(
     context
         .get_context_mut()
         .set_font(font.to_string_lossy().as_ref());
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_letter_spacing(
+    context: *const CanvasRenderingContext2D,
+) -> *const c_char {
+    let context = unsafe { &*context };
+    let ret = context.get_context().get_letter_spacing().to_string();
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_letter_spacing(
+    context: *mut CanvasRenderingContext2D,
+    spacing: *const c_char,
+) {
+    if spacing.is_null() {
+        return;
+    }
+    let context = unsafe { &mut *context };
+    let spacing = unsafe { CStr::from_ptr(spacing) };
+    context
+        .get_context_mut()
+        .set_letter_spacing(spacing.to_string_lossy().as_ref());
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_word_spacing(
+    context: *const CanvasRenderingContext2D,
+) -> *const c_char {
+    let context = unsafe { &*context };
+    let ret = context.get_context().get_word_spacing().to_string();
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_word_spacing(
+    context: *mut CanvasRenderingContext2D,
+    spacing: *const c_char,
+) {
+    if spacing.is_null() {
+        return;
+    }
+    let context = unsafe { &mut *context };
+    let spacing = unsafe { CStr::from_ptr(spacing) };
+    context
+        .get_context_mut()
+        .set_word_spacing(spacing.to_string_lossy().as_ref());
 }
 
 #[no_mangle]
@@ -7263,49 +7317,90 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: *mut CanvasRenderingContext2D,
     state: *mut WebGLState,
 ) {
-    assert!(!state.is_null());
+    assert!(!canvas.is_null());
     assert!(!state.is_null());
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
-    {
-        let context = &mut state.0;
-        context.remove_if_current();
-    }
 
-    let width;
-    let height;
+    let width: i32;
+    let height: i32;
     let source_non_gpu;
     {
         let ctx = canvas.get_context();
         let device = ctx.device();
-        width = device.width;
-        height = device.height;
+        width = device.width as i32;
+        height = device.height as i32;
         source_non_gpu = device.non_gpu;
     }
 
-    let mut source_ctx = canvas.get_context_mut();
-    let mut buf;
     if !source_non_gpu {
         canvas.make_current();
-        buf = source_ctx.snapshot_to_raster_data();
-        canvas.remove_if_current();
-        //  canvas.gl_context.remove_if_current();
-    } else {
-        buf = source_ctx.read_pixels();
-    }
+        let mut source_ctx = canvas.get_context_mut();
 
-    canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
-        target,
-        level,
-        internalformat,
-        width as i32,
-        height as i32,
-        0,
-        format,
-        image_type,
-        buf.as_mut_slice(),
-        state.get_inner_mut(),
-    );
+        let snapshot = source_ctx.snapshot();
+
+        if let Some(pixels) = snapshot.peek_pixels() {
+            if let Some(buf) = pixels.bytes() {
+                let buf = buf.to_vec();
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    0,
+                    format,
+                    image_type,
+                    buf.as_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        } else {
+            if let Some(buf) = source_ctx.to_raster_pixels(
+                snapshot,
+                if internalformat == gl_bindings::RGBA as i32 {
+                    true
+                } else {
+                    false
+                },
+                true,
+            ) {
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    0,
+                    format,
+                    image_type,
+                    buf.as_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        }
+    } else {
+        let mut source_ctx = canvas.get_context_mut();
+        canvas.make_current();
+        let buf = source_ctx.read_pixels();
+        canvas.remove_if_current();
+        canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            0,
+            format,
+            image_type,
+            buf.as_slice(),
+            state.get_inner_mut(),
+        );
+    }
 }
 
 #[no_mangle]
@@ -7492,45 +7587,88 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     assert!(!canvas.is_null());
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
-    {
-        let context = &mut state.0;
-        context.remove_if_current();
-    }
 
-    let width;
-    let height;
     let source_non_gpu;
     {
         let ctx = canvas.get_context();
         let device = ctx.device();
-        width = device.width;
-        height = device.height;
         source_non_gpu = device.non_gpu;
     }
 
-    let mut source_ctx = canvas.get_context_mut();
     let mut buf;
     if !source_non_gpu {
         canvas.make_current();
-        buf = source_ctx.snapshot_to_raster_data();
-        canvas.remove_if_current();
-        //  canvas.gl_context.remove_if_current();
-    } else {
-        buf = source_ctx.read_pixels();
-    }
+        let mut source_ctx = canvas.get_context_mut();
+        source_ctx.flush_and_sync_cpu();
+        let snapshot = source_ctx.snapshot();
+        let width = snapshot.width();
+        let height = snapshot.height();
 
-    canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
-        target,
-        level,
-        xoffset,
-        yoffset,
-        width as _,
-        height as _,
-        format,
-        image_type,
-        buf.as_mut_slice(),
-        state.get_inner_mut(),
-    );
+        if let Some(pixels) = snapshot.peek_pixels() {
+            if let Some(buf) = pixels.bytes() {
+                let mut buf = buf.to_vec();
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    image_type,
+                    buf.as_mut_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        } else {
+            if let Some(mut buf) = source_ctx.to_raster_pixels(
+                snapshot,
+                if format == gl_bindings::RGBA {
+                    true
+                } else {
+                    false
+                },
+                true,
+            ) {
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    image_type,
+                    buf.as_mut_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        }
+    } else {
+        let mut source_ctx = canvas.get_context_mut();
+        canvas.make_current();
+        let width = source_ctx.device().width;
+        let height = source_ctx.device().height;
+        buf = source_ctx.read_pixels();
+        canvas.remove_if_current();
+
+        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width as _,
+            height as _,
+            format,
+            image_type,
+            buf.as_mut_slice(),
+            state.get_inner_mut(),
+        );
+    }
 }
 
 #[no_mangle]

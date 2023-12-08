@@ -1856,7 +1856,7 @@ pub fn canvas_native_webgl_scissor(
 
 pub fn canvas_native_webgl_shader_source(shader: u32, source: &str, state: &mut WebGLState) {
     state.make_current();
-    let src = CString::new(source.as_bytes()).unwrap();
+    let src = CString::new(source).unwrap();
     unsafe { gl_bindings::ShaderSource(shader, 1, &src.as_ptr(), std::ptr::null()) }
 }
 
@@ -2335,13 +2335,13 @@ pub fn canvas_native_webgl_tex_sub_image2d(
 
         unsafe {
             gl_bindings::TexSubImage2D(
-                target as u32,
+                target,
                 level,
                 xoffset,
                 yoffset,
                 width,
                 height,
-                format as u32,
+                format,
                 image_type as u32,
                 buffer.as_ptr() as *const c_void,
             );
@@ -2351,13 +2351,13 @@ pub fn canvas_native_webgl_tex_sub_image2d(
     }
     unsafe {
         gl_bindings::TexSubImage2D(
-            target as u32,
+            target,
             level,
             xoffset,
             yoffset,
             width,
             height,
-            format as u32,
+            format,
             image_type as u32,
             buf.as_ptr() as *const c_void,
         );

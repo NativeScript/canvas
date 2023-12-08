@@ -396,6 +396,8 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.android);
 		} else if (source instanceof ImageAsset) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
+		} else if (source instanceof Canvas) {
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source instanceof ImageBitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.native);
 		} else if (source && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
@@ -437,6 +439,8 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.android);
 		} else if (srcData instanceof ImageAsset) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
+		} else if (srcData instanceof Canvas) {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData instanceof ImageBitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.native);
 		} else if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {
@@ -450,7 +454,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 				const result = ImageSource.fromFileSync(srcData.src);
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, result ? result.android : null);
 			}
-		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof TNSCanvas) {
+		} else if (srcData && typeof srcData.tagName === 'string' && srcData.tagName === 'CANVAS' && srcData._canvas instanceof Canvas) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._canvas.native);
 		}
 	}

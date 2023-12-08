@@ -37,11 +37,19 @@ impl Context {
         );
 
         let mut surface = surfaces::raster(&info, None, None).unwrap();
-        surface.canvas().scale((density, density));
+        let mut state = State::from_device(device, direction);
+
+        if density > 1. {
+            surface.canvas().scale((density, density));
+        } else {
+            state.use_device_scale = false;
+            state.did_use_device_scale = false;
+        };
+
         Context {
             surface,
             path: Path::default(),
-            state: State::from_device(device, direction),
+            state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
             device,
@@ -74,7 +82,13 @@ impl Context {
         );
 
         if let Some(mut surface) = surfaces::raster(&info, None, None) {
-            surface.canvas().scale((density, density));
+            if density > 1. {
+                surface.canvas().scale((density, density));
+            } else {
+                context.state.use_device_scale = false;
+                context.state.did_use_device_scale = false;
+            };
+
             context.surface = surface;
             context.device = device;
             context.path = Path::default();

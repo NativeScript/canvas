@@ -94,6 +94,8 @@ void canvas_native_release_gl_pointer(int64_t gl_context);
 
 void canvas_native_context_2d_test(int64_t context);
 
+void canvas_native_gl_make_current(int64_t gl_context);
+
 char *canvas_native_context_2d_test_to_data_url(int64_t context);
 
 void canvas_native_context_2d_destroy_string(char *string);

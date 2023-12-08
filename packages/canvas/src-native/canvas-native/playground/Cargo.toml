@@ -7,6 +7,7 @@ edition = "2021"
 canvas-core = { path = "../canvas-core" }
 canvas-webgl = { path = "../canvas-webgl" }
 canvas-2d = { path = "../canvas-2d", features = ["gl"] }
+gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.2"
 rand = "0.8.5"
 reqwest = { version = "0.11.14", features = ["blocking"] }

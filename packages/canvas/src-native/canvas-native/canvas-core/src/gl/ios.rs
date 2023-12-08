@@ -15,7 +15,7 @@ use std::sync::Arc;
 use crate::context_attributes::ContextAttributes;
 
 use once_cell::sync::OnceCell;
-use parking_lot::RwLock;
+use parking_lot::{ MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -24,6 +24,7 @@ pub struct GLContextInner {
     context: Option<EAGLContext>,
     sharegroup: EAGLSharegroup,
     view: Option<GLKView>,
+    transfer_surface_info: crate::gl::TransferSurface
 }
 
 unsafe impl Sync for GLContextInner {}
@@ -147,9 +148,9 @@ impl EAGLContext {
                 Some(current) => {
                     let is_equal: bool = unsafe { msg_send![&current, isEqual: &*self.0] };
                     if is_equal {
-                        unsafe {
-                            gl_bindings::Flush();
-                        }
+                        // unsafe {
+                        //     gl_bindings::Flush();
+                        // }
                         let nil: *mut NSObject = std::ptr::null_mut();
                         return msg_send![cls, setCurrentContext: nil];
                     }
@@ -326,13 +327,13 @@ impl GLKView {
 
     pub fn set_alpha(&self, alpha: bool) {
         let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
-        let _: () = unsafe { msg_send![&layer, setOpaque: alpha] };
+        let _: () = unsafe { msg_send![&layer, setOpaque: !alpha] };
     }
 
     pub fn get_alpha(&self) -> bool {
         let layer: Id<NSObject> = unsafe { msg_send_id![&self.0, layer] };
         let ret: bool = unsafe { msg_send![&layer, isOpaque] };
-        ret
+        !ret
     }
 
     pub fn set_drawable_depth_format(&self, format: GLKViewDrawableDepthFormat) {
@@ -472,6 +473,7 @@ impl GLContext {
             context,
             sharegroup: share_group,
             view: Some(view),
+            transfer_surface_info: Default::default()
         };
 
         Some(GLContext {
@@ -608,5 +610,15 @@ impl GLContext {
             .as_ref()
             .map(|v| v.drawable_height().try_into().unwrap_or_default())
             .unwrap()
+    }
+
+    pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
+        RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
+    }
+
+    pub fn get_transfer_surface_info_mut(
+        &self,
+    ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
+        RwLockWriteGuard::map(self.inner.write(), |v| &mut v.transfer_surface_info)
     }
 }

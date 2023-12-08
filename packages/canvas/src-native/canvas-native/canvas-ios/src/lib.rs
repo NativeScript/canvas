@@ -1,22 +1,22 @@
-use std::cell::RefCell;
+use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+use canvas_2d::utils::image::from_image_slice;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
+pub use canvas_c::*;
+use canvas_core::context_attributes::ContextAttributes;
+use canvas_core::gl::GLContext;
+use canvas_core::image_asset::ImageAsset;
+use gl_bindings::types::GLsizei;
+use parking_lot::RwLock;
 use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use parking_lot::RwLock;
 
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_2d::utils::image::from_image_slice;
-pub use canvas_c::*;
-use canvas_c::CanvasRenderingContext2D;
-use canvas_c::PaintStyle;
-use canvas_core::context_attributes::ContextAttributes;
-use canvas_core::gl::GLContext;
-use canvas_core::image_asset::ImageAsset;
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
     OffScreen,
-    OnScreen(NonNull<c_void>)
+    OnScreen(NonNull<c_void>),
 }
 
 #[allow(dead_code)]
@@ -27,6 +27,26 @@ pub(crate) struct iOSGLContext {
     ios_view: iOSView,
 }
 
+const VERTEX_SHADER: &str = "
+    precision highp float;
+    attribute vec4 aPosition;
+    uniform mat4 uTextureMatrix;
+    varying vec2 TexCoord;
+    void main(){
+    vec2 clipSpace = (1.0 - 2.0 * aPosition.xy);
+    TexCoord = aPosition.xy;
+    gl_Position = vec4(clipSpace, 0.0, 1.0);
+    }
+    ";
+
+const FRAGMENT_SHADER: &str = "
+    precision highp float;
+    varying vec2 TexCoord;
+    uniform sampler2D uSampler;
+    void main(){
+    gl_FragColor = texture2D(uSampler, TexCoord);
+    }
+    ";
 #[no_mangle]
 pub extern "C" fn canvas_native_init_ios_gl(
     view: i64,
@@ -47,6 +67,8 @@ pub extern "C" fn canvas_native_init_ios_gl(
         return 0;
     }
 
+    env_logger::init();
+
     let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
 
     if let Some(ios_view) = NonNull::new(view as *mut c_void) {
@@ -64,11 +86,11 @@ pub extern "C" fn canvas_native_init_ios_gl(
             is_canvas,
         );
 
-        if let Some(gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
+        if let Some(mut gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
             return Box::into_raw(Box::new(iOSGLContext {
                 ios_view: iOSView::OnScreen(ios_view),
                 gl_context,
-                context_attributes: attrs,
+                context_attributes: attrs
             })) as i64;
         }
     }
@@ -121,7 +143,7 @@ pub extern "C" fn canvas_native_init_ios_gl_with_shared_gl(
         let shared_context = shared_context as *mut iOSGLContext;
         let shared_context = unsafe { &*shared_context };
 
-        if let Some(gl_context) = GLContext::create_shared_window_context(
+        if let Some(mut gl_context) = GLContext::create_shared_window_context(
             &mut attrs,
             ios_view,
             &shared_context.gl_context,
@@ -136,10 +158,6 @@ pub extern "C" fn canvas_native_init_ios_gl_with_shared_gl(
 
     0
 }
-
-
-
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_init_offscreen_ios_gl(
@@ -178,7 +196,7 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl(
         is_canvas,
     );
 
-    if let Some(gl_context) = GLContext::create_offscreen_context(&mut attrs, width, height) {
+    if let Some(mut gl_context) = GLContext::create_offscreen_context(&mut attrs, width, height) {
         return Box::into_raw(Box::new(iOSGLContext {
             ios_view: iOSView::OffScreen,
             gl_context,
@@ -234,7 +252,7 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
     let shared_context = shared_context as *mut iOSGLContext;
     let shared_context = unsafe { &*shared_context };
 
-    if let Some(gl_context) = GLContext::create_shared_offscreen_context(
+    if let Some(mut gl_context) = GLContext::create_shared_offscreen_context(
         &mut attrs,
         width,
         height,
@@ -249,7 +267,6 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
 
     0
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_flush_gl(context: i64) -> bool {
@@ -313,7 +330,7 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let ctx_2d = CanvasRenderingContext2D::new(
+    let mut ctx_2d = CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -328,6 +345,11 @@ pub extern "C" fn canvas_native_create_2d_context(
         context.gl_context.clone(),
         alpha,
     );
+
+    {
+        let mut ctx = ctx_2d.get_context_mut();
+        ctx.clear_canvas();
+    }
 
     Box::into_raw(Box::new(ctx_2d)) as i64
 }
@@ -399,6 +421,17 @@ pub extern "C" fn canvas_native_context_2d_test(context: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_gl_make_current(gl_context: i64) {
+    if gl_context == 0 {
+        return;
+    }
+    let gl_context = gl_context as *mut iOSGLContext;
+    let gl_context = unsafe { &*gl_context };
+    gl_context.gl_context.make_current();
+}
+
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_2d_test_to_data_url(context: i64) -> *mut c_char {
     if context == 0 {
         return std::ptr::null_mut();
@@ -439,7 +472,6 @@ pub extern "C" fn canvas_native_imageasset_load_from_bytes(
     let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     asset.load_from_bytes(bytes)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_raw(

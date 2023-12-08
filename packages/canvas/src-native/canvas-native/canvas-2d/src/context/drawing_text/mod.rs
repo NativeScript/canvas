@@ -69,7 +69,7 @@ impl Context {
         self.draw_text(text.as_str(), x, y, width, None, &paint);
     }
 
-    fn apply_shadow_offset_matrix(canvas: &mut Canvas, shadow_offset_x: f32, shadow_offset_y: f32) {
+    fn apply_shadow_offset_matrix(canvas: &Canvas, shadow_offset_x: f32, shadow_offset_y: f32) {
         let current_transform = canvas.local_to_device_as_3x3();
         if let Some(invert) = canvas.local_to_device_as_3x3().invert() {
             canvas.concat(&invert);
@@ -102,10 +102,10 @@ impl Context {
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());
         text_style.set_font_size(self.state.font_style.size);
-        text_style.set_word_spacing(0.);
+        text_style.set_word_spacing(self.state.word_spacing);
+        text_style.set_letter_spacing(self.state.letter_spacing);
         text_style.set_height(1.);
         text_style.set_font_style(font_style);
-
         text_style.set_foreground_paint(paint);
         text_style.set_text_baseline(skia_safe::textlayout::TextBaseline::Alphabetic);
 
@@ -122,9 +122,11 @@ impl Context {
 
         let mut builder =
             skia_safe::textlayout::ParagraphBuilder::new(&paragraph_style, font_collection);
+        builder.peek_style();
         builder.add_text(text);
 
         let mut paragraph = builder.build();
+
         paragraph.layout(100000.);
 
         let metrics_vec = paragraph.get_line_metrics();

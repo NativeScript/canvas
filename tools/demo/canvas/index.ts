@@ -53,12 +53,13 @@ import {
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54, issue93 } from './issues';
+import { subTest } from './webgl/test';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -566,7 +567,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);
 		//multiStrokeStyle(this.canvas);
-		textAlign(this.canvas)
+		//textAlign(this.canvas)
 		//arc(this.canvas);
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
@@ -629,6 +630,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
+		//this.letterSpacing(this.canvas);
+		this.wordSpacing(this.canvas);
+		//imageProcessing(this.canvas);
+		//subTest(this.canvas);
 		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);
 		//textures(this.canvas);
@@ -663,6 +668,38 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// 	canvas.getBoundingClientRect();
 		// }
 		// console.timeEnd('getBoundingClientRect');
+	}
+
+	letterSpacing(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.font = '30px serif';
+
+		// Default letter spacing
+		ctx.fillText(`Hello world (default: ${ctx.letterSpacing})`, 10, 40);
+
+		// Custom letter spacing: 10px
+		ctx.letterSpacing = '10px';
+		ctx.fillText(`Hello world (${ctx.letterSpacing})`, 10, 90);
+
+		// Custom letter spacing: 20px
+		ctx.letterSpacing = '20px';
+		ctx.fillText(`Hello world (${ctx.letterSpacing})`, 10, 140);
+	}
+
+	wordSpacing(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.font = '30px serif';
+
+		// Default word spacing
+		ctx.fillText(`Hello world (default: ${ctx.wordSpacing})`, 10, 40);
+
+		// Custom word spacing: 10px
+		ctx.wordSpacing = '10px';
+		ctx.fillText(`Hello world (${ctx.wordSpacing})`, 10, 90);
+
+		// Custom word spacing: 30px
+		ctx.wordSpacing = '30px';
+		ctx.fillText(`Hello world (${ctx.wordSpacing})`, 10, 140);
 	}
 
 	drawRandomFullscreenImage(canvas) {

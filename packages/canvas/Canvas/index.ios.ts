@@ -43,7 +43,7 @@ export class Canvas extends CanvasBase {
 
 	private _contextType = ContextType.None;
 	private _is2D = false;
-
+	private _isBatch = false;
 	_didLayout = false;
 
 	constructor() {
@@ -160,9 +160,11 @@ export class Canvas extends CanvasBase {
 
 	static createCustomView() {
 		const canvas = new Canvas();
-		canvas.width = 300;
-		canvas.height = 150;
+		canvas._isBatch = true;
 		canvas._isCustom = true;
+		canvas.style.width = 300;
+		canvas.style.height = 150;
+		canvas._isBatch = false;
 		canvas._layoutNative();
 		return canvas;
 	}
@@ -243,6 +245,10 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative(force: boolean = false) {
+		if (this._isBatch) {
+			return;
+		}
+
 		if (!this._isCustom && !force) {
 			return;
 		}
@@ -257,6 +263,7 @@ export class Canvas extends CanvasBase {
 			}
 
 			const size = this._realSize;
+
 
 			const width = Utils.layout.toDevicePixels(size.width || 1);
 			const height = Utils.layout.toDevicePixels(size.height || 1);
@@ -285,6 +292,7 @@ export class Canvas extends CanvasBase {
 					this._layoutNative();
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
+
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
@@ -295,6 +303,7 @@ export class Canvas extends CanvasBase {
 					this._contextType = ContextType.Canvas;
 					// @ts-ignore
 					this._2dContext._type = '2d';
+					this._is2D = true;
 				}
 
 				return this._2dContext;

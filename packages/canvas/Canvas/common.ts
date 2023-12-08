@@ -532,6 +532,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						isPrimary: pointerId === 0,
+						button: -1
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -549,6 +550,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
+						button: -1
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {
@@ -828,6 +830,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
+						button: -1
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -845,6 +848,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
+						button: -1
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {

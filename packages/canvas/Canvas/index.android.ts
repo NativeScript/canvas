@@ -40,7 +40,7 @@ export class Canvas extends CanvasBase {
 
 	private _contextType = ContextType.None;
 	private _is2D = false;
-
+	private _isBatch = false;
 	constructor() {
 		super();
 		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
@@ -149,9 +149,11 @@ export class Canvas extends CanvasBase {
 
 	static createCustomView() {
 		const canvas = new Canvas();
+		canvas._isBatch = true;
 		canvas.width = 300;
 		canvas.height = 150;
 		canvas._isCustom = true;
+		canvas._isBatch = false;
 		canvas._layoutNative();
 		return canvas;
 	}
@@ -270,6 +272,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
+		if (this._isBatch) {
+			return;
+		}
 		if (!this._isCustom) {
 			return;
 		}

@@ -76,6 +76,11 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter);
     tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "letterSpacing"), GetLetterSpacing,
+                      SetLetterSpacing);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing);
+
+
     tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha);
     tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
                       SetImageSmoothingEnabled);
@@ -380,6 +385,61 @@ void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
     auto val = ConvertFromV8String(isolate, value);
     canvas_native_context_set_font(ptr->GetContext(), val.c_str());
 }
+
+
+void CanvasRenderingContext2DImpl::GetLetterSpacing(v8::Local<v8::String> property,
+                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto font = canvas_native_context_get_letter_spacing(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, font));
+
+    canvas_native_string_destroy((char *) font);
+}
+
+void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::String> property,
+                                                    v8::Local<v8::Value> value,
+                                                    const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_letter_spacing(ptr->GetContext(), val.c_str());
+}
+
+
+void CanvasRenderingContext2DImpl::GetWordSpacing(v8::Local<v8::String> property,
+                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto font = canvas_native_context_get_word_spacing(ptr->GetContext());
+    info.GetReturnValue().Set(ConvertToV8String(isolate, font));
+
+    canvas_native_string_destroy((char *) font);
+}
+
+void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::String> property,
+                                                  v8::Local<v8::Value> value,
+                                                  const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_word_spacing(ptr->GetContext(), val.c_str());
+}
+
 
 void CanvasRenderingContext2DImpl::GetGlobalAlpha(v8::Local<v8::String> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
@@ -1706,12 +1766,12 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
         canvas_native_context_fill_text_width(
                 ptr->GetContext(), text.c_str(), x,
                 y, width);
-    }else {
+    } else {
         canvas_native_context_fill_text(
                 ptr->GetContext(), text.c_str(), x,
                 y);
     }
-    
+
     ptr->UpdateInvalidateState();
 
 }
@@ -2279,14 +2339,14 @@ CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Valu
             float maxWidth = static_cast<float>(args[3]->NumberValue(context).ToChecked());
             canvas_native_context_stroke_text_width(
                     ptr->GetContext(), text.c_str(),
-                    x, y,maxWidth);
-        }else {
+                    x, y, maxWidth);
+        } else {
             canvas_native_context_stroke_text(
                     ptr->GetContext(), text.c_str(),
                     x, y);
         }
 
-        
+
         ptr->UpdateInvalidateState();
     }
 }

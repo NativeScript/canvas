@@ -1,6 +1,8 @@
+use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
 use std::io::Read;
 use std::num::NonZeroU32;
+use std::string::ToString;
 use std::sync::Arc;
 use std::time::{Instant, SystemTime};
 
@@ -25,12 +27,517 @@ use canvas_2d::context::compositing::composite_operation_type::CompositeOperatio
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::text_styles::text_align::TextAlign;
+use canvas_2d::context::{Context, ContextWrapper};
+use canvas_2d::to_data_url;
 use canvas_core::context_attributes::ContextAttributes;
-use canvas_core::gl::GLContext;
+use canvas_core::gl::{get_shader_info_log, GLContext};
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState, WebGLVersion};
+use canvas_webgl::webgl::{
+    canvas_native_webgl_attach_shader, canvas_native_webgl_bind_buffer,
+    canvas_native_webgl_bind_texture, canvas_native_webgl_buffer_data,
+    canvas_native_webgl_buffer_data_f32, canvas_native_webgl_clear,
+    canvas_native_webgl_clear_color, canvas_native_webgl_compile_shader,
+    canvas_native_webgl_create_buffer, canvas_native_webgl_create_program,
+    canvas_native_webgl_create_shader, canvas_native_webgl_create_texture,
+    canvas_native_webgl_delete_program, canvas_native_webgl_delete_shader,
+    canvas_native_webgl_draw_arrays, canvas_native_webgl_enable_vertex_attrib_array,
+    canvas_native_webgl_get_attrib_location, canvas_native_webgl_get_error,
+    canvas_native_webgl_get_program_info_log, canvas_native_webgl_get_program_parameter,
+    canvas_native_webgl_get_shader_info_log, canvas_native_webgl_get_shader_parameter,
+    canvas_native_webgl_get_tex_parameter, canvas_native_webgl_get_uniform_location,
+    canvas_native_webgl_link_program, canvas_native_webgl_pixel_storei,
+    canvas_native_webgl_shader_source, canvas_native_webgl_tex_image2d,
+    canvas_native_webgl_tex_image2d_asset, canvas_native_webgl_tex_parameteri,
+    canvas_native_webgl_uniform2f, canvas_native_webgl_uniform4fv, canvas_native_webgl_use_program,
+    canvas_native_webgl_vertex_attrib_pointer, canvas_native_webgl_viewport,
+};
+use canvas_webgl::webgl2::{canvas_native_webgl2_bind_vertex_array, canvas_native_webgl2_create_vertex_array};
+
+// Vertex and fragment shaders
+
+// Function to compile a shader
+fn compile_shader(state: &mut WebGLState, source: &str, shader_type: u32) -> u32 {
+    let shader = canvas_native_webgl_create_shader(shader_type, state);
+    canvas_native_webgl_shader_source(shader, source, state);
+    canvas_native_webgl_compile_shader(shader, state);
+
+    match canvas_native_webgl_get_shader_parameter(shader, 0x8B81, state) {
+        WebGLResult::Boolean(status) => {
+            if !status {
+                println!(
+                    "Shader compilation failed: {:?}",
+                    canvas_native_webgl_get_shader_info_log(shader, state)
+                );
+                canvas_native_webgl_delete_shader(shader, state);
+                return 0;
+            }
+        }
+        _ => {}
+    }
+
+    return shader;
+}
+
+// Function to link a program
+fn link_program(state: &mut WebGLState, vertex_shader: u32, fragment_shader: u32) -> u32 {
+    let program = canvas_native_webgl_create_program(state);
+    canvas_native_webgl_attach_shader(program, vertex_shader, state);
+    canvas_native_webgl_attach_shader(program, fragment_shader, state);
+    canvas_native_webgl_link_program(program, state);
+
+    match canvas_native_webgl_get_program_parameter(program, 0x8B82, state) {
+        WebGLResult::Boolean(result) => {
+            if !result {
+                println!(
+                    "Program linking failed: {:?}",
+                    canvas_native_webgl_get_program_info_log(program, state)
+                );
+                return 0;
+            }
+        }
+        _ => {}
+    }
+
+    return program;
+}
+
+// Function to set the rectangle vertices
+fn set_rectangle(state: &mut WebGLState, x: f32, y: f32, width: f32, height: f32) {
+    let vertices = [
+        x,
+        y,
+        x + width,
+        y,
+        x,
+        y + height,
+        x,
+        y + height,
+        x + width,
+        y,
+        x + width,
+        y + height,
+    ];
+    canvas_native_webgl_buffer_data_f32(0x8892, &vertices, 0x88E4, state);
+}
+
+fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextWrapper) {
+    // Compile shaders
+
+    let fs = include_str!("./fs.txt");
+    let vs = include_str!("./vs.txt");
+
+    let fragment_shader = compile_shader(state, fs, 0x8B30);
+
+    let vertex_shader = compile_shader(state, vs, 0x8B31);
+
+    // Link shaders into a program
+    let program = link_program(state, vertex_shader, fragment_shader);
+
+    // Get attribute and uniform locations
+    let position_attribute_location =
+        canvas_native_webgl_get_attrib_location(program, "a_position", state);
+    let color_uniform_location =
+        canvas_native_webgl_get_uniform_location(program, "u_color", state);
+
+    // Create a buffer and set the position data
+    let position_buffer = canvas_native_webgl_create_buffer(state);
+    canvas_native_webgl_bind_buffer(0x8892, position_buffer, state);
+
+    set_rectangle(
+        state,
+        0.,
+        0.,
+        state.get_drawing_buffer_width() as f32,
+        state.get_drawing_buffer_height() as f32,
+    );
+
+    canvas_native_webgl_clear_color(1.0, 1.0, 1.0, 1.0, state);
+    canvas_native_webgl_clear(0x00004000, state);
+
+    canvas_native_webgl_use_program(program, state);
+
+    canvas_native_webgl_bind_buffer(0x8892, position_buffer, state);
+
+    // Tell the attribute how to get data out of the position buffer
+    let size = 2; // 2 components per iteration
+    let ttype = 0x1406; // the data is 32bit floats
+    let normalize = false; // don't normalize the data
+    let stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+    let offset = 0; // start at the beginning of the buffer
+
+    canvas_native_webgl_vertex_attrib_pointer(
+        position_attribute_location as u32,
+        size,
+        ttype,
+        normalize,
+        stride,
+        offset,
+        state,
+    );
+
+    dbg!("webgl error {}", canvas_native_webgl_get_error(state));
+
+    canvas_native_webgl_enable_vertex_attrib_array(position_attribute_location as u32, state);
+
+    dbg!("webgl error {}", canvas_native_webgl_get_error(state));
+
+    canvas_native_webgl_uniform4fv(color_uniform_location, &[1.0, 1.0, 1.0, 1.0], state);
+
+    // Draw the rectangle
+    let primitive_type = 0x0004;
+    let offset_draw = 0;
+    let count = 6;
+
+    canvas_native_webgl_draw_arrays(primitive_type, offset_draw, count, state);
+
+    let w = gl_state.drawing_buffer_width();
+    let h = gl_state.drawing_buffer_height();
+
+    // state.remove_if_current();
+    gl_state.make_current();
+
+    let mut ctx = ctx_2d.get_context_mut();
+
+    ctx.set_font("30px Arial");
+
+    let fill_style = PaintStyle::new_color_str("white").unwrap();
+    ctx.set_fill_style(fill_style);
+    ctx.rect(0., 0., w as f32, h as f32);
+    ctx.fill(None);
+
+    let fill_style = PaintStyle::new_color_str("red").unwrap();
+    ctx.set_fill_style(fill_style);
+    ctx.fill_text("Hello, WebGL!", 50., 50., None);
+
+    // ctx.flush_and_sync_cpu();
+    //
+    // gl_state.swap_buffers();
+
+    let (_, texture_id) = ctx.snapshot_with_texture_id();
+
+    // let mut buf = ctx.read_pixels();
+    //  drop(ctx);
+
+    // dbg!(to_data_url(ctx_2d, "image/jpg", 100));
+
+    // gl_state.remove_if_current();
+    state.make_current();
+
+    gl_state.init_transfer_surface(texture_id);
+
+    gl_state.draw_tex_image_2d(
+        0x0DE1, 0, w as u32, h as u32, 0x1908, 0x1908, false, texture_id,
+    );
+
+    // canvas_native_webgl_tex_image2d(
+    //     0x0DE1,
+    //     0,
+    //     0x1908,
+    //     w,
+    //     h,
+    //     0,
+    //     0x1908,
+    //     0x1401,
+    //     buf.as_slice(),
+    //     state,
+    // );
+
+    canvas_native_webgl_draw_arrays(primitive_type, offset_draw, count, state);
+}
+
+fn leaves(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextWrapper) {
+    let drawingBufferWidth = state.get_drawing_buffer_width();
+    let drawingBufferHeight = state.get_drawing_buffer_height();
+
+    let vertexShader2d = "
+    #version 330
+in vec2 a_texCoord;
+ in vec2 a_position;
+
+
+uniform vec2 u_resolution;
+
+out vec2 v_texCoord;
+
+void main() {
+    // convert the rectangle from pixels to 0.0 to 1.0
+    vec2 zeroToOne = a_position / u_resolution;
+
+    // convert from 0->1 to 0->2
+    vec2 zeroToTwo = zeroToOne * 2.0;
+
+    // convert from 0->2 to -1->+1 (clipspace)
+    vec2 clipSpace = zeroToTwo - 1.0;
+
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+
+    // pass the texCoord to the fragment shader
+    // The GPU will interpolate this value between points.
+    v_texCoord = a_texCoord;
+}";
+
+    let fragmentShader2d = "
+        #version 330
+        precision mediump float;
+
+// our texture
+uniform sampler2D u_image;
+
+// the texCoords passed in from the vertex shader.
+in vec2 v_texCoord;
+
+out vec4 FragColor;
+
+void main() {
+    FragColor = texture(u_image, v_texCoord);
+}";
+
+    fn set_rectangle(state: &mut WebGLState, x: f32, y: f32, width: f32, height: f32) {
+        let x1 = x;
+        let x2 = x + width;
+        let y1 = y;
+        let y2 = y + height;
+        canvas_native_webgl_buffer_data_f32(
+            gl_bindings::ARRAY_BUFFER,
+            &[x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2],
+            gl_bindings::STATIC_DRAW,
+            state,
+        );
+    }
+
+    // function main() {
+    //     const asset = new global.ImageAsset();
+    //     asset.fromUrl("https://webglfundamentals.org/webgl/resources/leaves.jpg")
+    //         .then(image =>{
+    //             render(asset);
+    //         });
+    // }
+
+    // setup GLSL program
+    let program = create_program_from_scripts(
+        state,
+        [
+            (vertexShader2d, gl_bindings::VERTEX_SHADER),
+            (fragmentShader2d, gl_bindings::FRAGMENT_SHADER),
+        ],
+    )
+    .unwrap();
+
+    // look up where the vertex data needs to go.
+    let position_location = canvas_native_webgl_get_attrib_location(program, "a_position", state);
+    let texcoord_location = canvas_native_webgl_get_attrib_location(program, "a_texCoord", state);
+
+    // Create a buffer to put three 2d clip space points in
+    let positionBuffer = canvas_native_webgl_create_buffer(state);
+
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+    canvas_native_webgl_bind_buffer(gl_bindings::ARRAY_BUFFER, positionBuffer, state);
+
+    let width;
+    let height;
+
+    {
+        let ctx = ctx_2d.get_context();
+        width = ctx.device().width;
+        height = ctx.device().height;
+    }
+
+    // Set a rectangle the same size as the image.
+    set_rectangle(state, 0., 0., width, height);
+
+    // provide texture coordinates for the rectangle.
+    let texcoordBuffer = canvas_native_webgl_create_buffer(state);
+    canvas_native_webgl_bind_buffer(gl_bindings::ARRAY_BUFFER, texcoordBuffer, state);
+    canvas_native_webgl_buffer_data_f32(
+        gl_bindings::ARRAY_BUFFER,
+        &[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+        gl_bindings::STATIC_DRAW,
+        state,
+    );
+
+    // Create a texture.
+    let texture = canvas_native_webgl_create_texture(state);
+    canvas_native_webgl_bind_texture(gl_bindings::TEXTURE_2D, texture, state);
+
+    canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_WRAP_S,
+        gl_bindings::CLAMP_TO_EDGE as i32,
+        state,
+    );
+    canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_WRAP_T,
+        gl_bindings::CLAMP_TO_EDGE as i32,
+        state,
+    );
+
+    canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_MIN_FILTER,
+        gl_bindings::NEAREST as i32,
+        state,
+    );
+    canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_MAG_FILTER,
+        gl_bindings::NEAREST as i32,
+        state,
+    );
+
+     gl_state.make_current();
+
+    let mut ctx = ctx_2d.get_context_mut();
+
+    ctx.set_font("30px Arial");
+
+    let fill_style = PaintStyle::new_color_str("white").unwrap();
+    ctx.set_fill_style(fill_style);
+    ctx.rect(0., 0., width, height);
+    ctx.fill(None);
+
+    let fill_style = PaintStyle::new_color_str("red").unwrap();
+    ctx.set_fill_style(fill_style);
+    ctx.fill_text("Hello, WebGL!", 50., 50., None);
+
+  //  let d = ctx.read_pixels();
+
+    let (_, texture_id) = ctx.snapshot_with_texture_id();
+
+    state.make_current();
+
+   // gl_state.init_transfer_surface(texture_id);
+
+    gl_state.draw_tex_image_2d(
+        gl_bindings::TEXTURE_2D,
+        0,
+        width as u32,
+        height as u32,
+        gl_bindings::RGBA as i32,
+        gl_bindings::RGBA as i32,
+        false,
+        texture_id,
+    );
+
+
+    /*
+    let mut asset = ImageAsset::new();
+    let bytes = include_bytes!("./svh.jpeg");
+    asset.load_from_bytes(bytes);
+    */
+
+    // Upload the image into the texture.
+
+    // canvas_native_webgl_tex_image2d_asset(
+    //     gl_bindings::TEXTURE_2D as i32,
+    //     0,
+    //     gl_bindings::RGBA as i32,
+    //     gl_bindings::RGBA as i32,
+    //     gl_bindings::UNSIGNED_BYTE as i32,
+    //     &asset,
+    //     state,
+    // );
+
+    // canvas_native_webgl_tex_image2d(
+    //     gl_bindings::TEXTURE_2D as i32,
+    //     0,
+    //     gl_bindings::RGBA as i32,
+    //     width as i32, height as i32,
+    //     0,
+    //     gl_bindings::RGBA as i32,
+    //     gl_bindings::UNSIGNED_BYTE as i32,
+    //     d.as_slice(),
+    //     state,
+    // );
+
+
+    // lookup uniforms
+    let resolutionLocation =
+        canvas_native_webgl_get_uniform_location(program, "u_resolution", state);
+
+    // webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+
+    // Tell WebGL how to convert from clip space to pixels
+    canvas_native_webgl_viewport(0, 0, drawingBufferWidth, drawingBufferHeight, state);
+
+    canvas_native_webgl_clear_color(0., 0., 0., 0., state);
+    // Clear the canvas
+    canvas_native_webgl_clear(gl_bindings::COLOR_BUFFER_BIT, state);
+
+    // Tell it to use our program (pair of shaders)
+    canvas_native_webgl_use_program(program, state);
+
+    // opengl needs this one newer versions
+    // https://stackoverflow.com/a/24644675
+    let vaoId = canvas_native_webgl2_create_vertex_array(state);
+    canvas_native_webgl2_bind_vertex_array(vaoId, state);
+
+
+    // Turn on the position attribute
+    canvas_native_webgl_enable_vertex_attrib_array(position_location as u32, state);
+
+    // Bind the position buffer.
+    canvas_native_webgl_bind_buffer(gl_bindings::ARRAY_BUFFER, positionBuffer, state);
+
+    // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+    let size = 2; // 2 components per iteration
+    let ttype = gl_bindings::FLOAT; // the data is 32bit floats
+    let normalize = false; // don't normalize the data
+    let stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+    let offset = 0; // start at the beginning of the buffer
+
+    canvas_native_webgl_vertex_attrib_pointer(
+        position_location as u32,
+        size,
+        ttype,
+        normalize,
+        stride,
+        offset,
+        state,
+    );
+
+
+    // Turn on the teccord attribute
+    canvas_native_webgl_enable_vertex_attrib_array(texcoord_location as u32, state);
+
+    // Bind the position buffer.
+    canvas_native_webgl_bind_buffer(gl_bindings::ARRAY_BUFFER, texcoordBuffer, state);
+
+
+
+    // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+    let size = 2; // 2 components per iteration
+    let ttype = gl_bindings::FLOAT; // the data is 32bit floats
+    let normalize = false; // don't normalize the data
+    let stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+    let offset = 0; // start at the beginning of the buffer
+    canvas_native_webgl_vertex_attrib_pointer(
+        texcoord_location as u32,
+        size,
+        ttype,
+        normalize,
+        stride,
+        offset,
+        state,
+    );
+
+    // set the resolution
+    canvas_native_webgl_uniform2f(
+        resolutionLocation,
+        drawingBufferWidth as f32,
+        drawingBufferHeight as f32,
+        state,
+    );
+
+    // Draw the rectangle.
+    let primitive_type = gl_bindings::TRIANGLES;
+    let offset = 0;
+    let count = 6;
+
+    canvas_native_webgl_draw_arrays(primitive_type, offset, count, state);
+}
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -45,39 +552,50 @@ fn main() {
     let raw_window_handle = window.raw_window_handle();
 
     let mut attrs = ContextAttributes::default();
+    attrs.set_antialias(false);
 
     let size = window.inner_size();
 
-    let context = GLContext::create_window_context(
+    let ocontext = GLContext::create_offscreen_context_with_event_loop(
+        &mut attrs,
+        size.width as i32,
+        size.height as i32,
+        &event_loop,
+    );
+
+    let owebgl = ocontext.unwrap();
+
+    let context = GLContext::create_shared_window_context(
         &mut attrs,
         size.width as i32,
         size.height as i32,
         raw_window_handle,
+        &owebgl,
     );
 
     let webgl = context.unwrap();
 
     let mut gl_state = WebGLState::new_with_context(webgl, WebGLVersion::V2);
 
-    let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
-        WebGLResult::U32(value) => value as i32,
-        WebGLResult::I32(value) => value,
-        _ => 0,
-    };
+    // let value = match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state) {
+    //     WebGLResult::U32(value) => value as i32,
+    //     WebGLResult::I32(value) => value,
+    //     _ => 0,
+    // };
 
-    let mut done = false;
+    // let mut done = false;
 
-    let mut ctx_2d = ContextWrapper::new(Context::new_gl(
-        size.width as f32,
-        size.height as f32,
-        1.,
-        value,
-        0,
-        true,
-        value,
-        0.,
-        canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
-    ));
+    // let mut ctx_2d = ContextWrapper::new(Context::new_gl(
+    //     size.width as f32,
+    //     size.height as f32,
+    //     1.,
+    //     value,
+    //     0,
+    //     true,
+    //     value,
+    //     0.,
+    //     canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
+    // ));
 
     // {
     //     let mut ctx = ctx_2d.get_context_mut();
@@ -141,6 +659,34 @@ fn main() {
 
     //  triangle(&mut gl_state);
 
+    let mut done = false;
+
+    let mut gl_state_other = WebGLState::new_with_context(owebgl, WebGLVersion::V2);
+
+    gl_state_other.make_current();
+
+    let value =
+        match canvas_webgl::webgl::canvas_native_webgl_get_parameter(36006, &mut gl_state_other) {
+            WebGLResult::U32(value) => value as i32,
+            WebGLResult::I32(value) => value,
+            _ => 0,
+        };
+
+    let w = gl_state_other.drawing_buffer_width();
+    let h = gl_state_other.drawing_buffer_height();
+
+    let mut ctx_2d = ContextWrapper::new(Context::new_gl(
+        w as f32,
+        h as f32,
+        1.,
+        value,
+        0,
+        true,
+        value,
+        0.,
+        canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
+    ));
+
     event_loop.run(move |event, target, control_flow| {
         control_flow.set_wait();
         match event {
@@ -169,16 +715,21 @@ fn main() {
                 }
             }
             Event::RedrawEventsCleared => {
-                //  canvas_webgl::webgl::canvas_native_webgl_clear_color(
-                //     1., 0.2, 0.3, 1., &mut gl_state,
-                // );
-                //
-                //
-                // canvas_webgl::webgl::canvas_native_webgl_clear(
-                //     16384, &mut gl_state,
-                // );
+                if !done {
+                    window.request_redraw();
 
-                window.request_redraw();
+                    canvas_native_webgl_clear_color(1., 1., 1., 1., &mut gl_state);
+
+                    canvas_native_webgl_clear(16384, &mut gl_state);
+
+                    // test(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
+
+                    leaves(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
+
+                    done = true;
+
+                    gl_state.swap_buffers();
+                }
 
                 //  rainbow_octopus(&mut ctx_2d, &mut ro);
 
@@ -194,8 +745,9 @@ fn main() {
 
                 // colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
 
-                if let Some(color) = PaintStyle::new_color_str("red") {
+                /*
 
+                if let Some(color) = PaintStyle::new_color_str("red") {
                     {
                         let mut ctx = ctx_2d.get_context_mut();
                         //  colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
@@ -203,10 +755,9 @@ fn main() {
                         let black = PaintStyle::new_color_str("black").unwrap();
                         ctx.set_fill_style(bg);
                         let device = *ctx.device();
-                        ctx.rect(0.,0., device.width, device.height);
+                        ctx.rect(0., 0., device.width, device.height);
                         ctx.fill(None);
                         ctx.set_fill_style(black);
-
 
                         // Create a red line in position 150
                         ctx.set_stroke_style(color);
@@ -216,25 +767,25 @@ fn main() {
 
                         ctx.set_font("15px Arial");
 
-// Show the different textAlign values
+                        // Show the different textAlign values
                         ctx.set_text_align(TextAlign::START);
                         ctx.fill_text("textAlign = start", 150., 60., None);
                         ctx.set_text_align(TextAlign::END);
-                        ctx.fill_text("textAlign = end", 150., 80.,None);
+                        ctx.fill_text("textAlign = end", 150., 80., None);
                         ctx.set_text_align(TextAlign::LEFT);
-                        ctx.fill_text("textAlign = left", 150., 100.,None);
+                        ctx.fill_text("textAlign = left", 150., 100., None);
                         ctx.set_text_align(TextAlign::CENTER);
                         ctx.fill_text("textAlign = center", 150., 120., None);
                         ctx.set_text_align(TextAlign::RIGHT);
-                        ctx.fill_text("textAlign = right", 150., 140.,None);
-
+                        ctx.fill_text("textAlign = right", 150., 140., None);
 
                         ctx.flush();
                     }
 
-                  //  println!("{}", canvas_2d::to_data_url(&mut ctx_2d, "image/jpg", 100))
-
+                    //  println!("{}", canvas_2d::to_data_url(&mut ctx_2d, "image/jpg", 100))
                 }
+
+                */
                 //
                 // ctx_2d.fill_rect_xywh(0., 0., 300., 300.);
                 //  ctx_2d.get_context_mut().flush();
@@ -251,7 +802,7 @@ fn main() {
 
                 //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
 
-                gl_state.swap_buffers();
+                //  gl_state.swap_buffers();
             }
             Event::Resumed => {}
             _ => {}
@@ -1057,4 +1608,69 @@ fn solar(
     ctx.stroke(None);
 
     ctx.draw_image_asset_dx_dy_dw_dh(sun, 0., 0., 300., 300.);
+}
+
+fn create_program_from_scripts(
+    state: &mut WebGLState,
+    shader_sources: [(&str, u32); 2],
+) -> Option<u32> {
+    // setup GLSL programs
+
+    let mut shaders = vec![];
+
+    for (source, shader_type) in shader_sources {
+        unsafe {
+            let shader = canvas_native_webgl_create_shader(shader_type, state);
+
+            canvas_native_webgl_shader_source(shader, source, state);
+            canvas_native_webgl_compile_shader(shader, state);
+
+            let compiled = canvas_native_webgl_get_shader_parameter(
+                shader,
+                gl_bindings::COMPILE_STATUS,
+                state,
+            );
+
+            match compiled {
+                WebGLResult::Boolean(compiled) => {
+                    if !compiled {
+                        // Something went wrong during compilation; get the error
+                        let last_error = get_shader_info_log(shader);
+                        println!("*** Error compiling shader '{}': {:?}", shader, last_error);
+                        canvas_native_webgl_delete_shader(shader, state);
+                        return None;
+                    }
+
+                    shaders.push(shader);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let program = canvas_native_webgl_create_program(state);
+
+    for shader in shaders {
+        canvas_native_webgl_attach_shader(program, shader, state);
+    }
+
+    canvas_native_webgl_link_program(program, state);
+
+    // Check the link status
+    let linked =
+        canvas_native_webgl_get_program_parameter(program, gl_bindings::LINK_STATUS, state);
+
+    match linked {
+        WebGLResult::Boolean(linked) => {
+            if !linked {
+                let last_error = canvas_native_webgl_get_program_info_log(program, state);
+                println!("Error in program linking: {last_error}");
+                canvas_native_webgl_delete_program(program, state);
+                return None;
+            }
+        }
+        _ => {}
+    }
+
+    Some(program)
 }

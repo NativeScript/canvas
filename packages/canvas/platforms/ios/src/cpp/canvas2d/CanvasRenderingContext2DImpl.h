@@ -72,6 +72,21 @@ public:
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void> &info);
 
+
+    static void GetLetterSpacing(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetLetterSpacing(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void> &info);
+
+    static void GetWordSpacing(v8::Local<v8::String> property,
+                                 const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetWordSpacing(v8::Local<v8::String> property,
+                                 v8::Local<v8::Value> value,
+                                 const v8::PropertyCallbackInfo<void> &info);
+
     static void SetGlobalAlpha(v8::Local<v8::String> property,
                                v8::Local<v8::Value> value,
                                const v8::PropertyCallbackInfo<void> &info);

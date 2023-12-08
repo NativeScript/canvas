@@ -8,20 +8,23 @@
 import Foundation
 import OpenGLES
 import CoreVideo
+import UIKit
+
+
 @objcMembers
-@objc(TNSRender)
+@objc(NSCRender)
 public class NSCRender: NSObject {
-    private var mProgram = UInt32()
-    private var rbo = UInt32()
-    private var fbo = UInt32()
-    private var width: Int = -1
-    private var height: Int = -1
-    private var ab = UInt32()
-    private var pos = Int32(-1)
-    private var samplerPos = Int32()
-    private var vextexBuf: [Float32]
-    private static let SIZE_OF_FLOAT = 4
-    private static let VERTEX_SHADER = """
+    var mProgram = UInt32()
+    var rbo = UInt32()
+    var fbo = UInt32()
+    var width: Int = -1
+    var height: Int = -1
+    var ab = UInt32()
+    var pos = Int32(-1)
+    var samplerPos = Int32()
+    var vextexBuf: [Float32]
+    static let SIZE_OF_FLOAT = 4
+    static let VERTEX_SHADER = """
     precision highp float;
     attribute vec4 aPosition;
     uniform mat4 uTextureMatrix;
@@ -42,8 +45,11 @@ public class NSCRender: NSObject {
     }
     """
     
-    private var videoTexture: CVOpenGLESTexture? = nil
-    private var videoTextureCache: CVOpenGLESTextureCache? = nil
+    var surface: IOSurface? = nil
+    var videoTexture: CVOpenGLESTexture? = nil
+    var videoTextureCache: CVOpenGLESTextureCache? = nil
+    
+    var pixelBuf: Unmanaged<CVPixelBuffer>?
     public override init() {
         vextexBuf = [
             0, 0,
@@ -66,7 +72,185 @@ public class NSCRender: NSObject {
         pos = -1
     }
     
-    func drawFrame(buffer:CVPixelBuffer,width: Int,height: Int, internalFormat: Int32,
+    
+    static func getPixelFormat(_ cgImage: CGImage) -> CGBitmapInfo? {
+        return cgImage.bitmapInfo.intersection(.byteOrderMask)
+    }
+
+    
+
+    public func texImage2D(_ target: Int32 , _ level: Int32, _ internalFormat: Int32, _ format: Int32, _ type: Int32, _ source: NSCCanvas, _ dest: NSCCanvas,_ flipYWebGL: Bool){
+       canvas_native_gl_make_current(source.nativeGL)
+    
+        
+        // Check for the OES_mapbuffer extension
+        let extensions = String(cString: glGetString(GLenum(GL_EXTENSIONS)))
+        
+        if extensions.contains("GL_OES_mapbuffer") {
+            // OES_mapbuffer extension is supported, you can use glMapBufferOES
+            print("OES_mapbuffer is supported.")
+        } else {
+            // OES_mapbuffer extension is not supported
+            print("OES_mapbuffer is not supported.")
+        }
+        
+        
+        let sourceWidth = source.drawingBufferWidth
+        let sourceHeight = source.drawingBufferHeight
+        
+       
+        var start = CFAbsoluteTimeGetCurrent()
+        
+        var previous_framebuffer: GLint = 0
+    
+        
+        glGetIntegerv(
+            GLenum(GL_FRAMEBUFFER_BINDING),
+            &previous_framebuffer
+        )
+        
+        
+        var previous_texture: GLint = 0
+        
+        glGetIntegerv(
+            GLenum(GL_TEXTURE_BINDING_2D),
+            &previous_texture
+        )
+        
+        
+        var previous_pixel_pack_buffer: GLint = 0
+        
+        glGetIntegerv(
+            GLenum(GL_PIXEL_PACK_BUFFER_BINDING),
+            &previous_pixel_pack_buffer
+        )
+        
+        
+        
+        // Create a framebuffer
+        var framebuffer: GLuint = 0
+        glGenFramebuffers(1, &framebuffer)
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), framebuffer)
+
+        // Create a texture to render into
+        var texture: GLuint = 0
+        glGenTextures(1, &texture)
+        glBindTexture(GLenum(GL_TEXTURE_2D), texture)
+        glTexImage2D(GLenum(GL_TEXTURE_2D), 0, GL_RGBA, GLsizei(sourceWidth), GLsizei(sourceHeight), 0, GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), nil)
+        glFramebufferTexture2D(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), texture, 0)
+
+        // Check framebuffer status (optional)
+        if glCheckFramebufferStatus(GLenum(GL_FRAMEBUFFER)) != GLenum(GL_FRAMEBUFFER_COMPLETE) {
+            print("Framebuffer is not complete.")
+        }
+
+        // Unbind framebuffer
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(previous_framebuffer))
+
+        // Create PBOs
+        var pbos: [GLuint] = Array(repeating: 0, count: 2
+        )
+        glGenBuffers(GLsizei(pbos.count), &pbos)
+    
+
+        // Allocate storage for PBOs
+        let bufferSize: GLsizei = GLsizei(sourceWidth * sourceHeight * 4)
+        for pbo in pbos {
+            glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), pbo)
+            glBufferData(GLenum(GL_PIXEL_PACK_BUFFER), GLsizeiptr(bufferSize), nil, GLenum(GL_STREAM_READ))
+        }
+
+        // Bind the framebuffer
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), framebuffer)
+
+        // Use PBOs with glReadPixels for asynchronous pixel transfers
+        for pbo in pbos {
+            glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), pbo)
+            glReadPixels(0, 0, GLsizei(sourceWidth), GLsizei(sourceHeight), GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), nil)
+        }
+
+        // Unbind the framebuffer
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(previous_framebuffer))
+        
+        
+        var combinedData = UnsafeMutableRawPointer.allocate(byteCount: Int(bufferSize) * pbos.count, alignment: 1)
+        
+        // Map the PBOs for reading (asynchronously)
+        var count = 0
+        for pbo in pbos {
+            glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), pbo)
+          //  let mappedData = glMapBufferOES(GLenum(GL_PIXEL_PACK_BUFFER), GLenum(GL_MAP_READ_BIT_EXT))
+            let mappedData = glMapBufferRange(GLenum(GL_PIXEL_PACK_BUFFER), 0, GLsizeiptr(bufferSize), GLenum(GL_MAP_READ_BIT))
+            
+
+            if mappedData != nil {
+                if(count == 0){
+                    memcpy(combinedData, mappedData, Int(bufferSize))
+                }else {
+                    memcpy(combinedData.advanced(by: Int(bufferSize)), mappedData, Int(bufferSize))
+                }
+                glUnmapBuffer(GLenum(GL_PIXEL_PACK_BUFFER))
+            } else {
+                print("Failed to map buffer.")
+            }
+            
+            let error = glGetError()
+            if error != GLenum(GL_NO_ERROR) {
+                print("OpenGL error: \(error)")
+            }
+            
+            count += 1
+        }
+        
+       
+
+        glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), GLuint(previous_pixel_pack_buffer))
+        glBindBuffer(GLenum(GL_FRAMEBUFFER), GLuint(previous_framebuffer))
+        glBindBuffer(GLenum(GL_TEXTURE_2D), GLuint(previous_texture))
+
+
+        glDeleteFramebuffers(1, &framebuffer)
+        glDeleteTextures(1, &texture)
+        glDeleteBuffers(GLsizei(pbos.count), &pbos)
+        
+        print("glMapBufferOES", CFAbsoluteTimeGetCurrent() - start)
+        
+        start = CFAbsoluteTimeGetCurrent()
+        canvas_native_gl_make_current(dest.nativeGL)
+        
+        
+
+//        var unpack: GLint = 0
+//        var pack: GLint = 0
+//        glGetIntegerv(GLenum(GL_UNPACK_ALIGNMENT), &unpack)
+//        glGetIntegerv(GLenum(GL_PACK_ALIGNMENT), &pack)
+//
+//        print(unpack, pack)
+//        glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), 1)
+//        glPixelStorei(GLenum(GL_PACK_ALIGNMENT), 1)
+        
+    
+       
+    
+        
+        glTexImage2D(GLenum(target), level, internalFormat, GLsizei(sourceWidth) , GLsizei(sourceHeight), 0, GLenum(format), GLenum(type), combinedData)
+        
+        
+        combinedData.deallocate()
+        
+//        glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), unpack)
+//        glPixelStorei(GLenum(GL_PACK_ALIGNMENT), pack)
+        
+        print("glTexImage2D \(CFAbsoluteTimeGetCurrent() - start)")
+        
+        let error = glGetError()
+        if error != GLenum(GL_NO_ERROR) {
+            print("OpenGL error: \(error)")
+        }
+        
+    }
+    
+    func drawFrame(buffer:CVPixelBuffer, width: Int, height: Int, internalFormat: Int32,
                    format: Int32,
                    flipYWebGL: Bool) {
         
@@ -232,7 +416,6 @@ public class NSCRender: NSObject {
             glBindVertexArray(GLuint(previousVertexArray))
             return
         }
-        
         
         var textureID: GLuint = GLuint()
         textureID = CVOpenGLESTextureGetName(videoTexture!)

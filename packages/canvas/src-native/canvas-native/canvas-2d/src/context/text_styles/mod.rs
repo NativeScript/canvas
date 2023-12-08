@@ -45,4 +45,63 @@ impl Context {
     pub fn text_baseline(&self) -> TextBaseLine {
         self.state.text_baseline
     }
+
+    pub fn set_word_spacing(&mut self, value: &str) {
+        let size_regexp = crate::context::drawing_text::typography::FONT_REGEXP
+            .get_or_init(crate::context::drawing_text::typography::init_font_regexp);
+
+        if let Some(cap) = size_regexp.captures(value) {
+            let size_str = cap.get(7).or_else(|| cap.get(5)).unwrap().as_str();
+            let size = if size_str.ends_with('%') {
+                size_str
+                    .parse::<f32>()
+                    .map(|v| v / 100.0 * crate::context::drawing_text::typography::FONT_MEDIUM_PX)
+                    .ok()
+            } else {
+                size_str.parse::<f32>().ok()
+            };
+
+            if let Some(size) = size {
+                let size_px = crate::context::drawing_text::typography::parse_size_px(
+                    size,
+                    cap.get(8).map(|m| m.as_str()).unwrap_or("px"),
+                );
+                self.state.word_spacing_value = value.to_string();
+                self.state.word_spacing = size_px;
+            };
+        }
+    }
+
+    pub fn get_word_spacing(&self) -> &str {
+        return self.state.word_spacing_value.as_str();
+    }
+    pub fn set_letter_spacing(&mut self, value: &str) {
+        let size_regexp = crate::context::drawing_text::typography::FONT_REGEXP
+            .get_or_init(crate::context::drawing_text::typography::init_font_regexp);
+
+        if let Some(cap) = size_regexp.captures(value) {
+            let size_str = cap.get(7).or_else(|| cap.get(5)).unwrap().as_str();
+            let size = if size_str.ends_with('%') {
+                size_str
+                    .parse::<f32>()
+                    .map(|v| v / 100.0 * crate::context::drawing_text::typography::FONT_MEDIUM_PX)
+                    .ok()
+            } else {
+                size_str.parse::<f32>().ok()
+            };
+
+            if let Some(size) = size {
+                let size_px = crate::context::drawing_text::typography::parse_size_px(
+                    size,
+                    cap.get(8).map(|m| m.as_str()).unwrap_or("px"),
+                );
+                self.state.letter_spacing_value = value.to_string();
+                self.state.letter_spacing = size_px;
+            };
+        }
+    }
+
+    pub fn get_letter_spacing(&self) -> &str {
+        return self.state.letter_spacing_value.as_str();
+    }
 }

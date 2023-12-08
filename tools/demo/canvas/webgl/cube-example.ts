@@ -349,11 +349,14 @@ function loadTexture(gl: WebGLRenderingContext) {
 	// 	}
 	// }
 
-
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d');
+	
 	asset.fromFile('~/assets/file-assets/webgl/svh.jpeg').then((done) => {
 		if (done) {
+			ctx.drawImage(asset, 0, 0, asset.width,asset.height);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, asset);
+			// gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, canvas);
 
 			// WebGL1 has different requirements for power of 2 images
 			// vs non power of 2 images so check if the image is a

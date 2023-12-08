@@ -6,8 +6,6 @@ pub use canvas_c::*;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
-use gl_bindings::types::GLsizei;
-use parking_lot::RwLock;
 use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;

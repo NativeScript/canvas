@@ -97,6 +97,29 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		});
 	}
 
+	textBaseLine2(canvas) {
+		const ctx = canvas.getContext('2d');
+
+		const baselines = ['top', 'hanging', 'middle', 'alphabetic', 'ideographic', 'bottom'];
+		ctx.font = '20px serif';
+		ctx.strokeStyle = 'red';
+
+		ctx.beginPath();
+		ctx.moveTo(0, 100);
+		ctx.lineTo(840, 100);
+		ctx.moveTo(0, 55);
+		ctx.stroke();
+
+		baselines.forEach((baseline, index) => {
+			ctx.save();
+			ctx.textBaseline = baseline;
+			let x = index * 120 + 10;
+			ctx.fillText('Abcdefghijk', x, 100);
+			ctx.restore();
+			ctx.fillText(baseline, x + 5, 50);
+		});
+	}
+
 	svgViewLoaded(args) {
 		const view = args.object;
 		console.log('svg ready', view.id);
@@ -682,7 +705,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// 	canvas.getBoundingClientRect();
 		// }
 		// console.timeEnd('getBoundingClientRect');
-		this.textBaseLine(this.canvas);
+		// this.textBaseLine(this.canvas);
+		this.textBaseLine2(this.canvas);
 	}
 
 	letterSpacing(canvas) {

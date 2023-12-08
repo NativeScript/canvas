@@ -76,12 +76,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		this.textBaseLine();
-		// this.draw();
+		this.draw();
 	}
 
-	textBaseLine() {
-		const ctx = this.canvas.getContext('2d');
+	textBaseLine(canvas) {
+		const ctx = canvas.getContext('2d');
 
 		const baselines = ['top', 'hanging', 'middle', 'alphabetic', 'ideographic', 'bottom'];
 		ctx.font = '24px serif';
@@ -649,7 +648,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
-		this.wordSpacing(this.canvas);
+		//this.wordSpacing(this.canvas);
 		//imageProcessing(this.canvas);
 		//subTest(this.canvas);
 		//imageFilter(this.canvas);
@@ -677,14 +676,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.decoder()
 		//this.context2DTest(this.canvas);
 		//issue93(this.canvas);
-
 		// const canvas = this.canvas;
-
 		// console.time('getBoundingClientRect');
 		// for(let i = 0; i < 100000;i++){
 		// 	canvas.getBoundingClientRect();
 		// }
 		// console.timeEnd('getBoundingClientRect');
+		this.textBaseLine(this.canvas);
 	}
 
 	letterSpacing(canvas) {

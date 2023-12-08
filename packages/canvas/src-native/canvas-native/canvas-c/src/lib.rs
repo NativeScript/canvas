@@ -1,14 +1,16 @@
 #![allow(non_snake_case)]
 
-use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
+use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
+use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
+
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -18,14 +20,13 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
 };
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
-use log::log;
+use canvas_2d::context::text_styles::text_baseline::TextBaseLine;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
@@ -633,7 +634,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         width as i32,
         height as i32,
     )
-    .unwrap();
+        .unwrap();
 
     gl_context.make_current();
 
@@ -1072,12 +1073,12 @@ pub extern "C" fn canvas_native_context_get_text_baseline(
 ) -> *const c_char {
     let context = unsafe { &*context };
     let ret = match context.get_context().text_baseline() {
-        TextBaseline::ALPHABETIC => "alphabetic",
-        TextBaseline::BOTTOM => "bottom",
-        TextBaseline::HANGING => "hanging",
-        TextBaseline::IDEOGRAPHIC => "ideographic",
-        TextBaseline::MIDDLE => "middle",
-        TextBaseline::TOP => "top",
+        TextBaseLine::ALPHABETIC => "alphabetic",
+        TextBaseLine::BOTTOM => "bottom",
+        TextBaseLine::HANGING => "hanging",
+        TextBaseLine::IDEOGRAPHIC => "ideographic",
+        TextBaseLine::MIDDLE => "middle",
+        TextBaseLine::TOP => "top",
     };
     CString::new(ret).unwrap().into_raw()
 }
@@ -1095,14 +1096,14 @@ pub extern "C" fn canvas_native_context_set_text_baseline(
     match baseline.to_string_lossy().as_ref() {
         "alphabetic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::ALPHABETIC),
-        "bottom" => context.get_context_mut().set_text_baseline(TextBaseline::BOTTOM),
-        "hanging" => context.get_context_mut().set_text_baseline(TextBaseline::HANGING),
+            .set_text_baseline(TextBaseLine::ALPHABETIC),
+        "bottom" => context.get_context_mut().set_text_baseline(TextBaseLine::BOTTOM),
+        "hanging" => context.get_context_mut().set_text_baseline(TextBaseLine::HANGING),
         "ideographic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::IDEOGRAPHIC),
-        "middle" => context.get_context_mut().set_text_baseline(TextBaseline::MIDDLE),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseline::TOP),
+            .set_text_baseline(TextBaseLine::IDEOGRAPHIC),
+        "middle" => context.get_context_mut().set_text_baseline(TextBaseLine::MIDDLE),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseLine::TOP),
         _ => {}
     }
 }
@@ -3711,8 +3712,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-    where
-        R: Read + std::io::Seek + std::io::BufRead,
+        where
+            R: Read + std::io::Seek + std::io::BufRead,
     {
         self.0.load_from_reader(reader)
     }
@@ -4267,6 +4268,7 @@ pub extern "C" fn canvas_native_text_decoder_decode_c_string(
 
     decoder.0.decode_c_string(data).into_raw()
 }
+
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_get_encoding(
     decoder: *const TextDecoder,
@@ -4566,8 +4568,8 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
         format.as_ref(),
         quality,
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[derive(Debug)]
@@ -4806,7 +4808,6 @@ impl WebGLExtension {
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_blend_minmax(canvas_webgl::prelude::EXT_blend_minmax);
 
 #[no_mangle]
@@ -4818,7 +4819,6 @@ pub extern "C" fn canvas_native_webgl_EXT_blend_minmax_destroy(value: *mut EXT_b
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_color_buffer_half_float(canvas_webgl::prelude::EXT_color_buffer_half_float);
 
 #[no_mangle]
@@ -4832,7 +4832,6 @@ pub extern "C" fn canvas_native_webgl_EXT_color_buffer_half_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_disjoint_timer_query(canvas_webgl::prelude::EXT_disjoint_timer_query);
 
 #[no_mangle]
@@ -4846,7 +4845,6 @@ pub extern "C" fn canvas_native_webgl_EXT_disjoint_timer_query_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_sRGB(canvas_webgl::prelude::EXT_sRGB);
 
 #[no_mangle]
@@ -4858,7 +4856,6 @@ pub extern "C" fn canvas_native_webgl_EXT_sRGB_destroy(value: *mut EXT_disjoint_
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_shader_texture_lod(canvas_webgl::prelude::EXT_shader_texture_lod);
 
 #[no_mangle]
@@ -4872,7 +4869,6 @@ pub extern "C" fn canvas_native_webgl_EXT_shader_texture_lod_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_texture_filter_anisotropic(canvas_webgl::prelude::EXT_texture_filter_anisotropic);
 
 #[no_mangle]
@@ -4886,7 +4882,6 @@ pub extern "C" fn canvas_native_webgl_EXT_texture_filter_anisotropic_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_element_index_uint(canvas_webgl::prelude::OES_element_index_uint);
 
 #[no_mangle]
@@ -4900,7 +4895,6 @@ pub extern "C" fn canvas_native_webgl_OES_element_index_uint_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_standard_derivatives(canvas_webgl::prelude::OES_standard_derivatives);
 
 #[no_mangle]
@@ -4914,7 +4908,6 @@ pub extern "C" fn canvas_native_webgl_OES_standard_derivatives_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_float(canvas_webgl::prelude::OES_texture_float);
 
 #[no_mangle]
@@ -4926,7 +4919,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_float_destroy(value: *mut OES_
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_float_linear(canvas_webgl::prelude::OES_texture_float_linear);
 
 #[no_mangle]
@@ -4940,7 +4932,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_float_linear_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_half_float(canvas_webgl::prelude::OES_texture_half_float);
 
 #[no_mangle]
@@ -4954,7 +4945,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_half_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_half_float_linear(canvas_webgl::prelude::OES_texture_half_float_linear);
 
 #[no_mangle]
@@ -4968,7 +4958,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_half_float_linear_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_vertex_array_object(canvas_webgl::prelude::OES_vertex_array_object);
 
 #[no_mangle]
@@ -4982,7 +4971,6 @@ pub extern "C" fn canvas_native_webgl_OES_vertex_array_object_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_color_buffer_float(canvas_webgl::prelude::WEBGL_color_buffer_float);
 
 #[no_mangle]
@@ -4996,7 +4984,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_color_buffer_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_atc(canvas_webgl::prelude::WEBGL_compressed_texture_atc);
 
 #[no_mangle]
@@ -5010,7 +4997,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_atc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_etc1(canvas_webgl::prelude::WEBGL_compressed_texture_etc1);
 
 #[no_mangle]
@@ -5024,7 +5010,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc1_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_s3tc(canvas_webgl::prelude::WEBGL_compressed_texture_s3tc);
 
 #[no_mangle]
@@ -5038,7 +5023,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_s3tc_srgb(
     canvas_webgl::prelude::WEBGL_compressed_texture_s3tc_srgb,
 );
@@ -5054,7 +5038,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_srgb_destroy
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_etc(canvas_webgl::prelude::WEBGL_compressed_texture_etc);
 
 #[no_mangle]
@@ -5068,7 +5051,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_pvrtc(canvas_webgl::prelude::WEBGL_compressed_texture_pvrtc);
 
 #[no_mangle]
@@ -5082,7 +5064,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_pvrtc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_lose_context(canvas_webgl::prelude::WEBGL_lose_context);
 
 #[no_mangle]
@@ -5094,7 +5075,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_lose_context_destroy(value: *mut WEB
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct ANGLE_instanced_arrays(canvas_webgl::prelude::ANGLE_instanced_arrays);
 
 #[no_mangle]
@@ -5108,7 +5088,6 @@ pub extern "C" fn canvas_native_webgl_ANGLE_instanced_arrays_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_depth_texture(canvas_webgl::prelude::WEBGL_depth_texture);
 
 #[no_mangle]
@@ -5120,7 +5099,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_depth_texture_destroy(value: *mut WE
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_draw_buffers(canvas_webgl::prelude::WEBGL_draw_buffers);
 
 #[no_mangle]
@@ -6821,8 +6799,8 @@ pub extern "C" fn canvas_native_webgl_get_program_info_log(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -6864,8 +6842,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     CString::new(
         canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -6910,8 +6888,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
         shader,
         state.get_inner_mut(),
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -8814,8 +8792,8 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_name(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]

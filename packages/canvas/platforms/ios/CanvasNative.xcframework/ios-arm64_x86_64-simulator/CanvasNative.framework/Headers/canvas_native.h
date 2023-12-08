@@ -354,6 +354,11 @@ const char *canvas_native_context_get_text_align(const struct CanvasRenderingCon
 void canvas_native_context_set_text_align(struct CanvasRenderingContext2D *context,
                                           const char *alignment);
 
+const char *canvas_native_context_get_text_baseline(const struct CanvasRenderingContext2D *context);
+
+void canvas_native_context_set_text_baseline(struct CanvasRenderingContext2D *context,
+                                             const char *baseline);
+
 const char *canvas_native_context_get_global_composition(const struct CanvasRenderingContext2D *context);
 
 void canvas_native_context_set_global_composition(struct CanvasRenderingContext2D *context,

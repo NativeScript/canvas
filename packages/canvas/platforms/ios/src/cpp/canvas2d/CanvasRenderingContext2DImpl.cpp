@@ -98,6 +98,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->SetAccessor(ConvertToV8String(isolate, "shadowOffsetY"), GetShadowOffsetY,
                       SetShadowOffsetY);
     tmpl->SetAccessor(ConvertToV8String(isolate, "textAlign"), GetTextAlign, SetTextAlign);
+    tmpl->SetAccessor(ConvertToV8String(isolate, "textBaseline"), GetTextBaseline,
+                      SetTextBaseline);
     tmpl->SetAccessor(ConvertToV8String(isolate, "globalCompositeOperation"),
                       GetGlobalCompositeOperation, SetGlobalCompositeOperation);
     tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle);
@@ -743,6 +745,33 @@ void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
     auto alignment = ConvertFromV8String(isolate, value);
     canvas_native_context_set_text_align(ptr->GetContext(), alignment.c_str());
+}
+
+void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::String> property,
+                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    auto isolate = info.GetIsolate();
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(0);
+        return;
+    }
+    auto baseline = canvas_native_context_get_text_baseline(ptr->GetContext());
+    info.GetReturnValue().Set(
+            ConvertToV8String(isolate, baseline));
+    canvas_native_string_destroy((char *) baseline);
+}
+
+void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::String> property,
+                                                   v8::Local<v8::Value> value,
+                                                   const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto baseline = ConvertFromV8String(isolate, value);
+    canvas_native_context_set_text_baseline(ptr->GetContext(), baseline.c_str());
 }
 
 

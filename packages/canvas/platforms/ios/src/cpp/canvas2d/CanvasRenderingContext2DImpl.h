@@ -166,11 +166,18 @@ public:
                                  const v8::PropertyCallbackInfo<void> &info);
 
     static void GetTextAlign(v8::Local<v8::String> property,
-                             const v8::PropertyCallbackInfo<v8::Value> &info);
+                                 const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void SetTextAlign(v8::Local<v8::String> property,
-                             v8::Local<v8::Value> value,
-                             const v8::PropertyCallbackInfo<void> &info);
+                                 v8::Local<v8::Value> value,
+                                 const v8::PropertyCallbackInfo<void> &info);
+    
+    static void GetTextBaseline(v8::Local<v8::String> property,
+                                 const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetTextBaseline(v8::Local<v8::String> property,
+                                 v8::Local<v8::Value> value,
+                                 const v8::PropertyCallbackInfo<void> &info);
 
     static void GetGlobalCompositeOperation(v8::Local<v8::String> property,
                                             const v8::PropertyCallbackInfo<v8::Value> &info);

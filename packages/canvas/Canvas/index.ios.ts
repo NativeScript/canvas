@@ -264,6 +264,7 @@ export class Canvas extends CanvasBase {
 
 			const size = this._realSize;
 
+			// todo revisit 
 
 			const width = Utils.layout.toDevicePixels(size.width || 1);
 			const height = Utils.layout.toDevicePixels(size.height || 1);

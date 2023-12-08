@@ -12,6 +12,7 @@ use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
+use parking_lot::RwLock;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {

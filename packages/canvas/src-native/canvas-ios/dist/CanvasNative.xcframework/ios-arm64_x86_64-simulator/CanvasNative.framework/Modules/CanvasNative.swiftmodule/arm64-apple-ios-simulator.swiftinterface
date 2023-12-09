@@ -48,7 +48,10 @@ import _StringProcessing
   @objc @_Concurrency.MainActor(unsafe) public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor(unsafe) public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
   @objc @_Concurrency.MainActor(unsafe) public func getViewPtr() -> Swift.UnsafeMutableRawPointer
-  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool
+  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public var nativeGL: Swift.Int64 {
     get
   }

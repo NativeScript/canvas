@@ -67,7 +67,16 @@ public class NSCCanvas: UIView {
         return ptr!
     }
     
-    public var ignorePixelScaling = false
+    public var ignorePixelScaling: Bool = false {
+        didSet {
+            if(ignorePixelScaling){
+                glkView.contentScaleFactor = 1
+            }else {
+                glkView.contentScaleFactor = UIScreen.main.scale
+            }
+        }
+    }
+    
     
     private(set) public var nativeGL: Int64 = 0
     private(set) public var nativeContext: Int64 = 0
@@ -254,7 +263,13 @@ public class NSCCanvas: UIView {
     
            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
            
-           let density = Float(UIScreen.main.scale)
+           var density = Float(UIScreen.main.scale)
+           
+           
+           if (ignorePixelScaling) {
+               density = 1
+           }
+           
            native2DContext = CanvasHelpers.create2DContext(
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
             alpha, density, samples, fontColor, density * 160, 0

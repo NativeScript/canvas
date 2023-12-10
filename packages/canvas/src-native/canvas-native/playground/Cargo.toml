@@ -14,6 +14,6 @@ reqwest = { version = "0.11.14", features = ["blocking"] }
 chrono = "0.4.23"
 
 [target.'cfg(any(target_os = "macos", target_os = "android"))'.dependencies]
-glutin = "0.30.4"
-winit = "0.28.1"
-glutin-winit = "0.3.0"
+winit = "0.29.4"
+glutin-winit = "0.4.2"
+glutin = "0.31.1"

@@ -540,7 +540,7 @@ void main() {
 }
 
 fn main() {
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let window_builder = WindowBuilder::new();
     let mut asset = ImageAsset::new();
 
@@ -682,13 +682,12 @@ fn main() {
         value,
         0,
         true,
-        value,
+        0,
         0.,
         canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
     ));
 
-    event_loop.run(move |event, target, control_flow| {
-        control_flow.set_wait();
+    event_loop.run(move |event, target| {
         match event {
             Event::NewEvents(_) => {}
             Event::WindowEvent { event, .. } => {
@@ -709,100 +708,104 @@ fn main() {
                         // gl_state.swap_buffers();
                     }
                     WindowEvent::CloseRequested => {
-                        control_flow.set_exit();
+                        //control_flow.set_exit();
+                    }
+                    WindowEvent::RedrawRequested => {
+                        if !done {
+                            window.request_redraw();
+
+                            canvas_native_webgl_clear_color(1., 1., 1., 1., &mut gl_state);
+
+                            canvas_native_webgl_clear(16384, &mut gl_state);
+
+                            // test(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
+
+                            let mut ctx = ctx_2d.get_context_mut();
+
+                            ctx.fill_text(" ", 0., 0., None);
+
+                            //  leaves(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
+
+                            done = true;
+
+                            gl_state.swap_buffers();
+                        }
+
+                        //  rainbow_octopus(&mut ctx_2d, &mut ro);
+
+                        // if let (Some(sun), Some(moon), Some(earth)) = (sun.as_ref(), moon.as_ref(), earth.as_ref()) {
+                        //     solar(&ctx_2d, earth, moon, sun, fill.clone(), stroke.clone())
+                        // }
+
+                        // {
+                        //     clock(&mut ctx_2d);
+                        // }
+
+                        //swarm(&mut ctx_2d, &mut particles, particle_count);
+
+                        // colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
+
+                        /*
+
+                        if let Some(color) = PaintStyle::new_color_str("red") {
+                            {
+                                let mut ctx = ctx_2d.get_context_mut();
+                                //  colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
+                                let bg = PaintStyle::new_color_str("white").unwrap();
+                                let black = PaintStyle::new_color_str("black").unwrap();
+                                ctx.set_fill_style(bg);
+                                let device = *ctx.device();
+                                ctx.rect(0., 0., device.width, device.height);
+                                ctx.fill(None);
+                                ctx.set_fill_style(black);
+
+                                // Create a red line in position 150
+                                ctx.set_stroke_style(color);
+                                ctx.move_to(150., 20.);
+                                ctx.line_to(150., 170.);
+                                ctx.stroke(None);
+
+                                ctx.set_font("15px Arial");
+
+                                // Show the different textAlign values
+                                ctx.set_text_align(TextAlign::START);
+                                ctx.fill_text("textAlign = start", 150., 60., None);
+                                ctx.set_text_align(TextAlign::END);
+                                ctx.fill_text("textAlign = end", 150., 80., None);
+                                ctx.set_text_align(TextAlign::LEFT);
+                                ctx.fill_text("textAlign = left", 150., 100., None);
+                                ctx.set_text_align(TextAlign::CENTER);
+                                ctx.fill_text("textAlign = center", 150., 120., None);
+                                ctx.set_text_align(TextAlign::RIGHT);
+                                ctx.fill_text("textAlign = right", 150., 140., None);
+
+                                ctx.flush();
+                            }
+
+                            //  println!("{}", canvas_2d::to_data_url(&mut ctx_2d, "image/jpg", 100))
+                        }
+
+                        */
+                        //
+                        // ctx_2d.fill_rect_xywh(0., 0., 300., 300.);
+                        //  ctx_2d.get_context_mut().flush();
+                        //ctx_2d.flush();
+
+                        //   canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 0.0, 1.0, &mut gl_state);
+                        //
+                        // let start = Instant::now();
+                        // canvas_webgl::webgl::canvas_native_webgl_clear(canvas_webgl::webgl::COLOR_BUFFER_BIT, &mut gl_state);
+                        // let end = Instant::now() - start;
+                        //
+                        // println!("clear {:?}", end.as_millis());
+                        //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::TRIANGLES, 0, 3, &mut gl_state);
+
+                        //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
+
+                        //  gl_state.swap_buffers();
                     }
                     _ => {}
                 }
-            }
-            Event::RedrawEventsCleared => {
-                if !done {
-                    window.request_redraw();
-
-                    canvas_native_webgl_clear_color(1., 1., 1., 1., &mut gl_state);
-
-                    canvas_native_webgl_clear(16384, &mut gl_state);
-
-                    // test(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
-
-                    leaves(&mut gl_state, &mut gl_state_other, &mut ctx_2d);
-
-                    done = true;
-
-                    gl_state.swap_buffers();
-                }
-
-                //  rainbow_octopus(&mut ctx_2d, &mut ro);
-
-                // if let (Some(sun), Some(moon), Some(earth)) = (sun.as_ref(), moon.as_ref(), earth.as_ref()) {
-                //     solar(&ctx_2d, earth, moon, sun, fill.clone(), stroke.clone())
-                // }
-
-                // {
-                //     clock(&mut ctx_2d);
-                // }
-
-                //swarm(&mut ctx_2d, &mut particles, particle_count);
-
-                // colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
-
-                /*
-
-                if let Some(color) = PaintStyle::new_color_str("red") {
-                    {
-                        let mut ctx = ctx_2d.get_context_mut();
-                        //  colorRain(&mut ctx_2d, &mut colors, &mut dots, &mut dots_vel);
-                        let bg = PaintStyle::new_color_str("white").unwrap();
-                        let black = PaintStyle::new_color_str("black").unwrap();
-                        ctx.set_fill_style(bg);
-                        let device = *ctx.device();
-                        ctx.rect(0., 0., device.width, device.height);
-                        ctx.fill(None);
-                        ctx.set_fill_style(black);
-
-                        // Create a red line in position 150
-                        ctx.set_stroke_style(color);
-                        ctx.move_to(150., 20.);
-                        ctx.line_to(150., 170.);
-                        ctx.stroke(None);
-
-                        ctx.set_font("15px Arial");
-
-                        // Show the different textAlign values
-                        ctx.set_text_align(TextAlign::START);
-                        ctx.fill_text("textAlign = start", 150., 60., None);
-                        ctx.set_text_align(TextAlign::END);
-                        ctx.fill_text("textAlign = end", 150., 80., None);
-                        ctx.set_text_align(TextAlign::LEFT);
-                        ctx.fill_text("textAlign = left", 150., 100., None);
-                        ctx.set_text_align(TextAlign::CENTER);
-                        ctx.fill_text("textAlign = center", 150., 120., None);
-                        ctx.set_text_align(TextAlign::RIGHT);
-                        ctx.fill_text("textAlign = right", 150., 140., None);
-
-                        ctx.flush();
-                    }
-
-                    //  println!("{}", canvas_2d::to_data_url(&mut ctx_2d, "image/jpg", 100))
-                }
-
-                */
-                //
-                // ctx_2d.fill_rect_xywh(0., 0., 300., 300.);
-                //  ctx_2d.get_context_mut().flush();
-                //ctx_2d.flush();
-
-                //   canvas_webgl::webgl::canvas_native_webgl_clear_color(1.0, 1.0, 0.0, 1.0, &mut gl_state);
-                //
-                // let start = Instant::now();
-                // canvas_webgl::webgl::canvas_native_webgl_clear(canvas_webgl::webgl::COLOR_BUFFER_BIT, &mut gl_state);
-                // let end = Instant::now() - start;
-                //
-                // println!("clear {:?}", end.as_millis());
-                //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::TRIANGLES, 0, 3, &mut gl_state);
-
-                //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
-
-                //  gl_state.swap_buffers();
             }
             Event::Resumed => {}
             _ => {}

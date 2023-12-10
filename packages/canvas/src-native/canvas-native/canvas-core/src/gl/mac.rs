@@ -611,7 +611,7 @@ impl GLContext {
         use winit::event_loop::EventLoop;
         use winit::window::WindowBuilder;
 
-        let event_loop = EventLoop::new();
+        let event_loop = EventLoop::new().unwrap();
         let window_builder = WindowBuilder::new();
 
         let window = window_builder

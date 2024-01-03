@@ -533,7 +533,21 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.stroke();
 	}
 
+	drawOnCanvasWithCanvas(canvas) {
+		const c2 = document.createElement('canvas');
+		c2.width = 512;
+		c2.height = 512;
+		const c2d = c2.getContext('2d');
+		const image = new global.ImageAsset();
+
+		image.fromUrl(`https://source.unsplash.com/random/${512}x${512}`).then(() => {
+			c2d.drawImage(image, 0, 0);
+			const ctx = canvas.getContext('2d');
+			ctx.drawImage(c2, 0, 0);
+		});
+	}
 	draw() {
+		this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
@@ -706,7 +720,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// }
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
-		this.textBaseLine2(this.canvas);
+		//this.textBaseLine2(this.canvas);
 	}
 
 	letterSpacing(canvas) {

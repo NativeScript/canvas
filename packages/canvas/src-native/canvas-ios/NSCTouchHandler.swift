@@ -24,6 +24,7 @@ class NSCTouchHandler: NSObject {
     }
 
     var pointers: [CGPoint] = Array(repeating: CGPointZero, count: 10)
+    var touches: [UITouch?] = Array(repeating: nil, count: 10)
     var lastPointerPosition: [CGPoint] = Array(repeating: CGPointZero, count: 10)
     
     class TouchGestureRecognizer: UIGestureRecognizer {
@@ -31,6 +32,7 @@ class NSCTouchHandler: NSObject {
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
 
             for (ptridx, touch) in touches.enumerated() {
+                
                 
                let location = touch.location(in: view)
                 
@@ -41,6 +43,7 @@ class NSCTouchHandler: NSObject {
                 }
                 
                 handler.pointers[ptridx] = location
+                handler.touches[ptridx] = touch
                 handler.onPress(ptridx, location.x, location.y, self)
                 
                 view?.touchesBegan(touches, with: event)
@@ -49,7 +52,7 @@ class NSCTouchHandler: NSObject {
         }
         
         override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
-            handler?.onMove(self)
+            handler?.onMove(self, touches)
             view?.touchesMoved(touches, with: event)
         }
         
@@ -67,6 +70,7 @@ class NSCTouchHandler: NSObject {
                 
                 handler.onRelease(ptridx, location.x, location.y, self)
                 handler.pointers[ptridx] = CGPointZero
+                handler.touches[ptridx] = nil
                 
                 view?.touchesEnded(touches, with: event)
                 
@@ -84,12 +88,11 @@ class NSCTouchHandler: NSObject {
                 }
                 handler.onCancel(ptridx, location.x, location.y, self)
                 handler.pointers[ptridx] = CGPointZero
+                handler.touches[ptridx] = nil
                 
                 view?.touchesCancelled(touches, with: event)
                 
             }
-            
-            
             
         }
     }
@@ -105,8 +108,6 @@ class NSCTouchHandler: NSObject {
         let move = press || action == .changed
         let release = (action == .ended)
         let cancelled = action == .cancelled || action == .failed
-        
-    
     
         let location = numberOfTouches > 1 ?  gestureRecognizer.location(in: gestureRecognizer.view) : gestureRecognizer.location(ofTouch: ptridx, in: gestureRecognizer.view)
                 
@@ -114,33 +115,59 @@ class NSCTouchHandler: NSObject {
         let y = location.y
         
         guard let me = gestureRecognizer as? UIPinchGestureRecognizer else {
+            
+            // pan
             if(press){
                 pointers[ptridx] = location
                 onPress(ptridx, x, y, gestureRecognizer)
             }
-            
+
             if(release){
                 onRelease(ptridx, x, y, gestureRecognizer)
             }
-            
+
             if(move){
                 onMove(gestureRecognizer)
             }
-        
+
             if(cancelled){
                 onCancel(ptridx, x, y, gestureRecognizer)
             }
-            
+
             if(release || cancelled){
                 pointers[ptridx] = CGPointZero
             }
         
             return
         }
+        
+        if(release || cancelled){
+            if(release){
+                onRelease(ptridx, x, y, gestureRecognizer)
+            }
+
+          
+            if(cancelled){
+                onCancel(ptridx, x, y, gestureRecognizer)
+            }
+
+            if(release || cancelled){
+                pointers[ptridx] = CGPointZero
+            }
+            
+            return
+        }
+        
+               
+        let start = pointers[ptridx]
+        
+        let deltaX = x - start.x
+        let deltaY = y - start.y
+        
    
         
-        let deltaX = pinchRecognizer?.view?.transform.tx ?? 0
-        let deltaY = pinchRecognizer?.view?.transform.ty ?? 0
+//        let deltaX = pinchRecognizer?.view?.transform.tx ?? 0
+//        let deltaY = pinchRecognizer?.view?.transform.ty ?? 0
         let pointerCount = me.numberOfTouches
         var sb = "{"
         append("event", "scale", &sb)
@@ -222,8 +249,58 @@ class NSCTouchHandler: NSObject {
     }
     
     private func onMove(
-        _ gestureRecognizer: UIGestureRecognizer
+        _ gestureRecognizer: UIGestureRecognizer,
+        _ touches: Set<UITouch>? = nil
         ) {
+            
+            if(touches != nil){
+              /*  for (ptridx, touch) in touches!.enumerated() {
+                    
+                   let location = touch.location(in: view)
+                    
+                    handler?.onMove(ptridx, location.x, location.y, self)
+                    
+                    
+                    
+                }
+                */
+                
+                var sb = "{"
+                append("event", "move", &sb)
+
+                let last = touches!.count - 1
+                sb.append("\"pointers\": [")
+                
+                
+                for (ptridx, touch) in self.touches.enumerated() {
+                    if(touch == nil){
+                        continue
+                    }
+                    
+                   let location = touch!.location(in: view)
+                    
+                    sb += "{"
+                    append("ptrId", ptridx, &sb)
+                    append("x", location.x, &sb)
+                    append("y", location.y, &sb, true)
+
+                    if ptridx != last {
+                        sb += "},"
+                    } else {
+                        sb += "}"
+                    }
+                    
+                }
+                
+                
+                sb += "]"
+                
+                sb += "}"
+                view.touchEventListener?(sb, gestureRecognizer)
+                
+                
+                return
+            }
             
             
             let pointerCount = gestureRecognizer.numberOfTouches

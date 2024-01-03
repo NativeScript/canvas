@@ -19,14 +19,12 @@ use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
+use canvas_2d::context::text_styles::text_baseline::TextBaseLine;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
-use canvas_2d::utils::image::{
-    from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
-};
+use canvas_2d::utils::image::{from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy};
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
-use canvas_2d::context::text_styles::text_baseline::TextBaseLine;
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
@@ -1831,12 +1829,32 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
             if !source_non_gpu {
                 source.make_current();
 
+
+
+                #[cfg(any(target_os = "ios", target_os = "macos"))] {
+                    let snapshot = source_ctx.snapshot();
+                    let info = snapshot.image_info();
+
+                    if let Some((image, origin)) = snapshot.backend_texture(false) {
+                        let mut ctx = context.get_context_mut();
+
+                        if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
+                            return Some(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                                context.get_context().create_pattern(image, repetition),
+                            ))
+                        }
+                    }
+
+                    return None;
+                }
+
+
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 //let data = source_ctx.snapshot_to_raster_data();
 
                 //   let mut data = source_ctx.snapshot_to_raster_data();
                 let image = source_ctx.image_snapshot_to_non_texture_image();
-                // context.make_current();
+                context.make_current();
 
                 return image.map(|image| {
                     canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -2211,18 +2229,40 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     let context = unsafe { &mut *context };
     let source = unsafe { &*source };
     source.make_current();
-    let source_ctx = source.get_context_mut();
-    let width = source_ctx.device().width;
-    let height = source_ctx.device().height;
-    let bytes = source.get_context_mut().snapshot_to_raster_data();
+    // gl context is shared so snapshots should work
+    let mut source_ctx = source.get_context_mut();
 
-    if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
-    {
-        let context = unsafe { &mut *context };
-        context.make_current();
-        context.get_context_mut().draw_image_src_xywh_dst_xywh(
-            &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
-        );
+
+    #[cfg(any(target_os = "ios", target_os = "macos"))] {
+        let snapshot = source_ctx.snapshot();
+        let info = snapshot.image_info();
+
+        if let Some((image, origin)) = snapshot.backend_texture(false) {
+            let mut ctx = context.get_context_mut();
+
+            if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
+                ctx.draw_image_src_xywh_dst_xywh(
+                    &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+                );
+            }
+        }
+    }
+
+    #[cfg(target_os = "ios")] {
+        let width = source_ctx.device().width;
+        let height = source_ctx.device().height;
+
+        let bytes = source_ctx.snapshot_to_raster_data();
+
+        if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
+        {
+            let context = unsafe { &mut *context };
+            context.make_current();
+            context.get_context_mut().draw_image_src_xywh_dst_xywh(
+                &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+            );
+        }
+
     }
 }
 

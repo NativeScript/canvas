@@ -8,7 +8,7 @@ import { WebGLActiveInfo } from '../WebGLActiveInfo';
 import { WebGLRenderbuffer } from '../WebGLRenderbuffer';
 import { WebGLShaderPrecisionFormat } from '../WebGLShaderPrecisionFormat';
 
-export abstract class WebGLRenderingContextBase implements CanvasRenderingContext {
+export abstract class WebGLRenderingCommon implements CanvasRenderingContext {
 	abstract readonly drawingBufferHeight: number;
 	abstract readonly drawingBufferWidth: number;
 	public static isDebug = false;

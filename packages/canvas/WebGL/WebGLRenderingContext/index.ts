@@ -1,4 +1,4 @@
-import { WebGLRenderingContextBase } from './common';
+import { WebGLRenderingCommon } from './common';
 
 import { WebGLShader } from '../WebGLShader';
 import { WebGLFramebuffer } from '../WebGLFramebuffer';
@@ -44,7 +44,7 @@ import { Helpers } from '../../helpers';
 
 let ctor;
 
-export class WebGLRenderingContext extends WebGLRenderingContextBase {
+export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	public static isDebug = false;
 	public static filter: 'both' | 'error' | 'args' = 'both';
 	_context;
@@ -1115,3 +1115,5 @@ export class WebGLRenderingContext extends WebGLRenderingContextBase {
 		}
 	}
 }
+
+export class WebGLRenderingContext extends WebGLRenderingContextBase {}

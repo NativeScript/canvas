@@ -312,12 +312,12 @@ impl Context {
 
         match ss.make_raster_image(
             &mut self.surface.direct_context(),
-            skia_safe::image::CachingHint::Allow,
+            skia_safe::image::CachingHint::Disallow,
         ) {
             Some(image) => {
                 let mut info = skia_safe::ImageInfo::new(
                     info.dimensions(),
-                    ss.image_info().color_type(),
+                    skia_safe::ColorType::RGBA8888,
                     skia_safe::AlphaType::Unpremul,
                     None,
                 );
@@ -327,7 +327,7 @@ impl Context {
                     buf.as_mut_slice(),
                     row_bytes,
                     skia_safe::IPoint::new(0, 0),
-                    skia_safe::image::CachingHint::Allow,
+                    skia_safe::image::CachingHint::Disallow,
                 );
             }
             _ => {}

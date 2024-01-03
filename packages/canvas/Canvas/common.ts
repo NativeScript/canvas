@@ -138,8 +138,8 @@ export class MouseEvent extends UIEvent {
 	readonly pageY: number;
 	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup', options?: MouseEventOptions) {
 		super(type as any, options);
-		this.screenX = options.screenX ?? 0;
-		this.screenY = options.screenY ?? 0;
+		this.screenX = options?.screenX ?? 0;
+		this.screenY = options?.screenY ?? 0;
 		this.clientX = options?.clientX ?? 0;
 		this.clientY = options?.clientY ?? 0;
 		this.ctrlKey = options?.ctrlKey ?? false;
@@ -372,22 +372,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_isCustom: boolean = false;
 	_classList: Set<any>;
 
-	_pointerMoveCallbacks = new Set<any>();
-	_pointerUpCallbacks = new Set<any>();
-	_pointerDownCallbacks = new Set<any>();
-	_pointerCancelCallbacks = new Set<any>();
+	_pointerMoveCallbacks = [];
+	_pointerUpCallbacks = [];
+	_pointerDownCallbacks = [];
+	_pointerCancelCallbacks = [];
 
 	// For mouse compat because wtf
-	_mouseMoveCallbacks = new Set<any>();
-	_mouseUpCallbacks = new Set<any>();
-	_mouseDownCallbacks = new Set<any>();
-	_mouseCancelCallbacks = new Set<any>();
-	_mouseWheelCallbacks = new Set<any>();
+	_mouseMoveCallbacks = [];
+	_mouseUpCallbacks = [];
+	_mouseDownCallbacks = [];
+	_mouseCancelCallbacks = [];
+	_mouseWheelCallbacks = [];
 
-	_touchStartCallbacks = new Set<(TouchEvent) => void>();
-	_touchEndCallbacks = new Set<(TouchEvent) => void>();
-	_touchMoveCallbacks = new Set<(TouchEvent) => void>();
-	_touchCancelCallbacks = new Set<(TouchEvent) => void>();
+	_touchStartCallbacks = new Array<(TouchEvent) => void>();
+	_touchEndCallbacks = new Array<(TouchEvent) => void>();
+	_touchMoveCallbacks = new Array<(TouchEvent) => void>();
+	_touchCancelCallbacks = new Array<(TouchEvent) => void>();
 
 	_touches: Touch[] = [];
 	_touchesById: Touch[] = [];
@@ -410,47 +410,54 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		switch (eventtype) {
 			case 'mousemove':
-				this._mouseMoveCallbacks.add(callback);
+				this._mouseMoveCallbacks.push(callback);
 				break;
 			case 'pointermove':
-				this._pointerMoveCallbacks.add(callback);
+				this._pointerMoveCallbacks.push(callback);
 				break;
 			case 'mousedown':
-				this._mouseDownCallbacks.add(callback);
+				this._mouseDownCallbacks.push(callback);
 				break;
 			case 'pointerdown':
-				this._pointerDownCallbacks.add(callback);
+				this._pointerDownCallbacks.push(callback);
 				break;
 			case 'mouseup':
-				this._mouseUpCallbacks.add(callback);
+				this._mouseUpCallbacks.push(callback);
 				break;
 			case 'pointerup':
-				this._pointerUpCallbacks.add(callback);
+				this._pointerUpCallbacks.push(callback);
 				break;
 			case 'moveout':
 			case 'mousecancel':
-				this._mouseCancelCallbacks.add(callback);
+				this._mouseCancelCallbacks.push(callback);
 				break;
 			case 'pointercancel':
-				this._pointerCancelCallbacks.add(callback);
+				this._pointerCancelCallbacks.push(callback);
 				break;
 			case 'touchstart':
-				this._touchStartCallbacks.add(callback);
+				this._touchStartCallbacks.push(callback);
 				break;
 			case 'touchend':
-				this._touchEndCallbacks.add(callback);
+				this._touchEndCallbacks.push(callback);
 				break;
 			case 'touchmove':
-				this._touchMoveCallbacks.add(callback);
+				this._touchMoveCallbacks.push(callback);
 				break;
 			case 'touchcancel':
-				this._touchCancelCallbacks.add(callback);
+				this._touchCancelCallbacks.push(callback);
 				break;
 			case 'wheel':
 			case 'mousewheel':
 			case 'dommousescroll':
-				this._mouseWheelCallbacks.add(callback);
+				this._mouseWheelCallbacks.push(callback);
 				break;
+		}
+	}
+
+	private _removeItemFromArray(array: any[], item) {
+		const index = array.indexOf(item);
+		if (index !== -1) {
+			array.splice(index, 1);
 		}
 	}
 
@@ -467,58 +474,57 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		switch (eventtype) {
 			case 'mousemove':
-				this._mouseMoveCallbacks.delete(callback);
+				this._removeItemFromArray(this._mouseMoveCallbacks, callback);
 				break;
 			case 'pointermove':
-				this._pointerMoveCallbacks.delete(callback);
+				this._removeItemFromArray(this._pointerMoveCallbacks, callback);
 				break;
 			case 'mousedown':
-				this._mouseDownCallbacks.delete(callback);
+				this._removeItemFromArray(this._mouseDownCallbacks, callback);
 				break;
 			case 'pointerdown':
-				this._pointerDownCallbacks.delete(callback);
+				this._removeItemFromArray(this._pointerDownCallbacks, callback);
 				break;
 			case 'mouseup':
-				this._mouseUpCallbacks.delete(callback);
+				this._removeItemFromArray(this._mouseUpCallbacks, callback);
 				break;
 			case 'pointerup':
-				this._pointerUpCallbacks.delete(callback);
+				this._removeItemFromArray(this._pointerUpCallbacks, callback);
 				break;
 			case 'moveout':
 			case 'mousecancel':
-				this._mouseCancelCallbacks.delete(callback);
+				this._removeItemFromArray(this._mouseCancelCallbacks, callback);
 				break;
 			case 'pointercancel':
-				this._pointerCancelCallbacks.delete(callback);
+				this._removeItemFromArray(this._pointerCancelCallbacks, callback);
 				break;
 			case 'touchstart':
-				this._touchStartCallbacks.delete(callback);
+				this._removeItemFromArray(this._touchStartCallbacks, callback);
 				break;
 			case 'touchend':
-				this._touchEndCallbacks.delete(callback);
+				this._removeItemFromArray(this._touchEndCallbacks, callback);
 				break;
 			case 'touchmove':
-				this._touchMoveCallbacks.delete(callback);
+				this._removeItemFromArray(this._touchMoveCallbacks, callback);
 				break;
 			case 'touchcancel':
-				this._touchCancelCallbacks.delete(callback);
+				this._removeItemFromArray(this._touchCancelCallbacks, callback);
 				break;
 			case 'wheel':
 			case 'mousewheel':
 			case 'dommousescroll':
-				this._mouseWheelCallbacks.delete(callback);
+				this._removeItemFromArray(this._mouseWheelCallbacks, callback);
 				break;
 		}
 	}
 
 	private _moveCallback(pointers: { ptrId: number; x: number; y: number }[]) {
-		const hasPointerCallbacks = this._pointerMoveCallbacks.size > 0;
-		const hasMouseCallbacks = this._mouseMoveCallbacks.size > 0;
+		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
+		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			for (const pointer of pointers) {
 				const pointerId = pointer.ptrId;
 				const previousEvent = this._lastPointerEventById[pointerId];
-
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
 						pointerType: 'touch',
@@ -532,7 +538,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						isPrimary: pointerId === 0,
-						button: -1
+						button: -1,
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -550,7 +556,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1
+						button: -1,
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {
@@ -562,7 +568,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		if (this._touchMoveCallbacks.size > 0) {
+		if (this._touchMoveCallbacks.length > 0) {
 			const changedTouches = [];
 
 			for (const pointer of pointers) {
@@ -595,8 +601,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	private _upCallback(ptrId, x, y) {
-		const hasPointerCallbacks = this._pointerUpCallbacks.size > 0;
-		const hasMouseCallbacks = this._mouseUpCallbacks.size > 0;
+		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0;
+		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			const pointerId = ptrId;
@@ -644,7 +650,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		if (this._touchEndCallbacks.size > 0) {
+		if (this._touchEndCallbacks.length > 0) {
 			const touches = TouchList.fromList(this._touches);
 
 			const changedTouches = [
@@ -673,8 +679,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	private _downCallback(ptrId, x, y) {
-		const hasPointerCallbacks = this._pointerDownCallbacks.size > 0;
-		const hasMouseCallbacks = this._mouseDownCallbacks.size > 0;
+		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
+		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
 
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			const pointerId = ptrId;
@@ -714,7 +720,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			this._lastPointerEventById[pointerId] = { pointerId, x, y };
 		}
 
-		if (this._touchStartCallbacks.size > 0) {
+		if (this._touchStartCallbacks.length > 0) {
 			const touch = new Touch({
 				identifier: ptrId,
 				target: this,
@@ -742,8 +748,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	private _cancelCallback(ptrid, x, y) {
-		const hasPointerCallbacks = this._pointerCancelCallbacks.size > 0;
-		const hasMouseCallbacks = this._mouseCancelCallbacks.size > 0;
+		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
+		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			const pointerId = ptrid;
 			if (hasPointerCallbacks) {
@@ -779,7 +785,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		if (this._touchCancelCallbacks.size > 0) {
+		if (this._touchCancelCallbacks.length > 0) {
 			const touch = new Touch({
 				identifier: ptrid,
 				target: this,
@@ -809,9 +815,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
 		// move callback
 
-		const hasPointerCallbacks = this._pointerMoveCallbacks.size > 0;
-		const hasMouseCallbacks = this._mouseMoveCallbacks.size > 0;
-		const hasMouseWheel = this._mouseWheelCallbacks.size > 0;
+		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
+		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
+		const hasMouseWheel = this._mouseWheelCallbacks.length > 0;
 
 		if (hasPointerCallbacks || hasMouseCallbacks || hasMouseWheel) {
 			for (const pointer of data.pointers) {
@@ -830,7 +836,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1
+						button: -1,
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -848,7 +854,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1
+						button: -1,
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {
@@ -873,7 +879,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		if (this._touchMoveCallbacks.size > 0) {
+		if (this._touchMoveCallbacks.length > 0) {
 			const changedTouches = [];
 
 			for (const pointer of data.pointers) {
@@ -904,6 +910,40 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 	}
+
+	/*
+	switched on second move
+
+	{
+    "event": "down",
+    "ptrId": 0,
+    "x": 970.5,
+    "y": 688.5
+  }
+  {
+    "event": "down",
+    "ptrId": 1,
+    "x": 395.5,
+    "y": 187.5
+  }
+  {
+    "event": "move",
+    "pointers": [
+      {
+        "ptrId": 0,
+        "x": 396,
+        "y": 187.5
+      },
+      {
+        "ptrId": 1,
+        "x": 971,
+        "y": 688.5
+      }
+    ]
+  }
+
+
+	*/
 
 	_handleEvents(event) {
 		try {

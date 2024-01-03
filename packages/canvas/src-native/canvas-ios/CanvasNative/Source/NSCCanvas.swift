@@ -351,7 +351,7 @@ public class NSCCanvas: UIView {
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.pinchRecognizer!)
+        // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     public override init(frame: CGRect) {
@@ -364,17 +364,17 @@ public class NSCCanvas: UIView {
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.pinchRecognizer!)
+       // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     var ignoreTouchEvents = false {
         didSet {
             if(ignoreTouchEvents){
                 removeGestureRecognizer(handler!.gestureRecognizer!)
-                removeGestureRecognizer(handler!.pinchRecognizer!)
+             //   removeGestureRecognizer(handler!.pinchRecognizer!)
             }else {
                 addGestureRecognizer(handler!.gestureRecognizer!)
-                addGestureRecognizer(handler!.pinchRecognizer!)
+               // addGestureRecognizer(handler!.pinchRecognizer!)
             }
         }
     }

@@ -69,6 +69,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//init(this.canvas);
 
+		this.topDown(this.canvas);
+
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
@@ -111,6 +113,62 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
+	}
+
+	topDown(canvas) {
+		const context = canvas.getContext('webgl2');
+		const gridHelper = new THREE.GridHelper(40, 20, 16777215, 16777215);
+		const width = this.canvas.width as number;
+		const height = this.canvas.height as number;
+		const scene = new THREE.Scene();
+
+		scene.rotation.x = (45 * Math.PI) / 180;
+
+		scene.add(gridHelper);
+		scene.add(new THREE.AmbientLight(0xaaaaaa));
+
+		const light = new THREE.SpotLight(0xffffff, 10000);
+		light.position.set(0, 25, 50);
+		light.angle = Math.PI / 5;
+
+		light.shadow.camera.near = 0.1;
+		light.shadow.camera.far = 100;
+		light.shadow.mapSize.width = width;
+		light.shadow.mapSize.height = height;
+
+		scene.add(light);
+
+		scene.background = new THREE.Color('black');
+		const aspect = width / height;
+		const frustumSize = 20;
+		const camera = new THREE.OrthographicCamera((frustumSize * aspect) / -2, (frustumSize * aspect) / 2, frustumSize / 2, frustumSize / -2, 0.1, 100);
+
+		const renderer = new THREE.WebGLRenderer({ context, alpha: true });
+
+		// renderer.outputColorSpace = THREE.SRGBColorSpace;
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(width, height);
+		// renderer.setAnimationLoop(this.animate.bind(this));
+
+		const cameraControls = new OrbitControls(camera, this.canvas as any);
+		// cameraControls.maxPolarAngle = Math.PI * 0.5;
+		// cameraControls.minDistance = 3;
+		// cameraControls.maxDistance = 8;
+		cameraControls.enableRotate = false;
+		cameraControls.enablePan = true;
+		// cameraControls.enableZoom = true;
+
+		function render() {
+			renderer.render(scene, camera);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			render();
+		}
+
+		animate();
 	}
 
 	webgl_postprocessing_unreal_bloom(canvas) {
@@ -1275,10 +1333,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// shadow
 
 			var shadow = document.createElement('canvas');
-			shadow.width = 128;
-			shadow.height = 128;
+			shadow.width = 256;
+			shadow.height = 256;
 
 			var context = shadow.getContext('2d', { alpha: true });
+
 			var gradient = context.createRadialGradient(shadow.width / 2, shadow.height / 2, 0, shadow.width / 2, shadow.height / 2, shadow.width / 2);
 			gradient.addColorStop(0.1, 'rgba(210,210,210,1)');
 			gradient.addColorStop(1, 'rgba(255,255,255,1)');
@@ -1289,7 +1348,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var shadowTexture = new THREE.CanvasTexture(shadow);
 
 			var shadowMaterial = new THREE.MeshBasicMaterial({ map: shadowTexture });
-			var shadowGeo = new THREE.PlaneGeometry(300, 300, 1, 1);
+			var shadowGeo = new THREE.PlaneGeometry(600, 600, 1, 1);
 
 			var shadowMesh;
 
@@ -1365,9 +1424,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			var wireframe = new THREE.Mesh(geometry3, wireframeMaterial);
 			mesh.add(wireframe);
 			scene.add(mesh);
-			const gl = canvas.getContext('webgl2', { antialias: false }) as WebGL2RenderingContext;
+			const gl = canvas.getContext('webgl2', { alpha: true, antialias: false }) as WebGL2RenderingContext;
 
-			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false });
+			renderer = new THREE.WebGLRenderer({ context: gl, antialias: false, alpha: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 

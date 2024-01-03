@@ -12,11 +12,8 @@ import WebKit
 
 @objcMembers
 @objc(NSCCanvas)
-public class NSCCanvas: UIView, GLKViewDelegate {
+public class NSCCanvas: UIView {
     
-    public func glkView(_ view: GLKView, drawIn rect: CGRect) {
-        view.enableSetNeedsDisplay = false
-    }
     
     private static let shared_context_view = GLKView(frame: .init(x: 0, y: 0, width: 1, height: 1))
     
@@ -70,11 +67,20 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         return ptr!
     }
     
-    public var ignorePixelScaling = false
+    public var ignorePixelScaling: Bool = false {
+        didSet {
+            if(ignorePixelScaling){
+                glkView.contentScaleFactor = 1
+            }else {
+                glkView.contentScaleFactor = UIScreen.main.scale
+            }
+        }
+    }
+    
     
     private(set) public var nativeGL: Int64 = 0
     private(set) public var nativeContext: Int64 = 0
-    private var native2DContext: Int64 = 0
+    private(set) var native2DContext: Int64 = 0
     
     internal var glkView: CanvasGLKView
     private var is2D = false
@@ -175,11 +181,13 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         if(alpha){
             properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
             isOpaque = false
+            glkView.isOpaque = false
             (glkView.layer as! CAEAGLLayer).isOpaque = false
         }else {
             properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGB565
             isOpaque = true
             (glkView.layer as! CAEAGLLayer).isOpaque = true
+            glkView.isOpaque = true
         }
         
         
@@ -207,19 +215,15 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
         
+        
         let shared_context = NSCCanvas.shared_context
         
         nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
+
         
+        // get new fbo
 
         nativeContext = CanvasHelpers.getGLPointer(nativeGL)
-        
-        
-        if(useWebGL){
-            // fixes initial whitescreen
-            glkView.deleteDrawable()
-        }
-    
     }
     
     @objc public func create2DContext(
@@ -259,7 +263,13 @@ public class NSCCanvas: UIView, GLKViewDelegate {
     
            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
            
-           let density = Float(UIScreen.main.scale)
+           var density = Float(UIScreen.main.scale)
+           
+           
+           if (ignorePixelScaling) {
+               density = 1
+           }
+           
            native2DContext = CanvasHelpers.create2DContext(
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
             alpha, density, samples, fontColor, density * 160, 0
@@ -275,11 +285,10 @@ public class NSCCanvas: UIView, GLKViewDelegate {
             return
         }
         
-//        if (width == lastSize.width && height == lastSize.height) {
-//            return;
-//        }
-        
         frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
+        glkView.frame = bounds
+        
+        setNeedsLayout()
         layoutIfNeeded()
     }
     
@@ -299,6 +308,8 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         return snapshot
     }
     
+    
+    var renderer: NSCRender? = nil
     @discardableResult public func render() -> Bool{
         return CanvasHelpers.flushGL(nativeGL)
     }
@@ -336,11 +347,11 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
-        glkView.contentScaleFactor = UIScreen.main.nativeScale
+        glkView.contentScaleFactor = UIScreen.main.scale
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.pinchRecognizer!)
+        // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     public override init(frame: CGRect) {
@@ -349,21 +360,21 @@ public class NSCCanvas: UIView, GLKViewDelegate {
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
-        glkView.contentScaleFactor = UIScreen.main.nativeScale
+        glkView.contentScaleFactor = UIScreen.main.scale
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        addGestureRecognizer(handler!.pinchRecognizer!)
+       // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     var ignoreTouchEvents = false {
         didSet {
             if(ignoreTouchEvents){
                 removeGestureRecognizer(handler!.gestureRecognizer!)
-                removeGestureRecognizer(handler!.pinchRecognizer!)
+             //   removeGestureRecognizer(handler!.pinchRecognizer!)
             }else {
                 addGestureRecognizer(handler!.gestureRecognizer!)
-                addGestureRecognizer(handler!.pinchRecognizer!)
+               // addGestureRecognizer(handler!.pinchRecognizer!)
             }
         }
     }
@@ -381,11 +392,8 @@ public class NSCCanvas: UIView, GLKViewDelegate {
     private func resize(){
         if(nativeGL == 0){return}
         EAGLContext.setCurrent(glkView.context)
-        glkView.deleteDrawable()
-        
         if(is2D){
-            glkView.bindDrawable()
-            glViewport(0, 0, GLsizei(glkView.frame.width), GLsizei(glkView.frame.height))
+            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
         }
     }

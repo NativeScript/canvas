@@ -1,4 +1,5 @@
 use std::io::{Read, Seek, SeekFrom};
+use skia_safe::FontMgr;
 
 use skia_safe::svg::Dom;
 
@@ -14,7 +15,8 @@ pub fn draw_svg_from_path(context: &mut Context, path: &str) {
             match result {
                 Ok(_) => {
                     let _ = reader.seek(SeekFrom::Start(0));
-                    match Dom::read(reader) {
+                    let mgr = FontMgr::new();
+                    match Dom::read(reader, mgr) {
                         Ok(mut svg) => {
                             let _device = context.device;
                             let size = skia_safe::Size::new(
@@ -44,7 +46,8 @@ pub fn draw_svg_from_path(context: &mut Context, path: &str) {
 }
 
 pub fn draw_svg(context: &mut Context, svg: &str) {
-    match Dom::from_bytes(svg.as_bytes()) {
+    let mgr = FontMgr::new();
+    match Dom::from_bytes(svg.as_bytes(), mgr) {
         Ok(mut svg) => {
             let _device = context.device;
             let size = skia_safe::Size::new(

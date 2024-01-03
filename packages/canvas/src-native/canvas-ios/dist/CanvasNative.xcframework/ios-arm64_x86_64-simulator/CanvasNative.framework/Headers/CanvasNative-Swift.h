@@ -308,6 +308,8 @@ SWIFT_CLASS_NAMED("CanvasGLKView")
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (void)setNeedsDisplay;
 - (void)setNeedsDisplayInRect:(CGRect)rect;
+- (void)bindDrawable;
+- (void)deleteDrawable;
 - (nonnull instancetype)initWithFrame:(CGRect)frame context:(EAGLContext * _Nonnull)context SWIFT_UNAVAILABLE;
 @end
 
@@ -356,8 +358,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
-@interface NSCCanvas : UIView <GLKViewDelegate>
-- (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
+@interface NSCCanvas : UIView
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
@@ -424,8 +425,9 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) dispatch_que
 
 
 SWIFT_CLASS_NAMED("NSCRender")
-@interface TNSRender : NSObject
+@interface NSCRender : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
 - (void)createSurface;
 @end
 
@@ -450,8 +452,8 @@ SWIFT_CLASS_NAMED("Utils")
 @interface Utils : NSObject
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
-+ (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -774,6 +776,8 @@ SWIFT_CLASS_NAMED("CanvasGLKView")
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (void)setNeedsDisplay;
 - (void)setNeedsDisplayInRect:(CGRect)rect;
+- (void)bindDrawable;
+- (void)deleteDrawable;
 - (nonnull instancetype)initWithFrame:(CGRect)frame context:(EAGLContext * _Nonnull)context SWIFT_UNAVAILABLE;
 @end
 
@@ -822,8 +826,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
-@interface NSCCanvas : UIView <GLKViewDelegate>
-- (void)glkView:(GLKView * _Nonnull)view drawInRect:(CGRect)rect;
+@interface NSCCanvas : UIView
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
@@ -890,8 +893,9 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) dispatch_que
 
 
 SWIFT_CLASS_NAMED("NSCRender")
-@interface TNSRender : NSObject
+@interface NSCRender : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+- (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
 - (void)createSurface;
 @end
 
@@ -916,8 +920,8 @@ SWIFT_CLASS_NAMED("Utils")
 @interface Utils : NSObject
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
-+ (TNSRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(TNSRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end

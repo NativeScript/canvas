@@ -1,10 +1,14 @@
-use std::ffi::{c_void};
+use std::ffi::c_void;
 use std::os::raw::c_int;
 
-use skia_safe::{AlphaType, Bitmap, images, ColorType, Data, ISize, Image, ImageInfo, Pixmap};
+use skia_safe::{AlphaType, Bitmap, ColorType, Data, Image, ImageInfo, ISize};
 
-use canvas_core::image_asset::ImageAsset;
-
+pub fn from_backend_texture(context: &mut crate::context::Context, texture: &skia_safe::gpu::BackendTexture,  origin: skia_safe::gpu::SurfaceOrigin, info: &ImageInfo) -> Option<Image> {
+    if let Some(mut context) = context.surface.canvas().recording_context() {
+        return Image::from_texture(&mut context, texture, origin, info.color_type(), info.alpha_type(), info.color_space())
+    }
+    None
+}
 pub fn to_image(
     image_array: *const u8,
     image_size: usize,
@@ -18,7 +22,7 @@ pub fn to_image(
         AlphaType::Premul,
         None,
     );
-    Image::from_raster_data(&info, Data::new_copy(image_slice), (width * 4) as usize)
+    Image::from_raster_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
 }
 
 pub fn to_image_encoded(image_array: *const u8, image_size: usize) -> Option<Image> {
@@ -38,7 +42,7 @@ pub fn from_image_slice_no_copy(image_slice: &[u8], width: c_int, height: c_int)
         None,
     );
 
-    unsafe { Image::from_raster_data(&info, Data::new_bytes(image_slice), (width * 4) as usize) }
+    unsafe { Image::from_raster_data(&info, Data::new_bytes(image_slice), info.min_row_bytes()) }
 }
 
 pub fn from_bitmap_slice(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
@@ -54,7 +58,7 @@ pub fn from_bitmap_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opt
         bm.install_pixels(
             &info,
             image_slice.as_ptr() as *mut c_void,
-            (width * 4) as usize,
+            info.min_row_bytes(),
         );
     }
 
@@ -72,7 +76,7 @@ pub fn from_image_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opti
         AlphaType::Unpremul,
         None,
     );
-    Image::from_raster_data(&info, Data::new_copy(image_slice), (width * 4) as usize)
+    Image::from_raster_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
 }
 
 pub fn from_image_slice_encoded(image_slice: &[u8]) -> Option<Image> {

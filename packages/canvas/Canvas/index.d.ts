@@ -25,6 +25,7 @@ export declare class Canvas extends CanvasBase {
 	readonly clientHeight: number;
 	private _2dContext;
 	private canvas;
+	native: any;
 
 	constructor();
 

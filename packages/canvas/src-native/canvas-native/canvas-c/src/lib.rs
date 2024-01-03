@@ -3,12 +3,14 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
+use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
+
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -17,12 +19,10 @@ use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
+use canvas_2d::context::text_styles::text_baseline::TextBaseLine;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
-use canvas_2d::utils::image::{
-    from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy,
-};
+use canvas_2d::utils::image::{from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy};
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
 #[cfg(target_os = "android")]
@@ -129,6 +129,33 @@ pub extern "C" fn canvas_native_image_filter_destroy(value: *mut ImageFilter) {
 }
 
 /* Helpers */
+
+#[no_mangle]
+pub extern "C" fn canvas_native_font_add_family(
+    alias: *const c_char,
+    filenames: *const *const c_char,
+    length: usize,
+) {
+    let names = unsafe { std::slice::from_raw_parts(filenames, length) };
+    let names = names
+        .iter()
+        .map(|value| unsafe { CStr::from_ptr(*value).to_string_lossy().to_string() })
+        .collect::<Vec<_>>();
+    let tmp = names.iter().map(String::as_ref).collect::<Vec<&str>>();
+    if alias.is_null() {
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family(
+            None,
+            tmp.as_slice(),
+        );
+    } else {
+        let alias = unsafe { CStr::from_ptr(alias) };
+        let alias = alias.to_string_lossy();
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family(
+            Some(alias.as_ref()),
+            tmp.as_slice(),
+        );
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct FileHelper {
@@ -263,6 +290,10 @@ impl CanvasRenderingContext2D {
             gl_context,
             alpha,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.context.get_context_mut().reset();
     }
 
     pub fn render(&self) {
@@ -601,7 +632,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         width as i32,
         height as i32,
     )
-    .unwrap();
+        .unwrap();
 
     gl_context.make_current();
 
@@ -673,6 +704,55 @@ pub extern "C" fn canvas_native_context_set_font(
     context
         .get_context_mut()
         .set_font(font.to_string_lossy().as_ref());
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_letter_spacing(
+    context: *const CanvasRenderingContext2D,
+) -> *const c_char {
+    let context = unsafe { &*context };
+    let ret = context.get_context().get_letter_spacing().to_string();
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_letter_spacing(
+    context: *mut CanvasRenderingContext2D,
+    spacing: *const c_char,
+) {
+    if spacing.is_null() {
+        return;
+    }
+    let context = unsafe { &mut *context };
+    let spacing = unsafe { CStr::from_ptr(spacing) };
+    context
+        .get_context_mut()
+        .set_letter_spacing(spacing.to_string_lossy().as_ref());
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_word_spacing(
+    context: *const CanvasRenderingContext2D,
+) -> *const c_char {
+    let context = unsafe { &*context };
+    let ret = context.get_context().get_word_spacing().to_string();
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_word_spacing(
+    context: *mut CanvasRenderingContext2D,
+    spacing: *const c_char,
+) {
+    if spacing.is_null() {
+        return;
+    }
+    let context = unsafe { &mut *context };
+    let spacing = unsafe { CStr::from_ptr(spacing) };
+    context
+        .get_context_mut()
+        .set_word_spacing(spacing.to_string_lossy().as_ref());
 }
 
 #[no_mangle]
@@ -991,12 +1071,12 @@ pub extern "C" fn canvas_native_context_get_text_baseline(
 ) -> *const c_char {
     let context = unsafe { &*context };
     let ret = match context.get_context().text_baseline() {
-        TextBaseline::ALPHABETIC => "alphabetic",
-        TextBaseline::BOTTOM => "bottom",
-        TextBaseline::HANGING => "hanging",
-        TextBaseline::IDEOGRAPHIC => "ideographic",
-        TextBaseline::MIDDLE => "middle",
-        TextBaseline::TOP => "top",
+        TextBaseLine::ALPHABETIC => "alphabetic",
+        TextBaseLine::BOTTOM => "bottom",
+        TextBaseLine::HANGING => "hanging",
+        TextBaseLine::IDEOGRAPHIC => "ideographic",
+        TextBaseLine::MIDDLE => "middle",
+        TextBaseLine::TOP => "top",
     };
     CString::new(ret).unwrap().into_raw()
 }
@@ -1014,14 +1094,14 @@ pub extern "C" fn canvas_native_context_set_text_baseline(
     match baseline.to_string_lossy().as_ref() {
         "alphabetic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::ALPHABETIC),
-        "bottom" => context.get_context_mut().set_text_baseline(TextBaseline::BOTTOM),
-        "hanging" => context.get_context_mut().set_text_baseline(TextBaseline::HANGING),
+            .set_text_baseline(TextBaseLine::ALPHABETIC),
+        "bottom" => context.get_context_mut().set_text_baseline(TextBaseLine::BOTTOM),
+        "hanging" => context.get_context_mut().set_text_baseline(TextBaseLine::HANGING),
         "ideographic" => context
             .get_context_mut()
-            .set_text_baseline(TextBaseline::IDEOGRAPHIC),
-        "middle" => context.get_context_mut().set_text_baseline(TextBaseline::MIDDLE),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseline::TOP),
+            .set_text_baseline(TextBaseLine::IDEOGRAPHIC),
+        "middle" => context.get_context_mut().set_text_baseline(TextBaseLine::MIDDLE),
+        "top" => context.get_context_mut().set_text_baseline(TextBaseLine::TOP),
         _ => {}
     }
 }
@@ -1602,7 +1682,6 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
     ))))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_conic_gradient(
     context: *mut CanvasRenderingContext2D,
@@ -1614,7 +1693,9 @@ pub extern "C" fn canvas_native_context_create_conic_gradient(
     let context = unsafe { &mut *context };
     Box::into_raw(Box::new(PaintStyle(Some(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(
-            context.get_context().create_conic_gradient(start_angle, x, y)
+            context
+                .get_context()
+                .create_conic_gradient(start_angle, x, y),
         ),
     ))))
 }
@@ -1748,12 +1829,32 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
             if !source_non_gpu {
                 source.make_current();
 
+
+
+                #[cfg(any(target_os = "ios", target_os = "macos"))] {
+                    let snapshot = source_ctx.snapshot();
+                    let info = snapshot.image_info();
+
+                    if let Some((image, origin)) = snapshot.backend_texture(false) {
+                        let mut ctx = context.get_context_mut();
+
+                        if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
+                            return Some(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                                context.get_context().create_pattern(image, repetition),
+                            ))
+                        }
+                    }
+
+                    return None;
+                }
+
+
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 //let data = source_ctx.snapshot_to_raster_data();
 
                 //   let mut data = source_ctx.snapshot_to_raster_data();
                 let image = source_ctx.image_snapshot_to_non_texture_image();
-                // context.make_current();
+                context.make_current();
 
                 return image.map(|image| {
                     canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -2128,18 +2229,40 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     let context = unsafe { &mut *context };
     let source = unsafe { &*source };
     source.make_current();
-    let source_ctx = source.get_context_mut();
-    let width = source_ctx.device().width;
-    let height = source_ctx.device().height;
-    let bytes = source.get_context_mut().snapshot_to_raster_data();
+    // gl context is shared so snapshots should work
+    let mut source_ctx = source.get_context_mut();
 
-    if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
-    {
-        let context = unsafe { &mut *context };
-        context.make_current();
-        context.get_context_mut().draw_image_src_xywh_dst_xywh(
-            &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
-        );
+
+    #[cfg(any(target_os = "ios", target_os = "macos"))] {
+        let snapshot = source_ctx.snapshot();
+        let info = snapshot.image_info();
+
+        if let Some((image, origin)) = snapshot.backend_texture(false) {
+            let mut ctx = context.get_context_mut();
+
+            if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
+                ctx.draw_image_src_xywh_dst_xywh(
+                    &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+                );
+            }
+        }
+    }
+
+    #[cfg(target_os = "ios")] {
+        let width = source_ctx.device().width;
+        let height = source_ctx.device().height;
+
+        let bytes = source_ctx.snapshot_to_raster_data();
+
+        if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
+        {
+            let context = unsafe { &mut *context };
+            context.make_current();
+            context.get_context_mut().draw_image_src_xywh_dst_xywh(
+                &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+            );
+        }
+
     }
 }
 
@@ -2230,6 +2353,26 @@ pub extern "C" fn canvas_native_context_fill_text(
     text: *const c_char,
     x: f32,
     y: f32,
+) {
+    if text.is_null() {
+        return;
+    }
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .fill_text(text.as_ref(), x, y, None);
+}
+
+#[inline]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_fill_text_width(
+    context: *mut CanvasRenderingContext2D,
+    text: *const c_char,
+    x: f32,
+    y: f32,
     width: f32,
 ) {
     if text.is_null() {
@@ -2241,7 +2384,7 @@ pub extern "C" fn canvas_native_context_fill_text(
     context.make_current();
     context
         .get_context_mut()
-        .fill_text(text.as_ref(), x, y, width);
+        .fill_text(text.as_ref(), x, y, Some(width));
 }
 
 #[no_mangle]
@@ -2371,7 +2514,7 @@ pub extern "C" fn canvas_native_context_measure_text(
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
     Box::into_raw(Box::new(TextMetrics(
-        context.get_context().measure_text(text.as_ref()),
+        context.get_context_mut().measure_text(text.as_ref()),
     )))
 }
 
@@ -2585,6 +2728,25 @@ pub extern "C" fn canvas_native_context_stroke_text(
     text: *const c_char,
     x: f32,
     y: f32,
+) {
+    if text.is_null() {
+        return;
+    }
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .stroke_text(text.as_ref(), x, y, None);
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_stroke_text_width(
+    context: *mut CanvasRenderingContext2D,
+    text: *const c_char,
+    x: f32,
+    y: f32,
     width: f32,
 ) {
     if text.is_null() {
@@ -2596,7 +2758,7 @@ pub extern "C" fn canvas_native_context_stroke_text(
     context.make_current();
     context
         .get_context_mut()
-        .stroke_text(text.as_ref(), x, y, width);
+        .stroke_text(text.as_ref(), x, y, Some(width));
 }
 
 #[no_mangle]
@@ -3590,8 +3752,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-    where
-        R: Read + std::io::Seek + std::io::BufRead,
+        where
+            R: Read + std::io::Seek + std::io::BufRead,
     {
         self.0.load_from_reader(reader)
     }
@@ -4146,6 +4308,7 @@ pub extern "C" fn canvas_native_text_decoder_decode_c_string(
 
     decoder.0.decode_c_string(data).into_raw()
 }
+
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_get_encoding(
     decoder: *const TextDecoder,
@@ -4445,8 +4608,8 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
         format.as_ref(),
         quality,
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[derive(Debug)]
@@ -4685,7 +4848,6 @@ impl WebGLExtension {
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_blend_minmax(canvas_webgl::prelude::EXT_blend_minmax);
 
 #[no_mangle]
@@ -4697,7 +4859,6 @@ pub extern "C" fn canvas_native_webgl_EXT_blend_minmax_destroy(value: *mut EXT_b
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_color_buffer_half_float(canvas_webgl::prelude::EXT_color_buffer_half_float);
 
 #[no_mangle]
@@ -4711,7 +4872,6 @@ pub extern "C" fn canvas_native_webgl_EXT_color_buffer_half_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_disjoint_timer_query(canvas_webgl::prelude::EXT_disjoint_timer_query);
 
 #[no_mangle]
@@ -4725,7 +4885,6 @@ pub extern "C" fn canvas_native_webgl_EXT_disjoint_timer_query_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_sRGB(canvas_webgl::prelude::EXT_sRGB);
 
 #[no_mangle]
@@ -4737,7 +4896,6 @@ pub extern "C" fn canvas_native_webgl_EXT_sRGB_destroy(value: *mut EXT_disjoint_
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_shader_texture_lod(canvas_webgl::prelude::EXT_shader_texture_lod);
 
 #[no_mangle]
@@ -4751,7 +4909,6 @@ pub extern "C" fn canvas_native_webgl_EXT_shader_texture_lod_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct EXT_texture_filter_anisotropic(canvas_webgl::prelude::EXT_texture_filter_anisotropic);
 
 #[no_mangle]
@@ -4765,7 +4922,6 @@ pub extern "C" fn canvas_native_webgl_EXT_texture_filter_anisotropic_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_element_index_uint(canvas_webgl::prelude::OES_element_index_uint);
 
 #[no_mangle]
@@ -4779,7 +4935,6 @@ pub extern "C" fn canvas_native_webgl_OES_element_index_uint_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_standard_derivatives(canvas_webgl::prelude::OES_standard_derivatives);
 
 #[no_mangle]
@@ -4793,7 +4948,6 @@ pub extern "C" fn canvas_native_webgl_OES_standard_derivatives_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_float(canvas_webgl::prelude::OES_texture_float);
 
 #[no_mangle]
@@ -4805,7 +4959,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_float_destroy(value: *mut OES_
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_float_linear(canvas_webgl::prelude::OES_texture_float_linear);
 
 #[no_mangle]
@@ -4819,7 +4972,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_float_linear_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_half_float(canvas_webgl::prelude::OES_texture_half_float);
 
 #[no_mangle]
@@ -4833,7 +4985,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_half_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_texture_half_float_linear(canvas_webgl::prelude::OES_texture_half_float_linear);
 
 #[no_mangle]
@@ -4847,7 +4998,6 @@ pub extern "C" fn canvas_native_webgl_OES_texture_half_float_linear_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct OES_vertex_array_object(canvas_webgl::prelude::OES_vertex_array_object);
 
 #[no_mangle]
@@ -4861,7 +5011,6 @@ pub extern "C" fn canvas_native_webgl_OES_vertex_array_object_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_color_buffer_float(canvas_webgl::prelude::WEBGL_color_buffer_float);
 
 #[no_mangle]
@@ -4875,7 +5024,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_color_buffer_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_atc(canvas_webgl::prelude::WEBGL_compressed_texture_atc);
 
 #[no_mangle]
@@ -4889,7 +5037,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_atc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_etc1(canvas_webgl::prelude::WEBGL_compressed_texture_etc1);
 
 #[no_mangle]
@@ -4903,7 +5050,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc1_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_s3tc(canvas_webgl::prelude::WEBGL_compressed_texture_s3tc);
 
 #[no_mangle]
@@ -4917,7 +5063,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_s3tc_srgb(
     canvas_webgl::prelude::WEBGL_compressed_texture_s3tc_srgb,
 );
@@ -4933,7 +5078,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_srgb_destroy
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_etc(canvas_webgl::prelude::WEBGL_compressed_texture_etc);
 
 #[no_mangle]
@@ -4947,7 +5091,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_compressed_texture_pvrtc(canvas_webgl::prelude::WEBGL_compressed_texture_pvrtc);
 
 #[no_mangle]
@@ -4961,7 +5104,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_pvrtc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_lose_context(canvas_webgl::prelude::WEBGL_lose_context);
 
 #[no_mangle]
@@ -4973,7 +5115,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_lose_context_destroy(value: *mut WEB
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct ANGLE_instanced_arrays(canvas_webgl::prelude::ANGLE_instanced_arrays);
 
 #[no_mangle]
@@ -4987,7 +5128,6 @@ pub extern "C" fn canvas_native_webgl_ANGLE_instanced_arrays_destroy(
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_depth_texture(canvas_webgl::prelude::WEBGL_depth_texture);
 
 #[no_mangle]
@@ -4999,7 +5139,6 @@ pub extern "C" fn canvas_native_webgl_WEBGL_depth_texture_destroy(value: *mut WE
 }
 
 #[allow(non_camel_case_types)]
-
 pub struct WEBGL_draw_buffers(canvas_webgl::prelude::WEBGL_draw_buffers);
 
 #[no_mangle]
@@ -6700,8 +6839,8 @@ pub extern "C" fn canvas_native_webgl_get_program_info_log(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -6743,8 +6882,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     CString::new(
         canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -6789,8 +6928,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
         shader,
         state.get_inner_mut(),
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -7237,49 +7376,90 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas: *mut CanvasRenderingContext2D,
     state: *mut WebGLState,
 ) {
-    assert!(!state.is_null());
+    assert!(!canvas.is_null());
     assert!(!state.is_null());
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
-    {
-        let context = &mut state.0;
-        context.remove_if_current();
-    }
 
-    let width;
-    let height;
+    let width: i32;
+    let height: i32;
     let source_non_gpu;
     {
         let ctx = canvas.get_context();
         let device = ctx.device();
-        width = device.width;
-        height = device.height;
+        width = device.width as i32;
+        height = device.height as i32;
         source_non_gpu = device.non_gpu;
     }
 
-    let mut source_ctx = canvas.get_context_mut();
-    let mut buf;
     if !source_non_gpu {
         canvas.make_current();
-        buf = source_ctx.snapshot_to_raster_data();
-        canvas.remove_if_current();
-        //  canvas.gl_context.remove_if_current();
-    } else {
-        buf = source_ctx.read_pixels();
-    }
+        let mut source_ctx = canvas.get_context_mut();
 
-    canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
-        target,
-        level,
-        internalformat,
-        width as i32,
-        height as i32,
-        0,
-        format,
-        image_type,
-        buf.as_mut_slice(),
-        state.get_inner_mut(),
-    );
+        let snapshot = source_ctx.snapshot();
+
+        if let Some(pixels) = snapshot.peek_pixels() {
+            if let Some(buf) = pixels.bytes() {
+                let buf = buf.to_vec();
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    0,
+                    format,
+                    image_type,
+                    buf.as_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        } else {
+            if let Some(buf) = source_ctx.to_raster_pixels(
+                snapshot,
+                if internalformat == gl_bindings::RGBA as i32 {
+                    true
+                } else {
+                    false
+                },
+                true,
+            ) {
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    0,
+                    format,
+                    image_type,
+                    buf.as_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        }
+    } else {
+        let mut source_ctx = canvas.get_context_mut();
+        canvas.make_current();
+        let buf = source_ctx.read_pixels();
+        canvas.remove_if_current();
+        canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            0,
+            format,
+            image_type,
+            buf.as_slice(),
+            state.get_inner_mut(),
+        );
+    }
 }
 
 #[no_mangle]
@@ -7466,45 +7646,88 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     assert!(!canvas.is_null());
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
-    {
-        let context = &mut state.0;
-        context.remove_if_current();
-    }
 
-    let width;
-    let height;
     let source_non_gpu;
     {
         let ctx = canvas.get_context();
         let device = ctx.device();
-        width = device.width;
-        height = device.height;
         source_non_gpu = device.non_gpu;
     }
 
-    let mut source_ctx = canvas.get_context_mut();
     let mut buf;
     if !source_non_gpu {
         canvas.make_current();
-        buf = source_ctx.snapshot_to_raster_data();
-        canvas.remove_if_current();
-        //  canvas.gl_context.remove_if_current();
-    } else {
-        buf = source_ctx.read_pixels();
-    }
+        let mut source_ctx = canvas.get_context_mut();
+        source_ctx.flush_and_sync_cpu();
+        let snapshot = source_ctx.snapshot();
+        let width = snapshot.width();
+        let height = snapshot.height();
 
-    canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
-        target,
-        level,
-        xoffset,
-        yoffset,
-        width as _,
-        height as _,
-        format,
-        image_type,
-        buf.as_mut_slice(),
-        state.get_inner_mut(),
-    );
+        if let Some(pixels) = snapshot.peek_pixels() {
+            if let Some(buf) = pixels.bytes() {
+                let mut buf = buf.to_vec();
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    image_type,
+                    buf.as_mut_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        } else {
+            if let Some(mut buf) = source_ctx.to_raster_pixels(
+                snapshot,
+                if format == gl_bindings::RGBA {
+                    true
+                } else {
+                    false
+                },
+                true,
+            ) {
+                state.0.make_current();
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    image_type,
+                    buf.as_mut_slice(),
+                    state.get_inner_mut(),
+                );
+            }
+        }
+    } else {
+        let mut source_ctx = canvas.get_context_mut();
+        canvas.make_current();
+        let width = source_ctx.device().width;
+        let height = source_ctx.device().height;
+        buf = source_ctx.read_pixels();
+        canvas.remove_if_current();
+
+        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width as _,
+            height as _,
+            format,
+            image_type,
+            buf.as_mut_slice(),
+            state.get_inner_mut(),
+        );
+    }
 }
 
 #[no_mangle]
@@ -8609,8 +8832,8 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_name(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]

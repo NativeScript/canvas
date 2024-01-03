@@ -13,6 +13,8 @@ import UIKit
 @objc(CanvasGLKView)
 public class CanvasGLKView: GLKView {
     var isDirty: Bool = false
+    private (set) var fbo: UInt32 = 0
+    
     public init() {
         super.init(frame: .zero)
     }
@@ -32,6 +34,17 @@ public class CanvasGLKView: GLKView {
     public override func setNeedsDisplay(_ rect: CGRect) {
         super.setNeedsDisplay(rect)
         // isDirty = true
+    }
+    public override func bindDrawable() {
+        super.bindDrawable()
+        var fbo: UInt32 = 0
+        glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &fbo)
+        self.fbo = fbo
+    }
+    
+    public override func deleteDrawable() {
+        super.deleteDrawable()
+        self.fbo = 0
     }
 }
 

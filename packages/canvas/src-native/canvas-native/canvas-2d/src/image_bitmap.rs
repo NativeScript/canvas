@@ -249,7 +249,7 @@ pub(crate) fn create_image_bitmap_internal(
         Some(mut surface) => {
             let canvas = surface.canvas();
             if flip_y {
-                canvas.translate(skia_safe::Vector::new(0., source_rect.height() as f32));
+                canvas.translate(skia_safe::Vector::new(0., source_rect.height()));
                 canvas.scale((1., -1.));
             }
 

@@ -56,7 +56,7 @@ pub enum WebGLExtensionType {
     WEBGL_depth_texture,
     WEBGL_draw_buffers,
     OES_fbo_render_mipmap,
-    None
+    None,
 }
 
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -170,7 +170,7 @@ impl WebGLState {
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
         ctx.make_current();
-       // crate::webgl::restore_state_after_clear(&mut ctx);
+        // crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 
@@ -219,12 +219,12 @@ impl WebGLState {
             flip_y: false,
             unpack_colorspace_conversion_webgl: WEBGL_BROWSER_DEFAULT_WEBGL as i32,
         })));
-       // crate::webgl::restore_state_after_clear(&mut ctx);
+        // crate::webgl::restore_state_after_clear(&mut ctx);
         ctx
     }
 
     #[cfg(target_os = "ios")]
-    pub fn snapshot(&self) -> Option<Vec<u8>>{
+    pub fn snapshot(&self) -> Option<Vec<u8>> {
         self.get().gl_context.snapshot()
     }
 
@@ -413,6 +413,39 @@ impl WebGLState {
 
     pub fn remove_if_current(&self) {
         self.get().gl_context.remove_if_current();
+    }
+
+    pub fn init_transfer_surface(&mut self, texture_id: u32) {
+        let mut lock = self.get();
+        lock.gl_context
+            .get_transfer_surface_info_mut()
+            .init(texture_id);
+    }
+
+    pub fn draw_tex_image_2d(
+        &mut self,
+        target: u32,
+        level: i32,
+        width: u32,
+        height: u32,
+        internal_format: i32,
+        format: i32,
+        flip_y_webgl: bool,
+        texture_id: u32,
+    ) {
+        let mut lock = self.get();
+        lock.gl_context
+            .get_transfer_surface_info_mut()
+            .draw_tex_image_2d(
+                target,
+                level,
+                width,
+                height,
+                internal_format,
+                format,
+                flip_y_webgl,
+                texture_id,
+            );
     }
 }
 
@@ -992,8 +1025,7 @@ impl WebGLExtension for OES_texture_float {
     }
 }
 
-
-pub struct OES_fbo_render_mipmap{}
+pub struct OES_fbo_render_mipmap {}
 
 impl OES_fbo_render_mipmap {
     pub fn new() -> Self {

@@ -53,12 +53,13 @@ import {
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54, issue93 } from './issues';
+import { subTest } from './webgl/test';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -75,12 +76,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		console.log('canvas ready');
-		this.textBaseLine();
-		// this.draw();
+		this.draw();
 	}
 
-	textBaseLine() {
-		const ctx = this.canvas.getContext('2d');
+	textBaseLine(canvas) {
+		const ctx = canvas.getContext('2d');
 
 		const baselines = ['top', 'hanging', 'middle', 'alphabetic', 'ideographic', 'bottom'];
 		ctx.font = '24px serif';
@@ -94,6 +94,29 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.lineTo(550, y + 0.5);
 			ctx.stroke();
 			ctx.fillText(`Abcdefghijklmnop (${baseline})`, 0, y);
+		});
+	}
+
+	textBaseLine2(canvas) {
+		const ctx = canvas.getContext('2d');
+
+		const baselines = ['top', 'hanging', 'middle', 'alphabetic', 'ideographic', 'bottom'];
+		ctx.font = '20px serif';
+		ctx.strokeStyle = 'red';
+
+		ctx.beginPath();
+		ctx.moveTo(0, 100);
+		ctx.lineTo(840, 100);
+		ctx.moveTo(0, 55);
+		ctx.stroke();
+
+		baselines.forEach((baseline, index) => {
+			ctx.save();
+			ctx.textBaseline = baseline;
+			let x = index * 120 + 10;
+			ctx.fillText('Abcdefghijk', x, 100);
+			ctx.restore();
+			ctx.fillText(baseline, x + 5, 50);
 		});
 	}
 
@@ -510,7 +533,21 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.stroke();
 	}
 
+	drawOnCanvasWithCanvas(canvas) {
+		const c2 = document.createElement('canvas');
+		c2.width = 512;
+		c2.height = 512;
+		const c2d = c2.getContext('2d');
+		const image = new global.ImageAsset();
+
+		image.fromUrl(`https://source.unsplash.com/random/${512}x${512}`).then(() => {
+			c2d.drawImage(image, 0, 0);
+			const ctx = canvas.getContext('2d');
+			ctx.drawImage(c2, 0, 0);
+		});
+	}
 	draw() {
+		this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
@@ -647,6 +684,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
+		//this.letterSpacing(this.canvas);
+		//this.wordSpacing(this.canvas);
+		//imageProcessing(this.canvas);
+		//subTest(this.canvas);
 		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);
 		//textures(this.canvas);
@@ -678,6 +719,40 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// 	canvas.getBoundingClientRect();
 		// }
 		// console.timeEnd('getBoundingClientRect');
+		// this.textBaseLine(this.canvas);
+		//this.textBaseLine2(this.canvas);
+	}
+
+	letterSpacing(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.font = '30px serif';
+
+		// Default letter spacing
+		ctx.fillText(`Hello world (default: ${ctx.letterSpacing})`, 10, 40);
+
+		// Custom letter spacing: 10px
+		ctx.letterSpacing = '10px';
+		ctx.fillText(`Hello world (${ctx.letterSpacing})`, 10, 90);
+
+		// Custom letter spacing: 20px
+		ctx.letterSpacing = '20px';
+		ctx.fillText(`Hello world (${ctx.letterSpacing})`, 10, 140);
+	}
+
+	wordSpacing(canvas) {
+		const ctx = canvas.getContext('2d');
+		ctx.font = '30px serif';
+
+		// Default word spacing
+		ctx.fillText(`Hello world (default: ${ctx.wordSpacing})`, 10, 40);
+
+		// Custom word spacing: 10px
+		ctx.wordSpacing = '10px';
+		ctx.fillText(`Hello world (${ctx.wordSpacing})`, 10, 90);
+
+		// Custom word spacing: 30px
+		ctx.wordSpacing = '30px';
+		ctx.fillText(`Hello world (${ctx.wordSpacing})`, 10, 140);
 	}
 
 	drawRandomFullscreenImage(canvas) {

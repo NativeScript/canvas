@@ -1,6 +1,6 @@
 // swift-interface-format-version: 1.0
 // swift-compiler-version: Apple Swift version 5.8.1 (swiftlang-5.8.0.124.5 clang-1403.0.22.11.100)
-// swift-module-flags: -target arm64-apple-ios11.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
+// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
 // swift-module-flags-ignorable: -enable-bare-slash-regex
 import AVFoundation
 @_exported import CanvasNative
@@ -44,12 +44,14 @@ import _StringProcessing
   @objc override dynamic public init()
   @objc deinit
 }
-@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCCanvas) @_Concurrency.MainActor(unsafe) public class NSCCanvas : UIKit.UIView, GLKit.GLKViewDelegate {
-  @_Concurrency.MainActor(unsafe) @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCCanvas) @_Concurrency.MainActor(unsafe) public class NSCCanvas : UIKit.UIView {
   @objc @_Concurrency.MainActor(unsafe) public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor(unsafe) public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
   @objc @_Concurrency.MainActor(unsafe) public func getViewPtr() -> Swift.UnsafeMutableRawPointer
-  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool
+  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public var nativeGL: Swift.Int64 {
     get
   }
@@ -83,8 +85,9 @@ import _StringProcessing
   @objc deinit
   @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ canvas: CanvasNative.NSCCanvas, _ buffer: Swift.UnsafeMutableRawPointer)
 }
-@_inheritsConvenienceInitializers @objcMembers @objc(TNSRender) public class NSCRender : ObjectiveC.NSObject {
+@_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()
+  @objc public func texImage2D(_ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ source: CanvasNative.NSCCanvas, _ dest: CanvasNative.NSCCanvas, _ flipYWebGL: Swift.Bool)
   @objc public func createSurface()
   @objc deinit
 }
@@ -135,6 +138,8 @@ import _StringProcessing
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay(_ rect: CoreFoundation.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func bindDrawable()
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func deleteDrawable()
   @objc deinit
 }
 extension GLKit.GLKView {

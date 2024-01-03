@@ -10,10 +10,12 @@ const DEG: f32 = 180.0 / PI;
 impl Context {
     pub fn get_transform(&mut self) -> Matrix {
         let mut matrix = self.surface.canvas().local_to_device_as_3x3();
-        // return a non density scaled matrix
-        let x = matrix.scale_x() / self.device.density;
-        let y = matrix.scale_y() / self.device.density;
-        matrix.set_scale((x, y), None);
+        if self.state.use_device_scale {
+            // return a non density scaled matrix
+            let x = matrix.scale_x() / self.device.density;
+            let y = matrix.scale_y() / self.device.density;
+            matrix.set_scale((x, y), None);
+        }
         matrix
     }
 
@@ -22,8 +24,12 @@ impl Context {
     }
 
     pub fn scale(&mut self, x: c_float, y: c_float) {
-        let density = self.device.density;
-        self.surface.canvas().scale((x * density, y * density));
+        if self.state.use_device_scale {
+            let density = self.device.density;
+            self.surface.canvas().scale((x * density, y * density));
+        } else {
+            self.surface.canvas().scale((x, y));
+        }
     }
 
     pub fn translate(&mut self, x: c_float, y: c_float) {
@@ -41,11 +47,13 @@ impl Context {
     ) {
         let affine = [a, b, c, d, e, f];
         let mut transform = Matrix::from_affine(&affine);
-        let density = self.device.density;
-        let x_scale = transform.scale_x() * density;
-        let y_scale = transform.scale_y() * density;
-        transform.set_scale_x(x_scale);
-        transform.set_scale_y(y_scale);
+        if self.state.use_device_scale {
+            let density = self.device.density;
+            let x_scale = transform.scale_x() * density;
+            let y_scale = transform.scale_y() * density;
+            transform.set_scale_x(x_scale);
+            transform.set_scale_y(y_scale);
+        }
         self.surface.canvas().concat(&transform);
     }
 
@@ -53,11 +61,13 @@ impl Context {
         let mut current = self.surface.canvas().local_to_device_as_3x3();
         current.pre_concat(matrix);
 
-        let density = self.device.density;
-        let x_scale = current.scale_x() * density;
-        let y_scale = current.scale_y() * density;
-        current.set_scale_x(x_scale);
-        current.set_scale_y(y_scale);
+        if self.state.use_device_scale {
+            let density = self.device.density;
+            let x_scale = current.scale_x() * density;
+            let y_scale = current.scale_y() * density;
+            current.set_scale_x(x_scale);
+            current.set_scale_y(y_scale);
+        }
 
         let m = M44::from(&current);
         self.surface.canvas().set_matrix(&m);
@@ -75,11 +85,13 @@ impl Context {
         let affine = [a, b, c, d, e, f];
         let mut matrix = Matrix::from_affine(&affine);
 
-        let density = self.device.density;
-        let x_scale = matrix.scale_x() * density;
-        let y_scale = matrix.scale_y() * density;
-        matrix.set_scale_x(x_scale);
-        matrix.set_scale_y(y_scale);
+        if self.state.use_device_scale {
+            let density = self.device.density;
+            let x_scale = matrix.scale_x() * density;
+            let y_scale = matrix.scale_y() * density;
+            matrix.set_scale_x(x_scale);
+            matrix.set_scale_y(y_scale);
+        }
 
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
@@ -88,13 +100,13 @@ impl Context {
     pub fn set_transform_matrix(&mut self, matrix: &Matrix) {
         self.surface.canvas().reset_matrix();
         let mut matrix = matrix.clone();
-
-        let density = self.device.density;
-        let x_scale = matrix.scale_x() * density;
-        let y_scale = matrix.scale_y() * density;
-        matrix.set_scale_x(x_scale);
-        matrix.set_scale_y(y_scale);
-
+        if self.state.use_device_scale {
+            let density = self.device.density;
+            let x_scale = matrix.scale_x() * density;
+            let y_scale = matrix.scale_y() * density;
+            matrix.set_scale_x(x_scale);
+            matrix.set_scale_y(y_scale);
+        }
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
     }

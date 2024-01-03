@@ -107,13 +107,13 @@ impl Context {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint().clone();
+        let paint = self.state.paint.image_paint();
         self.surface.canvas().draw_image_rect_with_sampling_options(
             image,
             Some((&src_rect, SrcRectConstraint::Strict)),
             dst_rect,
             self.state.image_smoothing_quality,
-            &paint,
+            paint,
         );
     }
 
@@ -122,13 +122,13 @@ impl Context {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint().clone();
+        let paint = self.state.paint.image_paint();
         self.surface.canvas().draw_image_rect_with_sampling_options(
             image,
             None,
             dst_rect,
             self.state.image_smoothing_quality,
-            &paint,
+            paint,
         );
     }
 
@@ -136,7 +136,7 @@ impl Context {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint().clone();
+        let paint = self.state.paint.image_paint();
         self.surface.canvas().draw_image_with_sampling_options(
             image,
             (x, y),

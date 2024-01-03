@@ -399,15 +399,17 @@ class NSCCanvas : FrameLayout {
 			xrCompatible
 		)
 
-		val density = resources.displayMetrics.density
+		val density = if (ignorePixelScaling) {
+			1F
+		} else {
+			resources.displayMetrics.density
+		}
 
 		val samples = if (antialias) {
 			4
 		} else {
 			0
 		}
-
-		val start = System.currentTimeMillis()
 
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
@@ -420,9 +422,6 @@ class NSCCanvas : FrameLayout {
 			(resources.displayMetrics.densityDpi * 160).toFloat(),
 			direction
 		)
-
-		Log.d("com.test", "ts ${System.currentTimeMillis() - start}")
-
 		return native2DContext
 	}
 

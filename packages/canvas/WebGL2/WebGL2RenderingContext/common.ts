@@ -1,6 +1,6 @@
-import { WebGLRenderingContext } from '../../WebGL/WebGLRenderingContext';
+import { WebGLRenderingContextBase } from '../../WebGL/WebGLRenderingContext';
 
-export class WebGL2RenderingContextBase extends WebGLRenderingContext {
+export class WebGL2RenderingContextBase extends WebGLRenderingContextBase {
 	constructor(context, contextOptions?) {
 		super(context, contextOptions);
 	}

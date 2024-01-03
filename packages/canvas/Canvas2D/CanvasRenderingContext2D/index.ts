@@ -107,6 +107,14 @@ export class CanvasRenderingContext2D {
 		this.context.lineDashOffset = offset;
 	}
 
+	get letterSpacing() {
+		return this.context.letterSpacing;
+	}
+
+	set letterSpacing(spacing: string) {
+		this.context.letterSpacing = spacing;
+	}
+
 	get lineJoin() {
 		return this.context.lineJoin;
 	}
@@ -160,7 +168,15 @@ export class CanvasRenderingContext2D {
 	}
 
 	set textAlign(alignment: string) {
-		this.context.setTextAlign = alignment;
+		this.context.textAlign = alignment;
+	}
+
+	get textBaseline() {
+		return this.context.textBaseline;
+	}
+
+	set textBaseline(baseline: string) {
+		this.context.textBaseline = baseline;
 	}
 
 	get globalCompositeOperation() {
@@ -215,6 +231,14 @@ export class CanvasRenderingContext2D {
 
 	set lineWidth(width: number) {
 		this.context.lineWidth = width;
+	}
+
+	get wordSpacing() {
+		return this.context.wordSpacing;
+	}
+
+	set wordSpacing(spacing: string) {
+		this.context.wordSpacing = spacing;
 	}
 
 	__toDataURL(type: string = 'image/jpg', quality: number = 92) {

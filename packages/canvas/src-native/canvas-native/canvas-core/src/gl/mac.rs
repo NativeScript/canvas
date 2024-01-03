@@ -1,5 +1,7 @@
 use once_cell::sync::OnceCell;
-use parking_lot::RwLock;
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::sync::Arc;
@@ -39,6 +41,7 @@ pub struct GLContextInner {
     display: Option<Display>,
     window: Option<Window>,
     event: Option<EventLoop<()>>,
+    transfer_surface_info: crate::gl::TransferSurface,
 }
 
 unsafe impl Sync for GLContextInner {}
@@ -94,8 +97,7 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_transparency(value.get_alpha())
-            .build();
+            .with_transparency(value.get_alpha());
 
         if !value.get_is_canvas() && value.get_antialias() {
             builder = builder.with_multisampling(4)
@@ -113,7 +115,7 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
             .with_transparency(self.get_alpha());
 
-        if !value.get_is_canvas() && value.get_antialias() {
+        if !self.get_is_canvas() && self.get_antialias() {
             builder = builder.with_multisampling(4)
         }
         builder
@@ -283,11 +285,33 @@ impl GLContext {
         false
     }
 
+    pub fn create_shared_window_context(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+        context: &GLContext,
+    ) -> Option<GLContext> {
+        GLContext::create_window_context_internal(
+            context_attrs, width, height, window, Some(context)
+        )
+    }
+
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
         width: i32,
         height: i32,
         window: RawWindowHandle,
+    ) -> Option<GLContext> {
+        GLContext::create_window_context_internal(context_attrs, width, height, window, None)
+    }
+
+    fn create_window_context_internal(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        window: RawWindowHandle,
+        context: Option<&GLContext>,
     ) -> Option<GLContext> {
         match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
             Ok(display) => unsafe {
@@ -408,15 +432,24 @@ impl GLContext {
                             .map(SurfaceHelper::Window)
                             .ok();
 
-                        let context_attrs = glutin::context::ContextAttributesBuilder::new()
-                            .with_context_api(ContextApi::OpenGl(Some(
-                                if context_attrs.get_is_canvas() {
+                        let mut context_attrs_builder =
+                            glutin::context::ContextAttributesBuilder::new().with_context_api(
+                                ContextApi::OpenGl(Some(if context_attrs.get_is_canvas() {
                                     Version::new(2, 1)
                                 } else {
                                     Version::new(3, 0)
-                                },
-                            )))
-                            .build(Some(window));
+                                })),
+                            );
+
+                        if let Some(context) = context {
+                            let inner = context.inner.read();
+                            if let Some(context) = inner.context.as_ref() {
+                                context_attrs_builder =
+                                    context_attrs_builder.with_context_api(context.context_api());
+                            }
+                        }
+
+                        let context_attrs = context_attrs_builder.build(Some(window));
 
                         let context = display
                             .create_context(&config, &context_attrs)
@@ -430,6 +463,7 @@ impl GLContext {
                                 display: Some(display),
                                 window: None,
                                 event: None,
+                                transfer_surface_info: Default::default(),
                             })),
                         })
                     }
@@ -574,14 +608,14 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        use winit::event::{Event, WindowEvent};
         use winit::event_loop::EventLoop;
         use winit::window::WindowBuilder;
 
-        let event_loop = EventLoop::new();
+        let event_loop = EventLoop::new().unwrap();
         let window_builder = WindowBuilder::new();
 
         let window = window_builder
+            .with_inner_size(winit::dpi::PhysicalSize::new(width, height))
             .with_visible(false)
             .build(&event_loop)
             .unwrap();
@@ -594,6 +628,36 @@ impl GLContext {
                     let mut context = ctx.inner.write();
                     context.window = Some(window);
                     context.event = Some(event_loop);
+                }
+                ctx
+            },
+        )
+    }
+
+    pub fn create_offscreen_context_with_event_loop(
+        context_attrs: &mut ContextAttributes,
+        width: i32,
+        height: i32,
+        event_loop: &EventLoop<()>,
+    ) -> Option<GLContext> {
+        use winit::window::WindowBuilder;
+
+        let window_builder = WindowBuilder::new();
+
+        let window = window_builder
+            .with_inner_size(winit::dpi::PhysicalSize::new(width, height))
+            .with_visible(false)
+            .build(event_loop)
+            .unwrap();
+
+        let raw_window_handle = window.raw_window_handle();
+
+        GLContext::create_window_context(context_attrs, width, height, raw_window_handle).map(
+            |ctx| {
+                {
+                    let mut context = ctx.inner.write();
+                    context.window = Some(window);
+                    context.event = None;
                 }
                 ctx
             },
@@ -618,8 +682,6 @@ impl GLContext {
             Err(_) => false,
         }
     }
-
-
 
     #[inline(always)]
     pub fn set_vsync(&self, sync: bool) -> bool {
@@ -685,7 +747,8 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_width(&self) -> i32 {
         let inner = self.inner.read();
-        inner.surface
+        inner
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
@@ -698,7 +761,8 @@ impl GLContext {
     #[inline(always)]
     pub fn get_surface_height(&self) -> i32 {
         let inner = self.inner.read();
-        inner.surface
+        inner
+            .surface
             .as_ref()
             .map(|v| match v {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
@@ -706,5 +770,15 @@ impl GLContext {
                 SurfaceHelper::Pixmap(pixmap) => pixmap.height().unwrap_or_default() as i32,
             })
             .unwrap_or_default()
+    }
+
+    pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
+        RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
+    }
+
+    pub fn get_transfer_surface_info_mut(
+        &self,
+    ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
+        RwLockWriteGuard::map(self.inner.write(), |v| &mut v.transfer_surface_info)
     }
 }

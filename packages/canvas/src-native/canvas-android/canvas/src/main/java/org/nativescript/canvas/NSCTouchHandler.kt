@@ -47,7 +47,7 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 				sb.append(",\"pointers\": [")
 
 				currentEvent?.let { currentEvent ->
-					val pointerCount = currentEvent.pointerCount ?: 0
+					val pointerCount = currentEvent.pointerCount
 					val last = pointerCount - 1
 					for (p in 0 until pointerCount) {
 						try {
@@ -149,6 +149,7 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 		append("event", "down", sb)
 		append("ptrId", ptrId, sb)
+		append("isPrimary", ptrId == 0, sb)
 		append("x", x / scale, sb)
 		append("y", y / scale, sb, true)
 
@@ -168,6 +169,7 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 		append("event", "up", sb)
 		append("ptrId", ptrId, sb)
+		append("isPrimary", ptrId == 0, sb)
 		append("x", x / scale, sb)
 		append("y", y / scale, sb, true)
 
@@ -186,6 +188,7 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 		append("event", "cancel", sb)
 		append("ptrId", ptrId, sb)
+		append("isPrimary", ptrId == 0, sb)
 		append("x", x / scale, sb)
 		append("y", y / scale, sb, true)
 
@@ -211,6 +214,7 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 				val pid: Int = me.getPointerId(p)
 				sb.append("{")
 				append("ptrId", pid, sb)
+				append("isPrimary", pid == 0, sb)
 				append("x", me.getX(p) / scale, sb)
 				append("y", me.getY(p) / scale, sb, true)
 

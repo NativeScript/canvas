@@ -14,6 +14,18 @@ class NSCTouchHandler: NSObject {
     var panRecognizer: UIPanGestureRecognizer?
     var pinchRecognizer: UIPinchGestureRecognizer?
     
+    
+    var pointers: [Pointer] = []
+    
+    private var nextId: Int = 0
+    struct Pointer {
+        var pointerId: Int
+        var location: CGPoint
+        var touch: UITouch
+    }
+   
+    
+    
     init(canvas: NSCCanvas) {
         view = canvas
         super.init()
@@ -21,18 +33,15 @@ class NSCTouchHandler: NSObject {
         self.gestureRecognizer?.handler = self
         self.panRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handle))
         self.pinchRecognizer = UIPinchGestureRecognizer(target: self, action: #selector(handle))
+        self.pointers.reserveCapacity(10)
     }
 
-    var pointers: [CGPoint] = Array(repeating: CGPointZero, count: 10)
-    var touches: [UITouch?] = Array(repeating: nil, count: 10)
-    var lastPointerPosition: [CGPoint] = Array(repeating: CGPointZero, count: 10)
-    
+
     class TouchGestureRecognizer: UIGestureRecognizer {
         var handler: NSCTouchHandler?
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
 
-            for (ptridx, touch) in touches.enumerated() {
-                
+            for touch in touches {
                 
                let location = touch.location(in: view)
                 
@@ -42,11 +51,14 @@ class NSCTouchHandler: NSObject {
                     return
                 }
                 
-                handler.pointers[ptridx] = location
-                handler.touches[ptridx] = touch
-                handler.onPress(ptridx, location.x, location.y, self)
+                let pointer = Pointer(pointerId: handler.nextId, location: location, touch: touch)
+                
+                handler.pointers.append(pointer)
+                handler.onPress(pointer.pointerId, location.x, location.y, self)
                 
                 view?.touchesBegan(touches, with: event)
+                
+                handler.nextId += 1
                 
             }
         }
@@ -58,19 +70,26 @@ class NSCTouchHandler: NSObject {
         
         override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
         
-            for (ptridx, touch) in touches.enumerated() {
+            for touch in touches {
                 
                let location = touch.location(in: view)
-                
+               
                 
                 guard let handler = handler else {
                     view?.touchesEnded(touches, with: event)
                     return
                 }
                 
-                handler.onRelease(ptridx, location.x, location.y, self)
-                handler.pointers[ptridx] = CGPointZero
-                handler.touches[ptridx] = nil
+                
+                let index = handler.pointers.firstIndex { pointer in
+                    return pointer.touch == touch
+                }
+                
+                guard let index = index else {return}
+                let pointer = handler.pointers[index]
+                
+                handler.onRelease(pointer.pointerId, location.x, location.y, self)
+                handler.pointers.remove(at: index)
                 
                 view?.touchesEnded(touches, with: event)
                 
@@ -78,7 +97,7 @@ class NSCTouchHandler: NSObject {
         }
         
         override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
-            for (ptridx, touch) in touches.enumerated() {
+            for touch in touches {
                 
                let location = touch.location(in: view)
             
@@ -86,9 +105,16 @@ class NSCTouchHandler: NSObject {
                     view?.touchesCancelled(touches, with: event)
                     return
                 }
-                handler.onCancel(ptridx, location.x, location.y, self)
-                handler.pointers[ptridx] = CGPointZero
-                handler.touches[ptridx] = nil
+               
+                let index = handler.pointers.firstIndex { pointer in
+                    return pointer.touch == touch
+                }
+                
+                guard let index = index else {return}
+                let pointer = handler.pointers[index]
+                
+                handler.onCancel(pointer.pointerId, location.x, location.y, self)
+                handler.pointers.remove(at: index)
                 
                 view?.touchesCancelled(touches, with: event)
                 
@@ -99,7 +125,7 @@ class NSCTouchHandler: NSObject {
     
     @objc func handle(_ gestureRecognizer: UIGestureRecognizer) {
         
-        let numberOfTouches = gestureRecognizer.numberOfTouches
+      /*  let numberOfTouches = gestureRecognizer.numberOfTouches
 
         let action = gestureRecognizer.state
         let ptridx = numberOfTouches > 0 ? numberOfTouches - 1 : 0
@@ -201,7 +227,10 @@ class NSCTouchHandler: NSObject {
         sb += "}"
         
         view.touchEventListener?(sb, gestureRecognizer)
+        
+        */
     }
+    
     
     private func onPress(
         _ ptrId: Int, _ x: CGFloat, _ y: CGFloat,
@@ -210,6 +239,7 @@ class NSCTouchHandler: NSObject {
         var sb = "{"
         append("event", "down", &sb)
         append("ptrId", ptrId, &sb)
+        append("isPrimary", pointers.first?.pointerId == ptrId, &sb)
         append("x", x, &sb)
         append("y", y, &sb, true)
 
@@ -226,6 +256,7 @@ class NSCTouchHandler: NSObject {
         var sb = "{"
         append("event", "up", &sb)
         append("ptrId", ptrId, &sb)
+        append("isPrimary", pointers.first?.pointerId == ptrId, &sb)
         append("x", x, &sb)
         append("y", y, &sb, true)
 
@@ -241,6 +272,7 @@ class NSCTouchHandler: NSObject {
         var sb = "{"
         append("event", "cancel", &sb)
         append("ptrId", ptrId, &sb)
+        append("isPrimary", pointers.first?.pointerId == ptrId, &sb)
         append("x", x, &sb)
         append("y", y, &sb, true)
         sb += "}"
@@ -268,23 +300,20 @@ class NSCTouchHandler: NSObject {
                 var sb = "{"
                 append("event", "move", &sb)
 
-                let last = touches!.count - 1
+                let last = self.pointers.count - 1
                 sb.append("\"pointers\": [")
                 
                 
-                for (ptridx, touch) in self.touches.enumerated() {
-                    if(touch == nil){
-                        continue
-                    }
-                    
-                   let location = touch!.location(in: view)
-                    
+                for (index, pointer) in self.pointers.enumerated() {
+                    let location = pointer.touch.location(in: view)
+                    let pointerId = pointer.pointerId
                     sb += "{"
-                    append("ptrId", ptridx, &sb)
+                    append("ptrId", pointerId, &sb)
+                    append("isPrimary", index == 0, &sb)
                     append("x", location.x, &sb)
                     append("y", location.y, &sb, true)
 
-                    if ptridx != last {
+                    if index != last {
                         sb += "},"
                     } else {
                         sb += "}"
@@ -303,7 +332,7 @@ class NSCTouchHandler: NSObject {
             }
             
             
-            let pointerCount = gestureRecognizer.numberOfTouches
+          /*  let pointerCount = gestureRecognizer.numberOfTouches
 
             var sb = "{"
             append("event", "move", &sb)
@@ -328,6 +357,7 @@ class NSCTouchHandler: NSObject {
             
             sb += "}"
             view.touchEventListener?(sb, gestureRecognizer)
+            */
 
         }
     

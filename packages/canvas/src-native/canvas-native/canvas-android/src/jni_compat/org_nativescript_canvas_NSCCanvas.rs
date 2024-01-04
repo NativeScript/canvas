@@ -1,12 +1,12 @@
-use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use std::ffi::c_void;
+
 use jni::JNIEnv;
-use log::Level;
+use jni::objects::{JClass, JObject, JString};
+use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject};
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
-use std::ffi::c_void;
+use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect, Surface};
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -131,8 +131,7 @@ pub extern "system" fn nativeInitGLNoSurface(
     0
 }
 
-#[no_mangle]
-pub extern "system" fn nativeCreate2DContext(
+fn native_create_2d_context(
     context: jlong,
     width: jint,
     height: jint,
@@ -176,6 +175,42 @@ pub extern "system" fn nativeCreate2DContext(
     //context.gl_context.swap_buffers();
 
     Box::into_raw(Box::new(ctx_2d)) as jlong
+}
+
+#[no_mangle]
+pub extern "system" fn nativeCreate2DContext(
+    context: jlong,
+    width: jint,
+    height: jint,
+    alpha: jboolean,
+    density: jfloat,
+    samples: jint,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    native_create_2d_context(
+        context, width, height, alpha, density, samples, font_color, ppi, direction,
+    )
+}
+
+#[no_mangle]
+pub extern "system" fn nativeCreate2DContextNormal(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    width: jint,
+    height: jint,
+    alpha: jboolean,
+    density: jfloat,
+    samples: jint,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    native_create_2d_context(
+        context, width, height, alpha, density, samples, font_color, ppi, direction,
+    )
 }
 
 #[no_mangle]
@@ -227,8 +262,7 @@ pub extern "system" fn nativeUpdate2DSurface(
     }
 }
 
-#[no_mangle]
-pub extern "system" fn nativeUpdate2DSurfaceNoSurface(width: jint, height: jint, context: jlong) {
+fn native_update_2d_surface_no_surface(width: jint, height: jint, context: jlong) {
     if context == 0 {
         return;
     }
@@ -241,7 +275,22 @@ pub extern "system" fn nativeUpdate2DSurfaceNoSurface(width: jint, height: jint,
 }
 
 #[no_mangle]
-pub extern "system" fn nativeUpdateGLNoSurface(width: jint, height: jint, context: jlong) {
+pub extern "system" fn nativeUpdate2DSurfaceNoSurface(width: jint, height: jint, context: jlong) {
+    native_update_2d_surface_no_surface(width, height, context)
+}
+
+#[no_mangle]
+pub extern "system" fn nativeUpdate2DSurfaceNoSurfaceNormal(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    native_update_2d_surface_no_surface(width, height, context)
+}
+
+fn native_update_gl_no_surface(width: jint, height: jint, context: jlong) {
     if context == 0 {
         return;
     }
@@ -253,7 +302,33 @@ pub extern "system" fn nativeUpdateGLNoSurface(width: jint, height: jint, contex
 }
 
 #[no_mangle]
+pub extern "system" fn nativeUpdateGLNoSurface(width: jint, height: jint, context: jlong) {
+    native_update_gl_no_surface(width, height, context)
+}
+
+#[no_mangle]
+pub extern "system" fn nativeUpdateGLNoSurfaceNormal(
+    _env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    context: jlong,
+) {
+    native_update_gl_no_surface(width, height, context)
+}
+
+#[no_mangle]
 pub extern "system" fn nativeReleaseGL(context: jlong) {
+    if context == 0 {
+        return;
+    }
+    let context = context as *mut AndroidGLContext;
+    let _ = unsafe { Box::from_raw(context) };
+}
+
+#[no_mangle]
+pub extern "system" fn nativeReleaseGLNormal( _env: JNIEnv,
+                                              _: JClass, context: jlong) {
     if context == 0 {
         return;
     }
@@ -271,8 +346,34 @@ pub extern "system" fn nativeGetGLPointer(gl_context: jlong) -> jlong {
     gl_context.gl_context.as_raw_inner() as jlong
 }
 
+
+#[no_mangle]
+pub extern "system" fn nativeGetGLPointerNormal( _env: JNIEnv,
+                                                 _: JClass, gl_context: jlong) -> jlong {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *mut AndroidGLContext;
+    let gl_context = unsafe { &*gl_context };
+    gl_context.gl_context.as_raw_inner() as jlong
+}
+
 #[no_mangle]
 pub extern "system" fn nativeMakeGLCurrent(gl_context: jlong) -> jboolean {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *mut AndroidGLContext;
+    let gl_context = unsafe { &*gl_context };
+    if gl_context.gl_context.make_current() {
+        return JNI_TRUE;
+    }
+    JNI_FALSE
+}
+
+#[no_mangle]
+pub extern "system" fn nativeMakeGLCurrentNormal( _env: JNIEnv,
+                                                  _: JClass, gl_context: jlong) -> jboolean {
     if gl_context == 0 {
         return 0;
     }
@@ -302,7 +403,44 @@ pub extern "system" fn nativeGLPointerRefCount(gl_context: jlong) -> jlong {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeReleaseGLPointer(gl_context: jlong) {
+pub extern "system" fn nativeGLPointerRefCountNormal( _env: JNIEnv,
+                                                      _: JClass,  gl_context: jlong) -> jlong {
+    if gl_context == 0 {
+        return 0;
+    }
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    if gl_context.is_null() {
+        return 0;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+    let count = ctx.get_strong_count();
+    let _ = ctx.as_raw_inner();
+
+    count as i64
+}
+
+
+#[no_mangle]
+pub extern "system" fn nativeReleaseGLPointer( gl_context: jlong) {
+    if gl_context == 0 {
+        return;
+    }
+    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+    if gl_context.is_null() {
+        return;
+    }
+
+    let ctx = GLContext::from_raw_inner(gl_context);
+
+    if ctx.get_strong_count() <= 1 {
+        ctx.increment_strong_count();
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeReleaseGLPointerNormal( _env: JNIEnv,
+                                                     _: JClass,gl_context: jlong) {
     if gl_context == 0 {
         return;
     }
@@ -337,7 +475,61 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
 }
 
 #[no_mangle]
+pub extern "system" fn nativeContext2DTestNormal( _env: JNIEnv,
+                                                  _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let mut ctx = context.get_context_mut();
+        ctx.set_fill_style_with_color("red");
+        ctx.fill_rect_xywh(0., 0., 300., 300.);
+    }
+    context.render();
+}
+
+
+#[no_mangle]
 pub extern "system" fn nativeContext2DPathTest(context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let mut ctx = context.get_context_mut();
+
+        // Create path
+        let mut region = canvas_2d::context::paths::path::Path::default();
+        region.move_to(30f32, 90f32);
+        region.line_to(110f32, 20f32);
+        region.line_to(240f32, 130f32);
+        region.line_to(60f32, 130f32);
+        region.line_to(190f32, 20f32);
+        region.line_to(270f32, 90f32);
+        region.close_path();
+
+        // Fill path
+        ctx.set_fill_style_with_color("green");
+        ctx.fill_rule(
+            Some(&mut region),
+            canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd,
+        );
+    }
+    context.render();
+}
+
+#[no_mangle]
+pub extern "system" fn nativeContext2DPathTestNormal( _env: JNIEnv,
+                                                      _: JClass, context: jlong) {
     if context == 0 {
         return;
     }

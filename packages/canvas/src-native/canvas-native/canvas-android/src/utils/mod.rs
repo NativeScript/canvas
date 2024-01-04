@@ -46,7 +46,43 @@ pub extern "system" fn nativeInitContextWithCustomSurface(
 }
 
 #[no_mangle]
+pub extern "system" fn nativeInitContextWithCustomSurfaceNormal(
+    _env: JNIEnv,
+    _: JClass,
+    width: jfloat,
+    height: jfloat,
+    density: jfloat,
+    alpha: jboolean,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
+}
+
+#[no_mangle]
 pub extern "system" fn nativeResizeCustomSurface(
+    context: jlong,
+    width: jfloat,
+    height: jfloat,
+    _density: jfloat,
+    _alpha: jboolean,
+    _ppi: jfloat,
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+        let context: *mut ContextWrapper = context as _;
+        let context = &mut *context;
+        context.resize(width, height);
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeResizeCustomSurfaceNormal(
+    _env: JNIEnv,
+    _: JClass,
     context: jlong,
     width: jfloat,
     height: jfloat,

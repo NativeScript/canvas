@@ -4,21 +4,9 @@ extern crate android_logger;
 extern crate core;
 #[macro_use]
 extern crate log;
+
 use std::os::raw::c_void;
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
-    nativeContext2DPathTest, nativeContext2DTest, nativeCreate2DContext,
-    nativeCustomWithBitmapFlush, nativeGLPointerRefCount, nativeGetGLPointer, nativeInitGL,
-    nativeInitGLNoSurface, nativeMakeGLCurrent, nativeReleaseGL, nativeReleaseGLPointer,
-    nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdateGLNoSurface,
-    nativeUpdateGLSurface, nativeWriteCurrentGLContextToBitmap,
-};
-use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
-    nativeCreatePattern, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithBitmap,
-    nativeDrawImageWithBitmap,
-};
-use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::nativeLoadFromBitmap;
-use crate::jni_compat::org_nativescript_canvas_NSCSVG::{nativeDrawSVG, nativeDrawSVGFromPath};
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
 use ::jni::JavaVM;
@@ -27,9 +15,28 @@ use itertools::izip;
 use jni::NativeMethod;
 use once_cell::sync::OnceCell;
 
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
+    nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DTest,
+    nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal,
+    nativeCustomWithBitmapFlush, nativeGLPointerRefCount, nativeGLPointerRefCountNormal,
+    nativeGetGLPointer, nativeGetGLPointerNormal, nativeInitGL, nativeInitGLNoSurface,
+    nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal,
+    nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeUpdate2DSurface,
+    nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface,
+    nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWriteCurrentGLContextToBitmap,
+};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
+    nativeCreatePattern, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithBitmap,
+    nativeDrawImageWithBitmap,
+};
+use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::nativeLoadFromBitmap;
+use crate::jni_compat::org_nativescript_canvas_NSCSVG::{nativeDrawSVG, nativeDrawSVGFromPath};
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
 use crate::utils::gl::texture_render::nativeDrawFrame;
-use crate::utils::{nativeInitContextWithCustomSurface, nativeResizeCustomSurface};
+use crate::utils::{
+    nativeInitContextWithCustomSurface, nativeInitContextWithCustomSurfaceNormal,
+    nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
+};
 
 mod jni_compat;
 pub mod utils;
@@ -112,8 +119,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(Landroid/view/Surface;ZZZZLjava/lang/String;ZZZZZIZ)J",
                     "!(IIZZZZLjava/lang/String;ZZZZZIZ)J",
                     "!(JIIZFIIFI)J",
-                    "!(Landroid/view/Surface;j)V",
-                    "!(Landroid/view/Surface;j)V",
+                    "!(Landroid/view/Surface;J)V",
+                    "!(Landroid/view/Surface;J)V",
                     "!(IIJ)V",
                     "!(IIJ)V",
                     "!(J)V",
@@ -122,7 +129,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)J",
                     "!(J)V",
                     "!(JLandroid/graphics/Bitmap;)V",
-                    "!(FFFZIFI)j",
+                    "!(FFFZIFI)J",
                     "!(JFFFZI)V",
                     "!(JLandroid/graphics/Bitmap;)V",
                     "!(J)V",
@@ -130,26 +137,49 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ]
             };
 
-            let canvas_methods = [
-                nativeInitGL as *mut c_void,
-                nativeInitGLNoSurface as *mut c_void,
-                nativeCreate2DContext as *mut c_void,
-                nativeUpdateGLSurface as *mut c_void,
-                nativeUpdate2DSurface as *mut c_void,
-                nativeUpdate2DSurfaceNoSurface as *mut c_void,
-                nativeUpdateGLNoSurface as *mut c_void,
-                nativeReleaseGL as *mut c_void,
-                nativeMakeGLCurrent as *mut c_void,
-                nativeGLPointerRefCount as *mut c_void,
-                nativeGetGLPointer as *mut c_void,
-                nativeReleaseGLPointer as *mut c_void,
-                nativeWriteCurrentGLContextToBitmap as *mut c_void,
-                nativeInitContextWithCustomSurface as *mut c_void,
-                nativeResizeCustomSurface as *mut c_void,
-                nativeCustomWithBitmapFlush as *mut c_void,
-                nativeContext2DTest as *mut c_void,
-                nativeContext2DPathTest as *mut c_void,
-            ];
+            let canvas_methods = if ret >= ANDROID_O {
+                [
+                    nativeInitGL as *mut c_void,
+                    nativeInitGLNoSurface as *mut c_void,
+                    nativeCreate2DContext as *mut c_void,
+                    nativeUpdateGLSurface as *mut c_void,
+                    nativeUpdate2DSurface as *mut c_void,
+                    nativeUpdate2DSurfaceNoSurface as *mut c_void,
+                    nativeUpdateGLNoSurface as *mut c_void,
+                    nativeReleaseGL as *mut c_void,
+                    nativeMakeGLCurrent as *mut c_void,
+                    nativeGLPointerRefCount as *mut c_void,
+                    nativeGetGLPointer as *mut c_void,
+                    nativeReleaseGLPointer as *mut c_void,
+                    nativeWriteCurrentGLContextToBitmap as *mut c_void,
+                    nativeInitContextWithCustomSurface as *mut c_void,
+                    nativeResizeCustomSurface as *mut c_void,
+                    nativeCustomWithBitmapFlush as *mut c_void,
+                    nativeContext2DTest as *mut c_void,
+                    nativeContext2DPathTest as *mut c_void,
+                ]
+            } else {
+                [
+                    nativeInitGL as *mut c_void,
+                    nativeInitGLNoSurface as *mut c_void,
+                    nativeCreate2DContextNormal as *mut c_void,
+                    nativeUpdateGLSurface as *mut c_void,
+                    nativeUpdate2DSurface as *mut c_void,
+                    nativeUpdate2DSurfaceNoSurfaceNormal as *mut c_void,
+                    nativeUpdateGLNoSurfaceNormal as *mut c_void,
+                    nativeReleaseGLNormal as *mut c_void,
+                    nativeMakeGLCurrentNormal as *mut c_void,
+                    nativeGLPointerRefCountNormal as *mut c_void,
+                    nativeGetGLPointerNormal as *mut c_void,
+                    nativeReleaseGLPointerNormal as *mut c_void,
+                    nativeWriteCurrentGLContextToBitmap as *mut c_void,
+                    nativeInitContextWithCustomSurfaceNormal as *mut c_void,
+                    nativeResizeCustomSurfaceNormal as *mut c_void,
+                    nativeCustomWithBitmapFlush as *mut c_void,
+                    nativeContext2DTestNormal as *mut c_void,
+                    nativeContext2DPathTestNormal as *mut c_void,
+                ]
+            };
 
             let canvas_native_methods: Vec<NativeMethod> =
                 izip!(canvas_method_names, canvas_signatures, canvas_methods)

@@ -625,7 +625,7 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib() {
 			if (!isLibraryLoaded) {
-				System.loadLibrary("canvasandroid")
+				System.loadLibrary("canvasnative")
 				System.loadLibrary("canvasnativev8")
 				isLibraryLoaded = true
 			}

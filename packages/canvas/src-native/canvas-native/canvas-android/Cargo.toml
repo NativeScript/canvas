@@ -7,9 +7,8 @@ edition = "2021"
 rustflags = ["-Cpanic=abort", "-C target-cpu=native", "-C target-feature=-outline-atomics"]
 
 [lib]
-name = "canvasandroid"
+name = "canvasnative"
 crate-type = ["cdylib"]
-
 
 [dependencies]
 canvas-core = { path = "../canvas-core", features = ["2d"] }

@@ -11,7 +11,7 @@ if (ENABLE_LTO)
     set(RUST_FLAGS "-Clinker-plugin-lto" "-Clinker=clang-14" "-Clink-arg=-fuse-ld=lld-14")
 endif ()
 
-set(CANVAS_CORE_LIB ${PROJECT_NATIVE_ROOT_DIR}/target/${TARGET_DIR}/libcanvasandroid.a)
+set(CANVAS_CORE_LIB ${PROJECT_NATIVE_ROOT_DIR}/target/${TARGET_DIR}/libcanvasnative.a)
 
 #set(CANVAS_CXX ${CMAKE_CURRENT_BINARY_DIR}/canvas)
 #set(CANVAS_CXX_HEADER ${CMAKE_CURRENT_BINARY_DIR}/canvas_core.h)

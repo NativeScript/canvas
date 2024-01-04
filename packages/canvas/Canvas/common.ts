@@ -392,7 +392,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_touches: Touch[] = [];
 	_touchesById: Touch[] = [];
 
-	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = new Array(10);
+	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = new Array();
 
 	protected constructor() {
 		super();
@@ -524,7 +524,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			for (const pointer of pointers) {
 				const pointerId = pointer.ptrId;
-				const previousEvent = this._lastPointerEventById[pointerId];
+				const index = this._lastPointerEventById.findIndex((item) => {
+					return item?.pointerId === pointerId;
+				});
+				let previousEvent;
+				if (index > -1) {
+					previousEvent = this._lastPointerEventById[index];
+				} else {
+					previousEvent = { pointerId, x: 0, y: 0 };
+				}
+
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
 						pointerType: 'touch',
@@ -564,7 +573,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 				}
 
-				this._lastPointerEventById[pointerId] = { pointerId, x: pointer.x, y: pointer.y };
+				if (index > -1) {
+					this._lastPointerEventById[index] = { pointerId, x: pointer.x, y: pointer.y };
+				}
 			}
 		}
 
@@ -639,7 +650,12 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 			}
 
-			delete this._lastPointerEventById[pointerId];
+			const index = this._lastPointerEventById.findIndex((item) => {
+				return item?.pointerId === pointerId;
+			});
+			if (index > -1) {
+				this._lastPointerEventById.splice(index, 1);
+			}
 		}
 
 		const length = this._touches.length;
@@ -717,7 +733,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 			}
 
-			this._lastPointerEventById[pointerId] = { pointerId, x, y };
+			this._lastPointerEventById.push({ pointerId, x, y });
 		}
 
 		if (this._touchStartCallbacks.length > 0) {
@@ -823,7 +839,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (hasPointerCallbacks || hasMouseCallbacks || hasMouseWheel) {
 			for (const pointer of data.pointers) {
 				const pointerId = pointer.ptrId;
-				const previousEvent = this._lastPointerEventById[pointerId];
+
+				const index = this._lastPointerEventById.findIndex((item) => {
+					return item?.pointerId === pointerId;
+				});
+				let previousEvent;
+				if (index > -1) {
+					previousEvent = this._lastPointerEventById[index];
+				} else {
+					previousEvent = { pointerId, x: 0, y: 0 };
+				}
 
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
@@ -876,7 +901,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 				}
 
-				this._lastPointerEventById[pointerId] = { pointerId, x: pointer.x, y: pointer.y };
+				if (index > -1) {
+					this._lastPointerEventById[index] = { pointerId, x: pointer.x, y: pointer.y };
+				}
 			}
 		}
 

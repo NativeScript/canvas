@@ -50,7 +50,7 @@ else ()
 endif ()
 
 
-set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasandroid${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasnative${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
@@ -157,15 +157,15 @@ add_library(
 )
 
 
-add_custom_command(
-        TARGET canvasnativev8
-        #COMMAND cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
-        DEPENDS ${CANVAS_ANDROID_LIB}
-        #USES_TERMINAL
-)
+#add_custom_command(
+#        TARGET canvasnativev8
+#        #COMMAND RUSTFLAGS='-Cpanic=abort -C target-cpu=native -C target-feature=-outline-atomics' cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
+#        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
+#        DEPENDS ${CANVAS_ANDROID_LIB}
+#        #USES_TERMINAL
+#)
 
 
 #add_custom_command(
@@ -222,6 +222,6 @@ add_custom_command(TARGET canvasnativev8
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CANVAS_ANDROID_LIB}
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasandroid.so
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasnative.so
         )
 

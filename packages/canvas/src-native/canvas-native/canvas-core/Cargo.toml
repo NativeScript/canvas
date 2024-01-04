@@ -20,11 +20,11 @@ log = "0.4.17"
 icrate = { version = "0.0.4", features = ["objc2", "Foundation", "Foundation_NSData"] }
 core-foundation = "0.9.3"
 
-#[target.'cfg(target_os = "android")'.dependencies]
-#egl = "0.2.7"
-#glutin = "0.31.1"
+[target.'cfg(target_os = "android")'.dependencies]
+egl = "0.2.7"
+glutin = "0.31.1"
 #glutin = { git = "https://github.com/triniwiz/glutin", rev = "1b2cbbe" }
-#android_log = "0.1.3"
+android_log = "0.1.3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 winit = "0.29.4"

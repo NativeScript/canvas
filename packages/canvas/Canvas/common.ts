@@ -518,7 +518,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _moveCallback(pointers: { ptrId: number; x: number; y: number }[]) {
+	private _moveCallback(pointers: { ptrId: number; x: number; y: number; isPrimary: boolean }[]) {
 		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
@@ -537,7 +537,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						isPrimary: pointerId === 0,
+						isPrimary: pointer.isPrimary,
 						button: -1,
 					});
 
@@ -600,7 +600,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _upCallback(ptrId, x, y) {
+	private _upCallback(ptrId, x, y, isPrimary) {
 		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 
@@ -614,7 +614,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					clientY: y,
 					screenX: x,
 					screenY: y,
-					isPrimary: pointerId === 0,
+					isPrimary,
 					pageX: x,
 					pageY: y,
 				});
@@ -678,7 +678,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _downCallback(ptrId, x, y) {
+	private _downCallback(ptrId, x, y, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
 
@@ -692,7 +692,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					clientY: y,
 					screenX: x,
 					screenY: y,
-					isPrimary: pointerId === 0,
+					isPrimary,
 					pageX: x,
 					pageY: y,
 				});
@@ -747,7 +747,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _cancelCallback(ptrid, x, y) {
+	private _cancelCallback(ptrid, x, y, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
@@ -762,6 +762,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					isPrimary,
 				});
 
 				for (const callback of this._pointerCancelCallbacks) {
@@ -911,58 +912,24 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	/*
-	switched on second move
-
-	{
-    "event": "down",
-    "ptrId": 0,
-    "x": 970.5,
-    "y": 688.5
-  }
-  {
-    "event": "down",
-    "ptrId": 1,
-    "x": 395.5,
-    "y": 187.5
-  }
-  {
-    "event": "move",
-    "pointers": [
-      {
-        "ptrId": 0,
-        "x": 396,
-        "y": 187.5
-      },
-      {
-        "ptrId": 1,
-        "x": 971,
-        "y": 688.5
-      }
-    ]
-  }
-
-
-	*/
-
 	_handleEvents(event) {
 		try {
 			const data = JSON.parse(event);
 			switch (data.event) {
 				case 'down':
-					this._downCallback(data.ptrId, data.x, data.y);
+					this._downCallback(data.ptrId, data.x, data.y, data.isPrimary);
 					break;
 				case 'move':
 					this._moveCallback(data.pointers);
 					break;
 				case 'up':
-					this._upCallback(data.ptrId, data.x, data.y);
+					this._upCallback(data.ptrId, data.x, data.y, data.isPrimary);
 					break;
 				case 'scale':
 					this._pinchCallback(data);
 					break;
 				case 'cancel':
-					this._cancelCallback(data.ptrId, data.x, data.y);
+					this._cancelCallback(data.ptrId, data.x, data.y, data.isPrimary);
 					break;
 				default:
 					break;

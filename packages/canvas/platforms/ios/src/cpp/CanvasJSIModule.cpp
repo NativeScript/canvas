@@ -7,6 +7,7 @@
 #include "JSIRuntime.h"
 #include "JSIReadFileCallback.h"
 #include "Helpers.h"
+#include "PerIsolateData.h"
 
 void CanvasJSIModule::install(v8::Isolate *isolate) {
 
@@ -35,6 +36,12 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         MatrixImpl::Init(canvasMod, isolate);
         TextMetricsImpl::Init(canvasMod, isolate);
         URLImpl::Init(canvasMod, isolate);
+        
+        // always use the last slot
+        auto lastSlot = isolate->GetNumberOfDataSlots() - 1;
+        auto data = new PerIsolateData(isolate);
+        isolate->SetData(lastSlot, data);
+                
         v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod);
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),
                        v8::FunctionTemplate::New(isolate, &Create2DContext)->GetFunction(
@@ -200,6 +207,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                 auto shared_asset = canvas_native_image_asset_shared_clone(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
+                
 
                 auto cbFunc = args[count - 1].As<v8::Function>();
                 auto data = v8::External::New(isolate, ret);
@@ -673,14 +681,10 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                             isolate).As<v8::External>();
                                     v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                     v8::Context::Scope context_scope(context);
+                                    
+                            
 
-                                    auto ret = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
-                                            context).ToLocalChecked()->NewInstance(
-                                            context).ToLocalChecked();
-
-                                    SetNativeType(isolate, ret, NativeType::ImageBitmap);
-
-                                    ret->SetInternalField(0, cbData);
+                                    auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
                                     v8::Local<v8::Value> args[2];
 

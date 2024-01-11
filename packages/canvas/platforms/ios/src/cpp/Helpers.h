@@ -7,7 +7,7 @@
 #include <memory>
 #include "Common.h"
 #include "OneByteStringResource.h"
-
+#include "PerIsolateData.h"
 //#ifdef __APPLE__
 //#ifdef __OBJC__
 //#include <Foundation/Foundation.h>
@@ -23,6 +23,7 @@ static const char *LOG_TAG = "JS";
 static int m_maxLogcatObjectSize = 4096;
 
 #ifdef __ANDROID__
+
 static void sendToADBLogcat(const std::string &message, android_LogPriority logPriority) {
     // limit the size of the message that we send to logcat using the predefined value in package.json
     auto messageToLog = message;
@@ -46,6 +47,7 @@ static void sendToADBLogcat(const std::string &message, android_LogPriority logP
         }
     }
 }
+
 #endif
 
 //#ifdef __APPLE__
@@ -64,10 +66,9 @@ static void LogToConsole(const std::string &message) {
 #endif
 
 #ifdef __APPLE__
-   // Log("%s", message.c_str());
+    // Log("%s", message.c_str());
 #endif
 }
-
 
 
 enum class NativeType {
@@ -124,9 +125,16 @@ enum class NativeType {
     WebGLSync
 };
 
+inline static v8::Local<v8::String>
+ConvertToV8OneByteString(v8::Isolate *isolate, std::string string) {
+    auto value = new OneByteStringResource(std::move(string));
+    auto ret = v8::String::NewExternalOneByte(isolate, value);
+    return ret.ToLocalChecked();
+}
+
 
 inline static v8::Local<v8::String>
-ConvertToV8OneByteString(v8::Isolate *isolate, char* string) {
+ConvertToV8OneByteString(v8::Isolate *isolate, char *string) {
     auto value = new OneByteStringResource(string);
     auto ret = v8::String::NewExternalOneByte(isolate, value);
     return ret.ToLocalChecked();
@@ -190,22 +198,36 @@ GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
 }
 
 static void SetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj, NativeType type) {
-    v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
-    v8::Local<v8::Value> typeValue = v8::Number::New(isolate, (double) type).As<v8::Value>();
-    SetPrivateValue(isolate, obj, name, typeValue);
+    auto last = isolate->GetNumberOfDataSlots() - 1;
+    auto data = isolate->GetData(last);
+    if(data != nullptr){
+        auto consts = static_cast<PerIsolateData*>(data);
+        auto name = consts->INSTANT_TYPE_PERSISTENT->Get(isolate);
+       // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
+        v8::Local<v8::Value> typeValue = v8::Number::New(isolate, (double) type).As<v8::Value>();
+        SetPrivateValue(isolate, obj, name, typeValue);
+    }
+   
 }
 
 inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
     if (!obj->IsNullOrUndefined() && obj->IsObject()) {
-        v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
-        auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
-        auto context = isolate->GetCurrentContext();
-
-        if (!ret.IsEmpty() && ret->IsNumber()) {
-            auto value = (int) ret->NumberValue(context).ToChecked();
-            if (value >= (int) NativeType::CanvasGradient &&
-                value <= (int) NativeType::WebGLSync) {
-                return (NativeType) value;
+        auto last = isolate->GetNumberOfDataSlots() - 1;
+        auto data = isolate->GetData(last);
+        
+        if(data != nullptr){
+            auto consts = static_cast<PerIsolateData*>(data);
+            auto name = consts->INSTANT_TYPE_PERSISTENT->Get(isolate);
+            // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
+            auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
+            auto context = isolate->GetCurrentContext();
+            
+            if (!ret.IsEmpty() && ret->IsNumber()) {
+                auto value = ret->Int32Value(context).ToChecked();
+                if (value >= (int) NativeType::CanvasGradient &&
+                    value <= (int) NativeType::WebGLSync) {
+                    return (NativeType) value;
+                }
             }
         }
     }
@@ -214,30 +236,22 @@ inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8:
 }
 
 
-//template<typename T>
-//inline static rust::Slice<T>
-//GetArrayBufferData(v8::Local<v8::ArrayBuffer> &array) {
-//    auto buf = array->GetBackingStore()->Data();
-//    auto size = array->ByteLength();
-//
-//    rust::Slice<T> slice(reinterpret_cast<T *>(buf), size);
-//    return std::move(slice);
+template<class T>
+static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
+    auto *pThis = data.GetParameter();
+    pThis->weakHandle_.Reset();
+    delete pThis;
+}
+
+//static inline void BindFinalizer(v8::Isolate *isolate, v8::Global<v8::Object> &weakHandle, const v8::Local<v8::Object> &object) {
+//    v8::HandleScope scopedHandle(isolate);
+//    weakHandle.Reset(isolate, object);
+//    weakHandle.SetWeak(this, Finalizer, v8::WeakCallbackType::kParameter);
 //}
 
 
-//template<typename T>
-//inline static rust::Slice<T>
-//GetTypedArrayData(v8::Local<v8::TypedArray> &array) {
-//    auto buf = array->Buffer();
-//    auto offset = array->ByteOffset();
-//    auto size = buf->ByteLength();
-//    rust::Slice<T> slice(reinterpret_cast<T *>(buf->GetBackingStore()->Data()) + offset,
-//                         (size / sizeof(T)));
-//    return std::move(slice);
-//}
-
-
-
+/*
+ *  todo
 static void SetFastMethod(v8::Isolate* isolate,
                    v8::Local<v8::Template> that,
                    const char* name,
@@ -327,3 +341,5 @@ static void SetFastMethodNoSideEffect(v8::Isolate* isolate,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(name_string, t);
 }
+
+*/

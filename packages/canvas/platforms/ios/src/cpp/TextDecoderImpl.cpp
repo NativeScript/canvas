@@ -18,7 +18,7 @@ void TextDecoderImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "TextDecoder"), func);
+   canvasModule->Set(context, ConvertToV8String(isolate, "TextDecoder"), func);
 }
 
 TextDecoderImpl *TextDecoderImpl::GetPointer(v8::Local<v8::Object> object) {
@@ -57,6 +57,12 @@ v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     return ctorTmpl;
 }
 
+void MyWeakCallback(const v8::WeakCallbackInfo<TextDecoderImpl>& info) {
+    TextDecoderImpl* obj = info.GetParameter();
+    // Perform cleanup or any necessary actions when the object is no longer reachable
+    delete obj;
+}
+
 void TextDecoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto count = args.Length();
     auto value = args[0];
@@ -83,6 +89,8 @@ void TextDecoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto ext = v8::External::New(isolate, decoder);
 
     ret->SetInternalField(0, ext);
+
+    decoder->BindFinalizer(isolate, ret);
 
     args.GetReturnValue().Set(ret);
 

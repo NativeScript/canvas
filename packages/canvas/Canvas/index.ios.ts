@@ -241,6 +241,7 @@ export class Canvas extends CanvasBase {
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
 		this._readyListener = undefined;
+		this._canvas = undefined;
 		super.disposeNativeView();
 	}
 

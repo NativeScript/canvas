@@ -23,8 +23,9 @@
 #include "Path2D.h"
 #include "WebGLRenderingContextBase.h"
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-class CanvasRenderingContext2DImpl {
+class CanvasRenderingContext2DImpl: ObjectWrapperImpl {
 public:
     CanvasRenderingContext2DImpl(CanvasRenderingContext2D* context);
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
@@ -42,6 +43,7 @@ public:
         SetNativeType(isolate, object, NativeType::CanvasRenderingContext2D);
         auto ext = v8::External::New(isolate, renderingContext);
         object->SetInternalField(0, ext);
+        renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -5,8 +5,9 @@
 #pragma once
 
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-class WebGLQuery {
+class WebGLQuery: ObjectWrapperImpl {
 public:
     WebGLQuery(uint32_t query) : query_(query) {}
 
@@ -37,6 +38,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLQuery);
         auto ext = v8::External::New(isolate, query);
         object->SetInternalField(0, ext);
+        query->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

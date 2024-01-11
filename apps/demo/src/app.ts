@@ -2,6 +2,7 @@
 Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
+const TextDecoderO = TextDecoder;
 require('@nativescript/canvas-polyfill');
 // import { CanvasRenderingContext2D } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor;
@@ -70,11 +71,9 @@ const age = parseInt(params.get("age") as any); // is the number 18
 
 // try loading our custom font
 
-
 const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regular.ttf');
 
 global.CanvasModule.__addFontFamily('creepster', [font]);
-
 
 
 

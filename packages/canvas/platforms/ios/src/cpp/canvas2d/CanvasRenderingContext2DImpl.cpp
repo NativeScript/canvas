@@ -857,7 +857,6 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
         return;
     }
     auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     if (value->IsString()) {
         auto style = ConvertFromV8String(isolate, value);
@@ -942,7 +941,6 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
         return;
     }
     auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     if (value->IsString()) {
         auto style = ConvertFromV8String(isolate, value);
@@ -2007,6 +2005,8 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     auto ext = v8::External::New(isolate, data);
 
     ret->SetInternalField(0, ext);
+    
+    data->BindFinalizer(isolate, ret);
 
     SetNativeType(isolate, ret, NativeType::TextMetrics);
 

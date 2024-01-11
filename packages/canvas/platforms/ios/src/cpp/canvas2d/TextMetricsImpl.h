@@ -6,8 +6,9 @@
 
 #include <vector>
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-class TextMetricsImpl {
+class TextMetricsImpl: public ObjectWrapperImpl {
 public:
     TextMetricsImpl(TextMetrics* metrics);
     
@@ -24,41 +25,41 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static void GetWidth(v8::Local<v8::String> name,
+    static void GetWidth(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetActualBoundingBoxLeft(v8::Local<v8::String> name,
+    static void GetActualBoundingBoxLeft(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
-    static void GetActualBoundingBoxRight(v8::Local<v8::String> name,
+    static void GetActualBoundingBoxRight(v8::Local<v8::Name> name,
                                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetActualBoundingBoxAscent(v8::Local<v8::String> name,
+    static void GetActualBoundingBoxAscent(v8::Local<v8::Name> name,
                                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetActualBoundingBoxDescent(v8::Local<v8::String> name,
+    static void GetActualBoundingBoxDescent(v8::Local<v8::Name> name,
                                            const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetFontBoundingBoxAscent(v8::Local<v8::String> name,
+    static void GetFontBoundingBoxAscent(v8::Local<v8::Name> name,
                                            const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetFontBoundingBoxDescent(v8::Local<v8::String> name,
+    static void GetFontBoundingBoxDescent(v8::Local<v8::Name> name,
                                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetEmHeightAscent(v8::Local<v8::String> name,
+    static void GetEmHeightAscent(v8::Local<v8::Name> name,
                                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetEmHeightDescent(v8::Local<v8::String> name,
+    static void GetEmHeightDescent(v8::Local<v8::Name> name,
                                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetHangingBaseline(v8::Local<v8::String> name,
+    static void GetHangingBaseline(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetAlphabeticBaseline(v8::Local<v8::String> name,
+    static void GetAlphabeticBaseline(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetIdeographicBaseline(v8::Local<v8::String> name,
+    static void GetIdeographicBaseline(v8::Local<v8::Name> name,
                                    const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:

@@ -123,6 +123,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto ext = v8::External::New(isolate, object);
 
             ret->SetInternalField(0, ext);
+            
+            object->BindFinalizer(isolate, ret);
 
             args.GetReturnValue().Set(ret);
 
@@ -138,6 +140,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 auto ext = v8::External::New(isolate, object);
 
                 ret->SetInternalField(0, ext);
+                
+                object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -149,6 +153,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto ext = v8::External::New(isolate, path);
 
         ret->SetInternalField(0, ext);
+        
+        path->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);
         return;

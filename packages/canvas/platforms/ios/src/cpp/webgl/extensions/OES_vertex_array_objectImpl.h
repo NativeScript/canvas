@@ -8,8 +8,8 @@
 #include "WebGLVertexArrayObject.h"
 #include "Helpers.h"
 #include <vector>
-
-class OES_vertex_array_objectImpl {
+#include "ObjectWrapperImpl.h"
+class OES_vertex_array_objectImpl: ObjectWrapperImpl {
 public:
     OES_vertex_array_objectImpl(OES_vertex_array_object* object);
     ~OES_vertex_array_objectImpl(){
@@ -58,6 +58,7 @@ public:
         SetNativeType(isolate, object, NativeType::OES_vertex_array_object);
         auto ext = v8::External::New(isolate, vertexArrayObject);
         object->SetInternalField(0, ext);
+        vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

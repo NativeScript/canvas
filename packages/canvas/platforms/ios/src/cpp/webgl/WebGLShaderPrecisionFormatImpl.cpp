@@ -8,7 +8,7 @@ WebGLShaderPrecisionFormatImpl::WebGLShaderPrecisionFormatImpl(
                                                                WebGLShaderPrecisionFormat* shader) : shader_(shader) {}
 
 
-void WebGLShaderPrecisionFormatImpl::GetRangeMin(v8::Local<v8::String> property,
+void WebGLShaderPrecisionFormatImpl::GetRangeMin(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
     WebGLShaderPrecisionFormatImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -20,7 +20,7 @@ void WebGLShaderPrecisionFormatImpl::GetRangeMin(v8::Local<v8::String> property,
             ptr->GetShaderPrecisionFormat()));
 }
 
-void WebGLShaderPrecisionFormatImpl::GetRangeMax(v8::Local<v8::String> property,
+void WebGLShaderPrecisionFormatImpl::GetRangeMax(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
     WebGLShaderPrecisionFormatImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -33,7 +33,7 @@ void WebGLShaderPrecisionFormatImpl::GetRangeMax(v8::Local<v8::String> property,
 }
 
 
-void WebGLShaderPrecisionFormatImpl::GetPrecision(v8::Local<v8::String> property,
+void WebGLShaderPrecisionFormatImpl::GetPrecision(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     WebGLShaderPrecisionFormatImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {

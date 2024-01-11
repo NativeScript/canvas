@@ -7,8 +7,8 @@
 #include "Common.h"
 #include <vector>
 #include "Helpers.h"
-
-class EXT_color_buffer_half_floatImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_color_buffer_half_floatImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -23,6 +23,7 @@ public:
         object->SetInternalField(0, ext);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

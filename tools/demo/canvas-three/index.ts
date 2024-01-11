@@ -96,9 +96,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		this.threeCar(this.canvas);
+		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		//tiny_poly_world(this.canvas);
+		tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);

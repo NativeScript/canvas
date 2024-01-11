@@ -9,8 +9,8 @@
 #include "Caches.h"
 #include "Common.h"
 #include "Helpers.h"
-
-class WEBGL_compressed_texture_s3tc_srgbImpl {
+#include "ObjectWrapperImpl.h"
+class WEBGL_compressed_texture_s3tc_srgbImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -58,6 +58,7 @@ public:
         object->SetInternalField(0, ext);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));
+        compressedTextureS3TcSrgb->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

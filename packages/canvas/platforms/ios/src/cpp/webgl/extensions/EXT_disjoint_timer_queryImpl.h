@@ -8,8 +8,8 @@
 #include "Common.h"
 #include "WebGLQuery.h"
 #include <vector>
-
-class EXT_disjoint_timer_queryImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_disjoint_timer_queryImpl: ObjectWrapperImpl {
 public:
     EXT_disjoint_timer_queryImpl(EXT_disjoint_timer_query *query);
 
@@ -33,6 +33,7 @@ public:
         object->SetInternalField(0, ext);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_disjoint_timer_query"));
+        query->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

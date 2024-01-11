@@ -13,13 +13,14 @@
 #include "RafImpl.h"
 #include "OnRafCallback.h"
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
 enum class WebGLRenderingVersion : uint8_t {
     V1,
     V2
 };
 
-class WebGLRenderingContextBase {
+class WebGLRenderingContextBase: public ObjectWrapperImpl {
 public:
     WebGLRenderingContextBase(WebGLState* state, WebGLRenderingVersion version);
 

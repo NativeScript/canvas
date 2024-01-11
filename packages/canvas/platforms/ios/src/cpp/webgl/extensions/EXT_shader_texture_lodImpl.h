@@ -6,8 +6,8 @@
 
 #include "Caches.h"
 #include "Common.h"
-
-class EXT_shader_texture_lodImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_shader_texture_lodImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -38,6 +38,7 @@ public:
         SetNativeType(isolate, object, NativeType::EXT_shader_texture_lod);
         auto ext = v8::External::New(isolate, texture);
         object->SetInternalField(0, ext);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -5083,6 +5083,7 @@ WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
+    
     auto locationType = GetNativeType(isolate, locationValue);
     auto value = args[2];
     if (locationType == NativeType::WebGLUniformLocation) {

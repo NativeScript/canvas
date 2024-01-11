@@ -73,13 +73,13 @@ v8::Local<v8::FunctionTemplate> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "width"),
             GetWidth);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "height"),
             GetHeight);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "data"),
             GetData);
     cache->ImageDataTmpl =
@@ -114,6 +114,8 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto ext = v8::External::New(isolate, object);
 
         ret->SetInternalField(0, ext);
+        
+        object->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -135,6 +137,8 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto ext = v8::External::New(isolate, object);
 
         ret->SetInternalField(0, ext);
+        
+        object->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -146,7 +150,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 
 void
-ImageDataImpl::GetWidth(v8::Local<v8::String> name,
+ImageDataImpl::GetWidth(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
@@ -158,7 +162,7 @@ ImageDataImpl::GetWidth(v8::Local<v8::String> name,
 }
 
 void
-ImageDataImpl::GetHeight(v8::Local<v8::String> name,
+ImageDataImpl::GetHeight(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
@@ -171,7 +175,7 @@ ImageDataImpl::GetHeight(v8::Local<v8::String> name,
 
 
 void
-ImageDataImpl::GetData(v8::Local<v8::String> name,
+ImageDataImpl::GetData(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {

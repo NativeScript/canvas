@@ -9,8 +9,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-class OES_element_index_uintImpl {
+#include "ObjectWrapperImpl.h"
+class OES_element_index_uintImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -48,6 +48,7 @@ public:
         object->SetInternalField(0, ext);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "OES_element_index_uint"));
+        element->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

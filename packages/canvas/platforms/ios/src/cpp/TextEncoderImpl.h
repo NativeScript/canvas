@@ -6,9 +6,9 @@
 
 #include <vector>
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
-
-class TextEncoderImpl {
+class TextEncoderImpl: ObjectWrapperImpl {
 
 public:
     TextEncoderImpl(TextEncoder* encoder);
@@ -18,7 +18,7 @@ public:
     }
 
     TextEncoder* GetTextEncoder();
-
+    
     static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
     static TextEncoderImpl *GetPointer(v8::Local<v8::Object> object);

@@ -3,9 +3,6 @@ name = "canvas-android"
 version = "0.1.0"
 edition = "2021"
 
-[build]
-rustflags = ["-Cpanic=abort", "-C target-cpu=native", "-C target-feature=-outline-atomics"]
-
 [lib]
 name = "canvasnative"
 crate-type = ["cdylib"]

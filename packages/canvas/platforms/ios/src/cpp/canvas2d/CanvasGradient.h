@@ -6,7 +6,9 @@
 #include <vector>
 #include "Common.h"
 #include "Helpers.h"
-class CanvasGradient {
+#include "ObjectWrapperImpl.h"
+
+class CanvasGradient: ObjectWrapperImpl {
 public:
     CanvasGradient(PaintStyle*style);
     
@@ -16,7 +18,7 @@ public:
     }
 
     PaintStyle * GetPaintStyle();
-
+    
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static CanvasGradient *GetPointer(const v8::Local<v8::Object> &object);
@@ -31,6 +33,7 @@ public:
         SetNativeType(isolate, object, NativeType::CanvasGradient);
         auto ext = v8::External::New(isolate, gradient);
         object->SetInternalField(0, ext);
+        gradient->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -6,8 +6,9 @@
 
 #include <vector>
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
-class URLImpl {
+class URLImpl: ObjectWrapperImpl {
 public:
     URLImpl(URL *url);
 
@@ -17,6 +18,7 @@ public:
     }
 
     URL *GetURL();
+    
 
     static void Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate);
 

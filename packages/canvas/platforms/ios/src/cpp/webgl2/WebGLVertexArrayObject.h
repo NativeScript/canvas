@@ -7,8 +7,9 @@
 #include "Caches.h"
 #include "Common.h"
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-class WebGLVertexArrayObject {
+class WebGLVertexArrayObject: ObjectWrapperImpl {
 public:
     WebGLVertexArrayObject(uint32_t vertexArrayObject) : vertexArrayObject_(vertexArrayObject) {}
 
@@ -40,6 +41,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLVertexArrayObject);
         auto ext = v8::External::New(isolate, vertexArrayObject);
         object->SetInternalField(0, ext);
+        vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -6,8 +6,9 @@
 
 #include <vector>
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-class MatrixImpl {
+class MatrixImpl: ObjectWrapperImpl {
 public:
     MatrixImpl(Matrix* matrix);
     ~MatrixImpl(){

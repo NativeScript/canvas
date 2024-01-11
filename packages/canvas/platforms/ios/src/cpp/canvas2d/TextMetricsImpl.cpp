@@ -41,54 +41,54 @@ v8::Local<v8::FunctionTemplate> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "width"),
-            &GetWidth);
+            GetWidth);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "actualBoundingBoxLeft"),
-            &GetActualBoundingBoxLeft);
+            GetActualBoundingBoxLeft);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "actualBoundingBoxRight"),
-            &GetActualBoundingBoxRight);
+            GetActualBoundingBoxRight);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "actualBoundingBoxAscent"),
-            &GetActualBoundingBoxAscent);
+            GetActualBoundingBoxAscent);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "actualBoundingBoxDescent"),
-            &GetActualBoundingBoxDescent);
+            GetActualBoundingBoxDescent);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "fontBoundingBoxAscent"),
-            &GetFontBoundingBoxAscent);
+            GetFontBoundingBoxAscent);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "fontBoundingBoxDescent"),
-            &GetFontBoundingBoxDescent);
+            GetFontBoundingBoxDescent);
 
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "emHeightAscent"),
-            &GetEmHeightAscent);
+            GetEmHeightAscent);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "emHeightDescent"),
-            &GetEmHeightDescent);
+            GetEmHeightDescent);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "hangingBaseline"),
-            &GetHangingBaseline);
+            GetHangingBaseline);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "alphabeticBaseline"),
-            &GetAlphabeticBaseline);
+            GetAlphabeticBaseline);
 
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "ideographicBaseline"),
-            &GetIdeographicBaseline);
+            GetIdeographicBaseline);
 
     cache->TextMetricsTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -96,7 +96,7 @@ v8::Local<v8::FunctionTemplate> TextMetricsImpl::GetCtor(v8::Isolate *isolate) {
 }
 
 
-void TextMetricsImpl::GetWidth(v8::Local<v8::String> property,
+void TextMetricsImpl::GetWidth(v8::Local<v8::Name> property,
                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -108,7 +108,7 @@ void TextMetricsImpl::GetWidth(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetActualBoundingBoxLeft(v8::Local<v8::String> property,
+void TextMetricsImpl::GetActualBoundingBoxLeft(v8::Local<v8::Name> property,
                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -121,7 +121,7 @@ void TextMetricsImpl::GetActualBoundingBoxLeft(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetActualBoundingBoxRight(v8::Local<v8::String> property,
+void TextMetricsImpl::GetActualBoundingBoxRight(v8::Local<v8::Name> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -134,7 +134,7 @@ void TextMetricsImpl::GetActualBoundingBoxRight(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetActualBoundingBoxAscent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetActualBoundingBoxAscent(v8::Local<v8::Name> property,
                                                  const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -147,7 +147,7 @@ void TextMetricsImpl::GetActualBoundingBoxAscent(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetActualBoundingBoxDescent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetActualBoundingBoxDescent(v8::Local<v8::Name> property,
                                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -160,7 +160,7 @@ void TextMetricsImpl::GetActualBoundingBoxDescent(v8::Local<v8::String> property
 }
 
 
-void TextMetricsImpl::GetFontBoundingBoxAscent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetFontBoundingBoxAscent(v8::Local<v8::Name> property,
                                                const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -173,7 +173,7 @@ void TextMetricsImpl::GetFontBoundingBoxAscent(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetFontBoundingBoxDescent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetFontBoundingBoxDescent(v8::Local<v8::Name> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -186,7 +186,7 @@ void TextMetricsImpl::GetFontBoundingBoxDescent(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetEmHeightAscent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetEmHeightAscent(v8::Local<v8::Name> property,
                                         const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -199,7 +199,7 @@ void TextMetricsImpl::GetEmHeightAscent(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetEmHeightDescent(v8::Local<v8::String> property,
+void TextMetricsImpl::GetEmHeightDescent(v8::Local<v8::Name> property,
                                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -212,7 +212,7 @@ void TextMetricsImpl::GetEmHeightDescent(v8::Local<v8::String> property,
 }
 
 
-void TextMetricsImpl::GetHangingBaseline(v8::Local<v8::String> property,
+void TextMetricsImpl::GetHangingBaseline(v8::Local<v8::Name> property,
                                          const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -224,7 +224,7 @@ void TextMetricsImpl::GetHangingBaseline(v8::Local<v8::String> property,
             (double) canvas_native_text_metrics_get_hanging_baseline(ptr->GetTextMetrics()));
 }
 
-void TextMetricsImpl::GetAlphabeticBaseline(v8::Local<v8::String> property,
+void TextMetricsImpl::GetAlphabeticBaseline(v8::Local<v8::Name> property,
                                             const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {
@@ -236,7 +236,7 @@ void TextMetricsImpl::GetAlphabeticBaseline(v8::Local<v8::String> property,
             (double) canvas_native_text_metrics_get_alphabetic_baseline(ptr->GetTextMetrics()));
 }
 
-void TextMetricsImpl::GetIdeographicBaseline(v8::Local<v8::String> property,
+void TextMetricsImpl::GetIdeographicBaseline(v8::Local<v8::Name> property,
                                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     TextMetricsImpl *ptr = GetPointer(info.This());
     if (ptr == nullptr) {

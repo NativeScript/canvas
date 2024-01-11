@@ -6,8 +6,8 @@
 
 #include "Common.h"
 #include "Caches.h"
-
-class WebGLBuffer {
+#include "ObjectWrapperImpl.h"
+class WebGLBuffer: ObjectWrapperImpl {
 public:
     WebGLBuffer(uint32_t buffer) : buffer_(buffer) {}
 
@@ -38,6 +38,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLBuffer);
         auto ext = v8::External::New(isolate, buffer);
         object->SetInternalField(0, ext);
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

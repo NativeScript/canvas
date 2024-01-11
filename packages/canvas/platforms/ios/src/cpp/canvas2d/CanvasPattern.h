@@ -5,8 +5,9 @@
 #pragma once
 #include "MatrixImpl.h"
 #include <vector>
+#include "ObjectWrapperImpl.h"
 
-class CanvasPattern {
+class CanvasPattern: ObjectWrapperImpl {
 public:
     CanvasPattern(PaintStyle* style);
     
@@ -29,6 +30,7 @@ public:
         SetNativeType(isolate, object, NativeType::CanvasPattern);
         auto ext = v8::External::New(isolate, pattern);
         object->SetInternalField(0, ext);
+        pattern->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

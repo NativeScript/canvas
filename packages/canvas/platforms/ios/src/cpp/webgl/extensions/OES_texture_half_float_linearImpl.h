@@ -7,8 +7,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-class OES_texture_half_float_linearImpl {
+#include "ObjectWrapperImpl.h"
+class OES_texture_half_float_linearImpl: ObjectWrapperImpl {
 public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
@@ -41,6 +41,7 @@ public:
         SetNativeType(isolate, object, NativeType::OES_texture_half_float_linear);
         auto ext = v8::External::New(isolate, texture);
         object->SetInternalField(0, ext);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

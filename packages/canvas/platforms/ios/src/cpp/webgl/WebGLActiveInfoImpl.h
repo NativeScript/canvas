@@ -6,8 +6,8 @@
 #include "Common.h"
 #include "Helpers.h"
 #include <vector>
-
-class WebGLActiveInfoImpl {
+#include "ObjectWrapperImpl.h"
+class WebGLActiveInfoImpl: ObjectWrapperImpl {
 public:
     WebGLActiveInfoImpl(WebGLActiveInfo* info);
     
@@ -28,19 +28,20 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLActiveInfo);
         auto ext = v8::External::New(isolate, info);
         object->SetInternalField(0, ext);
+        info->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
     static void
-    GetName(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+    GetName(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void
-    GetSize(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+    GetSize(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void
-    GetType(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);
+    GetType(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     WebGLActiveInfo* info_;

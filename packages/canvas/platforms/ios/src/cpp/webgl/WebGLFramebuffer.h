@@ -5,9 +5,9 @@
 #pragma once
 
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WebGLFramebuffer {
+class WebGLFramebuffer: ObjectWrapperImpl {
 public:
     WebGLFramebuffer(uint32_t framebuffer) : framebuffer_(framebuffer) {}
 
@@ -38,6 +38,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLFramebuffer);
         auto ext = v8::External::New(isolate, buffer);
         object->SetInternalField(0, ext);
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -5,8 +5,9 @@
 #pragma once
 #include "Common.h"
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-class WebGLSyncImpl {
+class WebGLSyncImpl: ObjectWrapperImpl {
 public:
     WebGLSyncImpl(WebGLSync* sync) : sync_(sync) {}
 
@@ -37,6 +38,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLSync);
         auto ext = v8::External::New(isolate, sync);
         object->SetInternalField(0, ext);
+        sync->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

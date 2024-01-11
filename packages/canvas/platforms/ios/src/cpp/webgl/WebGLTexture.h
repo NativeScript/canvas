@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Helpers.h"
-
-class WebGLTexture {
+#include "ObjectWrapperImpl.h"
+class WebGLTexture: ObjectWrapperImpl {
 public:
     WebGLTexture(uint32_t texture) : texture_(texture) {}
 
@@ -37,6 +37,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLTexture);
         auto ext = v8::External::New(isolate, texture);
         object->SetInternalField(0, ext);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

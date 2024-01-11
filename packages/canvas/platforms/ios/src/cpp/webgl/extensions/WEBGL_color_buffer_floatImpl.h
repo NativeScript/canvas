@@ -9,8 +9,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-class WEBGL_color_buffer_floatImpl {
+#include "ObjectWrapperImpl.h"
+class WEBGL_color_buffer_floatImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -50,6 +50,7 @@ public:
         SetNativeType(isolate, object, NativeType::WEBGL_color_buffer_float);
         auto ext = v8::External::New(isolate, buffer);
         object->SetInternalField(0, ext);
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -21,6 +21,10 @@ OneByteStringResource::OneByteStringResource(CCow *cow) : cow_(cow) {
     usingCow_ = true;
 }
 
+OneByteStringResource::OneByteStringResource(std::string string) : stdString_(std::move(string)) {
+    this->usingString = true;
+}
+
 OneByteStringResource::~OneByteStringResource() {
     if (usingBuffer_) {
         canvas_native_u8_buffer_destroy(buffer_);
@@ -30,6 +34,8 @@ OneByteStringResource::~OneByteStringResource() {
         canvas_native_ccow_destroy(cow_);
         this->string_ = nullptr;
         this->length_ = 0;
+    }else if(usingString){
+        // noop
     } else {
         canvas_native_string_destroy((char *) this->string_);
         this->string_ = nullptr;

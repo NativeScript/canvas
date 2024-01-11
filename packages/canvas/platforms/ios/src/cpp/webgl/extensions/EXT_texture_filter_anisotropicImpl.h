@@ -9,8 +9,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-class EXT_texture_filter_anisotropicImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_texture_filter_anisotropicImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -46,6 +46,7 @@ public:
         SetNativeType(isolate, object, NativeType::EXT_texture_filter_anisotropic);
         auto ext = v8::External::New(isolate, filterAnisotropic);
         object->SetInternalField(0, ext);
+        filterAnisotropic->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

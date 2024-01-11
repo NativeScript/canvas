@@ -29,13 +29,13 @@ v8::Local<v8::FunctionTemplate> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolat
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(1);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "name"),
             GetName);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "size"),
             GetSize);
-    tmpl->SetAccessor(
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "type"),
             GetType);
 
@@ -45,22 +45,22 @@ v8::Local<v8::FunctionTemplate> WebGLActiveInfoImpl::GetCtor(v8::Isolate *isolat
 }
 
 void
-WebGLActiveInfoImpl::GetName(v8::Local<v8::String> name,
+WebGLActiveInfoImpl::GetName(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         auto info_name = canvas_native_webgl_active_info_get_name(ptr->GetWebGLActiveInfo());
-        info.GetReturnValue().Set(
-                ConvertToV8String(isolate, info_name));
-        canvas_native_string_destroy((char*)info_name);
+        auto returnValue = new OneByteStringResource((char *)info_name);
+        auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
+        info.GetReturnValue().Set(ret.ToLocalChecked());
         return;
     }
     info.GetReturnValue().SetEmptyString();
 }
 
 void
-WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name,
+WebGLActiveInfoImpl::GetSize(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
@@ -73,7 +73,7 @@ WebGLActiveInfoImpl::GetSize(v8::Local<v8::String> name,
 
 
 void
-WebGLActiveInfoImpl::GetType(v8::Local<v8::String> name,
+WebGLActiveInfoImpl::GetType(v8::Local<v8::Name> name,
                              const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {

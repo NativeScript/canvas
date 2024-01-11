@@ -9,8 +9,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-class WEBGL_compressed_texture_atcImpl {
+#include "ObjectWrapperImpl.h"
+class WEBGL_compressed_texture_atcImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -48,6 +48,7 @@ public:
         SetNativeType(isolate, object, NativeType::WEBGL_compressed_texture_atc);
         auto ext = v8::External::New(isolate, compressedTextureAtc);
         object->SetInternalField(0, ext);
+        compressedTextureAtc->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

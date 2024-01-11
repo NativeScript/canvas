@@ -9,8 +9,9 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-class OES_texture_half_floatImpl {
+class OES_texture_half_floatImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -40,6 +41,7 @@ public:
         SetNativeType(isolate, object, NativeType::OES_texture_half_float);
         auto ext = v8::External::New(isolate, texture);
         object->SetInternalField(0, ext);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -153,6 +153,8 @@ add_library(
 
         ${CPP_DIR}/CanvasJSIModule.cpp
 
+        ${CPP_DIR}/PerIsolateData.cpp
+
         ${CPP_DIR}/JSIRuntime.cpp
 )
 

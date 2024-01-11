@@ -9,9 +9,8 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
-
-
-class WEBGL_lose_contextImpl {
+#include "ObjectWrapperImpl.h"
+class WEBGL_lose_contextImpl: ObjectWrapperImpl {
 public:
     WEBGL_lose_contextImpl(WEBGL_lose_context* context);
     ~WEBGL_lose_contextImpl() {
@@ -55,6 +54,7 @@ public:
         SetNativeType(isolate, object, NativeType::WEBGL_lose_context);
         auto ext = v8::External::New(isolate, element);
         object->SetInternalField(0, ext);
+        element->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

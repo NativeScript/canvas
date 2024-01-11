@@ -82,6 +82,8 @@ void TextEncoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto ext = v8::External::New(isolate, txtEncoder);
 
     ret->SetInternalField(0, ext);
+    
+    txtEncoder->BindFinalizer(isolate, ret);
 
     args.GetReturnValue().Set(ret);
 

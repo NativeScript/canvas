@@ -8,8 +8,8 @@
 #include <vector>
 #include "Helpers.h"
 #include "Caches.h"
-
-class EXT_sRGBImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_sRGBImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -48,6 +48,7 @@ public:
         SetNativeType(isolate, object, NativeType::EXT_sRGB);
         auto ext = v8::External::New(isolate, extSrgb);
         object->SetInternalField(0, ext);
+        extSrgb->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

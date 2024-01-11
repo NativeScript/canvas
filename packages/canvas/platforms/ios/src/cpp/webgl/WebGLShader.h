@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Helpers.h"
-
-class WebGLShader {
+#include "ObjectWrapperImpl.h"
+class WebGLShader: ObjectWrapperImpl {
 public:
     WebGLShader(uint32_t shader) : shader_(shader) {}
 
@@ -37,6 +37,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLShader);
         auto ext = v8::External::New(isolate, shader);
         object->SetInternalField(0, ext);
+        shader->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

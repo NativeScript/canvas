@@ -120,11 +120,13 @@ void URLImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    auto decoder = new URLImpl(url);
+    auto urlImpl = new URLImpl(url);
 
-    auto ext = v8::External::New(isolate, decoder);
+    auto ext = v8::External::New(isolate, urlImpl);
 
     ret->SetInternalField(0, ext);
+    
+    urlImpl->BindFinalizer(isolate, ret);
 
     args.GetReturnValue().Set(ret);
 

@@ -29,6 +29,20 @@ struct JSICallback {
                                                                              data_(std::make_shared<v8::Persistent<v8::Value>>(
                                                                                      isolate,
                                                                                      data)) {}
+    
+    ~JSICallback() {
+        auto callback = callback_.get();
+        if(callback != nullptr){
+            callback->Reset();
+        }
+        auto data = data_.get();
+        if(data != nullptr){
+            data->Reset();
+        }
+        
+        callback_ = nullptr;
+        data_ = nullptr;
+    }
 };
 
 
@@ -64,6 +78,14 @@ struct JSICallback {
         ALooper_removeFd(looper_, fd_[0]);
         close(fd_[0]);
         ALooper_release(looper_);
+        auto callback = callback_.get();
+        if(callback != nullptr){
+            callback->Reset();
+        }
+        auto data = data_.get();
+        if(data != nullptr){
+            data->Reset();
+        }
         callback_ = nullptr;
         data_ = nullptr;
     }

@@ -7,8 +7,9 @@
 #include "Common.h"
 #include "Helpers.h"
 #include <vector>
+#include "ObjectWrapperImpl.h"
 
-class Path2D {
+class Path2D: ObjectWrapperImpl {
 public:
     Path2D(Path* path);
     ~Path2D(){

@@ -6,9 +6,9 @@
 
 #include "Helpers.h"
 #include <vector>
+#include "ObjectWrapperImpl.h"
 
-
-class ANGLE_instanced_arraysImpl {
+class ANGLE_instanced_arraysImpl: ObjectWrapperImpl {
 public:
     ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays *arrays);
 
@@ -27,6 +27,7 @@ public:
         SetNativeType(isolate, object, NativeType::ANGLE_instanced_arrays);
         auto ext = v8::External::New(isolate, arrays);
         object->SetInternalField(0, ext);
+        arrays->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

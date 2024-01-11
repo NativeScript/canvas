@@ -6,9 +6,9 @@
 
 #include "Common.h"
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-
-class OES_texture_floatImpl {
+class OES_texture_floatImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -39,6 +39,7 @@ public:
         SetNativeType(isolate, object, NativeType::OES_texture_float);
         auto ext = v8::External::New(isolate, texture);
         object->SetInternalField(0, ext);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

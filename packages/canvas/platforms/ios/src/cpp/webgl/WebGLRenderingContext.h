@@ -74,6 +74,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLRenderingContextBase);
         auto ext = v8::External::New(isolate, renderingContext);
         object->SetInternalField(0, ext);
+        renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

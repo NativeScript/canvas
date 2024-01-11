@@ -547,7 +547,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		});
 	}
 	draw() {
-		this.drawOnCanvasWithCanvas(this.canvas);
+		///this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
@@ -680,7 +680,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-		//fog(this.canvas);
+		fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);

@@ -5,9 +5,9 @@
 #pragma
 
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WebGLProgram {
+class WebGLProgram:ObjectWrapperImpl  {
 public:
     WebGLProgram(uint32_t program) : program_(program) {}
 
@@ -42,6 +42,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLProgram);
         auto ext = v8::External::New(isolate, program);
         object->SetInternalField(0, ext);
+        program->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

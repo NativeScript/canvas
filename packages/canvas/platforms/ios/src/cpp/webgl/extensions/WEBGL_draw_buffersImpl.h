@@ -9,13 +9,17 @@
 #include "Common.h"
 #include "Caches.h"
 #include "Helpers.h"
+#include "ObjectWrapperImpl.h"
 
-class WEBGL_draw_buffersImpl {
+class WEBGL_draw_buffersImpl: ObjectWrapperImpl {
 public:
     WEBGL_draw_buffersImpl(WEBGL_draw_buffers *buffers);
 
     ~WEBGL_draw_buffersImpl() {
-        // todo
+        if(this->buffers_ != nullptr){
+            canvas_native_webgl_WEBGL_draw_buffers_destroy(this->buffers_);
+            this->buffers_ = nullptr;
+        }
     }
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
@@ -122,6 +126,7 @@ public:
         SetNativeType(isolate, object, NativeType::WEBGL_draw_buffers);
         auto ext = v8::External::New(isolate, buffers);
         object->SetInternalField(0, ext);
+        buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

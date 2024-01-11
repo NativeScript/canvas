@@ -12,15 +12,17 @@
 #ifdef __APPLE__
 #include "NSOperationQueueWrapper.h"
 #endif
+#include "ObjectWrapperImpl.h"
 
-class ImageAssetImpl{
+class ImageAssetImpl: ObjectWrapperImpl{
 public:
+    
     ImageAssetImpl(ImageAsset* asset);
 
     ~ImageAssetImpl();
 
     ImageAsset* GetImageAsset();
-
+    
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static ImageAssetImpl *GetPointer(const v8::Local<v8::Object>& object);

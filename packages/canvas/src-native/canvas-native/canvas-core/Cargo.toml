@@ -11,7 +11,7 @@ edition = "2021"
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.2"
 parking_lot = "0.12.0"
-image = { version = "0.24.7", features = ["jpeg", "png", "gif", "rgb", "jpeg_rayon"] }
+image = { version = "0.24.7", features = ["jpeg", "png", "gif"] }
 skia-safe = { version = "0.69.0", features = ["gl", "svg"], optional = true }
 once_cell = "1.14.0"
 log = "0.4.17"

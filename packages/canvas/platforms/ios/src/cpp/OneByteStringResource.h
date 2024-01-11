@@ -13,6 +13,8 @@ public:
     OneByteStringResource(U8Buffer *buffer);
     
     OneByteStringResource(CCow *cow);
+    
+    OneByteStringResource(std::string string);
 
     ~OneByteStringResource();
 
@@ -25,8 +27,10 @@ private:
     size_t length_;
     U8Buffer *buffer_ = nullptr;
     CCow *cow_ = nullptr;
+    std::string stdString_;
     // todo enum
     bool usingBuffer_ = false;
     bool usingCow_ = false;
+    bool usingString = false;
 };
 

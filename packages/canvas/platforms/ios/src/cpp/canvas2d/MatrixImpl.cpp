@@ -219,6 +219,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 ret->SetInternalField(0, ext);
 
                 SetNativeType(isolate, ret, NativeType::Matrix);
+                
+                object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
 
@@ -244,6 +246,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 ret->SetInternalField(0, ext);
 
                 SetNativeType(isolate, ret, NativeType::Matrix);
+                
+                object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -259,6 +263,8 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         ret->SetInternalField(0, ext);
 
         SetNativeType(isolate, ret, NativeType::Matrix);
+        
+        object->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);
         return;

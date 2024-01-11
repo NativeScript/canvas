@@ -33,6 +33,11 @@ if (!hasNdkDirectory) {
 		println "No ndkDirectory set, checking environment \$ANDROID_NDK_HOME..."
 		NDK_PATH = "$System.env.ANDROID_NDK_HOME"
 	}
+
+	if (NDK_PATH == null || NDK_PATH == "null") {
+		println "No ndkDirectory set, checking environment \$ANDROID_NDK_HOME..."
+		NDK_PATH = "$System.env.ANDROID_NDK"
+	}
 } else {
 	NDK_PATH = ndkDirectory
 }
@@ -53,7 +58,7 @@ android {
 				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
 					"-DANDROID_STL=c++_static",
-					"-DANDROID_NDK_ROOT=${System.getenv("ANDROID_NDK_ROOT")}"
+					"-DANDROID_NDK_ROOT=${NDK_PATH}"
 			}
 		}
 		ndk {

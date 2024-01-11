@@ -7,9 +7,9 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WebGLUniformLocation {
+class WebGLUniformLocation: ObjectWrapperImpl {
 public:
     WebGLUniformLocation(int32_t
                          uniformLocation) :
@@ -44,6 +44,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLUniformLocation);
         auto ext = v8::External::New(isolate, uniformLocation);
         object->SetInternalField(0, ext);
+        uniformLocation->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

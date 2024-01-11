@@ -7,8 +7,8 @@
 #include "Common.h"
 #include <vector>
 #include "Helpers.h"
-
-class EXT_blend_minmaxImpl {
+#include "ObjectWrapperImpl.h"
+class EXT_blend_minmaxImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -23,6 +23,7 @@ public:
         object->SetInternalField(0, ext);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_blend_minmax"));
+        minmax->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

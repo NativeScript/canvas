@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Helpers.h"
-
-class WebGLRenderbuffer {
+#include "ObjectWrapperImpl.h"
+class WebGLRenderbuffer: ObjectWrapperImpl {
 public:
     WebGLRenderbuffer(uint32_t renderbuffer) : renderbuffer_(renderbuffer) {}
 
@@ -37,6 +37,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLRenderbuffer);
         auto ext = v8::External::New(isolate, buffer);
         object->SetInternalField(0, ext);
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

@@ -6,9 +6,9 @@
 
 #include "Caches.h"
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WebGLSampler {
+class WebGLSampler: ObjectWrapperImpl {
 public:
     WebGLSampler(uint32_t sampler) : sampler_(sampler) {}
 
@@ -39,6 +39,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLSampler);
         auto ext = v8::External::New(isolate, sampler);
         object->SetInternalField(0, ext);
+        sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

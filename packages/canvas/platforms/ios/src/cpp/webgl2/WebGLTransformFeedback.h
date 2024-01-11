@@ -6,8 +6,9 @@
 
 #include "Common.h"
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-class WebGLTransformFeedback {
+class WebGLTransformFeedback: ObjectWrapperImpl {
 public:
     WebGLTransformFeedback(uint32_t feedback) : feedback_(feedback) {}
 
@@ -39,6 +40,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLTransformFeedback);
         auto ext = v8::External::New(isolate, feedback);
         object->SetInternalField(0, ext);
+        feedback->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

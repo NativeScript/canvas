@@ -9,9 +9,9 @@
 #include "Helpers.h"
 #include "Common.h"
 #include "Caches.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WEBGL_compressed_texture_pvrtcImpl {
+class WEBGL_compressed_texture_pvrtcImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -56,6 +56,7 @@ public:
         SetNativeType(isolate, object, NativeType::WEBGL_compressed_texture_pvrtc);
         auto ext = v8::External::New(isolate, compressedTexturePvrtc);
         object->SetInternalField(0, ext);
+        compressedTexturePvrtc->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

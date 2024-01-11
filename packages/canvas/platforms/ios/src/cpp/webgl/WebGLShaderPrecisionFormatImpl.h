@@ -8,9 +8,9 @@
 #include "Helpers.h"
 #include "Caches.h"
 #include "Common.h"
+#include "ObjectWrapperImpl.h"
 
-
-class WebGLShaderPrecisionFormatImpl {
+class WebGLShaderPrecisionFormatImpl: ObjectWrapperImpl {
 public:
     WebGLShaderPrecisionFormatImpl(WebGLShaderPrecisionFormat* shader);
     
@@ -33,9 +33,9 @@ public:
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(1);
 
-        tmpl->SetAccessor(ConvertToV8String(isolate, "rangeMin"), &GetRangeMin);
-        tmpl->SetAccessor(ConvertToV8String(isolate, "rangeMax"), &GetRangeMax);
-        tmpl->SetAccessor(ConvertToV8String(isolate, "precision"), &GetPrecision);
+        tmpl->SetLazyDataProperty(ConvertToV8String(isolate, "rangeMin"), GetRangeMin);
+        tmpl->SetLazyDataProperty(ConvertToV8String(isolate, "rangeMax"), GetRangeMax);
+        tmpl->SetLazyDataProperty(ConvertToV8String(isolate, "precision"), GetPrecision);
 
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"));
@@ -54,6 +54,7 @@ public:
         SetNativeType(isolate, object, NativeType::WebGLShaderPrecisionFormat);
         auto ext = v8::External::New(isolate, shaderPrecisionFormat);
         object->SetInternalField(0, ext);
+        shaderPrecisionFormat->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
@@ -66,13 +67,13 @@ public:
     }
 
 
-    static void GetRangeMin(v8::Local<v8::String> property,
+    static void GetRangeMin(v8::Local<v8::Name> property,
                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetRangeMax(v8::Local<v8::String> property,
+    static void GetRangeMax(v8::Local<v8::Name> property,
                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void GetPrecision(v8::Local<v8::String> property,
+    static void GetPrecision(v8::Local<v8::Name> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
     WebGLShaderPrecisionFormat* GetShaderPrecisionFormat();

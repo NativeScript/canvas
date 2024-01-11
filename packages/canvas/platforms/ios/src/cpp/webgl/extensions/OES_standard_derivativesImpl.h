@@ -9,8 +9,8 @@
 #include "Caches.h"
 #include "Common.h"
 #include "Helpers.h"
-
-class OES_standard_derivativesImpl {
+#include "ObjectWrapperImpl.h"
+class OES_standard_derivativesImpl: ObjectWrapperImpl {
 public:
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -43,6 +43,7 @@ public:
         SetNativeType(isolate, object, NativeType::OES_standard_derivatives);
         auto ext = v8::External::New(isolate, derivatives);
         object->SetInternalField(0, ext);
+        derivatives->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

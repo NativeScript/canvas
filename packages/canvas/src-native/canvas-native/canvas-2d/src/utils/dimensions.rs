@@ -9,7 +9,6 @@ const SIZE_PX: f32 = 1.0 / 96.0 * SIZE_INCH;
 const SIZE_POINT: f32 = 1.0 / 72.0 * SIZE_INCH;
 const SIZE_PICAS: f32 = SIZE_POINT * 12.0;
 
-
 /// The default font size.
 pub const FONT_MEDIUM_PX: f32 = 16.0;
 

@@ -1,11 +1,23 @@
 use std::ffi::c_void;
 use std::os::raw::c_int;
 
-use skia_safe::{AlphaType, Bitmap, ColorType, Data, Image, ImageInfo, ISize};
+use skia_safe::{AlphaType, Bitmap, ColorType, Data, ISize, Image, ImageInfo};
 
-pub fn from_backend_texture(context: &mut crate::context::Context, texture: &skia_safe::gpu::BackendTexture,  origin: skia_safe::gpu::SurfaceOrigin, info: &ImageInfo) -> Option<Image> {
+pub fn from_backend_texture(
+    context: &mut crate::context::Context,
+    texture: &skia_safe::gpu::BackendTexture,
+    origin: skia_safe::gpu::SurfaceOrigin,
+    info: &ImageInfo,
+) -> Option<Image> {
     if let Some(mut context) = context.surface.canvas().recording_context() {
-        return Image::from_texture(&mut context, texture, origin, info.color_type(), info.alpha_type(), info.color_space())
+        return Image::from_texture(
+            &mut context,
+            texture,
+            origin,
+            info.color_type(),
+            info.alpha_type(),
+            info.color_space(),
+        );
     }
     None
 }

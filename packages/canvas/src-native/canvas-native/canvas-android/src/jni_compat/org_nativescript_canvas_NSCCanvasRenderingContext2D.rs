@@ -94,7 +94,7 @@ pub extern "system" fn nativeDrawImageDxDyWithBitmap(
     dx: jfloat,
     dy: jfloat,
 ) -> jboolean {
-    let mut bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
+    let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
     if let Some((bytes, _)) = bytes {
         return draw_image(
             context,
@@ -127,7 +127,7 @@ pub extern "system" fn nativeDrawImageDxDyDwDhWithBitmap(
     d_width: jfloat,
     d_height: jfloat,
 ) -> jboolean {
-    let mut bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
+    let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, _)) = bytes {
         return draw_image(
@@ -165,7 +165,7 @@ pub extern "system" fn nativeDrawImageWithBitmap(
     d_width: jfloat,
     d_height: jfloat,
 ) -> jboolean {
-    let mut bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
+    let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, _)) = bytes {
         return draw_image(

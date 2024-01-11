@@ -18,7 +18,6 @@ impl ScaleUtils for Rect {
     }
 }
 
-
 #[repr(transparent)]
 #[derive(Copy, Clone, Default)]
 pub struct ByteBufInner {

@@ -293,7 +293,11 @@ impl GLContext {
         context: &GLContext,
     ) -> Option<GLContext> {
         GLContext::create_window_context_internal(
-            context_attrs, width, height, window, Some(context)
+            context_attrs,
+            width,
+            height,
+            window,
+            Some(context),
         )
     }
 

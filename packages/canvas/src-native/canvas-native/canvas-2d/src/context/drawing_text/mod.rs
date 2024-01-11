@@ -3,12 +3,12 @@ use std::os::raw::c_float;
 
 use skia_safe::{Canvas, Paint};
 
-use crate::context::Context;
 use crate::context::drawing_text::global_fonts::FONT_LIBRARY;
 use crate::context::drawing_text::text_metrics::TextMetrics;
 use crate::context::text_styles::text_align::TextAlign;
 use crate::context::text_styles::text_baseline::TextBaseLine;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::Context;
 
 pub(crate) const MAX_TEXT_WIDTH: f32 = 100_000.0;
 
@@ -138,10 +138,12 @@ impl Context {
 
         let font = paragraph.get_font_at(0);
         let (_, font_metrics) = font.metrics();
-        if font_metrics.has_bounds() {  }
+        if font_metrics.has_bounds() {}
         let glyphs = font.str_to_glyphs_vec(text);
         let glyphs_size = glyphs.len();
-        if glyphs_size == 0 { return; }
+        if glyphs_size == 0 {
+            return;
+        }
         let mut bounds = vec![skia_safe::Rect::default(); glyphs_size];
         font.get_bounds(glyphs.as_slice(), bounds.as_mut_slice(), None);
         let range: Range<usize> = 0_usize..glyphs_size;
@@ -158,8 +160,9 @@ impl Context {
             line_width += tbox.rect.width();
         }
 
-        if line_width == 0. { return; }
-
+        if line_width == 0. {
+            return;
+        }
 
         let first_char_bounds = bounds[0];
         let mut descent = first_char_bounds.bottom;

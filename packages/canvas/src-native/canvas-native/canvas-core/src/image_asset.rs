@@ -5,10 +5,8 @@ use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null;
 use std::sync::Arc;
 
-use image::{
-    DynamicImage, EncodableLayout, GenericImageView, ImageFormat, Pixel,
-};
 use image::imageops::FilterType;
+use image::{DynamicImage, EncodableLayout, GenericImageView, ImageFormat, Pixel};
 use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::RawRwLock;
 
@@ -242,7 +240,6 @@ impl ImageAsset {
                                 if let Some(image) = data.as_rgba8() {
                                     let width = image.width() as i32;
                                     let height = image.height() as i32;
-
 
                                     let info = skia_safe::ImageInfo::new(
                                         skia_safe::ISize::new(width, height),

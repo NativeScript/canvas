@@ -5,7 +5,7 @@ const DEFAULT_CLANG_VERSION: &str = "14.0.7";
 
 fn main() {
     setup_aarch64_android_workaround();
-   // setup_x86_64_android_workaround();
+    // setup_x86_64_android_workaround();
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/mod.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCCanvas.rs");
@@ -20,8 +20,7 @@ fn setup_x86_64_android_workaround() {
         let android_ndk_home = if let Ok(android_ndk_home) = env::var("ANDROID_NDK") {
             android_ndk_home
         } else {
-            env::var("ANDROID_NDK_HOME")
-                .expect("ANDROID_NDK_HOME not set")
+            env::var("ANDROID_NDK_HOME").expect("ANDROID_NDK_HOME not set")
         };
 
         let build_os = match env::consts::OS {
@@ -54,8 +53,7 @@ fn setup_aarch64_android_workaround() {
         let android_ndk_home = if let Ok(android_ndk_home) = env::var("ANDROID_NDK") {
             android_ndk_home
         } else {
-            env::var("ANDROID_NDK_HOME")
-                .expect("ANDROID_NDK_HOME not set")
+            env::var("ANDROID_NDK_HOME").expect("ANDROID_NDK_HOME not set")
         };
 
         let build_os = match env::consts::OS {

@@ -881,11 +881,10 @@ pub fn canvas_native_webgl_get_extension(
     }
     // API_LEVEL
     #[allow(non_snake_case)]
-        let JELLY_BEAN_MR2 = 18;
+    let JELLY_BEAN_MR2 = 18;
 
     let ext = unsafe { CStr::from_ptr(std::mem::transmute(extensions)) };
     let extensions = ext.to_string_lossy();
-
 
     let extension = if name.eq("EXT_blend_minmax") {
         if extensions.contains("GL_EXT_blend_minmax") {
@@ -1088,12 +1087,8 @@ pub fn canvas_native_webgl_get_extension(
             }
             "OES_element_index_uint" => return Some(Box::new(OES_element_index_uint::new())),
             "OES_fbo_render_mipmap" => return Some(Box::new(OES_fbo_render_mipmap::new())),
-            "OES_standard_derivatives" => {
-                return Some(Box::new(OES_standard_derivatives::new()))
-            }
-            "OES_texture_float_linear" => {
-                return Some(Box::new(OES_texture_float_linear::new()))
-            }
+            "OES_standard_derivatives" => return Some(Box::new(OES_standard_derivatives::new())),
+            "OES_texture_float_linear" => return Some(Box::new(OES_texture_float_linear::new())),
             "OES_texture_half_float" => return Some(Box::new(OES_texture_half_float::new())),
             "OES_texture_half_float_linear" => {
                 return Some(Box::new(OES_texture_half_float_linear::new()))
@@ -1117,7 +1112,6 @@ pub fn canvas_native_webgl_get_extension(
 
     None
 }
-
 
 pub fn canvas_native_webgl_get_framebuffer_attachment_parameter(
     target: u32,
@@ -2142,11 +2136,9 @@ pub fn canvas_native_webgl_tex_image2d_image_asset(
 ) {
     state.make_current();
 
-
     let width = image_asset.width() as i32;
     let height = image_asset.height() as i32;
     let flip_y = state.get_flip_y();
-
 
     match utils::gl::get_image_asset_bytes_type(format, image_type) {
         GLImageAssetBytesType::RGBA8 => {
@@ -2157,11 +2149,10 @@ pub fn canvas_native_webgl_tex_image2d_image_asset(
                         utils::gl::flip_in_place(
                             buffer.as_mut_ptr(),
                             buffer.len(),
-                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                                as usize,
+                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                                * width) as usize,
                             height as usize,
                         );
-
 
                         gl_bindings::TexImage2D(
                             target as u32,
@@ -2200,11 +2191,10 @@ pub fn canvas_native_webgl_tex_image2d_image_asset(
                         utils::gl::flip_in_place(
                             buffer.as_mut_ptr(),
                             buffer.len(),
-                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                                as usize,
+                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
+                                * width) as usize,
                             height as usize,
                         );
-
 
                         gl_bindings::TexImage2D(
                             target as u32,

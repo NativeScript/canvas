@@ -3,14 +3,13 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
-use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
+use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -21,8 +20,12 @@ use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_baseline::TextBaseLine;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
-use canvas_2d::utils::image::{from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded, from_image_slice_no_copy};
+use canvas_2d::utils::image::{
+    from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
+    from_image_slice_no_copy,
+};
 use canvas_core::image_asset::OutputFormat;
 use canvas_webgl::prelude::WebGLVersion;
 #[cfg(target_os = "android")]
@@ -632,7 +635,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         width as i32,
         height as i32,
     )
-        .unwrap();
+    .unwrap();
 
     gl_context.make_current();
 
@@ -729,7 +732,6 @@ pub extern "C" fn canvas_native_context_set_letter_spacing(
         .get_context_mut()
         .set_letter_spacing(spacing.to_string_lossy().as_ref());
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_word_spacing(
@@ -1095,13 +1097,21 @@ pub extern "C" fn canvas_native_context_set_text_baseline(
         "alphabetic" => context
             .get_context_mut()
             .set_text_baseline(TextBaseLine::ALPHABETIC),
-        "bottom" => context.get_context_mut().set_text_baseline(TextBaseLine::BOTTOM),
-        "hanging" => context.get_context_mut().set_text_baseline(TextBaseLine::HANGING),
+        "bottom" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseLine::BOTTOM),
+        "hanging" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseLine::HANGING),
         "ideographic" => context
             .get_context_mut()
             .set_text_baseline(TextBaseLine::IDEOGRAPHIC),
-        "middle" => context.get_context_mut().set_text_baseline(TextBaseLine::MIDDLE),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseLine::TOP),
+        "middle" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseLine::MIDDLE),
+        "top" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseLine::TOP),
         _ => {}
     }
 }
@@ -2232,8 +2242,8 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     // gl context is shared so snapshots should work
     let mut source_ctx = source.get_context_mut();
 
-
-    #[cfg(any(target_os = "ios", target_os = "macos"))] {
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    {
         let snapshot = source_ctx.snapshot();
         let info = snapshot.image_info();
 
@@ -2248,13 +2258,15 @@ pub extern "C" fn canvas_native_context_draw_image_context(
         }
     }
 
-    #[cfg(target_os = "ios")] {
+    #[cfg(target_os = "ios")]
+    {
         let width = source_ctx.device().width;
         let height = source_ctx.device().height;
 
         let bytes = source_ctx.snapshot_to_raster_data();
 
-        if let Some(image) = from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
+        if let Some(image) =
+            from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
         {
             let context = unsafe { &mut *context };
             context.make_current();
@@ -2262,7 +2274,6 @@ pub extern "C" fn canvas_native_context_draw_image_context(
                 &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
             );
         }
-
     }
 }
 
@@ -3752,8 +3763,8 @@ impl ImageAsset {
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
-        where
-            R: Read + std::io::Seek + std::io::BufRead,
+    where
+        R: Read + std::io::Seek + std::io::BufRead,
     {
         self.0.load_from_reader(reader)
     }
@@ -4608,8 +4619,8 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
         format.as_ref(),
         quality,
     ))
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[derive(Debug)]
@@ -6839,8 +6850,8 @@ pub extern "C" fn canvas_native_webgl_get_program_info_log(
             state.get_inner_mut(),
         ),
     )
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -6882,8 +6893,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     CString::new(
         canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
     )
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -6928,8 +6939,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
         shader,
         state.get_inner_mut(),
     ))
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -8832,8 +8843,8 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_name(
             state.get_inner_mut(),
         ),
     )
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]

@@ -43,12 +43,7 @@ impl Context {
         }
     }
 
-    pub fn create_conic_gradient(
-        &self,
-        start_angle: c_float,
-        x: c_float,
-        y: c_float,
-    ) -> Gradient {
+    pub fn create_conic_gradient(&self, start_angle: c_float, x: c_float, y: c_float) -> Gradient {
         let angle = crate::utils::geometry::to_degrees(start_angle) - 90.0;
         Gradient::Conic {
             center: Point::new(x, y),
@@ -59,7 +54,6 @@ impl Context {
             tile_mode: TileMode::Clamp,
         }
     }
-
 
     pub fn create_conic_gradient_with_matrix(
         &self,

@@ -5,7 +5,6 @@ use crate::context::Context;
 pub mod path;
 
 impl Context {
-
     pub fn begin_path(&mut self) {
         self.path.begin_path();
     }

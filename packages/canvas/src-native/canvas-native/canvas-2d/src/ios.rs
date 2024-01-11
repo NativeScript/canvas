@@ -40,15 +40,17 @@ impl Context {
         };
         let mut context = skia_safe::gpu::DirectContext::new_metal(backend, None).unwrap();
         let surface_props = SurfaceProps::new(SurfacePropsFlags::default(), PixelGeometry::Unknown);
-        let surface_holder = unsafe { gpu::surfaces::wrap_mtk_view(
-            &mut context,
-            view as skia_safe::gpu::mtl::Handle,
-            gpu::SurfaceOrigin::TopLeft,
-            Some(samples),
-            ColorType::BGRA8888,
-            None,
-            Some(&surface_props),
-        )};
+        let surface_holder = unsafe {
+            gpu::surfaces::wrap_mtk_view(
+                &mut context,
+                view as skia_safe::gpu::mtl::Handle,
+                gpu::SurfaceOrigin::TopLeft,
+                Some(samples),
+                ColorType::BGRA8888,
+                None,
+                Some(&surface_props),
+            )
+        };
 
         Context {
             surface: surface_holder.unwrap(),

@@ -1,7 +1,6 @@
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
-
 pub mod st;
 pub(crate) mod surface_texture;
 pub mod texture_render;
@@ -20,7 +19,8 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
         return JNI_FALSE;
     }
 
-    let state = state as *mut crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
+    let state =
+        state as *mut crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
 
     if state.is_null() {
         return JNI_FALSE;

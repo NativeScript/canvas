@@ -57,7 +57,7 @@ fn main() {
             "GL_OES_packed_depth_stencil",
             "GL_EXT_draw_buffers",
             "OES_fbo_render_mipmap",
-            "GL_EXT_texture_format_BGRA8888"
+            "GL_EXT_texture_format_BGRA8888",
         ],
     )
     .write_bindings(GlobalGenerator, &mut file)

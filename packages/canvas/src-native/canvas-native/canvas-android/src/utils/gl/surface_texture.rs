@@ -134,7 +134,6 @@ extern "system" {
     pub fn ASurfaceTexture_getTimestamp(st: *mut ASurfaceTexture) -> i64;
 }
 
-
 extern "C" {
     #[doc = " Get a reference to the native ASurfaceTexture from the corresponding java object."]
     #[doc = ""]

@@ -1583,8 +1583,6 @@ pub fn canvas_native_webgl2_transform_feedback_varyings(
     }
 }
 
-
-
 pub fn canvas_native_webgl2_transform_feedback_varyings_raw(
     program: u32,
     varyings: *const *const c_char,

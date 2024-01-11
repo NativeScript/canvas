@@ -1,12 +1,12 @@
 use std::ffi::c_void;
 
-use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect, Surface};
+use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
 
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
@@ -327,8 +327,7 @@ pub extern "system" fn nativeReleaseGL(context: jlong) {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeReleaseGLNormal( _env: JNIEnv,
-                                              _: JClass, context: jlong) {
+pub extern "system" fn nativeReleaseGLNormal(_env: JNIEnv, _: JClass, context: jlong) {
     if context == 0 {
         return;
     }
@@ -346,10 +345,12 @@ pub extern "system" fn nativeGetGLPointer(gl_context: jlong) -> jlong {
     gl_context.gl_context.as_raw_inner() as jlong
 }
 
-
 #[no_mangle]
-pub extern "system" fn nativeGetGLPointerNormal( _env: JNIEnv,
-                                                 _: JClass, gl_context: jlong) -> jlong {
+pub extern "system" fn nativeGetGLPointerNormal(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jlong {
     if gl_context == 0 {
         return 0;
     }
@@ -372,8 +373,11 @@ pub extern "system" fn nativeMakeGLCurrent(gl_context: jlong) -> jboolean {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeMakeGLCurrentNormal( _env: JNIEnv,
-                                                  _: JClass, gl_context: jlong) -> jboolean {
+pub extern "system" fn nativeMakeGLCurrentNormal(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jboolean {
     if gl_context == 0 {
         return 0;
     }
@@ -403,8 +407,11 @@ pub extern "system" fn nativeGLPointerRefCount(gl_context: jlong) -> jlong {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeGLPointerRefCountNormal( _env: JNIEnv,
-                                                      _: JClass,  gl_context: jlong) -> jlong {
+pub extern "system" fn nativeGLPointerRefCountNormal(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+) -> jlong {
     if gl_context == 0 {
         return 0;
     }
@@ -420,9 +427,8 @@ pub extern "system" fn nativeGLPointerRefCountNormal( _env: JNIEnv,
     count as i64
 }
 
-
 #[no_mangle]
-pub extern "system" fn nativeReleaseGLPointer( gl_context: jlong) {
+pub extern "system" fn nativeReleaseGLPointer(gl_context: jlong) {
     if gl_context == 0 {
         return;
     }
@@ -439,8 +445,7 @@ pub extern "system" fn nativeReleaseGLPointer( gl_context: jlong) {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeReleaseGLPointerNormal( _env: JNIEnv,
-                                                     _: JClass,gl_context: jlong) {
+pub extern "system" fn nativeReleaseGLPointerNormal(_env: JNIEnv, _: JClass, gl_context: jlong) {
     if gl_context == 0 {
         return;
     }
@@ -475,8 +480,7 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeContext2DTestNormal( _env: JNIEnv,
-                                                  _: JClass, context: jlong) {
+pub extern "system" fn nativeContext2DTestNormal(_env: JNIEnv, _: JClass, context: jlong) {
     if context == 0 {
         return;
     }
@@ -492,7 +496,6 @@ pub extern "system" fn nativeContext2DTestNormal( _env: JNIEnv,
     }
     context.render();
 }
-
 
 #[no_mangle]
 pub extern "system" fn nativeContext2DPathTest(context: jlong) {
@@ -528,8 +531,7 @@ pub extern "system" fn nativeContext2DPathTest(context: jlong) {
 }
 
 #[no_mangle]
-pub extern "system" fn nativeContext2DPathTestNormal( _env: JNIEnv,
-                                                      _: JClass, context: jlong) {
+pub extern "system" fn nativeContext2DPathTestNormal(_env: JNIEnv, _: JClass, context: jlong) {
     if context == 0 {
         return;
     }

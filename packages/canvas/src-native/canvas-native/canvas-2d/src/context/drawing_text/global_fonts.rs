@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use skia_safe::{FontArguments, FontMgr, Typeface};
 use skia_safe::font_arguments::variation_position::Coordinate;
 use skia_safe::font_arguments::VariationPosition;
 use skia_safe::font_style::Slant;
 use skia_safe::textlayout::{FontCollection, TextStyle, TypefaceFontProvider};
+use skia_safe::{FontArguments, FontMgr, Typeface};
 
 #[derive(PartialEq, Eq, Hash)]
 struct CollectionKey {
@@ -169,7 +169,7 @@ impl FontLibrary {
         Ok(())
     }
 
-    pub fn reset(){
+    pub fn reset() {
         let mut library = FONT_LIBRARY.lock();
         library.fonts.clear();
 

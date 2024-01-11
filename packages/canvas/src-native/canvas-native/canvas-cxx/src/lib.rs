@@ -3647,7 +3647,9 @@ pub fn canvas_native_context_set_text_baseline(
         "alphabetic" => context
             .get_context_mut()
             .set_text_baseline(TextBaseline::ALPHABETIC),
-        "top" => context.get_context_mut().set_text_baseline(TextBaseline::TOP),
+        "top" => context
+            .get_context_mut()
+            .set_text_baseline(TextBaseline::TOP),
         "hanging" => context
             .get_context_mut()
             .set_text_baseline(TextBaseline::HANGING),
@@ -4098,9 +4100,7 @@ pub fn canvas_native_context_create_image_data_with_data(
 ) -> Box<ImageData> {
     Box::new(ImageData::new(
         canvas_2d::context::pixel_manipulation::image_data::ImageData::new_with_data(
-            width,
-            height,
-            data,
+            width, height, data,
         ),
     ))
 }
@@ -4200,7 +4200,6 @@ pub fn canvas_native_context_create_pattern_canvas2d(
     Box::new(PaintStyle(Repetition::try_from(repetition).map_or(
         None,
         |repetition| {
-
             context.remove_if_current();
 
             let width;
@@ -4223,9 +4222,9 @@ pub fn canvas_native_context_create_pattern_canvas2d(
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 //let data = source_ctx.snapshot_to_raster_data();
 
-             //   let mut data = source_ctx.snapshot_to_raster_data();
-               let image = source_ctx.image_snapshot_to_non_texture_image();
-               // context.make_current();
+                //   let mut data = source_ctx.snapshot_to_raster_data();
+                let image = source_ctx.image_snapshot_to_non_texture_image();
+                // context.make_current();
 
                 return image.map(|image| {
                     canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -5601,7 +5600,6 @@ impl Default for ImageAsset {
 }
 
 impl ImageAsset {
-
     pub fn is_valid(&self) -> bool {
         self.0.is_valid()
     }
@@ -8021,12 +8019,12 @@ fn canvas_native_webgl_tex_image2d_webgl(
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
-       // internalformat,
+        // internalformat,
         gl_bindings::RGBA as _,
         pixels.0,
         pixels.1,
         0,
-       // format,
+        // format,
         gl_bindings::RGBA as _,
         //image_type,
         gl_bindings::UNSIGNED_BYTE as _,
@@ -8218,7 +8216,6 @@ pub fn canvas_native_webgl_tex_sub_image2d_webgl(
     let mut pixels =
         canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
 
-
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,
         level,
@@ -8226,9 +8223,9 @@ pub fn canvas_native_webgl_tex_sub_image2d_webgl(
         yoffset,
         width,
         height,
-       // format,
+        // format,
         gl_bindings::RGBA as _,
-       // image_type,
+        // image_type,
         gl_bindings::UNSIGNED_BYTE as _,
         pixels.2.as_mut_slice(),
         state.get_inner_mut(),

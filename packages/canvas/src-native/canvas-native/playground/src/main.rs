@@ -53,7 +53,9 @@ use canvas_webgl::webgl::{
     canvas_native_webgl_uniform2f, canvas_native_webgl_uniform4fv, canvas_native_webgl_use_program,
     canvas_native_webgl_vertex_attrib_pointer, canvas_native_webgl_viewport,
 };
-use canvas_webgl::webgl2::{canvas_native_webgl2_bind_vertex_array, canvas_native_webgl2_create_vertex_array};
+use canvas_webgl::webgl2::{
+    canvas_native_webgl2_bind_vertex_array, canvas_native_webgl2_create_vertex_array,
+};
 
 // Vertex and fragment shaders
 
@@ -387,7 +389,7 @@ void main() {
         state,
     );
 
-     gl_state.make_current();
+    gl_state.make_current();
 
     let mut ctx = ctx_2d.get_context_mut();
 
@@ -402,13 +404,13 @@ void main() {
     ctx.set_fill_style(fill_style);
     ctx.fill_text("Hello, WebGL!", 50., 50., None);
 
-  //  let d = ctx.read_pixels();
+    //  let d = ctx.read_pixels();
 
     let (_, texture_id) = ctx.snapshot_with_texture_id();
 
     state.make_current();
 
-   // gl_state.init_transfer_surface(texture_id);
+    // gl_state.init_transfer_surface(texture_id);
 
     gl_state.draw_tex_image_2d(
         gl_bindings::TEXTURE_2D,
@@ -420,7 +422,6 @@ void main() {
         false,
         texture_id,
     );
-
 
     /*
     let mut asset = ImageAsset::new();
@@ -452,7 +453,6 @@ void main() {
     //     state,
     // );
 
-
     // lookup uniforms
     let resolutionLocation =
         canvas_native_webgl_get_uniform_location(program, "u_resolution", state);
@@ -473,7 +473,6 @@ void main() {
     // https://stackoverflow.com/a/24644675
     let vaoId = canvas_native_webgl2_create_vertex_array(state);
     canvas_native_webgl2_bind_vertex_array(vaoId, state);
-
 
     // Turn on the position attribute
     canvas_native_webgl_enable_vertex_attrib_array(position_location as u32, state);
@@ -498,14 +497,11 @@ void main() {
         state,
     );
 
-
     // Turn on the teccord attribute
     canvas_native_webgl_enable_vertex_attrib_array(texcoord_location as u32, state);
 
     // Bind the position buffer.
     canvas_native_webgl_bind_buffer(gl_bindings::ARRAY_BUFFER, texcoordBuffer, state);
-
-
 
     // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
     let size = 2; // 2 components per iteration

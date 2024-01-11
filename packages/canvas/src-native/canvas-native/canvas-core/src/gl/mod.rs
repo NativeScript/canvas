@@ -250,13 +250,9 @@ impl TransferSurface {
         let mut previous_texture = -1_i32;
 
         unsafe {
-            gl_bindings::GetIntegerv(
-                gl_bindings::TEXTURE_BINDING_2D,
-                &mut previous_texture,
-            );
+            gl_bindings::GetIntegerv(gl_bindings::TEXTURE_BINDING_2D, &mut previous_texture);
 
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, texture_id);
-
 
             gl_bindings::TexParameteri(
                 gl_bindings::TEXTURE_2D,
@@ -282,7 +278,6 @@ impl TransferSurface {
 
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, previous_texture as u32);
 
-
             gl_bindings::CopyTexImage2D(
                 target,
                 level,
@@ -291,7 +286,7 @@ impl TransferSurface {
                 0,
                 width as i32,
                 height as i32,
-                0
+                0,
             );
 
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, previous_texture as u32);
@@ -300,8 +295,6 @@ impl TransferSurface {
         self.width = width;
         self.height = height;
     }
-
-
 
     pub fn draw_tex_sub_image_2d(
         &mut self,
@@ -314,14 +307,10 @@ impl TransferSurface {
         flip_y_webgl: bool,
         texture_id: u32,
     ) {
-
         let mut previous_texture = -1_i32;
 
         unsafe {
-            gl_bindings::GetIntegerv(
-                gl_bindings::TEXTURE_BINDING_2D,
-                &mut previous_texture,
-            );
+            gl_bindings::GetIntegerv(gl_bindings::TEXTURE_BINDING_2D, &mut previous_texture);
 
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, texture_id);
 
@@ -348,7 +337,6 @@ impl TransferSurface {
             );
 
             gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, previous_texture as u32);
-
 
             gl_bindings::CopyTexSubImage2D(
                 target,

@@ -14,8 +14,6 @@ impl From<skia_safe::textlayout::TextDirection> for TextDirection {
     }
 }
 
-
-
 impl From<u32> for TextDirection {
     fn from(value: u32) -> Self {
         match value {

@@ -15,7 +15,9 @@ use std::sync::Arc;
 use crate::context_attributes::ContextAttributes;
 
 use once_cell::sync::OnceCell;
-use parking_lot::{ MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -24,7 +26,7 @@ pub struct GLContextInner {
     context: Option<EAGLContext>,
     sharegroup: EAGLSharegroup,
     view: Option<GLKView>,
-    transfer_surface_info: crate::gl::TransferSurface
+    transfer_surface_info: crate::gl::TransferSurface,
 }
 
 unsafe impl Sync for GLContextInner {}
@@ -473,7 +475,7 @@ impl GLContext {
             context,
             sharegroup: share_group,
             view: Some(view),
-            transfer_surface_info: Default::default()
+            transfer_surface_info: Default::default(),
         };
 
         Some(GLContext {

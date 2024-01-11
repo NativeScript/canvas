@@ -21,7 +21,9 @@ use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle}
 use crate::context_attributes::ContextAttributes;
 
 use once_cell::sync::OnceCell;
-use parking_lot::{ MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -573,7 +575,7 @@ impl GLContext {
                             surface,
                             context,
                             display: Some(display),
-                            transfer_surface_info: Default::default()
+                            transfer_surface_info: Default::default(),
                         };
 
                         let ret = GLContext {
@@ -981,7 +983,7 @@ impl GLContext {
                                 surface,
                                 context,
                                 display: Some(display),
-                                transfer_surface_info: Default::default()
+                                transfer_surface_info: Default::default(),
                             })),
                         })
                     }
@@ -1137,7 +1139,6 @@ impl GLContext {
             })
             .unwrap_or_default()
     }
-
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
         RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)

@@ -1,5 +1,5 @@
-use std::io::{Read, Seek, SeekFrom};
 use skia_safe::FontMgr;
+use std::io::{Read, Seek, SeekFrom};
 
 use skia_safe::svg::Dom;
 

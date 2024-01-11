@@ -1,9 +1,9 @@
+use log::log;
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 use std::os::raw::c_float;
 use std::sync::Arc;
-use log::log;
 
 use skia_safe::gpu::gl::TextureInfo;
 use skia_safe::{images, Color, Data, Image, Point, Surface};
@@ -164,7 +164,7 @@ impl State {
             word_spacing_value: "0px".to_string(),
             word_spacing: 0.,
             letter_spacing_value: "0px".to_string(),
-            letter_spacing: 0.
+            letter_spacing: 0.,
         }
     }
 }

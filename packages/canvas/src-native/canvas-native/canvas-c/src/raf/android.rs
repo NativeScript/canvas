@@ -13,7 +13,7 @@ struct RafInner {
     started: bool,
     callback: RafCallback,
     use_deprecated: bool,
-    is_prepared: bool
+    is_prepared: bool,
 }
 pub struct Raf {
     inner: Arc<parking_lot::RwLock<RafInner>>,

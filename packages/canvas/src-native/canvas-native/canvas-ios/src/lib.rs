@@ -6,11 +6,11 @@ pub use canvas_c::*;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
+use parking_lot::RwLock;
 use std::ffi::{c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
-use parking_lot::RwLock;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
@@ -89,7 +89,7 @@ pub extern "C" fn canvas_native_init_ios_gl(
             return Box::into_raw(Box::new(iOSGLContext {
                 ios_view: iOSView::OnScreen(ios_view),
                 gl_context,
-                context_attributes: attrs
+                context_attributes: attrs,
             })) as i64;
         }
     }
@@ -428,7 +428,6 @@ pub extern "C" fn canvas_native_gl_make_current(gl_context: i64) {
     let gl_context = unsafe { &*gl_context };
     gl_context.gl_context.make_current();
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_2d_test_to_data_url(context: i64) -> *mut c_char {

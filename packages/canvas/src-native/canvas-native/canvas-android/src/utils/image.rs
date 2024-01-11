@@ -34,7 +34,7 @@ impl BitmapBytes {
                 Ok(pixels) => {
                     self.is_locked = true;
                     self.pixels = pixels
-                },
+                }
                 _ => {
                     self.pixels = std::ptr::null();
                 }
@@ -42,7 +42,7 @@ impl BitmapBytes {
         }
 
         if self.pixels.is_null() {
-            return None
+            return None;
         }
 
         match self.native_bitmap.get_info() {
@@ -62,7 +62,7 @@ impl BitmapBytes {
                 Ok(pixels) => {
                     self.is_locked = true;
                     self.pixels = pixels
-                },
+                }
                 _ => {
                     self.pixels = std::ptr::null();
                 }
@@ -70,9 +70,8 @@ impl BitmapBytes {
         }
 
         if self.pixels.is_null() {
-            return None
+            return None;
         }
-
 
         match self.native_bitmap.get_info() {
             Ok(info) => unsafe {

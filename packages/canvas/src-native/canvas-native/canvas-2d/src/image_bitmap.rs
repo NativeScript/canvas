@@ -2,7 +2,7 @@
 
 use core::convert::{From, Into};
 
-use skia_safe::{EncodedImageFormat, surfaces};
+use skia_safe::{surfaces, EncodedImageFormat};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -240,11 +240,7 @@ pub(crate) fn create_image_bitmap_internal(
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );
-    match surfaces::raster(
-        &image_info,
-        Some((source_rect.width() * 4.) as usize),
-        None,
-    ) {
+    match surfaces::raster(&image_info, Some((source_rect.width() * 4.) as usize), None) {
         None => {}
         Some(mut surface) => {
             let canvas = surface.canvas();
@@ -278,21 +274,15 @@ pub(crate) fn create_image_bitmap_internal(
                         None,
                     );
 
-
                     let data = pixel_map.encode(EncodedImageFormat::PNG, 100);
 
                     if let Some(data) = data {
                         output.load_from_bytes(data.as_slice());
                     };
-
                 }
-
             } else {
-
-
                 let size = image_info.height() as usize * image_info.min_row_bytes();
                 let mut buf = vec![0_u8; size];
-
 
                 let mut info = skia_safe::ImageInfo::new(
                     skia_safe::ISize::new(image.width(), image.height()),
@@ -308,8 +298,6 @@ pub(crate) fn create_image_bitmap_internal(
                     skia_safe::IPoint::new(0, 0),
                     skia_safe::image::CachingHint::Allow,
                 );
-
-
 
                 let encoded = image.encode(&mut ctx, EncodedImageFormat::PNG, 100);
 

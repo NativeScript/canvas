@@ -1,9 +1,10 @@
-use canvas_2d::context::Context;
+use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::jlong;
-use jni::JNIEnv;
 
-#[allow(non_snake_case)]
+use canvas_2d::context::Context;
+
+
 #[no_mangle]
 pub extern "system" fn nativeDrawSVG(mut env: JNIEnv, _: JClass, context: jlong, svg: JString) {
     unsafe {

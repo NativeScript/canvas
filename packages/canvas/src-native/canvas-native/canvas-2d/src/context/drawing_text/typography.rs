@@ -1,9 +1,7 @@
-use std::panic::panic_any;
 use std::str::FromStr;
 
 use once_cell::sync::OnceCell;
 use regex::Regex;
-use skia_bindings::SkFontStyle_Slant;
 use skia_safe::font_style::Width;
 
 pub(crate) static FONT_REGEXP: OnceCell<Regex> = OnceCell::new();

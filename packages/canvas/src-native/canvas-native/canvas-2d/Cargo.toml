@@ -16,11 +16,10 @@ encoding_rs = "0.8.32"
 gl-bindings = { path = "../gl-bindings" }
 lazy_static = "1.4.0"
 csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86", features = ["named-colors"] }
-rgb = { version = "0.8.37", features = ["argb"] }
+#rgb = { version = "0.8.37", features = ["argb"] }
 log = "0.4.8"
 once_cell = "1.8.0"
-skia-bindings = { version = "0.69.0", features = ["gl", "svg", "textlayout"] }
 skia-safe = { version = "0.69.0", features = ["gl", "svg", "textlayout"] }
-image = { version = "0.24.7", features = ["png", "jpeg", "gif"] }
+image = { version = "0.24.7", features = ["jpeg", "png", "gif"] }
 bytes = "1.5.0"
 env_logger = "0.10.1"

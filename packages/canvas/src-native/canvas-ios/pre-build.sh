@@ -79,6 +79,7 @@ if [[ $CURRENT_ARCH == arm64 ]]; then
   fi
 fi
 
+export RUSTFLAGS="-Zlocation-detail=none"
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
 export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"

@@ -140,7 +140,7 @@ pub fn bytes_to_data_url(
     let image_info = ImageInfo::new(
         (width, height),
         ColorType::N32,
-        skia_bindings::SkAlphaType::Unpremul,
+        AlphaType::Unpremul,
         None,
     );
     if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize) {

@@ -22,7 +22,7 @@ BUILD_FLAG=""
 BITCODE_ENABLED=false
 FEATURE_FLAGS=""
 ##CARGO_FLAGS="-C link-arg=-s -Z embed-bitcode features=itarget target-cpu=native"
-CARGO_FLAGS=""
+CARGO_FLAGS="-Zlocation-detail=none"
 ##CARGO_FLAGS=""
 
 

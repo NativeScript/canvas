@@ -106,6 +106,10 @@ export class Canvas extends CanvasBase {
 		if (this.getMeasuredWidth() > 0) {
 			return this.getMeasuredWidth() / Screen.mainScreen.scale;
 		}
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+
 		const width = this._canvas.getWidth();
 		if (width === 0) {
 			let rootParams = this._canvas.getLayoutParams();
@@ -128,6 +132,9 @@ export class Canvas extends CanvasBase {
 	get height(): any {
 		if (this.getMeasuredHeight() > 0) {
 			return this.getMeasuredHeight() / Screen.mainScreen.scale;
+		}
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
 		}
 		const height = this._canvas.getHeight();
 		if (height === 0) {
@@ -285,6 +292,11 @@ export class Canvas extends CanvasBase {
 			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
 				return;
 			}
+
+			if (this._canvas === undefined || this._canvas === null) {
+				return;
+			}
+
 			const size = this._realSize;
 			org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
@@ -382,7 +394,7 @@ export class Canvas extends CanvasBase {
 	private get _boundingClientRect() {
 		if (this._jsBuffer === undefined) {
 			this._jsBuffer = new Float32Array(8);
-			this._canvas.setBoundsBuffer(this._jsBuffer);
+			this._canvas?.setBoundsBuffer?.(this._jsBuffer);
 		}
 		return this._jsBuffer;
 	}

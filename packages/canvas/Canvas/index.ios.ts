@@ -239,7 +239,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	disposeNativeView(): void {
-		this._canvas.setListener(null);
+		this._canvas?.setListener?.(null);
 		this._readyListener = undefined;
 		this._canvas = undefined;
 		super.disposeNativeView();
@@ -263,6 +263,10 @@ export class Canvas extends CanvasBase {
 				return;
 			}
 
+			if (this._canvas === undefined || this._canvas === null) {
+				return 0;
+			}
+
 			const size = this._realSize;
 
 			// todo revisit
@@ -273,7 +277,7 @@ export class Canvas extends CanvasBase {
 			this._canvas.forceLayout(size.width, size.height);
 
 			if (this._is2D) {
-				this._2dContext.native.__resize(width, height);
+				this._2dContext?.native?.__resize?.(width, height);
 			}
 
 			this._didLayout = true;
@@ -364,7 +368,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
-		return this.native.__toDataURL(type, encoderOptions);
+		return this.native?.__toDataURL?.(type, encoderOptions);
 	}
 
 	snapshot(flip: boolean = false): ImageSource | null {

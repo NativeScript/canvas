@@ -45,7 +45,6 @@ export class Canvas extends CanvasBase {
 		super();
 		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
-		this._canvas.setBoundsBuffer(this._boundingClientRect);
 		(global as any).__canvasLoaded = true;
 		const ref = new WeakRef(this);
 		this._canvas.setTouchEventListener(
@@ -378,7 +377,15 @@ export class Canvas extends CanvasBase {
 		return null;
 	}
 
-	private _boundingClientRect = new Float32Array(8);
+	private _jsBuffer: Float32Array;
+
+	private get _boundingClientRect() {
+		if (this._jsBuffer === undefined) {
+			this._jsBuffer = new Float32Array(8);
+			this._canvas.setBoundsBuffer(this._jsBuffer);
+		}
+		return this._jsBuffer;
+	}
 
 	getBoundingClientRect(): {
 		x: number;
@@ -390,51 +397,11 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		/*
-
-		getBoundingClientRect: 0.170ms
-  getBoundingClientRect: 0.027ms
-  getBoundingClientRect: 0.018ms
-
-		*/
+		if (!this._canvas) {
+			return new DOMRect(0, 0, 0, 0);
+		}
 		org.nativescript.canvas.NSCCanvas.getBoundingClientRect(this._canvas);
-		//org.nativescript.canvas.NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
-		const ret = new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
-
-		//  const value = JSON.parse(org.nativescript.canvas.NSCCanvas.getBoundingClientRectJSON(this._canvas));
-
-		//  const ret = new DOMRect(value.x, value.y,value.width, value.height, value.top, value.right, value.bottom, value.left);
-
-		// const ret = {
-		// 	bottom: this._boundingClientRect[2],
-		// 	height: this._boundingClientRect[5],
-		// 	left: this._boundingClientRect[3],
-		// 	right: this._boundingClientRect[1],
-		// 	top: this._boundingClientRect[0],
-		// 	width: this._boundingClientRect[4],
-		// 	x: this._boundingClientRect[6],
-		// 	y: this._boundingClientRect[7],
-		// };
-
-		// 0.141ms
-		// const view = this;
-		// const nativeView = view.android;
-		// const width = this.width;
-		// const height = this.height;
-		/*const ret = {
-			bottom: nativeView.getBottom() / Screen.mainScreen.scale,
-			height: height,
-			left: nativeView.getLeft() / Screen.mainScreen.scale,
-			right: nativeView.getRight() / Screen.mainScreen.scale,
-			top: nativeView.getTop() / Screen.mainScreen.scale,
-			width: width,
-			x: nativeView.getX() / Screen.mainScreen.scale,
-			y: nativeView.getY() / Screen.mainScreen.scale,
-		};*/
-
-		//	const ret = new DOMRect(nativeView.getX() / Screen.mainScreen.scale, nativeView.getY() / Screen.mainScreen.scale, width, height, nativeView.getTop() / Screen.mainScreen.scale, nativeView.getRight() / Screen.mainScreen.scale, nativeView.getBottom() / Screen.mainScreen.scale, nativeView.getLeft() / Screen.mainScreen.scale);
-
-		return ret;
+		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}
 
 	setPointerCapture() {}

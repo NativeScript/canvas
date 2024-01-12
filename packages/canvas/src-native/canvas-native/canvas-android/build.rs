@@ -1,8 +1,10 @@
 use std::env;
+use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 
-const DEFAULT_CLANG_VERSION: &str = "14.0.7";
-
+//const DEFAULT_CLANG_VERSION: &str = "14.0.7";
+const DEFAULT_CLANG_VERSION: &str = "12.0.9";
 fn main() {
     setup_aarch64_android_workaround();
     // setup_x86_64_android_workaround();
@@ -64,8 +66,21 @@ fn setup_aarch64_android_workaround() {
                 "Unsupported OS. You must use either Linux, MacOS or Windows to build the crate."
             ),
         };
+
+
+        let ndk_clang_version = if let Ok(mut android_version_txt) = File::open(&format!("{android_ndk_home}/toolchains/llvm/prebuilt/{build_os}-x86_64/AndroidVersion.txt")){
+            let mut data = String::new();
+            let _ = android_version_txt.read_to_string(&mut data);
+            let line = data.lines().take(1).next();
+            line.unwrap_or("").to_string()
+        }else {
+            DEFAULT_CLANG_VERSION.to_string()
+        };
+
         let clang_version =
-            env::var("NDK_CLANG_VERSION").unwrap_or_else(|_| DEFAULT_CLANG_VERSION.to_owned());
+            env::var("NDK_CLANG_VERSION")
+                .unwrap_or_else(|_| ndk_clang_version);
+
         let linux_aarch64_lib_dir = format!(
             "toolchains/llvm/prebuilt/{build_os}-x86_64/lib64/clang/{clang_version}/lib/linux/"
         );

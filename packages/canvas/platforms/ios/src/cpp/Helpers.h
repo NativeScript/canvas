@@ -202,26 +202,26 @@ static void SetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj
     auto data = isolate->GetData(last);
     if(data != nullptr){
         auto consts = static_cast<PerIsolateData*>(data);
-        auto name = consts->INSTANT_TYPE_PERSISTENT->Get(isolate);
+        auto name = consts->INSTANCE_TYPE_PERSISTENT->Get(isolate);
        // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
         v8::Local<v8::Value> typeValue = v8::Number::New(isolate, (double) type).As<v8::Value>();
         SetPrivateValue(isolate, obj, name, typeValue);
     }
-   
+
 }
 
 inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
     if (!obj->IsNullOrUndefined() && obj->IsObject()) {
         auto last = isolate->GetNumberOfDataSlots() - 1;
         auto data = isolate->GetData(last);
-        
+
         if(data != nullptr){
             auto consts = static_cast<PerIsolateData*>(data);
-            auto name = consts->INSTANT_TYPE_PERSISTENT->Get(isolate);
+            auto name = consts->INSTANCE_TYPE_PERSISTENT->Get(isolate);
             // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
             auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
             auto context = isolate->GetCurrentContext();
-            
+
             if (!ret.IsEmpty() && ret->IsNumber()) {
                 auto value = ret->Int32Value(context).ToChecked();
                 if (value >= (int) NativeType::CanvasGradient &&

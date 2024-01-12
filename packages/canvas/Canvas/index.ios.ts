@@ -265,7 +265,7 @@ export class Canvas extends CanvasBase {
 
 			const size = this._realSize;
 
-			// todo revisit 
+			// todo revisit
 
 			const width = Utils.layout.toDevicePixels(size.width || 1);
 			const height = Utils.layout.toDevicePixels(size.height || 1);
@@ -293,7 +293,6 @@ export class Canvas extends CanvasBase {
 				if (!this._2dContext) {
 					this._layoutNative();
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
-
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 
@@ -378,7 +377,14 @@ export class Canvas extends CanvasBase {
 		return null;
 	}
 
-	private _boundingClientRect = new Float32Array(8);
+	private _jsBuffer: Float32Array;
+
+	private get _boundingClientRect() {
+		if (this._jsBuffer === undefined) {
+			this._jsBuffer = new Float32Array(8);
+		}
+		return this._jsBuffer;
+	}
 
 	getBoundingClientRect(): {
 		x: number;
@@ -390,52 +396,12 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		//  console.time('getBoundingClientRect');
-
-		/*
-		getBoundingClientRect: 0.033ms
-  getBoundingClientRect: 0.026ms
-  getBoundingClientRect: 0.008ms 
-		*/
+		if (!this._canvas) {
+			return new DOMRect(0, 0, 0, 0);
+		}
 
 		NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
 
-		const ret = new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
-
-		// const ret = {
-		// 	bottom: this._boundingClientRect[2],
-		// 	height: this._boundingClientRect[5],
-		// 	left: this._boundingClientRect[3],
-		// 	right: this._boundingClientRect[1],
-		// 	top: this._boundingClientRect[0],
-		// 	width: this._boundingClientRect[4],
-		// 	x: this._boundingClientRect[6],
-		// 	y: this._boundingClientRect[7],
-		// };
-
-		/*
-		 getBoundingClientRect: 0.064ms
-  getBoundingClientRect: 0.049ms
-  getBoundingClientRect: 0.036ms
-		*/
-
-		// const view = this;
-		// const frame = view.ios.frame as CGRect;
-		// const width = view.width;
-		// const height = view.height;
-		// const ret = {
-		// 	bottom: height,
-		// 	height: height,
-		// 	left: frame.origin.x,
-		// 	right: width,
-		// 	top: frame.origin.y,
-		// 	width: width,
-		// 	x: frame.origin.x,
-		// 	y: frame.origin.y,
-		// };
-
-		//  console.timeEnd('getBoundingClientRect');
-
-		return ret;
+		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}
 }

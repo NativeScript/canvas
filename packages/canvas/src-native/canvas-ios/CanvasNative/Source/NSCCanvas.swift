@@ -446,18 +446,18 @@ public class NSCCanvas: UIView {
     
     @objc public static func getBoundingClientRect(_ canvas: NSCCanvas, _ buffer: UnsafeMutableRawPointer) {
         var bytes = buffer.assumingMemoryBound(to: Float.self)
-        let x = canvas.frame.origin.x
-        let y = canvas.frame.origin.y
-        let width = canvas.frame.size.width
-        let height = canvas.frame.size.height
-        bytes.pointee =  Float(y)
-        bytes.advanced(by: 1).pointee = Float(x + width)
-        bytes.advanced(by: 2).pointee = Float(y + height)
-        bytes.advanced(by: 3).pointee = Float(x)
-        bytes.advanced(by: 4).pointee = Float(width)
-        bytes.advanced(by: 5).pointee = Float(height)
-        bytes.advanced(by: 6).pointee = Float(x)
-        bytes.advanced(by: 7).pointee = Float(y)
+        let x = Float(canvas.frame.origin.x)
+        let y = Float(canvas.frame.origin.y)
+        let width = Float(canvas.frame.size.width)
+        let height = Float(canvas.frame.size.height)
+        bytes.pointee = y
+        (bytes + 1).pointee = x + width
+        (bytes + 2).pointee = y + height
+        (bytes + 3).pointee = x
+        (bytes + 4).pointee = width
+        (bytes + 5).pointee = height
+        (bytes + 6).pointee = x
+        (bytes + 7).pointee = y
     }
     
 }

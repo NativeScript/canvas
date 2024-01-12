@@ -121,7 +121,7 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto ext = v8::External::New(isolate, object);
 
     ret->SetInternalField(0, ext);
-    
+
     object->BindFinalizer(isolate, ret);
 
     args.GetReturnValue().Set(ret);

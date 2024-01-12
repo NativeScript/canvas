@@ -668,14 +668,15 @@ class NSCCanvas : FrameLayout {
 		fun getBoundingClientRect(canvas: NSCCanvas) {
 			canvas.boundsBuffer?.let { buffer ->
 				val density = canvas.context.resources.displayMetrics.density
-				buffer.put(0, canvas.top / density)
-				buffer.put(1, canvas.right / density)
-				buffer.put(2, canvas.bottom / density)
-				buffer.put(3, canvas.left / density)
-				buffer.put(4, canvas.width / density)
-				buffer.put(5, canvas.height / density)
-				buffer.put(6, canvas.x / density)
-				buffer.put(7, canvas.y / density)
+				val densityInverse = 1.0f / density
+				buffer.put(0, canvas.top * densityInverse)
+				buffer.put(1, canvas.right * densityInverse)
+				buffer.put(2, canvas.bottom * densityInverse)
+				buffer.put(3, canvas.left * densityInverse)
+				buffer.put(4, canvas.width * densityInverse)
+				buffer.put(5, canvas.height * densityInverse)
+				buffer.put(6, canvas.x * densityInverse)
+				buffer.put(7, canvas.y * densityInverse)
 			}
 		}
 
@@ -685,15 +686,16 @@ class NSCCanvas : FrameLayout {
 
 			val sb = StringBuilder()
 			sb.append("{")
+			val densityInverse = 1.0f / density
 
-			append("top", canvas.top / density, sb)
-			append("right", canvas.right / density, sb)
-			append("bottom", canvas.bottom / density, sb)
-			append("left", canvas.left / density, sb)
-			append("width", canvas.width / density, sb)
-			append("height", canvas.height / density, sb)
-			append("x", canvas.x / density, sb)
-			append("y", canvas.y / density, sb, true)
+			append("top", canvas.top * densityInverse, sb)
+			append("right", canvas.right * densityInverse, sb)
+			append("bottom", canvas.bottom * densityInverse, sb)
+			append("left", canvas.left * densityInverse, sb)
+			append("width", canvas.width * densityInverse, sb)
+			append("height", canvas.height * densityInverse, sb)
+			append("x", canvas.x * densityInverse, sb)
+			append("y", canvas.y * densityInverse, sb, true)
 
 			sb.append("}")
 
@@ -872,7 +874,7 @@ class NSCCanvas : FrameLayout {
 
 
 		@JvmStatic
-		internal val direction: Int
+		val direction: Int
 			get() {
 				var direction = 0
 				if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL) {

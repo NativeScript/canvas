@@ -463,12 +463,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	public removeEventListener(arg: string, callback: any, thisArg?: any) {
 		super.removeEventListener(arg, callback, thisArg);
-		// if (WEB_GESTURE_EVENTS.indexOf(arg) !== -1) {
-		// 	// if we dont have any other web gestures we can unregister gestures
-		// 	if (!WEB_GESTURE_EVENTS.some((e) => this.hasListeners(e))) {
-		// 		this.__unregisterGestures();
-		// 	}
-		// }
 
 		const eventtype = arg.toLowerCase();
 

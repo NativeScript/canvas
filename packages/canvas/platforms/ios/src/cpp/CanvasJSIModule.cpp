@@ -36,12 +36,12 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         MatrixImpl::Init(canvasMod, isolate);
         TextMetricsImpl::Init(canvasMod, isolate);
         URLImpl::Init(canvasMod, isolate);
-        
+
         // always use the last slot
         auto lastSlot = isolate->GetNumberOfDataSlots() - 1;
         auto data = new PerIsolateData(isolate);
         isolate->SetData(lastSlot, data);
-                
+
         v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod);
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),
                        v8::FunctionTemplate::New(isolate, &Create2DContext)->GetFunction(
@@ -207,7 +207,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                 auto shared_asset = canvas_native_image_asset_shared_clone(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
-                
+
 
                 auto cbFunc = args[count - 1].As<v8::Function>();
                 auto data = v8::External::New(isolate, ret);
@@ -681,8 +681,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                             isolate).As<v8::External>();
                                     v8::Local<v8::Context> context = callback->GetCreationContextChecked();
                                     v8::Context::Scope context_scope(context);
-                                    
-                            
+
+
 
                                     auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
 
@@ -1207,79 +1207,88 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
         auto desynchronized = false;
         auto xr_compatible = false;
 
-        v8::Local<v8::Value> versionValue;
+        auto last = isolate->GetNumberOfDataSlots() - 1;
+        auto data = isolate->GetData(last);
 
-        config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue);
+        if (data != nullptr) {
+            auto consts = static_cast<PerIsolateData *>(data);
 
-        if (!versionValue.IsEmpty() && versionValue->IsString()) {
-            version = ConvertFromV8String(isolate, versionValue);
+            v8::Local<v8::Value> versionValue;
+
+            config->Get(context, consts->VERSION_PERSISTENT->Get(isolate)).ToLocal(&versionValue);
+
+            if (!versionValue.IsEmpty() && versionValue->IsString()) {
+                version = ConvertFromV8String(isolate, versionValue);
+            }
+
+            v8::Local<v8::Value> alphaValue;
+
+            config->Get(context, consts->ALPHA_PERSISTENT->Get(isolate)).ToLocal(&alphaValue);
+            if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
+                alpha = alphaValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> antialiasValue;
+            config->Get(context, consts->ANTIALIAS_PERSISTENT->Get(isolate)).ToLocal(
+                    &antialiasValue);
+            if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
+                antialias = antialiasValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
+            config->Get(context,
+                        consts->FAIL_IF_MAJOR_PERFORMANCE_CAVEAT_PERSISTENT->Get(isolate)).ToLocal(
+                    &failIfMajorPerformanceCaveatValue);
+            if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
+                failIfMajorPerformanceCaveatValue->IsBoolean()) {
+                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
+                        isolate);
+            }
+
+            v8::Local<v8::Value> powerPreferenceValue;
+            config->Get(context, consts->POWER_PREFERENCE_PERSISTENT->Get(isolate)).ToLocal(
+                    &powerPreferenceValue);
+            if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
+                power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
+            }
+
+            v8::Local<v8::Value> premultipliedAlphaValue;
+            config->Get(context,
+                        consts->PREMULTIPLIED_ALPHA_PERSISTENT->Get(isolate)).ToLocal(
+                    &premultipliedAlphaValue);
+            if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
+                premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> preserveDrawingBufferValue;
+            config->Get(context,
+                        consts->PRESERVE_DRAWING_BUFFER_PERSISTENT->Get(isolate)).ToLocal(
+                    &preserveDrawingBufferValue);
+            if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
+                preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> stencilValue;
+            config->Get(context, consts->STENCIL_PERSISTENT->Get(isolate)).ToLocal(&stencilValue);
+            if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
+                stencil = stencilValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> desynchronizedValue;
+            config->Get(context, consts->DESYNCHRONIZED_PERSISTENT->Get(isolate)).ToLocal(
+                    &desynchronizedValue);
+            if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
+                desynchronized = desynchronizedValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> xrCompatibleValue;
+            config->Get(context,
+                        consts->XR_COMPATIBLE_PERSISTENT->Get(isolate)).ToLocal(&xrCompatibleValue);
+            if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
+                xr_compatible = xrCompatibleValue->BooleanValue(isolate);
+            }
         }
 
-        v8::Local<v8::Value> alphaValue;
-
-        config->Get(context, ConvertToV8String(isolate, "alpha")).ToLocal(&alphaValue);
-        if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
-            alpha = alphaValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> antialiasValue;
-        config->Get(context, ConvertToV8String(isolate, "antialias")).ToLocal(&antialiasValue);
-        if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
-            antialias = antialiasValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat")).ToLocal(
-                &failIfMajorPerformanceCaveatValue);
-        if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
-            failIfMajorPerformanceCaveatValue->IsBoolean()) {
-            fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
-                    isolate);
-        }
-
-        v8::Local<v8::Value> powerPreferenceValue;
-        config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
-                &powerPreferenceValue);
-        if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
-            power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
-        }
-
-        v8::Local<v8::Value> premultipliedAlphaValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
-                &premultipliedAlphaValue);
-        if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
-            premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> preserveDrawingBufferValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "preserveDrawingBuffer")).ToLocal(
-                &preserveDrawingBufferValue);
-        if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
-            preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> stencilValue;
-        config->Get(context, ConvertToV8String(isolate, "stencil")).ToLocal(&stencilValue);
-        if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
-            stencil = stencilValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> desynchronizedValue;
-        config->Get(context, ConvertToV8String(isolate, "desynchronized")).ToLocal(
-                &desynchronizedValue);
-        if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
-            desynchronized = desynchronizedValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> xrCompatibleValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "xrCompatible")).ToLocal(&xrCompatibleValue);
-        if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
-            xr_compatible = xrCompatibleValue->BooleanValue(isolate);
-        }
 
         if (version !=
             "v1") {
@@ -1397,79 +1406,89 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
         auto desynchronized = false;
         auto xr_compatible = false;
 
-        v8::Local<v8::Value> versionValue;
 
-        config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue);
+        auto last = isolate->GetNumberOfDataSlots() - 1;
+        auto data = isolate->GetData(last);
 
-        if (!versionValue.IsEmpty() && versionValue->IsString()) {
-            version = ConvertFromV8String(isolate, versionValue);
+        if (data != nullptr) {
+            auto consts = static_cast<PerIsolateData *>(data);
+
+            v8::Local<v8::Value> versionValue;
+
+            config->Get(context, consts->VERSION_PERSISTENT->Get(isolate)).ToLocal(&versionValue);
+
+            if (!versionValue.IsEmpty() && versionValue->IsString()) {
+                version = ConvertFromV8String(isolate, versionValue);
+            }
+
+            v8::Local<v8::Value> alphaValue;
+
+            config->Get(context, consts->ALPHA_PERSISTENT->Get(isolate)).ToLocal(&alphaValue);
+            if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
+                alpha = alphaValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> antialiasValue;
+            config->Get(context, consts->ANTIALIAS_PERSISTENT->Get(isolate)).ToLocal(
+                    &antialiasValue);
+            if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
+                antialias = antialiasValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
+            config->Get(context,
+                        consts->FAIL_IF_MAJOR_PERFORMANCE_CAVEAT_PERSISTENT->Get(isolate)).ToLocal(
+                    &failIfMajorPerformanceCaveatValue);
+            if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
+                failIfMajorPerformanceCaveatValue->IsBoolean()) {
+                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
+                        isolate);
+            }
+
+            v8::Local<v8::Value> powerPreferenceValue;
+            config->Get(context, consts->POWER_PREFERENCE_PERSISTENT->Get(isolate)).ToLocal(
+                    &powerPreferenceValue);
+            if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
+                power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
+            }
+
+            v8::Local<v8::Value> premultipliedAlphaValue;
+            config->Get(context,
+                        consts->PREMULTIPLIED_ALPHA_PERSISTENT->Get(isolate)).ToLocal(
+                    &premultipliedAlphaValue);
+            if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
+                premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> preserveDrawingBufferValue;
+            config->Get(context,
+                        consts->PRESERVE_DRAWING_BUFFER_PERSISTENT->Get(isolate)).ToLocal(
+                    &preserveDrawingBufferValue);
+            if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
+                preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> stencilValue;
+            config->Get(context, consts->STENCIL_PERSISTENT->Get(isolate)).ToLocal(&stencilValue);
+            if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
+                stencil = stencilValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> desynchronizedValue;
+            config->Get(context, consts->DESYNCHRONIZED_PERSISTENT->Get(isolate)).ToLocal(
+                    &desynchronizedValue);
+            if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
+                desynchronized = desynchronizedValue->BooleanValue(isolate);
+            }
+
+            v8::Local<v8::Value> xrCompatibleValue;
+            config->Get(context,
+                        consts->XR_COMPATIBLE_PERSISTENT->Get(isolate)).ToLocal(&xrCompatibleValue);
+            if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
+                xr_compatible = xrCompatibleValue->BooleanValue(isolate);
+            }
         }
 
-        v8::Local<v8::Value> alphaValue;
-
-        config->Get(context, ConvertToV8String(isolate, "alpha")).ToLocal(&alphaValue);
-        if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
-            alpha = alphaValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> antialiasValue;
-        config->Get(context, ConvertToV8String(isolate, "antialias")).ToLocal(&antialiasValue);
-        if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
-            antialias = antialiasValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "failIfMajorPerformanceCaveat")).ToLocal(
-                &failIfMajorPerformanceCaveatValue);
-        if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
-            failIfMajorPerformanceCaveatValue->IsBoolean()) {
-            fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
-                    isolate);
-        }
-
-        v8::Local<v8::Value> powerPreferenceValue;
-        config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
-                &powerPreferenceValue);
-        if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
-            power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
-        }
-
-        v8::Local<v8::Value> premultipliedAlphaValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
-                &premultipliedAlphaValue);
-        if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
-            premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> preserveDrawingBufferValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "preserveDrawingBuffer")).ToLocal(
-                &preserveDrawingBufferValue);
-        if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
-            preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> stencilValue;
-        config->Get(context, ConvertToV8String(isolate, "stencil")).ToLocal(&stencilValue);
-        if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
-            stencil = stencilValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> desynchronizedValue;
-        config->Get(context, ConvertToV8String(isolate, "desynchronized")).ToLocal(
-                &desynchronizedValue);
-        if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
-            desynchronized = desynchronizedValue->BooleanValue(isolate);
-        }
-
-        v8::Local<v8::Value> xrCompatibleValue;
-        config->Get(context,
-                    ConvertToV8String(isolate, "xrCompatible")).ToLocal(&xrCompatibleValue);
-        if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
-            xr_compatible = xrCompatibleValue->BooleanValue(isolate);
-        }
 
         if (version !=
             "v2") {

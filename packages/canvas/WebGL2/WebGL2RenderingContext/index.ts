@@ -43,9 +43,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 		let direction = 0;
 		if (global.isAndroid) {
-			if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-				direction = 1;
-			}
+			direction = (<any>org).nativescript.canvas.NSCCanvas.getDirection();
 		} else {
 			//direction = 1;
 		}

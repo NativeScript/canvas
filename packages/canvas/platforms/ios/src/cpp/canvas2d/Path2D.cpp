@@ -7,7 +7,7 @@
 #include "Helpers.h"
 #include "OneByteStringResource.h"
 
-Path2D::Path2D(Path* path)
+Path2D::Path2D(Path *path)
         : path_(path) {}
 
 
@@ -24,86 +24,36 @@ void Path2D::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
 }
 
 Path2D *Path2D::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
     return static_cast<Path2D *>(ptr);
 }
 
-v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
-    auto cache = Caches::Get(isolate);
-    auto ctor = cache->Path2DTmpl.get();
-    if (ctor != nullptr) {
-        return ctor->Get(isolate);
-    }
+v8::CFunction Path2D::fast_arc_(v8::CFunction::Make(Path2D::FastArc));
 
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
-    ctorTmpl->SetClassName(ConvertToV8String(isolate, "Path2D"));
+v8::CFunction Path2D::fast_add_path_(v8::CFunction::Make(Path2D::FastAddPath));
 
-    auto tmpl = ctorTmpl->InstanceTemplate();
+v8::CFunction Path2D::fast_arc_to_(v8::CFunction::Make(Path2D::FastArcTo));
 
-    tmpl->SetInternalFieldCount(1);
-    tmpl->Set(
-            ConvertToV8String(isolate, "addPath"),
-            v8::FunctionTemplate::New(isolate, &AddPath));
+v8::CFunction Path2D::fast_bezier_curve_to_(v8::CFunction::Make(Path2D::FastBezierCurveTo));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "arc"),
-            v8::FunctionTemplate::New(isolate, &Arc));
+v8::CFunction Path2D::fast_close_path_(v8::CFunction::Make(Path2D::FastClosePath));
 
+v8::CFunction Path2D::fast_ellipse_(v8::CFunction::Make(Path2D::FastEllipse));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "arcTo"),
-            v8::FunctionTemplate::New(isolate, &ArcTo));
+v8::CFunction Path2D::fast_line_to_(v8::CFunction::Make(Path2D::FastLineTo));
 
+v8::CFunction Path2D::fast_move_to_(v8::CFunction::Make(Path2D::FastMoveTo));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bezierCurveTo"),
-            v8::FunctionTemplate::New(isolate, &BezierCurveTo));
+v8::CFunction Path2D::fast_quadratic_curve_to_(v8::CFunction::Make(Path2D::FastQuadraticCurveTo));
 
+v8::CFunction Path2D::fast_rect_(v8::CFunction::Make(Path2D::FastRect));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "closePath"),
-            v8::FunctionTemplate::New(isolate, &ClosePath));
+//v8::CFunction Path2D::fast_round_rect_(v8::CFunction::Make(Path2D::FastRoundRect));
 
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "ellipse"),
-            v8::FunctionTemplate::New(isolate, &Ellipse));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "lineTo"),
-            v8::FunctionTemplate::New(isolate, &LineTo));
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "moveTo"),
-            v8::FunctionTemplate::New(isolate, &MoveTo));
-
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "quadraticCurveTo"),
-            v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "rect"),
-            v8::FunctionTemplate::New(isolate, &Rect));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "roundRect"),
-            v8::FunctionTemplate::New(isolate, &RoundRect));
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "__toSVG"),
-            v8::FunctionTemplate::New(isolate, &__toSVG));
-
-
-    cache->Path2DTmpl =
-            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
-    return ctorTmpl;
-}
+//v8::CFunction Path2D::fast_to_svg_(v8::CFunction::Make(Path2D::FastToSVG));
 
 void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto count = args.Length();
@@ -120,10 +70,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             auto path = canvas_native_path_create_with_string(d.c_str());
             auto object = new Path2D(path);
 
-            auto ext = v8::External::New(isolate, object);
+            ret->SetAlignedPointerInInternalField(0, object);
 
-            ret->SetInternalField(0, ext);
-            
             object->BindFinalizer(isolate, ret);
 
             args.GetReturnValue().Set(ret);
@@ -137,10 +85,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
                         path_to_copy->GetPath());
                 auto object = new Path2D(path);
 
-                auto ext = v8::External::New(isolate, object);
+                ret->SetAlignedPointerInInternalField(0, object);
 
-                ret->SetInternalField(0, ext);
-                
                 object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
@@ -150,10 +96,9 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         auto path = new Path2D(canvas_native_path_create());
 
-        auto ext = v8::External::New(isolate, path);
 
-        ret->SetInternalField(0, ext);
-        
+        ret->SetAlignedPointerInInternalField(0, path);
+
         path->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);
@@ -175,9 +120,8 @@ void Path2D::AddPath(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (value->IsObject()) {
         auto object = GetPointer(value.As<v8::Object>());
         if (object != nullptr) {
-            canvas_native_path_add_path(
-                    ptr->GetPath(),
-                    object->GetPath());
+            AddPathImpl(ptr->GetPath(),
+                        object->GetPath());
         }
     }
 }
@@ -220,17 +164,14 @@ void Path2D::ArcTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    canvas_native_path_arc_to(
+    ArcToImpl(
             ptr->GetPath(),
-            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
-            static_cast<float>(args[1]->NumberValue(context).ToChecked()),
-            static_cast<float>(args[2]->NumberValue(context).ToChecked()),
-            static_cast<float>(args[3]->NumberValue(context).ToChecked()),
-            static_cast<float>(args[4]->NumberValue(context).ToChecked())
+            args[0]->NumberValue(context).ToChecked(),
+            args[1]->NumberValue(context).ToChecked(),
+            args[2]->NumberValue(context).ToChecked(),
+            args[3]->NumberValue(context).ToChecked(),
+            args[4]->NumberValue(context).ToChecked()
     );
-
-
-    args.GetReturnValue().SetUndefined();
 }
 
 void Path2D::BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -244,7 +185,7 @@ void Path2D::BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto context = isolate->GetCurrentContext();
 
 
-    canvas_native_path_bezier_curve_to(
+    BezierCurveToImpl(
             ptr->GetPath(),
             static_cast<float>(args[0]->NumberValue(context).ToChecked()),
             static_cast<float>(args[1]->NumberValue(context).ToChecked()),
@@ -412,7 +353,7 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             x, y,
                             width,
                             height, store.data(),
-                                                  store.size());
+                            store.size());
 
                 }
             }
@@ -444,12 +385,101 @@ void Path2D::__toSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 //    args.GetReturnValue().Set(ConvertToV8String(isolate, d.c_str()));
 
-    auto value = new OneByteStringResource((char *)d);
+    auto value = new OneByteStringResource((char *) d);
     auto ret = v8::String::NewExternalOneByte(isolate, value);
     args.GetReturnValue().Set(ret.ToLocalChecked());
 }
 
-Path* Path2D::GetPath() {
+Path *Path2D::GetPath() {
     return this->path_;
 }
 
+
+v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
+    auto cache = Caches::Get(isolate);
+    auto ctor = cache->Path2DTmpl.get();
+    if (ctor != nullptr) {
+        return ctor->Get(isolate);
+    }
+
+    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "Path2D"));
+
+    auto tmpl = ctorTmpl->InstanceTemplate();
+
+    tmpl->SetInternalFieldCount(1);
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "addPath"),
+//            v8::FunctionTemplate::New(isolate, &AddPath));
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "arc"),
+//            v8::FunctionTemplate::New(isolate, &Arc));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "arcTo"),
+            v8::FunctionTemplate::New(isolate, &ArcTo));
+
+    SetFastMethod(isolate, tmpl, "addPath", AddPath, &fast_add_path_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "arc", Arc, &fast_arc_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "arcTo", ArcTo, &fast_arc_to_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "bezierCurveTo", BezierCurveTo, &fast_bezier_curve_to_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "closePath", ClosePath, &fast_close_path_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "ellipse", Ellipse, &fast_ellipse_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "lineTo", LineTo, &fast_line_to_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "moveTo", MoveTo, &fast_move_to_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "quadraticCurveTo", QuadraticCurveTo, &fast_quadratic_curve_to_,
+                  v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "rect", Rect, &fast_rect_, v8::Local<v8::Value>());
+//    SetFastMethod(isolate, tmpl, "roundRect", RoundRect, &fast_round_rect_, v8::Local<v8::Value>());
+//    SetFastMethod(isolate, tmpl, "__toSVG", __toSVG, &fast_to_svg_, v8::Local<v8::Value>());
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "bezierCurveTo"),
+//            v8::FunctionTemplate::New(isolate, &BezierCurveTo));
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "closePath"),
+//            v8::FunctionTemplate::New(isolate, &ClosePath));
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "ellipse"),
+//            v8::FunctionTemplate::New(isolate, &Ellipse));
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "lineTo"),
+//            v8::FunctionTemplate::New(isolate, &LineTo));
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "moveTo"),
+//            v8::FunctionTemplate::New(isolate, &MoveTo));
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "quadraticCurveTo"),
+//            v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "rect"),
+//            v8::FunctionTemplate::New(isolate, &Rect));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "roundRect"),
+            v8::FunctionTemplate::New(isolate, &RoundRect));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "__toSVG"),
+            v8::FunctionTemplate::New(isolate, &__toSVG));
+
+
+    cache->Path2DTmpl =
+            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+    return ctorTmpl;
+}

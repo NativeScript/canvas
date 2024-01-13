@@ -6,6 +6,16 @@
 #include "Caches.h"
 #include "OneByteStringResource.h"
 
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_close_path_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClosePath));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_begin_path_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBeginPath));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_arc_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArc));
+
+//v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
+
+
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
         CanvasRenderingContext2D *context) : context_(context) {
 
@@ -39,7 +49,7 @@ void CanvasRenderingContext2DImpl::Init(v8::Local<v8::Object> canvasModule, v8::
 
 CanvasRenderingContext2DImpl *
 CanvasRenderingContext2DImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -110,10 +120,17 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     tmpl->Set(ConvertToV8String(isolate, "addHitRegion"),
               v8::FunctionTemplate::New(isolate, &AddHitRegion));
-    tmpl->Set(ConvertToV8String(isolate, "arc"), v8::FunctionTemplate::New(isolate, &Arc));
+//    tmpl->Set(ConvertToV8String(isolate, "arc"), v8::FunctionTemplate::New(isolate, &Arc));
+
+    SetFastMethod(isolate, tmpl, "arc", Arc, &fast_arc_, v8::Local<v8::Value>());
+
     tmpl->Set(ConvertToV8String(isolate, "arcTo"), v8::FunctionTemplate::New(isolate, &ArcTo));
-    tmpl->Set(ConvertToV8String(isolate, "beginPath"),
-              v8::FunctionTemplate::New(isolate, &BeginPath));
+//    tmpl->Set(ConvertToV8String(isolate, "beginPath"),
+//              v8::FunctionTemplate::New(isolate, &BeginPath));
+
+    SetFastMethod(isolate, tmpl, "beginPath", BeginPath, &fast_begin_path_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "bezierCurveTo"),
               v8::FunctionTemplate::New(isolate, &BezierCurveTo));
     tmpl->Set(ConvertToV8String(isolate, "clearHitRegions"),
@@ -121,8 +138,13 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->Set(ConvertToV8String(isolate, "clearRect"),
               v8::FunctionTemplate::New(isolate, &ClearRect));
     tmpl->Set(ConvertToV8String(isolate, "clip"), v8::FunctionTemplate::New(isolate, &Clip));
-    tmpl->Set(ConvertToV8String(isolate, "closePath"),
-              v8::FunctionTemplate::New(isolate, &ClosePath));
+//    tmpl->Set(ConvertToV8String(isolate, "closePath"),
+//              v8::FunctionTemplate::New(isolate, &ClosePath));
+
+
+    SetFastMethod(isolate, tmpl, "closePath", ClosePath, &fast_close_path_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "createImageData"),
               v8::FunctionTemplate::New(isolate, &CreateImageData));
     tmpl->Set(ConvertToV8String(isolate, "createPattern"),
@@ -141,6 +163,9 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &DrawImage));
     tmpl->Set(ConvertToV8String(isolate, "ellipse"), v8::FunctionTemplate::New(isolate, &Ellipse));
     tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
+
+//    SetFastMethod(isolate, tmpl, "fill", Fill, &fast_fill_, v8::Local<v8::Value>());
+
     tmpl->Set(ConvertToV8String(isolate, "fillRect"),
               v8::FunctionTemplate::New(isolate, &FillRect));
     tmpl->Set(ConvertToV8String(isolate, "fillText"),
@@ -2005,7 +2030,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     auto ext = v8::External::New(isolate, data);
 
     ret->SetInternalField(0, ext);
-    
+
     data->BindFinalizer(isolate, ret);
 
     SetNativeType(isolate, ret, NativeType::TextMetrics);

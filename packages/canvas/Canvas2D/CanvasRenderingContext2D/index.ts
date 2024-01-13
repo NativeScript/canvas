@@ -248,7 +248,7 @@ export class CanvasRenderingContext2D {
 	addHitRegion(region: any): void {}
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
-		this.context.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+		this.context.arc(x, y, radius, startAngle, endAngle, anticlockwise ?? false);
 	}
 
 	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void {

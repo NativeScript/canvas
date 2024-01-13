@@ -25,9 +25,10 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class CanvasRenderingContext2DImpl: ObjectWrapperImpl {
+class CanvasRenderingContext2DImpl : ObjectWrapperImpl {
 public:
-    CanvasRenderingContext2DImpl(CanvasRenderingContext2D* context);
+    CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context);
+
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static CanvasRenderingContext2DImpl *GetPointer(const v8::Local<v8::Object> &object);
@@ -41,8 +42,7 @@ public:
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(isolate, object, NativeType::CanvasRenderingContext2D);
-        auto ext = v8::External::New(isolate, renderingContext);
-        object->SetInternalField(0, ext);
+        object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -52,7 +52,6 @@ public:
     static void DrawPoints(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void DrawPaint(const v8::FunctionCallbackInfo<v8::Value> &args);
-
 
     static void __MakeDirty(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -76,18 +75,18 @@ public:
 
 
     static void GetLetterSpacing(v8::Local<v8::String> property,
-                        const v8::PropertyCallbackInfo<v8::Value> &info);
-
-    static void SetLetterSpacing(v8::Local<v8::String> property,
-                        v8::Local<v8::Value> value,
-                        const v8::PropertyCallbackInfo<void> &info);
-
-    static void GetWordSpacing(v8::Local<v8::String> property,
                                  const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void SetWordSpacing(v8::Local<v8::String> property,
+    static void SetLetterSpacing(v8::Local<v8::String> property,
                                  v8::Local<v8::Value> value,
                                  const v8::PropertyCallbackInfo<void> &info);
+
+    static void GetWordSpacing(v8::Local<v8::String> property,
+                               const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetWordSpacing(v8::Local<v8::String> property,
+                               v8::Local<v8::Value> value,
+                               const v8::PropertyCallbackInfo<void> &info);
 
     static void SetGlobalAlpha(v8::Local<v8::String> property,
                                v8::Local<v8::Value> value,
@@ -168,18 +167,18 @@ public:
                                  const v8::PropertyCallbackInfo<void> &info);
 
     static void GetTextAlign(v8::Local<v8::String> property,
-                                 const v8::PropertyCallbackInfo<v8::Value> &info);
+                             const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void SetTextAlign(v8::Local<v8::String> property,
-                                 v8::Local<v8::Value> value,
-                                 const v8::PropertyCallbackInfo<void> &info);
-    
+                             v8::Local<v8::Value> value,
+                             const v8::PropertyCallbackInfo<void> &info);
+
     static void GetTextBaseline(v8::Local<v8::String> property,
-                                 const v8::PropertyCallbackInfo<v8::Value> &info);
+                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void SetTextBaseline(v8::Local<v8::String> property,
-                                 v8::Local<v8::Value> value,
-                                 const v8::PropertyCallbackInfo<void> &info);
+                                v8::Local<v8::Value> value,
+                                const v8::PropertyCallbackInfo<void> &info);
 
     static void GetGlobalCompositeOperation(v8::Local<v8::String> property,
                                             const v8::PropertyCallbackInfo<v8::Value> &info);
@@ -217,13 +216,72 @@ public:
                             const v8::PropertyCallbackInfo<void> &info);
 
 
+    static v8::CFunction fast_close_path_;
+    static v8::CFunction fast_begin_path_;
+
+    static v8::CFunction fast_arc_;
+//    static v8::CFunction fast_fill_;
+
+
     static void AddHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Arc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void
+    ArcImpl(CanvasRenderingContext2D *receiver_obj, double x, double y, double radius,
+            double startAngle,
+            double endAngle, bool anti_clockwise) {
+
+        canvas_native_context_arc(
+                receiver_obj,
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(radius),
+                static_cast<float>(startAngle),
+                static_cast<float>(endAngle),
+                anti_clockwise
+        );
+    }
+
+
+    static void
+    FastArc(v8::Local<v8::Object> receiver_obj, double x, double y, double radius,
+            double startAngle,
+            double endAngle, bool anti_clockwise) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        ArcImpl(
+                ptr->GetContext(),
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(radius),
+                static_cast<float>(startAngle),
+                static_cast<float>(endAngle),
+                anti_clockwise
+        );
+    }
+
+
     static void ArcTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void BeginPath(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void BeginPathImpl(CanvasRenderingContext2D *receiver_obj) {
+        canvas_native_context_begin_path(receiver_obj);
+    }
+
+    static void FastBeginPath(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        BeginPathImpl(ptr->GetContext());
+    }
 
     static void BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -234,6 +292,19 @@ public:
     static void Clip(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void ClosePath(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void ClosePathImpl(CanvasRenderingContext2D *receiver_obj) {
+        canvas_native_context_close_path(receiver_obj);
+    }
+
+    static void FastClosePath(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        ClosePathImpl(ptr->GetContext());
+    }
 
     static void CreateImageData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -333,10 +404,10 @@ public:
 
     RafImpl *GetRaf();
 
-    CanvasRenderingContext2D* GetContext();
+    CanvasRenderingContext2D *GetContext();
 
 private:
-    CanvasRenderingContext2D* context_;
+    CanvasRenderingContext2D *context_;
 
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 

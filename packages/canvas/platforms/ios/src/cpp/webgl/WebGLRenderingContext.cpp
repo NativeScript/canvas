@@ -5,6 +5,110 @@
 #include "WebGLRenderingContext.h"
 #include "OneByteStringResource.h"
 
+v8::CFunction WebGLRenderingContext::fast_uniform1f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fImpl));
+
+v8::CFunction WebGLRenderingContext::fast_uniform1i_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1iImpl));
+
+
+v8::CFunction WebGLRenderingContext::fast_draw_arrays_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDrawArrays));
+
+v8::CFunction WebGLRenderingContext::fast_clear_(
+        v8::CFunction::Make(WebGLRenderingContext::FastClear));
+
+v8::CFunction WebGLRenderingContext::fast_clear_color_(
+        v8::CFunction::Make(WebGLRenderingContext::FastClearColor));
+
+v8::CFunction WebGLRenderingContext::fast_enable_(
+        v8::CFunction::Make(WebGLRenderingContext::FastEnable));
+
+v8::CFunction WebGLRenderingContext::fast_use_program_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUseProgram));
+
+v8::CFunction WebGLRenderingContext::fast_viewport_(
+        v8::CFunction::Make(WebGLRenderingContext::FastViewport));
+
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix2fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix2fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix2fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix2fvArray));
+
+const v8::CFunction uniform_matrix2fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_matrix2fv_,
+        WebGLRenderingContext::fast_uniform_matrix2fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix3fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix3fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix3fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix3fvArray));
+
+const v8::CFunction uniform_matrix3fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_matrix3fv_,
+        WebGLRenderingContext::fast_uniform_matrix3fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix4fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix4fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_matrix4fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniformMatrix4fvArray));
+
+const v8::CFunction uniform_matrix4fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_matrix4fv_,
+        WebGLRenderingContext::fast_uniform_matrix4fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_1fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_1fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fvArray));
+
+const v8::CFunction uniform_1fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_1fv_,
+        WebGLRenderingContext::fast_uniform_1fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_2fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_2fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2fvArray));
+
+const v8::CFunction uniform_2fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_2fv_,
+        WebGLRenderingContext::fast_uniform_2fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_3fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_3fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3fvArray));
+
+const v8::CFunction uniform_3fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_3fv_,
+        WebGLRenderingContext::fast_uniform_3fv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_4fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4fv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_4fv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4fvArray));
+
+const v8::CFunction uniform_4fv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_4fv_,
+        WebGLRenderingContext::fast_uniform_4fv_array_
+};
+
+
 WebGLRenderingContext::WebGLRenderingContext(WebGLState *state)
         : WebGLRenderingContextBase(state, WebGLRenderingVersion::V1) {
 
@@ -41,7 +145,7 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
 }
 
 WebGLRenderingContext *WebGLRenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -3833,7 +3937,7 @@ WebGLRenderingContext::TexParameterf(const v8::FunctionCallbackInfo<v8::Value> &
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto target =  args[0]->Uint32Value(
+    auto target = args[0]->Uint32Value(
             context).ToChecked();
     auto pname = args[1]->Uint32Value(
             context).ToChecked();
@@ -4053,7 +4157,7 @@ WebGLRenderingContext::VertexAttrib1f(const v8::FunctionCallbackInfo<v8::Value> 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto index =  args[0]->Uint32Value(
+    auto index = args[0]->Uint32Value(
             context).ToChecked();
     auto v0 = static_cast<float>(args[1]->NumberValue(
             context).ToChecked());
@@ -5814,10 +5918,13 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &CheckFramebufferStatus)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearColor"),
-            v8::FunctionTemplate::New(isolate, &ClearColor)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "clearColor"),
+//            v8::FunctionTemplate::New(isolate, &ClearColor)
+//    );
+
+    SetFastMethod(isolate, tmpl, "clearColor", ClearColor, &fast_clear_color_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "clearDepth"),
@@ -5829,10 +5936,13 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &ClearStencil)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clear"),
-            v8::FunctionTemplate::New(isolate, &Clear)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "clear"),
+//            v8::FunctionTemplate::New(isolate, &Clear)
+//    );
+
+
+    SetFastMethod(isolate, tmpl, "clear", Clear, &fast_clear_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "colorMask"),
@@ -5961,10 +6071,14 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawArrays"),
-            v8::FunctionTemplate::New(isolate, &DrawArrays)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "drawArrays"),
+//            v8::FunctionTemplate::New(isolate, &DrawArrays)
+//    );
+
+    SetFastMethod(isolate, tmpl, "drawArrays", DrawArrays, &fast_draw_arrays_,
+                  v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "drawElements"),
@@ -5976,10 +6090,12 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "enable"),
-            v8::FunctionTemplate::New(isolate, &Enable)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "enable"),
+//            v8::FunctionTemplate::New(isolate, &Enable)
+//    );
+
+    SetFastMethod(isolate, tmpl, "enable", Enable, &fast_enable_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "finish"),
@@ -6335,25 +6451,33 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1f"),
-            v8::FunctionTemplate::New(isolate, &Uniform1f)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform1f"),
+//            v8::FunctionTemplate::New(isolate, &Uniform1f)
+//    );
+
+
+    SetFastMethod(isolate, tmpl, "uniform1f", Uniform1f, &fast_uniform1f_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "uniform1iv"),
             v8::FunctionTemplate::New(isolate, &Uniform1iv)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform1fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform1fv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform1fv)
+//    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1i"),
-            v8::FunctionTemplate::New(isolate, &Uniform1i)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform1fv", Uniform1fv,
+                               uniform_1fv_overloads_, v8::Local<v8::Value>());
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform1i"),
+//            v8::FunctionTemplate::New(isolate, &Uniform1i)
+//    );
+
+    SetFastMethod(isolate, tmpl, "uniform1i", Uniform1i, &fast_uniform1i_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -6366,10 +6490,13 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &Uniform2iv)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform2fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform2fv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform2fv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform2fv", Uniform2fv,
+                               uniform_2fv_overloads_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "uniform2i"),
@@ -6386,10 +6513,13 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &Uniform3iv)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform3fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform3fv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform3fv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform3fv", Uniform3fv,
+                               uniform_3fv_overloads_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "uniform3i"),
@@ -6406,10 +6536,15 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &Uniform4iv)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4fv"),
-            v8::FunctionTemplate::New(isolate, &Uniform4fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform4fv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform4fv)
+//    );
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform4fv", Uniform4fv,
+                               uniform_4fv_overloads_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "uniform4i"),
@@ -6417,28 +6552,41 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix2fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix2fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniformMatrix2fv"),
+//            v8::FunctionTemplate::New(isolate, &UniformMatrix2fv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2fv", UniformMatrix2fv,
+                               uniform_matrix2fv_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix3fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix3fv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniformMatrix3fv"),
+//            v8::FunctionTemplate::New(isolate, &UniformMatrix3fv)
+//    );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix4fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix4fv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3fv", UniformMatrix3fv,
+                               uniform_matrix3fv_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "useProgram"),
-            v8::FunctionTemplate::New(isolate, &UseProgram)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniformMatrix4fv"),
+//            v8::FunctionTemplate::New(isolate, &UniformMatrix4fv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4fv", UniformMatrix4fv,
+                               uniform_matrix4fv_overloads_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "useProgram", UseProgram, &fast_use_program_,
+                  v8::Local<v8::Value>());
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "useProgram"),
+//            v8::FunctionTemplate::New(isolate, &UseProgram)
+//    );
 
 
     tmpl->Set(
@@ -6447,9 +6595,12 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "viewport"),
-            v8::FunctionTemplate::New(isolate, &Viewport)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "viewport"),
+//            v8::FunctionTemplate::New(isolate, &Viewport)
+//    );
+
+
+    SetFastMethod(isolate, tmpl, "viewport", Viewport, &fast_viewport_, v8::Local<v8::Value>());
 
 }

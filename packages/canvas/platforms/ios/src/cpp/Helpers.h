@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "OneByteStringResource.h"
 #include "PerIsolateData.h"
+#include "v8-fast-api-calls.h"
 //#ifdef __APPLE__
 //#ifdef __OBJC__
 //#include <Foundation/Foundation.h>
@@ -250,8 +251,7 @@ static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
 //}
 
 
-/*
- *  todo
+
 static void SetFastMethod(v8::Isolate* isolate,
                    v8::Local<v8::Template> that,
                    const char* name,
@@ -273,6 +273,36 @@ static void SetFastMethod(v8::Isolate* isolate,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(name_string, t);
 }
+
+
+
+#define NUM(a) (sizeof(a) / sizeof(*a))
+
+static void SetFastMethodWithOverLoads(v8::Isolate* isolate,
+                          v8::Local<v8::Template> that,
+                          const char* name,
+                          v8::FunctionCallback slow_callback,
+                          const v8::CFunction* method_overloads,
+                          v8::Local<v8::Value> data) {
+
+    auto len = NUM(&method_overloads);
+    v8::Local<v8::FunctionTemplate> t =
+            v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
+                                      slow_callback,
+                                      data,
+                                      v8::Local<v8::Signature>(),
+                                      0,
+                                      v8::ConstructorBehavior::kThrow,
+                                      v8::SideEffectType::kHasSideEffect, {method_overloads, len});
+    // kInternalized strings are created in the old space.
+    const v8::NewStringType type = v8::NewStringType::kInternalized;
+    v8::Local<v8::String> name_string =
+            v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
+    that->Set(name_string, t);
+}
+
+
+
 static void SetFastMethod(v8::Local<v8::Context> context,
                           v8::Local<v8::Object> that,
                    const char* name,
@@ -341,5 +371,3 @@ static void SetFastMethodNoSideEffect(v8::Isolate* isolate,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(name_string, t);
 }
-
-*/

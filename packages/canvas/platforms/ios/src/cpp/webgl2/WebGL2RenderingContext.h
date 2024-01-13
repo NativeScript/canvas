@@ -24,9 +24,11 @@
 class WebGL2RenderingContext : public WebGLRenderingContext {
 public:
 
-    WebGL2RenderingContext(WebGLState* state);
+    WebGL2RenderingContext(WebGLState *state);
 
-    WebGL2RenderingContext(WebGLState* state, WebGLRenderingVersion version);
+    WebGL2RenderingContext(WebGLState *state, WebGLRenderingVersion version);
+
+    static v8::CFunction fast_bind_vertex_array_;
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -37,8 +39,7 @@ public:
         auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
         SetNativeType(isolate, object, NativeType::WebGLRenderingContextBase);
-        auto ext = v8::External::New(isolate, renderingContext);
-        object->SetInternalField(0, ext);
+        object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
@@ -66,6 +67,27 @@ public:
     static void BindTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void BindVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    BindVertexArrayImpl(WebGL2RenderingContext *ptr, uint32_t vertex_array) {
+        canvas_native_webgl2_bind_vertex_array(
+                vertex_array,
+                ptr->GetState()
+        );
+
+    }
+
+    static void FastBindVertexArray(v8::Local<v8::Object> receiver_obj, uint32_t vertex_array) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        BindVertexArrayImpl(
+                ptr,
+                vertex_array
+        );
+    }
 
     static void BlitFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 

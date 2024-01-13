@@ -3,6 +3,8 @@
 //
 
 #include "WebGL2RenderingContext.h"
+v8::CFunction WebGL2RenderingContext::fast_bind_vertex_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBindVertexArray));
 
 WebGL2RenderingContext::WebGL2RenderingContext(WebGLState *state) : WebGLRenderingContext(
         state, WebGLRenderingVersion::V2) {
@@ -42,7 +44,7 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
 }
 
 WebGL2RenderingContext *WebGL2RenderingContext::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -3952,10 +3954,12 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &BindTransformFeedback)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindVertexArray"),
-            v8::FunctionTemplate::New(isolate, &BindVertexArray)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "bindVertexArray"),
+//            v8::FunctionTemplate::New(isolate, &BindVertexArray)
+//    );
+
+    SetFastMethod(isolate, tmpl, "bindVertexArray", BindVertexArray, &fast_bind_vertex_array_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "blitFramebuffer"),

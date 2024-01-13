@@ -25,7 +25,7 @@ public:
     WebGLRenderingContextBase(WebGLState* state, WebGLRenderingVersion version);
 
     static WebGLRenderingContextBase *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

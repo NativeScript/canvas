@@ -3,7 +3,7 @@ import { GestureTypes, TouchGestureEventData, Screen } from '@nativescript/core'
 let LAF = 0;
 
 var config = {
-	particleNumber: 10,
+	particleNumber: 50,
 	maxParticleSize: 10,
 	maxSpeed: 40,
 	colorVariation: 10,
@@ -119,9 +119,9 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 			return updateParticleModel(p);
 		});
 		// Draw em'
-		particles.forEach((p) => {
+		for (const p of particles) {
 			drawParticle(p.x, p.y, p.r, p.c);
-		});
+		}
 		// Play the same song? Ok!
 	};
 
@@ -170,9 +170,10 @@ function initParticles(x = 0, y = 0) {
 	for (let i = 0; i < numParticles; i++) {
 		particles.push(new Particle(x, y));
 	}
-	particles.forEach((p) => {
+
+	for (const p of particles) {
 		drawParticle(p.x, p.y, p.r, p.c);
-	});
+	}
 }
 
 function cancelTouchParticles() {

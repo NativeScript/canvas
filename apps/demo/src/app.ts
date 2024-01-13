@@ -75,6 +75,81 @@ const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regula
 
 global.CanvasModule.__addFontFamily('creepster', [font]);
 
+const path = new Path2D();
+
+// slow 0.484
+// eval(`
+// function arc(x, y) { return path.arc(x, y); }
+// global.arc = arc;
+// %PrepareFunctionForOptimization(arc);
+// `);
+
+// path.arc(100, 75, 50, 0, 2 * Math.PI);
+
+// console.time('slow');
+// for (let i = 0; i < 1_000; i++) {
+// 	path.arc(100, 75, 50, 0, 2 * Math.PI);
+// }
+// console.timeEnd('slow');
+
+// for (let i = 0; i < 5000; i++) {
+// 	path.arc(100, 75, 50, 0, 2 * Math.PI);
+// }
+
+// eval(`%OptimizeFunctionOnNextCall(global.arc);`);
+
+// console.time('fast');
+// for (let i = 0; i < 1_000; i++) {
+// 	path.arc(100, 75, 50, 0, 2 * Math.PI);
+// }
+// console.timeEnd('fast');
+
+// console.time('fast');
+// for (let i = 0; i < 1_000; i++) {
+// 	path.arc(100, 75, 50, 0, 2 * Math.PI);
+// }
+// console.timeEnd('fast');
+
+// console.time('fast');
+// for (let i = 0; i < 1_000; i++) {
+// 	path.arc(100, 75, 50, 0, 2 * Math.PI);
+// }
+// console.timeEnd('fast');
+
+
+// const pathToAdd = new Path2D();
+// pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
+// const path1 = new Path2D();
+// console.time('fast:addPath');
+// path1.addPath(pathToAdd);
+// console.timeEnd('fast:addPath');
+
+
+// eval(`
+// const pathToAdd = new Path2D();
+// pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
+// const path = new Path2D();
+// %OptimizeFunctionOnNextCall(path.addPath);
+// console.time('fast:addPath');
+// path.addPath(pathToAdd);
+// console.timeEnd('fast:addPath');
+// `);
+
+
+// eval(`
+// const pathToAdd = new Path2D();
+// pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
+// const path = new Path2D();
+// %OptimizeFunctionOnNextCall(path.addPath);
+// console.time('fast:addPath');
+// path.addPath(pathToAdd);
+// console.timeEnd('fast:addPath');
+// `);
+
+
+// for (let i = 0; i < 1_000; i++) {
+// 	path2.addPath(path);
+// }
 
 
 // console.time('url');

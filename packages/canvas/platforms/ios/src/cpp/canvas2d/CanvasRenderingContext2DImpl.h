@@ -220,7 +220,21 @@ public:
     static v8::CFunction fast_begin_path_;
 
     static v8::CFunction fast_arc_;
-//    static v8::CFunction fast_fill_;
+    static v8::CFunction fast_arc_to_;
+    static v8::CFunction fast_clear_rect_;
+
+    static v8::CFunction fast_fill_;
+    static v8::CFunction fast_fill_one_path_;
+
+    static v8::CFunction fast_stroke_;
+    static v8::CFunction fast_stroke_path_;
+
+
+    static v8::CFunction fast_restore_;
+
+    static v8::CFunction fast_save_;
+
+    static v8::CFunction fast_translate_;
 
 
     static void AddHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -268,6 +282,25 @@ public:
 
     static void ArcTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastArcTo(v8::Local<v8::Object> receiver_obj, double x1,
+                          double y1,
+                          double x2,
+                          double y2,
+                          double radius) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_arc_to(
+                ptr->GetContext(), static_cast<float>(x1),
+                static_cast<float>(y1),
+                static_cast<float>(x2),
+                static_cast<float>(y2),
+                static_cast<float>(radius)
+        );
+    }
+
     static void BeginPath(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void BeginPathImpl(CanvasRenderingContext2D *receiver_obj) {
@@ -288,6 +321,24 @@ public:
     static void ClearHitRegions(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void ClearRect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastClearRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                              double height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_clear_rect(
+                ptr->GetContext(),
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height)
+        );
+        ptr->UpdateInvalidateState();
+    }
 
     static void Clip(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -330,6 +381,106 @@ public:
 
     static void Fill(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    /* todo when fast string is supported
+    static void FastFillTwo(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path, string) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto object = Path2D::GetPointer(path);
+
+        if (object != nullptr) {
+            auto data = ConvertFromV8String(isolate, args[1]);
+            canvas_native_context_fill_with_path(
+                    ptr->GetContext(),
+                    object->GetPath(),
+                    data.c_str());
+            ptr->UpdateInvalidateState();
+        }
+    }
+
+    */
+
+    static void FastFillOnePath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto object = Path2D::GetPointer(path);
+
+        std::string rule("nonzero");
+        canvas_native_context_fill_with_path(
+                ptr->GetContext(),
+                object->GetPath(), rule.c_str());
+        ptr->UpdateInvalidateState();
+    }
+
+    // todo when fast string is supported
+    /*
+    static void FastFillOneString(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+        if (ptr == nullptr) {
+            return;
+        }
+        auto isolate = args.GetIsolate();
+
+        auto count = args.Length();
+        auto value = args[0];
+        if (count == 2) {
+            auto type = GetNativeType(isolate, value.As<v8::Object>());
+            if (type == NativeType::Path2D) {
+                auto object = Path2D::GetPointer(value.As<v8::Object>());
+
+                if (object != nullptr) {
+                    auto data = ConvertFromV8String(isolate, args[1]);
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(),
+                            data.c_str());
+                    ptr->UpdateInvalidateState();
+                }
+            }
+
+        } else if (count == 1) {
+            if (value->IsString()) {
+                auto rule = ConvertFromV8String(isolate, value);
+                canvas_native_context_fill(
+                        ptr->GetContext(), rule.c_str());
+                ptr->UpdateInvalidateState();
+            } else if (value->IsObject()) {
+                auto type = GetNativeType(isolate, value.As<v8::Object>());
+                if (type == NativeType::Path2D) {
+                    auto object = Path2D::GetPointer(value.As<v8::Object>());
+
+                    std::string rule("nonzero");
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(), rule.c_str());
+                    ptr->UpdateInvalidateState();
+                }
+            }
+        } else {
+            std::string rule("nonzero");
+            canvas_native_context_fill(
+                    ptr->GetContext(), rule.c_str());
+            ptr->UpdateInvalidateState();
+        }
+    }
+*/
+    static void FastFill(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        std::string rule("nonzero");
+        canvas_native_context_fill(
+                ptr->GetContext(), rule.c_str());
+        ptr->UpdateInvalidateState();
+    }
+
     static void FillRect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FillText(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -362,9 +513,29 @@ public:
 
     static void Restore(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastRestore(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_restore(
+                ptr->GetContext());
+    }
+
     static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Save(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastSave(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_save(
+                ptr->GetContext());
+    }
 
     static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -376,6 +547,26 @@ public:
 
     static void Stroke(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastStroke(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        canvas_native_context_stroke(
+                ptr->GetContext());
+        ptr->UpdateInvalidateState();
+    }
+
+    static void FastStrokePath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        auto path = Path2D::GetPointer(path_obj);
+        if (path != nullptr) {
+            canvas_native_context_stroke_with_path(
+                    ptr->GetContext(),
+                    path->GetPath());
+            ptr->UpdateInvalidateState();
+        }
+    }
+
     static void StrokeRect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -383,6 +574,13 @@ public:
     static void Transform(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Translate(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastTranslate(v8::Local<v8::Object> receiver_obj, double x, double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        canvas_native_context_translate(
+                ptr->GetContext(), x, y);
+    }
+
 
     static void __ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args);
 

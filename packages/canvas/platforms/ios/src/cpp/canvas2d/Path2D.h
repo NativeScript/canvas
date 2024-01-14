@@ -61,6 +61,7 @@ public:
     static v8::CFunction fast_quadratic_curve_to_;
     static v8::CFunction fast_rect_;
     static v8::CFunction fast_round_rect_;
+    static v8::CFunction fast_round_rect_array_;
     // static v8::CFunction fast_to_svg_; // todo after v8 upgrade
 
 
@@ -307,7 +308,8 @@ public:
         );
     }
 
-    static void FastRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width, double height) {
+    static void
+    FastRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width, double height) {
         Path2D *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -323,115 +325,49 @@ public:
     }
 
 
-/*
-    static void RoundRectImpl(Path *receiver_obj,v8::CTypeInfo()) {
-        Path2D *ptr = GetPointer(args.This());
+    static void FastRoundRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                              double height, double radii) {
+        Path2D *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto isolate = args.GetIsolate();
-        auto context = isolate->GetCurrentContext();
+        canvas_native_path_round_rect_tl_tr_br_bl(
+                ptr->GetPath(), static_cast<float>(x), static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height), static_cast<float>(radii), static_cast<float>(radii),
+                static_cast<float>(radii), static_cast<float>(radii));
 
-
-        if (args.Length() == 5) {
-            auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
-            auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-            auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-            auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
-            auto objectOrNumber = args[4];
-            if (objectOrNumber->IsObject()) {
-                auto radii = objectOrNumber.As<v8::Object>();
-                if (radii->IsArray()) {
-                    auto array = radii.As<v8::Array>();
-                    auto size = array->Length();
-
-                    if (size > 1) {
-                        std::vector<float> store;
-                        store.reserve(size);
-                        for (int i = 0;
-                             i < size; i++) {
-                            store[i] = (float) array->Get(context, i).ToLocalChecked()->NumberValue(
-                                    context).ToChecked();
-                        }
-
-                        canvas_native_path_round_rect(
-                                ptr->GetPath(),
-                                x, y,
-                                width,
-                                height, store.data(),
-                                store.size());
-
-                    }
-                }
-            } else {
-                auto radii = (float) objectOrNumber->NumberValue(context).ToChecked();
-                canvas_native_path_round_rect_tl_tr_br_bl(
-                        ptr->GetPath(), x, y,
-                        width,
-                        height, radii, radii,
-                        radii, radii);
-
-            }
-        }
-
-        args.GetReturnValue().SetUndefined();
     }
 
-    static void RoundRectImpl2(Path *receiver_obj) {
-        Path2D *ptr = GetPointer(args.This());
+    static void
+    FastRoundRectArray(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                       double height, v8::Local<v8::Array> value) {
+        Path2D *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        auto isolate = args.GetIsolate();
-        auto context = isolate->GetCurrentContext();
+        auto len = value->Length();
+        std::vector<float> buf;
+        buf.reserve(len);
 
+        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                value, nullptr, len);
 
-        if (args.Length() == 5) {
-            auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
-            auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-            auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-            auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
-            auto objectOrNumber = args[4];
-            if (objectOrNumber->IsObject()) {
-                auto radii = objectOrNumber.As<v8::Object>();
-                if (radii->IsArray()) {
-                    auto array = radii.As<v8::Array>();
-                    auto size = array->Length();
+        if (copied) {
+            if (len > 1) {
 
-                    if (size > 1) {
-                        std::vector<float> store;
-                        store.reserve(size);
-                        for (int i = 0;
-                             i < size; i++) {
-                            store[i] = (float) array->Get(context, i).ToLocalChecked()->NumberValue(
-                                    context).ToChecked();
-                        }
-
-                        canvas_native_path_round_rect(
-                                ptr->GetPath(),
-                                x, y,
-                                width,
-                                height, store.data(),
-                                store.size());
-
-                    }
-                }
-            } else {
-                auto radii = (float) objectOrNumber->NumberValue(context).ToChecked();
-                canvas_native_path_round_rect_tl_tr_br_bl(
-                        ptr->GetPath(), x, y,
+                canvas_native_path_round_rect(
+                        ptr->GetPath(),
+                        x, y,
                         width,
-                        height, radii, radii,
-                        radii, radii);
+                        height, buf.data(),
+                        buf.size());
 
             }
         }
-
-        args.GetReturnValue().SetUndefined();
     }
-*/
 
 
     /*

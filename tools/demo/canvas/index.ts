@@ -629,7 +629,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcToAnimation(this.canvas);
 		// ellipse(this.canvas);
 		//fillPath(this.canvas);
-		//flappyBird(this.canvas);
+		// flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
@@ -644,7 +644,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		//this.clock(this.canvas);
+		this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
@@ -680,7 +680,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//  setTimeout(() => {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
-		fog(this.canvas);
+		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
@@ -1742,12 +1742,13 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	clock(canvas) {
 		let scale = false;
 		var ctx = canvas.getContext('2d');
-		ctx.scale(3, 3);
+		ctx.scale(.1, .1);
+		ctx.translate(100, 100);
 
 		function clock() {
 			var now = new Date();
 			ctx.save();
-			ctx.clearRect(0, 0, 150, 150);
+			ctx.clearRect(100, 100, 150, 150);
 			ctx.translate(75, 75);
 			ctx.scale(0.4, 0.4);
 			ctx.rotate(-Math.PI / 2);

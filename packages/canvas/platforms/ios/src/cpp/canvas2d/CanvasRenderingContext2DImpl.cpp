@@ -7,13 +7,55 @@
 #include "OneByteStringResource.h"
 
 
-v8::CFunction CanvasRenderingContext2DImpl::fast_close_path_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClosePath));
+v8::CFunction CanvasRenderingContext2DImpl::fast_close_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClosePath));
 
-v8::CFunction CanvasRenderingContext2DImpl::fast_begin_path_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBeginPath));
+v8::CFunction CanvasRenderingContext2DImpl::fast_begin_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBeginPath));
 
-v8::CFunction CanvasRenderingContext2DImpl::fast_arc_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArc));
+v8::CFunction CanvasRenderingContext2DImpl::fast_arc_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArc));
 
-//v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
+v8::CFunction CanvasRenderingContext2DImpl::fast_arc_to_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArcTo));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_save_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSave));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_restore_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRestore));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_translate_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastTranslate));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_clear_rect_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClearRect));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_one_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillOnePath));
+
+const v8::CFunction fast_fill_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_fill_,
+        CanvasRenderingContext2DImpl::fast_fill_one_path_
+};
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStroke));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokePath));
+
+const v8::CFunction fast_stroke_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_stroke_,
+        CanvasRenderingContext2DImpl::fast_stroke_path_
+};
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
@@ -64,7 +106,6 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasRenderingContext2D"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
@@ -124,9 +165,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     SetFastMethod(isolate, tmpl, "arc", Arc, &fast_arc_, v8::Local<v8::Value>());
 
-    tmpl->Set(ConvertToV8String(isolate, "arcTo"), v8::FunctionTemplate::New(isolate, &ArcTo));
+    SetFastMethod(isolate, tmpl, "arcTo", ArcTo, &fast_arc_to_, v8::Local<v8::Value>());
+
+    // tmpl->Set(ConvertToV8String(isolate, "arcTo"), v8::FunctionTemplate::New(isolate, &ArcTo));
 //    tmpl->Set(ConvertToV8String(isolate, "beginPath"),
 //              v8::FunctionTemplate::New(isolate, &BeginPath));
+
 
     SetFastMethod(isolate, tmpl, "beginPath", BeginPath, &fast_begin_path_, v8::Local<v8::Value>());
 
@@ -135,8 +179,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &BezierCurveTo));
     tmpl->Set(ConvertToV8String(isolate, "clearHitRegions"),
               v8::FunctionTemplate::New(isolate, &ClearHitRegions));
-    tmpl->Set(ConvertToV8String(isolate, "clearRect"),
-              v8::FunctionTemplate::New(isolate, &ClearRect));
+//    tmpl->Set(ConvertToV8String(isolate, "clearRect"),
+//              v8::FunctionTemplate::New(isolate, &ClearRect));
+
+    SetFastMethod(isolate, tmpl, "clearRect", ClearRect, &fast_clear_rect_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "clip"), v8::FunctionTemplate::New(isolate, &Clip));
 //    tmpl->Set(ConvertToV8String(isolate, "closePath"),
 //              v8::FunctionTemplate::New(isolate, &ClosePath));
@@ -162,9 +210,10 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->Set(ConvertToV8String(isolate, "drawImage"),
               v8::FunctionTemplate::New(isolate, &DrawImage));
     tmpl->Set(ConvertToV8String(isolate, "ellipse"), v8::FunctionTemplate::New(isolate, &Ellipse));
-    tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
+    // tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
 
-//    SetFastMethod(isolate, tmpl, "fill", Fill, &fast_fill_, v8::Local<v8::Value>());
+    SetFastMethodWithOverLoads(isolate, tmpl, "fill", Fill, fast_fill_overloads_,
+                               v8::Local<v8::Value>());
 
     tmpl->Set(ConvertToV8String(isolate, "fillRect"),
               v8::FunctionTemplate::New(isolate, &FillRect));
@@ -193,9 +242,17 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &RemoveHitRegion));
     tmpl->Set(ConvertToV8String(isolate, "resetTransform"),
               v8::FunctionTemplate::New(isolate, &ResetTransform));
-    tmpl->Set(ConvertToV8String(isolate, "restore"), v8::FunctionTemplate::New(isolate, &Restore));
+
+    SetFastMethod(isolate, tmpl, "restore", Restore, &fast_restore_, v8::Local<v8::Value>());
+
+    //  tmpl->Set(ConvertToV8String(isolate, "restore"), v8::FunctionTemplate::New(isolate, &Restore));
     tmpl->Set(ConvertToV8String(isolate, "rotate"), v8::FunctionTemplate::New(isolate, &Rotate));
-    tmpl->Set(ConvertToV8String(isolate, "save"), v8::FunctionTemplate::New(isolate, &Save));
+
+
+    SetFastMethod(isolate, tmpl, "save", Save, &fast_save_, v8::Local<v8::Value>());
+    //tmpl->Set(ConvertToV8String(isolate, "save"), v8::FunctionTemplate::New(isolate, &Save));
+
+
     tmpl->Set(ConvertToV8String(isolate, "scale"), v8::FunctionTemplate::New(isolate, &Scale));
     tmpl->Set(ConvertToV8String(isolate, "scrollPathIntoView"),
               v8::FunctionTemplate::New(isolate, &ScrollPathIntoView));
@@ -203,15 +260,24 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &SetLineDash));
     tmpl->Set(ConvertToV8String(isolate, "setTransform"),
               v8::FunctionTemplate::New(isolate, &SetTransform));
-    tmpl->Set(ConvertToV8String(isolate, "stroke"), v8::FunctionTemplate::New(isolate, &Stroke));
+    //  tmpl->Set(ConvertToV8String(isolate, "stroke"), v8::FunctionTemplate::New(isolate, &Stroke));
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "stroke", Stroke, fast_stroke_overloads_,
+                               v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
               v8::FunctionTemplate::New(isolate, &StrokeRect));
     tmpl->Set(ConvertToV8String(isolate, "strokeText"),
               v8::FunctionTemplate::New(isolate, &StrokeText));
     tmpl->Set(ConvertToV8String(isolate, "transform"),
               v8::FunctionTemplate::New(isolate, &Transform));
-    tmpl->Set(ConvertToV8String(isolate, "translate"),
-              v8::FunctionTemplate::New(isolate, &Translate));
+
+
+    SetFastMethod(isolate, tmpl, "translate", Translate, &fast_translate_, v8::Local<v8::Value>());
+
+//    tmpl->Set(ConvertToV8String(isolate, "translate"),
+//              v8::FunctionTemplate::New(isolate, &Translate));
     tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
               v8::FunctionTemplate::New(isolate, &__ToDataURL));
 

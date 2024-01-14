@@ -110,7 +110,6 @@ public:
     static v8::CFunction fast_uniform_4fv_array_;
 
 
-
     static v8::Local<v8::Object>
     NewInstance(v8::Isolate *isolate, WebGLRenderingContext *renderingContext) {
         auto context = isolate->GetCurrentContext();
@@ -492,7 +491,6 @@ public:
     static void Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
-
     static void
     FastUniform1fv(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> location_obj,
                    const v8::FastApiTypedArray<float> &value) {
@@ -541,8 +539,6 @@ public:
 
         }
     }
-
-
 
 
     static void Uniform1i(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -690,10 +686,6 @@ public:
     }
 
 
-
-
-
-
     static void Uniform3i(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Uniform4f(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -742,11 +734,14 @@ public:
             auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
                     value, nullptr, len);
 
-            canvas_native_webgl_uniform4fv(
-                    location->GetUniformLocation(),
-                    buf.data(),
-                    buf.size(),
-                    ptr->GetState());
+            if (copied) {
+                canvas_native_webgl_uniform4fv(
+                        location->GetUniformLocation(),
+                        buf.data(),
+                        buf.size(),
+                        ptr->GetState());
+            }
+
 
         }
     }
@@ -813,10 +808,6 @@ public:
     }
 
 
-
-
-
-
     static void UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
@@ -875,11 +866,6 @@ public:
 
         }
     }
-
-
-
-
-
 
 
     static void UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value> &args);

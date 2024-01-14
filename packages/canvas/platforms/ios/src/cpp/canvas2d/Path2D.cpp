@@ -53,6 +53,20 @@ v8::CFunction Path2D::fast_rect_(v8::CFunction::Make(Path2D::FastRect));
 
 //v8::CFunction Path2D::fast_round_rect_(v8::CFunction::Make(Path2D::FastRoundRect));
 
+
+v8::CFunction Path2D::fast_round_rect_(
+        v8::CFunction::Make(Path2D::FastRoundRect));
+
+v8::CFunction Path2D::fast_round_rect_array_(
+        v8::CFunction::Make(Path2D::FastRoundRectArray));
+
+const v8::CFunction fast_round_rect_overloads_[] = {
+        Path2D::fast_round_rect_,
+        Path2D::fast_round_rect_array_
+};
+
+
+
 //v8::CFunction Path2D::fast_to_svg_(v8::CFunction::Make(Path2D::FastToSVG));
 
 void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -410,14 +424,6 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
 
     tmpl->SetInternalFieldCount(1);
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "addPath"),
-//            v8::FunctionTemplate::New(isolate, &AddPath));
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "arc"),
-//            v8::FunctionTemplate::New(isolate, &Arc));
-
     tmpl->Set(
             ConvertToV8String(isolate, "arcTo"),
             v8::FunctionTemplate::New(isolate, &ArcTo));
@@ -434,8 +440,16 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
     SetFastMethod(isolate, tmpl, "quadraticCurveTo", QuadraticCurveTo, &fast_quadratic_curve_to_,
                   v8::Local<v8::Value>());
     SetFastMethod(isolate, tmpl, "rect", Rect, &fast_rect_, v8::Local<v8::Value>());
-//    SetFastMethod(isolate, tmpl, "roundRect", RoundRect, &fast_round_rect_, v8::Local<v8::Value>());
-//    SetFastMethod(isolate, tmpl, "__toSVG", __toSVG, &fast_to_svg_, v8::Local<v8::Value>());
+    SetFastMethodWithOverLoads(isolate, tmpl, "roundRect", RoundRect,
+                               fast_round_rect_overloads_, v8::Local<v8::Value>());
+
+    //    tmpl->Set(
+//            ConvertToV8String(isolate, "addPath"),
+//            v8::FunctionTemplate::New(isolate, &AddPath));
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "arc"),
+//            v8::FunctionTemplate::New(isolate, &Arc));
 
 
 //    tmpl->Set(
@@ -470,9 +484,9 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
 //            ConvertToV8String(isolate, "rect"),
 //            v8::FunctionTemplate::New(isolate, &Rect));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "roundRect"),
-            v8::FunctionTemplate::New(isolate, &RoundRect));
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "roundRect"),
+//            v8::FunctionTemplate::New(isolate, &RoundRect));
 
     tmpl->Set(
             ConvertToV8String(isolate, "__toSVG"),

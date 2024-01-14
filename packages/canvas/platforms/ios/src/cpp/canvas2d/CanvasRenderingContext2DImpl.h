@@ -226,9 +226,14 @@ public:
     static v8::CFunction fast_fill_;
     static v8::CFunction fast_fill_one_path_;
 
+    static v8::CFunction fast_fill_rect_;
+
     static v8::CFunction fast_stroke_;
     static v8::CFunction fast_stroke_path_;
 
+    static v8::CFunction fast_stroke_rect_;
+
+    static v8::CFunction fast_rotate_;
 
     static v8::CFunction fast_restore_;
 
@@ -483,6 +488,24 @@ public:
 
     static void FillRect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FastFillRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                             double height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_fill_rect(
+                ptr->GetContext(),
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height)
+        );
+        ptr->UpdateInvalidateState();
+    }
+
     static void FillText(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetImageData(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -524,6 +547,13 @@ public:
     }
 
     static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastRotate(v8::Local<v8::Object> receiver_obj, double angle) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        canvas_native_context_rotate(
+                ptr->GetContext(), angle);
+    }
+
 
     static void Save(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -568,6 +598,20 @@ public:
     }
 
     static void StrokeRect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastStrokeRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                           double height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        canvas_native_context_stroke_rect(
+                ptr->GetContext(), static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height));
+        ptr->UpdateInvalidateState();
+    }
+
 
     static void StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args);
 

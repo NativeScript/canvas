@@ -34,6 +34,16 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_clear_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClearRect));
 
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rect_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRect));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_rect_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokeRect));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_rotate_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRotate));
+
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
 
@@ -44,6 +54,7 @@ const v8::CFunction fast_fill_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_fill_,
         CanvasRenderingContext2DImpl::fast_fill_one_path_
 };
+
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_(
@@ -215,8 +226,16 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     SetFastMethodWithOverLoads(isolate, tmpl, "fill", Fill, fast_fill_overloads_,
                                v8::Local<v8::Value>());
 
-    tmpl->Set(ConvertToV8String(isolate, "fillRect"),
-              v8::FunctionTemplate::New(isolate, &FillRect));
+
+
+
+    SetFastMethod(isolate, tmpl, "fillRect", FillRect, &fast_fill_rect_, v8::Local<v8::Value>());
+
+
+
+//
+//    tmpl->Set(ConvertToV8String(isolate, "fillRect"),
+//              v8::FunctionTemplate::New(isolate, &FillRect));
     tmpl->Set(ConvertToV8String(isolate, "fillText"),
               v8::FunctionTemplate::New(isolate, &FillText));
     tmpl->Set(ConvertToV8String(isolate, "getImageData"),
@@ -246,7 +265,11 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     SetFastMethod(isolate, tmpl, "restore", Restore, &fast_restore_, v8::Local<v8::Value>());
 
     //  tmpl->Set(ConvertToV8String(isolate, "restore"), v8::FunctionTemplate::New(isolate, &Restore));
-    tmpl->Set(ConvertToV8String(isolate, "rotate"), v8::FunctionTemplate::New(isolate, &Rotate));
+
+
+    SetFastMethod(isolate, tmpl, "rotate", Rotate, &fast_rotate_, v8::Local<v8::Value>());
+
+//    tmpl->Set(ConvertToV8String(isolate, "rotate"), v8::FunctionTemplate::New(isolate, &Rotate));
 
 
     SetFastMethod(isolate, tmpl, "save", Save, &fast_save_, v8::Local<v8::Value>());
@@ -266,8 +289,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
                                v8::Local<v8::Value>());
 
 
-    tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
-              v8::FunctionTemplate::New(isolate, &StrokeRect));
+//    tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
+//              v8::FunctionTemplate::New(isolate, &StrokeRect));
+
+    SetFastMethod(isolate, tmpl, "strokeRect", StrokeRect, &fast_stroke_rect_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "strokeText"),
               v8::FunctionTemplate::New(isolate, &StrokeText));
     tmpl->Set(ConvertToV8String(isolate, "transform"),

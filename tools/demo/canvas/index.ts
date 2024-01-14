@@ -60,6 +60,7 @@ let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
 import { issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
+import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -547,6 +548,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		});
 	}
 	draw() {
+		rnSkiaPerf(this.canvas);
 		///this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
@@ -644,7 +646,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		this.clock(this.canvas);
+		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);

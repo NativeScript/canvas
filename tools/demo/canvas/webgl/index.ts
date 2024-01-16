@@ -7,3 +7,4 @@ export * from './interactive-cube';
 export * from './textures';
 export * from './webgl-image-processing';
 export * from './video';
+export * from './chaos-lines';

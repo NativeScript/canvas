@@ -17,11 +17,11 @@ v8::Local<v8::FunctionTemplate> EXT_disjoint_timer_queryImpl::GetCtor(v8::Isolat
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_disjoint_timer_query"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     tmpl->Set(ConvertToV8String(isolate, "QUERY_COUNTER_BITS_EXT"),
               v8::Integer::NewFromUnsigned(isolate, 0x8864));
@@ -74,7 +74,7 @@ v8::Local<v8::FunctionTemplate> EXT_disjoint_timer_queryImpl::GetCtor(v8::Isolat
 
 EXT_disjoint_timer_queryImpl *
 EXT_disjoint_timer_queryImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -107,7 +107,7 @@ void EXT_disjoint_timer_queryImpl::DeleteQueryExt(
     }
     auto isolate = args.GetIsolate();
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
@@ -128,7 +128,7 @@ void EXT_disjoint_timer_queryImpl::IsQueryExt(
     }
     auto isolate = args.GetIsolate();
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
@@ -156,7 +156,7 @@ void EXT_disjoint_timer_queryImpl::BeginQueryExt(
     auto queryValue = args[1];
 
     auto target = targetValue->Uint32Value(context).ToChecked();
-    auto type = GetNativeType(isolate, queryValue);
+    auto type = GetNativeType( queryValue);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
 
@@ -199,7 +199,7 @@ void EXT_disjoint_timer_queryImpl::QueryCounterExt(
     auto targetValue = args[1];
 
     auto target = targetValue->Uint32Value(context).ToChecked();
-    auto type = GetNativeType(isolate, queryValue.As<v8::Object>());
+    auto type = GetNativeType( queryValue.As<v8::Object>());
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
 

@@ -32,7 +32,7 @@ void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -47,11 +47,11 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "ImageAsset"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
     tmpl->SetAccessor(
             ConvertToV8String(isolate, "width"),
             GetWidth);
@@ -112,15 +112,13 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType(isolate, ret, NativeType::ImageAsset);
+    SetNativeType( ret, NativeType::ImageAsset);
 
     auto image_asset = canvas_native_image_asset_create();
 
     auto object = new ImageAssetImpl(image_asset);
 
-    auto ext = v8::External::New(isolate, object);
-
-    ret->SetInternalField(0, ext);
+    ret->SetAlignedPointerInInternalField(0, object);
 
     object->BindFinalizer(isolate, ret);
 

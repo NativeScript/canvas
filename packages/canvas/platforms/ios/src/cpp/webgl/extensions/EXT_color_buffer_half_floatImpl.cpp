@@ -14,11 +14,11 @@ v8::Local<v8::FunctionTemplate> EXT_color_buffer_half_floatImpl::GetCtor(v8::Iso
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_color_buffer_half_float"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     tmpl->Set(ConvertToV8String(isolate, "RGBA16F_EXT"),
               v8::Integer::NewFromUnsigned(isolate, 0x881A));

@@ -10,7 +10,7 @@
 class CanvasPattern: ObjectWrapperImpl {
 public:
     CanvasPattern(PaintStyle* style);
-    
+
     ~CanvasPattern() {
         canvas_native_paint_style_destroy(this->GetPaintStyle());
         this->style_ = nullptr;
@@ -27,9 +27,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::CanvasPattern);
-        auto ext = v8::External::New(isolate, pattern);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::CanvasPattern);
+        object->SetAlignedPointerInInternalField(0, pattern);
         pattern->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

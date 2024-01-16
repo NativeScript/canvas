@@ -76,7 +76,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType(isolate, ret, NativeType::Path2D);
+    SetNativeType( ret, NativeType::Path2D);
 
     if (count > 0) {
         if (value->IsString()) {
@@ -417,12 +417,12 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "Path2D"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
 
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     tmpl->Set(
             ConvertToV8String(isolate, "arcTo"),

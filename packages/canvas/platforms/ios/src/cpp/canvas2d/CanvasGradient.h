@@ -11,14 +11,14 @@
 class CanvasGradient: ObjectWrapperImpl {
 public:
     CanvasGradient(PaintStyle*style);
-    
+
     ~CanvasGradient(){
         canvas_native_paint_style_destroy(this->GetPaintStyle());
         this->style_ = nullptr;
     }
 
     PaintStyle * GetPaintStyle();
-    
+
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static CanvasGradient *GetPointer(const v8::Local<v8::Object> &object);
@@ -30,9 +30,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasGradient::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::CanvasGradient);
-        auto ext = v8::External::New(isolate, gradient);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::CanvasGradient);
+        object->SetAlignedPointerInInternalField(0, gradient);
         gradient->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

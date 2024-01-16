@@ -123,6 +123,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value) {
+		if (this.style.width === value) {
+			return;
+		}
 		this.style.width = value;
 		this._didLayout = false;
 		this._layoutNative();
@@ -148,6 +151,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value) {
+		if (this.style.height === value) {
+			return;
+		}
 		this.style.height = value;
 		this._didLayout = false;
 		this._layoutNative();

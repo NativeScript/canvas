@@ -19,11 +19,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_sRGB"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
         tmpl->Set(ConvertToV8String(isolate, "SRGB_EXT"),
                   v8::Integer::NewFromUnsigned(isolate, GL_SRGB_EXT));
         tmpl->Set(ConvertToV8String(isolate, "SRGB_ALPHA_EXT"),
@@ -45,15 +45,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_sRGBImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::EXT_sRGB);
-        auto ext = v8::External::New(isolate, extSrgb);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::EXT_sRGB);
+        object->SetAlignedPointerInInternalField(0, extSrgb);
         extSrgb->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static EXT_sRGBImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

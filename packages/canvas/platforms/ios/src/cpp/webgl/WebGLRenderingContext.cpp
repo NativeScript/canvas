@@ -5,11 +5,53 @@
 #include "WebGLRenderingContext.h"
 #include "OneByteStringResource.h"
 
+
+v8::CFunction WebGLRenderingContext::fast_active_texture_(
+        v8::CFunction::Make(WebGLRenderingContext::FastActiveTexture));
+
+
+v8::CFunction WebGLRenderingContext::fast_attach_shader_(
+        v8::CFunction::Make(WebGLRenderingContext::FastAttachShader));
+
+
+v8::CFunction WebGLRenderingContext::fast_bind_buffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindBuffer));
+
+v8::CFunction WebGLRenderingContext::fast_bind_buffer_null_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindBufferNull));
+
+const v8::CFunction bind_buffer_overloads_[] = {
+        WebGLRenderingContext::fast_bind_buffer_,
+        WebGLRenderingContext::fast_bind_buffer_null_
+};
+
+
 v8::CFunction WebGLRenderingContext::fast_uniform1f_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1fImpl));
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1f));
 
 v8::CFunction WebGLRenderingContext::fast_uniform1i_(
-        v8::CFunction::Make(WebGLRenderingContext::FastUniform1iImpl));
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1i));
+
+
+v8::CFunction WebGLRenderingContext::fast_uniform2f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2f));
+
+v8::CFunction WebGLRenderingContext::fast_uniform2i_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2i));
+
+
+v8::CFunction WebGLRenderingContext::fast_uniform3f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3f));
+
+v8::CFunction WebGLRenderingContext::fast_uniform3i_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3i));
+
+
+v8::CFunction WebGLRenderingContext::fast_uniform4f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4f));
+
+v8::CFunction WebGLRenderingContext::fast_uniform4i_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4i));
 
 
 v8::CFunction WebGLRenderingContext::fast_draw_arrays_(
@@ -24,8 +66,22 @@ v8::CFunction WebGLRenderingContext::fast_clear_color_(
 v8::CFunction WebGLRenderingContext::fast_enable_(
         v8::CFunction::Make(WebGLRenderingContext::FastEnable));
 
+v8::CFunction WebGLRenderingContext::fast_enable_vertex_attrib_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastEnableVertexAttribArray));
+
+
 v8::CFunction WebGLRenderingContext::fast_use_program_(
         v8::CFunction::Make(WebGLRenderingContext::FastUseProgram));
+
+v8::CFunction WebGLRenderingContext::fast_use_program_null_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUseProgramNull));
+
+
+const v8::CFunction fast_use_overloads_[] = {
+        WebGLRenderingContext::fast_use_program_,
+        WebGLRenderingContext::fast_use_program_null_
+};
+
 
 v8::CFunction WebGLRenderingContext::fast_viewport_(
         v8::CFunction::Make(WebGLRenderingContext::FastViewport));
@@ -63,6 +119,52 @@ const v8::CFunction uniform_matrix4fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_matrix4fv_,
         WebGLRenderingContext::fast_uniform_matrix4fv_array_
 };
+
+v8::CFunction WebGLRenderingContext::fast_uniform_1iv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1iv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_1iv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform1ivArray));
+
+
+const v8::CFunction uniform_1iv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_1iv_,
+        WebGLRenderingContext::fast_uniform_1iv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_2iv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2iv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_2iv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform2ivArray));
+
+const v8::CFunction uniform_2iv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_2iv_,
+        WebGLRenderingContext::fast_uniform_2iv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_3iv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3iv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_3iv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform3ivArray));
+
+const v8::CFunction uniform_3iv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_3iv_,
+        WebGLRenderingContext::fast_uniform_3iv_array_
+};
+
+v8::CFunction WebGLRenderingContext::fast_uniform_4iv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4iv));
+
+v8::CFunction WebGLRenderingContext::fast_uniform_4iv_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastUniform4ivArray));
+
+const v8::CFunction uniform_4iv_overloads_[] = {
+        WebGLRenderingContext::fast_uniform_4iv_,
+        WebGLRenderingContext::fast_uniform_4iv_array_
+};
+
 
 v8::CFunction WebGLRenderingContext::fast_uniform_1fv_(
         v8::CFunction::Make(WebGLRenderingContext::FastUniform1fv));
@@ -108,6 +210,9 @@ const v8::CFunction uniform_4fv_overloads_[] = {
         WebGLRenderingContext::fast_uniform_4fv_array_
 };
 
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_pointer(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttribPointer));
+
 
 WebGLRenderingContext::WebGLRenderingContext(WebGLState *state)
         : WebGLRenderingContextBase(state, WebGLRenderingVersion::V1) {
@@ -129,11 +234,11 @@ v8::Local<v8::FunctionTemplate> WebGLRenderingContext::GetCtor(v8::Isolate *isol
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLRenderingContext"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     SetConstants(isolate, tmpl);
     SetProps(isolate, tmpl);
@@ -427,8 +532,8 @@ void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Valu
     auto programValue = args[0];
     auto shaderValue = args[1];
 
-    auto programType = GetNativeType(isolate, programValue);
-    auto shaderType = GetNativeType(isolate, shaderValue);
+    auto programType = GetNativeType(programValue);
+    auto shaderType = GetNativeType(shaderValue);
 
     WebGLProgram *program = nullptr;
     WebGLShader *shader = nullptr;
@@ -440,14 +545,11 @@ void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Valu
         shader = WebGLShader::GetPointer(shaderValue.As<v8::Object>());
     }
 
-    if (program == nullptr || shader == nullptr) {
-        return;
-    }
 
-    canvas_native_webgl_attach_shader(
-            program->GetProgram(),
-            shader->GetShader(),
-            ptr->GetState()
+    AttachShaderImpl(
+            ptr,
+            program,
+            shader
     );
 }
 
@@ -461,7 +563,7 @@ void WebGLRenderingContext::BindAttribLocation(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
 
@@ -489,7 +591,7 @@ void WebGLRenderingContext::BindBuffer(const v8::FunctionCallbackInfo<v8::Value>
     auto target = args[0]->Uint32Value(context).ToChecked();
     if (!args[1]->IsNull() &&
         args[1]->IsObject()) {
-        auto type = GetNativeType(isolate, args[1]);
+        auto type = GetNativeType(args[1]);
         if (type == NativeType::WebGLBuffer) {
             auto buffer = WebGLBuffer::GetPointer(args[1].As<v8::Object>());
             if (buffer ==
@@ -523,7 +625,7 @@ void WebGLRenderingContext::BindFramebuffer(const v8::FunctionCallbackInfo<v8::V
 
     auto target = args[0]->Uint32Value(context).ToChecked();
     if (args[1]->IsObject()) {
-        auto type = GetNativeType(isolate, args[1]);
+        auto type = GetNativeType(args[1]);
         if (type == NativeType::WebGLFramebuffer) {
             auto framebuffer = WebGLFramebuffer::GetPointer(args[1].As<v8::Object>());
             canvas_native_webgl_bind_frame_buffer(
@@ -554,7 +656,7 @@ void WebGLRenderingContext::BindRenderbuffer(const v8::FunctionCallbackInfo<v8::
 
     auto target = args[0]->Uint32Value(context).ToChecked();
     if (args[1]->IsObject()) {
-        auto type = GetNativeType(isolate, args[1]);
+        auto type = GetNativeType(args[1]);
         if (type == NativeType::WebGLRenderbuffer) {
             auto renderbuffer = WebGLRenderbuffer::GetPointer(args[1].As<v8::Object>());
 
@@ -586,7 +688,7 @@ void WebGLRenderingContext::BindTexture(const v8::FunctionCallbackInfo<v8::Value
 
     auto target = args[0]->Uint32Value(context).ToChecked();
     if (args[1]->IsObject()) {
-        auto type = GetNativeType(isolate, args[1].As<v8::Object>());
+        auto type = GetNativeType(args[1].As<v8::Object>());
         if (type == NativeType::WebGLTexture) {
             auto texture = WebGLTexture::GetPointer(args[1].As<v8::Object>());
             canvas_native_webgl_bind_texture(
@@ -1157,8 +1259,6 @@ void WebGLRenderingContext::CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Va
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto count = args.Length();
-
 
     auto target = args[0]->Uint32Value(context).ToChecked();
     auto level = args[1]->Int32Value(context).ToChecked();
@@ -1191,8 +1291,6 @@ void WebGLRenderingContext::CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8:
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-
-    auto count = args.Length();
 
 
     auto target = args[0]->Uint32Value(context).ToChecked();
@@ -1249,7 +1347,6 @@ void WebGLRenderingContext::CreateFramebuffer(const v8::FunctionCallbackInfo<v8:
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
 
     auto buffer = canvas_native_webgl_create_framebuffer(
@@ -1393,7 +1490,7 @@ void WebGLRenderingContext::DeleteBuffer(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLBuffer) {
         auto buffer = WebGLBuffer::GetPointer(value.As<v8::Object>());
         if (buffer != nullptr) {
@@ -1415,7 +1512,7 @@ void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8:
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLFramebuffer) {
         auto buffer = WebGLFramebuffer::GetPointer(value.As<v8::Object>());
         if (buffer != nullptr) {
@@ -1435,11 +1532,9 @@ void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Val
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
@@ -1464,7 +1559,7 @@ void WebGLRenderingContext::DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8
 
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLRenderbuffer) {
         auto buffer = WebGLRenderbuffer::GetPointer(value.As<v8::Object>());
@@ -1489,7 +1584,7 @@ void WebGLRenderingContext::DeleteShader(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLShader) {
         auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
@@ -1512,7 +1607,7 @@ void WebGLRenderingContext::DeleteTexture(const v8::FunctionCallbackInfo<v8::Val
 
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLTexture) {
         auto texture = WebGLTexture::GetPointer(value.As<v8::Object>());
@@ -1592,8 +1687,8 @@ void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Valu
     auto programValue = args[0];
     auto shaderValue = args[1];
 
-    auto programType = GetNativeType(isolate, programValue);
-    auto shaderType = GetNativeType(isolate, shaderValue);
+    auto programType = GetNativeType(programValue);
+    auto shaderType = GetNativeType(shaderValue);
     WebGLProgram *program = nullptr;
     WebGLShader *shader = nullptr;
     if (programType == NativeType::WebGLProgram) {
@@ -1767,7 +1862,7 @@ WebGLRenderingContext::FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8
     auto attachment = args[1]->Uint32Value(context).ToChecked();
     auto renderbuffertarget = args[2]->Uint32Value(context).ToChecked();
     auto renderbufferValue = args[3];
-    auto type = GetNativeType(isolate, renderbufferValue);
+    auto type = GetNativeType(renderbufferValue);
     if (type == NativeType::WebGLRenderbuffer) {
         auto renderbuffer = WebGLRenderbuffer::GetPointer(renderbufferValue.As<v8::Object>());
         if (renderbuffer != nullptr) {
@@ -1796,7 +1891,7 @@ void WebGLRenderingContext::FramebufferTexture2D(const v8::FunctionCallbackInfo<
     auto textarget = args[2]->Uint32Value(context).ToChecked();
     auto level = args[4]->Int32Value(context).ToChecked();
     auto textureValue = args[3];
-    auto type = GetNativeType(isolate, textureValue);
+    auto type = GetNativeType(textureValue);
     if (type == NativeType::WebGLTexture) {
         auto texture = WebGLTexture::GetPointer(textureValue.As<v8::Object>());
         if (texture != nullptr) {
@@ -1856,7 +1951,7 @@ void WebGLRenderingContext::GetActiveAttrib(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto index = args[1]->Int32Value(context).ToChecked();
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -1887,7 +1982,7 @@ void WebGLRenderingContext::GetActiveUniform(const v8::FunctionCallbackInfo<v8::
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto index = args[1]->Int32Value(
                 context).ToChecked();
@@ -1919,7 +2014,7 @@ void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         if (program != nullptr) {
@@ -1958,7 +2053,7 @@ void WebGLRenderingContext::GetAttribLocation(const v8::FunctionCallbackInfo<v8:
     auto isolate = args.GetIsolate();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
 
     if (type == NativeType::WebGLProgram) {
         auto name = ConvertFromV8String(isolate, args[1]);
@@ -2431,7 +2526,7 @@ void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8:
     auto isolate = args.GetIsolate();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         if (program != nullptr) {
@@ -2466,7 +2561,7 @@ void WebGLRenderingContext::GetProgramParameter(const v8::FunctionCallbackInfo<v
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     auto pname = args[1]->Uint32Value(
             context).ToChecked();
     if (type == NativeType::WebGLProgram) {
@@ -2541,7 +2636,7 @@ void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLShader) {
         auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
         if (shader != nullptr) {
@@ -2576,7 +2671,7 @@ void WebGLRenderingContext::GetShaderParameter(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     auto pname = args[1]->Uint32Value(
             context).ToChecked();
     if (type == NativeType::WebGLShader) {
@@ -2656,7 +2751,7 @@ void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::V
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLShader) {
         auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
 
@@ -2763,7 +2858,7 @@ WebGLRenderingContext::GetUniformLocation(const v8::FunctionCallbackInfo<v8::Val
     auto isolate = args.GetIsolate();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType(programValue);
     auto nameValue = args[1];
     if (type == NativeType::WebGLProgram && nameValue->IsString()) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -2800,9 +2895,9 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto programType = GetNativeType(isolate, programValue);
+    auto programType = GetNativeType(programValue);
     auto locationValue = args[1];
-    auto locationType = GetNativeType(isolate, locationValue);
+    auto locationType = GetNativeType(locationValue);
     if (programType == NativeType::WebGLProgram &&
         locationType == NativeType::WebGLUniformLocation) {
 
@@ -3100,7 +3195,7 @@ WebGLRenderingContext::IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLBuffer) {
         auto buffer = WebGLBuffer::GetPointer(value.As<v8::Object>());
         if (buffer != nullptr) {
@@ -3159,7 +3254,7 @@ WebGLRenderingContext::IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLFramebuffer) {
         auto framebuffer = WebGLFramebuffer::GetPointer(value.As<v8::Object>());
         if (framebuffer != nullptr) {
@@ -3186,7 +3281,7 @@ WebGLRenderingContext::IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
         if (program != nullptr) {
@@ -3214,7 +3309,7 @@ WebGLRenderingContext::IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> 
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLRenderbuffer) {
         auto renderbuffer = WebGLRenderbuffer::GetPointer(value.As<v8::Object>());
         if (renderbuffer != nullptr) {
@@ -3242,7 +3337,7 @@ WebGLRenderingContext::IsShader(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLShader) {
         auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
         if (shader != nullptr) {
@@ -3269,7 +3364,7 @@ WebGLRenderingContext::IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLTexture) {
         auto texture = WebGLTexture::GetPointer(value.As<v8::Object>());
         if (texture != nullptr) {
@@ -3312,7 +3407,7 @@ WebGLRenderingContext::LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto isolate = args.GetIsolate();
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
         if (program != nullptr) {
@@ -3531,7 +3626,7 @@ WebGLRenderingContext::ShaderSource(const v8::FunctionCallbackInfo<v8::Value> &a
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     auto sourceValue = args[1];
     if (type == NativeType::WebGLShader) {
         auto shader = WebGLShader::GetPointer(value.As<v8::Object>());
@@ -3743,7 +3838,7 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                 context).ToChecked();
 
         auto pixels = args[5];
-        auto pixelsType = GetNativeType(isolate, pixels);
+        auto pixelsType = GetNativeType(pixels);
 
         switch (pixelsType) {
             case NativeType::ImageAsset: {
@@ -4004,7 +4099,7 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
 
 
         auto pixels = args[6];
-        auto pixelsType = GetNativeType(isolate, pixels);
+        auto pixelsType = GetNativeType(pixels);
 
         switch (pixelsType) {
             case NativeType::ImageAsset: {
@@ -4508,7 +4603,7 @@ WebGLRenderingContext::Uniform1fv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4565,7 +4660,7 @@ WebGLRenderingContext::Uniform2fv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4622,7 +4717,7 @@ WebGLRenderingContext::Uniform3fv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4678,7 +4773,7 @@ WebGLRenderingContext::Uniform4fv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4845,7 +4940,7 @@ WebGLRenderingContext::Uniform1iv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4903,7 +4998,7 @@ WebGLRenderingContext::Uniform2iv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -4960,7 +5055,7 @@ WebGLRenderingContext::Uniform3iv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -5018,7 +5113,7 @@ WebGLRenderingContext::Uniform4iv(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType(locationValue);
     auto v0Value = args[1];
 
 
@@ -5075,7 +5170,7 @@ WebGLRenderingContext::UniformMatrix2fv(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto locationType = GetNativeType(isolate, locationValue);
+    auto locationType = GetNativeType(locationValue);
     auto value = args[2];
     if (locationType == NativeType::WebGLUniformLocation) {
 
@@ -5130,7 +5225,7 @@ WebGLRenderingContext::UniformMatrix3fv(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto locationType = GetNativeType(isolate, locationValue);
+    auto locationType = GetNativeType(locationValue);
     auto value = args[2];
     if (locationType == NativeType::WebGLUniformLocation) {
 
@@ -5188,7 +5283,7 @@ WebGLRenderingContext::UniformMatrix4fv(const v8::FunctionCallbackInfo<v8::Value
 
     auto locationValue = args[0];
 
-    auto locationType = GetNativeType(isolate, locationValue);
+    auto locationType = GetNativeType(locationValue);
     auto value = args[2];
     if (locationType == NativeType::WebGLUniformLocation) {
 
@@ -5252,7 +5347,7 @@ WebGLRenderingContext::UseProgram(const v8::FunctionCallbackInfo<v8::Value> &arg
         return;
     }
 
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
         if (program != nullptr) {
@@ -5275,7 +5370,7 @@ WebGLRenderingContext::ValidateProgram(const v8::FunctionCallbackInfo<v8::Value>
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(value.As<v8::Object>());
         if (program != nullptr) {
@@ -5842,25 +5937,36 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
               v8::FunctionTemplate::New(isolate, &__GetSupportedExtensions));
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "activeTexture"),
-            v8::FunctionTemplate::New(isolate, &ActiveTexture)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "attachShader"),
-            v8::FunctionTemplate::New(isolate, &AttachShader)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "activeTexture"),
+//            v8::FunctionTemplate::New(isolate, &ActiveTexture));
+
+    SetFastMethod(isolate, tmpl, "activeTexture", ActiveTexture, &fast_active_texture_,
+                  v8::Local<v8::Value>());
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "attachShader"),
+//            v8::FunctionTemplate::New(isolate, &AttachShader)
+//    );
+//
+
+    SetFastMethod(isolate, tmpl, "attachShader", AttachShader, &fast_attach_shader_,
+                  v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "bindAttribLocation"),
             v8::FunctionTemplate::New(isolate, &BindAttribLocation)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindBuffer"),
-            v8::FunctionTemplate::New(isolate, &BindBuffer)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "bindBuffer"),
+//            v8::FunctionTemplate::New(isolate, &BindBuffer)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "bindBuffer", BindBuffer,
+                               bind_buffer_overloads_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "bindFramebuffer"),
@@ -6089,6 +6195,11 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             ConvertToV8String(isolate, "enableVertexAttribArray"),
             v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
     );
+
+
+    SetFastMethod(isolate, tmpl, "enableVertexAttribArray", EnableVertexAttribArray,
+                  &fast_enable_vertex_attrib_array_, v8::Local<v8::Value>());
+
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "enable"),
@@ -6445,11 +6556,15 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribPointer"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "vertexAttribPointer"),
+//            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
+//    );
 
+
+
+    SetFastMethod(isolate, tmpl, "vertexAttribPointer", VertexAttribPointer,
+                  &fast_vertex_attrib_pointer, v8::Local<v8::Value>());
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "uniform1f"),
@@ -6459,10 +6574,14 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
 
     SetFastMethod(isolate, tmpl, "uniform1f", Uniform1f, &fast_uniform1f_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform1iv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform1iv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform1iv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform1iv", Uniform1iv,
+                               uniform_1iv_overloads_, v8::Local<v8::Value>());
+
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "uniform1fv"),
@@ -6480,15 +6599,24 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethod(isolate, tmpl, "uniform1i", Uniform1i, &fast_uniform1i_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2f"),
-            v8::FunctionTemplate::New(isolate, &Uniform2f)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform2f"),
+//            v8::FunctionTemplate::New(isolate, &Uniform2f)
+//    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform2iv)
-    );
+
+    SetFastMethod(isolate, tmpl, "uniform2f", Uniform2f, &fast_uniform2f_, v8::Local<v8::Value>());
+
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform2iv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform2iv)
+//    );
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform2iv", Uniform2iv,
+                               uniform_2iv_overloads_, v8::Local<v8::Value>());
+
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "uniform2fv"),
@@ -6498,20 +6626,27 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform2fv", Uniform2fv,
                                uniform_2fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2i"),
-            v8::FunctionTemplate::New(isolate, &Uniform2i)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform2i"),
+//            v8::FunctionTemplate::New(isolate, &Uniform2i)
+//    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3f"),
-            v8::FunctionTemplate::New(isolate, &Uniform3f)
-    );
+    SetFastMethod(isolate, tmpl, "uniform2i", Uniform2i, &fast_uniform2i_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform3iv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform3f"),
+//            v8::FunctionTemplate::New(isolate, &Uniform3f)
+//    );
+
+    SetFastMethod(isolate, tmpl, "uniform3f", Uniform3f, &fast_uniform3f_, v8::Local<v8::Value>());
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform3iv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform3iv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform3iv", Uniform3iv,
+                               uniform_3iv_overloads_, v8::Local<v8::Value>());
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "uniform3fv"),
@@ -6521,20 +6656,28 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform3fv", Uniform3fv,
                                uniform_3fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3i"),
-            v8::FunctionTemplate::New(isolate, &Uniform3i)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform3i"),
+//            v8::FunctionTemplate::New(isolate, &Uniform3i)
+//    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4f"),
-            v8::FunctionTemplate::New(isolate, &Uniform4f)
-    );
+    SetFastMethod(isolate, tmpl, "uniform3i", Uniform3i, &fast_uniform3i_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4iv"),
-            v8::FunctionTemplate::New(isolate, &Uniform4iv)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform4f"),
+//            v8::FunctionTemplate::New(isolate, &Uniform4f)
+//    );
+
+    SetFastMethod(isolate, tmpl, "uniform4f", Uniform4f, &fast_uniform4f_, v8::Local<v8::Value>());
+
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform4iv"),
+//            v8::FunctionTemplate::New(isolate, &Uniform4iv)
+//    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniform4iv", Uniform4iv,
+                               uniform_4iv_overloads_, v8::Local<v8::Value>());
+
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "uniform4fv"),
@@ -6546,10 +6689,12 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
                                uniform_4fv_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4i"),
-            v8::FunctionTemplate::New(isolate, &Uniform4i)
-    );
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "uniform4i"),
+//            v8::FunctionTemplate::New(isolate, &Uniform4i)
+//    );
+
+    SetFastMethod(isolate, tmpl, "uniform4i", Uniform4i, &fast_uniform4i_, v8::Local<v8::Value>());
 
 
 //    tmpl->Set(
@@ -6579,9 +6724,9 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4fv", UniformMatrix4fv,
                                uniform_matrix4fv_overloads_, v8::Local<v8::Value>());
 
+    SetFastMethodWithOverLoads(isolate, tmpl, "useProgram", UseProgram,
+                               fast_use_overloads_, v8::Local<v8::Value>());
 
-    SetFastMethod(isolate, tmpl, "useProgram", UseProgram, &fast_use_program_,
-                  v8::Local<v8::Value>());
 
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "useProgram"),

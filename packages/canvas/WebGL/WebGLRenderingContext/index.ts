@@ -126,25 +126,25 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	bindBuffer(target: number, buffer: WebGLBuffer): void {
-		const value = buffer ? buffer.native : null;
+		const value = buffer ? buffer.native : 0;
 		this.native.bindBuffer(target, value);
 	}
 
 	@profile
 	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void {
-		const value = framebuffer ? framebuffer.native : null;
+		const value = framebuffer ? framebuffer.native : 0;
 		this.native.bindFramebuffer(target, value);
 	}
 
 	@profile
 	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void {
-		const value = renderbuffer ? renderbuffer.native : null;
+		const value = renderbuffer ? renderbuffer.native : 0;
 		this.native.bindRenderbuffer(target, value);
 	}
 
 	@profile
 	bindTexture(target: number, texture: WebGLTexture): void {
-		const value = texture ? texture.native : null;
+		const value = texture ? texture.native : 0;
 		this.native.bindTexture(target, value);
 	}
 
@@ -1035,7 +1035,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 	@profile
 	useProgram(program: WebGLProgram): void {
-		const value = program ? program.native : null;
+		const value = program ? program.native : 0;
 		this.native.useProgram(value);
 	}
 

@@ -20,11 +20,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_element_index_uint"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_INT"),
                   v8::Integer::NewFromUnsigned(isolate, GL_UNSIGNED_INT));
@@ -43,9 +43,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_element_index_uintImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::OES_element_index_uint);
-        auto ext = v8::External::New(isolate, element);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::OES_element_index_uint);
+        object->SetAlignedPointerInInternalField(0, element);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "OES_element_index_uint"));
         element->BindFinalizer(isolate, object);
@@ -53,7 +52,7 @@ public:
     }
 
     static OES_element_index_uintImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -25,11 +25,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_vertex_array_object"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "OES_vertex_array_object"));
         tmpl->Set(ConvertToV8String(isolate, "VERTEX_ARRAY_BINDING_OES"),
@@ -55,15 +55,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_vertex_array_objectImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::OES_vertex_array_object);
-        auto ext = v8::External::New(isolate, vertexArrayObject);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::OES_vertex_array_object);
+        object->SetAlignedPointerInInternalField(0, vertexArrayObject);
         vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_vertex_array_objectImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

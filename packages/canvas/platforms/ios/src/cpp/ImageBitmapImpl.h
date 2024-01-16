@@ -19,25 +19,27 @@ struct Options {
 };
 
 
-class ImageBitmapImpl: public ObjectWrapperImpl {
+class ImageBitmapImpl : public ObjectWrapperImpl {
 public:
     ImageBitmapImpl(ImageAsset *asset);
 
     ~ImageBitmapImpl();
-    
+
     static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, v8::Local<v8::External> asset) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
         auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::ImageBitmap);
-        object->SetInternalField(0, asset);
-        
+        SetNativeType(object, NativeType::ImageBitmap);
+
         auto ptr = asset->Value();
         auto impl = static_cast<ObjectWrapperImpl *>(ptr);
-        
+
+
+        object->SetAlignedPointerInInternalField(0, ptr);
+
         impl->BindFinalizer(isolate, object);
-        
+
         return scope.Escape(object);
     }
 

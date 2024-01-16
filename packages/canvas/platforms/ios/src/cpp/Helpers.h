@@ -71,6 +71,9 @@ static void LogToConsole(const std::string &message) {
 #endif
 }
 
+enum class NativeMask {
+    Type = 1
+};
 
 enum class NativeType {
     None,
@@ -198,37 +201,22 @@ GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
     return result;
 }
 
-static void SetNativeType(v8::Isolate *isolate, const v8::Local<v8::Object> &obj, NativeType type) {
-    auto last = isolate->GetNumberOfDataSlots() - 1;
-    auto data = isolate->GetData(last);
-    if(data != nullptr){
-        auto consts = static_cast<PerIsolateData*>(data);
-        auto name = consts->INSTANCE_TYPE_PERSISTENT->Get(isolate);
-       // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
-        v8::Local<v8::Value> typeValue = v8::Number::New(isolate, (double) type).As<v8::Value>();
-        SetPrivateValue(isolate, obj, name, typeValue);
-    }
-
+static void SetNativeType(const v8::Local<v8::Object> &obj, NativeType type) {
+    auto value = (int32_t) type;
+    obj->SetAlignedPointerInInternalField(1, new int32_t(value));
 }
 
-inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
-    if (!obj->IsNullOrUndefined() && obj->IsObject()) {
-        auto last = isolate->GetNumberOfDataSlots() - 1;
-        auto data = isolate->GetData(last);
+inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
+    if (!obj->IsNullOrUndefined() && obj->IsObject() &&
+        obj.As<v8::Object>()->InternalFieldCount() > 1) {
+        auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(1);
 
-        if(data != nullptr){
-            auto consts = static_cast<PerIsolateData*>(data);
-            auto name = consts->INSTANCE_TYPE_PERSISTENT->Get(isolate);
-            // v8::Local<v8::String> name = ConvertToV8String(isolate, "__type");
-            auto ret = GetPrivateValue(isolate, obj.As<v8::Object>(), name);
-            auto context = isolate->GetCurrentContext();
-
-            if (!ret.IsEmpty() && ret->IsNumber()) {
-                auto value = ret->Int32Value(context).ToChecked();
-                if (value >= (int) NativeType::CanvasGradient &&
-                    value <= (int) NativeType::WebGLSync) {
-                    return (NativeType) value;
-                }
+        if (info != nullptr) {
+            auto value = *static_cast<int32_t *>(info);
+            auto ret = value;
+            if (ret >= (int) NativeType::CanvasGradient &&
+                ret <= (int) NativeType::WebGLSync) {
+                return (NativeType) ret;
             }
         }
     }
@@ -237,12 +225,12 @@ inline static NativeType GetNativeType(v8::Isolate *isolate, const v8::Local<v8:
 }
 
 
-template<class T>
-static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
-    auto *pThis = data.GetParameter();
-    pThis->weakHandle_.Reset();
-    delete pThis;
-}
+//template<class T>
+//static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
+//    auto *pThis = data.GetParameter();
+//    pThis->weakHandle_.Reset();
+//    delete pThis;
+//}
 
 //static inline void BindFinalizer(v8::Isolate *isolate, v8::Global<v8::Object> &weakHandle, const v8::Local<v8::Object> &object) {
 //    v8::HandleScope scopedHandle(isolate);
@@ -252,48 +240,21 @@ static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
 
 
 
-static void SetFastMethod(v8::Isolate* isolate,
-                   v8::Local<v8::Template> that,
-                   const char* name,
-                   v8::FunctionCallback slow_callback,
-                   const v8::CFunction* c_function,
-                   v8::Local<v8::Value> data) {
+static void SetFastMethod(v8::Isolate *isolate,
+                          v8::Local<v8::Template> that,
+                          const char *name,
+                          v8::FunctionCallback slow_callback,
+                          const v8::CFunction *c_function,
+                          v8::Local<v8::Value> data) {
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::New(isolate,
-                                slow_callback,
-                                data,
-                                v8::Local<v8::Signature>(),
-                                        0,
-                                v8::ConstructorBehavior::kThrow,
-                                v8::SideEffectType::kHasSideEffect,
-                                c_function);
-    // kInternalized strings are created in the old space.
-    const v8::NewStringType type = v8::NewStringType::kInternalized;
-    v8::Local<v8::String> name_string =
-            v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
-    that->Set(name_string, t);
-}
-
-
-
-#define NUM(a) (sizeof(a) / sizeof(*a))
-
-static void SetFastMethodWithOverLoads(v8::Isolate* isolate,
-                          v8::Local<v8::Template> that,
-                          const char* name,
-                          v8::FunctionCallback slow_callback,
-                          const v8::CFunction* method_overloads,
-                          v8::Local<v8::Value> data) {
-
-    auto len = NUM(&method_overloads);
-    v8::Local<v8::FunctionTemplate> t =
-            v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
                                       slow_callback,
                                       data,
                                       v8::Local<v8::Signature>(),
                                       0,
                                       v8::ConstructorBehavior::kThrow,
-                                      v8::SideEffectType::kHasSideEffect, {method_overloads, len});
+                                      v8::SideEffectType::kHasSideEffect,
+                                      c_function);
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =
@@ -302,23 +263,49 @@ static void SetFastMethodWithOverLoads(v8::Isolate* isolate,
 }
 
 
+#define NUM(a) (sizeof(a) / sizeof(*a))
+
+static void SetFastMethodWithOverLoads(v8::Isolate *isolate,
+                                       v8::Local<v8::Template> that,
+                                       const char *name,
+                                       v8::FunctionCallback slow_callback,
+                                       const v8::CFunction *method_overloads,
+                                       v8::Local<v8::Value> data) {
+
+    auto len = NUM(&method_overloads);
+    v8::Local<v8::FunctionTemplate> t =
+            v8::FunctionTemplate::NewWithCFunctionOverloads(isolate,
+                                                            slow_callback,
+                                                            data,
+                                                            v8::Local<v8::Signature>(),
+                                                            0,
+                                                            v8::ConstructorBehavior::kThrow,
+                                                            v8::SideEffectType::kHasSideEffect,
+                                                            {method_overloads, len});
+    // kInternalized strings are created in the old space.
+    const v8::NewStringType type = v8::NewStringType::kInternalized;
+    v8::Local<v8::String> name_string =
+            v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
+    that->Set(name_string, t);
+}
+
 
 static void SetFastMethod(v8::Local<v8::Context> context,
                           v8::Local<v8::Object> that,
-                   const char* name,
-                   v8::FunctionCallback slow_callback,
-                   const v8::CFunction* c_function,
+                          const char *name,
+                          v8::FunctionCallback slow_callback,
+                          const v8::CFunction *c_function,
                           v8::Local<v8::Value> data = v8::Local<v8::Value>()) {
-    v8::Isolate* isolate = context->GetIsolate();
+    v8::Isolate *isolate = context->GetIsolate();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
-                                slow_callback,
-                                data,
-                                v8::Local<v8::Signature>(),
-                                        0,
-                                v8::ConstructorBehavior::kThrow,
-                                v8::SideEffectType::kHasSideEffect,
-                                c_function)
+                                      slow_callback,
+                                      data,
+                                      v8::Local<v8::Signature>(),
+                                      0,
+                                      v8::ConstructorBehavior::kThrow,
+                                      v8::SideEffectType::kHasSideEffect,
+                                      c_function)
                     ->GetFunction(context)
                     .ToLocalChecked();
     const v8::NewStringType type = v8::NewStringType::kInternalized;
@@ -328,21 +315,21 @@ static void SetFastMethod(v8::Local<v8::Context> context,
 }
 
 static void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
-                               v8::Local<v8::Object> that,
-                               const char* name,
-                               v8::FunctionCallback slow_callback,
-                               const v8::CFunction* c_function,
-                               v8::Local<v8::Value> data) {
-    v8::Isolate* isolate = context->GetIsolate();
+                                      v8::Local<v8::Object> that,
+                                      const char *name,
+                                      v8::FunctionCallback slow_callback,
+                                      const v8::CFunction *c_function,
+                                      v8::Local<v8::Value> data) {
+    v8::Isolate *isolate = context->GetIsolate();
     v8::Local<v8::Function> function =
             v8::FunctionTemplate::New(isolate,
-                                slow_callback,
-                                data,
-                                v8::Local<v8::Signature>(),
-                                        0,
-                                v8::ConstructorBehavior::kThrow,
-                                v8::SideEffectType::kHasNoSideEffect,
-                                c_function)
+                                      slow_callback,
+                                      data,
+                                      v8::Local<v8::Signature>(),
+                                      0,
+                                      v8::ConstructorBehavior::kThrow,
+                                      v8::SideEffectType::kHasNoSideEffect,
+                                      c_function)
                     ->GetFunction(context)
                     .ToLocalChecked();
     const v8::NewStringType type = v8::NewStringType::kInternalized;
@@ -350,21 +337,22 @@ static void SetFastMethodNoSideEffect(v8::Local<v8::Context> context,
             v8::String::NewFromUtf8(isolate, name, type).ToLocalChecked();
     that->Set(context, name_string, function).Check();
 }
-static void SetFastMethodNoSideEffect(v8::Isolate* isolate,
-                               v8::Local<v8::Template> that,
-                               const char* name,
-                               v8::FunctionCallback slow_callback,
-                               const v8::CFunction* c_function,
-                               v8::Local<v8::Value> data) {
+
+static void SetFastMethodNoSideEffect(v8::Isolate *isolate,
+                                      v8::Local<v8::Template> that,
+                                      const char *name,
+                                      v8::FunctionCallback slow_callback,
+                                      const v8::CFunction *c_function,
+                                      v8::Local<v8::Value> data) {
     v8::Local<v8::FunctionTemplate> t =
             v8::FunctionTemplate::New(isolate,
-                                slow_callback,
-                                data,
-                                v8::Local<v8::Signature>(),
-                                        0,
-                                v8::ConstructorBehavior::kThrow,
-                                v8::SideEffectType::kHasNoSideEffect,
-                                c_function);
+                                      slow_callback,
+                                      data,
+                                      v8::Local<v8::Signature>(),
+                                      0,
+                                      v8::ConstructorBehavior::kThrow,
+                                      v8::SideEffectType::kHasNoSideEffect,
+                                      c_function);
     // kInternalized strings are created in the old space.
     const v8::NewStringType type = v8::NewStringType::kInternalized;
     v8::Local<v8::String> name_string =

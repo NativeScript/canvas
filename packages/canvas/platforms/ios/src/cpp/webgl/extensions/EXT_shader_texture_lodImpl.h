@@ -35,15 +35,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_shader_texture_lodImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::EXT_shader_texture_lod);
-        auto ext = v8::External::New(isolate, texture);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::EXT_shader_texture_lod);
+        object->SetAlignedPointerInInternalField(0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static EXT_shader_texture_lodImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

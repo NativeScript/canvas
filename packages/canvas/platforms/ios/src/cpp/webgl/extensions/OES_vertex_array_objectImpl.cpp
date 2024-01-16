@@ -37,7 +37,7 @@ void OES_vertex_array_objectImpl::DeleteVertexArrayOES(
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
@@ -60,7 +60,7 @@ void OES_vertex_array_objectImpl::IsVertexArrayOES(
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
@@ -88,7 +88,7 @@ void OES_vertex_array_objectImpl::BindVertexArrayOES(
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());

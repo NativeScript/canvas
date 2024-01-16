@@ -38,7 +38,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGL2RenderingContext::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLRenderingContextBase);
+        SetNativeType( object, NativeType::WebGLRenderingContextBase);
         object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);

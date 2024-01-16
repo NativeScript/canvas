@@ -8,7 +8,7 @@
 
 struct ImageDataBuffer {
 public:
-    explicit ImageDataBuffer(ImageData* imageData) : imageData_(imageData) {
+    explicit ImageDataBuffer(ImageData *imageData) : imageData_(imageData) {
         this->slice_ = canvas_native_image_data_get_data(imageData_);
         this->buf_ = canvas_native_u8_buffer_get_bytes_mut(slice_);
         this->size_ = canvas_native_u8_buffer_get_length(slice_);
@@ -32,11 +32,11 @@ public:
 private:
     uint8_t *buf_;
     size_t size_;
-    ImageData* imageData_;
-    U8Buffer* slice_;
+    ImageData *imageData_;
+    U8Buffer *slice_;
 };
 
-ImageDataImpl::ImageDataImpl(ImageData* imageData) : imageData_(imageData) {}
+ImageDataImpl::ImageDataImpl(ImageData *imageData) : imageData_(imageData) {}
 
 void ImageDataImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -51,8 +51,8 @@ void ImageDataImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
 }
 
 
-ImageDataImpl *ImageDataImpl::GetPointer(const v8::Local<v8::Object>& object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+ImageDataImpl *ImageDataImpl::GetPointer(const v8::Local<v8::Object> &object) {
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -68,11 +68,11 @@ v8::Local<v8::FunctionTemplate> ImageDataImpl::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "ImageData"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
     tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "width"),
             GetWidth);
@@ -108,14 +108,14 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto image_data = canvas_native_context_create_image_data(
                 (int32_t) value->NumberValue(context).ToChecked(),
                 (int32_t) args[1]->NumberValue(context).ToChecked());
-        
+
         auto object = new ImageDataImpl(image_data);
 
-        auto ext = v8::External::New(isolate, object);
+        ret->SetAlignedPointerInInternalField(0, object);
 
-        ret->SetInternalField(0, ext);
-        
         object->BindFinalizer(isolate, ret);
+
+        SetNativeType(ret, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -134,10 +134,10 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         auto object = new ImageDataImpl(image_data);
 
-        auto ext = v8::External::New(isolate, object);
+        ret->SetAlignedPointerInInternalField(0, object);
 
-        ret->SetInternalField(0, ext);
-        
+        SetNativeType(ret, NativeType::ImageData);
+
         object->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);

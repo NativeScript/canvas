@@ -18,11 +18,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLRenderbuffer"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         cache->WebGLRenderbufferTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -34,15 +34,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLRenderbuffer::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLRenderbuffer);
-        auto ext = v8::External::New(isolate, buffer);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLRenderbuffer);
+        object->SetAlignedPointerInInternalField(0, buffer);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLRenderbuffer *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

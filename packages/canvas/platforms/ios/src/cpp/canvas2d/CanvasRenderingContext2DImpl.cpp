@@ -20,6 +20,24 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_arc_to_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastArcTo));
 
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImageDxDy));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_dw_dh_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImageDxDyDwDh));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_draw_image_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawImage));
+
+
+const v8::CFunction fast_draw_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_draw_image_,
+        CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_dw_dh_,
+        CanvasRenderingContext2DImpl::fast_draw_image_dx_dy_
+};
+
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_save_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSave));
 
@@ -54,7 +72,6 @@ const v8::CFunction fast_fill_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_fill_,
         CanvasRenderingContext2DImpl::fast_fill_one_path_
 };
-
 
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_(
@@ -120,7 +137,7 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasRenderingContext2D"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     tmpl->Set(ConvertToV8String(isolate, "drawPoint"),
               v8::FunctionTemplate::New(isolate, &DrawPoint));
@@ -218,15 +235,19 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &CreateRadialGradient));
     tmpl->Set(ConvertToV8String(isolate, "drawFocusIfNeeded"),
               v8::FunctionTemplate::New(isolate, &DrawFocusIfNeeded));
-    tmpl->Set(ConvertToV8String(isolate, "drawImage"),
-              v8::FunctionTemplate::New(isolate, &DrawImage));
+//    tmpl->Set(ConvertToV8String(isolate, "drawImage"),
+//              v8::FunctionTemplate::New(isolate, &DrawImage));
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "drawImage", DrawImage, fast_draw_overloads_,
+                               v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "ellipse"), v8::FunctionTemplate::New(isolate, &Ellipse));
     // tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
 
     SetFastMethodWithOverLoads(isolate, tmpl, "fill", Fill, fast_fill_overloads_,
                                v8::Local<v8::Value>());
-
-
 
 
     SetFastMethod(isolate, tmpl, "fillRect", FillRect, &fast_fill_rect_, v8::Local<v8::Value>());
@@ -292,7 +313,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 //    tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
 //              v8::FunctionTemplate::New(isolate, &StrokeRect));
 
-    SetFastMethod(isolate, tmpl, "strokeRect", StrokeRect, &fast_stroke_rect_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "strokeRect", StrokeRect, &fast_stroke_rect_,
+                  v8::Local<v8::Value>());
 
 
     tmpl->Set(ConvertToV8String(isolate, "strokeText"),
@@ -982,7 +1004,7 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
                                                                style.c_str());
     } else if (value->IsObject()) {
 
-        auto type = GetNativeType(isolate, value);
+        auto type = GetNativeType(value);
 
         switch (type) {
             case NativeType::CanvasGradient: {
@@ -1066,7 +1088,7 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
                                                                  style.c_str());
     } else if (value->IsObject()) {
 
-        auto type = GetNativeType(isolate, value);
+        auto type = GetNativeType(value);
 
         switch (type) {
             case NativeType::CanvasGradient: {
@@ -1325,7 +1347,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
     auto value = args[0];
     if (count == 1 && value->IsObject()) {
 
-        auto typeValue = GetNativeType(isolate, value);
+        auto typeValue = GetNativeType(value);
 
         if (typeValue == NativeType::ImageData) {
 
@@ -1341,11 +1363,10 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
             auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
                     context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-            auto ext = v8::External::New(isolate, data);
 
-            ret->SetInternalField(0, ext);
+            ret->SetAlignedPointerInInternalField(0, data);
 
-            SetNativeType(isolate, ret, NativeType::ImageData);
+            SetNativeType(ret, NativeType::ImageData);
 
             args.GetReturnValue().Set(ret);
 
@@ -1363,11 +1384,9 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
         auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        auto ext = v8::External::New(isolate, data);
+        ret->SetAlignedPointerInInternalField(0, data);
 
-        ret->SetInternalField(0, ext);
-
-        SetNativeType(isolate, ret, NativeType::ImageData);
+        SetNativeType(ret, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
     }
@@ -1386,7 +1405,7 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
 
     if (args.Length() > 1) {
         auto value = args[0];
-        auto valueType = GetNativeType(isolate, value);
+        auto valueType = GetNativeType(value);
 
         switch (valueType) {
             case NativeType::ImageAsset: {
@@ -1637,7 +1656,7 @@ CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto image = value.As<v8::Object>();
-    auto imageType = GetNativeType(isolate, image);
+    auto imageType = GetNativeType(image);
     if (count == 3) {
         auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
@@ -1833,7 +1852,7 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
     auto count = args.Length();
     auto value = args[0];
     if (count == 2) {
-        auto type = GetNativeType(isolate, value.As<v8::Object>());
+        auto type = GetNativeType(value.As<v8::Object>());
         if (type == NativeType::Path2D) {
             auto object = Path2D::GetPointer(value.As<v8::Object>());
 
@@ -1854,7 +1873,7 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
                     ptr->GetContext(), rule.c_str());
             ptr->UpdateInvalidateState();
         } else if (value->IsObject()) {
-            auto type = GetNativeType(isolate, value.As<v8::Object>());
+            auto type = GetNativeType(value.As<v8::Object>());
             if (type == NativeType::Path2D) {
                 auto object = Path2D::GetPointer(value.As<v8::Object>());
 
@@ -1946,11 +1965,9 @@ CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Va
         auto ret = ImageDataImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-        auto ext = v8::External::New(isolate, data);
+        ret->SetAlignedPointerInInternalField(0, data);
 
-        ret->SetInternalField(0, ext);
-
-        SetNativeType(isolate, ret, NativeType::ImageData);
+        SetNativeType(ret, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -2020,7 +2037,7 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
 
 
         auto value = args[0];
-        auto type = GetNativeType(isolate, value);
+        auto type = GetNativeType(value);
 
         if (type == NativeType::Path2D) {
             auto path = Path2D::GetPointer(value.As<v8::Object>());
@@ -2066,7 +2083,7 @@ CanvasRenderingContext2DImpl::IsPointInStroke(const v8::FunctionCallbackInfo<v8:
 
 
         auto value = args[0];
-        auto type = GetNativeType(isolate, value);
+        auto type = GetNativeType(value);
 
         if (type == NativeType::Path2D) {
             auto path = Path2D::GetPointer(value.As<v8::Object>());
@@ -2120,13 +2137,11 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
     auto ret = TextMetricsImpl::GetCtor(isolate)->GetFunction(
             context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
 
-    auto ext = v8::External::New(isolate, data);
-
-    ret->SetInternalField(0, ext);
+    ret->SetAlignedPointerInInternalField(0, data);
 
     data->BindFinalizer(isolate, ret);
 
-    SetNativeType(isolate, ret, NativeType::TextMetrics);
+    SetNativeType(ret, NativeType::TextMetrics);
 
     args.GetReturnValue().Set(ret);
 
@@ -2434,7 +2449,7 @@ CanvasRenderingContext2DImpl::Stroke(const v8::FunctionCallbackInfo<v8::Value> &
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType(value);
     if (type == NativeType::Path2D) {
         auto path = Path2D::GetPointer(value.As<v8::Object>());
         if (path != nullptr) {
@@ -2608,6 +2623,7 @@ void CanvasRenderingContext2DImpl::Flush() {
     if (state == (int) InvalidateState::InvalidateStatePending) {
         this->SetInvalidateState(InvalidateState::InvalidateStateInvalidating);
         //   canvas_native_context_flush(ptr->GetContext());
+
         canvas_native_context_render(this->GetContext());
         //        canvas_native_context_gl_make_current(ptr->GetContext());
         //        canvas_native_context_gl_swap_buffers(ptr->GetContext());

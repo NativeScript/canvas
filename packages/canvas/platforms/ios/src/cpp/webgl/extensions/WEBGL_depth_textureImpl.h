@@ -21,11 +21,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WEBGL_depth_texture"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         tmpl->Set(ConvertToV8String(isolate, "UNSIGNED_INT_24_8_WEBGL"), v8::Integer::NewFromUnsigned(isolate, 0x84FA));
 
@@ -43,15 +43,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_depth_textureImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WEBGL_depth_texture);
-        auto ext = v8::External::New(isolate, depthTexture);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WEBGL_depth_texture);
+        object->SetAlignedPointerInInternalField(0, depthTexture);
         depthTexture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_depth_textureImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

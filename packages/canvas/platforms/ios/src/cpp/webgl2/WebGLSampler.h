@@ -20,11 +20,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLSampler"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         cache->WebGLSamplerTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -36,15 +36,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLSampler::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLSampler);
-        auto ext = v8::External::New(isolate, sampler);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLSampler);
+        object->SetAlignedPointerInInternalField(0, sampler);
         sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLSampler *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

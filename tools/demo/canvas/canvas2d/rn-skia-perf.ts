@@ -3,7 +3,7 @@ import { Canvas } from '@nativescript/canvas';
 export function rnSkiaPerf(canvas: Canvas) {
 	const ctx = canvas.getContext('2d');
 
-	let numberOfBoxes = 1200;
+	let numberOfBoxes = 450;
 	const { width, height } = canvas as any;
 
 	const Size = 25;
@@ -43,6 +43,13 @@ export function rnSkiaPerf(canvas: Canvas) {
 			ctx.restore();
 		}
 	}
+
+    canvas.addEventListener('touchstart', (args: TouchEvent) => {
+		const first = args.changedTouches[0];
+		pos.x = first.clientX;
+		pos.y = first.clientY;
+		draw();
+	});
 
 	canvas.addEventListener('touchmove', (args: TouchEvent) => {
 		const first = args.changedTouches[0];

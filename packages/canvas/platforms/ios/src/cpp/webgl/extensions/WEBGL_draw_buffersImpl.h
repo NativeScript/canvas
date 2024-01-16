@@ -30,11 +30,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WEBGL_draw_buffers"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
         tmpl->Set(ConvertToV8String(isolate, "drawBuffersWEBGL"),
                   v8::FunctionTemplate::New(isolate, &DrawBuffersWEBGL));
 
@@ -123,15 +123,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_draw_buffersImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WEBGL_draw_buffers);
-        auto ext = v8::External::New(isolate, buffers);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WEBGL_draw_buffers);
+        object->SetAlignedPointerInInternalField(0, buffers);
         buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_draw_buffersImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

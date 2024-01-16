@@ -13,7 +13,7 @@
 class WebGLShaderPrecisionFormatImpl: ObjectWrapperImpl {
 public:
     WebGLShaderPrecisionFormatImpl(WebGLShaderPrecisionFormat* shader);
-    
+
     ~WebGLShaderPrecisionFormatImpl() {
         canvas_native_webgl_shader_precision_format_destroy(this->GetShaderPrecisionFormat());
         this->shader_ = nullptr;
@@ -27,11 +27,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLShaderPrecisionFormat"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         tmpl->SetLazyDataProperty(ConvertToV8String(isolate, "rangeMin"), GetRangeMin);
         tmpl->SetLazyDataProperty(ConvertToV8String(isolate, "rangeMax"), GetRangeMax);
@@ -51,15 +51,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLShaderPrecisionFormatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLShaderPrecisionFormat);
-        auto ext = v8::External::New(isolate, shaderPrecisionFormat);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLShaderPrecisionFormat);
+        object->SetAlignedPointerInInternalField(0, shaderPrecisionFormat);
         shaderPrecisionFormat->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLShaderPrecisionFormatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

@@ -10,7 +10,7 @@
 class WebGLActiveInfoImpl: ObjectWrapperImpl {
 public:
     WebGLActiveInfoImpl(WebGLActiveInfo* info);
-    
+
     ~WebGLActiveInfoImpl(){
         canvas_native_webgl_active_info_destroy(this->info_);
         this->info_ = nullptr;
@@ -25,9 +25,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLActiveInfoImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLActiveInfo);
-        auto ext = v8::External::New(isolate, info);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLActiveInfo);
+        object->SetAlignedPointerInInternalField(0, info);
         info->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

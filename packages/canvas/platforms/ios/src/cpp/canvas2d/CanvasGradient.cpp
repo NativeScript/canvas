@@ -21,7 +21,7 @@ void CanvasGradient::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
 }
 
 CanvasGradient *CanvasGradient::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -36,11 +36,11 @@ v8::Local<v8::FunctionTemplate> CanvasGradient::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasGradient"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
     tmpl->Set(
             ConvertToV8String(isolate, "addColorStop"),
             v8::FunctionTemplate::New(isolate, &AddColorStop));

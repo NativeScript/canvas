@@ -18,11 +18,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_texture_float"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
         tmpl->Set(ConvertToV8String(isolate, "ext_name"),
                   ConvertToV8String(isolate, "OES_texture_float"));
 
@@ -36,15 +36,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLShader::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::OES_texture_float);
-        auto ext = v8::External::New(isolate, texture);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::OES_texture_float);
+        object->SetAlignedPointerInInternalField(0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static OES_texture_floatImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

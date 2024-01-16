@@ -20,11 +20,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "OES_fbo_render_mipmap"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         cache->OES_fbo_render_mipmapTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -37,9 +37,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_fbo_render_mipmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::OES_fbo_render_mipmap);
-        auto ext = v8::External::New(isolate, texture);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::OES_fbo_render_mipmap);
+        object->SetAlignedPointerInInternalField(0, texture);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "OES_fbo_render_mipmap"));
         texture->BindFinalizer(isolate, object);
@@ -47,7 +46,7 @@ public:
     }
 
     static OES_fbo_render_mipmapImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

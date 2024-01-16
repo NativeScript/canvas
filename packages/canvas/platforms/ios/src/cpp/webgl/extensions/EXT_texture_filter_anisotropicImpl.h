@@ -20,11 +20,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "EXT_texture_filter_anisotropic"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
         tmpl->Set(ConvertToV8String(isolate, "MAX_TEXTURE_MAX_ANISOTROPY_EXT"),
                   v8::Integer::NewFromUnsigned(isolate, GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT));
         tmpl->Set(ConvertToV8String(isolate, "TEXTURE_MAX_ANISOTROPY_EXT"),
@@ -43,15 +43,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_texture_filter_anisotropicImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::EXT_texture_filter_anisotropic);
-        auto ext = v8::External::New(isolate, filterAnisotropic);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::EXT_texture_filter_anisotropic);
+        object->SetAlignedPointerInInternalField(0, filterAnisotropic);
         filterAnisotropic->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static EXT_texture_filter_anisotropicImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

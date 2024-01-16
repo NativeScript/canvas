@@ -41,7 +41,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::CanvasRenderingContext2D);
+        SetNativeType(object, NativeType::CanvasRenderingContext2D);
         object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -215,6 +215,11 @@ public:
                             v8::Local<v8::Value> value,
                             const v8::PropertyCallbackInfo<void> &info);
 
+    static v8::CFunction fast_draw_image_dx_dy_;
+
+    static v8::CFunction fast_draw_image_dx_dy_dw_dh_;
+
+    static v8::CFunction fast_draw_image_;
 
     static v8::CFunction fast_close_path_;
     static v8::CFunction fast_begin_path_;
@@ -275,11 +280,11 @@ public:
 
         ArcImpl(
                 ptr->GetContext(),
-                static_cast<float>(x),
-                static_cast<float>(y),
-                static_cast<float>(radius),
-                static_cast<float>(startAngle),
-                static_cast<float>(endAngle),
+                x,
+                y,
+                radius,
+                startAngle,
+                endAngle,
                 anti_clockwise
         );
     }
@@ -382,6 +387,230 @@ public:
 
     static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    DrawImageDxDyAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset, double dx,
+                           double dy) {
+        if (asset != nullptr) {
+            canvas_native_context_draw_image_dx_dy_asset(
+                    ptr->GetContext(),
+                    asset,
+                    static_cast<float>(dx), static_cast<float>(dy));
+            ptr->UpdateInvalidateState();
+        }
+    }
+
+    static void
+    DrawImageDxDyContext2DImpl(CanvasRenderingContext2DImpl *ptr,
+                               CanvasRenderingContext2D *source, double dx, double dy) {
+        if (source != nullptr) {
+            canvas_native_context_draw_image_dx_dy_context(
+                    ptr->GetContext(),
+                    source,
+                    static_cast<float>(dx), static_cast<float>(dy));
+            ptr->UpdateInvalidateState();
+        }
+    }
+
+
+    static void
+    FastDrawImageDxDy(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_obj,
+                      double dx, double dy) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto imageType = GetNativeType(image_obj);
+        switch (imageType) {
+            case NativeType::ImageAsset: {
+                auto asset = ImageAssetImpl::GetPointer(image_obj);
+                DrawImageDxDyAssetImpl(ptr, asset->GetImageAsset(), dx, dy);
+            }
+                break;
+            case NativeType::ImageBitmap: {
+                auto asset = ImageBitmapImpl::GetPointer(image_obj);
+                DrawImageDxDyAssetImpl(ptr, asset->GetImageAsset(), dx, dy);
+            }
+                break;
+            case NativeType::CanvasRenderingContext2D: {
+                auto context = CanvasRenderingContext2DImpl::GetPointer(image_obj);
+                DrawImageDxDyContext2DImpl(ptr, context->GetContext(), dx, dy);
+            }
+                break;
+            default:
+                break;
+        }
+    }
+
+    static void DrawImageDxDyDwDhAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset,
+                                           double dx, double dy, double dw, double dh) {
+
+
+        if (asset != nullptr) {
+            canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                    ptr->GetContext(),
+                    asset,
+                    static_cast<float>(dx), static_cast<float>(dy),
+                    static_cast<float>(dw),
+                    static_cast<float>(dh));
+            ptr->UpdateInvalidateState();
+        }
+    }
+
+
+    static void DrawImageDxDyDwDhContextImpl(CanvasRenderingContext2DImpl *ptr,
+                                             CanvasRenderingContext2D *source,
+                                             double dx, double dy, double dw, double dh) {
+
+        if (source != nullptr) {
+            canvas_native_context_draw_image_dx_dy_dw_dh_context(
+                    ptr->GetContext(),
+                    source,
+                    static_cast<float>(dx), static_cast<float>(dy),
+                    static_cast<float>(dw),
+                    static_cast<float>(dh));
+            ptr->UpdateInvalidateState();
+        }
+    }
+
+
+    static void
+    FastDrawImageDxDyDwDh(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_obj,
+                          double dx, double dy, double dw, double dh) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto imageType = GetNativeType(image_obj);
+
+        switch (imageType) {
+            case NativeType::ImageAsset: {
+                auto image_asset = ImageAssetImpl::GetPointer(image_obj);
+
+                if (image_asset != nullptr) {
+                    DrawImageDxDyDwDhAssetImpl(
+                            ptr,
+                            image_asset->GetImageAsset(),
+                            dx, dy,
+                            dw,
+                            dh);
+                    ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            case NativeType::ImageBitmap: {
+                auto image_asset = ImageBitmapImpl::GetPointer(image_obj);
+
+                if (image_asset != nullptr) {
+                    DrawImageDxDyDwDhAssetImpl(
+                            ptr,
+                            image_asset->GetImageAsset(),
+                            dx, dy,
+                            dw,
+                            dh);
+                    ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            case NativeType::CanvasRenderingContext2D: {
+                auto context = CanvasRenderingContext2DImpl::GetPointer(image_obj);
+
+                if (context != nullptr) {
+                    DrawImageDxDyDwDhContextImpl(
+                            ptr,
+                            context->GetContext(),
+                            dx, dy,
+                            dw,
+                            dh);
+                    ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            default:
+                break;
+        }
+    }
+
+    static void
+    DrawImageAssetImpl(CanvasRenderingContext2DImpl *ptr,
+                       ImageAsset *asset, double sx,
+                       double sy, double sw, double sh, double dx, double dy, double dw,
+                       double dh) {
+
+        canvas_native_context_draw_image_asset(
+                ptr->GetContext(),
+                asset,
+                static_cast<float>(sx),
+                static_cast<float>(sy), static_cast<float>(sw), static_cast<float>(sh),
+                static_cast<float>(dx),
+                static_cast<float>(dy), static_cast<float>(dw), static_cast<float>(dh));
+
+        ptr->UpdateInvalidateState();
+    }
+
+
+    static void
+    DrawImageContextImpl(CanvasRenderingContext2DImpl *ptr,
+                         CanvasRenderingContext2D *source, double sx,
+                         double sy, double sw, double sh, double dx, double dy, double dw,
+                         double dh) {
+        canvas_native_context_draw_image_context(
+                ptr->GetContext(),
+                source,
+                static_cast<float>(sx),
+                static_cast<float>(sy), static_cast<float>(sw), static_cast<float>(sh),
+                static_cast<float>(dx),
+                static_cast<float>(dy), static_cast<float>(dw), static_cast<float>(dh));
+        ptr->UpdateInvalidateState();
+    }
+
+    static void
+    FastDrawImage(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_obj, double sx,
+                  double sy, double sw, double sh, double dx, double dy, double dw,
+                  double dh) {
+
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto imageType = GetNativeType(image_obj);
+
+        switch (imageType) {
+            case NativeType::ImageAsset: {
+                auto image_asset = ImageAssetImpl::GetPointer(image_obj);
+
+                if (image_asset != nullptr) {
+                    DrawImageAssetImpl(ptr, image_asset->GetImageAsset(), sx, sy, sw, sh, dx, dy,
+                                       dw, dh);
+                }
+            }
+                break;
+            case NativeType::ImageBitmap: {
+                auto image_bitmap = ImageBitmapImpl::GetPointer(image_obj);
+                if (image_bitmap != nullptr) {
+                    DrawImageAssetImpl(ptr, image_bitmap->GetImageAsset(), sx, sy, sw, sh, dx, dy,
+                                       dw, dh);
+                }
+            }
+                break;
+            case NativeType::CanvasRenderingContext2D: {
+                auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image_obj);
+                if (image_canvas != nullptr) {
+                    DrawImageContextImpl(ptr, image_canvas->GetContext(), sx, sy, sw, sh, dx, dy,
+                                         dw, dh);
+                }
+            }
+                break;
+            default:
+                break;
+        }
+
+    }
+
+
     static void Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Fill(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -434,7 +663,7 @@ public:
         auto count = args.Length();
         auto value = args[0];
         if (count == 2) {
-            auto type = GetNativeType(isolate, value.As<v8::Object>());
+            auto type = GetNativeType( value.As<v8::Object>());
             if (type == NativeType::Path2D) {
                 auto object = Path2D::GetPointer(value.As<v8::Object>());
 
@@ -455,7 +684,7 @@ public:
                         ptr->GetContext(), rule.c_str());
                 ptr->UpdateInvalidateState();
             } else if (value->IsObject()) {
-                auto type = GetNativeType(isolate, value.As<v8::Object>());
+                auto type = GetNativeType( value.As<v8::Object>());
                 if (type == NativeType::Path2D) {
                     auto object = Path2D::GetPointer(value.As<v8::Object>());
 
@@ -601,7 +830,7 @@ public:
 
 
     static void FastStrokeRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
-                           double height) {
+                               double height) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
 
         canvas_native_context_stroke_rect(

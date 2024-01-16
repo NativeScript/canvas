@@ -53,7 +53,7 @@ import {
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 //const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
-import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing } from './webgl';
+import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
@@ -61,6 +61,7 @@ import * as Svg from '@nativescript/canvas/SVG';
 import { issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
+import { breathe } from './canvas2d/breathe';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -548,7 +549,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		});
 	}
 	draw() {
-		rnSkiaPerf(this.canvas);
+		//rnSkiaPerf(this.canvas);
+		//breathe(this.canvas);
 		///this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
@@ -631,7 +633,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcToAnimation(this.canvas);
 		// ellipse(this.canvas);
 		//fillPath(this.canvas);
-		// flappyBird(this.canvas);
+		//createChaosLines(this.canvas);
+		flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);

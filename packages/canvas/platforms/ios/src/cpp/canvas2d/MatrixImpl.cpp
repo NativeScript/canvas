@@ -21,7 +21,7 @@ void MatrixImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) 
 }
 
 MatrixImpl *MatrixImpl::GetPointer(v8::Local<v8::Object> object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -36,11 +36,11 @@ v8::Local<v8::FunctionTemplate> MatrixImpl::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate, Ctor);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "DOMMatrix"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
 
     tmpl->SetAccessor(
             ConvertToV8String(isolate, "a"),
@@ -214,12 +214,10 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 auto object = new MatrixImpl(matrix);
 
-                auto ext = v8::External::New(isolate, object);
+                ret->SetAlignedPointerInInternalField(0, object);
 
-                ret->SetInternalField(0, ext);
+                SetNativeType( ret, NativeType::Matrix);
 
-                SetNativeType(isolate, ret, NativeType::Matrix);
-                
                 object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
@@ -241,12 +239,11 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 auto object = new MatrixImpl(matrix);
 
-                auto ext = v8::External::New(isolate, object);
 
-                ret->SetInternalField(0, ext);
+                ret->SetAlignedPointerInInternalField(0, object);
 
-                SetNativeType(isolate, ret, NativeType::Matrix);
-                
+                SetNativeType( ret, NativeType::Matrix);
+
                 object->BindFinalizer(isolate, ret);
 
                 args.GetReturnValue().Set(ret);
@@ -258,12 +255,10 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto matrix = canvas_native_matrix_create();
         auto object = new MatrixImpl(matrix);
 
-        auto ext = v8::External::New(isolate, object);
+        ret->SetAlignedPointerInInternalField(0, object);
 
-        ret->SetInternalField(0, ext);
+        SetNativeType( ret, NativeType::Matrix);
 
-        SetNativeType(isolate, ret, NativeType::Matrix);
-        
         object->BindFinalizer(isolate, ret);
 
         args.GetReturnValue().Set(ret);

@@ -19,11 +19,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLSync"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         cache->WebGLSyncTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -35,15 +35,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLSyncImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLSync);
-        auto ext = v8::External::New(isolate, sync);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLSync);
+        object->SetAlignedPointerInInternalField(0, sync);
         sync->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLSyncImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

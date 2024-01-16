@@ -24,9 +24,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = ANGLE_instanced_arraysImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::ANGLE_instanced_arrays);
-        auto ext = v8::External::New(isolate, arrays);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::ANGLE_instanced_arrays);
+        object->SetAlignedPointerInInternalField(0, arrays);
         arrays->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

@@ -21,11 +21,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WEBGL_compressed_texture_pvrtc"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_RGB_PVRTC_4BPPV1_IMG"),
                   v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG));
@@ -53,15 +53,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_pvrtcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WEBGL_compressed_texture_pvrtc);
-        auto ext = v8::External::New(isolate, compressedTexturePvrtc);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WEBGL_compressed_texture_pvrtc);
+        object->SetAlignedPointerInInternalField(0, compressedTexturePvrtc);
         compressedTexturePvrtc->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WEBGL_compressed_texture_pvrtcImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

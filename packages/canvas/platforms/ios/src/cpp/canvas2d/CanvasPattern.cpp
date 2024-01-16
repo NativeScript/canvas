@@ -21,7 +21,7 @@ void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate 
 }
 
 CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
-    auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+    auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -33,9 +33,8 @@ static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pa
     v8::EscapableHandleScope scope(isolate);
     auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
             context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-    SetNativeType(isolate, object, NativeType::CanvasPattern);
-    auto ext = v8::External::New(isolate, pattern);
-    object->SetInternalField(0, ext);
+    SetNativeType( object, NativeType::CanvasPattern);
+    object->SetAlignedPointerInInternalField(0, pattern);
     return scope.Escape(object);
 }
 
@@ -47,11 +46,11 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "CanvasPattern"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
     tmpl->Set(
             ConvertToV8String(isolate, "SetTransform"),
             v8::FunctionTemplate::New(isolate, &SetTransform));
@@ -70,7 +69,7 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
     auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
 
     if (type == NativeType::Matrix) {
 

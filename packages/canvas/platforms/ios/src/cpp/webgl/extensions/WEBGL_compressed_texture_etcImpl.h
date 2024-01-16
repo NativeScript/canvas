@@ -20,11 +20,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WEBGL_compressed_texture_etc"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         tmpl->Set(ConvertToV8String(isolate, "COMPRESSED_R11_EAC"),
                   v8::Integer::NewFromUnsigned(isolate, GL_COMPRESSED_R11_EAC));
@@ -70,9 +70,8 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_etcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WEBGL_compressed_texture_etc);
-        auto ext = v8::External::New(isolate, compressedTextureEtc);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WEBGL_compressed_texture_etc);
+        object->SetAlignedPointerInInternalField(0, compressedTextureEtc);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "WEBGL_compressed_texture_etc"));
         compressedTextureEtc->BindFinalizer(isolate, object);
@@ -80,7 +79,7 @@ public:
     }
 
     static WEBGL_compressed_texture_etcImpl *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

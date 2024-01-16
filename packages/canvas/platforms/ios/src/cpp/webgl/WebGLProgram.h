@@ -23,11 +23,11 @@ public:
         }
 
         v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+        ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
         ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGLProgram"));
 
         auto tmpl = ctorTmpl->InstanceTemplate();
-        tmpl->SetInternalFieldCount(1);
+        tmpl->SetInternalFieldCount(2);
 
         cache->WebGLProgramTmpl =
                 std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -39,15 +39,14 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLProgram::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(isolate, object, NativeType::WebGLProgram);
-        auto ext = v8::External::New(isolate, program);
-        object->SetInternalField(0, ext);
+        SetNativeType( object, NativeType::WebGLProgram);
+        object->SetAlignedPointerInInternalField(0, program);
         program->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 
     static WebGLProgram *GetPointer(const v8::Local<v8::Object> &object) {
-        auto ptr = object->GetInternalField(0).As<v8::External>()->Value();
+        auto ptr = object->GetAlignedPointerFromInternalField(0);
         if (ptr == nullptr) {
             return nullptr;
         }

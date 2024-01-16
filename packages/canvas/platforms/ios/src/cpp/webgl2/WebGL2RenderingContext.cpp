@@ -25,11 +25,11 @@ v8::Local<v8::FunctionTemplate> WebGL2RenderingContext::GetCtor(v8::Isolate *iso
     }
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
-    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(1);
+    ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "WebGL2RenderingContext"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
-    tmpl->SetInternalFieldCount(1);
+    tmpl->SetInternalFieldCount(2);
     WebGLRenderingContext::SetConstants(isolate, tmpl);
     SetConstants(isolate, tmpl);
 
@@ -61,7 +61,7 @@ void WebGL2RenderingContext::BeginQuery(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto value = args[1];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLQuery) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
@@ -103,7 +103,7 @@ void WebGL2RenderingContext::BindBufferBase(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
 
     auto bufferValue = args[2];
-    auto type = GetNativeType(isolate, bufferValue);
+    auto type = GetNativeType( bufferValue);
 
     if (type == NativeType::WebGLBuffer) {
         auto target = args[0]->Uint32Value(context).ToChecked();
@@ -130,7 +130,7 @@ void WebGL2RenderingContext::BindBufferRange(const v8::FunctionCallbackInfo<v8::
     auto context = isolate->GetCurrentContext();
 
     auto bufferValue = args[2];
-    auto type = GetNativeType(isolate, bufferValue);
+    auto type = GetNativeType( bufferValue);
     if (type == NativeType::WebGLBuffer) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto index = args[1]->Uint32Value(context).ToChecked();
@@ -158,7 +158,7 @@ void WebGL2RenderingContext::BindSampler(const v8::FunctionCallbackInfo<v8::Valu
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[1];
-    auto type = GetNativeType(isolate, samplerValue);
+    auto type = GetNativeType( samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto unit = args[0]->Uint32Value(context).ToChecked();
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
@@ -182,7 +182,7 @@ WebGL2RenderingContext::BindTransformFeedback(const v8::FunctionCallbackInfo<v8:
     auto context = isolate->GetCurrentContext();
 
     auto transformFeedbackValue = args[1];
-    auto type = GetNativeType(isolate, transformFeedbackValue);
+    auto type = GetNativeType( transformFeedbackValue);
 
     if (type == NativeType::WebGLTransformFeedback) {
         auto target = args[0]->Uint32Value(context).ToChecked();
@@ -214,7 +214,7 @@ void WebGL2RenderingContext::BindVertexArray(const v8::FunctionCallbackInfo<v8::
         return;
     }
 
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLVertexArrayObject) {
         auto vertexArray = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
 
@@ -458,7 +458,7 @@ void WebGL2RenderingContext::ClientWaitSync(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
 
     auto syncValue = args[0];
-    auto type = GetNativeType(isolate, syncValue);
+    auto type = GetNativeType( syncValue);
     if (args.Length() > 2 && type == NativeType::WebGLSync) {
         auto sync = WebGLSyncImpl::GetPointer(syncValue.As<v8::Object>());
         if (sync != nullptr) {
@@ -696,7 +696,7 @@ void WebGL2RenderingContext::DeleteQuery(const v8::FunctionCallbackInfo<v8::Valu
     auto isolate = args.GetIsolate();
 
     auto queryValue = args[0];
-    auto type = GetNativeType(isolate, queryValue);
+    auto type = GetNativeType( queryValue);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
 
@@ -719,7 +719,7 @@ void WebGL2RenderingContext::DeleteSampler(const v8::FunctionCallbackInfo<v8::Va
 
 
     auto samplerValue = args[0];
-    auto type = GetNativeType(isolate, samplerValue);
+    auto type = GetNativeType( samplerValue);
 
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
@@ -743,7 +743,7 @@ void WebGL2RenderingContext::DeleteSync(const v8::FunctionCallbackInfo<v8::Value
 
 
     auto syncValue = args[0];
-    auto type = GetNativeType(isolate, syncValue);
+    auto type = GetNativeType( syncValue);
     if (type == NativeType::WebGLSync) {
         auto sync = WebGLSyncImpl::GetPointer(syncValue.As<v8::Object>());
 
@@ -767,7 +767,7 @@ WebGL2RenderingContext::DeleteTransformFeedback(const v8::FunctionCallbackInfo<v
 
 
     auto transformFeedbackValue = args[0];
-    auto type = GetNativeType(isolate, transformFeedbackValue);
+    auto type = GetNativeType( transformFeedbackValue);
     if (type == NativeType::WebGLTransformFeedback) {
         auto transformFeedback = WebGLTransformFeedback::GetPointer(
                 transformFeedbackValue.As<v8::Object>());
@@ -791,7 +791,7 @@ void WebGL2RenderingContext::DeleteVertexArray(const v8::FunctionCallbackInfo<v8
 
 
     auto vertexArrayValue = args[0];
-    auto type = GetNativeType(isolate, vertexArrayValue);
+    auto type = GetNativeType( vertexArrayValue);
     if (type == NativeType::WebGLVertexArrayObject) {
 
         auto vertexArray = WebGLVertexArrayObject::GetPointer(vertexArrayValue.As<v8::Object>());
@@ -972,7 +972,7 @@ WebGL2RenderingContext::FramebufferTextureLayer(const v8::FunctionCallbackInfo<v
 
 
     auto textureValue = args[2];
-    auto type = GetNativeType(isolate, textureValue);
+    auto type = GetNativeType( textureValue);
     if (type == NativeType::WebGLTexture) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto attachment = args[1]->Uint32Value(context).ToChecked();
@@ -1005,7 +1005,7 @@ WebGL2RenderingContext::GetActiveUniformBlockName(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         if (program != nullptr) {
@@ -1036,7 +1036,7 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
 
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -1111,7 +1111,7 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
 
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -1278,7 +1278,7 @@ void WebGL2RenderingContext::GetFragDataLocation(const v8::FunctionCallbackInfo<
 
     auto programValue = args[0];
     auto nameValue = args[1];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram && nameValue->IsString()) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
 
@@ -1496,7 +1496,7 @@ void WebGL2RenderingContext::GetQueryParameter(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto queryValue = args[0];
-    auto type = GetNativeType(isolate, queryValue);
+    auto type = GetNativeType( queryValue);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
         if (query != nullptr) {
@@ -1565,7 +1565,7 @@ void WebGL2RenderingContext::GetSamplerParameter(const v8::FunctionCallbackInfo<
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType(isolate, samplerValue);
+    auto type = GetNativeType( samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         if (sampler != nullptr) {
@@ -1655,7 +1655,7 @@ void WebGL2RenderingContext::GetTransformFeedbackVarying(
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto index = args[1]->Uint32Value(context).ToChecked();
@@ -1693,7 +1693,7 @@ void WebGL2RenderingContext::GetUniformBlockIndex(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto index = ConvertFromV8String(isolate, args[1]);
@@ -1721,7 +1721,7 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto uniformNamesObject = args[1];
@@ -1852,7 +1852,7 @@ void WebGL2RenderingContext::IsQuery(const v8::FunctionCallbackInfo<v8::Value> &
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1877,7 +1877,7 @@ void WebGL2RenderingContext::IsSampler(const v8::FunctionCallbackInfo<v8::Value>
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLSampler) {
         auto query = WebGLSampler::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1902,7 +1902,7 @@ void WebGL2RenderingContext::IsSync(const v8::FunctionCallbackInfo<v8::Value> &a
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLSync) {
         auto query = WebGLSyncImpl::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1927,7 +1927,7 @@ void WebGL2RenderingContext::IsTransformFeedback(const v8::FunctionCallbackInfo<
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLTransformFeedback) {
         auto query = WebGLTransformFeedback::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1952,7 +1952,7 @@ void WebGL2RenderingContext::IsVertexArray(const v8::FunctionCallbackInfo<v8::Va
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType(isolate, value);
+    auto type = GetNativeType( value);
     if (type == NativeType::WebGLVertexArrayObject) {
         auto query = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -2039,7 +2039,7 @@ void WebGL2RenderingContext::SamplerParameterf(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType(isolate, samplerValue);
+    auto type = GetNativeType( samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         auto pname = args[1]->Uint32Value(context).ToChecked();
@@ -2065,7 +2065,7 @@ void WebGL2RenderingContext::SamplerParameteri(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType(isolate, samplerValue);
+    auto type = GetNativeType( samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         auto pname = args[1]->Uint32Value(context).ToChecked();
@@ -2162,7 +2162,7 @@ void WebGL2RenderingContext::TexImage3D(const v8::FunctionCallbackInfo<v8::Value
             return;
         }
 
-        auto imageType = GetNativeType(isolate, imageOrPixelsOrOffset);
+        auto imageType = GetNativeType( imageOrPixelsOrOffset);
 
         switch (imageType) {
             case NativeType::ImageAsset: {
@@ -2421,7 +2421,7 @@ void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Va
         }
 
 
-        auto imageType = GetNativeType(isolate, imageOrPixelsOrOffsetObject);
+        auto imageType = GetNativeType( imageOrPixelsOrOffsetObject);
 
         if (imageType == NativeType::ImageAsset) {
             auto asset = ImageAssetImpl::GetPointer(imageOrPixelsOrOffsetObject.As<v8::Object>());
@@ -2523,7 +2523,7 @@ WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto varyingsObject = args[1];
@@ -2573,7 +2573,7 @@ void WebGL2RenderingContext::Uniform1ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
     auto v0Value = args[1];
     if (type == NativeType::WebGLUniformLocation) {
@@ -2603,7 +2603,7 @@ void WebGL2RenderingContext::Uniform2ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2635,7 +2635,7 @@ void WebGL2RenderingContext::Uniform3ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2672,7 +2672,7 @@ void WebGL2RenderingContext::Uniform4ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2714,7 +2714,7 @@ void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2771,7 +2771,7 @@ void WebGL2RenderingContext::Uniform2uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2827,7 +2827,7 @@ void WebGL2RenderingContext::Uniform3uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2884,7 +2884,7 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2941,7 +2941,7 @@ void WebGL2RenderingContext::UniformBlockBinding(const v8::FunctionCallbackInfo<
 
 
     auto programValue = args[0];
-    auto type = GetNativeType(isolate, programValue);
+    auto type = GetNativeType( programValue);
     if (type == NativeType::WebGLProgram) {
 
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -2974,7 +2974,7 @@ void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3030,7 +3030,7 @@ void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3087,7 +3087,7 @@ void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3145,7 +3145,7 @@ void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3201,7 +3201,7 @@ void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3257,7 +3257,7 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType(isolate, locationValue);
+    auto type = GetNativeType( locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);

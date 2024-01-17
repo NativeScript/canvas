@@ -214,6 +214,70 @@ v8::CFunction WebGLRenderingContext::fast_vertex_attrib_pointer(
         v8::CFunction::Make(WebGLRenderingContext::FastVertexAttribPointer));
 
 
+v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindFramebuffer));
+
+v8::CFunction WebGLRenderingContext::fast_bind_frame_buffer_null_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindFramebufferNull));
+
+const v8::CFunction fast_bind_frame_buffer_overloads_[] = {
+        WebGLRenderingContext::fast_bind_frame_buffer_null_,
+        WebGLRenderingContext::fast_bind_frame_buffer_
+};
+
+
+v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindRenderbuffer));
+
+v8::CFunction WebGLRenderingContext::fast_bind_render_buffer_null_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindRenderbufferNull));
+
+const v8::CFunction fast_bind_render_buffer_overloads_[] = {
+        WebGLRenderingContext::fast_bind_render_buffer_null_,
+        WebGLRenderingContext::fast_bind_render_buffer_
+};
+
+
+v8::CFunction WebGLRenderingContext::fast_bind_texture_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindTexture));
+
+v8::CFunction WebGLRenderingContext::fast_bind_texture_null_(
+        v8::CFunction::Make(WebGLRenderingContext::FastBindTextureNull));
+
+const v8::CFunction fast_bind_texture_overloads_[] = {
+        WebGLRenderingContext::fast_bind_texture_null_,
+        WebGLRenderingContext::fast_bind_texture_,
+};
+
+v8::CFunction WebGLRenderingContext::fast_draw_elements_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDrawElements));
+
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_1f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib1f));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_1fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib1fv));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_2f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib2f));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_2fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib2fv));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_3f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib3f));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_3fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib3fv));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_4f_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib4f));
+
+v8::CFunction WebGLRenderingContext::fast_vertex_attrib_4fv_(
+        v8::CFunction::Make(WebGLRenderingContext::FastVertexAttrib4fv));
+
+
 WebGLRenderingContext::WebGLRenderingContext(WebGLState *state)
         : WebGLRenderingContextBase(state, WebGLRenderingVersion::V1) {
 
@@ -5938,18 +6002,9 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
 
 
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "activeTexture"),
-//            v8::FunctionTemplate::New(isolate, &ActiveTexture));
-
     SetFastMethod(isolate, tmpl, "activeTexture", ActiveTexture, &fast_active_texture_,
                   v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "attachShader"),
-//            v8::FunctionTemplate::New(isolate, &AttachShader)
-//    );
-//
 
     SetFastMethod(isolate, tmpl, "attachShader", AttachShader, &fast_attach_shader_,
                   v8::Local<v8::Value>());
@@ -5959,29 +6014,29 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &BindAttribLocation)
     );
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "bindBuffer"),
-//            v8::FunctionTemplate::New(isolate, &BindBuffer)
-//    );
-
     SetFastMethodWithOverLoads(isolate, tmpl, "bindBuffer", BindBuffer,
                                bind_buffer_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &BindFramebuffer)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &BindRenderbuffer)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "bindFramebuffer", BindFramebuffer,
+                               fast_bind_frame_buffer_overloads_, v8::Local<v8::Value>());
+
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "bindRenderbuffer", BindRenderbuffer,
+                               fast_bind_render_buffer_overloads_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "bindTexture"),
             v8::FunctionTemplate::New(isolate, &BindTexture)
     );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "bindTexture", BindTexture,
+                               fast_bind_texture_overloads_, v8::Local<v8::Value>());
+
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "blendColor"),
@@ -6186,15 +6241,11 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
                   v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawElements"),
-            v8::FunctionTemplate::New(isolate, &DrawElements)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "enableVertexAttribArray"),
-            v8::FunctionTemplate::New(isolate, &EnableVertexAttribArray)
-    );
+    SetFastMethod(isolate, tmpl, "drawElements", DrawElements, &fast_draw_elements_,
+                  v8::Local<v8::Value>());
+
+
 
 
     SetFastMethod(isolate, tmpl, "enableVertexAttribArray", EnableVertexAttribArray,
@@ -6515,121 +6566,65 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib1f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib1f)
-    );
+    SetFastMethod(isolate, tmpl, "vertexAttrib1f", VertexAttrib1f,
+                  &fast_vertex_attrib_1f_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib1fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib1fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib2f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib2f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib2fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib2fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib3f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib3f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib3fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib3fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib4f"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib4f)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttrib4fv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttrib4fv)
-    );
+    SetFastMethod(isolate, tmpl, "vertexAttrib1fv", VertexAttrib1fv,
+                  &fast_vertex_attrib_1fv_, v8::Local<v8::Value>());
 
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "vertexAttribPointer"),
-//            v8::FunctionTemplate::New(isolate, &VertexAttribPointer)
-//    );
+    SetFastMethod(isolate, tmpl, "vertexAttrib2f", VertexAttrib2f,
+                  &fast_vertex_attrib_2f_, v8::Local<v8::Value>());
 
+    SetFastMethod(isolate, tmpl, "vertexAttrib2fv", VertexAttrib2fv,
+                  &fast_vertex_attrib_2fv_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "vertexAttrib3f", VertexAttrib3f,
+                  &fast_vertex_attrib_3f_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "vertexAttrib3fv", VertexAttrib3fv,
+                  &fast_vertex_attrib_3fv_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "vertexAttrib4f", VertexAttrib4f,
+                  &fast_vertex_attrib_4f_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "vertexAttrib4fv", VertexAttrib4fv,
+                  &fast_vertex_attrib_4fv_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "vertexAttribPointer", VertexAttribPointer,
                   &fast_vertex_attrib_pointer, v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform1f"),
-//            v8::FunctionTemplate::New(isolate, &Uniform1f)
-//    );
-
 
     SetFastMethod(isolate, tmpl, "uniform1f", Uniform1f, &fast_uniform1f_, v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform1iv"),
-//            v8::FunctionTemplate::New(isolate, &Uniform1iv)
-//    );
 
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform1iv", Uniform1iv,
                                uniform_1iv_overloads_, v8::Local<v8::Value>());
 
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform1fv"),
-//            v8::FunctionTemplate::New(isolate, &Uniform1fv)
-//    );
 
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform1fv", Uniform1fv,
                                uniform_1fv_overloads_, v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform1i"),
-//            v8::FunctionTemplate::New(isolate, &Uniform1i)
-//    );
 
     SetFastMethod(isolate, tmpl, "uniform1i", Uniform1i, &fast_uniform1i_, v8::Local<v8::Value>());
 
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform2f"),
-//            v8::FunctionTemplate::New(isolate, &Uniform2f)
-//    );
-
 
     SetFastMethod(isolate, tmpl, "uniform2f", Uniform2f, &fast_uniform2f_, v8::Local<v8::Value>());
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform2iv"),
-//            v8::FunctionTemplate::New(isolate, &Uniform2iv)
-//    );
 
 
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform2iv", Uniform2iv,
                                uniform_2iv_overloads_, v8::Local<v8::Value>());
 
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform2fv"),
-//            v8::FunctionTemplate::New(isolate, &Uniform2fv)
-//    );
-
     SetFastMethodWithOverLoads(isolate, tmpl, "uniform2fv", Uniform2fv,
                                uniform_2fv_overloads_, v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "uniform2i"),
-//            v8::FunctionTemplate::New(isolate, &Uniform2i)
-//    );
+
 
     SetFastMethod(isolate, tmpl, "uniform2i", Uniform2i, &fast_uniform2i_, v8::Local<v8::Value>());
 

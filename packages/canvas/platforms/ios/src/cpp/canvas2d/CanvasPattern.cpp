@@ -66,8 +66,6 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType( value);
 

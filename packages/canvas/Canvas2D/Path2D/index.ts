@@ -2,27 +2,24 @@ import { DOMMatrix } from '../DOMMatrix';
 
 import { Helpers } from '../../helpers';
 
-let ctor;
+
 export class Path2D {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasModule.Path2D;
 	}
 
 	_native;
 	constructor(instance?: any) {
 		let nativeInstance;
 		if (!instance) {
-			nativeInstance = new ctor();
+			nativeInstance = new global.CanvasModule.Path2D();
 			this._native = nativeInstance;
 			return this;
 		}
 		if (typeof instance === 'string') {
-			nativeInstance = new ctor(instance);
+			nativeInstance = new global.CanvasModule.Path2D(instance);
 		} else if (instance instanceof Path2D) {
-			nativeInstance = new ctor(instance.native);
-		} else {
-			nativeInstance = new ctor();
+			nativeInstance = new global.CanvasModule.Path2D(instance.native);
 		}
 		this._native = nativeInstance;
 	}
@@ -43,7 +40,7 @@ export class Path2D {
 
 	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
 		//const arc = this._getMethod('arc');
-		this.native.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+		this.native.arc(x, y, radius, startAngle, endAngle, anticlockwise ?? false);
 	}
 
 	arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void {
@@ -63,7 +60,7 @@ export class Path2D {
 
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
 		//const ellipse = this._getMethod('ellipse');
-		this.native.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
+		this.native.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise ?? false);
 	}
 
 	lineTo(x: number, y: number): void {

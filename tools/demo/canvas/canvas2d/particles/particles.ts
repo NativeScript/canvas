@@ -127,7 +127,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 
 	// Click listener
 	if (!nativeCanvas) {
-		canvas.parent.on(GestureTypes.tap as any, (args) => {});
+		/*canvas.parent.on(GestureTypes.tap as any, (args) => {});
 		canvas.addEventListener('touchstart', (args: TouchEvent) => {
 			const touches = args.touches.item(0);
 			const first = touches;
@@ -143,6 +143,8 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 				initParticles(first.clientX, first.clientY);
 			}
 		});
+
+		*/
 
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		// 	var x = args.getX(),

@@ -570,6 +570,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	companion object {
+		@JvmStatic
 		var views = ConcurrentHashMap<Any?, Any?>()
 
 		@JvmStatic

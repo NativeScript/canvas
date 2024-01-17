@@ -46,46 +46,52 @@ export class Canvas extends CanvasBase {
 	private _isBatch = false;
 	_didLayout = false;
 
-	constructor() {
+	constructor(nativeInstance?) {
 		super();
-		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
-		this._canvas.userInteractionEnabled = true;
-		const ref = new WeakRef(this);
-		const listener = (NSObject as any).extend(
-			{
-				contextReady() {
-					if (!this._isReady) {
-						const owner = ref.get();
-						if (owner) {
-							owner._readyEvent();
-							this._isReady = true;
+		if (nativeInstance) {
+			// allows Worker usage
+			this._canvas = nativeInstance;
+			(global as any).__canvasLoaded = true;
+		} else {
+			this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
+			this._canvas.userInteractionEnabled = true;
+			const ref = new WeakRef(this);
+			const listener = (NSObject as any).extend(
+				{
+					contextReady() {
+						if (!this._isReady) {
+							const owner = ref.get();
+							if (owner) {
+								owner._readyEvent();
+								this._isReady = true;
+							}
 						}
-					}
+					},
 				},
-			},
-			{
-				protocols: [NSCCanvasListener],
-			}
-		);
-		this._readyListener = listener.new();
-		this._canvas.setListener(this._readyListener);
-		this._canvas.enterBackgroundListener = () => {
-			if (!this.native) {
-				return;
-			}
-			this.native.__stopRaf();
-		};
+				{
+					protocols: [NSCCanvasListener],
+				}
+			);
+			this._readyListener = listener.new();
+			this._canvas.setListener(this._readyListener);
+			this._canvas.enterBackgroundListener = () => {
+				if (!this.native) {
+					return;
+				}
+				this.native.__stopRaf();
+			};
 
-		this._canvas.becomeActiveListener = () => {
-			if (!this.native) {
-				return;
-			}
-			this.native.__startRaf();
-		};
+			this._canvas.becomeActiveListener = () => {
+				if (!this.native) {
+					return;
+				}
+				this.native.__startRaf();
+			};
 
-		this._canvas.touchEventListener = (event, recognizer) => {
-			this._handleEvents(event);
-		};
+			this._canvas.touchEventListener = (event, recognizer) => {
+				this._handleEvents(event);
+			};
+		}
 	}
 
 	[ignorePixelScalingProperty.setNative](value: boolean) {
@@ -120,6 +126,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value) {
+		if (value === this.style.width) {
+			return;
+		}
 		this.style.width = value;
 		this._didLayout = false;
 		this._layoutNative(true);
@@ -135,6 +144,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value) {
+		if (value === this.style.height) {
+			return;
+		}
 		this.style.height = value;
 		this._didLayout = false;
 		this._layoutNative(true);

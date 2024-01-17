@@ -41,23 +41,29 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 	private _isBatch = false;
-	constructor() {
+	constructor(nativeInstance?) {
 		super();
-		const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
-		this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
-		(global as any).__canvasLoaded = true;
-		const ref = new WeakRef(this);
-		this._canvas.setTouchEventListener(
-			new org.nativescript.canvas.NSCCanvas.TouchEvents({
-				onEvent(event: string, nativeEvent: android.view.MotionEvent) {
-					const owner = ref.get();
-					if (!owner) {
-						return;
-					}
-					owner._handleEvents(event);
-				},
-			})
-		);
+		if (nativeInstance) {
+			// allows Worker usage
+			this._canvas = nativeInstance;
+			(global as any).__canvasLoaded = true;
+		} else {
+			const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
+			this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
+			(global as any).__canvasLoaded = true;
+			const ref = new WeakRef(this);
+			this._canvas.setTouchEventListener(
+				new org.nativescript.canvas.NSCCanvas.TouchEvents({
+					onEvent(event: string, nativeEvent: android.view.MotionEvent) {
+						const owner = ref.get();
+						if (!owner) {
+							return;
+						}
+						owner._handleEvents(event);
+					},
+				})
+			);
+		}
 	}
 
 	[upscaleProperty.setNative](value: boolean) {

@@ -7,6 +7,30 @@
 #include "OneByteStringResource.h"
 
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_ellipse_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastEllipse));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_bezier_curve_to_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastBezierCurveTo));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_clip_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClip));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_clip_rule_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClipRule));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_clip_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClipPath));
+
+
+const v8::CFunction fast_clip_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_clip_,
+        CanvasRenderingContext2DImpl::fast_clip_path_,
+        CanvasRenderingContext2DImpl::fast_clip_rule_
+};
+
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_close_path_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClosePath));
 
@@ -51,7 +75,6 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_translate_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_clear_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastClearRect));
 
-
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRect));
 
@@ -65,14 +88,35 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_rotate_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
 
-v8::CFunction CanvasRenderingContext2DImpl::fast_fill_one_path_(
-        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillOnePath));
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillPath));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rule_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRule));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_path_rule_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillPathRule));
 
 const v8::CFunction fast_fill_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_fill_path_rule_,
+        CanvasRenderingContext2DImpl::fast_fill_path_,
+        CanvasRenderingContext2DImpl::fast_fill_rule_,
         CanvasRenderingContext2DImpl::fast_fill_,
-        CanvasRenderingContext2DImpl::fast_fill_one_path_
+
 };
 
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_put_image_data_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastPutImageData));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_put_image_data_dx_dy_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastPutImageDataDxDy));
+
+const v8::CFunction fast_put_image_data_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_put_image_data_,
+        CanvasRenderingContext2DImpl::fast_put_image_data_dx_dy_
+
+};
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStroke));
@@ -84,6 +128,84 @@ const v8::CFunction fast_stroke_overloads_[] = {
         CanvasRenderingContext2DImpl::fast_stroke_,
         CanvasRenderingContext2DImpl::fast_stroke_path_
 };
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPathXY));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_rule_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPathXYRule));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_path_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInPath));
+
+const v8::CFunction fast_is_point_in_path_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_is_point_in_path_,
+        CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_rule_,
+        CanvasRenderingContext2DImpl::fast_is_point_in_path_xy_
+};
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_stroke_xy_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInStrokeXY));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_is_point_in_stroke_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastIsPointInStroke));
+
+const v8::CFunction fast_is_point_in_stroke_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_is_point_in_stroke_,
+        CanvasRenderingContext2DImpl::fast_is_point_in_stroke_xy_
+};
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_line_to_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastLineTo));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_move_to_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastMoveTo));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_quadratic_curve_to_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastQuadraticCurveTo));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_array_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRoundRectArray));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_round_rect_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRoundRect));
+
+const v8::CFunction fast_round_rect_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_round_rect_array_,
+        CanvasRenderingContext2DImpl::fast_round_rect_
+};
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_rect_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRect));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_scale_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRect));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_set_line_dash_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetLineDash));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_set_transform_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetTransform));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_set_transform_abcdef_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastSetTransformABCDEF));
+
+const v8::CFunction fast_set_transform_overloads_[] = {
+        CanvasRenderingContext2DImpl::fast_set_transform_abcdef_,
+        CanvasRenderingContext2DImpl::fast_set_transform_
+};
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_transform_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastTransform));
+
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_reset_transform_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastResetTransform));
 
 
 CanvasRenderingContext2DImpl::CanvasRenderingContext2DImpl(
@@ -159,7 +281,6 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
                       SetLetterSpacing);
     tmpl->SetAccessor(ConvertToV8String(isolate, "wordSpacing"), GetWordSpacing, SetWordSpacing);
 
-
     tmpl->SetAccessor(ConvertToV8String(isolate, "globalAlpha"), GetGlobalAlpha, SetGlobalAlpha);
     tmpl->SetAccessor(ConvertToV8String(isolate, "imageSmoothingEnabled"), GetImageSmoothingEnabled,
                       SetImageSmoothingEnabled);
@@ -184,39 +305,31 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->SetAccessor(ConvertToV8String(isolate, "fillStyle"), GetFillStyle, SetFillStyle);
     tmpl->SetAccessor(ConvertToV8String(isolate, "strokeStyle"), GetStrokeStyle, SetStrokeStyle);
     tmpl->SetAccessor(ConvertToV8String(isolate, "lineWidth"), GetLineWidth, SetLineWidth);
-    tmpl->SetAccessor(ConvertToV8String(isolate, "lineDash"), GetLineDash, SetLineDash);
 
 
     tmpl->Set(ConvertToV8String(isolate, "addHitRegion"),
               v8::FunctionTemplate::New(isolate, &AddHitRegion));
-//    tmpl->Set(ConvertToV8String(isolate, "arc"), v8::FunctionTemplate::New(isolate, &Arc));
 
     SetFastMethod(isolate, tmpl, "arc", Arc, &fast_arc_, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "arcTo", ArcTo, &fast_arc_to_, v8::Local<v8::Value>());
 
-    // tmpl->Set(ConvertToV8String(isolate, "arcTo"), v8::FunctionTemplate::New(isolate, &ArcTo));
-//    tmpl->Set(ConvertToV8String(isolate, "beginPath"),
-//              v8::FunctionTemplate::New(isolate, &BeginPath));
-
-
     SetFastMethod(isolate, tmpl, "beginPath", BeginPath, &fast_begin_path_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(ConvertToV8String(isolate, "bezierCurveTo"),
-              v8::FunctionTemplate::New(isolate, &BezierCurveTo));
+    SetFastMethod(isolate, tmpl, "bezierCurveTo", BezierCurveTo, &fast_bezier_curve_to_,
+                  v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "clearHitRegions"),
               v8::FunctionTemplate::New(isolate, &ClearHitRegions));
-//    tmpl->Set(ConvertToV8String(isolate, "clearRect"),
-//              v8::FunctionTemplate::New(isolate, &ClearRect));
+
 
     SetFastMethod(isolate, tmpl, "clearRect", ClearRect, &fast_clear_rect_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(ConvertToV8String(isolate, "clip"), v8::FunctionTemplate::New(isolate, &Clip));
-//    tmpl->Set(ConvertToV8String(isolate, "closePath"),
-//              v8::FunctionTemplate::New(isolate, &ClosePath));
-
+    SetFastMethodWithOverLoads(isolate, tmpl, "clip", Clip, fast_clip_overloads_,
+                               v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "closePath", ClosePath, &fast_close_path_, v8::Local<v8::Value>());
 
@@ -235,83 +348,87 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &CreateRadialGradient));
     tmpl->Set(ConvertToV8String(isolate, "drawFocusIfNeeded"),
               v8::FunctionTemplate::New(isolate, &DrawFocusIfNeeded));
-//    tmpl->Set(ConvertToV8String(isolate, "drawImage"),
-//              v8::FunctionTemplate::New(isolate, &DrawImage));
 
 
     SetFastMethodWithOverLoads(isolate, tmpl, "drawImage", DrawImage, fast_draw_overloads_,
                                v8::Local<v8::Value>());
 
-
-    tmpl->Set(ConvertToV8String(isolate, "ellipse"), v8::FunctionTemplate::New(isolate, &Ellipse));
-    // tmpl->Set(ConvertToV8String(isolate, "fill"), v8::FunctionTemplate::New(isolate, &Fill));
+    SetFastMethod(isolate, tmpl, "ellipse", Ellipse, &fast_ellipse_, v8::Local<v8::Value>());
 
     SetFastMethodWithOverLoads(isolate, tmpl, "fill", Fill, fast_fill_overloads_,
                                v8::Local<v8::Value>());
 
-
     SetFastMethod(isolate, tmpl, "fillRect", FillRect, &fast_fill_rect_, v8::Local<v8::Value>());
 
-
-
-//
-//    tmpl->Set(ConvertToV8String(isolate, "fillRect"),
-//              v8::FunctionTemplate::New(isolate, &FillRect));
     tmpl->Set(ConvertToV8String(isolate, "fillText"),
               v8::FunctionTemplate::New(isolate, &FillText));
     tmpl->Set(ConvertToV8String(isolate, "getImageData"),
               v8::FunctionTemplate::New(isolate, &GetImageData));
     tmpl->Set(ConvertToV8String(isolate, "getLineDash"),
               v8::FunctionTemplate::New(isolate, &GetLineDash));
-    tmpl->Set(ConvertToV8String(isolate, "isPointInPath"),
-              v8::FunctionTemplate::New(isolate, &IsPointInPath));
-    tmpl->Set(ConvertToV8String(isolate, "isPointInStroke"),
-              v8::FunctionTemplate::New(isolate, &IsPointInStroke));
-    tmpl->Set(ConvertToV8String(isolate, "lineTo"), v8::FunctionTemplate::New(isolate, &LineTo));
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "isPointInPath", IsPointInPath,
+                               fast_is_point_in_path_overloads_,
+                               v8::Local<v8::Value>());
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "isPointInStroke", IsPointInStroke,
+                               fast_is_point_in_stroke_overloads_,
+                               v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "lineTo", LineTo, &fast_line_to_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "measureText"),
               v8::FunctionTemplate::New(isolate, &MeasureText));
-    tmpl->Set(ConvertToV8String(isolate, "moveTo"), v8::FunctionTemplate::New(isolate, &MoveTo));
-    tmpl->Set(ConvertToV8String(isolate, "putImageData"),
-              v8::FunctionTemplate::New(isolate, &PutImageData));
-    tmpl->Set(ConvertToV8String(isolate, "quadraticCurveTo"),
-              v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
-    tmpl->Set(ConvertToV8String(isolate, "roundRect"),
-              v8::FunctionTemplate::New(isolate, &RoundRect));
-    tmpl->Set(ConvertToV8String(isolate, "rect"), v8::FunctionTemplate::New(isolate, &Rect));
+
+    SetFastMethod(isolate, tmpl, "moveTo", MoveTo, &fast_move_to_, v8::Local<v8::Value>());
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "putImageData", PutImageData,
+                               fast_put_image_data_overloads_,
+                               v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "quadraticCurveTo", QuadraticCurveTo, &fast_quadratic_curve_to_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "roundRect", RoundRect, fast_round_rect_overloads_,
+                               v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "rect", Rect, &fast_rect_, v8::Local<v8::Value>());
+
+
     tmpl->Set(ConvertToV8String(isolate, "removeHitRegion"),
               v8::FunctionTemplate::New(isolate, &RemoveHitRegion));
-    tmpl->Set(ConvertToV8String(isolate, "resetTransform"),
-              v8::FunctionTemplate::New(isolate, &ResetTransform));
+
+
+    SetFastMethod(isolate, tmpl, "resetTransform", ResetTransform, &fast_reset_transform_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "restore", Restore, &fast_restore_, v8::Local<v8::Value>());
 
-    //  tmpl->Set(ConvertToV8String(isolate, "restore"), v8::FunctionTemplate::New(isolate, &Restore));
-
-
     SetFastMethod(isolate, tmpl, "rotate", Rotate, &fast_rotate_, v8::Local<v8::Value>());
 
-//    tmpl->Set(ConvertToV8String(isolate, "rotate"), v8::FunctionTemplate::New(isolate, &Rotate));
-
-
     SetFastMethod(isolate, tmpl, "save", Save, &fast_save_, v8::Local<v8::Value>());
-    //tmpl->Set(ConvertToV8String(isolate, "save"), v8::FunctionTemplate::New(isolate, &Save));
+
+    SetFastMethod(isolate, tmpl, "scale", Scale, &fast_scale_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(ConvertToV8String(isolate, "scale"), v8::FunctionTemplate::New(isolate, &Scale));
     tmpl->Set(ConvertToV8String(isolate, "scrollPathIntoView"),
               v8::FunctionTemplate::New(isolate, &ScrollPathIntoView));
-    tmpl->Set(ConvertToV8String(isolate, "setLineDash"),
-              v8::FunctionTemplate::New(isolate, &SetLineDash));
-    tmpl->Set(ConvertToV8String(isolate, "setTransform"),
-              v8::FunctionTemplate::New(isolate, &SetTransform));
-    //  tmpl->Set(ConvertToV8String(isolate, "stroke"), v8::FunctionTemplate::New(isolate, &Stroke));
+
+    SetFastMethod(isolate, tmpl, "setLineDash", SetLineDash, &fast_set_line_dash_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "setTransform", SetTransform,
+                               fast_set_transform_overloads_, v8::Local<v8::Value>());
+
 
     SetFastMethodWithOverLoads(isolate, tmpl, "stroke", Stroke, fast_stroke_overloads_,
                                v8::Local<v8::Value>());
 
-
-//    tmpl->Set(ConvertToV8String(isolate, "strokeRect"),
-//              v8::FunctionTemplate::New(isolate, &StrokeRect));
 
     SetFastMethod(isolate, tmpl, "strokeRect", StrokeRect, &fast_stroke_rect_,
                   v8::Local<v8::Value>());
@@ -319,14 +436,13 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     tmpl->Set(ConvertToV8String(isolate, "strokeText"),
               v8::FunctionTemplate::New(isolate, &StrokeText));
-    tmpl->Set(ConvertToV8String(isolate, "transform"),
-              v8::FunctionTemplate::New(isolate, &Transform));
+
+    SetFastMethod(isolate, tmpl, "transform", Transform, &fast_transform_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "translate", Translate, &fast_translate_, v8::Local<v8::Value>());
 
-//    tmpl->Set(ConvertToV8String(isolate, "translate"),
-//              v8::FunctionTemplate::New(isolate, &Translate));
+
     tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
               v8::FunctionTemplate::New(isolate, &__ToDataURL));
 
@@ -1311,15 +1427,55 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
     }
 
     auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto count = args.Length();
+    if (count == 0) {
+        canvas_native_context_clip_rule(
+                ptr->GetContext(), "nonzero");
+    } else if (count == 1 && args[0]->IsInt32()) {
+        auto val = args[0]->Int32Value(context);
+        switch (val.ToChecked()) {
+            case 0:
+                canvas_native_context_clip_rule(
+                        ptr->GetContext(), "nonzero");
+                break;
+            case 1:
+                canvas_native_context_clip_rule(
+                        ptr->GetContext(), "evenodd");
+                break;
+        }
+    } else if (count == 1 && args[0]->IsObject()) {
+        auto type = GetNativeType(args[0].As<v8::Object>());
+        if (type == NativeType::Path2D) {
+            auto object = Path2D::GetPointer(args[0].As<v8::Object>());
 
-    if (args.Length() == 0) {
-        std::string rule("nonzero");
-        canvas_native_context_clip_rule(
-                ptr->GetContext(), rule.c_str());
-    } else if (args[0]->IsString()) {
-        auto val = ConvertFromV8String(isolate, args[0]);
-        canvas_native_context_clip_rule(
-                ptr->GetContext(), val.c_str());
+            if (object != nullptr) {
+                canvas_native_context_clip(
+                        ptr->GetContext(), object->GetPath(), "nonzero");
+            }
+        }
+    } else if (count >= 2 && args[0]->IsObject() && args[1]->IsInt32()) {
+        auto type = GetNativeType(args[0].As<v8::Object>());
+        if (type == NativeType::Path2D) {
+            auto object = Path2D::GetPointer(args[0].As<v8::Object>());
+            auto rule = args[1]->Int32Value(context).ToChecked();
+
+            if (object != nullptr) {
+                switch (rule) {
+                    case 0:
+                        canvas_native_context_clip(
+                                ptr->GetContext(), object->GetPath(), "nonzero");
+                        break;
+                    case 1:
+                        canvas_native_context_clip(
+                                ptr->GetContext(), object->GetPath(), "evenodd");
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+        }
     }
 }
 
@@ -1848,7 +2004,7 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
         return;
     }
     auto isolate = args.GetIsolate();
-
+    auto context = isolate->GetCurrentContext();
     auto count = args.Length();
     auto value = args[0];
     if (count == 2) {
@@ -1857,37 +2013,61 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
             auto object = Path2D::GetPointer(value.As<v8::Object>());
 
             if (object != nullptr) {
-                auto data = ConvertFromV8String(isolate, args[1]);
-                canvas_native_context_fill_with_path(
-                        ptr->GetContext(),
-                        object->GetPath(),
-                        data.c_str());
-                ptr->UpdateInvalidateState();
+                auto rule = args[1]->Int32Value(context).ToChecked();
+                switch (rule) {
+                    case 0:
+                        canvas_native_context_fill_with_path(
+                                ptr->GetContext(),
+                                object->GetPath(),
+                                "nonzero");
+                        ptr->UpdateInvalidateState();
+                        break;
+                    case 1:
+                        canvas_native_context_fill_with_path(
+                                ptr->GetContext(),
+                                object->GetPath(),
+                                "evenodd");
+                        ptr->UpdateInvalidateState();
+                        break;
+                    default:
+                        break;
+                }
+
             }
         }
-
     } else if (count == 1) {
-        if (value->IsString()) {
-            auto rule = ConvertFromV8String(isolate, value);
-            canvas_native_context_fill(
-                    ptr->GetContext(), rule.c_str());
-            ptr->UpdateInvalidateState();
+        if (value->IsInt32()) {
+            auto rule = args[1]->Int32Value(context).ToChecked();
+            switch (rule) {
+                case 0:
+                    canvas_native_context_fill(
+                            ptr->GetContext(),
+                            "nonzero");
+                    ptr->UpdateInvalidateState();
+                    break;
+                case 1:
+                    canvas_native_context_fill(
+                            ptr->GetContext(),
+                            "evenodd");
+                    ptr->UpdateInvalidateState();
+                    break;
+                default:
+                    break;
+            }
         } else if (value->IsObject()) {
             auto type = GetNativeType(value.As<v8::Object>());
             if (type == NativeType::Path2D) {
                 auto object = Path2D::GetPointer(value.As<v8::Object>());
 
-                std::string rule("nonzero");
                 canvas_native_context_fill_with_path(
                         ptr->GetContext(),
-                        object->GetPath(), rule.c_str());
+                        object->GetPath(), "nonzero");
                 ptr->UpdateInvalidateState();
             }
         }
     } else {
-        std::string rule("nonzero");
         canvas_native_context_fill(
-                ptr->GetContext(), rule.c_str());
+                ptr->GetContext(), "nonzero");
         ptr->UpdateInvalidateState();
     }
 }
@@ -2017,24 +2197,31 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
     if (count == 2) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        std::string rule("nonzero");
         auto ret = canvas_native_context_is_point_in_path(
-                ptr->GetContext(), x, y, rule.c_str());
+                ptr->GetContext(), x, y, "nonzero");
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 3 &&
-               args[2]->IsString()) {
+               args[2]->IsInt32()) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        auto rule = ConvertFromV8String(isolate, args[2]);
-        auto ret = canvas_native_context_is_point_in_path(
-                ptr->GetContext(), x, y, rule.c_str());
+        auto rule = args[2]->Int32Value(context).ToChecked();
+        bool ret = false;
+        switch (rule) {
+            case 0:
+                ret = canvas_native_context_is_point_in_path(
+                        ptr->GetContext(), x, y, "nonzero");
+                break;
+            case 1:
+                ret = canvas_native_context_is_point_in_path(
+                        ptr->GetContext(), x, y, "evenodd");
+                break;
+        }
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 4 &&
                args[0]->IsObject() &&
-               args[3]->IsString()) {
-
+               args[3]->IsInt32()) {
 
         auto value = args[0];
         auto type = GetNativeType(value);
@@ -2043,13 +2230,24 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
             auto path = Path2D::GetPointer(value.As<v8::Object>());
             auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
             auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-            auto rule = ConvertFromV8String(isolate, args[3]);
-
+            auto rule = args[3]->Int32Value(context).ToChecked();
+            bool ret = false;
 
             if (path != nullptr) {
-                auto ret = canvas_native_context_is_point_in_path_with_path(
-                        ptr->GetContext(),
-                        path->GetPath(), x, y, rule.c_str());
+
+                switch (rule) {
+                    case 0:
+                        ret = canvas_native_context_is_point_in_path_with_path(
+                                ptr->GetContext(),
+                                path->GetPath(), x, y, "nonzero");
+                        break;
+                    case 1:
+                        ret = canvas_native_context_is_point_in_path_with_path(
+                                ptr->GetContext(),
+                                path->GetPath(), x, y, "evenodd");
+                        break;
+                }
+
                 args.GetReturnValue().Set(ret);
                 return;
             }
@@ -2089,7 +2287,6 @@ CanvasRenderingContext2DImpl::IsPointInStroke(const v8::FunctionCallbackInfo<v8:
             auto path = Path2D::GetPointer(value.As<v8::Object>());
             auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
             auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-            auto rule = ConvertFromV8String(isolate, args[3]);
 
 
             if (path != nullptr) {

@@ -12,6 +12,17 @@ import { Helpers } from '../../helpers';
 let ctor;
 declare const NSCCanvasRenderingContext2D;
 
+function ruleToEnum(rule: string): number {
+	switch (rule) {
+		case 'nonzero':
+			return 0;
+		case 'evenodd':
+			return 1;
+		default:
+			return -1; // will be ignored
+	}
+}
+
 export class CanvasRenderingContext2D {
 	public static isDebug = true;
 	private context;
@@ -277,9 +288,9 @@ export class CanvasRenderingContext2D {
 
 	clip(...args: any): void {
 		if (typeof args[0] === 'string') {
-			this.context.clip(args[0]);
+			this.context.clip(ruleToEnum(args[0]));
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.clip(args[0].native, args[1]);
+			this.context.clip(args[0].native, ruleToEnum(args[1]));
 		} else if (args[0] instanceof Path2D) {
 			this.context.clip(args[0].native);
 		} else {
@@ -525,7 +536,7 @@ export class CanvasRenderingContext2D {
 	}
 
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise: boolean = false): void {
-		this.context.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
+		this.context.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise ?? false);
 	}
 
 	fill(): void;
@@ -536,9 +547,9 @@ export class CanvasRenderingContext2D {
 
 	fill(...args: any): void {
 		if (typeof args[0] === 'string') {
-			this.context.fill(args[0]);
+			this.context.fill(ruleToEnum(args[0]));
 		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.fill(args[0].native, args[1]);
+			this.context.fill(args[0].native, ruleToEnum(args[1]));
 		} else if (args[0] instanceof Path2D) {
 			this.context.fill(args[0].native);
 		} else {
@@ -574,9 +585,9 @@ export class CanvasRenderingContext2D {
 		if (args.length === 2) {
 			return this.context.isPointInPath(args[0], args[1]);
 		} else if (args.length === 3) {
-			return this.context.isPointInPath(args[0], args[1], args[2]);
+			return this.context.isPointInPath(args[0], args[1], ruleToEnum(args[2]));
 		} else if (args.length === 4 && args[0] instanceof Path2D) {
-			return this.context.isPointInPath(args[0].native, args[1], args[2], args[3]);
+			return this.context.isPointInPath(args[0].native, args[1], args[2], ruleToEnum(args[3]));
 		}
 		return false;
 	}
@@ -617,7 +628,7 @@ export class CanvasRenderingContext2D {
 			return;
 		}
 
-		let data = args[0] as any;
+		const data = args[0] as any;
 		if (args.length === 3) {
 			this.context.putImageData(data.native, args[1], args[2]);
 		} else if (args.length === 7) {

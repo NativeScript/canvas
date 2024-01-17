@@ -598,7 +598,6 @@ export function isPointInStrokeTouch(canvas) {
 export function march(canvas) {
 	const ctx = canvas.getContext('2d');
 	var offset = 0;
-	ctx.scale(3, 3);
 
 	function draw() {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);

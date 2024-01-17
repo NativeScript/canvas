@@ -2,6 +2,7 @@ import { DemoSharedBase } from '../utils';
 import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
 
 let Matter;
+declare const NSCCanvas;
 import { Canvas } from '@nativescript/canvas';
 import {
 	arcToAnimation,
@@ -52,7 +53,6 @@ import {
 	createConicGradient,
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
-//const CanvasWorker = require('nativescript-worker-loader!./canvas.worker.js');
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
@@ -572,25 +572,44 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
-		// const worker = new CanvasWorker();
+	/*	const worker = new Worker('./canvas.worker.js');
+		global.CanvasWorker = worker;
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
 		//         y = (args.getY() * Screen.mainScreen.scale);
 		//     worker.postMessage({event: 'touch', x, y})
 		// });
-		// if (isAndroid) {
-		//     canvas.android.setHandleInvalidationManually(true);
-		//     (com.github.triniwiz.canvas.CanvasView as any).getViews().put(
-		//         `${canvas._domId}`, new java.lang.ref.WeakReference(canvas.android)
-		//     );
-		// } else {
-		//     canvas.ios.handleInvalidationManually = true;
-		//     canvas.ios.moveOffMain();
-		//     Canvas.getViews().setObjectForKey(canvas.ios, `${canvas._domId}`);
-		// }
-		// const w = canvas.getMeasuredWidth(),
-		//     h = canvas.getMeasuredHeight();
-		// worker.postMessage({id: `${canvas._domId}`, width: w, height: h});
+
+		this.canvas.addEventListener('touchstart', (event) => {
+			const touches = event.touches.item(0);
+			const first = touches;
+			worker.postMessage({ event: 'touchstart', clientX: first.clientX, clientY: first.clientY });
+		});
+
+		this.canvas.addEventListener('touchmove', (event) => {
+			const touches = event.changedTouches;
+			if (Array.isArray(touches)) {
+				const first = touches[0];
+				worker.postMessage({ event: 'touchmove', clientX: first.clientX, clientY: first.clientY });
+			}
+		});
+
+		
+		if (global.isAndroid) {
+			//    canvas.android.setHandleInvalidationManually(true);
+			(org.nativescript as any).canvas.NSCCanvas.getViews().put(`${this.canvas._domId}`, new java.lang.ref.WeakReference(this.canvas.android));
+		} else {
+			//  this.canvas.ios.handleInvalidationManually = true;
+			//this.canvas.ios.moveOffMain();
+			NSCCanvas.getViews().setObjectForKey(this.canvas.ios, `${this.canvas._domId}`);
+		}
+
+		const w = this.canvas.width,
+			h = this.canvas.height;
+
+		worker.postMessage({ id: `${this.canvas._domId}`, width: w, height: h });
+
+		*/
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
@@ -631,7 +650,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcMultiple(this.canvas);
 		//arcTo(this.canvas);
 		//arcToAnimation(this.canvas);
-		// ellipse(this.canvas);
+		//ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//createChaosLines(this.canvas);
 		flappyBird(this.canvas);
@@ -1747,7 +1766,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	clock(canvas) {
 		let scale = false;
 		var ctx = canvas.getContext('2d');
-		ctx.scale(.1, .1);
+		ctx.scale(0.1, 0.1);
 		ctx.translate(100, 100);
 
 		function clock() {

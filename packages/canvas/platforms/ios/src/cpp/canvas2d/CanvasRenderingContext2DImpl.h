@@ -27,6 +27,96 @@
 
 class CanvasRenderingContext2DImpl : ObjectWrapperImpl {
 public:
+
+    static v8::CFunction fast_arc_;
+
+    static v8::CFunction fast_arc_to_;
+
+    static v8::CFunction fast_begin_path_;
+
+    static v8::CFunction fast_bezier_curve_to_;
+
+    static v8::CFunction fast_clear_rect_;
+
+    static v8::CFunction fast_clip_rule_;
+
+    static v8::CFunction fast_clip_path_;
+
+    static v8::CFunction fast_clip_;
+
+    static v8::CFunction fast_close_path_;
+
+    static v8::CFunction fast_draw_image_dx_dy_;
+
+    static v8::CFunction fast_draw_image_dx_dy_dw_dh_;
+
+    static v8::CFunction fast_draw_image_;
+
+    static v8::CFunction fast_ellipse_;
+
+    static v8::CFunction fast_fill_;
+
+    static v8::CFunction fast_fill_path_;
+
+    static v8::CFunction fast_fill_rule_;
+
+    static v8::CFunction fast_is_point_in_path_xy_;
+
+    static v8::CFunction fast_is_point_in_path_xy_rule_;
+
+    static v8::CFunction fast_is_point_in_path_;
+
+    static v8::CFunction fast_is_point_in_stroke_xy_;
+
+    static v8::CFunction fast_is_point_in_stroke_;
+
+    static v8::CFunction fast_line_to_;
+
+    static v8::CFunction fast_move_to_;
+
+    static v8::CFunction fast_put_image_data_dx_dy_;
+
+    static v8::CFunction fast_put_image_data_;
+
+    static v8::CFunction fast_quadratic_curve_to_;
+
+    static v8::CFunction fast_round_rect_array_;
+
+    static v8::CFunction fast_round_rect_;
+
+    static v8::CFunction fast_rect_;
+
+    static v8::CFunction fast_scale_;
+
+    static v8::CFunction fast_set_line_dash_;
+
+    static v8::CFunction fast_set_transform_;
+
+    static v8::CFunction fast_set_transform_abcdef_;
+
+    static v8::CFunction fast_transform_;
+
+    static v8::CFunction fast_fill_path_rule_;
+
+    static v8::CFunction fast_fill_rect_;
+
+    static v8::CFunction fast_stroke_;
+
+    static v8::CFunction fast_stroke_path_;
+
+    static v8::CFunction fast_stroke_rect_;
+
+    static v8::CFunction fast_rotate_;
+
+    static v8::CFunction fast_reset_transform_;
+
+    static v8::CFunction fast_restore_;
+
+    static v8::CFunction fast_save_;
+
+    static v8::CFunction fast_translate_;
+
+
     CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context);
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
@@ -215,37 +305,6 @@ public:
                             v8::Local<v8::Value> value,
                             const v8::PropertyCallbackInfo<void> &info);
 
-    static v8::CFunction fast_draw_image_dx_dy_;
-
-    static v8::CFunction fast_draw_image_dx_dy_dw_dh_;
-
-    static v8::CFunction fast_draw_image_;
-
-    static v8::CFunction fast_close_path_;
-    static v8::CFunction fast_begin_path_;
-
-    static v8::CFunction fast_arc_;
-    static v8::CFunction fast_arc_to_;
-    static v8::CFunction fast_clear_rect_;
-
-    static v8::CFunction fast_fill_;
-    static v8::CFunction fast_fill_one_path_;
-
-    static v8::CFunction fast_fill_rect_;
-
-    static v8::CFunction fast_stroke_;
-    static v8::CFunction fast_stroke_path_;
-
-    static v8::CFunction fast_stroke_rect_;
-
-    static v8::CFunction fast_rotate_;
-
-    static v8::CFunction fast_restore_;
-
-    static v8::CFunction fast_save_;
-
-    static v8::CFunction fast_translate_;
-
 
     static void AddHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -328,6 +387,29 @@ public:
 
     static void BezierCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FastBezierCurveTo(v8::Local<v8::Object> receiver_obj, double cp1x,
+                                  double cp1y,
+                                  double cp2x,
+                                  double cp2y,
+                                  double x,
+                                  double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_bezier_curve_to(
+                ptr->GetContext(),
+                static_cast<float>(cp1x),
+                static_cast<float>(cp1y),
+                static_cast<float>(cp2x),
+                static_cast<float>(cp2y),
+                static_cast<float>(x),
+                static_cast<float>(y)
+        );
+    }
+
     static void ClearHitRegions(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void ClearRect(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -351,6 +433,63 @@ public:
     }
 
     static void Clip(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastClipRule(v8::Local<v8::Object> receiver_obj, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        switch (rule) {
+            case 0:
+                canvas_native_context_clip_rule(
+                        ptr->GetContext(), "nonzero");
+                break;
+            case 1:
+                canvas_native_context_clip_rule(
+                        ptr->GetContext(), "evenodd");
+                break;
+        }
+    }
+
+    static void FastClipPath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        if (GetNativeType(path_obj) == NativeType::Path2D) {
+            auto path = Path2D::GetPointer(path_obj);
+            canvas_native_context_clip(
+                    ptr->GetContext(), path->GetPath(), "nonzero");
+        }
+
+
+    }
+
+    static void
+    FastClip(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        if (GetNativeType(path_obj) == NativeType::Path2D) {
+            auto path = Path2D::GetPointer(path_obj);
+            switch (rule) {
+                case 0:
+                    canvas_native_context_clip(
+                            ptr->GetContext(), path->GetPath(), "nonzero");
+                    break;
+                case 1:
+                    canvas_native_context_clip(
+                            ptr->GetContext(), path->GetPath(), "evenodd");
+                    break;
+            }
+        }
+
+
+    }
 
     static void ClosePath(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -613,30 +752,64 @@ public:
 
     static void Ellipse(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void Fill(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-    /* todo when fast string is supported
-    static void FastFillTwo(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path, string) {
+    static void FastEllipse(v8::Local<v8::Object> receiver_obj, double x,
+                            double y,
+                            double radius_x,
+                            double radius_y,
+                            double rotation,
+                            double start_angle,
+                            double end_angle,
+                            bool anticlockwise) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
+
+        canvas_native_context_ellipse(
+                ptr->GetContext(), x, y,
+                radius_x,
+                radius_y, rotation,
+                start_angle, end_angle,
+                anticlockwise);
+    }
+
+
+    static void Fill(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastFillPathRule(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
 
         auto object = Path2D::GetPointer(path);
 
         if (object != nullptr) {
-            auto data = ConvertFromV8String(isolate, args[1]);
-            canvas_native_context_fill_with_path(
-                    ptr->GetContext(),
-                    object->GetPath(),
-                    data.c_str());
+            switch (rule) {
+                case 0:
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(),
+                            "nonzero");
+                    break;
+                case 1:
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(),
+                            "evenodd");
+                    break;
+                default:
+                    break;
+            }
+
             ptr->UpdateInvalidateState();
         }
     }
 
-    */
 
-    static void FastFillOnePath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path) {
+    static void FastFillPath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -644,74 +817,42 @@ public:
 
         auto object = Path2D::GetPointer(path);
 
-        std::string rule("nonzero");
         canvas_native_context_fill_with_path(
                 ptr->GetContext(),
-                object->GetPath(), rule.c_str());
+                object->GetPath(), "nonzero");
         ptr->UpdateInvalidateState();
     }
 
-    // todo when fast string is supported
-    /*
-    static void FastFillOneString(v8::Local<v8::Object> receiver_obj) {
-        CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    static void FastFillRule(v8::Local<v8::Object> receiver_obj, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
-        auto isolate = args.GetIsolate();
 
-        auto count = args.Length();
-        auto value = args[0];
-        if (count == 2) {
-            auto type = GetNativeType( value.As<v8::Object>());
-            if (type == NativeType::Path2D) {
-                auto object = Path2D::GetPointer(value.As<v8::Object>());
-
-                if (object != nullptr) {
-                    auto data = ConvertFromV8String(isolate, args[1]);
-                    canvas_native_context_fill_with_path(
-                            ptr->GetContext(),
-                            object->GetPath(),
-                            data.c_str());
-                    ptr->UpdateInvalidateState();
-                }
-            }
-
-        } else if (count == 1) {
-            if (value->IsString()) {
-                auto rule = ConvertFromV8String(isolate, value);
+        switch (rule) {
+            case 0:
                 canvas_native_context_fill(
-                        ptr->GetContext(), rule.c_str());
+                        ptr->GetContext(), "nonzero");
                 ptr->UpdateInvalidateState();
-            } else if (value->IsObject()) {
-                auto type = GetNativeType( value.As<v8::Object>());
-                if (type == NativeType::Path2D) {
-                    auto object = Path2D::GetPointer(value.As<v8::Object>());
-
-                    std::string rule("nonzero");
-                    canvas_native_context_fill_with_path(
-                            ptr->GetContext(),
-                            object->GetPath(), rule.c_str());
-                    ptr->UpdateInvalidateState();
-                }
-            }
-        } else {
-            std::string rule("nonzero");
-            canvas_native_context_fill(
-                    ptr->GetContext(), rule.c_str());
-            ptr->UpdateInvalidateState();
+                break;
+            case 1:
+                canvas_native_context_fill(
+                        ptr->GetContext(), "evenodd");
+                ptr->UpdateInvalidateState();
+                break;
+            default:
+                break;
         }
     }
-*/
+
     static void FastFill(v8::Local<v8::Object> receiver_obj) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
         }
 
-        std::string rule("nonzero");
         canvas_native_context_fill(
-                ptr->GetContext(), rule.c_str());
+                ptr->GetContext(), "nonzero");
         ptr->UpdateInvalidateState();
     }
 
@@ -743,25 +884,290 @@ public:
 
     static void IsPointInPath(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsPointInPathXY(v8::Local<v8::Object> receiver_obj, double x, double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        return canvas_native_context_is_point_in_path(
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "nonzero");
+    }
+
+    static bool
+    FastIsPointInPathXYRule(v8::Local<v8::Object> receiver_obj, double x, double y, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        bool ret = false;
+        switch (rule) {
+            case 0:
+                ret = canvas_native_context_is_point_in_path(
+                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "nonzero");
+                break;
+            case 1:
+                ret = canvas_native_context_is_point_in_path(
+                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "evenodd");
+                break;
+            default:
+                break;
+        }
+
+        return ret;
+    }
+
+    static bool
+    FastIsPointInPath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj, double x,
+                      double y, int32_t rule) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        bool ret = false;
+
+        auto type = GetNativeType(path_obj);
+
+        if (type == NativeType::Path2D) {
+            auto path = Path2D::GetPointer(path_obj);
+
+
+            switch (rule) {
+                case 0:
+                    ret = canvas_native_context_is_point_in_path_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), x, y, "nonzero");
+                    break;
+                case 1:
+                    ret = canvas_native_context_is_point_in_path_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), x, y, "evenodd");
+                    break;
+            }
+
+        }
+        return ret;
+    }
+
+
     static void IsPointInStroke(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static bool FastIsPointInStrokeXY(v8::Local<v8::Object> receiver_obj, double x, double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        return canvas_native_context_is_point_in_stroke(
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y));
+    }
+
+    static bool
+    FastIsPointInStroke(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj,
+                        double x, double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        auto type = GetNativeType(path_obj);
+
+        if (type == NativeType::Path2D) {
+            auto path = Path2D::GetPointer(path_obj);
+
+            return canvas_native_context_is_point_in_stroke_with_path(
+                    ptr->GetContext(),
+                    path->GetPath(), static_cast<float>(x), static_cast<float>(y));
+        }
+
+        return false;
+    }
+
     static void LineTo(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastLineTo(v8::Local<v8::Object> receiver_obj, float x, float y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_line_to(
+                ptr->GetContext(), x, y);
+    }
+
 
     static void MeasureText(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastMoveTo(v8::Local<v8::Object> receiver_obj, float x, float y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_move_to(
+                ptr->GetContext(), x, y);
+    }
+
     static void PutImageData(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastPutImageDataDxDy(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_data_obj,
+                         float dx, float dy) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto type = GetNativeType(image_data_obj);
+        if (type == NativeType::ImageData) {
+            auto imageData = ImageDataImpl::GetPointer(image_data_obj);
+            auto dirtyWidth = (float) canvas_native_image_data_get_width(
+                    imageData->GetImageData());
+            auto dirtyHeight = (float) canvas_native_image_data_get_height(
+                    imageData->GetImageData());
+            canvas_native_context_put_image_data(
+                    ptr->GetContext(),
+                    imageData->GetImageData(), dx,
+                    dy, 0, 0,
+                    dirtyWidth, dirtyHeight);
+            ptr->UpdateInvalidateState();
+        }
+
+    }
+
+    static void
+    FastPutImageData(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_data_obj,
+                     float dx, float dy, float dirtyX, float dirtyY, float dirtyWidth,
+                     float dirtyHeight) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(image_data_obj);
+        if (type == NativeType::ImageData) {
+
+            auto imageData = ImageDataImpl::GetPointer(image_data_obj);
+            canvas_native_context_put_image_data(
+                    ptr->GetContext(),
+                    imageData->GetImageData(), dx,
+                    dy, dirtyX, dirtyY,
+                    dirtyWidth, dirtyHeight);
+            ptr->UpdateInvalidateState();
+        }
+
+    }
 
     static void QuadraticCurveTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FastQuadraticCurveTo(v8::Local<v8::Object> receiver_obj, float cpx,
+                                     float cpy,
+                                     float x,
+                                     float y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_quadratic_curve_to(
+                ptr->GetContext(), cpx, cpy,
+                x, y);
+
+    }
+
+
     static void RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FastRoundRectArray(v8::Local<v8::Object> receiver_obj, float x,
+                                   float y,
+                                   float width,
+                                   float height, v8::Local<v8::Array> array) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) { return; }
+
+
+        auto len = array->Length();
+        std::vector<float> buf;
+        buf.reserve(len);
+
+        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                array, buf.data(), len);
+
+        if (copied) {
+            canvas_native_context_round_rect(
+                    ptr->GetContext(),
+                    x, y,
+                    width,
+                    height, buf.data(), buf.size());
+        }
+    }
+
+    static void FastRoundRect(v8::Local<v8::Object> receiver_obj, float x,
+                              float y,
+                              float width,
+                              float height, float radii) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) { return; }
+
+
+        canvas_native_context_round_rect_tl_tr_br_bl(
+                ptr->GetContext(), x, y,
+                width,
+                height, radii, radii,
+                radii, radii);
+
+    }
+
     static void Rect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastRect(v8::Local<v8::Object> receiver_obj, float x,
+                         float y,
+                         float width,
+                         float height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+
+        if (ptr == nullptr) { return; }
+
+        canvas_native_context_rect(
+                ptr->GetContext(), x, y,
+                width,
+                height);
+
+    }
 
     static void RemoveHitRegion(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void ResetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastResetTransform(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_reset_transform(
+                ptr->GetContext());
+    }
 
     static void Restore(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -777,8 +1183,11 @@ public:
 
     static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void FastRotate(v8::Local<v8::Object> receiver_obj, double angle) {
+    static void FastRotate(v8::Local<v8::Object> receiver_obj, float angle) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
         canvas_native_context_rotate(
                 ptr->GetContext(), angle);
     }
@@ -798,11 +1207,77 @@ public:
 
     static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastScale(v8::Local<v8::Object> receiver_obj, float x, float y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_scale(
+                ptr->GetContext(), x, y);
+    }
+
     static void ScrollPathIntoView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void SetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FastSetLineDash(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Array> array) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto len = array->Length();
+        std::vector<float> buf;
+        buf.reserve(len);
+
+        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                array, buf.data(), len);
+
+        if (copied) {
+            canvas_native_context_set_line_dash(
+                    ptr->GetContext(), buf.data(), buf.size());
+        }
+    }
+
+
     static void SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastSetTransform(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> matrix_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(matrix_obj);
+
+        if (type == NativeType::Matrix) {
+            auto matrix = MatrixImpl::GetPointer(matrix_obj);
+            if (matrix != nullptr) {
+                canvas_native_context_set_transform_matrix(
+                        ptr->GetContext(),
+                        matrix->GetMatrix());
+            }
+        }
+    }
+
+
+    static void
+    FastSetTransformABCDEF(v8::Local<v8::Object> receiver_obj, float a, float b, float c, float d,
+                           float e, float f) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_set_transform(
+                ptr->GetContext(), a, b, c, d,
+                e,
+                f);
+    }
 
     static void Stroke(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -832,6 +1307,9 @@ public:
     static void FastStrokeRect(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
                                double height) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
 
         canvas_native_context_stroke_rect(
                 ptr->GetContext(), static_cast<float>(x),
@@ -846,10 +1324,30 @@ public:
 
     static void Transform(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastTransform(v8::Local<v8::Object> receiver_obj, float a, float b, float c, float d,
+                  float e, float f) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_context_transform(
+                ptr->GetContext(), a, b, c, d,
+                e,
+                f);
+    }
+
     static void Translate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void FastTranslate(v8::Local<v8::Object> receiver_obj, double x, double y) {
+
+    static void FastTranslate(v8::Local<v8::Object> receiver_obj, float x, float y) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
         canvas_native_context_translate(
                 ptr->GetContext(), x, y);
     }

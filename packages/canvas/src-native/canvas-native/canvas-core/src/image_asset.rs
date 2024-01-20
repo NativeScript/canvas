@@ -86,7 +86,7 @@ enum ByteType {
 impl ImageAsset {
     pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
         let asset = asset.0.write();
-        let mut inner = ImageAssetInner {
+        let inner = ImageAssetInner {
             image: asset.image.clone(),
             luma_image: asset.luma_image.clone(),
             error: String::new(),

@@ -203,6 +203,10 @@ typedef struct WebGLSync WebGLSync;
 
 void canvas_native_image_filter_destroy(struct ImageFilter *value);
 
+void canvas_native_font_add_family(const char *alias,
+                                   const char *const *filenames,
+                                   uintptr_t length);
+
 void canvas_native_helper_destroy(struct FileHelper *value);
 
 struct FileHelper *canvas_native_helper_read_file(const char *path);
@@ -243,10 +247,6 @@ void canvas_native_raf_stop(struct Raf *raf);
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
 bool canvas_native_raf_get_started(const struct Raf *raf);
 #endif
-
-void canvas_native_font_add_family(const char *alias,
-                                   const char *const *filenames,
-                                   uintptr_t length);
 
 struct CanvasRenderingContext2D *canvas_native_context_create_with_wrapper(int64_t context,
                                                                            int64_t gl_context);
@@ -677,10 +677,10 @@ void canvas_native_context_fill_text(struct CanvasRenderingContext2D *context,
                                      float y);
 
 void canvas_native_context_fill_text_width(struct CanvasRenderingContext2D *context,
-                                     const char *text,
-                                     float x,
-                                     float y,
-                                     float width);
+                                           const char *text,
+                                           float x,
+                                           float y,
+                                           float width);
 
 struct ImageData *canvas_native_context_get_image_data(struct CanvasRenderingContext2D *context,
                                                        float sx,
@@ -794,10 +794,10 @@ void canvas_native_context_stroke_text(struct CanvasRenderingContext2D *context,
                                        float y);
 
 void canvas_native_context_stroke_text_width(struct CanvasRenderingContext2D *context,
-                                       const char *text,
-                                       float x,
-                                       float y,
-                                       float width);
+                                             const char *text,
+                                             float x,
+                                             float y,
+                                             float width);
 
 void canvas_native_context_transform(struct CanvasRenderingContext2D *context,
                                      float a,
@@ -1461,14 +1461,44 @@ void canvas_native_webgl_buffer_data(uint32_t target,
                                      uint32_t usage,
                                      struct WebGLState *state);
 
+void canvas_native_webgl_buffer_data_i8(uint32_t target,
+                                        const int8_t *src_data,
+                                        uintptr_t size,
+                                        uint32_t usage,
+                                        struct WebGLState *state);
+
 void canvas_native_webgl_buffer_data_u16(uint32_t target,
                                          const uint16_t *src_data,
                                          uintptr_t size,
                                          uint32_t usage,
                                          struct WebGLState *state);
 
+void canvas_native_webgl_buffer_data_i16(uint32_t target,
+                                         const int16_t *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
 void canvas_native_webgl_buffer_data_f32(uint32_t target,
                                          const float *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
+void canvas_native_webgl_buffer_data_f64(uint32_t target,
+                                         const double *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
+void canvas_native_webgl_buffer_data_u32(uint32_t target,
+                                         const uint32_t *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
+void canvas_native_webgl_buffer_data_i32(uint32_t target,
+                                         const int32_t *src_data,
                                          uintptr_t size,
                                          uint32_t usage,
                                          struct WebGLState *state);
@@ -1483,6 +1513,48 @@ void canvas_native_webgl_buffer_sub_data(uint32_t target,
                                          const uint8_t *src_data,
                                          uintptr_t size,
                                          struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_i8(uint32_t target,
+                                            intptr_t offset,
+                                            const int8_t *src_data,
+                                            uintptr_t size,
+                                            struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_i16(uint32_t target,
+                                             intptr_t offset,
+                                             const int16_t *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_u16(uint32_t target,
+                                             intptr_t offset,
+                                             const uint16_t *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_i32(uint32_t target,
+                                             intptr_t offset,
+                                             const int32_t *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_u32(uint32_t target,
+                                             intptr_t offset,
+                                             const uint32_t *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_f32(uint32_t target,
+                                             intptr_t offset,
+                                             const float *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl_buffer_sub_data_f64(uint32_t target,
+                                             intptr_t offset,
+                                             const double *src_data,
+                                             uintptr_t size,
+                                             struct WebGLState *state);
 
 void canvas_native_webgl_buffer_sub_data_none(uint32_t target,
                                               intptr_t offset,

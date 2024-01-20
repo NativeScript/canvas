@@ -22,5 +22,5 @@ ndk = { version = "0.7.0", features = ["bitmap"] }
 libloading = "0.8.1"
 log = "0.4.20"
 android_logger = "0.13.1"
-skia-safe = { version = "0.69.0" }
+skia-safe = { version = "0.70.0" }
 itertools = "0.12.0"

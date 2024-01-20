@@ -165,6 +165,41 @@ pub fn canvas_native_webgl_buffer_data(
     }
 }
 
+pub fn canvas_native_webgl_buffer_data_i8(
+    target: u32,
+    src_data: &[i8],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferData(
+            target,
+            src_data.len().try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
+pub fn canvas_native_webgl_buffer_data_i16(
+    target: u32,
+    src_data: &[i16],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<i16>();
+    unsafe {
+        gl_bindings::BufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
 pub fn canvas_native_webgl_buffer_data_u16(
     target: u32,
     src_data: &[u16],
@@ -201,6 +236,60 @@ pub fn canvas_native_webgl_buffer_data_f32(
     }
 }
 
+pub fn canvas_native_webgl_buffer_data_f64(
+    target: u32,
+    src_data: &[f64],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<f64>();
+    unsafe {
+        gl_bindings::BufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
+pub fn canvas_native_webgl_buffer_data_i32(
+    target: u32,
+    src_data: &[i32],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<i32>();
+    unsafe {
+        gl_bindings::BufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
+pub fn canvas_native_webgl_buffer_data_u32(
+    target: u32,
+    src_data: &[u32],
+    usage: u32,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    let len = src_data.len() * std::mem::size_of::<u32>();
+    unsafe {
+        gl_bindings::BufferData(
+            target,
+            len.try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+            usage,
+        );
+    }
+}
+
 pub fn canvas_native_webgl_buffer_data_none(
     target: u32,
     size: isize,
@@ -225,6 +314,134 @@ pub fn canvas_native_webgl_buffer_sub_data(
             target,
             offset.try_into().unwrap(),
             src_data.len().try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+pub fn canvas_native_webgl_buffer_sub_data_i8(
+    target: u32,
+    offset: isize,
+    src_data: &[i8],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            src_data.len().try_into().unwrap(),
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+pub fn canvas_native_webgl_buffer_sub_data_i16(
+    target: u32,
+    offset: isize,
+    src_data: &[i16],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<i16>() as isize,
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+
+pub fn canvas_native_webgl_buffer_sub_data_u16(
+    target: u32,
+    offset: isize,
+    src_data: &[u16],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<u16>() as isize,
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+pub fn canvas_native_webgl_buffer_sub_data_i32(
+    target: u32,
+    offset: isize,
+    src_data: &[i32],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<i32>() as isize,
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+pub fn canvas_native_webgl_buffer_sub_data_u32(
+    target: u32,
+    offset: isize,
+    src_data: &[u32],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<u32>() as isize,
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+
+
+pub fn canvas_native_webgl_buffer_sub_data_f32(
+    target: u32,
+    offset: isize,
+    src_data: &[f32],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<f32>() as isize,
+            src_data.as_ptr() as *const c_void,
+        );
+    }
+}
+
+
+pub fn canvas_native_webgl_buffer_sub_data_f64(
+    target: u32,
+    offset: isize,
+    src_data: &[f64],
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::BufferSubData(
+            target,
+            offset.try_into().unwrap(),
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<f64>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }

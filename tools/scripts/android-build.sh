@@ -22,7 +22,7 @@ ANDROID_x86_64_OUTPUT="$ANDROID_x86_64_OUTPUT_DIR/debug/$OUTPUT_LIB_NAME"
 ANDROID_NDK_SYSROOT_LIB="$ANDROID_NDK/sysroot/usr/lib"
 LIBCPLUSPLUS_NAME="libc++_shared.so"
 #CARGO_FLAGS="-C target-cpu=native"
-CARGO_FLAGS=""
+CARGO_FLAGS="-Zlocation-detail=none -C target-cpu=native -C panic=abort"
 for arg in "$@"
 do
     if [[ "$arg" == "--help" ]] || [[ "$arg" == "-h" ]]

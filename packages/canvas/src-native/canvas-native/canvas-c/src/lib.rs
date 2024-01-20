@@ -6132,6 +6132,25 @@ pub extern "C" fn canvas_native_webgl_buffer_data(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_data_i8(
+    target: u32,
+    src_data: *const i8,
+    size: usize,
+    usage: u32,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_data_i8(
+        target,
+        src_data,
+        usage,
+        state.get_inner_mut(),
+    )
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_u16(
     target: u32,
     src_data: *const u16,
@@ -6150,6 +6169,68 @@ pub extern "C" fn canvas_native_webgl_buffer_data_u16(
     )
 }
 
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_data_i16(
+    target: u32,
+    src_data: *const i16,
+    size: usize,
+    usage: u32,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_data_i16(
+        target,
+        src_data,
+        usage,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_data_u32(
+    target: u32,
+    src_data: *const u32,
+    size: usize,
+    usage: u32,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_data_u32(
+        target,
+        src_data,
+        usage,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_data_i32(
+    target: u32,
+    src_data: *const i32,
+    size: usize,
+    usage: u32,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_data_i32(
+        target,
+        src_data,
+        usage,
+        state.get_inner_mut(),
+    )
+}
+
+
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_buffer_data_f32(
     target: u32,
@@ -6161,6 +6242,24 @@ pub extern "C" fn canvas_native_webgl_buffer_data_f32(
     let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_data_f32(
+        target,
+        src_data,
+        usage,
+        state.get_inner_mut(),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_data_f64(
+    target: u32,
+    src_data: *const f64,
+    size: usize,
+    usage: u32,
+    state: *mut WebGLState,
+) {
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_data_f64(
         target,
         src_data,
         usage,
@@ -6196,6 +6295,148 @@ pub extern "C" fn canvas_native_webgl_buffer_sub_data(
     let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_i8(
+    target: u32,
+    offset: isize,
+    src_data: *const i8,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_i8(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_i16(
+    target: u32,
+    offset: isize,
+    src_data: *const i16,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_i16(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_u16(
+    target: u32,
+    offset: isize,
+    src_data: *const u16,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_u16(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_i32(
+    target: u32,
+    offset: isize,
+    src_data: *const i32,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_i32(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_u32(
+    target: u32,
+    offset: isize,
+    src_data: *const u32,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_u32(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_f32(
+    target: u32,
+    offset: isize,
+    src_data: *const f32,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_f32(
+        target,
+        offset,
+        src_data,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_buffer_sub_data_f64(
+    target: u32,
+    offset: isize,
+    src_data: *const f64,
+    size: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src_data = unsafe { std::slice::from_raw_parts(src_data, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_buffer_sub_data_f64(
         target,
         offset,
         src_data,

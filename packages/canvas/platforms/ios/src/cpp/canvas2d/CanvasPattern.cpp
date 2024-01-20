@@ -6,7 +6,7 @@
 #include "Helpers.h"
 #include "Caches.h"
 
-CanvasPattern::CanvasPattern(PaintStyle* style) : style_(style) {}
+CanvasPattern::CanvasPattern(PaintStyle *style) : style_(style) {}
 
 void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
@@ -19,6 +19,9 @@ void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate 
 
     canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func);
 }
+
+v8::CFunction CanvasPattern::fast_set_transform_(
+        v8::CFunction::Make(CanvasPattern::FastSetTransform));
 
 CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetAlignedPointerFromInternalField(0);
@@ -33,7 +36,7 @@ static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pa
     v8::EscapableHandleScope scope(isolate);
     auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
             context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-    SetNativeType( object, NativeType::CanvasPattern);
+    SetNativeType(object, NativeType::CanvasPattern);
     object->SetAlignedPointerInInternalField(0, pattern);
     return scope.Escape(object);
 }
@@ -51,9 +54,9 @@ v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
-    tmpl->Set(
-            ConvertToV8String(isolate, "SetTransform"),
-            v8::FunctionTemplate::New(isolate, &SetTransform));
+
+    SetFastMethod(isolate, tmpl, "setTransform", SetTransform, &fast_set_transform_,
+                  v8::Local<v8::Value>());
 
     cache->CanvasPatternTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -67,7 +70,7 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::Matrix) {
 
@@ -81,6 +84,6 @@ void CanvasPattern::SetTransform(const v8::FunctionCallbackInfo<v8::Value> &args
 
 }
 
-PaintStyle* CanvasPattern::GetPaintStyle() {
+PaintStyle *CanvasPattern::GetPaintStyle() {
     return this->style_;
 }

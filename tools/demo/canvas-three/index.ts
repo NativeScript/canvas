@@ -1801,6 +1801,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		controls.enablePan = false;
 		controls.enableDamping = true;
 
+
+		const light = new THREE.SpotLight();
+		light.position.set(-1.8, 0.6, 2.7 * 1.2);
+		scene.add(light);
+
 		const dracoLoader = new DRACOLoader();
 		dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
 		dracoLoader.setDecoderConfig({ type: 'js' });
@@ -2745,8 +2750,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// lights
 
 			var light = new THREE.HemisphereLight(0xffffff, 0x444444);
-			light.position.set(0, 40, 0);
+			light.position.set(0, 20, 0);
 			scene.add(light);
+
+			
 
 			light = new THREE.DirectionalLight(0xffffff) as any;
 			light.position.set(0, 20, 10);

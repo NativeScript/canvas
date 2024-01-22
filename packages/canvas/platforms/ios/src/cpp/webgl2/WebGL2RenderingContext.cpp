@@ -3,8 +3,232 @@
 //
 
 #include "WebGL2RenderingContext.h"
+
+v8::CFunction WebGL2RenderingContext::fast_begin_query_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBeginQuery));
+
+v8::CFunction WebGL2RenderingContext::fast_begin_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBeginTransformFeedback));
+
 v8::CFunction WebGL2RenderingContext::fast_bind_vertex_array_(
         v8::CFunction::Make(WebGL2RenderingContext::FastBindVertexArray));
+
+
+v8::CFunction WebGL2RenderingContext::fast_bind_buffer_base_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBindBufferBase));
+
+v8::CFunction WebGL2RenderingContext::fast_bind_buffer_range_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBindBufferRange));
+
+v8::CFunction WebGL2RenderingContext::fast_bind_sampler_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBindSampler));
+
+v8::CFunction WebGL2RenderingContext::fast_bind_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBindTransformFeedback));
+
+v8::CFunction WebGL2RenderingContext::fast_blit_framebuffer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastBlitFramebuffer));
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fi_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfi));
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfv));
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferfvArray));
+
+const v8::CFunction fast_clear_buffer_fv_overloads_[] = {
+        WebGL2RenderingContext::fast_clear_buffer_fv_,
+        WebGL2RenderingContext::fast_clear_buffer_fv_array_
+};
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferiv));
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_iv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferivArray));
+
+const v8::CFunction fast_clear_buffer_iv_overloads_[] = {
+        WebGL2RenderingContext::fast_clear_buffer_iv_,
+        WebGL2RenderingContext::fast_clear_buffer_iv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferuiv));
+
+v8::CFunction WebGL2RenderingContext::fast_clear_buffer_uiv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastClearBufferuivArray));
+
+const v8::CFunction fast_clear_buffer_uiv_overloads_[] = {
+        WebGL2RenderingContext::fast_clear_buffer_uiv_,
+        WebGL2RenderingContext::fast_clear_buffer_uiv_array_
+};
+
+v8::CFunction WebGL2RenderingContext::fast_draw_arrays_instanced_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDrawArraysInstanced));
+
+v8::CFunction WebGL2RenderingContext::fast_draw_buffers_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDrawBuffers));
+
+
+v8::CFunction WebGL2RenderingContext::fast_draw_elements_instanced_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDrawElementsInstanced));
+
+v8::CFunction WebGL2RenderingContext::fast_draw_range_elements_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDrawRangeElements));
+
+v8::CFunction WebGL2RenderingContext::fast_resume_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastResumeTransformFeedback));
+
+v8::CFunction WebGL2RenderingContext::fast_sampler_parameterf_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastSamplerParameterf));
+
+v8::CFunction WebGL2RenderingContext::fast_sampler_parameteri_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastSamplerParameteri));
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_1ui_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform1ui));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_1uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform1uiv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_2ui_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform2ui));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_2uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform2uiv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_3ui_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform3ui));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_3uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform3uiv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_4ui_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform4ui));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_4uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniform4uiv));
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x3fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x3fvArray));
+
+const v8::CFunction fast_uniform_matrix_2x3fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_2x3fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_2x3fv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x4fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix2x4fvArray));
+
+const v8::CFunction fast_uniform_matrix_2x4fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_2x4fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_2x4fv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x2fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x2fvArray));
+
+const v8::CFunction fast_uniform_matrix_3x2fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_3x2fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_3x2fv_array_
+};
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x4fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix3x4fvArray));
+
+const v8::CFunction fast_uniform_matrix_3x4fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_3x4fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_3x4fv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x2fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x2fvArray));
+
+const v8::CFunction fast_uniform_matrix_4x2fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_4x2fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_4x2fv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x3fv));
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformMatrix4x3fvArray));
+
+const v8::CFunction fast_uniform_matrix_4x3fv_overloads_[] = {
+        WebGL2RenderingContext::fast_uniform_matrix_4x3fv_,
+        WebGL2RenderingContext::fast_uniform_matrix_4x3fv_array_
+};
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_divisor_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribDivisor));
+
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4i_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4i));
+
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4iv));
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4ivArray));
+
+const v8::CFunction fast_vertex_attrib_i_4iv_overloads_[] = {
+        WebGL2RenderingContext::fast_vertex_attrib_i_4iv_,
+        WebGL2RenderingContext::fast_vertex_attrib_i_4iv_array_
+};
+
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4ui_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4ui));
+
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4uiv));
+
+v8::CFunction WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastVertexAttribI4uivArray));
+
+const v8::CFunction fast_vertex_attrib_i_4uiv_overloads_[] = {
+        WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_,
+        WebGL2RenderingContext::fast_vertex_attrib_i_4uiv_array_
+};
+
+v8::CFunction WebGL2RenderingContext::fast_uniform_block_binding_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastUniformBlockBinding));
+
+
+v8::CFunction WebGL2RenderingContext::fast_invalidate_framebuffer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastInvalidateFramebuffer));
+
+v8::CFunction WebGL2RenderingContext::fast_invalidate_sub_framebuffer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastInvalidateSubFramebuffer));
+
 
 WebGL2RenderingContext::WebGL2RenderingContext(WebGLState *state) : WebGLRenderingContext(
         state, WebGLRenderingVersion::V2) {
@@ -61,7 +285,7 @@ void WebGL2RenderingContext::BeginQuery(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto value = args[1];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLQuery) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
@@ -103,7 +327,7 @@ void WebGL2RenderingContext::BindBufferBase(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
 
     auto bufferValue = args[2];
-    auto type = GetNativeType( bufferValue);
+    auto type = GetNativeType(bufferValue);
 
     if (type == NativeType::WebGLBuffer) {
         auto target = args[0]->Uint32Value(context).ToChecked();
@@ -130,7 +354,7 @@ void WebGL2RenderingContext::BindBufferRange(const v8::FunctionCallbackInfo<v8::
     auto context = isolate->GetCurrentContext();
 
     auto bufferValue = args[2];
-    auto type = GetNativeType( bufferValue);
+    auto type = GetNativeType(bufferValue);
     if (type == NativeType::WebGLBuffer) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto index = args[1]->Uint32Value(context).ToChecked();
@@ -158,7 +382,7 @@ void WebGL2RenderingContext::BindSampler(const v8::FunctionCallbackInfo<v8::Valu
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[1];
-    auto type = GetNativeType( samplerValue);
+    auto type = GetNativeType(samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto unit = args[0]->Uint32Value(context).ToChecked();
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
@@ -182,7 +406,7 @@ WebGL2RenderingContext::BindTransformFeedback(const v8::FunctionCallbackInfo<v8:
     auto context = isolate->GetCurrentContext();
 
     auto transformFeedbackValue = args[1];
-    auto type = GetNativeType( transformFeedbackValue);
+    auto type = GetNativeType(transformFeedbackValue);
 
     if (type == NativeType::WebGLTransformFeedback) {
         auto target = args[0]->Uint32Value(context).ToChecked();
@@ -214,7 +438,7 @@ void WebGL2RenderingContext::BindVertexArray(const v8::FunctionCallbackInfo<v8::
         return;
     }
 
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLVertexArrayObject) {
         auto vertexArray = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
 
@@ -458,7 +682,7 @@ void WebGL2RenderingContext::ClientWaitSync(const v8::FunctionCallbackInfo<v8::V
     auto context = isolate->GetCurrentContext();
 
     auto syncValue = args[0];
-    auto type = GetNativeType( syncValue);
+    auto type = GetNativeType(syncValue);
     if (args.Length() > 2 && type == NativeType::WebGLSync) {
         auto sync = WebGLSyncImpl::GetPointer(syncValue.As<v8::Object>());
         if (sync != nullptr) {
@@ -696,7 +920,7 @@ void WebGL2RenderingContext::DeleteQuery(const v8::FunctionCallbackInfo<v8::Valu
     auto isolate = args.GetIsolate();
 
     auto queryValue = args[0];
-    auto type = GetNativeType( queryValue);
+    auto type = GetNativeType(queryValue);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
 
@@ -719,7 +943,7 @@ void WebGL2RenderingContext::DeleteSampler(const v8::FunctionCallbackInfo<v8::Va
 
 
     auto samplerValue = args[0];
-    auto type = GetNativeType( samplerValue);
+    auto type = GetNativeType(samplerValue);
 
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
@@ -743,7 +967,7 @@ void WebGL2RenderingContext::DeleteSync(const v8::FunctionCallbackInfo<v8::Value
 
 
     auto syncValue = args[0];
-    auto type = GetNativeType( syncValue);
+    auto type = GetNativeType(syncValue);
     if (type == NativeType::WebGLSync) {
         auto sync = WebGLSyncImpl::GetPointer(syncValue.As<v8::Object>());
 
@@ -767,7 +991,7 @@ WebGL2RenderingContext::DeleteTransformFeedback(const v8::FunctionCallbackInfo<v
 
 
     auto transformFeedbackValue = args[0];
-    auto type = GetNativeType( transformFeedbackValue);
+    auto type = GetNativeType(transformFeedbackValue);
     if (type == NativeType::WebGLTransformFeedback) {
         auto transformFeedback = WebGLTransformFeedback::GetPointer(
                 transformFeedbackValue.As<v8::Object>());
@@ -791,7 +1015,7 @@ void WebGL2RenderingContext::DeleteVertexArray(const v8::FunctionCallbackInfo<v8
 
 
     auto vertexArrayValue = args[0];
-    auto type = GetNativeType( vertexArrayValue);
+    auto type = GetNativeType(vertexArrayValue);
     if (type == NativeType::WebGLVertexArrayObject) {
 
         auto vertexArray = WebGLVertexArrayObject::GetPointer(vertexArrayValue.As<v8::Object>());
@@ -972,7 +1196,7 @@ WebGL2RenderingContext::FramebufferTextureLayer(const v8::FunctionCallbackInfo<v
 
 
     auto textureValue = args[2];
-    auto type = GetNativeType( textureValue);
+    auto type = GetNativeType(textureValue);
     if (type == NativeType::WebGLTexture) {
         auto target = args[0]->Uint32Value(context).ToChecked();
         auto attachment = args[1]->Uint32Value(context).ToChecked();
@@ -1005,7 +1229,7 @@ WebGL2RenderingContext::GetActiveUniformBlockName(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         if (program != nullptr) {
@@ -1036,7 +1260,7 @@ void WebGL2RenderingContext::GetActiveUniformBlockParameter(
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
 
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -1111,7 +1335,7 @@ void WebGL2RenderingContext::GetActiveUniforms(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
 
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -1278,7 +1502,7 @@ void WebGL2RenderingContext::GetFragDataLocation(const v8::FunctionCallbackInfo<
 
     auto programValue = args[0];
     auto nameValue = args[1];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram && nameValue->IsString()) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
 
@@ -1496,7 +1720,7 @@ void WebGL2RenderingContext::GetQueryParameter(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto queryValue = args[0];
-    auto type = GetNativeType( queryValue);
+    auto type = GetNativeType(queryValue);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(queryValue.As<v8::Object>());
         if (query != nullptr) {
@@ -1565,7 +1789,7 @@ void WebGL2RenderingContext::GetSamplerParameter(const v8::FunctionCallbackInfo<
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType( samplerValue);
+    auto type = GetNativeType(samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         if (sampler != nullptr) {
@@ -1655,7 +1879,7 @@ void WebGL2RenderingContext::GetTransformFeedbackVarying(
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto index = args[1]->Uint32Value(context).ToChecked();
@@ -1693,7 +1917,7 @@ void WebGL2RenderingContext::GetUniformBlockIndex(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto index = ConvertFromV8String(isolate, args[1]);
@@ -1721,7 +1945,7 @@ void WebGL2RenderingContext::GetUniformIndices(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto uniformNamesObject = args[1];
@@ -1852,7 +2076,7 @@ void WebGL2RenderingContext::IsQuery(const v8::FunctionCallbackInfo<v8::Value> &
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLQuery) {
         auto query = WebGLQuery::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1877,7 +2101,7 @@ void WebGL2RenderingContext::IsSampler(const v8::FunctionCallbackInfo<v8::Value>
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLSampler) {
         auto query = WebGLSampler::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1902,7 +2126,7 @@ void WebGL2RenderingContext::IsSync(const v8::FunctionCallbackInfo<v8::Value> &a
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLSync) {
         auto query = WebGLSyncImpl::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1927,7 +2151,7 @@ void WebGL2RenderingContext::IsTransformFeedback(const v8::FunctionCallbackInfo<
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLTransformFeedback) {
         auto query = WebGLTransformFeedback::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -1952,7 +2176,7 @@ void WebGL2RenderingContext::IsVertexArray(const v8::FunctionCallbackInfo<v8::Va
     auto context = isolate->GetCurrentContext();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
     if (type == NativeType::WebGLVertexArrayObject) {
         auto query = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
         if (query != nullptr) {
@@ -2039,7 +2263,7 @@ void WebGL2RenderingContext::SamplerParameterf(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType( samplerValue);
+    auto type = GetNativeType(samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         auto pname = args[1]->Uint32Value(context).ToChecked();
@@ -2065,7 +2289,7 @@ void WebGL2RenderingContext::SamplerParameteri(const v8::FunctionCallbackInfo<v8
     auto context = isolate->GetCurrentContext();
 
     auto samplerValue = args[0];
-    auto type = GetNativeType( samplerValue);
+    auto type = GetNativeType(samplerValue);
     if (type == NativeType::WebGLSampler) {
         auto sampler = WebGLSampler::GetPointer(samplerValue.As<v8::Object>());
         auto pname = args[1]->Uint32Value(context).ToChecked();
@@ -2162,7 +2386,7 @@ void WebGL2RenderingContext::TexImage3D(const v8::FunctionCallbackInfo<v8::Value
             return;
         }
 
-        auto imageType = GetNativeType( imageOrPixelsOrOffset);
+        auto imageType = GetNativeType(imageOrPixelsOrOffset);
 
         switch (imageType) {
             case NativeType::ImageAsset: {
@@ -2421,7 +2645,7 @@ void WebGL2RenderingContext::TexSubImage3D(const v8::FunctionCallbackInfo<v8::Va
         }
 
 
-        auto imageType = GetNativeType( imageOrPixelsOrOffsetObject);
+        auto imageType = GetNativeType(imageOrPixelsOrOffsetObject);
 
         if (imageType == NativeType::ImageAsset) {
             auto asset = ImageAssetImpl::GetPointer(imageOrPixelsOrOffsetObject.As<v8::Object>());
@@ -2523,7 +2747,7 @@ WebGL2RenderingContext::TransformFeedbackVaryings(const v8::FunctionCallbackInfo
     auto context = isolate->GetCurrentContext();
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
         auto varyingsObject = args[1];
@@ -2573,7 +2797,7 @@ void WebGL2RenderingContext::Uniform1ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
     auto v0Value = args[1];
     if (type == NativeType::WebGLUniformLocation) {
@@ -2603,7 +2827,7 @@ void WebGL2RenderingContext::Uniform2ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2635,7 +2859,7 @@ void WebGL2RenderingContext::Uniform3ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2672,7 +2896,7 @@ void WebGL2RenderingContext::Uniform4ui(const v8::FunctionCallbackInfo<v8::Value
     auto context = isolate->GetCurrentContext();
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
     if (type == NativeType::WebGLUniformLocation) {
 
@@ -2714,7 +2938,7 @@ void WebGL2RenderingContext::Uniform1uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2771,7 +2995,7 @@ void WebGL2RenderingContext::Uniform2uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2827,7 +3051,7 @@ void WebGL2RenderingContext::Uniform3uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
@@ -2884,13 +3108,13 @@ void WebGL2RenderingContext::Uniform4uiv(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
 
 
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto dataValue = args[1];
-        if(location != nullptr){
+        if (location != nullptr) {
             if (dataValue->IsUint32Array()) {
                 auto buf = dataValue.As<v8::Uint32Array>();
 
@@ -2941,7 +3165,7 @@ void WebGL2RenderingContext::UniformBlockBinding(const v8::FunctionCallbackInfo<
 
 
     auto programValue = args[0];
-    auto type = GetNativeType( programValue);
+    auto type = GetNativeType(programValue);
     if (type == NativeType::WebGLProgram) {
 
         auto program = WebGLProgram::GetPointer(programValue.As<v8::Object>());
@@ -2974,7 +3198,7 @@ void WebGL2RenderingContext::UniformMatrix2x3fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3030,7 +3254,7 @@ void WebGL2RenderingContext::UniformMatrix2x4fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3087,7 +3311,7 @@ void WebGL2RenderingContext::UniformMatrix3x2fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3145,7 +3369,7 @@ void WebGL2RenderingContext::UniformMatrix3x4fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3201,7 +3425,7 @@ void WebGL2RenderingContext::UniformMatrix4x2fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3257,7 +3481,7 @@ void WebGL2RenderingContext::UniformMatrix4x3fv(const v8::FunctionCallbackInfo<v
 
 
     auto locationValue = args[0];
-    auto type = GetNativeType( locationValue);
+    auto type = GetNativeType(locationValue);
     if (type == NativeType::WebGLUniformLocation) {
         auto location = WebGLUniformLocation::GetPointer(locationValue.As<v8::Object>());
         auto transpose = args[1]->BooleanValue(isolate);
@@ -3924,67 +4148,45 @@ void WebGL2RenderingContext::SetConstants(v8::Isolate *isolate,
 void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
                                         const v8::Local<v8::ObjectTemplate> &tmpl) {
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "beginQuery"),
-            v8::FunctionTemplate::New(isolate, &BeginQuery)
-    );
+    SetFastMethod(isolate, tmpl, "beginQuery", BeginQuery, &fast_begin_query_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "beginTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &BeginTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "beginTransformFeedback", BeginTransformFeedback,
+                  &fast_begin_transform_feedback_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindBufferBase"),
-            v8::FunctionTemplate::New(isolate, &BindBufferBase)
-    );
+    SetFastMethod(isolate, tmpl, "bindBufferBase", BindBufferBase, &fast_bind_buffer_base_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindBufferRange"),
-            v8::FunctionTemplate::New(isolate, &BindBufferRange)
-    );
+    SetFastMethod(isolate, tmpl, "bindBufferRange", BindBufferRange, &fast_bind_buffer_range_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindSampler"),
-            v8::FunctionTemplate::New(isolate, &BindSampler)
-    );
+    SetFastMethod(isolate, tmpl, "bindSampler", BindSampler, &fast_bind_sampler_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "bindTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &BindTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "bindTransformFeedback", BindTransformFeedback,
+                  &fast_bind_transform_feedback_, v8::Local<v8::Value>());
 
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "bindVertexArray"),
-//            v8::FunctionTemplate::New(isolate, &BindVertexArray)
-//    );
 
-    SetFastMethod(isolate, tmpl, "bindVertexArray", BindVertexArray, &fast_bind_vertex_array_, v8::Local<v8::Value>());
+    SetFastMethod(isolate, tmpl, "bindVertexArray", BindVertexArray, &fast_bind_vertex_array_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "blitFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &BlitFramebuffer)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearBufferfi"),
-            v8::FunctionTemplate::New(isolate, &ClearBufferfi)
-    );
+    SetFastMethod(isolate, tmpl, "blitFramebuffer", BlitFramebuffer, &fast_blit_framebuffer_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearBufferfv"),
-            v8::FunctionTemplate::New(isolate, &ClearBufferfv)
-    );
+    SetFastMethod(isolate, tmpl, "clearBufferfi", ClearBufferfi, &fast_clear_buffer_fi_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearBufferiv"),
-            v8::FunctionTemplate::New(isolate, &ClearBufferiv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferfv", ClearBufferfv,
+                               fast_clear_buffer_fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "clearBufferuiv"),
-            v8::FunctionTemplate::New(isolate, &ClearBufferuiv)
-    );
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferiv", ClearBufferiv,
+                               fast_clear_buffer_iv_overloads_, v8::Local<v8::Value>());
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "clearBufferuiv", ClearBufferuiv,
+                               fast_clear_buffer_uiv_overloads_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "clientWaitSync"),
@@ -4052,25 +4254,22 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &DeleteVertexArray)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawArraysInstanced"),
-            v8::FunctionTemplate::New(isolate, &DrawArraysInstanced)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawBuffers"),
-            v8::FunctionTemplate::New(isolate, &DrawBuffers)
-    );
+    SetFastMethod(isolate, tmpl, "drawArraysInstanced", DrawArraysInstanced,
+                  &fast_draw_arrays_instanced_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawElementsInstanced"),
-            v8::FunctionTemplate::New(isolate, &DrawElementsInstanced)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawRangeElements"),
-            v8::FunctionTemplate::New(isolate, &DrawRangeElements)
-    );
+    SetFastMethod(isolate, tmpl, "drawBuffers", DrawBuffers, &fast_draw_buffers_,
+                  v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "drawElementsInstanced", DrawElementsInstanced,
+                  &fast_draw_elements_instanced_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "drawRangeElements", DrawRangeElements, &fast_draw_range_elements_,
+                  v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "endQuery"),
@@ -4092,113 +4291,76 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &FramebufferTextureLayer)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1ui"),
-            v8::FunctionTemplate::New(isolate, &Uniform1ui)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform1uiv"),
-            v8::FunctionTemplate::New(isolate, &Uniform1uiv)
-    );
+    SetFastMethod(isolate, tmpl, "uniform1ui", Uniform1ui, &fast_uniform_1ui_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2ui"),
-            v8::FunctionTemplate::New(isolate, &Uniform2ui)
-    );
+    SetFastMethod(isolate, tmpl, "uniform1uiv", Uniform1uiv, &fast_uniform_1uiv_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform2uiv"),
-            v8::FunctionTemplate::New(isolate, &Uniform2uiv)
-    );
+    SetFastMethod(isolate, tmpl, "uniform2ui", Uniform2ui, &fast_uniform_2ui_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3ui"),
-            v8::FunctionTemplate::New(isolate, &Uniform3ui)
-    );
+    SetFastMethod(isolate, tmpl, "uniform2uiv", Uniform2uiv, &fast_uniform_2uiv_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform3uiv"),
-            v8::FunctionTemplate::New(isolate, &Uniform3uiv)
-    );
+    SetFastMethod(isolate, tmpl, "uniform3ui", Uniform3ui, &fast_uniform_3ui_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4ui"),
-            v8::FunctionTemplate::New(isolate, &Uniform4ui)
-    );
+    SetFastMethod(isolate, tmpl, "uniform3uiv", Uniform3uiv, &fast_uniform_3uiv_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniform4uiv"),
-            v8::FunctionTemplate::New(isolate, &Uniform4uiv)
-    );
+    SetFastMethod(isolate, tmpl, "uniform4ui", Uniform4ui, &fast_uniform_4ui_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "uniform4uiv", Uniform4uiv, &fast_uniform_4uiv_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "uniformBlockBinding", UniformBlockBinding,
+                  &fast_uniform_block_binding_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformBlockBinding"),
-            v8::FunctionTemplate::New(isolate, &UniformBlockBinding)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x3fv", UniformMatrix2x3fv,
+                               fast_uniform_matrix_2x3fv_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix2x3fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix2x3fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix2x4fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix2x4fv)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix3x2fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix3x2fv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix2x4fv", UniformMatrix2x4fv,
+                               fast_uniform_matrix_2x4fv_overloads_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix3x4fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix3x4fv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x2fv", UniformMatrix3x2fv,
+                               fast_uniform_matrix_3x2fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix4x2fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix4x2fv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix3x4fv", UniformMatrix3x4fv,
+                               fast_uniform_matrix_3x4fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix4x3fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix4x3fv)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "uniformMatrix4x3fv"),
-            v8::FunctionTemplate::New(isolate, &UniformMatrix4x3fv)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x2fv", UniformMatrix4x2fv,
+                               fast_uniform_matrix_4x2fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribDivisor"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribDivisor)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribI4i"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribI4i)
-    );
+    SetFastMethodWithOverLoads(isolate, tmpl, "uniformMatrix4x3fv", UniformMatrix4x3fv,
+                               fast_uniform_matrix_4x3fv_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribI4iv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribI4iv)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribI4ui"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribI4ui)
-    );
+    SetFastMethod(isolate, tmpl, "vertexAttribDivisor", VertexAttribDivisor,
+                  &fast_vertex_attrib_divisor_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribI4uiv"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribI4uiv)
-    );
+
+    SetFastMethod(isolate, tmpl, "vertexAttribI4i", VertexAttribI4i, &fast_vertex_attrib_i_4i_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4iv", VertexAttribI4iv,
+                               fast_vertex_attrib_i_4iv_overloads_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "vertexAttribI4ui", VertexAttribI4ui, &fast_vertex_attrib_i_4ui_,
+                  v8::Local<v8::Value>());
+
+
+    SetFastMethodWithOverLoads(isolate, tmpl, "vertexAttribI4uiv", VertexAttribI4uiv,
+                               fast_vertex_attrib_i_4uiv_overloads_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "getActiveUniformBlockName"),
@@ -4278,15 +4440,12 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &GetUniformIndices)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "invalidateFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &InvalidateFramebuffer)
-    );
+    SetFastMethod(isolate, tmpl, "invalidateFramebuffer", InvalidateFramebuffer,
+                  &fast_invalidate_framebuffer_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "invalidateSubFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &InvalidateSubFramebuffer)
-    );
+
+    SetFastMethod(isolate, tmpl, "invalidateSubFramebuffer", InvalidateSubFramebuffer,
+                  &fast_invalidate_sub_framebuffer_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -4331,20 +4490,15 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "resumeTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &ResumeTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "resumeTransformFeedback", ResumeTransformFeedback,
+                  &fast_resume_transform_feedback_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "samplerParameterf"),
-            v8::FunctionTemplate::New(isolate, &SamplerParameterf)
-    );
+    SetFastMethod(isolate, tmpl, "samplerParameterf", SamplerParameterf, &fast_sampler_parameterf_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "samplerParameteri"),
-            v8::FunctionTemplate::New(isolate, &SamplerParameteri)
-    );
+    SetFastMethod(isolate, tmpl, "samplerParameteri", SamplerParameteri, &fast_sampler_parameteri_,
+                  v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "texImage3D"),

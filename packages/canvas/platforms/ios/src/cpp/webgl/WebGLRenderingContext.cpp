@@ -435,10 +435,10 @@ v8::CFunction WebGLRenderingContext::fast_delete_program_(
 
 
 v8::CFunction WebGLRenderingContext::fast_delete_renderbuffer_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteFramebuffer));
+        v8::CFunction::Make(WebGLRenderingContext::FastDeleteRenderbuffer));
 
 v8::CFunction WebGLRenderingContext::fast_delete_shader_(
-        v8::CFunction::Make(WebGLRenderingContext::FastDeleteFramebuffer));
+        v8::CFunction::Make(WebGLRenderingContext::FastDeleteShader));
 
 v8::CFunction WebGLRenderingContext::fast_delete_texture_(
         v8::CFunction::Make(WebGLRenderingContext::FastDeleteTexture));
@@ -449,6 +449,136 @@ v8::CFunction WebGLRenderingContext::fast_compile_shader_(
 
 v8::CFunction WebGLRenderingContext::fast_framebuffer_texture_2d_(
         v8::CFunction::Make(WebGLRenderingContext::FastFramebufferTexture2D));
+
+v8::CFunction WebGLRenderingContext::fast_color_mask_(
+        v8::CFunction::Make(WebGLRenderingContext::FastColorMask));
+
+v8::CFunction WebGLRenderingContext::fast_copy_tex_image_2d_(
+        v8::CFunction::Make(WebGLRenderingContext::FastCopyTexImage2D));
+
+v8::CFunction WebGLRenderingContext::fast_copy_tex_sub_image_2d_(
+        v8::CFunction::Make(WebGLRenderingContext::FastCopyTexSubImage2D));
+
+v8::CFunction WebGLRenderingContext::fast_cull_face_(
+        v8::CFunction::Make(WebGLRenderingContext::FastCullFace));
+
+v8::CFunction WebGLRenderingContext::fast_depth_func_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDepthFunc));
+
+v8::CFunction WebGLRenderingContext::fast_depth_mask_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDepthMask));
+
+v8::CFunction WebGLRenderingContext::fast_depth_range_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDepthRange));
+
+v8::CFunction WebGLRenderingContext::fast_detach_shader_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDetachShader));
+
+v8::CFunction WebGLRenderingContext::fast_disable_vertex_attrib_array_(
+        v8::CFunction::Make(WebGLRenderingContext::FastDisableVertexAttribArray));
+
+v8::CFunction WebGLRenderingContext::fast_finish_(
+        v8::CFunction::Make(WebGLRenderingContext::FastFinish));
+
+v8::CFunction WebGLRenderingContext::fast_flush_(
+        v8::CFunction::Make(WebGLRenderingContext::FastFlush));
+
+v8::CFunction WebGLRenderingContext::fast_framebuffer_renderbuffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastFramebufferRenderbuffer));
+
+
+v8::CFunction WebGLRenderingContext::fast_front_face_(
+        v8::CFunction::Make(WebGLRenderingContext::FastFrontFace));
+
+v8::CFunction WebGLRenderingContext::fast_generate_mipmap_(
+        v8::CFunction::Make(WebGLRenderingContext::FastGenerateMipmap));
+
+
+v8::CFunction WebGLRenderingContext::fast_get_vertex_attrib_offset_(
+        v8::CFunction::Make(WebGLRenderingContext::FastGetVertexAttribOffset));
+
+v8::CFunction WebGLRenderingContext::fast_hint_(
+        v8::CFunction::Make(WebGLRenderingContext::FastHint));
+
+v8::CFunction WebGLRenderingContext::fast_is_buffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsBuffer));
+
+v8::CFunction WebGLRenderingContext::fast_is_context_lost_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsContextLost));
+
+v8::CFunction WebGLRenderingContext::fast_is_enabled_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsEnabled));
+
+v8::CFunction WebGLRenderingContext::fast_is_framebuffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsFramebuffer));
+
+v8::CFunction WebGLRenderingContext::fast_is_program_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsProgram));
+
+v8::CFunction WebGLRenderingContext::fast_is_renderbuffer_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsRenderbuffer));
+
+v8::CFunction WebGLRenderingContext::fast_is_shader_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsShader));
+
+v8::CFunction WebGLRenderingContext::fast_is_texture_(
+        v8::CFunction::Make(WebGLRenderingContext::FastIsTexture));
+
+v8::CFunction WebGLRenderingContext::fast_line_width_(
+        v8::CFunction::Make(WebGLRenderingContext::FastLineWidth));
+
+v8::CFunction WebGLRenderingContext::fast_link_program_(
+        v8::CFunction::Make(WebGLRenderingContext::FastLinkProgram));
+
+v8::CFunction WebGLRenderingContext::fast_pixel_storei_bool_(
+        v8::CFunction::Make(WebGLRenderingContext::FastPixelStoreiBool));
+
+
+v8::CFunction WebGLRenderingContext::fast_pixel_storei_(
+        v8::CFunction::Make(WebGLRenderingContext::FastPixelStorei));
+
+
+const v8::CFunction fast_pixel_storei_overloads_[] = {
+        WebGLRenderingContext::fast_pixel_storei_,
+        WebGLRenderingContext::fast_pixel_storei_bool_
+};
+
+v8::CFunction WebGLRenderingContext::fast_polygon_offset_(
+        v8::CFunction::Make(WebGLRenderingContext::FastPolygonOffset));
+
+v8::CFunction WebGLRenderingContext::fast_renderbuffer_storage_(
+        v8::CFunction::Make(WebGLRenderingContext::FastRenderbufferStorage));
+
+v8::CFunction WebGLRenderingContext::fast_sample_coverage_(
+        v8::CFunction::Make(WebGLRenderingContext::FastSampleCoverage));
+
+v8::CFunction WebGLRenderingContext::fast_scissor_(
+        v8::CFunction::Make(WebGLRenderingContext::FastScissor));
+
+
+v8::CFunction WebGLRenderingContext::fast_stencil_func_separate_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilFuncSeparate));
+
+v8::CFunction WebGLRenderingContext::fast_stencil_func_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilFunc));
+
+v8::CFunction WebGLRenderingContext::fast_stencil_mask_separate_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilMaskSeparate));
+
+v8::CFunction WebGLRenderingContext::fast_stencil_mask_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilMask));
+
+v8::CFunction WebGLRenderingContext::fast_stencil_op_separate_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilOpSeparate));
+
+v8::CFunction WebGLRenderingContext::fast_stencil_op_(
+        v8::CFunction::Make(WebGLRenderingContext::FastStencilOp));
+
+v8::CFunction WebGLRenderingContext::fast_tex_parameterf_(
+        v8::CFunction::Make(WebGLRenderingContext::FastTexParameterf));
+
+v8::CFunction WebGLRenderingContext::fast_tex_parameteri_(
+        v8::CFunction::Make(WebGLRenderingContext::FastTexParameteri));
 
 
 WebGLRenderingContext::WebGLRenderingContext(WebGLState *state)
@@ -6253,10 +6383,9 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
 
     SetFastMethod(isolate, tmpl, "clear", Clear, &fast_clear_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "colorMask"),
-            v8::FunctionTemplate::New(isolate, &ColorMask)
-    );
+
+    SetFastMethod(isolate, tmpl, "colorMask", ColorMask, &fast_color_mask_, v8::Local<v8::Value>());
+
     tmpl->Set(
             ConvertToV8String(isolate, "commit"),
             v8::FunctionTemplate::New(isolate, &Commit)
@@ -6274,14 +6403,12 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             ConvertToV8String(isolate, "compressedTexSubImage2D"),
             v8::FunctionTemplate::New(isolate, &CompressedTexSubImage2D)
     );
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyTexImage2D"),
-            v8::FunctionTemplate::New(isolate, &CopyTexImage2D)
-    );
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyTexSubImage2D"),
-            v8::FunctionTemplate::New(isolate, &CopyTexSubImage2D)
-    );
+
+    SetFastMethod(isolate, tmpl, "copyTexImage2D", CopyTexImage2D, &fast_copy_tex_image_2d_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "copyTexSubImage2D", CopyTexSubImage2D,
+                  &fast_copy_tex_sub_image_2d_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "createBuffer"),
@@ -6313,12 +6440,8 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &CreateTexture)
     );
 
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "cullFace"),
-            v8::FunctionTemplate::New(isolate, &CullFace)
-    );
-
+    SetFastMethod(isolate, tmpl, "cullFace", CullFace, &fast_cull_face_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "deleteBuffer", DeleteBuffer, &fast_delete_buffer_,
                   v8::Local<v8::Value>());
@@ -6338,31 +6461,21 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethod(isolate, tmpl, "deleteTexture", DeleteTexture, &fast_delete_texture_,
                   v8::Local<v8::Value>());
 
+    SetFastMethod(isolate, tmpl, "depthFunc", DepthFunc, &fast_depth_func_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthFunc"),
-            v8::FunctionTemplate::New(isolate, &DepthFunc)
-    );
+    SetFastMethod(isolate, tmpl, "depthMask", DepthMask, &fast_depth_mask_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthMask"),
-            v8::FunctionTemplate::New(isolate, &DepthMask)
-    );
+    SetFastMethod(isolate, tmpl, "depthRange", DepthRange, &fast_depth_range_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "depthRange"),
-            v8::FunctionTemplate::New(isolate, &DepthRange)
-    );
+    SetFastMethod(isolate, tmpl, "detachShader", DetachShader, &fast_detach_shader_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "detachShader"),
-            v8::FunctionTemplate::New(isolate, &DetachShader)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "disableVertexAttribArray"),
-            v8::FunctionTemplate::New(isolate, &DisableVertexAttribArray)
-    );
+    SetFastMethod(isolate, tmpl, "disableVertexAttribArray", DisableVertexAttribArray,
+                  &fast_disable_vertex_attrib_array_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "disable", Disable, &fast_disable_,
                   v8::Local<v8::Value>());
@@ -6374,41 +6487,29 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     SetFastMethod(isolate, tmpl, "drawElements", DrawElements, &fast_draw_elements_,
                   v8::Local<v8::Value>());
 
-
     SetFastMethod(isolate, tmpl, "enableVertexAttribArray", EnableVertexAttribArray,
                   &fast_enable_vertex_attrib_array_, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "enable", Enable, &fast_enable_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "finish"),
-            v8::FunctionTemplate::New(isolate, &Finish)
-    );
+    SetFastMethod(isolate, tmpl, "finish", Finish, &fast_finish_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "flush"),
-            v8::FunctionTemplate::New(isolate, &Flush)
-    );
+    SetFastMethod(isolate, tmpl, "flush", Flush, &fast_flush_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "framebufferRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &FramebufferRenderbuffer)
-    );
-
+    SetFastMethod(isolate, tmpl, "framebufferRenderbuffer", FramebufferRenderbuffer,
+                  &fast_framebuffer_renderbuffer_, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "framebufferTexture2D", FramebufferTexture2D,
                   &fast_framebuffer_texture_2d_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "frontFace"),
-            v8::FunctionTemplate::New(isolate, &FrontFace)
-    );
+    SetFastMethod(isolate, tmpl, "frontFace", FrontFace,
+                  &fast_front_face_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "generateMipmap"),
-            v8::FunctionTemplate::New(isolate, &GenerateMipmap)
-    );
+
+    SetFastMethod(isolate, tmpl, "generateMipmap", GenerateMipmap,
+                  &fast_generate_mipmap_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "getActiveAttrib"),
@@ -6521,10 +6622,8 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "getVertexAttribOffset"),
-            v8::FunctionTemplate::New(isolate, &GetVertexAttribOffset)
-    );
+    SetFastMethod(isolate, tmpl, "getVertexAttribOffset", GetVertexAttribOffset,
+                  &fast_get_vertex_attrib_offset_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -6532,135 +6631,92 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
             v8::FunctionTemplate::New(isolate, &GetVertexAttrib)
     );
 
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "hint"),
-            v8::FunctionTemplate::New(isolate, &Hint)
-    );
+    SetFastMethod(isolate, tmpl, "hint", Hint,
+                  &fast_hint_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isBuffer"),
-            v8::FunctionTemplate::New(isolate, &IsBuffer)
-    );
+    SetFastMethod(isolate, tmpl, "isBuffer", IsBuffer,
+                  &fast_is_buffer_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isContextLost"),
-            v8::FunctionTemplate::New(isolate, &IsContextLost)
-    );
+    SetFastMethod(isolate, tmpl, "isContextLost", IsContextLost,
+                  &fast_is_context_lost_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isEnabled"),
-            v8::FunctionTemplate::New(isolate, &IsEnabled)
-    );
+    SetFastMethod(isolate, tmpl, "isEnabled", IsEnabled,
+                  &fast_is_enabled_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isFramebuffer"),
-            v8::FunctionTemplate::New(isolate, &IsFramebuffer)
-    );
+    SetFastMethod(isolate, tmpl, "isFramebuffer", IsFramebuffer,
+                  &fast_is_framebuffer_, v8::Local<v8::Value>());
 
+    SetFastMethod(isolate, tmpl, "isProgram", IsProgram,
+                  &fast_is_program_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isProgram"),
-            v8::FunctionTemplate::New(isolate, &IsProgram)
-    );
+    SetFastMethod(isolate, tmpl, "isRenderbuffer", IsRenderbuffer,
+                  &fast_is_renderbuffer_, v8::Local<v8::Value>());
 
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isRenderbuffer"),
-            v8::FunctionTemplate::New(isolate, &IsRenderbuffer)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isShader"),
-            v8::FunctionTemplate::New(isolate, &IsShader)
-    );
+    SetFastMethod(isolate, tmpl, "isShader", IsShader,
+                  &fast_is_shader_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isTexture"),
-            v8::FunctionTemplate::New(isolate, &IsTexture)
-    );
+    SetFastMethod(isolate, tmpl, "isTexture", IsTexture,
+                  &fast_is_texture_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "lineWidth", LineWidth,
+                  &fast_line_width_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "lineWidth"),
-            v8::FunctionTemplate::New(isolate, &LineWidth)
-    );
+    SetFastMethod(isolate, tmpl, "linkProgram", LinkProgram,
+                  &fast_link_program_, v8::Local<v8::Value>());
 
+    SetFastMethodWithOverLoads(isolate, tmpl, "pixelStorei", PixelStorei,
+                               fast_pixel_storei_overloads_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "linkProgram"),
-            v8::FunctionTemplate::New(isolate, &LinkProgram)
-    );
+    SetFastMethod(isolate, tmpl, "polygonOffset", PolygonOffset,
+                  &fast_polygon_offset_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "pixelStorei"),
-            v8::FunctionTemplate::New(isolate, &PixelStorei)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "polygonOffset"),
-            v8::FunctionTemplate::New(isolate, &PolygonOffset)
-    );
 
     tmpl->Set(
             ConvertToV8String(isolate, "readPixels"),
             v8::FunctionTemplate::New(isolate, &ReadPixels)
     );
 
+    SetFastMethod(isolate, tmpl, "renderbufferStorage", RenderbufferStorage,
+                  &fast_renderbuffer_storage_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "renderbufferStorage"),
-            v8::FunctionTemplate::New(isolate, &RenderbufferStorage)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "sampleCoverage"),
-            v8::FunctionTemplate::New(isolate, &SampleCoverage)
-    );
+    SetFastMethod(isolate, tmpl, "sampleCoverage", SampleCoverage,
+                  &fast_sample_coverage_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "scissor"),
-            v8::FunctionTemplate::New(isolate, &Scissor)
-    );
+    SetFastMethod(isolate, tmpl, "scissor", Scissor,
+                  &fast_scissor_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "shaderSource"),
             v8::FunctionTemplate::New(isolate, &ShaderSource)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilFuncSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilFuncSeparate)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilFunc"),
-            v8::FunctionTemplate::New(isolate, &StencilFunc)
-    );
+    SetFastMethod(isolate, tmpl, "stencilFuncSeparate", StencilFuncSeparate,
+                  &fast_stencil_func_separate_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilMaskSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilMaskSeparate)
-    );
+    SetFastMethod(isolate, tmpl, "stencilFunc", StencilFunc,
+                  &fast_stencil_func_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilMask"),
-            v8::FunctionTemplate::New(isolate, &StencilMask)
-    );
+    SetFastMethod(isolate, tmpl, "stencilMaskSeparate", StencilMaskSeparate,
+                  &fast_stencil_mask_separate_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilOpSeparate"),
-            v8::FunctionTemplate::New(isolate, &StencilOpSeparate)
-    );
+    SetFastMethod(isolate, tmpl, "stencilMask", StencilMask,
+                  &fast_stencil_mask_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "stencilOp"),
-            v8::FunctionTemplate::New(isolate, &StencilOp)
-    );
+
+    SetFastMethod(isolate, tmpl, "stencilOpSeparate", StencilOpSeparate,
+                  &fast_stencil_op_separate_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "stencilOp", StencilOp,
+                  &fast_stencil_op_, v8::Local<v8::Value>());
 
 
     tmpl->Set(
@@ -6669,16 +6725,13 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
     );
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "texParameterf"),
-            v8::FunctionTemplate::New(isolate, &TexParameterf)
-    );
+    SetFastMethod(isolate, tmpl, "texParameterf", TexParameterf,
+                  &fast_tex_parameterf_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "texParameteri"),
-            v8::FunctionTemplate::New(isolate, &TexParameteri)
-    );
+    SetFastMethod(isolate, tmpl, "texParameteri", TexParameteri,
+                  &fast_tex_parameteri_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "texSubImage2D"),

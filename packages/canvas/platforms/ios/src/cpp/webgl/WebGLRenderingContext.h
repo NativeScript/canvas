@@ -247,6 +247,54 @@ public:
     static v8::CFunction fast_framebuffer_texture_2d_;
 
 
+    static v8::CFunction fast_color_mask_;
+    static v8::CFunction fast_copy_tex_image_2d_;
+    static v8::CFunction fast_copy_tex_sub_image_2d_;
+    static v8::CFunction fast_cull_face_;
+    static v8::CFunction fast_depth_func_;
+    static v8::CFunction fast_depth_mask_;
+    static v8::CFunction fast_depth_range_;
+    static v8::CFunction fast_detach_shader_;
+    static v8::CFunction fast_disable_vertex_attrib_array_;
+
+    static v8::CFunction fast_finish_;
+    static v8::CFunction fast_flush_;
+    static v8::CFunction fast_framebuffer_renderbuffer_;
+    static v8::CFunction fast_front_face_;
+    static v8::CFunction fast_generate_mipmap_;
+    static v8::CFunction fast_get_vertex_attrib_offset_;
+    static v8::CFunction fast_hint_;
+    static v8::CFunction fast_is_buffer_;
+    static v8::CFunction fast_is_context_lost_;
+    static v8::CFunction fast_is_enabled_;
+    static v8::CFunction fast_is_framebuffer_;
+    static v8::CFunction fast_is_program_;
+    static v8::CFunction fast_is_renderbuffer_;
+    static v8::CFunction fast_is_shader_;
+    static v8::CFunction fast_is_texture_;
+    static v8::CFunction fast_line_width_;
+    static v8::CFunction fast_link_program_;
+    static v8::CFunction fast_pixel_storei_bool_;
+    static v8::CFunction fast_pixel_storei_;
+    static v8::CFunction fast_polygon_offset_;
+
+    static v8::CFunction fast_renderbuffer_storage_;
+    static v8::CFunction fast_sample_coverage_;
+    static v8::CFunction fast_scissor_;
+
+
+    static v8::CFunction fast_stencil_func_separate_;
+    static v8::CFunction fast_stencil_func_;
+    static v8::CFunction fast_stencil_mask_separate_;
+    static v8::CFunction fast_stencil_mask_;
+    static v8::CFunction fast_stencil_op_separate_;
+    static v8::CFunction fast_stencil_op_;
+
+    static v8::CFunction fast_tex_parameterf_;
+    static v8::CFunction fast_tex_parameteri_;
+
+
+
     static v8::Local<v8::Object>
     NewInstance(v8::Isolate *isolate, WebGLRenderingContext *renderingContext) {
         auto context = isolate->GetCurrentContext();
@@ -1130,6 +1178,22 @@ public:
 
     static void ColorMask(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastColorMask(v8::Local<v8::Object> receiver_obj, bool red, bool green, bool blue, bool alpha) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_color_mask(
+                red,
+                green,
+                blue,
+                alpha,
+                ptr->GetState()
+        );
+    }
+
     static void Commit(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CompileShader(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -1159,7 +1223,54 @@ public:
 
     static void CopyTexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastCopyTexImage2D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
+                       uint32_t internalformat, int32_t x, int32_t y, int32_t width, int32_t height,
+                       int32_t border) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_copy_tex_image2d(
+                target,
+                level,
+                internalformat,
+                x,
+                y,
+                width,
+                height,
+                border,
+                ptr->GetState()
+        );
+
+    }
+
     static void CopyTexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastCopyTexSubImage2D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
+                          int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, int32_t width,
+                          int32_t height) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_webgl_copy_tex_sub_image2d(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                x,
+                y,
+                width,
+                height,
+                ptr->GetState()
+        );
+
+    }
 
     static void CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1174,6 +1285,20 @@ public:
     static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CullFace(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastCullFace(v8::Local<v8::Object> receiver_obj, uint32_t mode) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_webgl_cull_face(
+                mode,
+                ptr->GetState()
+        );
+
+    }
 
     static void DeleteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1312,13 +1437,91 @@ public:
 
     static void DepthFunc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastDepthFunc(v8::Local<v8::Object> receiver_obj, uint32_t func) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_depth_func(
+                func,
+                ptr->GetState()
+        );
+    }
+
     static void DepthMask(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastDepthMask(v8::Local<v8::Object> receiver_obj, bool mask) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+        canvas_native_webgl_depth_mask(
+                mask,
+                ptr->GetState()
+        );
+    }
 
     static void DepthRange(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastDepthRange(v8::Local<v8::Object> receiver_obj, double zNear, double zFar) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_depth_range(
+                static_cast<float>(zNear),
+                static_cast<float>(zFar),
+                ptr->GetState()
+        );
+    }
+
     static void DetachShader(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastDetachShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> program_obj,
+                     v8::Local<v8::Object> shader_obj) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto programType = GetNativeType(program_obj);
+        auto shaderType = GetNativeType(shader_obj);
+        WebGLProgram *program = nullptr;
+        WebGLShader *shader = nullptr;
+        if (programType == NativeType::WebGLProgram) {
+            program = WebGLProgram::GetPointer(program_obj);
+        }
+        if (shaderType == NativeType::WebGLShader) {
+            shader = WebGLShader::GetPointer(shader_obj);
+        }
+
+        if (program != nullptr &&
+            shader != nullptr) {
+            canvas_native_webgl_detach_shader(
+                    program->GetProgram(),
+                    shader->GetShader(),
+                    ptr->GetState()
+            );
+        }
+    }
+
     static void DisableVertexAttribArray(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastDisableVertexAttribArray(v8::Local<v8::Object> receiver_obj, uint32_t index) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_webgl_disable_vertex_attrib_array(
+                index,
+                ptr->GetState()
+        );
+    }
 
     static void Disable(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1422,9 +1625,56 @@ public:
 
     static void Finish(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastFinish(v8::Local<v8::Object> receiver_obj) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_finish(
+                ptr->GetState()
+        );
+    }
+
+    static void FastFlush(v8::Local<v8::Object> receiver_obj) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_flush(
+                ptr->GetState()
+        );
+    }
+
     static void Flush(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FramebufferRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastFramebufferRenderbuffer(v8::Local<v8::Object> receiver_obj, uint32_t target,
+                                            uint32_t attachment,
+                                            uint32_t renderbuffertarget,
+                                            v8::Local<v8::Object> renderbuffer_obj) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto type = GetNativeType(renderbuffer_obj);
+        if (type == NativeType::WebGLRenderbuffer) {
+            auto renderbuffer = WebGLRenderbuffer::GetPointer(renderbuffer_obj);
+            if (renderbuffer != nullptr) {
+                canvas_native_webgl_framebuffer_renderbuffer(
+                        target,
+                        attachment,
+                        renderbuffertarget,
+                        renderbuffer->GetRenderBuffer(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
 
     static void FramebufferTexture2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1454,7 +1704,31 @@ public:
 
     static void FrontFace(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastFrontFace(v8::Local<v8::Object> receiver_obj, uint32_t mode) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_front_face(
+                mode,
+                ptr->GetState()
+        );
+    }
+
     static void GenerateMipmap(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastGenerateMipmap(v8::Local<v8::Object> receiver_obj, uint32_t target) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_generate_mipmap(
+                target,
+                ptr->GetState()
+        );
+    }
 
     static void GetActiveAttrib(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1465,6 +1739,22 @@ public:
     static void GetAttribLocation(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetBufferParameter(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static uint32_t
+    FastGetBufferParameter(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t pname) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return -1;
+        }
+
+
+        return canvas_native_webgl_get_buffer_parameter(
+                target,
+                pname,
+                ptr->GetState()
+        );
+
+    }
 
     static void GetContextAttributes(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1500,61 +1790,484 @@ public:
 
     static void GetVertexAttribOffset(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static int32_t
+    FastGetVertexAttribOffset(v8::Local<v8::Object> receiver_obj, uint32_t index, uint32_t pname) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return 0;
+        }
+
+
+        return canvas_native_webgl_get_vertex_attrib_offset(
+                index,
+                pname,
+                ptr->GetState());
+    }
+
     static void GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Hint(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastHint(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t mode) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_hint(target,
+                                 mode,
+                                 ptr->GetState());
+    }
+
     static void IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool FastIsBuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLBuffer) {
+            auto buffer = WebGLBuffer::GetPointer(value);
+            if (buffer != nullptr) {
+                auto ret = canvas_native_webgl_is_buffer(
+                        buffer->GetBuffer(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+
+        return false;
+    }
 
     static void IsContextLost(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsContextLost(v8::Local<v8::Object> receiver_obj) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto ret = canvas_native_webgl_get_is_context_lost(
+                ptr->GetState());
+
+        return ret;
+    }
+
     static void IsEnabled(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool FastIsEnabled(v8::Local<v8::Object> receiver_obj, uint32_t cap) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        return canvas_native_webgl_is_enabled(
+                cap, ptr->GetState());
+    }
 
     static void IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsFramebuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLFramebuffer) {
+            auto framebuffer = WebGLFramebuffer::GetPointer(value);
+            if (framebuffer != nullptr) {
+                auto ret = canvas_native_webgl_is_framebuffer(
+                        framebuffer->GetFrameBuffer(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+
+        return false;
+    }
+
     static void IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool FastIsProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLProgram) {
+            auto program = WebGLProgram::GetPointer(value);
+            if (program != nullptr) {
+                auto ret = canvas_native_webgl_is_program(
+                        program->GetProgram(),
+                        ptr->GetState());
+
+                return ret;
+            }
+        }
+
+        return false;
+    }
 
     static void IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool
+    FastIsRenderbuffer(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLRenderbuffer) {
+            auto renderbuffer = WebGLRenderbuffer::GetPointer(value);
+            if (renderbuffer != nullptr) {
+                auto ret = canvas_native_webgl_is_renderbuffer(
+                        renderbuffer->GetRenderBuffer(),
+                        ptr->GetState());
+
+                return ret;
+            }
+        }
+
+        return false;
+    }
+
     static void IsShader(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool FastIsShader(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLShader) {
+            auto shader = WebGLShader::GetPointer(value);
+            if (shader != nullptr) {
+                auto ret = canvas_native_webgl_is_shader(
+                        shader->GetShader(),
+                        ptr->GetState());
+
+                return ret;
+            }
+        }
+
+        return false;
+    }
 
     static void IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsTexture(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLTexture) {
+            auto texture = WebGLTexture::GetPointer(value);
+            if (texture != nullptr) {
+                auto ret = canvas_native_webgl_is_texture(
+                        texture->GetTexture(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+
+        return false;
+    }
+
     static void LineWidth(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastLineWidth(v8::Local<v8::Object> receiver_obj, double width) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_line_width(
+                static_cast<float>(width),
+                ptr->GetState());
+
+    }
 
     static void LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastLinkProgram(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> value) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(value);
+        if (type == NativeType::WebGLProgram) {
+            auto program = WebGLProgram::GetPointer(value);
+            if (program != nullptr) {
+                canvas_native_webgl_link_program(
+                        program->GetProgram(),
+                        ptr->GetState());
+            }
+        }
+    }
+
     static void PixelStorei(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastPixelStoreiBool(v8::Local<v8::Object> receiver_obj, uint32_t pname, bool param) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_pixel_storei(
+                pname,
+                param ? 1 : 0,
+                ptr->GetState()
+        );
+    }
+
+    static void FastPixelStorei(v8::Local<v8::Object> receiver_obj, uint32_t pname, int32_t param) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_pixel_storei(
+                pname,
+                param,
+                ptr->GetState()
+        );
+    }
+
     static void PolygonOffset(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastPolygonOffset(v8::Local<v8::Object> receiver_obj, double factor, double units) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_polygon_offset(
+                static_cast<float>(factor),
+                static_cast<float>(units),
+                ptr->GetState()
+        );
+
+    }
 
     static void ReadPixels(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void RenderbufferStorage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastRenderbufferStorage(v8::Local<v8::Object> receiver_obj, uint32_t target,
+                                        uint32_t internalFormat, int32_t width, int32_t height) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_renderbuffer_storage(
+                target,
+                internalFormat,
+                width,
+                height,
+                ptr->GetState()
+        );
+
+    }
+
     static void SampleCoverage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastSampleCoverage(v8::Local<v8::Object> receiver_obj, double value, bool invert) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_sample_coverage(
+                static_cast<float>(value),
+                invert,
+                ptr->GetState()
+        );
+
+    }
+
     static void Scissor(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastScissor(v8::Local<v8::Object> receiver_obj, int32_t x, int32_t y, int32_t width,
+                            int32_t height) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_scissor(
+                x,
+                y,
+                width,
+                height,
+                ptr->GetState()
+        );
+
+    }
 
     static void ShaderSource(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void StencilFuncSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastStencilFuncSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t func,
+                            int32_t ref, uint32_t mask) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_stencil_func_separate(
+                face,
+                func,
+                ref,
+                mask,
+                ptr->GetState()
+        );
+
+    }
+
     static void StencilFunc(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastStencilFunc(v8::Local<v8::Object> receiver_obj, uint32_t func, int32_t ref, uint32_t mask) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_stencil_func(
+                func,
+                ref,
+                mask,
+                ptr->GetState()
+        );
+
+    }
 
     static void StencilMaskSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastStencilMaskSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t mask) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_stencil_mask_separate(
+                face,
+                mask,
+                ptr->GetState()
+        );
+
+    }
+
     static void StencilMask(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastStencilMask(v8::Local<v8::Object> receiver_obj, uint32_t mask) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_webgl_stencil_mask(
+                mask,
+                ptr->GetState()
+        );
+
+    }
 
     static void StencilOpSeparate(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastStencilOpSeparate(v8::Local<v8::Object> receiver_obj, uint32_t face, uint32_t fail,
+                          uint32_t zfail, uint32_t zpass) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_stencil_op_separate(
+                face,
+                fail,
+                zfail,
+                zpass,
+                ptr->GetState()
+        );
+
+    }
+
     static void StencilOp(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastStencilOp(v8::Local<v8::Object> receiver_obj, uint32_t fail, uint32_t zfail,
+                              uint32_t zpass) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_stencil_op(
+                fail,
+                zfail,
+                zpass,
+                ptr->GetState()
+        );
+
+    }
 
     static void TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void TexParameterf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastTexParameterf(v8::Local<v8::Object> receiver_obj, uint32_t target, uint32_t pname,
+                      double param) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_tex_parameterf(
+                target,
+                pname,
+                static_cast<float>(param),
+                ptr->GetState()
+        );
+
+    }
+
     static void TexParameteri(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastTexParameteri(v8::Local<v8::Object> receiver_obj, uint32_t target,
+                                  uint32_t pname, int32_t
+                                  param) {
+        WebGLRenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl_tex_parameteri(
+                target,
+                pname,
+                param,
+                ptr->GetState()
+        );
+
+    }
 
     static void TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -2337,7 +3050,6 @@ public:
         if (location != nullptr) {
 
             float *data;
-
             value.getStorageIfAligned(&data);
             auto size = value.length();
 

@@ -405,7 +405,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
 		super.addEventListener(arg, callback, thisArg);
-
+		if (typeof arg !== 'string') {
+			return;
+		}
 		const eventtype = arg.toLowerCase();
 
 		switch (eventtype) {

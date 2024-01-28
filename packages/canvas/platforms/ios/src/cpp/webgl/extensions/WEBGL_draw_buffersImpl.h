@@ -11,12 +11,14 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class WEBGL_draw_buffersImpl: ObjectWrapperImpl {
+class WEBGL_draw_buffersImpl : ObjectWrapperImpl {
 public:
     WEBGL_draw_buffersImpl(WEBGL_draw_buffers *buffers);
 
+    static v8::CFunction fast_draw_buffers_webgl;
+
     ~WEBGL_draw_buffersImpl() {
-        if(this->buffers_ != nullptr){
+        if (this->buffers_ != nullptr) {
             canvas_native_webgl_WEBGL_draw_buffers_destroy(this->buffers_);
             this->buffers_ = nullptr;
         }
@@ -35,8 +37,9 @@ public:
 
         auto tmpl = ctorTmpl->InstanceTemplate();
         tmpl->SetInternalFieldCount(2);
-        tmpl->Set(ConvertToV8String(isolate, "drawBuffersWEBGL"),
-                  v8::FunctionTemplate::New(isolate, &DrawBuffersWEBGL));
+
+        SetFastMethod(isolate, tmpl, "drawBuffersWEBGL", DrawBuffersWEBGL,
+                      &fast_draw_buffers_webgl, v8::Local<v8::Value>());
 
 
         tmpl->Set(ConvertToV8String(isolate, "COLOR_ATTACHMENT0_WEBGL"),
@@ -123,7 +126,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_draw_buffersImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_draw_buffers);
+        SetNativeType(object, NativeType::WEBGL_draw_buffers);
         object->SetAlignedPointerInInternalField(0, buffers);
         buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -138,6 +141,29 @@ public:
     }
 
     static void DrawBuffersWEBGL(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void
+    FastDrawBuffersWEBGL(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Array> value) {
+        WEBGL_draw_buffersImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto len = value->Length();
+        std::vector<uint32_t> buf;
+        buf.reserve(len);
+
+        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<uint32_t>::Build().GetId(), uint32_t>(
+                value, buf.data(), len);
+
+        if (copied) {
+
+            canvas_native_webgl_draw_buffers_draw_buffers_webgl(buf.data(), buf.size(),
+                                                                ptr->GetDrawBuffers());
+        }
+    }
 
     WEBGL_draw_buffers *GetDrawBuffers() {
         return this->buffers_;

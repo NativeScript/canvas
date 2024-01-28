@@ -45,6 +45,15 @@ typedef enum PaintStyleType {
   PaintStyleTypePattern,
 } PaintStyleType;
 
+typedef enum TextBaseLine {
+  TOP = 0,
+  HANGING = 1,
+  MIDDLE = 2,
+  ALPHABETIC = 3,
+  IDEOGRAPHIC = 4,
+  BOTTOM = 5,
+} TextBaseLine;
+
 typedef enum WebGLExtensionType {
   WebGLExtensionTypeEXT_blend_minmax,
   WebGLExtensionTypeEXT_color_buffer_half_float,
@@ -364,10 +373,15 @@ const char *canvas_native_context_get_text_align(const struct CanvasRenderingCon
 void canvas_native_context_set_text_align(struct CanvasRenderingContext2D *context,
                                           const char *alignment);
 
-const char *canvas_native_context_get_text_baseline(const struct CanvasRenderingContext2D *context);
+const char *canvas_native_context_get_text_baseline_str(const struct CanvasRenderingContext2D *context);
+
+void canvas_native_context_set_text_baseline_str(struct CanvasRenderingContext2D *context,
+                                                 const char *baseline);
 
 void canvas_native_context_set_text_baseline(struct CanvasRenderingContext2D *context,
-                                             const char *baseline);
+                                             enum TextBaseLine baseline);
+
+enum TextBaseLine canvas_native_context_get_text_baseline(const struct CanvasRenderingContext2D *context);
 
 const char *canvas_native_context_get_global_composition(const struct CanvasRenderingContext2D *context);
 
@@ -482,11 +496,18 @@ void canvas_native_context_clear_rect(struct CanvasRenderingContext2D *context,
                                       float width,
                                       float height);
 
+void canvas_native_context_clip_str(struct CanvasRenderingContext2D *context,
+                                    struct Path *path,
+                                    const char *rule);
+
+void canvas_native_context_clip_rule_str(struct CanvasRenderingContext2D *context,
+                                         const char *rule);
+
 void canvas_native_context_clip(struct CanvasRenderingContext2D *context,
                                 struct Path *path,
-                                const char *rule);
+                                uint32_t rule);
 
-void canvas_native_context_clip_rule(struct CanvasRenderingContext2D *context, const char *rule);
+void canvas_native_context_clip_rule(struct CanvasRenderingContext2D *context, uint32_t rule);
 
 void canvas_native_context_close_path(struct CanvasRenderingContext2D *context);
 
@@ -659,11 +680,17 @@ void canvas_native_context_ellipse(struct CanvasRenderingContext2D *context,
                                    float end_angle,
                                    bool anticlockwise);
 
-void canvas_native_context_fill(struct CanvasRenderingContext2D *context, const char *rule);
+void canvas_native_context_fill_str(struct CanvasRenderingContext2D *context, const char *rule);
+
+void canvas_native_context_fill_with_path_str(struct CanvasRenderingContext2D *context,
+                                              struct Path *path,
+                                              const char *rule);
+
+void canvas_native_context_fill(struct CanvasRenderingContext2D *context, uint32_t rule);
 
 void canvas_native_context_fill_with_path(struct CanvasRenderingContext2D *context,
                                           struct Path *path,
-                                          const char *rule);
+                                          uint32_t rule);
 
 void canvas_native_context_fill_rect(struct CanvasRenderingContext2D *context,
                                      float x,
@@ -690,16 +717,27 @@ struct ImageData *canvas_native_context_get_image_data(struct CanvasRenderingCon
 
 struct Matrix *canvas_native_context_get_transform(struct CanvasRenderingContext2D *context);
 
+bool canvas_native_context_is_point_in_path_str(struct CanvasRenderingContext2D *context,
+                                                float x,
+                                                float y,
+                                                const char *rule);
+
+bool canvas_native_context_is_point_in_path_with_path_str(struct CanvasRenderingContext2D *context,
+                                                          struct Path *path,
+                                                          float x,
+                                                          float y,
+                                                          const char *rule);
+
 bool canvas_native_context_is_point_in_path(struct CanvasRenderingContext2D *context,
                                             float x,
                                             float y,
-                                            const char *rule);
+                                            uint32_t rule);
 
 bool canvas_native_context_is_point_in_path_with_path(struct CanvasRenderingContext2D *context,
                                                       struct Path *path,
                                                       float x,
                                                       float y,
-                                                      const char *rule);
+                                                      uint32_t rule);
 
 bool canvas_native_context_is_point_in_stroke(struct CanvasRenderingContext2D *context,
                                               float x,
@@ -1479,18 +1517,6 @@ void canvas_native_webgl_buffer_data_i16(uint32_t target,
                                          uint32_t usage,
                                          struct WebGLState *state);
 
-void canvas_native_webgl_buffer_data_f32(uint32_t target,
-                                         const float *src_data,
-                                         uintptr_t size,
-                                         uint32_t usage,
-                                         struct WebGLState *state);
-
-void canvas_native_webgl_buffer_data_f64(uint32_t target,
-                                         const double *src_data,
-                                         uintptr_t size,
-                                         uint32_t usage,
-                                         struct WebGLState *state);
-
 void canvas_native_webgl_buffer_data_u32(uint32_t target,
                                          const uint32_t *src_data,
                                          uintptr_t size,
@@ -1499,6 +1525,18 @@ void canvas_native_webgl_buffer_data_u32(uint32_t target,
 
 void canvas_native_webgl_buffer_data_i32(uint32_t target,
                                          const int32_t *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
+void canvas_native_webgl_buffer_data_f32(uint32_t target,
+                                         const float *src_data,
+                                         uintptr_t size,
+                                         uint32_t usage,
+                                         struct WebGLState *state);
+
+void canvas_native_webgl_buffer_data_f64(uint32_t target,
+                                         const double *src_data,
                                          uintptr_t size,
                                          uint32_t usage,
                                          struct WebGLState *state);

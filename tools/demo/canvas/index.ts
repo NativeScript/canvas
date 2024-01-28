@@ -51,6 +51,9 @@ import {
 	strokeStyle,
 	circle_demo,
 	createConicGradient,
+	clip2,
+	clip3,
+	clearRect,
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
@@ -622,11 +625,14 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.vexFlow(this.canvas);
 		// canvas.android.setHandleInvalidationManually(true);
 		//const ctx = canvas.getContext('2d');
+		//clearRect(this.canvas);
 		//fillRule(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
 		//clip(this.canvas);
+		//clip2(this.canvas);
+		//clip3(this.canvas);
 		//fillStyle(this.canvas);
 		//font(this.canvas);
 		//globalAlpha(this.canvas);

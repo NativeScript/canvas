@@ -8,6 +8,18 @@
 ANGLE_instanced_arraysImpl::ANGLE_instanced_arraysImpl(ANGLE_instanced_arrays *arrays)
         : arrays_(arrays) {}
 
+
+v8::CFunction ANGLE_instanced_arraysImpl::fast_draw_arrays_instanced_angle_(
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastDrawArraysInstancedANGLE));
+
+
+v8::CFunction ANGLE_instanced_arraysImpl::fast_draw_elements_instanced_angle_(
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastDrawElementsInstancedANGLE));
+
+v8::CFunction ANGLE_instanced_arraysImpl::fast_vertex_attrib_divisor_angle_(
+        v8::CFunction::Make(ANGLE_instanced_arraysImpl::FastVertexAttribDivisorANGLE));
+
+
 ANGLE_instanced_arraysImpl *
 ANGLE_instanced_arraysImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetAlignedPointerFromInternalField(0);
@@ -103,17 +115,15 @@ v8::Local<v8::FunctionTemplate> ANGLE_instanced_arraysImpl::GetCtor(v8::Isolate 
     tmpl->Set(ConvertToV8String(isolate, "ext_name"),
               ConvertToV8String(isolate, "ANGLE_instanced_arrays"));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawArraysInstancedANGLE"),
-            v8::FunctionTemplate::New(isolate, &DrawArraysInstancedANGLE));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "drawElementsInstancedANGLE"),
-            v8::FunctionTemplate::New(isolate, &DrawElementsInstancedANGLE));
+    SetFastMethod(isolate, tmpl, "drawArraysInstancedANGLE", DrawArraysInstancedANGLE,
+                  &fast_draw_arrays_instanced_angle_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "vertexAttribDivisorANGLE"),
-            v8::FunctionTemplate::New(isolate, &VertexAttribDivisorANGLE));
+    SetFastMethod(isolate, tmpl, "drawElementsInstancedANGLE", DrawElementsInstancedANGLE,
+                  &fast_draw_elements_instanced_angle_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "vertexAttribDivisorANGLE", VertexAttribDivisorANGLE,
+                  &fast_vertex_attrib_divisor_angle_, v8::Local<v8::Value>());
 
 
     cache->ANGLE_instanced_arraysTmpl =

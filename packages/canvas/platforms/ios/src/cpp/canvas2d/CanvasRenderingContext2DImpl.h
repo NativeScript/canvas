@@ -28,6 +28,8 @@
 class CanvasRenderingContext2DImpl : ObjectWrapperImpl {
 public:
 
+    static v8::CFunction fast_draw_point_;
+
     static v8::CFunction fast_arc_;
 
     static v8::CFunction fast_arc_to_;
@@ -138,6 +140,18 @@ public:
     }
 
     static void DrawPoint(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastDrawPoint(v8::Local<v8::Object> receiver_obj, double x, double y) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_draw_point(
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y));
+        ptr->UpdateInvalidateState();
+    }
 
     static void DrawPoints(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -434,7 +448,7 @@ public:
 
     static void Clip(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void FastClipRule(v8::Local<v8::Object> receiver_obj, int32_t rule) {
+    static void FastClipRule(v8::Local<v8::Object> receiver_obj, uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -442,12 +456,11 @@ public:
 
         switch (rule) {
             case 0:
-                canvas_native_context_clip_rule(
-                        ptr->GetContext(), "nonzero");
-                break;
             case 1:
                 canvas_native_context_clip_rule(
-                        ptr->GetContext(), "evenodd");
+                        ptr->GetContext(), rule);
+                break;
+            default:
                 break;
         }
     }
@@ -461,14 +474,14 @@ public:
         if (GetNativeType(path_obj) == NativeType::Path2D) {
             auto path = Path2D::GetPointer(path_obj);
             canvas_native_context_clip(
-                    ptr->GetContext(), path->GetPath(), "nonzero");
+                    ptr->GetContext(), path->GetPath(), 0);
         }
 
 
     }
 
     static void
-    FastClip(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj, int32_t rule) {
+    FastClip(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj, uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -478,12 +491,11 @@ public:
             auto path = Path2D::GetPointer(path_obj);
             switch (rule) {
                 case 0:
-                    canvas_native_context_clip(
-                            ptr->GetContext(), path->GetPath(), "nonzero");
-                    break;
                 case 1:
                     canvas_native_context_clip(
-                            ptr->GetContext(), path->GetPath(), "evenodd");
+                            ptr->GetContext(), path->GetPath(), rule);
+                    break;
+                default:
                     break;
             }
         }
@@ -777,7 +789,8 @@ public:
     static void Fill(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
-    FastFillPathRule(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path, int32_t rule) {
+    FastFillPathRule(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path,
+                     uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -789,16 +802,11 @@ public:
         if (object != nullptr) {
             switch (rule) {
                 case 0:
-                    canvas_native_context_fill_with_path(
-                            ptr->GetContext(),
-                            object->GetPath(),
-                            "nonzero");
-                    break;
                 case 1:
                     canvas_native_context_fill_with_path(
                             ptr->GetContext(),
                             object->GetPath(),
-                            "evenodd");
+                            rule);
                     break;
                 default:
                     break;
@@ -819,11 +827,11 @@ public:
 
         canvas_native_context_fill_with_path(
                 ptr->GetContext(),
-                object->GetPath(), "nonzero");
+                object->GetPath(), 0);
         ptr->UpdateInvalidateState();
     }
 
-    static void FastFillRule(v8::Local<v8::Object> receiver_obj, int32_t rule) {
+    static void FastFillRule(v8::Local<v8::Object> receiver_obj, uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -831,13 +839,9 @@ public:
 
         switch (rule) {
             case 0:
-                canvas_native_context_fill(
-                        ptr->GetContext(), "nonzero");
-                ptr->UpdateInvalidateState();
-                break;
             case 1:
                 canvas_native_context_fill(
-                        ptr->GetContext(), "evenodd");
+                        ptr->GetContext(), rule);
                 ptr->UpdateInvalidateState();
                 break;
             default:
@@ -852,7 +856,7 @@ public:
         }
 
         canvas_native_context_fill(
-                ptr->GetContext(), "nonzero");
+                ptr->GetContext(), 0);
         ptr->UpdateInvalidateState();
     }
 
@@ -892,11 +896,11 @@ public:
         }
 
         return canvas_native_context_is_point_in_path(
-                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "nonzero");
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), 0);
     }
 
     static bool
-    FastIsPointInPathXYRule(v8::Local<v8::Object> receiver_obj, double x, double y, int32_t rule) {
+    FastIsPointInPathXYRule(v8::Local<v8::Object> receiver_obj, double x, double y, uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
 
         if (ptr == nullptr) {
@@ -906,12 +910,9 @@ public:
         bool ret = false;
         switch (rule) {
             case 0:
-                ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "nonzero");
-                break;
             case 1:
                 ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), "evenodd");
+                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), rule);
                 break;
             default:
                 break;
@@ -922,7 +923,7 @@ public:
 
     static bool
     FastIsPointInPath(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> path_obj, double x,
-                      double y, int32_t rule) {
+                      double y, uint32_t rule) {
         CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
 
         if (ptr == nullptr) {
@@ -940,14 +941,13 @@ public:
 
             switch (rule) {
                 case 0:
-                    ret = canvas_native_context_is_point_in_path_with_path(
-                            ptr->GetContext(),
-                            path->GetPath(), x, y, "nonzero");
-                    break;
                 case 1:
                     ret = canvas_native_context_is_point_in_path_with_path(
                             ptr->GetContext(),
-                            path->GetPath(), x, y, "evenodd");
+                            path->GetPath(), x, y, rule);
+                    break;
+                    break;
+                default:
                     break;
             }
 

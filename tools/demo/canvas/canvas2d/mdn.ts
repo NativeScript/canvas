@@ -361,7 +361,7 @@ export function arcTo(canvas) {
 
 export function arcToAnimation(canvas) {
 	const ctx = canvas.getContext('2d');
-	ctx.scale(3, 3);
+	//ctx.scale(3, 3);
 	const mouse = { x: 0, y: 0 };
 
 	let r = 100; // Radius
@@ -483,6 +483,27 @@ export function createRadialGradient(canvas) {
 	ctx.fillRect(20, 20, 160, 160);
 }
 
+export function clearRect(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	// Draw yellow background
+	ctx.beginPath();
+	ctx.fillStyle = '#ff6';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	// Draw blue triangle
+	ctx.beginPath();
+	ctx.fillStyle = 'blue';
+	ctx.moveTo(20, 20);
+	ctx.lineTo(180, 20);
+	ctx.lineTo(130, 130);
+	ctx.closePath();
+	ctx.fill();
+
+	// Clear part of the canvas
+	ctx.clearRect(10, 10, 120, 100);
+}
+
 export function fillRule(canvas) {
 	const ctx = canvas.getContext('2d');
 
@@ -564,6 +585,38 @@ export function clip(canvas) {
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = 'orange';
 	ctx.fillRect(0, 0, 100, 100);
+}
+
+export function clip2(canvas) {
+	const ctx = canvas.getContext('2d');
+	// Create clipping path
+	const region = new Path2D();
+	region.rect(80, 10, 20, 130);
+	region.rect(40, 50, 100, 50);
+	ctx.clip(region, 'evenodd');
+
+	// Draw stuff that gets clipped
+	ctx.fillStyle = 'blue';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+export function clip3(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	// Create two clipping paths
+	let circlePath = new Path2D();
+	circlePath.arc(150, 75, 75, 0, 2 * Math.PI);
+	let squarePath = new Path2D();
+	squarePath.rect(85, 10, 130, 130);
+
+	// Set the clip to the circle
+	ctx.clip(circlePath);
+	// Set the clip to be the intersection of the circle and the square
+	ctx.clip(squarePath);
+
+	// Draw stuff that gets clipped
+	ctx.fillStyle = 'blue';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 export function isPointInStrokeTouch(canvas) {

@@ -83,6 +83,30 @@ public:
     static v8::CFunction fast_invalidate_sub_framebuffer_;
 
 
+    static v8::CFunction fast_copy_tex_sub_image_3d_;
+    static v8::CFunction fast_copy_buffer_sub_data_;
+
+    static v8::CFunction fast_delete_query_;
+    static v8::CFunction fast_delete_sampler_;
+    static v8::CFunction fast_delete_sync_;
+    static v8::CFunction fast_delete_transform_feedback_;
+    static v8::CFunction fast_delete_vertex_array_;
+
+    static v8::CFunction fast_end_query_;
+    static v8::CFunction fast_end_transform_feedback_;
+    static v8::CFunction fast_framebuffer_texture_layer_;
+
+
+    static v8::CFunction fast_pause_transform_feedback_;
+    static v8::CFunction fast_read_buffer_;
+    static v8::CFunction fast_renderbuffer_storage_multisample_;
+
+    static v8::CFunction fast_is_query_;
+    static v8::CFunction fast_is_sampler_;
+    static v8::CFunction fast_is_sync_;
+    static v8::CFunction fast_is_transform_feedback_;
+    static v8::CFunction fast_is_vertex_array_;
+
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
     static v8::Local<v8::Object>
@@ -468,7 +492,49 @@ public:
 
     static void CopyBufferSubData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastCopyBufferSubData(v8::Local<v8::Object> receiver_obj, uint32_t readTarget,
+                                      uint32_t writeTarget, int32_t readOffset, int32_t writeOffset,
+                                      uint32_t size) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_copy_buffer_sub_data(
+                readTarget,
+                writeTarget,
+                static_cast<ssize_t>(readOffset),
+                static_cast<ssize_t>(writeOffset),
+                static_cast<ssize_t>(size),
+                ptr->GetState()
+        );
+    }
+
     static void CopyTexSubImage3D(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastCopyTexSubImage3D(v8::Local<v8::Object> receiver_obj, uint32_t target, int32_t level,
+                          int32_t xoffset, int32_t yoffset, int32_t zoffset, int32_t x, int32_t y,
+                          int32_t width, int32_t height) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        canvas_native_webgl2_copy_tex_sub_image3d(
+                target,
+                level,
+                xoffset,
+                yoffset,
+                zoffset,
+                x,
+                y,
+                width,
+                height,
+                ptr->GetState()
+        );
+    }
 
     static void CreateQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -480,13 +546,115 @@ public:
 
     static void DeleteQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void
+    FastDeleteQuery(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> query_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(query_obj);
+        if (type == NativeType::WebGLQuery) {
+            auto query = WebGLQuery::GetPointer(query_obj);
+
+            if (query != nullptr) {
+                canvas_native_webgl2_delete_query_with_query(
+                        query->GetQuery(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+
     static void DeleteSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastDeleteSampler(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sampler_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(sampler_obj);
+
+        if (type == NativeType::WebGLSampler) {
+            auto sampler = WebGLSampler::GetPointer(sampler_obj);
+
+            if (sampler != nullptr) {
+                canvas_native_webgl2_delete_sampler_with_sampler(
+                        sampler->GetSampler(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
 
     static void DeleteSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastDeleteSync(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sync_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(sync_obj);
+        if (type == NativeType::WebGLSync) {
+            auto sync = WebGLSyncImpl::GetPointer(sync_obj);
+
+            if (sync != nullptr) {
+                canvas_native_webgl2_delete_sync_with_sync(
+                        sync->GetSync(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+
     static void DeleteTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastDeleteTransformFeedback(v8::Local<v8::Object> receiver_obj,
+                                            v8::Local<v8::Object> transform_feedback_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto type = GetNativeType(transform_feedback_obj);
+        if (type == NativeType::WebGLTransformFeedback) {
+            auto transformFeedback = WebGLTransformFeedback::GetPointer(
+                    transform_feedback_obj);
+
+            if (transformFeedback != nullptr) {
+                canvas_native_webgl2_delete_transform_feedback(
+                        transformFeedback->GetFeedback(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
+
     static void DeleteVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastDeleteVertexArray(v8::Local<v8::Object> receiver_obj,
+                                      v8::Local<v8::Object> vertex_array_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        auto type = GetNativeType(vertex_array_obj);
+        if (type == NativeType::WebGLVertexArrayObject) {
+
+            auto vertexArray = WebGLVertexArrayObject::GetPointer(vertex_array_obj);
+            if (vertexArray != nullptr) {
+                canvas_native_webgl2_delete_vertex_array_with_vertex_array(
+                        vertexArray->GetVertexArrayObject(),
+                        ptr->GetState()
+                );
+            }
+        }
+    }
 
     static void DrawArraysInstanced(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -583,11 +751,57 @@ public:
 
     static void EndQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastEndQuery(v8::Local<v8::Object> receiver_obj, uint32_t target) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_end_query(target,
+                                       ptr->GetState());
+    }
+
     static void EndTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastEndTransformFeedback(v8::Local<v8::Object> receiver_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_end_transform_feedback(
+                ptr->GetState());
+    }
 
     static void FenceSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FramebufferTextureLayer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastFramebufferTextureLayer(v8::Local<v8::Object> receiver_obj,
+                                            v8::Local<v8::Object> texture_obj, uint32_t target,
+                                            uint32_t attachment, int32_t level, int32_t layer) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto type = GetNativeType(texture_obj);
+        if (type == NativeType::WebGLTexture) {
+            auto texture = WebGLTexture::GetPointer(texture_obj);
+            if (texture != nullptr) {
+                canvas_native_webgl2_framebuffer_texture_layer(
+                        target,
+                        attachment,
+                        texture->GetTexture(),
+                        level,
+                        layer,
+                        ptr->GetState()
+                );
+            }
+
+        }
+    }
 
     static void GetActiveUniformBlockName(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -675,19 +889,168 @@ public:
 
     static void IsQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsQuery(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> query_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(query_obj);
+        if (type == NativeType::WebGLQuery) {
+            auto query = WebGLQuery::GetPointer(query_obj);
+            if (query != nullptr) {
+                auto ret = canvas_native_webgl2_is_query(
+                        query->GetQuery(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+        // todo check return
+        return false;
+    }
+
     static void IsSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool
+    FastIsSampler(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sample_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(sample_obj);
+        if (type == NativeType::WebGLSampler) {
+            auto query = WebGLSampler::GetPointer(sample_obj);
+            if (query != nullptr) {
+                auto ret = canvas_native_webgl2_is_sampler(
+                        query->GetSampler(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+        // todo check return
+        return false;
+    }
 
     static void IsSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool FastIsSync(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> sync_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(sync_obj);
+        if (type == NativeType::WebGLSync) {
+            auto query = WebGLSyncImpl::GetPointer(sync_obj);
+            if (query != nullptr) {
+                auto ret = canvas_native_webgl2_is_sync(
+                        query->GetSync(),
+                        ptr->GetState());
+
+                return ret;
+            }
+        }
+        // todo check return
+        return false;
+    }
+
     static void IsTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static bool FastIsTransformFeedback(v8::Local<v8::Object> receiver_obj,
+                                        v8::Local<v8::Object> feedback_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(feedback_obj);
+        if (type == NativeType::WebGLTransformFeedback) {
+            auto query = WebGLTransformFeedback::GetPointer(feedback_obj);
+            if (query != nullptr) {
+                auto ret = canvas_native_webgl2_is_transform_feedback(
+                        query->GetFeedback(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+        // todo check return
+        return false;
+    }
 
     static void IsVertexArray(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static bool
+    FastIsVertexArray(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> vertex_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return false;
+        }
+
+
+        auto type = GetNativeType(vertex_obj);
+        if (type == NativeType::WebGLVertexArrayObject) {
+            auto query = WebGLVertexArrayObject::GetPointer(vertex_obj);
+            if (query != nullptr) {
+                auto ret = canvas_native_webgl2_is_vertex_array(
+                        query->GetVertexArrayObject(),
+                        ptr->GetState());
+                return ret;
+            }
+        }
+        // todo check return
+        return false;
+    }
+
     static void PauseTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FastPauseTransformFeedback(v8::Local<v8::Object> receiver_obj) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+        canvas_native_webgl2_pause_transform_feedback(
+                ptr->GetState());
+    }
 
     static void ReadBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FastReadBuffer(v8::Local<v8::Object> receiver_obj, uint32_t src) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_read_buffer(
+                src,
+                ptr->GetState()
+        );
+    }
+
     static void RenderbufferStorageMultisample(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastRenderbufferStorageMultisample(v8::Local<v8::Object> receiver_obj, uint32_t target,
+                                       int32_t samples, uint32_t internalFormat, int32_t width,
+                                       int32_t height) {
+        WebGL2RenderingContext *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_webgl2_renderbuffer_storage_multisample(
+                target,
+                samples,
+                internalFormat,
+                width,
+                height,
+                ptr->GetState()
+        );
+    }
 
     static void ResumeTransformFeedback(const v8::FunctionCallbackInfo<v8::Value> &args);
 

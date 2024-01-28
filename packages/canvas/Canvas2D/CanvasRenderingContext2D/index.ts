@@ -23,6 +23,44 @@ function ruleToEnum(rule: string): number {
 	}
 }
 
+function toBaseLine(value: string): number {
+	switch (value) {
+		case 'top':
+			return 0;
+		case 'hanging':
+			return 1;
+		case 'middle':
+			return 2;
+		case 'alphabetic':
+			return 3;
+		case 'ideographic':
+			return 4;
+		case 'bottom':
+			return 5;
+		default:
+			return -1;
+	}
+}
+
+function fromBaseLine(value: number): string {
+	switch (value) {
+		case 0:
+			return 'top';
+		case 1:
+			return 'hanging';
+		case 2:
+			return 'middle';
+		case 3:
+			return 'alphabetic';
+		case 4:
+			return 'ideographic';
+		case 5:
+			return 'bottom';
+		default:
+			return null;
+	}
+}
+
 export class CanvasRenderingContext2D {
 	public static isDebug = true;
 	private context;
@@ -183,11 +221,15 @@ export class CanvasRenderingContext2D {
 	}
 
 	get textBaseline() {
-		return this.context.textBaseline;
+		return fromBaseLine(this.context.textBaseline);
 	}
 
 	set textBaseline(baseline: string) {
-		this.context.textBaseline = baseline;
+		const value = toBaseLine(baseline);
+		if (value === -1) {
+			return;
+		}
+		this.context.textBaseline = value;
 	}
 
 	get globalCompositeOperation() {
@@ -202,15 +244,11 @@ export class CanvasRenderingContext2D {
 		return this.context.fillStyle;
 	}
 
-	set fillStyle(color: string | CanvasGradient | CanvasPattern) {
+	set fillStyle(color: CanvasGradient | CanvasPattern | string) {
 		if (color === undefined || color === null) {
 			return;
 		}
-		if (color instanceof CanvasGradient || color instanceof CanvasPattern) {
-			this.context.fillStyle = color.native;
-		} else {
-			this.context.fillStyle = color;
-		}
+		this.context.fillStyle = typeof color === 'object' ? color.native : color;
 	}
 
 	get filter(): string {
@@ -229,11 +267,7 @@ export class CanvasRenderingContext2D {
 		if (color === undefined || color === null) {
 			return;
 		}
-		if (color instanceof CanvasGradient || color instanceof CanvasPattern) {
-			this.context.strokeStyle = color.native;
-		} else {
-			this.context.strokeStyle = color;
-		}
+		this.context.strokeStyle = typeof color === 'object' ? color.native : color;
 	}
 
 	get lineWidth() {

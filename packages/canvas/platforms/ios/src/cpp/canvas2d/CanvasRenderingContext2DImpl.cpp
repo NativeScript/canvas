@@ -7,6 +7,9 @@
 #include "OneByteStringResource.h"
 
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_draw_point_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawPoint));
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_ellipse_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastEllipse));
 
@@ -261,8 +264,8 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
-    tmpl->Set(ConvertToV8String(isolate, "drawPoint"),
-              v8::FunctionTemplate::New(isolate, &DrawPoint));
+    SetFastMethod(isolate, tmpl, "drawPoint", DrawPoint, &fast_draw_point_, v8::Local<v8::Value>());
+
     tmpl->Set(ConvertToV8String(isolate, "drawPoints"),
               v8::FunctionTemplate::New(isolate, &DrawPoints));
     tmpl->Set(ConvertToV8String(isolate, "drawPaint"),
@@ -1012,9 +1015,10 @@ void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::String> propert
         return;
     }
     auto baseline = canvas_native_context_get_text_baseline(ptr->GetContext());
-    info.GetReturnValue().Set(
-            ConvertToV8String(isolate, baseline));
-    canvas_native_string_destroy((char *) baseline);
+    info.GetReturnValue().Set((uint32_t) baseline);
+//    info.GetReturnValue().Set(
+//            ConvertToV8String(isolate, baseline));
+//    canvas_native_string_destroy((char *) baseline);
 }
 
 void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::String> property,
@@ -1026,8 +1030,13 @@ void CanvasRenderingContext2DImpl::SetTextBaseline(v8::Local<v8::String> propert
         return;
     }
     auto isolate = info.GetIsolate();
-    auto baseline = ConvertFromV8String(isolate, value);
-    canvas_native_context_set_text_baseline(ptr->GetContext(), baseline.c_str());
+    auto context = isolate->GetCurrentContext();
+    uint32_t baseline = 0;
+    if (value->Uint32Value(context).To(&baseline)) {
+        canvas_native_context_set_text_baseline(ptr->GetContext(), (TextBaseLine) baseline);
+    }
+//    auto baseline = ConvertFromV8String(isolate, value);
+//    canvas_native_context_set_text_baseline(ptr->GetContext(), baseline.c_str());
 }
 
 
@@ -1431,18 +1440,13 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
     auto count = args.Length();
     if (count == 0) {
         canvas_native_context_clip_rule(
-                ptr->GetContext(), "nonzero");
-    } else if (count == 1 && args[0]->IsInt32()) {
-        auto val = args[0]->Int32Value(context);
-        switch (val.ToChecked()) {
-            case 0:
-                canvas_native_context_clip_rule(
-                        ptr->GetContext(), "nonzero");
-                break;
-            case 1:
-                canvas_native_context_clip_rule(
-                        ptr->GetContext(), "evenodd");
-                break;
+                ptr->GetContext(), 0);
+    } else if (count == 1 && args[0]->IsUint32()) {
+        uint32_t val = 0;
+
+        if (args[0]->Uint32Value(context).To(&val)) {
+            canvas_native_context_clip_rule(
+                    ptr->GetContext(), val);
         }
     } else if (count == 1 && args[0]->IsObject()) {
         auto type = GetNativeType(args[0].As<v8::Object>());
@@ -1451,29 +1455,18 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
 
             if (object != nullptr) {
                 canvas_native_context_clip(
-                        ptr->GetContext(), object->GetPath(), "nonzero");
+                        ptr->GetContext(), object->GetPath(), 0);
             }
         }
-    } else if (count >= 2 && args[0]->IsObject() && args[1]->IsInt32()) {
+    } else if (count >= 2 && args[0]->IsObject() && args[1]->IsUint32()) {
         auto type = GetNativeType(args[0].As<v8::Object>());
         if (type == NativeType::Path2D) {
             auto object = Path2D::GetPointer(args[0].As<v8::Object>());
-            auto rule = args[1]->Int32Value(context).ToChecked();
+            uint32_t rule = 0;
 
-            if (object != nullptr) {
-                switch (rule) {
-                    case 0:
-                        canvas_native_context_clip(
-                                ptr->GetContext(), object->GetPath(), "nonzero");
-                        break;
-                    case 1:
-                        canvas_native_context_clip(
-                                ptr->GetContext(), object->GetPath(), "evenodd");
-                        break;
-                    default:
-                        break;
-                }
-
+            if (args[1]->Uint32Value(context).To(&rule)) {
+                canvas_native_context_clip(
+                        ptr->GetContext(), object->GetPath(), rule);
             }
         }
     }
@@ -2013,20 +2006,13 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
             auto object = Path2D::GetPointer(value.As<v8::Object>());
 
             if (object != nullptr) {
-                auto rule = args[1]->Int32Value(context).ToChecked();
+                auto rule = args[1]->Uint32Value(context).ToChecked();
                 switch (rule) {
                     case 0:
-                        canvas_native_context_fill_with_path(
-                                ptr->GetContext(),
-                                object->GetPath(),
-                                "nonzero");
-                        ptr->UpdateInvalidateState();
-                        break;
                     case 1:
                         canvas_native_context_fill_with_path(
                                 ptr->GetContext(),
-                                object->GetPath(),
-                                "evenodd");
+                                object->GetPath(), rule);
                         ptr->UpdateInvalidateState();
                         break;
                     default:
@@ -2037,18 +2023,12 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
         }
     } else if (count == 1) {
         if (value->IsInt32()) {
-            auto rule = args[1]->Int32Value(context).ToChecked();
+            auto rule = args[1]->Uint32Value(context).ToChecked();
             switch (rule) {
                 case 0:
                     canvas_native_context_fill(
                             ptr->GetContext(),
-                            "nonzero");
-                    ptr->UpdateInvalidateState();
-                    break;
-                case 1:
-                    canvas_native_context_fill(
-                            ptr->GetContext(),
-                            "evenodd");
+                            rule);
                     ptr->UpdateInvalidateState();
                     break;
                 default:
@@ -2061,13 +2041,13 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
 
                 canvas_native_context_fill_with_path(
                         ptr->GetContext(),
-                        object->GetPath(), "nonzero");
+                        object->GetPath(), 0);
                 ptr->UpdateInvalidateState();
             }
         }
     } else {
         canvas_native_context_fill(
-                ptr->GetContext(), "nonzero");
+                ptr->GetContext(), 0);
         ptr->UpdateInvalidateState();
     }
 }
@@ -2198,23 +2178,22 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto ret = canvas_native_context_is_point_in_path(
-                ptr->GetContext(), x, y, "nonzero");
+                ptr->GetContext(), x, y, 0);
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 3 &&
                args[2]->IsInt32()) {
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-        auto rule = args[2]->Int32Value(context).ToChecked();
+        auto rule = args[2]->Uint32Value(context).ToChecked();
         bool ret = false;
         switch (rule) {
             case 0:
-                ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), x, y, "nonzero");
-                break;
             case 1:
                 ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), x, y, "evenodd");
+                        ptr->GetContext(), x, y, rule);
+                break;
+            default:
                 break;
         }
         args.GetReturnValue().Set(ret);
@@ -2230,21 +2209,19 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
             auto path = Path2D::GetPointer(value.As<v8::Object>());
             auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
             auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-            auto rule = args[3]->Int32Value(context).ToChecked();
+            auto rule = args[3]->Uint32Value(context).ToChecked();
             bool ret = false;
 
             if (path != nullptr) {
 
                 switch (rule) {
                     case 0:
-                        ret = canvas_native_context_is_point_in_path_with_path(
-                                ptr->GetContext(),
-                                path->GetPath(), x, y, "nonzero");
-                        break;
                     case 1:
                         ret = canvas_native_context_is_point_in_path_with_path(
                                 ptr->GetContext(),
-                                path->GetPath(), x, y, "evenodd");
+                                path->GetPath(), x, y, rule);
+                        break;
+                    default:
                         break;
                 }
 
@@ -2368,47 +2345,44 @@ CanvasRenderingContext2DImpl::PutImageData(const v8::FunctionCallbackInfo<v8::Va
 
 
     auto value = args[0];
-    auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
-                                     ConvertToV8String(isolate, "__type"));
+
     auto count = args.Length();
-    if (!typeValue.IsEmpty()) {
-        auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
-        if (type == NativeType::ImageData) {
+
+    auto type = GetNativeType(value.As<v8::Object>());
+    if (type == NativeType::ImageData) {
 
 
-            auto imageData = ImageDataImpl::GetPointer(value.As<v8::Object>());
-            if (count == 3) {
-                auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-                auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-                float dirtyX = 0;
-                float dirtyY = 0;
-                auto dirtyWidth = (float) canvas_native_image_data_get_width(
-                        imageData->GetImageData());
-                auto dirtyHeight = (float) canvas_native_image_data_get_height(
-                        imageData->GetImageData());
-                canvas_native_context_put_image_data(
-                        ptr->GetContext(),
-                        imageData->GetImageData(), dx,
-                        dy, dirtyX, dirtyY,
-                        dirtyWidth, dirtyHeight);
-                ptr->UpdateInvalidateState();
-            } else if (count == 7) {
-                auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
-                auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
-                auto dirtyX = static_cast<float>(args[3]->NumberValue(context).ToChecked());
-                auto dirtyY = static_cast<float>(args[4]->NumberValue(context).ToChecked());
-                auto dirtyWidth = static_cast<float>(args[5]->NumberValue(context).ToChecked());
-                auto dirtyHeight = static_cast<float>(args[6]->NumberValue(context).ToChecked());
-                canvas_native_context_put_image_data(
-                        ptr->GetContext(),
-                        imageData->GetImageData(), dx,
-                        dy, dirtyX, dirtyY,
-                        dirtyWidth, dirtyHeight);
-                ptr->UpdateInvalidateState();
-            }
+        auto imageData = ImageDataImpl::GetPointer(value.As<v8::Object>());
+        if (count == 3) {
+            auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+            auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+            float dirtyX = 0;
+            float dirtyY = 0;
+            auto dirtyWidth = (float) canvas_native_image_data_get_width(
+                    imageData->GetImageData());
+            auto dirtyHeight = (float) canvas_native_image_data_get_height(
+                    imageData->GetImageData());
+            canvas_native_context_put_image_data(
+                    ptr->GetContext(),
+                    imageData->GetImageData(), dx,
+                    dy, dirtyX, dirtyY,
+                    dirtyWidth, dirtyHeight);
+            ptr->UpdateInvalidateState();
+        } else if (count == 7) {
+            auto dx = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+            auto dy = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+            auto dirtyX = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+            auto dirtyY = static_cast<float>(args[4]->NumberValue(context).ToChecked());
+            auto dirtyWidth = static_cast<float>(args[5]->NumberValue(context).ToChecked());
+            auto dirtyHeight = static_cast<float>(args[6]->NumberValue(context).ToChecked());
+            canvas_native_context_put_image_data(
+                    ptr->GetContext(),
+                    imageData->GetImageData(), dx,
+                    dy, dirtyX, dirtyY,
+                    dirtyWidth, dirtyHeight);
+            ptr->UpdateInvalidateState();
         }
     }
-
 }
 
 void
@@ -2609,21 +2583,15 @@ CanvasRenderingContext2DImpl::SetTransform(const v8::FunctionCallbackInfo<v8::Va
     auto value = args[0];
     if (count == 1 && value->IsObject()) {
 
-        auto typeValue = GetPrivateValue(isolate, value.As<v8::Object>(),
-                                         ConvertToV8String(isolate, "__type"));
+        auto type = GetNativeType(value.As<v8::Object>());
 
-        if (!typeValue.IsEmpty()) {
-            auto type = (NativeType) typeValue->Int32Value(context).ToChecked();
-
-            if (type == NativeType::Matrix) {
-                auto matrix = MatrixImpl::GetPointer(value.As<v8::Object>());
-                if (matrix != nullptr) {
-                    canvas_native_context_set_transform_matrix(
-                            ptr->GetContext(),
-                            matrix->GetMatrix());
-                }
+        if (type == NativeType::Matrix) {
+            auto matrix = MatrixImpl::GetPointer(value.As<v8::Object>());
+            if (matrix != nullptr) {
+                canvas_native_context_set_transform_matrix(
+                        ptr->GetContext(),
+                        matrix->GetMatrix());
             }
-
         }
     } else if (count == 6) {
         auto a = static_cast<float>(args[0]->NumberValue(context).ToChecked());

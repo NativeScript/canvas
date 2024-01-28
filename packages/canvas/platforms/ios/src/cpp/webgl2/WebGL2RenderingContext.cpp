@@ -230,9 +230,68 @@ v8::CFunction WebGL2RenderingContext::fast_invalidate_sub_framebuffer_(
         v8::CFunction::Make(WebGL2RenderingContext::FastInvalidateSubFramebuffer));
 
 
+v8::CFunction WebGL2RenderingContext::fast_copy_tex_sub_image_3d_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastCopyTexSubImage3D));
+
+v8::CFunction WebGL2RenderingContext::fast_copy_buffer_sub_data_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastCopyBufferSubData));
+
+v8::CFunction WebGL2RenderingContext::fast_delete_query_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteQuery));
+v8::CFunction WebGL2RenderingContext::fast_delete_sampler_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteSampler));
+v8::CFunction WebGL2RenderingContext::fast_delete_sync_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteSync));
+v8::CFunction WebGL2RenderingContext::fast_delete_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteTransformFeedback));
+v8::CFunction WebGL2RenderingContext::fast_delete_vertex_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastDeleteVertexArray));
+
+v8::CFunction WebGL2RenderingContext::fast_end_query_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastEndQuery));
+
+v8::CFunction WebGL2RenderingContext::fast_end_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastEndTransformFeedback));
+
+v8::CFunction WebGL2RenderingContext::fast_framebuffer_texture_layer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastFramebufferTextureLayer));
+
+v8::CFunction WebGL2RenderingContext::fast_pause_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastPauseTransformFeedback));
+
+
+v8::CFunction WebGL2RenderingContext::fast_read_buffer_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastReadBuffer));
+
+v8::CFunction WebGL2RenderingContext::fast_renderbuffer_storage_multisample_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastRenderbufferStorageMultisample));
+
+
+v8::CFunction WebGL2RenderingContext::fast_is_query_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastIsQuery));
+
+
+v8::CFunction WebGL2RenderingContext::fast_is_sampler_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastIsSampler));
+
+
+v8::CFunction WebGL2RenderingContext::fast_is_sync_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastIsSync));
+
+
+v8::CFunction WebGL2RenderingContext::fast_is_transform_feedback_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastIsTransformFeedback));
+
+
+v8::CFunction WebGL2RenderingContext::fast_is_vertex_array_(
+        v8::CFunction::Make(WebGL2RenderingContext::FastIsVertexArray));
+
+
+
 WebGL2RenderingContext::WebGL2RenderingContext(WebGLState *state) : WebGLRenderingContext(
         state, WebGLRenderingVersion::V2) {
 }
+
 
 
 WebGL2RenderingContext::WebGL2RenderingContext(WebGLState *state,
@@ -4198,15 +4257,13 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &CompressedTexSubImage3D)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyBufferSubData"),
-            v8::FunctionTemplate::New(isolate, &CopyBufferSubData)
-    );
+    SetFastMethod(isolate, tmpl, "copyBufferSubData", CopyBufferSubData,
+                               &fast_copy_buffer_sub_data_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "copyTexSubImage3D"),
-            v8::FunctionTemplate::New(isolate, &CopyTexSubImage3D)
-    );
+
+    SetFastMethod(isolate, tmpl, "copyTexSubImage3D", CopyTexSubImage3D,
+                               &fast_copy_tex_sub_image_3d_, v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "createQuery"),
@@ -4228,40 +4285,27 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
             v8::FunctionTemplate::New(isolate, &CreateVertexArray)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteQuery"),
-            v8::FunctionTemplate::New(isolate, &DeleteQuery)
-    );
 
+    SetFastMethod(isolate, tmpl, "deleteQuery", DeleteQuery,
+                  &fast_delete_query_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteSampler"),
-            v8::FunctionTemplate::New(isolate, &DeleteSampler)
-    );
+    SetFastMethod(isolate, tmpl, "deleteSampler", DeleteSampler,
+                  &fast_delete_sampler_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteSync"),
-            v8::FunctionTemplate::New(isolate, &DeleteSync)
-    );
+    SetFastMethod(isolate, tmpl, "deleteSync", DeleteSync,
+                  &fast_delete_sync_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &DeleteTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "deleteTransformFeedback", DeleteTransformFeedback,
+                  &fast_delete_transform_feedback_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "deleteVertexArray"),
-            v8::FunctionTemplate::New(isolate, &DeleteVertexArray)
-    );
-
+    SetFastMethod(isolate, tmpl, "deleteVertexArray", DeleteVertexArray,
+                  &fast_delete_vertex_array_, v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "drawArraysInstanced", DrawArraysInstanced,
                   &fast_draw_arrays_instanced_, v8::Local<v8::Value>());
 
-
     SetFastMethod(isolate, tmpl, "drawBuffers", DrawBuffers, &fast_draw_buffers_,
                   v8::Local<v8::Value>());
-
 
     SetFastMethod(isolate, tmpl, "drawElementsInstanced", DrawElementsInstanced,
                   &fast_draw_elements_instanced_, v8::Local<v8::Value>());
@@ -4271,26 +4315,21 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
                   v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "endQuery"),
-            v8::FunctionTemplate::New(isolate, &EndQuery)
-    );
+    SetFastMethod(isolate, tmpl, "endQuery", EndQuery, &fast_end_query_,
+                  v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "endTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &EndTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "endTransformFeedback", EndTransformFeedback, &fast_end_transform_feedback_,
+                  v8::Local<v8::Value>());
+
 
     tmpl->Set(
             ConvertToV8String(isolate, "fenceSync"),
             v8::FunctionTemplate::New(isolate, &FenceSync)
     );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "framebufferTextureLayer"),
-            v8::FunctionTemplate::New(isolate, &FramebufferTextureLayer)
-    );
 
+    SetFastMethod(isolate, tmpl, "framebufferTextureLayer", FramebufferTextureLayer, &fast_framebuffer_texture_layer_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "uniform1ui", Uniform1ui, &fast_uniform_1ui_,
                   v8::Local<v8::Value>());
@@ -4448,46 +4487,38 @@ void WebGL2RenderingContext::SetMethods(v8::Isolate *isolate,
                   &fast_invalidate_sub_framebuffer_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isQuery"),
-            v8::FunctionTemplate::New(isolate, &IsQuery)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "isSampler"),
-            v8::FunctionTemplate::New(isolate, &IsSampler)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isSync"),
-            v8::FunctionTemplate::New(isolate, &IsSync)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &IsTransformFeedback)
-    );
-
-    tmpl->Set(
-            ConvertToV8String(isolate, "isVertexArray"),
-            v8::FunctionTemplate::New(isolate, &IsVertexArray)
-    );
+    SetFastMethod(isolate, tmpl, "isQuery", IsQuery,
+                  &fast_is_query_, v8::Local<v8::Value>());
 
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "pauseTransformFeedback"),
-            v8::FunctionTemplate::New(isolate, &PauseTransformFeedback)
-    );
+    SetFastMethod(isolate, tmpl, "isSampler", IsSampler,
+                  &fast_is_sampler_, v8::Local<v8::Value>());
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "readBuffer"),
-            v8::FunctionTemplate::New(isolate, &ReadBuffer)
-    );
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "renderbufferStorageMultisample"),
-            v8::FunctionTemplate::New(isolate, &RenderbufferStorageMultisample)
-    );
+
+    SetFastMethod(isolate, tmpl, "isSync", IsSync,
+                  &fast_is_sync_, v8::Local<v8::Value>());
+
+
+
+    SetFastMethod(isolate, tmpl, "isTransformFeedback", IsTransformFeedback,
+                  &fast_is_transform_feedback_, v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "isVertexArray", IsVertexArray,
+                  &fast_is_vertex_array_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "pauseTransformFeedback", PauseTransformFeedback,
+                  &fast_pause_transform_feedback_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "readBuffer", ReadBuffer,
+                  &fast_read_buffer_, v8::Local<v8::Value>());
+
+
+    SetFastMethod(isolate, tmpl, "renderbufferStorageMultisample", RenderbufferStorageMultisample,
+                  &fast_renderbuffer_storage_multisample_, v8::Local<v8::Value>());
 
 
     SetFastMethod(isolate, tmpl, "resumeTransformFeedback", ResumeTransformFeedback,

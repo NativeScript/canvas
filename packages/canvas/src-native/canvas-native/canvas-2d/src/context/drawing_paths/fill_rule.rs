@@ -34,6 +34,19 @@ impl TryFrom<&str> for FillRule {
     }
 }
 
+
+impl TryFrom<u32> for FillRule {
+    type Error = &'static str;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(FillRule::NonZero),
+            1 => Ok(FillRule::EvenOdd),
+            _ => Err("Invalid FillRule"),
+        }
+    }
+}
+
 impl From<i32> for FillRule {
     fn from(value: i32) -> FillRule {
         match value {

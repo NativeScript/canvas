@@ -5,10 +5,22 @@
 #include "OES_vertex_array_objectImpl.h"
 
 
-OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(OES_vertex_array_object* object)
+OES_vertex_array_objectImpl::OES_vertex_array_objectImpl(OES_vertex_array_object *object)
         : object_(object) {
 
 }
+
+
+v8::CFunction OES_vertex_array_objectImpl::fast_delete_vertex_array_oes_(
+        v8::CFunction::Make(OES_vertex_array_objectImpl::FastDeleteVertexArrayOES));
+
+
+v8::CFunction OES_vertex_array_objectImpl::fast_is_vertex_array_oes_(
+        v8::CFunction::Make(OES_vertex_array_objectImpl::FastIsVertexArrayOES));
+
+
+v8::CFunction OES_vertex_array_objectImpl::fast_bind_vertex_array_oes_(
+        v8::CFunction::Make(OES_vertex_array_objectImpl::FastBindVertexArrayOES));
 
 void OES_vertex_array_objectImpl::CreateVertexArrayOES(
         const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -34,10 +46,9 @@ void OES_vertex_array_objectImpl::DeleteVertexArrayOES(
     if (ptr == nullptr) {
         return;
     }
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
@@ -57,10 +68,8 @@ void OES_vertex_array_objectImpl::IsVertexArrayOES(
         args.GetReturnValue().Set(false);
         return;
     }
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());
@@ -85,10 +94,9 @@ void OES_vertex_array_objectImpl::BindVertexArrayOES(
     if (ptr == nullptr) {
         return;
     }
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
-    auto type = GetNativeType( value);
+    auto type = GetNativeType(value);
 
     if (type == NativeType::WebGLVertexArrayObject) {
         auto array_object = WebGLVertexArrayObject::GetPointer(value.As<v8::Object>());

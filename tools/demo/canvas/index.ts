@@ -551,7 +551,26 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.drawImage(c2, 0, 0);
 		});
 	}
+
+	fillIssue(canvas) {
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.beginPath();
+		ctx.fillStyle = 'rgba(0, 255, 0, 1)';
+		ctx.arc(50, 50, 30, 0, Math.PI * 2, true);
+		ctx.arc(50, 50, 15, 0, Math.PI * 2, true);
+		ctx.fill('evenodd');
+	}
+
+	clearIssue(canvas) {
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.fillStyle = 'red';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.resetTransform();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+	}
 	draw() {
+		//this.clearIssue(this.canvas);
+		this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
 		//breathe(this.canvas);
 		///this.drawOnCanvasWithCanvas(this.canvas);
@@ -575,7 +594,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
 		//handleVideo(this.canvas);
-	/*	const worker = new Worker('./canvas.worker.js');
+		/*	const worker = new Worker('./canvas.worker.js');
 		global.CanvasWorker = worker;
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		//     var x = args.getX() * Screen.mainScreen.scale,
@@ -658,7 +677,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcToAnimation(this.canvas);
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
-		createChaosLines(this.canvas);
+		//createChaosLines(this.canvas);
 		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);

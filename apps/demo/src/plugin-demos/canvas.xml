@@ -8,9 +8,9 @@
   
   <!-- <ui:Dom rowSpan="2" colSpan="2"> -->
 
-  <!-- <ui:Fill color="#e8f4f8" /> -->
+  <!-- <ui:Fill color="#e8f4f8" />
 
-    <!-- <ui:Rect x="0" y="0" width="256" height="256" color="lightblue"/>
+    <ui:Rect x="0" y="0" width="256" height="256" color="lightblue"/>
     <ui:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/> -->
 
 <!-- <ui:RoundedRect
@@ -52,16 +52,22 @@
       </ui:Group> -->
 
 
-       <!-- <ui:Fill color="#e8f4f8" />
-      <ui:Group
+       <!-- <ui:Fill color="#e8f4f8" /> -->
+      <!-- <ui:Group
         color="lightblue"
-        origin="{x: 128, y: 128 }"
-        transform="[{ skewX: Math.PI / 6 }]"
+        origin="{{origin}}"
+        transform="{{[{ skewX: Math.PI / 6 }]}}"
       >
         <ui:RoundedRect x="64" y="64" width="128" height="128" r="10" /> 
 
-   </ui:Group>
-   -->
+   </ui:Group> -->
+  
+
+   <!-- <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR}}" color="#51AFED" />
+      <ui:Group color="lightblue" paintStyle="stroke" strokeWidth="10">
+        <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{ groupR / 2}}" />
+        <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{ groupR / 3}}" color="white" />
+      </ui:Group> -->
 
 
   <!-- <ui:Fill color="white" />
@@ -74,7 +80,7 @@
         x="0"
         y="400"
         text="Hello World"
-        font="bold 100px serif"
+        font="bold 32px serif"
       /> -->
 
 
@@ -83,10 +89,10 @@
         <ui:Shadow dx="12" dy="12" blur="25" color="#93b8c4" />
         <ui:Shadow dx="-12" dy="-12" blur="25" color="#c7f8ff" />
       </ui:RoundedRect>
-
+-->
         
-  </ui:Dom> 
-   -->
+  <!-- </ui:Dom>  -->
+   
   
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
 		 <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"

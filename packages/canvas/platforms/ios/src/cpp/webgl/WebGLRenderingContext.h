@@ -1557,13 +1557,13 @@ public:
             return;
         }
 
-
-        DrawArraysImpl(
-                ptr,
+        canvas_native_webgl_draw_arrays(
                 mode,
                 first,
-                count
+                count,
+                ptr->GetState()
         );
+        ptr->UpdateInvalidateState();
     }
 
     static void DrawElements(const v8::FunctionCallbackInfo<v8::Value> &args);

@@ -34,10 +34,9 @@ export class RoundedRect extends Paint {
 	_children: Paint[] = [];
 
 	draw() {
-		const scale = Screen.mainScreen.scale;
 		const context = this._canvas.getContext('2d') as any;
 		const color = this._getColor();
-		context.roundRect(this.x * scale, this.y * scale, this.width * scale, this.height * scale, this.r * scale);
+		context.roundRect(this.x, this.y, this.width, this.height, this.r);
 		if (this._children.length > 0) {
 			this._children.forEach((child) => {
 				const child_color = child._getColor();
@@ -50,9 +49,9 @@ export class RoundedRect extends Paint {
 							const blur = context.shadowBlur;
 							const shadowColor = context.shadowColor;
 
-							context.shadowOffsetX = child.dx * scale;
-							context.shadowOffsetY = child.dy * scale;
-							context.shadowBlur = child.blur * scale;
+							context.shadowOffsetX = child.dx;
+							context.shadowOffsetY = child.dy;
+							context.shadowBlur = child.blur;
 							context.shadowColor = child_color;
 
 							context.fill();
@@ -76,9 +75,9 @@ export class RoundedRect extends Paint {
 							const blur = context.shadowBlur;
 							const shadowColor = context.shadowColor;
 
-							context.shadowOffsetX = child.dx * scale;
-							context.shadowOffsetY = child.dy * scale;
-							context.shadowBlur = child.blur * scale;
+							context.shadowOffsetX = child.dx;
+							context.shadowOffsetY = child.dy;
+							context.shadowBlur = child.blur;
 							context.shadowColor = child_color;
 
 							context.stroke();

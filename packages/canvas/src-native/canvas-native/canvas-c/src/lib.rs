@@ -7080,6 +7080,8 @@ pub extern "C" fn canvas_native_webgl_disable_vertex_attrib_array(
     )
 }
 
+
+#[inline(always)]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_draw_arrays(
     mode: u32,
@@ -7092,6 +7094,8 @@ pub extern "C" fn canvas_native_webgl_draw_arrays(
     // Flush Context
 }
 
+
+#[inline(always)]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_draw_elements(
     mode: u32,

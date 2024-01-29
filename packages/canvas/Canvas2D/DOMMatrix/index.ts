@@ -4,14 +4,15 @@ let ctor;
 export class DOMMatrix {
 	static {
 		Helpers.initialize();
-		ctor = global.CanvasModule.DOMMatrix;
 	}
 	_native;
 	constructor(instance?) {
 		if (Array.isArray(instance)) {
-			this._native = new ctor(instance);
+			this._native = new global.CanvasModule.DOMMatrix(instance);
 		} else if (!instance) {
-			this._native = new ctor();
+			this._native = new global.CanvasModule.DOMMatrix();
+		} else {
+			this._native = instance;
 		}
 	}
 

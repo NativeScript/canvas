@@ -34,7 +34,6 @@ export class Text extends Paint {
 			return;
 		}
 		const context = this._canvas.getContext('2d') as any;
-		const scale = Screen.mainScreen.scale;
 
 		if (typeof this._font === 'string') {
 			context.font = this._font;
@@ -45,12 +44,12 @@ export class Text extends Paint {
 		switch (style) {
 			case 'fill':
 				context.fillStyle = color;
-				context.fillText(this.text, this.x * scale, this.y * scale);
+				context.fillText(this.text, this.x, this.y);
 				break;
 			case 'stroke':
 				context.strokeStyle = color;
 				context.lineWidth = this.strokeWidth;
-				context.strokeText(this.text, this.x * scale, this.y * scale);
+				context.strokeText(this.text, this.x, this.y);
 				break;
 		}
 	}

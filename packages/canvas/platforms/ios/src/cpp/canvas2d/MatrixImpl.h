@@ -8,7 +8,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class MatrixImpl: ObjectWrapperImpl {
+class MatrixImpl: public ObjectWrapperImpl {
 public:
     MatrixImpl(Matrix* matrix);
     ~MatrixImpl(){

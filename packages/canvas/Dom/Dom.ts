@@ -22,9 +22,15 @@ export class Dom extends LayoutBase {
 	}
 
 	_ready(args: EventData) {
-		this._children.forEach((child) => {
+		console.time('_ready');
+		for (const child of this._children) {
 			child.draw();
-		});
+		}
+
+		// this._children.forEach((child) => {
+		// 	child.draw();
+		// });
+		console.timeEnd('_ready');
 	}
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
 		if (view === this._canvas) {

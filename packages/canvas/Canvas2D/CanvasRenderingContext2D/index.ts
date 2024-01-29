@@ -611,6 +611,11 @@ export class CanvasRenderingContext2D {
 		return this.context.getLineDash();
 	}
 
+
+	getTransform(): DOMMatrix {
+		return new DOMMatrix(this.context.getTransform());
+	}
+
 	isPointInPath(x: number, y: number, fillRule: string): boolean;
 
 	isPointInPath(path: Path2D, x: number, y: number, fillRule: string): boolean;
@@ -716,8 +721,16 @@ export class CanvasRenderingContext2D {
 		this.context.setLineDash(segments);
 	}
 
-	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void {
-		this.context.setTransform(a, b, c, d, e, f);
+	setTransform(matrix: DOMMatrix): void
+	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void
+	setTransform(a: number | DOMMatrix, b?: number, c?: number, d?: number, e?: number, f?: number): void {
+		if(typeof a === 'object'){
+			// @ts-ignore
+			this.context.setTransform(a.native);
+		}else {
+			this.context.setTransform(a, b, c, d, e, f);
+		}
+	
 	}
 
 	stroke(): void;

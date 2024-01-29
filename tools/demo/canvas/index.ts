@@ -658,8 +658,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//arcToAnimation(this.canvas);
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
-		//createChaosLines(this.canvas);
-		flappyBird(this.canvas);
+		createChaosLines(this.canvas);
+		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);

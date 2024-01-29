@@ -583,20 +583,20 @@ fn clear_if_composited(mask: u32, state: &mut WebGLState) -> HowToClear {
 }
 
 // #[cfg(target_os = "ios")]
-// pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
-//     state.make_current();
-//     if clear_if_composited(mask, state) != HowToClear::CombinedClear {
-//         unsafe { gl_bindings::Clear(mask) }
-//     }
-//     // Flush context
-// }
-
-// #[cfg(not(target_os = "ios"))]
 pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
     state.make_current();
-    unsafe { gl_bindings::Clear(mask) }
+    if clear_if_composited(mask, state) != HowToClear::CombinedClear {
+        unsafe { gl_bindings::Clear(mask) }
+    }
     // Flush context
 }
+
+// #[cfg(not(target_os = "ios"))]
+// pub fn canvas_native_webgl_clear(mask: u32, state: &mut WebGLState) {
+//     state.make_current();
+//     unsafe { gl_bindings::Clear(mask) }
+//     // Flush context
+// }
 
 pub fn canvas_native_webgl_clear_color(
     red: f32,

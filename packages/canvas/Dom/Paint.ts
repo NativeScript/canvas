@@ -11,6 +11,7 @@ export const strokeWidthProperty = new Property<Paint, number>({
 	defaultValue: 1,
 });
 
+const defaultColor = new Color('black');
 export class Paint extends LayoutBase {
 	strokeWidth: number;
 	_canvas: Canvas;
@@ -28,6 +29,9 @@ export class Paint extends LayoutBase {
 		this._paintStyleDirty = true;
 	}
 
+	_getStrokeWidth() {
+		return (this.parent as any)?.strokeWidth ?? this.strokeWidth;
+	}
 	_getPaintStyle() {
 		const paintStyle = this.paintStyle;
 		if (paintStyle !== 'fill') {
@@ -40,9 +44,9 @@ export class Paint extends LayoutBase {
 	}
 
 	_getColor() {
-		const color = this.color ?? new Color('black');
+		const color = this.color ?? defaultColor;
 		const hex = color.hex;
-		if (color.name !== 'black' || hex !== '#000000') {
+		if (color.name !== 'black' && hex !== '#000000') {
 			return hex;
 		}
 		return (this.parent as any)?.color?.hex ?? hex;
@@ -53,17 +57,20 @@ export class Paint extends LayoutBase {
 
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 
-		context.lineWidth = this.strokeWidth;
-
 		const style = this._getPaintStyle();
+
+		context.closePath();
 
 		if (style === 'fill') {
 			context.fillStyle = color;
 			context.fill();
 		} else if (style === 'stroke') {
+			context.lineWidth = this._getStrokeWidth();
 			context.strokeStyle = color;
 			context.stroke();
 		}
+
+		context.beginPath();
 	}
 }
 

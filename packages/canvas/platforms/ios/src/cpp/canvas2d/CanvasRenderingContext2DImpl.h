@@ -1279,6 +1279,9 @@ public:
                 f);
     }
 
+
+    static void GetTransform(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void Stroke(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FastStroke(v8::Local<v8::Object> receiver_obj) {

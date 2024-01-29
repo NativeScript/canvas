@@ -28,6 +28,7 @@ export class Path extends Paint {
 			context.fillStyle = this.color.hex;
 			context.fill(this._path as any);
 		} else if (style === 'stroke') {
+			context.lineWidth = this.strokeWidth;
 			context.strokeStyle = this.color.hex;
 			context.stroke(this._path as any);
 		}

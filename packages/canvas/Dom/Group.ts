@@ -21,10 +21,11 @@ export const originProperty = new ShorthandProperty<Style, { x: number; y: numbe
 		const type = typeof value;
 		if (type === 'string') {
 			try {
-				const val = JSON.parse(value as any);
+				const val = JSON.parse(JSON.stringify(value as any));
+
 				return [
-					[originXProperty, val.x],
-					[originYProperty, val.y],
+					[originXProperty, val.x ?? 0],
+					[originYProperty, val.y ?? 0],
 				];
 			} catch (error) {}
 		}
@@ -40,7 +41,7 @@ export const originProperty = new ShorthandProperty<Style, { x: number; y: numbe
 	},
 });
 
-export const transformProperty = new Property<Group, any>({
+export const transformProperty = new Property<Group, any[]>({
 	name: 'transform',
 });
 
@@ -75,9 +76,21 @@ M11 = 0,
     M44 = 15,
 */
 
-function parseTransformation(value, transform: DOMMatrix) {
+function parseTransformation(value, _transform: DOMMatrix) {
 	/*
-		{matrix: number[]}, {perspective: number}, {rotate: string}, {rotateX: string}, {rotateY: string}, {rotateZ: string}, {scale: number}, {scaleX: number}, {scaleY: number}, {translateX: number}, {translateY: number}, {skewX: string}, {skewY: string}
+		{matrix: number[]},
+		 {perspective: number},
+		  {rotate: string},
+		  {rotateX: string},
+		   {rotateY: string},
+		    {rotateZ: string}, 
+			{scale: number}, 
+			{scaleX: number},
+			 {scaleY: number},
+			  {translateX: number}, 
+			  {translateY: number},
+			   {skewX: string},
+			    {skewY: string}
 		*/
 
 	const matrix = value.matrix;
@@ -150,58 +163,75 @@ function parseTransformation(value, transform: DOMMatrix) {
 
 	const skewX = value.skewX;
 
+	if (typeof skewX === 'number') {
+		_transform.c = skewX;
+	}
+
 	if (typeof skewX === 'string') {
 		return;
 	}
 
-	const skewY = value.translateY;
+	const skewY = value.skewY;
+
+	if (typeof skewY === 'number') {
+		_transform.b = skewY;
+	}
 
 	if (typeof skewY === 'string') {
 		return;
 	}
 }
 
-[{ skewX: Math.PI / 6 }];
-
 export class Group extends Paint {
 	_children: Set<Paint> = new Set();
 
 	_matrix: DOMMatrix;
-	origin: { x: number; y: number };
-	transform;
+	originX: number = 0;
+	originY: number = 0;
+	//origin: { x: number; y: number };
+	transform: any[];
 	constructor() {
 		super();
 	}
 	[transformProperty.setNative](value) {
-		if (typeof value === 'string') {
-			try {
-				const val = JSON.parse(JSON.stringify(value)) as any[];
-
-				const matrix = new DOMMatrix();
-
-				if (Array.isArray(val)) {
-					val.forEach((item) => {
-						parseTransformation(val, matrix);
-					});
-				}
-
-				this._matrix = matrix;
-			} catch (error) {}
+		if (Array.isArray(value)) {
+			const matrix = new DOMMatrix();
+			value.forEach((item) => {
+				parseTransformation(item, matrix);
+			});
+			this._matrix = matrix;
 		}
 	}
+
+	set origin(value) {
+		// @ts-ignore
+		this.style.origin = value;
+	}
+
+	get origin() {
+		// @ts-ignore
+		return this.style.origin;
+	}
+
 	draw() {
 		if (this._children.size > 0) {
 			const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 			context.save();
-			context.translate(this.originX, this.originY);
+			const origin = this.origin;
+			context.translate(origin.x ?? 0, origin.y ?? 0);
+			if (this._matrix) {
+				context.setTransform(this._matrix);
+			}
+			context.lineWidth = this.strokeWidth;
 			this._children.forEach((child) => {
 				child.draw();
 			});
+
 			context.restore();
 		}
 	}
 
-	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
+	_addViewToNativeVisualTree(view: ViewBase, _atIndex?: number): boolean {
 		if (view instanceof Paint || view instanceof Image) {
 			view._addCanvas(this._canvas);
 			(view as any)._inGroup = true;

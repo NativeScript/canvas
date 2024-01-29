@@ -429,6 +429,10 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
                                fast_set_transform_overloads_, v8::Local<v8::Value>());
 
 
+    tmpl->Set(ConvertToV8String(isolate, "getTransform"),
+              v8::FunctionTemplate::New(isolate, &GetTransform));
+
+
     SetFastMethodWithOverLoads(isolate, tmpl, "stroke", Stroke, fast_stroke_overloads_,
                                v8::Local<v8::Value>());
 
@@ -2605,6 +2609,30 @@ CanvasRenderingContext2DImpl::SetTransform(const v8::FunctionCallbackInfo<v8::Va
                 e,
                 f);
     }
+}
+
+
+void
+CanvasRenderingContext2DImpl::GetTransform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto matrix = canvas_native_context_get_transform(ptr->GetContext());
+
+
+    auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(context).ToLocalChecked()->NewInstance(
+            context).ToLocalChecked();
+    auto object = new MatrixImpl(matrix);
+
+    ret->SetAlignedPointerInInternalField(0, object);
+
+    SetNativeType(ret, NativeType::Matrix);
+
+    object->BindFinalizer(isolate, ret);
+
+    args.GetReturnValue().Set(ret);
 }
 
 void

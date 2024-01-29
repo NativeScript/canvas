@@ -41,9 +41,8 @@ export class Rect extends Paint {
 	draw() {
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 		context.rect(this.x, this.y, this.width, this.height);
-
 		if (this._children.length > 0) {
-			this._children.forEach((child) => {
+			for (const child of this._children) {
 				switch (child.paintStyle) {
 					case 'fill':
 						context.fillStyle = child.color.hex;
@@ -55,7 +54,7 @@ export class Rect extends Paint {
 						context.stroke();
 						break;
 				}
-			});
+			}
 		} else {
 			super.draw();
 		}

@@ -4,6 +4,7 @@ use std::ops::{Index, IndexMut};
 use std::os::raw::c_float;
 
 use skia_safe::M44;
+use skia_safe::matrix::AffineMember;
 
 #[derive(Clone, Debug)]
 pub struct Matrix(M44);
@@ -134,7 +135,7 @@ impl Matrix {
         ];
         self.0.get_col_major(&mut m);
         m[member] = value;
-        self.0 = M44::row_major(&m);
+        self.0 = M44::col_major(&m);
     }
 
     fn member_2d_name(&self, member: Member2DName) -> c_float {
@@ -151,7 +152,7 @@ impl Matrix {
         ];
         self.0.get_col_major(&mut m);
         m[member] = value;
-        self.0 = M44::row_major(&m);
+        self.0 = M44::col_major(&m);
     }
 
     fn member_3d(&self, member: Member3D) -> c_float {
@@ -168,7 +169,7 @@ impl Matrix {
         ];
         self.0.get_col_major(&mut m);
         m[member] = value;
-        self.0 = M44::row_major(&m);
+        self.0 = M44::col_major(&m);
     }
 
     pub fn affine(&self) -> Vec<c_float> {
@@ -180,13 +181,13 @@ impl Matrix {
             1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         ];
         self.0.get_col_major(&mut m);
-        m[Member2D::A] = value[0];
-        m[Member2D::B] = value[1];
-        m[Member2D::C] = value[2];
-        m[Member2D::D] = value[3];
-        m[Member2D::E] = value[4];
-        m[Member2D::F] = value[5];
-        self.0 = M44::row_major(&m);
+        m[0] = value[0];
+        m[1] = value[1];
+        m[4] = value[2];
+        m[5] = value[3];
+        m[12] = value[4];
+        m[13] = value[5];
+        self.0 = M44::col_major(&m);
     }
 
     pub fn a(&self) -> c_float {

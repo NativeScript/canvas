@@ -85,7 +85,7 @@ export class Circle extends Paint {
 						break;
 					case 'stroke':
 						context.strokeStyle = color;
-						context.lineWidth = child.strokeWidth;
+						context.lineWidth = child._getStrokeWidth();
 						context.stroke();
 						break;
 				}

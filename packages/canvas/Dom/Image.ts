@@ -38,9 +38,8 @@ export class Image extends View {
 			return;
 		}
 		const context = this._canvas.getContext('2d') as any;
-		const scale = Screen.mainScreen.scale;
 
-		context.drawImage(this.image as any, this.x * scale, this.y * scale, this.width * scale, this.height * scale);
+		context.drawImage(this.image as any, this.x, this.y, this.width, this.height);
 	}
 }
 

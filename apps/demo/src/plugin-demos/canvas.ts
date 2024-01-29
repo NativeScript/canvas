@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 }
 
 export class DemoModel extends DemoSharedCanvas {
+	origin = { x: 128, y: 128 };
 	points = [
 		{ x: 128, y: 0 },
 		{ x: 168, y: 80 },

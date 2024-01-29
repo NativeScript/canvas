@@ -2011,33 +2011,19 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
 
             if (object != nullptr) {
                 auto rule = args[1]->Uint32Value(context).ToChecked();
-                switch (rule) {
-                    case 0:
-                    case 1:
-                        canvas_native_context_fill_with_path(
-                                ptr->GetContext(),
-                                object->GetPath(), rule);
-                        ptr->UpdateInvalidateState();
-                        break;
-                    default:
-                        break;
-                }
-
+                canvas_native_context_fill_with_path(
+                        ptr->GetContext(),
+                        object->GetPath(), rule);
+                ptr->UpdateInvalidateState();
             }
         }
     } else if (count == 1) {
-        if (value->IsInt32()) {
-            auto rule = args[1]->Uint32Value(context).ToChecked();
-            switch (rule) {
-                case 0:
-                    canvas_native_context_fill(
-                            ptr->GetContext(),
-                            rule);
-                    ptr->UpdateInvalidateState();
-                    break;
-                default:
-                    break;
-            }
+        if (value->IsUint32()) {
+            auto rule = value->Uint32Value(context).ToChecked();
+            canvas_native_context_fill(
+                    ptr->GetContext(),
+                    rule);
+            ptr->UpdateInvalidateState();
         } else if (value->IsObject()) {
             auto type = GetNativeType(value.As<v8::Object>());
             if (type == NativeType::Path2D) {
@@ -2190,16 +2176,8 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto rule = args[2]->Uint32Value(context).ToChecked();
-        bool ret = false;
-        switch (rule) {
-            case 0:
-            case 1:
-                ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), x, y, rule);
-                break;
-            default:
-                break;
-        }
+        bool ret = canvas_native_context_is_point_in_path(
+                ptr->GetContext(), x, y, rule);
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 4 &&
@@ -2214,20 +2192,12 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
             auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
             auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
             auto rule = args[3]->Uint32Value(context).ToChecked();
-            bool ret = false;
 
             if (path != nullptr) {
 
-                switch (rule) {
-                    case 0:
-                    case 1:
-                        ret = canvas_native_context_is_point_in_path_with_path(
-                                ptr->GetContext(),
-                                path->GetPath(), x, y, rule);
-                        break;
-                    default:
-                        break;
-                }
+                bool ret = canvas_native_context_is_point_in_path_with_path(
+                        ptr->GetContext(),
+                        path->GetPath(), x, y, rule);
 
                 args.GetReturnValue().Set(ret);
                 return;

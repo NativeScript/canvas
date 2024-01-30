@@ -1,6 +1,6 @@
 import { colorProperty, Property, booleanConverter } from '@nativescript/core';
-import { Group } from '../Group';
 import { Paint } from '../Paint';
+import { Path2D } from '../../Canvas2D';
 
 export const p1Property = new Property<Line, number>({
 	name: 'p1',

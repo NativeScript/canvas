@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
 
     s.authors      = "Ammar Ahmed"
     s.homepage     = "https://github.com/ammarahm-ed/nativescript-v8-module"
-    s.platforms    = { :ios => "12.4" }
+    s.platforms    = { :ios => "12.0" }
     s.source       = { :git => "https://github.com/ammarahm-ed/nativescript-v8-module.git", :tag => "v1.0.0" }
     s.cocoapods_version      = ">= 1.10.1"
     s.vendored_frameworks = "NativeScript.xcframework"

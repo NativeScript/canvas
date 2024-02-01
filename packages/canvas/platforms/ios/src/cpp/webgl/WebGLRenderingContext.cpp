@@ -6302,6 +6302,11 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
                   v8::Local<v8::Value>());
 
 
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+                      SetContinuousRenderMode);
+
+
     // todo
     tmpl->Set(ConvertToV8String(isolate, "__toDataURL"),
               v8::FunctionTemplate::New(isolate, &__ToDataURL));

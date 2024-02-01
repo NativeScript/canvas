@@ -65,6 +65,7 @@ import { issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
+import { lines } from './canvas2d/lines';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -552,6 +553,67 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		});
 	}
 
+	pathIssue(canvas) {
+		const d = [
+			[100, 68],
+			[109.40456403667957, 87.05572809000084],
+			[130.43380852144492, 90.11145618000168],
+			[115.21690426072246, 104.94427190999916],
+			[118.80912807335915, 125.88854381999832],
+			[100, 116],
+			[81.19087192664087, 125.88854381999832],
+			[84.78309573927754, 104.94427190999916],
+			[69.56619147855508, 90.1114561800017],
+			[90.59543596332043, 87.05572809000084],
+		];
+		function drawStarWithCoords(ctx) {
+			ctx.beginPath();
+			ctx.moveTo(d[0][0], d[0][1]);
+			for (let i = 1; i < d.length; i++) {
+				ctx.lineTo(d[i][0], d[i][1]);
+			}
+			ctx.closePath();
+			ctx.fill();
+		}
+
+		function drawStar(ctx, fetti: { x: number; y: number; scalar: number }) {
+			var rot = (Math.PI / 2) * 3;
+			var innerRadius = 4 * fetti.scalar;
+			var outerRadius = 8 * fetti.scalar;
+			var x = fetti.x;
+			var y = fetti.y;
+			var spikes = 5;
+			var step = Math.PI / spikes;
+			ctx.beginPath();
+			while (spikes--) {
+				x = fetti.x + Math.cos(rot) * outerRadius;
+				y = fetti.y + Math.sin(rot) * outerRadius;
+				ctx.lineTo(x, y);
+
+				rot += step;
+
+				x = fetti.x + Math.cos(rot) * innerRadius;
+				y = fetti.y + Math.sin(rot) * innerRadius;
+
+				ctx.lineTo(x, y);
+				rot += step;
+			}
+
+			ctx.closePath();
+			ctx.fill();
+		}
+
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		ctx.fillStyle = 'red';
+		drawStar(ctx, { x: 100, y: 200, scalar: 4 });
+
+		ctx.fillStyle = 'blue';
+		drawStarWithCoords(ctx);
+	}
+
 	fillIssue(canvas) {
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 		ctx.beginPath();
@@ -569,8 +631,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
+		this.pathIssue(this.canvas);
+		//lines(this.canvas);
 		//this.clearIssue(this.canvas);
-		this.fillIssue(this.canvas);
+		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
 		//breathe(this.canvas);
 		///this.drawOnCanvasWithCanvas(this.canvas);

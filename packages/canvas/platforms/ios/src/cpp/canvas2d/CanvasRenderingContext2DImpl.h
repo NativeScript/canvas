@@ -28,6 +28,10 @@
 class CanvasRenderingContext2DImpl : ObjectWrapperImpl {
 public:
 
+    static v8::CFunction fast_start_raf_;
+
+    static v8::CFunction fast_stop_raf_;
+
     static v8::CFunction fast_draw_point_;
 
     static v8::CFunction fast_arc_;
@@ -121,6 +125,34 @@ public:
 
     CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context);
 
+    void StartRaf();
+
+    void StopRaf();
+
+    static void __StartRaf(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void __FastStartRaf(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        ptr->StartRaf();
+
+    }
+
+    static void __StopRaf(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void __FastStopRaf(v8::Local<v8::Object> receiver_obj) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        ptr->StopRaf();
+
+    }
+
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static CanvasRenderingContext2DImpl *GetPointer(const v8::Local<v8::Object> &object);
@@ -162,6 +194,15 @@ public:
     static void __GetPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void __Resize(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void SetContinuousRenderMode(v8::Local<v8::String> property,
+                                        v8::Local<v8::Value> value,
+                                        const v8::PropertyCallbackInfo<void> &info);
+
+    static void GetContinuousRenderMode(v8::Local<v8::String> property,
+                                        const v8::PropertyCallbackInfo<v8::Value> &info);
+
 
     static void GetFilter(v8::Local<v8::String> property,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
@@ -489,17 +530,9 @@ public:
 
         if (GetNativeType(path_obj) == NativeType::Path2D) {
             auto path = Path2D::GetPointer(path_obj);
-            switch (rule) {
-                case 0:
-                case 1:
-                    canvas_native_context_clip(
-                            ptr->GetContext(), path->GetPath(), rule);
-                    break;
-                default:
-                    break;
-            }
+            canvas_native_context_clip(
+                    ptr->GetContext(), path->GetPath(), rule);
         }
-
 
     }
 
@@ -800,18 +833,10 @@ public:
         auto object = Path2D::GetPointer(path);
 
         if (object != nullptr) {
-            switch (rule) {
-                case 0:
-                case 1:
-                    canvas_native_context_fill_with_path(
-                            ptr->GetContext(),
-                            object->GetPath(),
-                            rule);
-                    break;
-                default:
-                    break;
-            }
-
+            canvas_native_context_fill_with_path(
+                    ptr->GetContext(),
+                    object->GetPath(),
+                    rule);
             ptr->UpdateInvalidateState();
         }
     }
@@ -837,16 +862,9 @@ public:
             return;
         }
 
-        switch (rule) {
-            case 0:
-            case 1:
-                canvas_native_context_fill(
-                        ptr->GetContext(), rule);
-                ptr->UpdateInvalidateState();
-                break;
-            default:
-                break;
-        }
+        canvas_native_context_fill(
+                ptr->GetContext(), rule);
+        ptr->UpdateInvalidateState();
     }
 
     static void FastFill(v8::Local<v8::Object> receiver_obj) {
@@ -907,18 +925,8 @@ public:
             return false;
         }
 
-        bool ret = false;
-        switch (rule) {
-            case 0:
-            case 1:
-                ret = canvas_native_context_is_point_in_path(
-                        ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), rule);
-                break;
-            default:
-                break;
-        }
-
-        return ret;
+        return canvas_native_context_is_point_in_path(
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), rule);
     }
 
     static bool
@@ -939,17 +947,9 @@ public:
             auto path = Path2D::GetPointer(path_obj);
 
 
-            switch (rule) {
-                case 0:
-                case 1:
-                    ret = canvas_native_context_is_point_in_path_with_path(
-                            ptr->GetContext(),
-                            path->GetPath(), x, y, rule);
-                    break;
-                    break;
-                default:
-                    break;
-            }
+            ret = canvas_native_context_is_point_in_path_with_path(
+                    ptr->GetContext(),
+                    path->GetPath(), x, y, rule);
 
         }
         return ret;
@@ -1384,5 +1384,7 @@ private:
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 
     std::shared_ptr<RafImpl> raf_;
+
+    bool continuousRender_ = true;
 
 };

@@ -1213,6 +1213,8 @@ bool canvas_native_webgl_make_current(struct WebGLState *state);
 
 bool canvas_native_webgl_swap_buffers(struct WebGLState *state);
 
+bool canvas_native_webgl_make_current_and_swap_buffers(struct WebGLState *state);
+
 void canvas_native_webgl_resized(struct WebGLState *_state);
 
 const char *canvas_native_webgl_to_data_url(struct WebGLState *state,

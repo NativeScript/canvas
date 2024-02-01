@@ -6,9 +6,6 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::CString;
 use std::os::raw::c_void;
 use std::rc::Rc;
-use std::sync::Arc;
-
-use parking_lot::RawRwLock;
 
 use canvas_core::gl::GLContext;
 
@@ -407,9 +404,21 @@ impl WebGLState {
         self.get().gl_context.make_current()
     }
 
+    #[inline(always)]
     pub fn swap_buffers(&self) -> bool {
         self.get().gl_context.swap_buffers()
     }
+
+    #[inline(always)]
+    pub fn make_current_and_swap_buffers(&self) -> bool {
+        let current = self.get();
+        if !current.gl_context.make_current(){
+            return false;
+        }
+
+        return  current.gl_context.swap_buffers()
+    }
+
 
     pub fn remove_if_current(&self) {
         self.get().gl_context.remove_if_current();

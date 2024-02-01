@@ -7,8 +7,8 @@
 WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
                                                      WebGLRenderingVersion version)
 : state_(state), version_(version) {
-    
-    
+
+
     auto ctx_ptr = reinterpret_cast<intptr_t>(reinterpret_cast<intptr_t *>(this));
     auto raf_callback = new OnRafCallback(
                                           ctx_ptr,
@@ -19,13 +19,44 @@ WebGLRenderingContextBase::WebGLRenderingContextBase(WebGLState* state,
                  std::make_shared<RafImpl>(
                                            raf_callback,
                                            raf_callback_ptr, raf));
-    
+
     auto _raf = this->GetRaf();
-    
+
     if (_raf != nullptr) {
         canvas_native_raf_start(_raf->GetRaf());
     }
-    
+
+}
+
+
+void WebGLRenderingContextBase::GetContinuousRenderMode(v8::Local<v8::String> property,
+                                                           const v8::PropertyCallbackInfo<v8::Value> &info) {
+    WebGLRenderingContextBase *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(false);
+        return;
+    }
+    info.GetReturnValue().Set(ptr->continuousRender_);
+}
+
+void WebGLRenderingContextBase::SetContinuousRenderMode(v8::Local<v8::String> property,
+                                                           v8::Local<v8::Value> value,
+                                                           const v8::PropertyCallbackInfo<void> &info) {
+    WebGLRenderingContextBase *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = value->BooleanValue(isolate);
+    if (val == ptr->continuousRender_) {
+        return;
+    }
+    if (val) {
+        ptr->StartRaf();
+    } else {
+        ptr->StopRaf();
+    }
+    ptr->continuousRender_ = val;
 }
 
 
@@ -64,8 +95,7 @@ void WebGLRenderingContextBase::Flush() {
     auto state = this->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending;
     if (state == (int) InvalidateState::InvalidateStatePending) {
         this->SetInvalidateState((int) InvalidateState::InvalidateStateInvalidating);
-        canvas_native_webgl_make_current(this->GetState());
-        canvas_native_webgl_swap_buffers(this->GetState());
+        canvas_native_webgl_make_current_and_swap_buffers(this->GetState());
         this->SetInvalidateState((int) InvalidateState::InvalidateStateNone);
     }
 }

@@ -1,9 +1,8 @@
-use std::os::raw::c_float;
+use std::os::raw::{c_float, c_ushort};
 
-use csscolorparser::Color;
-use skia_safe::paint::Style;
-use skia_safe::{BlendMode, Paint, Rect};
+use skia_safe::Paint;
 
+use crate::context::compositing::composite_operation_type::CompositeOperationType;
 use crate::context::Context;
 use crate::utils::color;
 
@@ -65,8 +64,8 @@ impl Context {
     pub fn draw_paint(&mut self, color: &str) {
         if let Some(color) = color::parse_color(color) {
             let mut paint = Paint::default();
-            paint.set_anti_alias(true);
-            paint.set_color(color);
+            paint.set_anti_alias(true)
+                .set_color(color);
             self.surface.canvas().draw_paint(&paint);
         }
     }
@@ -91,6 +90,46 @@ impl Context {
                 points.as_slice(),
                 self.state.paint.stroke_paint(),
             );
+        }
+    }
+
+    pub fn draw_vertices(&mut self, vertices: &[c_float], mode: skia_safe::vertices::VertexMode, indices: &[c_ushort], textures: &[c_float], colors: &[&str], blend_mode: CompositeOperationType){
+        let positions: Vec<_> = vertices
+            .chunks(2)
+            .into_iter()
+            .map(|point| (point[0], point[1]).into())
+            .collect();
+
+        let texs: Vec<_> = textures
+            .chunks(2)
+            .into_iter()
+            .map(|point| (point[0], point[1]).into())
+            .collect();
+
+        let colors: Vec<_> = colors.iter()
+            .filter_map(|color| {
+                csscolorparser::Color::from_html(*color)
+                    .map(|color| {
+                        let color = color.rgba_u8();
+                        skia_safe::Color::from_argb(color.3, color.0, color.1, color.2)
+                    })
+                    .ok()
+            })
+            .collect();
+
+        if vertices.len() % 2 == 0 && textures.len() % 2 == 0 {
+            let v = skia_safe::vertices::Vertices::new_copy(
+                mode,
+                &positions,
+                &texs,
+                &colors,
+                if indices.is_empty() {
+                    None
+                }else { Some(indices)}
+            );
+            let mut paint = Paint::default();
+                paint.set_anti_alias(true);
+            self.surface.canvas().draw_vertices(&v, blend_mode.get_blend_mode(), &paint);
         }
     }
 }

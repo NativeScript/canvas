@@ -70,6 +70,15 @@ export class DemoModel extends DemoSharedCanvas {
 		{ x: 128, y: 0 },
 	];
 
+	start = { x: 0, y: 0 };
+	end = { x: 256, y: 256 };
+
+  
+  start1 = { x: 128, y: 128 };
+	end1 = { x: 128, y: 16 };
+
+	colors = ['blue', 'yellow'];
+
 	image = new ImageAsset();
 
 	width = 256;

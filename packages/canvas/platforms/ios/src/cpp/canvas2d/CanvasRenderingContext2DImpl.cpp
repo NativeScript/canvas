@@ -6,6 +6,11 @@
 #include "Caches.h"
 #include "OneByteStringResource.h"
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_start_raf_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStartRaf));
+
+v8::CFunction CanvasRenderingContext2DImpl::fast_stop_raf_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStopRaf));
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_point_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawPoint));
@@ -251,6 +256,27 @@ CanvasRenderingContext2DImpl::GetPointer(const v8::Local<v8::Object> &object) {
     return static_cast<CanvasRenderingContext2DImpl *>(ptr);
 }
 
+
+void CanvasRenderingContext2DImpl::StartRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (!canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_start(raf->GetRaf());
+        }
+    }
+}
+
+
+void CanvasRenderingContext2DImpl::StopRaf() {
+    auto raf = this->GetRaf();
+    if (raf != nullptr) {
+        if (canvas_native_raf_get_started(raf->GetRaf())) {
+            canvas_native_raf_stop(raf->GetRaf());
+        }
+    }
+}
+
+
 v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto ctor = cache->CanvasRenderingContext2DTmpl.get();
@@ -263,6 +289,13 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
+
+
+    SetFastMethod(isolate, tmpl, "__startRaf", __StartRaf, &fast_start_raf_,
+                  v8::Local<v8::Value>());
+
+    SetFastMethod(isolate, tmpl, "__stopRaf", __StopRaf, &fast_stop_raf_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "drawPoint", DrawPoint, &fast_draw_point_, v8::Local<v8::Value>());
 
@@ -277,6 +310,9 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->Set(ConvertToV8String(isolate, "__getPointer"),
               v8::FunctionTemplate::New(isolate, __GetPointer));
     tmpl->Set(ConvertToV8String(isolate, "__resize"), v8::FunctionTemplate::New(isolate, __Resize));
+
+    tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,
+                      SetContinuousRenderMode);
 
     tmpl->SetAccessor(ConvertToV8String(isolate, "filter"), GetFilter, SetFilter);
     tmpl->SetAccessor(ConvertToV8String(isolate, "font"), GetFont, SetFont);
@@ -319,23 +355,18 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     SetFastMethod(isolate, tmpl, "beginPath", BeginPath, &fast_begin_path_, v8::Local<v8::Value>());
 
-
     SetFastMethod(isolate, tmpl, "bezierCurveTo", BezierCurveTo, &fast_bezier_curve_to_,
                   v8::Local<v8::Value>());
-
 
     tmpl->Set(ConvertToV8String(isolate, "clearHitRegions"),
               v8::FunctionTemplate::New(isolate, &ClearHitRegions));
 
-
     SetFastMethod(isolate, tmpl, "clearRect", ClearRect, &fast_clear_rect_, v8::Local<v8::Value>());
-
 
     SetFastMethodWithOverLoads(isolate, tmpl, "clip", Clip, fast_clip_overloads_,
                                v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "closePath", ClosePath, &fast_close_path_, v8::Local<v8::Value>());
-
 
     tmpl->Set(ConvertToV8String(isolate, "createImageData"),
               v8::FunctionTemplate::New(isolate, &CreateImageData));
@@ -351,7 +382,6 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
               v8::FunctionTemplate::New(isolate, &CreateRadialGradient));
     tmpl->Set(ConvertToV8String(isolate, "drawFocusIfNeeded"),
               v8::FunctionTemplate::New(isolate, &DrawFocusIfNeeded));
-
 
     SetFastMethodWithOverLoads(isolate, tmpl, "drawImage", DrawImage, fast_draw_overloads_,
                                v8::Local<v8::Value>());
@@ -466,6 +496,59 @@ RafImpl *CanvasRenderingContext2DImpl::GetRaf() {
     return this->raf_.get();
 }
 
+
+void CanvasRenderingContext2DImpl::__StartRaf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    ptr->StartRaf();
+
+}
+
+void CanvasRenderingContext2DImpl::__StopRaf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    ptr->StopRaf();
+
+}
+
+
+void CanvasRenderingContext2DImpl::GetContinuousRenderMode(v8::Local<v8::String> property,
+                                                           const v8::PropertyCallbackInfo<v8::Value> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        info.GetReturnValue().Set(false);
+        return;
+    }
+    info.GetReturnValue().Set(ptr->continuousRender_);
+}
+
+void CanvasRenderingContext2DImpl::SetContinuousRenderMode(v8::Local<v8::String> property,
+                                                           v8::Local<v8::Value> value,
+                                                           const v8::PropertyCallbackInfo<void> &info) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = info.GetIsolate();
+    auto val = value->BooleanValue(isolate);
+    if (val == ptr->continuousRender_) {
+        return;
+    }
+    if (val) {
+        ptr->StartRaf();
+    } else {
+        ptr->StopRaf();
+    }
+    ptr->continuousRender_ = val;
+}
+
+
 /* Non Standard 2D */
 
 void CanvasRenderingContext2DImpl::DrawPoint(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -490,53 +573,41 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
     if (ptr == nullptr) {
         return;
     }
-
+    
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-
-
-    auto mode = ConvertFromV8String(isolate, args[0]);
+    
+    
+    auto mode = args[0];
     auto points = args[1].As<v8::Array>();
     auto size = points->Length();
-
-
-    if ((size % 2) == 0) {
-        int32_t pointMode = -1;
-        if (mode == "points") {
-            pointMode = 0;
-        } else if (mode == "lines") {
-            pointMode = 1;
-        } else if (mode == "polygon") {
-            pointMode = 2;
-        }
-        if (pointMode == -1) {
-            return;
-        }
+    
+    if (size == 0){return;}
+    uint32_t pointMode = 0;
+    if(mode->IsUint32() && mode->Uint32Value(context).To(&pointMode)){
         std::vector<float> store;
-        store.reserve(size);
-        int next = 0;
+        auto len = size * 2;
+        store.reserve(len);
         for (int i = 0; i < size; i++) {
-
+            
             auto object = points->Get(
-                    context, i).ToLocalChecked().As<v8::Object>();
-
+                                      context, i).ToLocalChecked().As<v8::Object>();
+            
             auto x = object->Get(context,
                                  ConvertToV8String(isolate, "x")).ToLocalChecked()->NumberValue(
-                    context).ToChecked();
+                                                                                                context).ToChecked();
             auto y = object->Get(context,
                                  ConvertToV8String(isolate, "y")).ToLocalChecked()->NumberValue(
-                    context).ToChecked();
-            store[next] = (float) x;
-            store[next + 1] = (float) y;
-
-            next = i + 2;
+                                                                                                context).ToChecked();
+            store.emplace_back((float) x);
+            store.emplace_back((float) y);
         }
-
+        
         canvas_native_context_draw_points(
-                ptr->GetContext(), pointMode,
-                store.data(), store.size());
-
-
+                                          ptr->GetContext(), pointMode,
+                                          store.data(), store.size());
+        
+        
         ptr->UpdateInvalidateState();
     }
 }
@@ -2785,11 +2856,7 @@ void CanvasRenderingContext2DImpl::Flush() {
     auto state = (int) this->GetInvalidateState() & (int) InvalidateState::InvalidateStatePending;
     if (state == (int) InvalidateState::InvalidateStatePending) {
         this->SetInvalidateState(InvalidateState::InvalidateStateInvalidating);
-        //   canvas_native_context_flush(ptr->GetContext());
-
         canvas_native_context_render(this->GetContext());
-        //        canvas_native_context_gl_make_current(ptr->GetContext());
-        //        canvas_native_context_gl_swap_buffers(ptr->GetContext());
         this->SetInvalidateState(InvalidateState::InvalidateStateNone);
     }
 }

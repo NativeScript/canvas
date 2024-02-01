@@ -6,7 +6,7 @@
 
   <GridLayout rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" width="100%" height="100%">
   
-  <!-- <ui:Dom rowSpan="2" colSpan="2"> -->
+  <ui:Dom rowSpan="2" colSpan="2">
 
   <!-- <ui:Fill color="#e8f4f8" />
 
@@ -21,7 +21,21 @@
         r="25"
         color="lightblue"
       /> -->
-    <!-- <ui:Circle cx="128" cy="128" r="128" color="lightblue" /> -->
+    <ui:Rect x="0" y="0" width="256" height="256">
+ <!-- <ui:LinearGradient
+          start="{{ start }}"
+          end="{{ end }}"
+          colors="{{colors}}"
+        /> -->
+
+        <ui:TwoPointConicalGradient
+           start="{{ start1 }}"
+          startR="128"
+          end="{{ end1 }}"
+          endR="16"
+           colors="{{colors}}"
+        />
+    </ui:Rect>
 
      <!-- <ui:Points
         points="{{ points }}"
@@ -91,12 +105,12 @@
       </ui:RoundedRect>
 -->
         
-  <!-- </ui:Dom>  -->
+  </ui:Dom> 
    
   
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <canvas:Canvas rowSpan="2" colSpan="2" width="100%" height="100%" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/> 
+		 <!-- <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}"
+									 layoutChanged="{{ onLayout }}"/>  -->
                                      <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
                                      <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
                                       <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>

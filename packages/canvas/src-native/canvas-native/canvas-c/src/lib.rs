@@ -4847,6 +4847,17 @@ pub extern "C" fn canvas_native_webgl_swap_buffers(state: *mut WebGLState) -> bo
     let state = unsafe { &mut *state };
     state.get_inner().swap_buffers()
 }
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_make_current_and_swap_buffers(state: *mut WebGLState) -> bool {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    state.get_inner().make_current_and_swap_buffers()
+}
+
+
 /* GL */
 
 /* WebGL */

@@ -32,6 +32,14 @@ public:
         return static_cast<WebGLRenderingContextBase *>(ptr);
     }
 
+
+    static void GetContinuousRenderMode(v8::Local<v8::String> property,
+                                                            const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void SetContinuousRenderMode(v8::Local<v8::String> property,
+                                                            v8::Local<v8::Value> value,
+                                                            const v8::PropertyCallbackInfo<void> &info);
+
     ~WebGLRenderingContextBase();
 
     void UpdateInvalidateState();
@@ -66,5 +74,7 @@ private:
     int invalidateState_ = static_cast<int>(InvalidateState::InvalidateStateNone);
 
     std::shared_ptr<RafImpl> raf_;
+
+    bool continuousRender_ = true;
 };
 

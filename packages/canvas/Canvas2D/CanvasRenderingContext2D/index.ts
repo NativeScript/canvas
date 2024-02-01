@@ -451,7 +451,19 @@ export class CanvasRenderingContext2D {
 	}
 
 	drawPoints(mode: 'points' | 'lines' | 'polygon', points: { x: number; y: number }[]) {
-		this.context.drawPoints(mode, points);
+		let modeValue = -1;
+		switch (mode) {
+			case 'points':
+				modeValue = 0;
+				break;
+			case 'lines':
+				modeValue = 1;
+				break;
+			case 'polygon':
+				modeValue = 2;
+				break;
+		}
+		this.context.drawPoints(modeValue, points);
 	}
 
 	drawFocusIfNeeded(element): void;
@@ -611,7 +623,6 @@ export class CanvasRenderingContext2D {
 		return this.context.getLineDash();
 	}
 
-
 	getTransform(): DOMMatrix {
 		return new DOMMatrix(this.context.getTransform());
 	}
@@ -621,11 +632,12 @@ export class CanvasRenderingContext2D {
 	isPointInPath(path: Path2D, x: number, y: number, fillRule: string): boolean;
 
 	isPointInPath(...args): boolean {
-		if (args.length === 2) {
+		const length = args.length;
+		if (length === 2) {
 			return this.context.isPointInPath(args[0], args[1]);
-		} else if (args.length === 3) {
+		} else if (length === 3) {
 			return this.context.isPointInPath(args[0], args[1], ruleToEnum(args[2]));
-		} else if (args.length === 4 && args[0] instanceof Path2D) {
+		} else if (length === 4 && args[0] instanceof Path2D) {
 			return this.context.isPointInPath(args[0].native, args[1], args[2], ruleToEnum(args[3]));
 		}
 		return false;
@@ -636,9 +648,10 @@ export class CanvasRenderingContext2D {
 	isPointInStroke(path: Path2D, x: number, y: number): boolean;
 
 	isPointInStroke(...args): boolean {
-		if (args.length === 2) {
+		const length = args.length;
+		if (length === 2) {
 			return this.context.isPointInStroke(args[0], args[1]);
-		} else if (args.length === 3 && args[0] instanceof Path2D) {
+		} else if (length === 3 && args[0] instanceof Path2D) {
 			return this.context.isPointInStroke(args[0].native, args[1], args[2]);
 		}
 		return false;
@@ -668,9 +681,10 @@ export class CanvasRenderingContext2D {
 		}
 
 		const data = args[0] as any;
-		if (args.length === 3) {
+		const length = args.length;
+		if (length === 3) {
 			this.context.putImageData(data.native, args[1], args[2]);
-		} else if (args.length === 7) {
+		} else if (length === 7) {
 			this.context.putImageData(data.native, args[1], args[2], args[3], args[4], args[5], args[6]);
 		}
 	}
@@ -721,16 +735,15 @@ export class CanvasRenderingContext2D {
 		this.context.setLineDash(segments);
 	}
 
-	setTransform(matrix: DOMMatrix): void
-	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void
+	setTransform(matrix: DOMMatrix): void;
+	setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
 	setTransform(a: number | DOMMatrix, b?: number, c?: number, d?: number, e?: number, f?: number): void {
-		if(typeof a === 'object'){
+		if (typeof a === 'object') {
 			// @ts-ignore
 			this.context.setTransform(a.native);
-		}else {
+		} else {
 			this.context.setTransform(a, b, c, d, e, f);
 		}
-	
 	}
 
 	stroke(): void;

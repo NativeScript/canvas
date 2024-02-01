@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{Point, RRect, Rect};
+use skia_safe::{Point, Rect, RRect};
 
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::matrix::Matrix;
@@ -12,6 +12,35 @@ pub struct Path {
     pub(crate) path: skia_safe::Path,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub enum PathFillType {
+    Winding = 0,
+    EvenOdd = 1,
+    InverseWinding = 2,
+    InverseEvenOdd = 3,
+}
+
+impl Into<PathFillType> for skia_safe::PathFillType {
+    fn into(self) -> PathFillType {
+        match self {
+            skia_safe::PathFillType::Winding => PathFillType::Winding,
+            skia_safe::PathFillType::EvenOdd => PathFillType::EvenOdd,
+            skia_safe::PathFillType::InverseWinding => PathFillType::InverseWinding,
+            skia_safe::PathFillType::InverseEvenOdd => PathFillType::InverseEvenOdd,
+        }
+    }
+}
+
+impl Into<skia_safe::PathFillType> for PathFillType {
+    fn into(self) -> skia_safe::PathFillType {
+        match self {
+            PathFillType::Winding => skia_safe::PathFillType::Winding ,
+            PathFillType::EvenOdd => skia_safe::PathFillType::EvenOdd,
+            PathFillType::InverseWinding => skia_safe::PathFillType::InverseWinding,
+            PathFillType::InverseEvenOdd => skia_safe::PathFillType::InverseEvenOdd,
+        }
+    }
+}
 impl Default for Path {
     fn default() -> Self {
         Self::new()
@@ -21,6 +50,14 @@ impl Default for Path {
 impl Path {
     pub fn path(&self) -> &skia_safe::Path {
         &self.path
+    }
+
+    pub fn path_fill_type(&self) -> PathFillType {
+        self.path.fill_type().into()
+    }
+
+    pub fn set_path_fill_type(&mut self, value: PathFillType) {
+        self.path.set_fill_type(value.into());
     }
 
     pub fn make_scale(&mut self, (sx, sy): (f32, f32)) -> Self {
@@ -132,9 +169,9 @@ impl Path {
     pub fn add_path(&mut self, path: &Path, matrix: Option<&Matrix>) {
         match matrix {
             None => {
-                self.path.add_path(
+                self.path.add_path_matrix(
                     path.path(),
-                    Point::new(0.0, 0.0),
+                    &skia_safe::Matrix::new_identity(),
                     skia_safe::path::AddPathMode::Append,
                 );
             }
@@ -183,7 +220,12 @@ impl Path {
     }
 
     pub fn line_to(&mut self, x: c_float, y: c_float) {
-        self.path.line_to(Point::new(x, y));
+        // web impl
+        let point = Point::new(x, y);
+        if self.path.is_empty() {
+            self.path.move_to(point);
+        }
+        self.path.line_to(point);
     }
 
     pub fn close_path(&mut self) {

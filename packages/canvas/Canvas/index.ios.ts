@@ -220,9 +220,18 @@ export class Canvas extends CanvasBase {
 		if (parent && parent.ownerDocument === undefined) {
 			Object.defineProperty(parent, 'ownerDocument', {
 				get: function () {
-					return window?.document ?? doc;
+					return global?.window?.document ?? doc;
 				},
 			});
+		}
+	}
+
+	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
+		const nativeView = this.nativeView;
+		if (nativeView) {
+			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
+			const height = Utils.layout.getMeasureSpecSize(heightMeasureSpec);
+			this.setMeasuredDimension(width, height);
 		}
 	}
 

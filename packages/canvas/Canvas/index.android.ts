@@ -223,7 +223,7 @@ export class Canvas extends CanvasBase {
 			if (parent && parent.ownerDocument === undefined) {
 				Object.defineProperty(parent, 'ownerDocument', {
 					get: function () {
-						return window?.document ?? doc;
+						return global?.window?.document ?? doc;
 					},
 				});
 			}

@@ -43,14 +43,16 @@ export class Rect extends Paint {
 		context.rect(this.x, this.y, this.width, this.height);
 		if (this._children.length > 0) {
 			for (const child of this._children) {
-				switch (child.paintStyle) {
+				const color = child._getColor();
+				const style = child._getPaintStyle();
+				switch (style) {
 					case 'fill':
-						context.fillStyle = child.color.hex;
+						context.fillStyle = color;
 						context.fill();
 						break;
 					case 'stroke':
-						context.strokeStyle = child.color.hex;
-						context.lineWidth = child.strokeWidth;
+						context.strokeStyle = color;
+						context.lineWidth = child._getStrokeWidth();
 						context.stroke();
 						break;
 				}
@@ -61,7 +63,11 @@ export class Rect extends Paint {
 	}
 
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
-		if (view instanceof Paint) {
+		if (view === this._canvas) {
+			this.nativeView.addView(this._canvas.nativeView);
+			return true;
+		} else if (view instanceof Paint) {
+			view._canvas = this._canvas;
 			this._children.push(view);
 		}
 		return false;

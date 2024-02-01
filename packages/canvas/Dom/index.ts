@@ -6,3 +6,4 @@ export * from './Paint';
 export * from './Fill';
 export * from './Text';
 export * from './Shadow';
+export * from './shaders';

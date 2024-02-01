@@ -100,6 +100,7 @@ export class Circle extends Paint {
 			this.nativeView.addView(this._canvas.nativeView);
 			return true;
 		} else if (view instanceof Paint) {
+			view._canvas = this._canvas;
 			this._children.push(view);
 		}
 		return false;

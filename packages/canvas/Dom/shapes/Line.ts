@@ -28,12 +28,14 @@ export class Line extends Paint {
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 		const line = new Path2D();
 		line.lineTo(this.p1, this.p2);
-		const style = this.paintStyle;
+		const color = this._getColor();
+		const style = this._getPaintStyle();
+
 		if (style === 'fill') {
-			context.fillStyle = this.color.hex;
+			context.fillStyle = color;
 			context.fill(line);
 		} else if (style === 'stroke') {
-			context.strokeStyle = this.color.hex;
+			context.strokeStyle = color;
 			context.stroke(line);
 		}
 	}

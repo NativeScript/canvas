@@ -2,6 +2,7 @@ import { LayoutBase, Property, ShorthandProperty, Style, ViewBase } from '@nativ
 import { originXProperty, originYProperty } from '@nativescript/core/ui/core/view';
 import { Image } from './Image';
 import { Paint } from './Paint';
+import { DOMMatrix } from "../Canvas2D/DOMMatrix"
 
 export const matrixProperty = new Property<Group, DOMMatrix>({
 	name: 'matrix',

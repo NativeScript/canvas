@@ -1,5 +1,5 @@
 import { Canvas } from '@nativescript/canvas';
-import { Screen } from '@nativescript/core';
+import { Animation, Screen } from '@nativescript/core';
 interface vec2 {
 	x: number;
 	y: number;
@@ -66,38 +66,40 @@ export function breathe(canvas: Canvas) {
 
 	const center = { x: width / 2, y: height / 2 - 64 };
 
-	let progress = 0;
+	if (global.isAndroid) {
+		let progress = 0;
 
-	const animator = android.animation.ValueAnimator.ofFloat([0, 1] as any);
-	animator.setDuration(3000);
+		const animator = android.animation.ValueAnimator.ofFloat([0, 1] as any);
+		animator.setDuration(3000);
 
-	animator.addUpdateListener(
-		new android.animation.ValueAnimator.AnimatorUpdateListener({
-			onAnimationUpdate(value) {
-				progress = value.getAnimatedValue();
-				context.save();
-				context.clearRect(0, 0, width, height);
-				context.fillStyle = 'rgb(36,43,56)';
-				context.fillRect(0, 0, width, height);
-				context.filter = 'blur(1px);';
+		animator.addUpdateListener(
+			new android.animation.ValueAnimator.AnimatorUpdateListener({
+				onAnimationUpdate(value) {
+					progress = value.getAnimatedValue();
+					context.save();
+					context.clearRect(0, 0, width, height);
+					context.fillStyle = 'rgb(36,43,56)';
+					context.fillRect(0, 0, width, height);
+					context.filter = 'blur(1px);';
 
-				context.globalCompositeOperation = 'screen';
+					context.globalCompositeOperation = 'screen';
 
-				context.translate(center.x, center.y);
+					context.translate(center.x, center.y);
 
-				context.rotate(mix(progress, -Math.PI, 0));
+					context.rotate(mix(progress, -Math.PI, 0));
 
-				for (let i = 0; i < 6; i++) {
-					Ring({ context: context as any, index: i, progress });
-				}
-				context.restore();
-			},
-		})
-	);
+					for (let i = 0; i < 6; i++) {
+						Ring({ context: context as any, index: i, progress });
+					}
+					context.restore();
+				},
+			})
+		);
 
-	animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
-	animator.setRepeatMode(android.view.animation.Animation.REVERSE);
-	animator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+		animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+		animator.setRepeatMode(android.view.animation.Animation.REVERSE);
+		animator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
 
-	animator.start();
+		animator.start();
+	}
 }

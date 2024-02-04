@@ -3,24 +3,39 @@ import { Gradients } from './Gradients';
 
 const startProperty = new Property<TwoPointConicalGradient, { x: number; y: number }>({
 	name: 'start',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const startRProperty = new Property<TwoPointConicalGradient, number>({
 	name: 'startR',
-	valueConverter: parseFloat
+	valueConverter: parseFloat,
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const endProperty = new Property<TwoPointConicalGradient, { x: number; y: number }>({
 	name: 'end',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const endRProperty = new Property<TwoPointConicalGradient, number>({
 	name: 'endR',
-	valueConverter: parseFloat
+	valueConverter: parseFloat,
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const colorsProperty = new Property<TwoPointConicalGradient, string[]>({
 	name: 'colors',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export class TwoPointConicalGradient extends Gradients {

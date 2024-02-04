@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.PixelFormat
 import android.os.*
 import android.util.AttributeSet
 import android.util.Log
@@ -91,7 +92,7 @@ class NSCCanvas : FrameLayout {
 	private var isAlpha = false
 
 	constructor(context: Context) : super(context, null) {
-		init(context, null, SurfaceType.Texture)
+		init(context, null, surfaceType)
 	}
 
 	constructor(context: Context, type: SurfaceType) : super(context, null) {
@@ -99,7 +100,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-		init(context, attrs, SurfaceType.Texture)
+		init(context, attrs, surfaceType)
 	}
 
 	private fun init(context: Context, attrs: AttributeSet?, type: SurfaceType) {
@@ -316,6 +317,13 @@ class NSCCanvas : FrameLayout {
 		}
 
 		val surface = if (surfaceType == SurfaceType.Surface) {
+			if (alpha) {
+				surfaceView.setZOrderOnTop(true)
+				surfaceView.holder.setFormat(PixelFormat.RGBA_8888)
+			} else {
+				surfaceView.setZOrderOnTop(false)
+				surfaceView.holder.setFormat(PixelFormat.RGB_565)
+			}
 			surfaceView.holder.surface
 		} else {
 			textureView.isOpaque = !alpha
@@ -504,6 +512,10 @@ class NSCCanvas : FrameLayout {
 			}
 
 		}
+	}
+
+	fun forceResize(){
+		resize()
 	}
 
 	interface Listener {

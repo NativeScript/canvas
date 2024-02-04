@@ -7,6 +7,9 @@ export const cxProperty = new Property<Circle, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const cyProperty = new Property<Circle, number>({
@@ -14,12 +17,18 @@ export const cyProperty = new Property<Circle, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const rProperty = new Property<Circle, number>({
 	name: 'r',
 	valueConverter(value) {
 		return parseFloat(value);
+	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
 	},
 });
 

@@ -41,6 +41,7 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 	private _isBatch = false;
+	static useSurface = false;
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {
@@ -49,7 +50,12 @@ export class Canvas extends CanvasBase {
 			(global as any).__canvasLoaded = true;
 		} else {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
-			this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
+			if (Canvas.useSurface) {
+				this._canvas = new org.nativescript.canvas.NSCCanvas(activity, org.nativescript.canvas.NSCCanvas.SurfaceType.Surface);
+			} else {
+				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
+			}
+
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
 			this._canvas.setTouchEventListener(

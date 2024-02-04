@@ -8,11 +8,12 @@ use canvas_2d::context::Context;
 #[no_mangle]
 pub extern "system" fn nativeDrawSVG(mut env: JNIEnv, _: JClass, context: jlong, svg: JString) {
     unsafe {
-        let context: *mut Context = context as _;
-        let context = &mut *context;
+        let context = context as *mut canvas_c::CanvasRenderingContext2D;
+        let context = unsafe { &mut *context };
         if let Ok(svg) = env.get_string(&svg) {
             let svg = svg.to_string_lossy();
-            canvas_2d::svg::draw_svg(context, svg.as_ref());
+            let mut context = context.get_context_mut();
+            canvas_2d::svg::draw_svg(&mut context, svg.as_ref());
         }
     }
 }
@@ -26,11 +27,12 @@ pub extern "system" fn nativeDrawSVGFromPath(
     path: JString,
 ) {
     unsafe {
-        let context: *mut Context = context as _;
-        let context = &mut *context;
+        let context = context as *mut canvas_c::CanvasRenderingContext2D;
+        let context = unsafe { &mut *context };
         if let Ok(path) = env.get_string(&path) {
+            let mut context = context.get_context_mut();
             let path = path.to_string_lossy();
-            canvas_2d::svg::draw_svg_from_path(context, path.as_ref());
+            canvas_2d::svg::draw_svg_from_path(&mut context, path.as_ref());
         }
     }
 }

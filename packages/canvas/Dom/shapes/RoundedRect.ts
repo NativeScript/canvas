@@ -2,11 +2,15 @@ import { colorProperty, Property, booleanConverter, ViewBase, Screen } from '@na
 import { Group } from '../Group';
 import { Paint } from '../Paint';
 import { Shadow } from '../Shadow';
+import { Rect } from './Rect';
 
 const xProperty = new Property<RoundedRect, number>({
 	name: 'x',
 	valueConverter(value) {
 		return parseFloat(value);
+	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
 	},
 });
 
@@ -15,6 +19,9 @@ const yProperty = new Property<RoundedRect, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const rProperty = new Property<RoundedRect, number>({
@@ -22,9 +29,12 @@ const rProperty = new Property<RoundedRect, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
-export class RoundedRect extends Paint {
+export class RoundedRect extends Rect {
 	x: number;
 	y: number;
 	width: number;

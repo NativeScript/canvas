@@ -4,11 +4,17 @@ import { Paint } from '../Paint';
 
 export const pointsProperty = new Property<Points, { x: number; y: number }[]>({
 	name: 'points',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const modeProperty = new Property<Points, 'points' | 'lines' | 'polygon'>({
 	name: 'mode',
 	defaultValue: 'points',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export class Points extends Paint {

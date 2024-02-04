@@ -4,7 +4,7 @@ require('@nativescript/canvas-polyfill');
 */
 const TextDecoderO = TextDecoder;
 require('@nativescript/canvas-polyfill');
-// import { CanvasRenderingContext2D } from '@nativescript/canvas';
+import { Canvas } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
@@ -75,7 +75,10 @@ const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regula
 
 global.CanvasModule.__addFontFamily('creepster', [font]);
 
-const path = new Path2D();
+// Canvas.useSurface = true;
+
+// const path = new Path2D();
+
 
 // slow 0.484
 // eval(`

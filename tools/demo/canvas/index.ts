@@ -631,7 +631,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
-		this.pathIssue(this.canvas);
+		//this.pathIssue(this.canvas);
 		//lines(this.canvas);
 		//this.clearIssue(this.canvas);
 		//this.fillIssue(this.canvas);
@@ -721,7 +721,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-		//circle_demo(this.canvas);
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);

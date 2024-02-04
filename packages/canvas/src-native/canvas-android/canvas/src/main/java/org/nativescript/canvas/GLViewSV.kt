@@ -15,11 +15,13 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 		if (ignorePixelScaling) {
 			scaleX = density
 			scaleY = density
-		}else {
+		} else {
 			scaleX = 1f
 			scaleY = 1f
 		}
 	}
+
+	internal var isReady = false
 
 	var ignorePixelScaling: Boolean = false
 		set(value) {
@@ -36,6 +38,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	fun init() {
+		setZOrderOnTop(true)
 		holder.addCallback(this)
 	}
 
@@ -47,6 +50,10 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+		if (canvas?.nativeGL != 0L) {
+			canvas?.resize()
+			return
+		}
 		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
 			isCreatedWithZeroSized = false
 			canvas?.let {
@@ -57,5 +64,6 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 
 	override fun surfaceDestroyed(holder: SurfaceHolder) {
 		isCreated = false
+		isCreatedWithZeroSized = false
 	}
 }

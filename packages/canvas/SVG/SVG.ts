@@ -1,4 +1,4 @@
-import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Application, Utils } from '@nativescript/core';
+import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Application, Utils, booleanConverter } from '@nativescript/core';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
@@ -52,6 +52,12 @@ export const strokeMiterlimitProperty = new CssProperty<Style, any>({
 });
 export const srcProperty = new Property<Svg, string>({
 	name: 'src',
+});
+
+export const syncProperty = new Property<Svg, boolean>({
+	name: 'sync',
+	defaultValue: false,
+	valueConverter: booleanConverter,
 });
 
 declare const TNSSVG, org;
@@ -118,6 +124,13 @@ export class Svg extends View {
 		}
 	}
 
+	[syncProperty.setNative](value: boolean) {
+		if (global.isAndroid) {
+			this._svg.setSync(value);
+		} else if (global.isIOS) {
+			this._svg.sync = value;
+		}
+	}
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
 		super.onLayout(left, top, right, bottom);
 		this.__redraw();
@@ -183,6 +196,7 @@ export class Svg extends View {
 	}
 }
 
+syncProperty.register(Svg);
 srcProperty.register(Svg);
 stopColorProperty.register(Style);
 strokeWidthProperty.register(Style);

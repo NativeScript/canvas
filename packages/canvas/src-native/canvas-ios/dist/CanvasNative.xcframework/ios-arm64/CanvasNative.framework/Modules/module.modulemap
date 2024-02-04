@@ -1,7 +1,7 @@
 framework module CanvasNative {
   umbrella header "CanvasNative.h"
-
   export *
+
   module * { export * }
 }
 

@@ -49,7 +49,7 @@ impl BitmapBytes {
             Ok(info) => unsafe {
                 Some(std::slice::from_raw_parts_mut(
                     self.pixels as _,
-                    (info.width() * info.height() * 4) as usize,
+                    (info.height() * info.stride()) as usize,
                 ))
             },
             _ => None,
@@ -77,7 +77,7 @@ impl BitmapBytes {
             Ok(info) => unsafe {
                 Some(std::slice::from_raw_parts(
                     self.pixels as _,
-                    (info.width() * info.height() * 4) as usize,
+                    (info.height() * info.stride()) as usize,
                 ))
             },
             _ => None,
@@ -116,7 +116,7 @@ pub fn get_bytes_from_bitmap(
             let buf = unsafe {
                 std::slice::from_raw_parts(
                     pixels as *const u8,
-                    (info.width() * info.height() * 4) as usize,
+                    (info.height() * info.stride()) as usize,
                 )
             };
             Some((buf.to_vec(), info))
@@ -138,7 +138,7 @@ pub fn bitmap_handler(
             let buf = unsafe {
                 std::slice::from_raw_parts_mut(
                     pixels as *mut u8,
-                    (info.width() * info.height() * 4) as usize,
+                    (info.height() * info.stride()) as usize,
                 )
             };
             handler(Some((buf, &info)));

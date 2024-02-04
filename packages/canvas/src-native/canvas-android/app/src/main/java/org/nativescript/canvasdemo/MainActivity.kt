@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		//svg = findViewById(R.id.svgView)
+		svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -407,12 +407,12 @@ class MainActivity : AppCompatActivity() {
 //			                scale(1 0.5)">
 //			    <path id="heart" d="M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z" />
 //			  </g>
-////
-////			  <use xlink:href="#heart" fill="none" stroke="red"/>
-////			</svg>
-////		""".trimIndent())
+//
+//			  <use xlink:href="#heart" fill="none" stroke="red"/>
+//			</svg>
+//		""".trimIndent())
 
-		//drawTransformMatrixSvg()
+	//	drawTransformMatrixSvg()
 		//drawTransformRotateSvg()
 		//drawTransformScaleSvg()
 		//drawTransformTranslateSvg()
@@ -424,9 +424,9 @@ class MainActivity : AppCompatActivity() {
 
 		//drawRadialGradientCircleSvg()
 
-		//	drawTransformGradientSvg()
+			//drawTransformGradientSvg()
 
-		//	drawClipPathUnitsSvg()
+			//drawClipPathUnitsSvg()
 		//	downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
@@ -495,6 +495,13 @@ class MainActivity : AppCompatActivity() {
 				*/
 
 
+	}
+
+	override fun onResume() {
+		super.onResume()
+		if (canvas?.nativeContext != 0L){
+			NSCCanvas.context2DPathTest(canvas!!.nativeContext)
+		}
 	}
 
 	fun goToVideo(view: View) {

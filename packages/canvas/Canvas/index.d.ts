@@ -31,6 +31,8 @@ export declare class Canvas extends CanvasBase {
 
 	flush(): void;
 
+	static useSurface: boolean;
+
 	static createCustomView(): Canvas;
 
 	createNativeView(): any;

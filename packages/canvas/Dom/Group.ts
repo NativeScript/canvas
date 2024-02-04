@@ -200,6 +200,7 @@ export class Group extends Paint {
 				parseTransformation(item, matrix);
 			});
 			this._matrix = matrix;
+			this.invalidate();
 		}
 	}
 

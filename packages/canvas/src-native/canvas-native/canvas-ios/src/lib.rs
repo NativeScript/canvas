@@ -1,16 +1,18 @@
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
-use canvas_2d::utils::image::from_image_slice;
-use canvas_c::CanvasRenderingContext2D;
-use canvas_c::PaintStyle;
-pub use canvas_c::*;
-use canvas_core::context_attributes::ContextAttributes;
-use canvas_core::gl::GLContext;
-use canvas_core::image_asset::ImageAsset;
-use parking_lot::RwLock;
-use std::ffi::{c_longlong, c_void, CStr, CString};
+use std::ffi::{c_int, c_longlong, c_void, CStr, CString};
 use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
+
+use parking_lot::RwLock;
+
+use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+use canvas_2d::utils::image::from_image_slice;
+pub use canvas_c::*;
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::PaintStyle;
+use canvas_core::context_attributes::ContextAttributes;
+use canvas_core::gl::GLContext;
+use canvas_core::image_asset::ImageAsset;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
@@ -594,4 +596,131 @@ pub extern "C" fn canvas_native_context_draw_image_with_bytes(
     draw_image(
         context, bytes, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     )
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_svg_draw_from_string(context: i64,
+                                     svg: *const c_char) {
+
+    if context == 0 || svg.is_null() {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    let context = unsafe { &mut *context };
+
+    let svg = unsafe { CStr::from_ptr(svg)};
+
+    let mut context = context.get_context_mut();
+    let svg = svg.to_string_lossy();
+    canvas_2d::svg::draw_svg(&mut context, svg.as_ref());
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_svg_draw_from_path(
+    context: i64,
+    path: *const c_char,
+) {
+    if context == 0 || path.is_null() {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    let context = unsafe { &mut *context };
+
+    let path = unsafe { CStr::from_ptr(path)};
+
+    let mut context = context.get_context_mut();
+    let path = path.to_string_lossy();
+    canvas_2d::svg::draw_svg_from_path(&mut context, path.as_ref());
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_custom_with_buffer_flush(
+    context: i64,
+    bytes: *mut u8,
+    size: usize,
+    width: f32,
+    height: f32,
+    alpha: bool
+) {
+    unsafe {
+        if context == 0 {
+            return;
+        }
+
+        let ct = if alpha {
+            skia_safe::ColorType::RGBA8888
+        } else {
+            skia_safe::ColorType::RGB565
+        };
+
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width as i32, height as i32),
+            ct,
+            skia_safe::AlphaType::Premul,
+            None,
+        );
+        let context = context as *mut canvas_c::CanvasRenderingContext2D;
+        let context = unsafe { &mut *context };
+        let mut context = context.get_context_mut();
+
+        let data = std::slice::from_raw_parts_mut(bytes, size);
+        let mut surface =
+            skia_safe::surfaces::wrap_pixels(&info, data, None, None).unwrap();
+        let canvas = surface.canvas();
+        let mut paint = skia_safe::Paint::default();
+        paint.set_anti_alias(true);
+        paint.set_style(skia_safe::PaintStyle::Fill);
+        paint.set_blend_mode(skia_safe::BlendMode::Clear);
+        canvas.draw_rect(
+            skia_safe::Rect::from_xywh(
+                0f32,
+                0f32,
+                width,
+                height,
+            ),
+            &paint,
+        );
+        context.draw_on_surface(&mut surface);
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
+    width: f32,
+    height: f32,
+    density: f32,
+    alpha: bool,
+    font_color: c_int,
+    ppi: f32,
+    direction: c_int,
+) -> c_longlong {
+
+    let mut ctx_2d = CanvasRenderingContext2D::new(
+        canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new(
+            width as f32,
+            height as f32,
+            density,
+            alpha,
+            font_color,
+            ppi,
+            canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+        )),
+        GLContext::default(),
+        alpha,
+    );
+
+    {
+        let mut ctx = ctx_2d.get_context_mut();
+        ctx.clear_canvas();
+    }
+
+    Box::into_raw(Box::new(ctx_2d)) as i64
+
 }

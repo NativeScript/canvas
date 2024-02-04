@@ -37,8 +37,28 @@ let speed = 0.01;
 let canvas;
 let ctx;
 
+let started = false;
+let cancelled = false;
+let raf;
+
 export function circle_demo(view) {
 	canvas = view;
+
+	view.on('unloaded', (args) => {
+		cancelled = true;
+		if (raf) {
+			cancelAnimationFrame(raf);
+			raf = undefined;
+		}
+	});
+
+	view.on('loaded', (args) => {
+		cancelled = false;
+		if (started) {
+			//	canvas.nativeView.forceResize();
+			drawAnimation();
+		}
+	});
 
 	circles.forEach((circle) => {
 		if (canvas) {
@@ -71,9 +91,13 @@ export function circle_demo(view) {
 }
 
 function drawAnimation() {
+	if (cancelled) {
+		return;
+	}
+	started = true;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	circles.forEach((circle) => circle.draw(ctx, speed));
 
-	requestAnimationFrame(() => drawAnimation());
+	raf = requestAnimationFrame(() => drawAnimation());
 }

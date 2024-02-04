@@ -4,6 +4,9 @@ import { Path2D } from '../../Canvas2D';
 
 export const pathProperty = new Property<Path, string>({
 	name: 'path',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export class Path extends Paint {

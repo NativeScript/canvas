@@ -16,6 +16,7 @@ import java.util.concurrent.Executors
 class NSCSVG : View {
 	internal var bitmap: Bitmap? = null
 	private var svgCanvas: Long = 0
+	private var context2D: Long = 0
 	private var isInit = false
 	internal val lock = Any()
 	private var pendingInvalidate: Boolean = false
@@ -23,6 +24,8 @@ class NSCSVG : View {
 	private var src: String = ""
 	private var srcPath: String = ""
 	private var mMatrix = Matrix()
+
+	var sync: Boolean = false
 
 
 	constructor(context: Context) : super(context, null) {
@@ -60,9 +63,38 @@ class NSCSVG : View {
 
 	private var currentTask: java.util.concurrent.Future<*>? = null
 	private fun resize(w: Int, h: Int) {
+		if (svgCanvas == 0L) {
+			return
+		}
 		currentTask?.cancel(true)
+		val metrics = resources.displayMetrics
+		if (sync) {
+			NSCCanvas.nativeResizeCustomSurface(
+				svgCanvas,
+				w.toFloat(),
+				h.toFloat(),
+				metrics.density,
+				true,
+				metrics.densityDpi
+			)
+
+			if (srcPath.isNotEmpty() || src.isNotEmpty()) {
+				if (srcPath.isNotEmpty()) {
+					nativeDrawSVGFromPath(svgCanvas, srcPath)
+				} else {
+					nativeDrawSVG(svgCanvas, src)
+				}
+				bitmap?.let {
+					NSCCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+					pendingInvalidate = false
+					invalidate()
+				}
+			}
+
+			return
+		}
+
 		currentTask = executor.submit {
-			val metrics = resources.displayMetrics
 			NSCCanvas.nativeResizeCustomSurface(
 				svgCanvas,
 				w.toFloat(),
@@ -100,6 +132,38 @@ class NSCSVG : View {
 
 			if (svgCanvas == 0L) {
 				currentTask?.cancel(true)
+				if (sync) {
+
+					svgCanvas = NSCCanvas.nativeInitContextWithCustomSurface(
+						w.toFloat(),
+						h.toFloat(),
+						metrics.density,
+						true,
+						Color.BLACK,
+						metrics.densityDpi.toFloat(),
+						NSCCanvas.direction
+					)
+
+					if (srcPath.isNotEmpty() || src.isNotEmpty()) {
+
+						if (srcPath.isNotEmpty()) {
+							nativeDrawSVGFromPath(svgCanvas, srcPath)
+						} else {
+							nativeDrawSVG(svgCanvas, src)
+						}
+						bitmap?.let {
+							NSCCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+							pendingInvalidate = false
+							invalidate()
+						}
+
+					}
+
+					currentTask = null
+
+
+					return
+				}
 				currentTask = executor.submit {
 					synchronized(lock) {
 						svgCanvas = NSCCanvas.nativeInitContextWithCustomSurface(
@@ -146,6 +210,14 @@ class NSCSVG : View {
 
 	fun flush() {
 		bitmap?.let {
+			if (sync) {
+				if (svgCanvas != 0L) {
+					NSCCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+					pendingInvalidate = false
+					invalidate()
+				}
+				return
+			}
 			synchronized(lock) {
 				if (svgCanvas != 0L) {
 					currentTask?.cancel(true)
@@ -167,6 +239,28 @@ class NSCSVG : View {
 		synchronized(lock) {
 			if (svgCanvas != 0L) {
 				currentTask?.cancel(true)
+				if (sync){
+					if (srcPath.isNotEmpty()) {
+						nativeDrawSVGFromPath(svgCanvas, srcPath)
+						bitmap?.let {
+							if (svgCanvas != 0L) {
+								NSCCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+								pendingInvalidate = false
+								invalidate()
+							}
+						}
+					} else {
+						nativeDrawSVG(svgCanvas, src)
+						bitmap?.let {
+							if (svgCanvas != 0L) {
+								NSCCanvas.nativeCustomWithBitmapFlush(svgCanvas, it)
+								pendingInvalidate = false
+								invalidate()
+							}
+						}
+					}
+					return
+				}
 				currentTask = executor.submit {
 					if (srcPath.isNotEmpty()) {
 						nativeDrawSVGFromPath(svgCanvas, srcPath)

@@ -46,6 +46,8 @@ export class Canvas extends CanvasBase {
 	private _isBatch = false;
 	_didLayout = false;
 
+	static useSurface = false;
+	
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {

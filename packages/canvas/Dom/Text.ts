@@ -6,6 +6,9 @@ const xProperty = new Property<Text, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const yProperty = new Property<Text, number>({
@@ -13,10 +16,16 @@ const yProperty = new Property<Text, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const textProperty = new Property<Text, string>({
 	name: 'text',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export class Text extends Paint {

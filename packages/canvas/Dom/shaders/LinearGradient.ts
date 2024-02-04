@@ -3,14 +3,23 @@ import { Gradients } from './Gradients';
 
 const startProperty = new Property<LinearGradient, { x: number; y: number }>({
 	name: 'start',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const endProperty = new Property<LinearGradient, { x: number; y: number }>({
 	name: 'end',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 const colorsProperty = new Property<LinearGradient, string[]>({
 	name: 'colors',
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export class LinearGradient extends Gradients {

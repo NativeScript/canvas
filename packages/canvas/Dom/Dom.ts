@@ -2,10 +2,18 @@ import { EventData, LayoutBase, ViewBase, Utils, View } from '@nativescript/core
 import { Canvas } from '../Canvas';
 import { Image } from './Image';
 import { Paint } from './Paint';
+enum State {
+	None,
+	Pending,
+	Invalidating,
+}
 export class Dom extends LayoutBase {
 	_canvas: Canvas;
 	_children = [];
 
+	_raf: any;
+	_state: State = State.None;
+	_isReady: boolean = false;
 	constructor() {
 		super();
 		this._canvas = new Canvas();
@@ -28,6 +36,22 @@ export class Dom extends LayoutBase {
 		this._addView(this._canvas);
 	}
 
+	onLoaded(): void {
+		super.onLoaded();
+		if (this._ready) {
+			this._bindRaf();
+		}
+	}
+
+	onUnloaded(): void {
+		if (this._raf) {
+			cancelAnimationFrame(this._raf);
+			this._raf = undefined;
+			this._state = State.Pending;
+		}
+		super.onUnloaded();
+	}
+
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
 		super.onLayout(left, top, right, bottom);
 		View.layoutChild(this, this._canvas, left, top, right, bottom);
@@ -44,10 +68,36 @@ export class Dom extends LayoutBase {
 	}
 
 	_ready(args: EventData) {
-		for (const child of this._children) {
-			child.draw();
-		}
+		this._isReady = true;
+		this._dirty();
+		this._draw();
 	}
+
+	_draw() {
+		const state = this._state & State.Pending;
+		if (state === State.Pending) {
+			const ctx = this._canvas.getContext('2d');
+			this._state = State.Invalidating;
+			ctx.clearRect(0, 0, this._canvas.width as number, this._canvas.height as number);
+			for (const child of this._children) {
+				child.draw();
+			}
+			this._state = State.None;
+		}
+		this._bindRaf();
+	}
+
+	_bindRaf() {
+		if (!this._isReady) {
+			return;
+		}
+		this._raf = requestAnimationFrame(this._draw.bind(this));
+	}
+
+	_dirty() {
+		this._state = this._state | State.Pending;
+	}
+
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
 		if (view === this._canvas) {
 			if (global.isIOS) {

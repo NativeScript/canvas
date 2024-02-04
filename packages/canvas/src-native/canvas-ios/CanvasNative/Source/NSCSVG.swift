@@ -15,6 +15,7 @@ public class NSCSVG: UIView {
     var context: Int64 = 0
     var didInitDrawing = false
     var forceResize = false
+    var sync = false
     public var ignorePixelScaling = false {
         didSet {
             forceResize = true
@@ -43,19 +44,52 @@ public class NSCSVG: UIView {
     func doDraw(){
         if self.srcPath == nil && self.src == nil {return}
         workItem?.cancel()
-     /*   workItem = DispatchWorkItem {
+        
+        if(sync){
+            
+            if(self.context > 0){
+                if(self.srcPath != nil){
+                    guard let srcPath = self.srcPath else{return}
+                    let source = srcPath as NSString
+                    
+                    canvas_native_svg_draw_from_path(self.context, source.utf8String)
+                    guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+                    canvas_native_context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height), true)
+                    
+                    self.didInitDrawing = true
+                    self.setNeedsDisplay()
+                    return
+                }
+                
+                guard let src = self.src else{return}
+                let source = src as NSString
+                canvas_native_svg_draw_from_string(self.context, source.utf8String)
+                guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+                canvas_native_context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height), true)
+                
+                self.didInitDrawing = true
+                self.setNeedsDisplay()
+            }
+            
+            return
+        }
+        
+        
+        workItem = DispatchWorkItem {
             [weak self] in
                 guard let self =  self else {return}
                 if(self.context > 0){
                     if(self.srcPath != nil){
                         guard let srcPath = self.srcPath else{return}
                         let source = srcPath as NSString
-                        svg_draw_from_path(self.context, source.utf8String)
+                        
+                        canvas_native_svg_draw_from_path(self.context, source.utf8String)
                         guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
-                        context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height))
+                        canvas_native_context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height), true)
                         
                         DispatchQueue.main.async { [self] in
-                            if(self.workItem!.isCancelled){
+                            if(self.workItem != nil && self.workItem!.isCancelled){
+                                self.workItem = nil
                                 return
                             }
                             self.didInitDrawing = true
@@ -66,26 +100,27 @@ public class NSCSVG: UIView {
                     
                     guard let src = self.src else{return}
                     let source = src as NSString
-                    svg_draw_from_string(self.context, source.utf8String)
+                    canvas_native_svg_draw_from_string(self.context, source.utf8String)
                     guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
-                    context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height))
+                    canvas_native_context_custom_with_buffer_flush(self.context, buf, self.buf_size, Float(self.data_size.width), Float(self.data_size.height), true)
                     
                     DispatchQueue.main.async {
                         [self] in
-                            if(self.workItem!.isCancelled){
-                                return
-                            }
+                        if(self.workItem != nil && self.workItem!.isCancelled){
+                            self.workItem = nil
+                            return
+                        }
                         self.didInitDrawing = true
                         self.setNeedsDisplay()
                     }
                 }
-        }*/
+        }
         queue.async(execute: workItem!)
     }
     
 
     func update(){
-     /*   let size = layer.frame.size
+        let size = layer.frame.size
         let width = Float(size.width) * deviceScale()
         let height = Float(size.height) * deviceScale()
         if !size.equalTo(data_size) || forceResize {
@@ -94,21 +129,21 @@ public class NSCSVG: UIView {
             buf_size = UInt(width * height * 4)
             data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
             if context == 0 {
-                var direction = TNSTextDirection.Ltr
+                var direction: Int32 = 0
                 if(UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft){
-                    direction = TNSTextDirection.Rtl
+                    direction = 1
                 }
-                context = context_init_context_with_custom_surface(Float(width), Float(height), deviceScale(), true, 0, 0, TextDirection(rawValue: direction.rawValue))
+                context =  canvas_native_context_init_context_with_custom_surface(Float(width), Float(height), deviceScale(), true, 0, 0, direction)
                 doDraw()
             }else {
-                context_resize_custom_surface(context, Float(width), Float(height), deviceScale(), true, 0)
+                canvas_native_resize_context_2d(context, Float(width), Float(height))
                 doDraw()
             }
             
             if forceResize {
                 forceResize = false
             }
-        }*/
+        }
     }
     
     public override func layoutSubviews() {

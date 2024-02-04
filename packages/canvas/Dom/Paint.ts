@@ -1,5 +1,6 @@
 import { Color, LayoutBase, Property } from '@nativescript/core';
 import { Canvas } from '../Canvas';
+import { Dom } from './Dom';
 
 export const paintStyleProperty = new Property<Paint, 'fill' | 'stroke'>({
 	name: 'paintStyle',
@@ -27,6 +28,13 @@ export class Paint extends LayoutBase {
 
 	[paintStyleProperty.setNative](value) {
 		this._paintStyleDirty = true;
+	}
+
+	invalidate() {
+		const parent = this.parent as Dom;
+		if (parent != null) {
+			parent._dirty?.();
+		}
 	}
 
 	_getStrokeWidth() {

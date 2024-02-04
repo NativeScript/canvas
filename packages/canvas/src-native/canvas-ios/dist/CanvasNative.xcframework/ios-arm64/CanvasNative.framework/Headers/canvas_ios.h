@@ -141,4 +141,23 @@ bool canvas_native_context_draw_image_with_bytes(int64_t context,
                                                  float d_width,
                                                  float d_height);
 
+void canvas_native_svg_draw_from_string(int64_t context, const char *svg);
+
+void canvas_native_svg_draw_from_path(int64_t context, const char *path);
+
+void canvas_native_context_custom_with_buffer_flush(int64_t context,
+                                                    uint8_t *bytes,
+                                                    uintptr_t size,
+                                                    float width,
+                                                    float height,
+                                                    bool alpha);
+
+long long canvas_native_context_init_context_with_custom_surface(float width,
+                                                                 float height,
+                                                                 float density,
+                                                                 bool alpha,
+                                                                 int font_color,
+                                                                 float ppi,
+                                                                 int direction);
+
 #endif /* CANVAS_IOS_H */

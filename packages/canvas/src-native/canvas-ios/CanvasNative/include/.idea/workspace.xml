@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="850de024-069a-4cd6-b254-30cad6ce3bd8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../../../../../apps/demo/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../apps/demo/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas-three.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas-three.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../apps/demo/src/plugin-demos/canvas.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Canvas/index.android.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Canvas/index.android.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Canvas/index.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Canvas/index.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Canvas/index.ios.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Canvas/index.ios.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Dom.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Dom.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Group.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Group.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Image.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Image.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Paint.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Paint.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Shadow.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Shadow.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/Text.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/Text.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shaders/LinearGradient.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shaders/LinearGradient.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shaders/TwoPointConicalGradient.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shaders/TwoPointConicalGradient.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/Circle.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/Circle.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/Line.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/Line.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/Path.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/Path.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/Points.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/Points.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/Rect.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/Rect.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Dom/shapes/RoundedRect.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Dom/shapes/RoundedRect.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../platforms/android/canvas-release.aar" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../platforms/android/canvas-release.aar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-android/app/src/main/java/org/nativescript/canvasdemo/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-android/app/src/main/java/org/nativescript/canvasdemo/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-android/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-android/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/GLViewSV.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/GLViewSV.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/NSCCanvas.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/NSCCanvas.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/NSCSVG.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-android/canvas/src/main/java/org/nativescript/canvas/NSCSVG.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../CanvasNative.xcodeproj/project.xcworkspace/xcuserdata/triniwiz.xcuserdatad/UserInterfaceState.xcuserstate" beforeDir="false" afterPath="$PROJECT_DIR$/../../CanvasNative.xcodeproj/project.xcworkspace/xcuserdata/triniwiz.xcuserdatad/UserInterfaceState.xcuserstate" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Source/NSCCanvas.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Source/NSCCanvas.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Source/NSCSVG.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Source/NSCSVG.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/canvas_ios.h" beforeDir="false" afterPath="$PROJECT_DIR$/canvas_ios.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/CanvasNative" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Headers/CanvasNative-Swift.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Headers/CanvasNative.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Headers/canvas_ios.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Headers/canvas_native.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/CanvasNative.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios.abi.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios.private.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios.swiftdoc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/Modules/module.modulemap" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/CanvasNative.framework/NSCCanvas.nib" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/dSYMs/CanvasNative.framework.dSYM/Contents/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64/dSYMs/CanvasNative.framework.dSYM/Contents/Resources/DWARF/CanvasNative" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/CanvasNative" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Headers/CanvasNative-Swift.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Headers/CanvasNative.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Headers/canvas_ios.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Headers/canvas_native.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.abi.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftdoc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.abi.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftdoc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftinterface" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/Modules/module.modulemap" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/NSCCanvas.nib" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/CanvasNative.framework/_CodeSignature/CodeResources" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/dSYMs/CanvasNative.framework.dSYM/Contents/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../dist/CanvasNative.xcframework/ios-arm64_x86_64-simulator/dSYMs/CanvasNative.framework.dSYM/Contents/Resources/DWARF/CanvasNative" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/jni_compat/org_nativescript_canvas_NSCSVG.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/jni_compat/org_nativescript_canvas_NSCSVG.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/utils/image.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/utils/image.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/utils/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-native/canvas-android/src/utils/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas-ios/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-native/canvas-ios/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas-ios/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../../canvas-native/canvas-ios/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../canvas-native/canvas_native.h" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../tools/demo/canvas-three/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../tools/demo/canvas-three/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../tools/demo/canvas/canvas2d/breathe.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../tools/demo/canvas/canvas2d/breathe.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../../tools/demo/canvas/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../../tools/demo/canvas/index.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../../../.." />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="2bundfib" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2023" />
+    <option name="minorVersion" value="3.2" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 2
+}]]></component>
+  <component name="ProjectId" id="2btUzbzeLtu0nCtXjAt9D33uBj4" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "master",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="850de024-069a-4cd6-b254-30cad6ce3bd8" name="Changes" comment="" />
+      <created>1707034132920</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1707034132920</updated>
+      <workItem from="1707034134428" duration="21000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

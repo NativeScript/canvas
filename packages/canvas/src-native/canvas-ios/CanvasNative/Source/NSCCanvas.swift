@@ -270,9 +270,15 @@ public class NSCCanvas: UIView {
                density = 1
            }
            
+           
+           var direction: Int32 = 0
+           if(UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft){
+               direction = 1
+           }
+           
            native2DContext = CanvasHelpers.create2DContext(
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
-            alpha, density, samples, fontColor, density * 160, 0
+            alpha, density, samples, fontColor, density * 160, direction
            )
            return native2DContext
        }

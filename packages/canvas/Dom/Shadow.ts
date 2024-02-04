@@ -6,6 +6,9 @@ export const dxProperty = new Property<Shadow, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const dyProperty = new Property<Shadow, number>({
@@ -13,12 +16,18 @@ export const dyProperty = new Property<Shadow, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const blurProperty = new Property<Shadow, number>({
 	name: 'blur',
 	valueConverter(value) {
 		return parseFloat(value);
+	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
 	},
 });
 

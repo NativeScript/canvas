@@ -6,7 +6,16 @@
 
   <GridLayout rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" width="100%" height="100%">
   
-  <ui:Dom rowSpan="2" colSpan="2">
+  <!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}}"> -->
+
+
+  <!-- <ui:Line
+        p1="{{({x: 0, y: 0})}}"
+        p2="{{({x: 256, y: 256})}}"
+        color="lightblue"
+        paintStyle="stroke"
+        strokeWidth="4"
+      /> -->
 
   <!-- <ui:Fill color="#e8f4f8" />
 
@@ -14,6 +23,7 @@
     <ui:Path path="M 128 0 L 168 80 L 256 93 L 192 155 L 207 244 L 128 202 L 49 244 L 64 155 L 0 93 L 88 80 L 128 0 Z" color="red"/> -->
 
 <!-- <ui:RoundedRect
+loaded="{{ rectLoaded }}"
         x="0"
         y="0"
         width="256"
@@ -21,21 +31,21 @@
         r="25"
         color="lightblue"
       /> -->
-    <ui:Rect x="0" y="0" width="256" height="256">
+    <!-- <ui:Rect x="0" y="0" width="256" height="256"> -->
  <!-- <ui:LinearGradient
           start="{{ start }}"
           end="{{ end }}"
           colors="{{colors}}"
         /> -->
 
-        <ui:TwoPointConicalGradient
+        <!-- <ui:TwoPointConicalGradient
            start="{{ start1 }}"
           startR="128"
           end="{{ end1 }}"
           endR="16"
            colors="{{colors}}"
         />
-    </ui:Rect>
+    </ui:Rect> -->
 
      <!-- <ui:Points
         points="{{ points }}"
@@ -105,16 +115,16 @@
       </ui:RoundedRect>
 -->
         
-  </ui:Dom> 
+  <!-- </ui:Dom>  -->
    
   
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <!-- <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/>  -->
-                                     <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
-                                     <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
-                                      <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>
-                                     <canvas:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/> -->
+		 <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}"
+									 layoutChanged="{{ onLayout }}"/> 
+                                     <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/> -->
+                                     <!-- <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/> -->
+                                      <!-- <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/> -->
+                                     <!-- <canvas:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/> -->
     <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->
 
     <!-- <ScrollView  rowSpan="4" visibility="{{ show ? 'visible': 'collapse' }}" orientation="vertical">

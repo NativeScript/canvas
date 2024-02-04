@@ -7,12 +7,18 @@ export const xProperty = new Property<Rect, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const yProperty = new Property<Rect, number>({
 	name: 'y',
 	valueConverter(value) {
 		return parseFloat(value);
+	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
 	},
 });
 
@@ -21,12 +27,18 @@ export const widthProperty = new Property<Rect, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
+	},
 });
 
 export const heightProperty = new Property<Rect, number>({
 	name: 'height',
 	valueConverter(value) {
 		return parseFloat(value);
+	},
+	valueChanged(target, oldValue, newValue) {
+		target.invalidate();
 	},
 });
 
@@ -76,3 +88,5 @@ export class Rect extends Paint {
 
 xProperty.register(Rect);
 yProperty.register(Rect);
+widthProperty.register(Rect);
+heightProperty.register(Rect);

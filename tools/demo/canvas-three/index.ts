@@ -98,7 +98,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		tiny_poly_world(this.canvas);
+		//tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -111,7 +111,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
 

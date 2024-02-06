@@ -615,6 +615,10 @@ export class CanvasRenderingContext2D {
 		}
 	}
 
+	fillOval(x: number, y: number, width: number, height: number): void {
+		this.context.fillOval(x, y, width, height);
+	}
+
 	getImageData(sx: number, sy: number, sw: number, sh: number): ImageData {
 		return ImageData.fromNative(this.context.getImageData(sx, sy, sw, sh));
 	}
@@ -766,6 +770,10 @@ export class CanvasRenderingContext2D {
 		} else {
 			this.context.strokeText(text + '', x, y);
 		}
+	}
+
+	strokeOval(x: number, y: number, width: number, height: number): void {
+		this.context.strokeOval(x, y, width, height);
 	}
 
 	transform(a: number, b: number, c: number, d: number, e: number, f: number): void {

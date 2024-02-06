@@ -86,12 +86,18 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_clear_rect_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillRect));
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_fill_oval_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFillOval));
+
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_rect_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokeRect));
 
+v8::CFunction CanvasRenderingContext2DImpl::fast_stroke_oval_(
+        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastStrokeOval));
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_rotate_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastRotate));
-
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_fill_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastFill));
@@ -395,6 +401,10 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     tmpl->Set(ConvertToV8String(isolate, "fillText"),
               v8::FunctionTemplate::New(isolate, &FillText));
+
+
+    SetFastMethod(isolate, tmpl, "fillOval", FillOval, &fast_fill_oval_, v8::Local<v8::Value>());
+
     tmpl->Set(ConvertToV8String(isolate, "getImageData"),
               v8::FunctionTemplate::New(isolate, &GetImageData));
     tmpl->Set(ConvertToV8String(isolate, "getLineDash"),
@@ -473,6 +483,10 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
 
     tmpl->Set(ConvertToV8String(isolate, "strokeText"),
               v8::FunctionTemplate::New(isolate, &StrokeText));
+
+
+    SetFastMethod(isolate, tmpl, "strokeOval", StrokeOval, &fast_stroke_oval_,
+                  v8::Local<v8::Value>());
 
     SetFastMethod(isolate, tmpl, "transform", Transform, &fast_transform_, v8::Local<v8::Value>());
 
@@ -573,15 +587,15 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
     if (ptr == nullptr) {
         return;
     }
-    
+
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    
-    
+
+
     auto mode = args[0];
     auto points = args[1].As<v8::Array>();
     auto size = points->Length();
-    
+
     if (size == 0){return;}
     uint32_t pointMode = 0;
     if(mode->IsUint32() && mode->Uint32Value(context).To(&pointMode)){
@@ -589,10 +603,10 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
         auto len = size * 2;
         store.reserve(len);
         for (int i = 0; i < size; i++) {
-            
+
             auto object = points->Get(
                                       context, i).ToLocalChecked().As<v8::Object>();
-            
+
             auto x = object->Get(context,
                                  ConvertToV8String(isolate, "x")).ToLocalChecked()->NumberValue(
                                                                                                 context).ToChecked();
@@ -602,12 +616,12 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
             store.emplace_back((float) x);
             store.emplace_back((float) y);
         }
-        
+
         canvas_native_context_draw_points(
                                           ptr->GetContext(), pointMode,
                                           store.data(), store.size());
-        
-        
+
+
         ptr->UpdateInvalidateState();
     }
 }
@@ -2161,6 +2175,26 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
 
 }
 
+
+void
+CanvasRenderingContext2DImpl::FillOval(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+    auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+    auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+    auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+    canvas_native_context_fill_oval(
+            ptr->GetContext(), x, y, width,
+            height);
+    ptr->UpdateInvalidateState();
+}
+
 void
 CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
@@ -2746,6 +2780,29 @@ CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Valu
         ptr->UpdateInvalidateState();
     }
 }
+
+void
+CanvasRenderingContext2DImpl::StrokeOval(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() == 4) {
+        auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
+        auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
+        auto width = static_cast<float>(args[2]->NumberValue(context).ToChecked());
+        auto height = static_cast<float>(args[3]->NumberValue(context).ToChecked());
+        canvas_native_context_stroke_oval(
+                ptr->GetContext(), x, y,
+                width,
+                height);
+        ptr->UpdateInvalidateState();
+    }
+}
+
+
+
 
 void
 CanvasRenderingContext2DImpl::Transform(const v8::FunctionCallbackInfo<v8::Value> &args) {

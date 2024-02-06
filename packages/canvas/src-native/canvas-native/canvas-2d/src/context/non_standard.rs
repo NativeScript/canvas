@@ -61,6 +61,15 @@ impl TryFrom<&str> for PointMode {
 }
 
 impl Context {
+
+    pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32){
+        self.surface.canvas().draw_oval(skia_safe::Rect::from_xywh(x, y, width, height), self.state.paint.fill_paint());
+    }
+
+    pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32){
+        self.surface.canvas().draw_oval(skia_safe::Rect::from_xywh(x, y, width, height), self.state.paint.stroke_paint());
+    }
+
     pub fn draw_paint(&mut self, color: &str) {
         if let Some(color) = color::parse_color(color) {
             let mut paint = Paint::default();

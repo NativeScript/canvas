@@ -106,11 +106,15 @@ public:
 
     static v8::CFunction fast_fill_rect_;
 
+    static v8::CFunction fast_fill_oval_;
+
     static v8::CFunction fast_stroke_;
 
     static v8::CFunction fast_stroke_path_;
 
     static v8::CFunction fast_stroke_rect_;
+
+    static v8::CFunction fast_stroke_oval_;
 
     static v8::CFunction fast_rotate_;
 
@@ -900,6 +904,27 @@ public:
 
     static void FillText(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+
+    static void FillOval(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastFillOval(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                             double height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_fill_oval(
+                ptr->GetContext(),
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height)
+        );
+        ptr->UpdateInvalidateState();
+    }
+
     static void GetImageData(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetLineDash(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -1324,6 +1349,27 @@ public:
 
 
     static void StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+
+    static void StrokeOval(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void FastStrokeOval(v8::Local<v8::Object> receiver_obj, double x, double y, double width,
+                               double height) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_context_stroke_oval(
+                ptr->GetContext(), static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(width),
+                static_cast<float>(height));
+        ptr->UpdateInvalidateState();
+    }
+
 
     static void Transform(const v8::FunctionCallbackInfo<v8::Value> &args);
 

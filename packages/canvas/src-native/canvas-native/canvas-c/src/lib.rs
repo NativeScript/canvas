@@ -2587,6 +2587,24 @@ pub extern "C" fn canvas_native_context_fill_text_width(
 
 #[inline(always)]
 #[no_mangle]
+pub extern "C" fn canvas_native_context_fill_oval(
+    context: *mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+) {
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .fill_oval(x, y, width, height);
+}
+
+
+
+#[inline(always)]
+#[no_mangle]
 pub extern "C" fn canvas_native_context_get_image_data(
     context: *mut CanvasRenderingContext2D,
     sx: f32,
@@ -3027,6 +3045,24 @@ pub extern "C" fn canvas_native_context_stroke_text_width(
         .stroke_text(text.as_ref(), x, y, Some(width));
 }
 
+#[inline(always)]
+#[no_mangle]
+pub extern "C" fn canvas_native_context_stroke_oval(
+    context: *mut CanvasRenderingContext2D,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+) {
+    let context = unsafe { &mut *context };
+    context.make_current();
+    context
+        .get_context_mut()
+        .stroke_oval(x, y, width, height);
+}
+
+
+
 
 #[inline(always)]
 #[no_mangle]
@@ -3308,6 +3344,15 @@ impl Path {
     pub(crate) fn inner_mut(&mut self) -> &mut canvas_2d::context::paths::path::Path {
         &mut self.0
     }
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_path_trim(path: *mut Path, start: f32, end: f32) {
+    if path.is_null() {
+        return;
+    }
+    let path = unsafe { &mut *path };
+    path.0.trim(start, end);
 }
 
 #[no_mangle]

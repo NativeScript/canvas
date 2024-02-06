@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{Point, Rect, RRect};
+use skia_safe::{PathEffect, Point, Rect, RRect};
 
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::matrix::Matrix;
@@ -301,6 +301,16 @@ impl Path {
                 skia_safe::PathDirection::CCW
             };
             self.path.add_rrect(rrect, Some((direction, 0)));
+        }
+    }
+
+    pub fn trim(&mut self, start: f32, end: f32){
+        if start != 0. && end != 1. {
+           if let Some(effect ) =  PathEffect::trim(start, end, None) {
+               if let Some((mut path, _)) = effect.filter_path(&self.path, &skia_safe::StrokeRec::new_hairline(), Rect::default()) {
+                   self.path.swap(&mut path);
+               }
+           }
         }
     }
 }

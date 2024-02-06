@@ -51,9 +51,6 @@ v8::CFunction Path2D::fast_quadratic_curve_to_(v8::CFunction::Make(Path2D::FastQ
 
 v8::CFunction Path2D::fast_rect_(v8::CFunction::Make(Path2D::FastRect));
 
-//v8::CFunction Path2D::fast_round_rect_(v8::CFunction::Make(Path2D::FastRoundRect));
-
-
 v8::CFunction Path2D::fast_round_rect_(
         v8::CFunction::Make(Path2D::FastRoundRect));
 
@@ -64,6 +61,8 @@ const v8::CFunction fast_round_rect_overloads_[] = {
         Path2D::fast_round_rect_,
         Path2D::fast_round_rect_array_
 };
+
+v8::CFunction Path2D::fast_trim_(v8::CFunction::Make(Path2D::FastTrim));
 
 
 
@@ -76,7 +75,7 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType( ret, NativeType::Path2D);
+    SetNativeType(ret, NativeType::Path2D);
 
     if (count > 0) {
         if (value->IsString()) {
@@ -385,6 +384,21 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     args.GetReturnValue().SetUndefined();
 }
 
+void Path2D::Trim(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Path2D *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    canvas_native_path_trim(ptr->GetPath(),
+                            static_cast<float>(args[0]->NumberValue(context).ToChecked()),
+                            static_cast<float>(args[1]->NumberValue(context).ToChecked()));
+}
+
 void Path2D::__toSVG(const v8::FunctionCallbackInfo<v8::Value> &args) {
     Path2D *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -443,50 +457,7 @@ v8::Local<v8::FunctionTemplate> Path2D::GetCtor(v8::Isolate *isolate) {
     SetFastMethodWithOverLoads(isolate, tmpl, "roundRect", RoundRect,
                                fast_round_rect_overloads_, v8::Local<v8::Value>());
 
-    //    tmpl->Set(
-//            ConvertToV8String(isolate, "addPath"),
-//            v8::FunctionTemplate::New(isolate, &AddPath));
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "arc"),
-//            v8::FunctionTemplate::New(isolate, &Arc));
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "bezierCurveTo"),
-//            v8::FunctionTemplate::New(isolate, &BezierCurveTo));
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "closePath"),
-//            v8::FunctionTemplate::New(isolate, &ClosePath));
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "ellipse"),
-//            v8::FunctionTemplate::New(isolate, &Ellipse));
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "lineTo"),
-//            v8::FunctionTemplate::New(isolate, &LineTo));
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "moveTo"),
-//            v8::FunctionTemplate::New(isolate, &MoveTo));
-
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "quadraticCurveTo"),
-//            v8::FunctionTemplate::New(isolate, &QuadraticCurveTo));
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "rect"),
-//            v8::FunctionTemplate::New(isolate, &Rect));
-
-//    tmpl->Set(
-//            ConvertToV8String(isolate, "roundRect"),
-//            v8::FunctionTemplate::New(isolate, &RoundRect));
+    SetFastMethod(isolate, tmpl, "trim", Trim, &fast_trim_, v8::Local<v8::Value>());
 
     tmpl->Set(
             ConvertToV8String(isolate, "__toSVG"),

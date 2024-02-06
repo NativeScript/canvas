@@ -64,6 +64,8 @@ public:
     static v8::CFunction fast_round_rect_array_;
     // static v8::CFunction fast_to_svg_; // todo after v8 upgrade
 
+    static v8::CFunction fast_trim_;
+
 
     static void Arc(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -428,6 +430,23 @@ public:
     static void Rect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Trim(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void
+    FastTrim(v8::Local<v8::Object> receiver_obj, double start, double end) {
+
+        Path2D *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+        canvas_native_path_trim(
+                ptr->GetPath(),
+                static_cast<float>(start),
+                static_cast<float>(end)
+        );
+    }
 
     static void __toSVG(const v8::FunctionCallbackInfo<v8::Value> &args);
 

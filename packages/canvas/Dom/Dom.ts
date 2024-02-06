@@ -14,6 +14,7 @@ export class Dom extends LayoutBase {
 	_raf: any;
 	_state: State = State.None;
 	_isReady: boolean = false;
+	_onFrameCallback?: (frame: number) => void = null;
 	constructor() {
 		super();
 		this._canvas = new Canvas();
@@ -67,13 +68,17 @@ export class Dom extends LayoutBase {
 		}
 	}
 
+	set onFrameCallback(value: (frame: number) => void | null) {
+		this._onFrameCallback = value;
+	}
+
 	_ready(args: EventData) {
 		this._isReady = true;
 		this._dirty();
-		this._draw();
+		this._draw(null);
 	}
 
-	_draw() {
+	_draw(ts) {
 		const state = this._state & State.Pending;
 		if (state === State.Pending) {
 			const ctx = this._canvas.getContext('2d');
@@ -84,6 +89,7 @@ export class Dom extends LayoutBase {
 			}
 			this._state = State.None;
 		}
+		this._onFrameCallback?.(ts);
 		this._bindRaf();
 	}
 

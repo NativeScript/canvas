@@ -155,6 +155,8 @@ class NSCCanvas : FrameLayout {
 			nativeReleaseGL(nativeGL)
 			nativeGL = 0
 		}
+
+		textureView.surfaceTexture?.release()
 	}
 
 	@JvmOverloads

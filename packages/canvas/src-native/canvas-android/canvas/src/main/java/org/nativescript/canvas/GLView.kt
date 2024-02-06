@@ -49,6 +49,8 @@ class GLView : TextureView, SurfaceTextureListener {
         surfaceTextureListener = this
     }
 
+
+
     private fun resize() {
         canvas?.resize()
     }
@@ -104,7 +106,7 @@ class GLView : TextureView, SurfaceTextureListener {
 
     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
         isCreated = false
-        return true
+        return false
     }
 
 

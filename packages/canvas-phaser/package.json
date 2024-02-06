@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-phaser",
-  "version": "2.0.0-beta.4",
+  "version": "2.0.0-beta.5",
   "description": "Build awesome 2D games with Phaser.js and NativeScript",
   "main": "index",
   "typings": "index.d.ts",

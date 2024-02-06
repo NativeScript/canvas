@@ -57,7 +57,8 @@ export class Text extends Paint {
 				break;
 			case 'stroke':
 				context.strokeStyle = color;
-				context.lineWidth = this.strokeWidth;
+				context.lineWidth = this._getStrokeWidth();
+				context.lineJoin = this._getStrokeJoin();
 				context.strokeText(this.text, this.x, this.y);
 				break;
 		}

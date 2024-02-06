@@ -1355,7 +1355,9 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 		GridLayout.setRow(fieldDistance, 1);
 		GridLayout.setRowSpan(fieldGameOver, 2);
 
-		parent.addChild(containerLayout);
+		if(containerLayout.parent !== parent){
+			parent.addChild(containerLayout);
+		}
 	}
 
 	////////////////////////////////////////////////

@@ -77,7 +77,8 @@ export class RoundedRect extends Rect {
 						break;
 					case 'stroke':
 						context.strokeStyle = color;
-						context.lineWidth = child.strokeWidth;
+						context.lineWidth = child._getStrokeWidth();
+						context.lineJoin = child._getStrokeJoin();
 
 						if (child instanceof Shadow) {
 							const dx = context.shadowOffsetX;

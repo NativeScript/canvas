@@ -24,7 +24,9 @@ export class Points extends Paint {
 	draw() {
 		const override_color = (this.parent as any)._overrideColor;
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
-		context.strokeStyle = this.color.hex;
+		context.lineWidth = this._getStrokeWidth();
+		context.lineJoin = this._getStrokeJoin();
+		context.strokeStyle = this._getColor();
 		(context as any).drawPoints(this.mode ?? 'points', this.points);
 	}
 }

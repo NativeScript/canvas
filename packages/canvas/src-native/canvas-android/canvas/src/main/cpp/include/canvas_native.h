@@ -709,6 +709,12 @@ void canvas_native_context_fill_text_width(struct CanvasRenderingContext2D *cont
                                            float y,
                                            float width);
 
+void canvas_native_context_fill_oval(struct CanvasRenderingContext2D *context,
+                                     float x,
+                                     float y,
+                                     float width,
+                                     float height);
+
 struct ImageData *canvas_native_context_get_image_data(struct CanvasRenderingContext2D *context,
                                                        float sx,
                                                        float sy,
@@ -837,6 +843,12 @@ void canvas_native_context_stroke_text_width(struct CanvasRenderingContext2D *co
                                              float y,
                                              float width);
 
+void canvas_native_context_stroke_oval(struct CanvasRenderingContext2D *context,
+                                       float x,
+                                       float y,
+                                       float width,
+                                       float height);
+
 void canvas_native_context_transform(struct CanvasRenderingContext2D *context,
                                      float a,
                                      float b,
@@ -920,6 +932,8 @@ bool canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(c
                                                                                float resize_width,
                                                                                float resize_height,
                                                                                struct ImageAsset *output);
+
+void canvas_native_path_trim(struct Path *path, float start, float end);
 
 void canvas_native_path_add_path(struct Path *path, const struct Path *path_to_add);
 

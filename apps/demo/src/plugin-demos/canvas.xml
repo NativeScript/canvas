@@ -10,12 +10,24 @@
 
 
   <!-- <ui:Line
-        p1="{{({x: 0, y: 0})}}"
+
+        p1="{{({x: 10, y: 10})}}"
         p2="{{({x: 256, y: 256})}}"
         color="lightblue"
         paintStyle="stroke"
-        strokeWidth="4"
+        strokeWidth="8"
+      />
+
+        <ui:Points
+        points="{{ points }}"
+        mode="points"
+        color="lightblue"
+        paintStyle="stroke"
+        strokeWidth="1"
       /> -->
+
+
+       <!-- <ui:Oval x="64" y="0" width="128" height="256" color="lightblue" /> -->
 
   <!-- <ui:Fill color="#e8f4f8" />
 

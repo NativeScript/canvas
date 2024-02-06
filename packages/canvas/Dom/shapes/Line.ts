@@ -27,7 +27,7 @@ export class Line extends Paint {
 		const override_color = (this.parent as any)._overrideColor;
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
 		const line = new Path2D();
-		line.lineTo(this.p1.x, this.p1.y);
+		line.moveTo(this.p1.x, this.p1.y);
 		line.lineTo(this.p2.x, this.p2.y);
 		const color = this._getColor();
 		const style = this._getPaintStyle();
@@ -38,6 +38,7 @@ export class Line extends Paint {
 		} else if (style === 'stroke') {
 			context.strokeStyle = color;
 			context.lineWidth = this._getStrokeWidth();
+			context.lineJoin = this._getStrokeJoin();
 			context.stroke(line);
 		}
 	}

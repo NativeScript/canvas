@@ -4,17 +4,20 @@ import { Dom } from './Dom';
 
 export const paintStyleProperty = new Property<Paint, 'fill' | 'stroke'>({
 	name: 'paintStyle',
-	defaultValue: 'fill',
 });
 
 export const strokeWidthProperty = new Property<Paint, number>({
 	name: 'strokeWidth',
-	defaultValue: 1,
+});
+
+export const strokeJoinProperty = new Property<Paint, 'bevel' | 'miter' | 'round'>({
+	name: 'strokeJoin',
 });
 
 const defaultColor = new Color('black');
 export class Paint extends LayoutBase {
 	strokeWidth: number;
+	strokeJoin: 'bevel' | 'miter' | 'round';
 	_canvas: Canvas;
 	_addCanvas(canvas: Canvas) {
 		this._canvas = canvas;
@@ -37,16 +40,20 @@ export class Paint extends LayoutBase {
 		}
 	}
 
+	_getStrokeJoin() {
+		return (this.parent as any)?.strokeJoin ?? this.strokeJoin ?? 'miter';
+	}
+
 	_getStrokeWidth() {
-		return (this.parent as any)?.strokeWidth ?? this.strokeWidth;
+		return (this.parent as any)?.strokeWidth ?? this.strokeWidth ?? 1;
 	}
 	_getPaintStyle() {
 		const paintStyle = this.paintStyle;
-		if (paintStyle !== 'fill') {
+		if (paintStyle === 'stroke') {
 			return paintStyle;
 		}
 		if (this._inGroup) {
-			return (this.parent as any).paintStyle;
+			return (this.parent as any)?._getPaintStyle?.();
 		}
 		return 'fill';
 	}
@@ -84,3 +91,4 @@ export class Paint extends LayoutBase {
 
 paintStyleProperty.register(Paint);
 strokeWidthProperty.register(Paint);
+strokeJoinProperty.register(Paint);

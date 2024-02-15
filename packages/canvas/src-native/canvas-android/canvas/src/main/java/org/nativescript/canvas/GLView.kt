@@ -50,7 +50,6 @@ class GLView : TextureView, SurfaceTextureListener {
     }
 
 
-
     private fun resize() {
         canvas?.resize()
     }

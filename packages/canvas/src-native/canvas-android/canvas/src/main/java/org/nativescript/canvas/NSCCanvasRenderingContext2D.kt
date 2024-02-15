@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import dalvik.annotation.optimization.FastNative
 
 class NSCCanvasRenderingContext2D {
@@ -8,6 +9,18 @@ class NSCCanvasRenderingContext2D {
 
 		init {
 			NSCCanvas.loadLib()
+		}
+
+		@JvmStatic
+		fun drawAtlas(
+			context: Long,
+			bitmap: Bitmap,
+			xform: FloatArray,
+			tex: FloatArray,
+			colors: IntArray,
+			blendMode: Int
+		) {
+			nativeDrawAtlasWithBitmap(context, bitmap, xform, tex, colors, blendMode)
 		}
 
 		@JvmStatic
@@ -121,5 +134,18 @@ class NSCCanvasRenderingContext2D {
 			dWidth: Float,
 			dHeight: Float
 		): Boolean
+
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawAtlasWithBitmap(
+			context: Long,
+			bitmap: Bitmap,
+			xform: FloatArray,
+			tex: FloatArray,
+			colors: IntArray,
+			blendMode: Int
+		)
 	}
+
 }

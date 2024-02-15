@@ -1,10 +1,9 @@
-use log::{log, Level};
+use skia_safe::{Color, ColorType, gpu, PixelGeometry};
 use skia_safe::gpu::gl::Interface;
-use skia_safe::{gpu, surfaces, Color, ColorType, PixelGeometry, Surface};
 
+use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -32,7 +31,7 @@ impl Context {
             ppi,
         };
         let interface = Interface::new_native();
-        let mut ctx = gpu::DirectContext::new_gl(interface, None).unwrap();
+        let mut ctx = gpu::DirectContext::new_gl(interface.unwrap(), None).unwrap();
 
         ctx.reset(None);
 
@@ -72,6 +71,8 @@ impl Context {
 
         if density > 1. {
             surface.canvas().scale((density, density));
+            state.line_width = density;
+            state.paint.stroke_paint_mut().set_stroke_width(density);
         } else {
             state.use_device_scale = false;
             state.did_use_device_scale = false;
@@ -98,7 +99,7 @@ impl Context {
         ppi: f32,
     ) {
         let interface = Interface::new_native();
-        let ctx = gpu::DirectContext::new_gl(interface, None);
+        let ctx = gpu::DirectContext::new_gl(interface.unwrap(), None);
         if ctx.is_none() {
             return;
         }
@@ -145,17 +146,21 @@ impl Context {
             None,
             Some(&surface_props),
         ) {
+            context.device = device;
+            context.path = Path::default();
+            context.reset_state();
+
             if density > 1. {
                 surface.canvas().scale((density, density));
+                context.state.line_width = density;
+                context.state.paint.stroke_paint_mut().set_stroke_width(density);
             } else {
                 context.state.use_device_scale = false;
                 context.state.did_use_device_scale = false;
             };
 
             context.surface = surface;
-            context.device = device;
-            context.path = Path::default();
-            context.reset_state();
+
         }
     }
 }

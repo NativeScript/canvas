@@ -25,10 +25,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
     nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface,
     nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWriteCurrentGLContextToBitmap,
 };
-use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
-    nativeCreatePattern, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithBitmap,
-    nativeDrawImageWithBitmap,
-};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithBitmap};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::nativeLoadFromBitmap;
 use crate::jni_compat::org_nativescript_canvas_NSCSVG::{nativeDrawSVG, nativeDrawSVGFromPath};
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
@@ -220,6 +217,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeDrawImageDxDyWithBitmap",
                 "nativeDrawImageDxDyDwDhWithBitmap",
                 "nativeDrawImageWithBitmap",
+                "nativeDrawAtlasWithBitmap"
             ];
 
             let canvas_rendering_context_2d_signatures = if ret >= ANDROID_O {
@@ -228,6 +226,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JLandroid/graphics/Bitmap;FFFF)Z",
                     "(JLandroid/graphics/Bitmap;FFFFFF)Z",
                     "(JLandroid/graphics/Bitmap;FFFFFFFFFF)Z",
+                    "(JLandroid/graphics/Bitmap;[F[F[II)V"
                 ]
             } else {
                 [
@@ -235,6 +234,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JLandroid/graphics/Bitmap;FFFF)Z",
                     "!(JLandroid/graphics/Bitmap;FFFFFF)Z",
                     "!(JLandroid/graphics/Bitmap;FFFFFFFFFF)Z",
+                    "!(JLandroid/graphics/Bitmap;[F[F[II)V"
                 ]
             };
 
@@ -243,6 +243,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 nativeDrawImageDxDyWithBitmap as *mut c_void,
                 nativeDrawImageDxDyDwDhWithBitmap as *mut c_void,
                 nativeDrawImageWithBitmap as *mut c_void,
+                nativeDrawAtlasWithBitmap as *mut c_void
             ];
 
             let canvas_rendering_context_2d_native_methods: Vec<NativeMethod> = izip!(

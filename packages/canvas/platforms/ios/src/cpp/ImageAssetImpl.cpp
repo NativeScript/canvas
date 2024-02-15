@@ -15,8 +15,8 @@ ImageAssetImpl::ImageAssetImpl(ImageAsset *asset) : asset_(asset) {
 }
 
 ImageAssetImpl::~ImageAssetImpl() {
-     canvas_native_image_asset_destroy(this->GetImageAsset());
-     asset_ = nullptr;
+    canvas_native_image_asset_destroy(this->GetImageAsset());
+    asset_ = nullptr;
 }
 
 void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
@@ -61,6 +61,10 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->SetAccessor(
             ConvertToV8String(isolate, "error"),
             GetError);
+
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "__addr"),
+            GetAddr);
 
     tmpl->Set(
             ConvertToV8String(isolate, "scale"),
@@ -112,7 +116,7 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType( ret, NativeType::ImageAsset);
+    SetNativeType(ret, NativeType::ImageAsset);
 
     auto image_asset = canvas_native_image_asset_create();
 
@@ -147,6 +151,21 @@ ImageAssetImpl::GetHeight(v8::Local<v8::String> name,
         return;
     }
     info.GetReturnValue().Set(0);
+}
+
+
+void
+ImageAssetImpl::GetAddr(v8::Local<v8::String> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto isolate = info.GetIsolate();
+        auto addr = static_cast<intptr_t *>(static_cast<void *>(ptr->GetImageAsset()));
+        auto ret = std::to_string(*addr);
+        info.GetReturnValue().Set(ConvertToV8String(isolate, ret.c_str()));
+        return;
+    }
+    info.GetReturnValue().SetEmptyString();
 }
 
 void

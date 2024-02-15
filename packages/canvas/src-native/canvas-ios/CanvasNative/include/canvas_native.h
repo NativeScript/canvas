@@ -670,6 +670,40 @@ void canvas_native_context_draw_image_context(struct CanvasRenderingContext2D *c
                                               float d_width,
                                               float d_height);
 
+void canvas_native_context_draw_atlas(struct CanvasRenderingContext2D *context,
+                                      const uint8_t *data,
+                                      uintptr_t size,
+                                      float width,
+                                      float height,
+                                      const float *xform,
+                                      uintptr_t xform_size,
+                                      const float *tex,
+                                      uintptr_t tex_size,
+                                      const char *const *colors,
+                                      uintptr_t colors_size,
+                                      int32_t blend_mode);
+
+void canvas_native_context_draw_atlas_encoded(struct CanvasRenderingContext2D *context,
+                                              const uint8_t *data,
+                                              uintptr_t size,
+                                              const float *xform,
+                                              uintptr_t xform_size,
+                                              const float *tex,
+                                              uintptr_t tex_size,
+                                              const char *const *colors,
+                                              uintptr_t colors_size,
+                                              int32_t blend_mode);
+
+void canvas_native_context_draw_atlas_asset(struct CanvasRenderingContext2D *context,
+                                            struct ImageAsset *asset,
+                                            const float *xform,
+                                            uintptr_t xform_size,
+                                            const float *tex,
+                                            uintptr_t tex_size,
+                                            const char *const *colors,
+                                            uintptr_t colors_size,
+                                            int32_t blend_mode);
+
 void canvas_native_context_ellipse(struct CanvasRenderingContext2D *context,
                                    float x,
                                    float y,

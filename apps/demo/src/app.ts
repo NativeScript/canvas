@@ -3,8 +3,8 @@ Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
 const TextDecoderO = TextDecoder;
-require('@nativescript/canvas-polyfill');
-import { Canvas } from '@nativescript/canvas';
+// require('@nativescript/canvas-polyfill');
+// import { Canvas } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
@@ -71,9 +71,9 @@ const age = parseInt(params.get("age") as any); // is the number 18
 
 // try loading our custom font
 
-const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regular.ttf');
+// const font = nsPath.join(knownFolders.currentApp().path, 'fonts/Creepster-Regular.ttf');
 
-global.CanvasModule.__addFontFamily('creepster', [font]);
+// global.CanvasModule.__addFontFamily('creepster', [font]);
 
 // Canvas.useSurface = true;
 
@@ -169,6 +169,7 @@ Application.on('uncaughtError', (args) => {
 	console.log('uncaughtError: error', args.error);
 	console.log('uncaughtError: platform error', args.android ?? args.ios);
 });
+
 Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');
 	if (global.isAndroid) {

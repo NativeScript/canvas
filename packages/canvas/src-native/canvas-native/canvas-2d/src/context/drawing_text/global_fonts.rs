@@ -152,7 +152,7 @@ impl FontLibrary {
             let path = std::path::Path::new(&filename);
             let typeface = match std::fs::read(path) {
                 Err(why) => return Err(format!("{}: \"{}\"", why, path.display())),
-                Ok(bytes) => Typeface::from_data(skia_safe::Data::new_copy(&bytes), None),
+                Ok(bytes) => Typeface::make_deserialize(std::io::Cursor::new(&bytes), None),
             };
 
             match typeface {

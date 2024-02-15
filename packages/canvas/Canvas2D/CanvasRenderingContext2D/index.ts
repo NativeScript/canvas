@@ -2,7 +2,7 @@ import { CanvasGradient } from '../CanvasGradient';
 import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
 import { TextMetrics } from '../TextMetrics';
-import { ImageSource, Screen } from '@nativescript/core';
+import { ImageSource, Screen, Color } from '@nativescript/core';
 import { ImageAsset } from '../../ImageAsset';
 import { CanvasPattern } from '../CanvasPattern';
 import { Canvas } from '../../Canvas';
@@ -61,10 +61,69 @@ function fromBaseLine(value: number): string {
 	}
 }
 
+function toBlendMode(value: string): number {
+	switch (value) {
+		case 'source-over':
+			return 0;
+		case 'source-in':
+			return 1;
+		case 'source-out':
+			return 2;
+		case 'source-atop':
+			return 3;
+		case 'destination-over':
+			return 4;
+		case 'destination-in':
+			return 5;
+		case 'destination-out':
+			return 6;
+		case 'destination-atop':
+			return 7;
+		case 'lighter':
+			return 8;
+		case 'copy':
+			return 9;
+		case 'xor':
+			return 10;
+		case 'multiply':
+			return 11;
+		case 'screen':
+			return 12;
+		case 'overlay':
+			return 13;
+		case 'darken':
+			return 14;
+		case 'lighten':
+			return 15;
+		case 'color-dodge':
+			return 16;
+		case 'color-burn':
+			return 17;
+		case 'hard-light':
+			return 18;
+		case 'soft-light':
+			return 19;
+		case 'difference':
+			return 20;
+		case 'exclusion':
+			return 21;
+		case 'hue':
+			return 22;
+		case 'saturation':
+			return 23;
+		case 'color':
+			return 24;
+		case 'luminosity':
+			return 25;
+		default:
+			null;
+	}
+}
+
 export class CanvasRenderingContext2D {
 	public static isDebug = true;
 	private context;
-
+	private contextPtr: any;
 	static {
 		Helpers.initialize();
 		//ctor = global.CanvasJSIModule.create2DContext;
@@ -82,6 +141,7 @@ export class CanvasRenderingContext2D {
 		}
 		this.context = ctor(ctxPtr, width, height, Screen.mainScreen.scale, contextOptions.antialias ? 4 : 0, contextOptions.alpha, contextOptions.fontColor, 1, direction);
 		*/
+		this.contextPtr = context;
 		const ctxPtr = BigInt(context.toString());
 		this.context = ctor(ctxPtr);
 	}
@@ -578,6 +638,123 @@ export class CanvasRenderingContext2D {
 			this.context.drawImage(image, args[1], args[2], args[3], args[4]);
 		} else if (args.length === 9) {
 			this.context.drawImage(image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+	}
+
+	drawAtlas(
+		image: any,
+		xform: {
+			scos: number;
+			ssin: number;
+			tx: number;
+			ty: number;
+		}[],
+		tex: { x: number; y: number; width: number; height: number }[],
+		colors?: string[],
+		blendMode: GlobalCompositeOperation = 'destination-over'
+	): void {
+		let isNativeSource = false;
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+			image = (image as any).native;
+		} else if (image instanceof ImageAsset) {
+			image = image.native;
+		} else if (image instanceof ImageSource) {
+			if (global.isAndroid) {
+				isNativeSource = true;
+				image = image.android;
+			}
+			if (global.isIOS) {
+				isNativeSource = true;
+				image = image.ios;
+			}
+		} else if (global.isAndroid && image instanceof android.graphics.Bitmap) {
+			isNativeSource = true;
+		} else if (global.isIOS && image instanceof UIImage) {
+			isNativeSource = true;
+		} else if (image instanceof Canvas) {
+			image = (image as any).native;
+		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
+			if (image._imageSource instanceof ImageSource) {
+				if (global.isAndroid) {
+					isNativeSource = true;
+					image = image._imageSource.android;
+				}
+				if (global.isIOS) {
+					isNativeSource = true;
+					image = image._imageSource.ios;
+				}
+				return;
+			} else if (global.isAndroid && image._image instanceof android.graphics.Bitmap) {
+				image = image._image;
+				isNativeSource = true;
+			} else if (global.isIOS && image._image instanceof UIImage) {
+				image = image._image;
+				isNativeSource = true;
+			} else if (image._asset instanceof ImageAsset) {
+				image = image._asset.native;
+			} else if (typeof image.src === 'string') {
+				image = new ImageAsset();
+				image.fromFileSync(image.src);
+			}
+		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
+			image = image._canvas.native;
+		} else if (image instanceof ImageBitmap) {
+			image = (image as any).native;
+		}
+
+		if (isNativeSource) {
+			if (global.isIOS) {
+				return;
+			}
+
+			if (global.isAndroid) {
+				const x = Array.create('float', xform.length * 4);
+				let next = 0;
+				for (let i = 0; i < xform.length; i++) {
+					const item = xform[i];
+					x[next] = item.scos;
+					x[next + 1] = item.ssin;
+					x[next + 1] = item.tx;
+					x[next + 1] = item.ty;
+					next += 3;
+				}
+
+				const t = Array.create('float', tex.length * 4);
+				let tnext = 0;
+				for (let i = 0; i < tex.length; i++) {
+					const item = tex[i];
+					t[tnext] = item.x;
+					t[tnext + 1] = item.y;
+					t[tnext + 1] = item.width;
+					t[tnext + 1] = item.height;
+					tnext += 3;
+				}
+
+				const c = Array.create('int', colors?.length ?? 0);
+
+				if (colors?.length) {
+					for (let i = 0; i < colors.length; i++) {
+						const item = colors[i];
+						c[i] = new Color(item).argb;
+					}
+				}
+
+				(org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawAtlas(this.contextPtr, image, x, t, c, toBlendMode(blendMode ?? 'destination-over') ?? 4);
+			}
+		} else {
+			if (image) {
+				const x = xform.reduce((accumulator: number[], currentValue) => {
+					accumulator.push(currentValue.scos, currentValue.ssin, currentValue.tx, currentValue.ty);
+					return accumulator;
+				}, []);
+
+				const t = tex.reduce((accumulator: number[], currentValue) => {
+					accumulator.push(currentValue.x, currentValue.y, currentValue.width, currentValue.height);
+					return accumulator;
+				}, []);
+
+				this.context.drawAtlas(image, x, t, colors ?? null, toBlendMode(blendMode ?? 'destination-over') ?? 4);
+			}
 		}
 	}
 

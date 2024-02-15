@@ -47,6 +47,7 @@ export class Paint extends LayoutBase {
 	_getStrokeWidth() {
 		return (this.parent as any)?.strokeWidth ?? this.strokeWidth ?? 1;
 	}
+
 	_getPaintStyle() {
 		const paintStyle = this.paintStyle;
 		if (paintStyle === 'stroke') {
@@ -74,7 +75,9 @@ export class Paint extends LayoutBase {
 
 		const style = this._getPaintStyle();
 
-		context.closePath();
+		//context.closePath();
+
+		context.globalAlpha = this.opacity;
 
 		if (style === 'fill') {
 			context.fillStyle = color;
@@ -85,7 +88,7 @@ export class Paint extends LayoutBase {
 			context.stroke();
 		}
 
-		context.beginPath();
+		//context.beginPath();
 	}
 }
 

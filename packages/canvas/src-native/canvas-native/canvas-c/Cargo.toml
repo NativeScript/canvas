@@ -18,7 +18,7 @@ canvas-webgl = { path = "../canvas-webgl", optional = true }
 parking_lot = "0.12.0"
 ureq = { version = "2.9.1", features = ["gzip"] }
 bytes = "1.5.0"
-ada-url = "2.2.0"
+ada-url = "2.2.1"
 log = { version = "0.4.20"}
 
 [target.'cfg(target_os="ios")'.dependencies]

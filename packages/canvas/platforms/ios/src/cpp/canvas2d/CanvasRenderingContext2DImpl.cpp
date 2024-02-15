@@ -15,6 +15,10 @@ v8::CFunction CanvasRenderingContext2DImpl::fast_stop_raf_(
 v8::CFunction CanvasRenderingContext2DImpl::fast_draw_point_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawPoint));
 
+//v8::CFunction CanvasRenderingContext2DImpl::fast_draw_atlas_(
+//        v8::CFunction::Make(CanvasRenderingContext2DImpl::FastDrawAtlas));
+
+
 v8::CFunction CanvasRenderingContext2DImpl::fast_ellipse_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::FastEllipse));
 
@@ -389,6 +393,12 @@ v8::Local<v8::FunctionTemplate> CanvasRenderingContext2DImpl::GetCtor(v8::Isolat
     tmpl->Set(ConvertToV8String(isolate, "drawFocusIfNeeded"),
               v8::FunctionTemplate::New(isolate, &DrawFocusIfNeeded));
 
+    tmpl->Set(ConvertToV8String(isolate, "drawAtlas"),
+              v8::FunctionTemplate::New(isolate, &DrawAtlas));
+
+
+//    SetFastMethod(isolate, tmpl, "drawAtlas", DrawAtlas, &fast_draw_atlas_, v8::Local<v8::Value>());
+
     SetFastMethodWithOverLoads(isolate, tmpl, "drawImage", DrawImage, fast_draw_overloads_,
                                v8::Local<v8::Value>());
 
@@ -596,30 +606,30 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
     auto points = args[1].As<v8::Array>();
     auto size = points->Length();
 
-    if (size == 0){return;}
+    if (size == 0) { return; }
     uint32_t pointMode = 0;
-    if(mode->IsUint32() && mode->Uint32Value(context).To(&pointMode)){
+    if (mode->IsUint32() && mode->Uint32Value(context).To(&pointMode)) {
         std::vector<float> store;
         auto len = size * 2;
         store.reserve(len);
         for (int i = 0; i < size; i++) {
 
             auto object = points->Get(
-                                      context, i).ToLocalChecked().As<v8::Object>();
+                    context, i).ToLocalChecked().As<v8::Object>();
 
             auto x = object->Get(context,
                                  ConvertToV8String(isolate, "x")).ToLocalChecked()->NumberValue(
-                                                                                                context).ToChecked();
+                    context).ToChecked();
             auto y = object->Get(context,
                                  ConvertToV8String(isolate, "y")).ToLocalChecked()->NumberValue(
-                                                                                                context).ToChecked();
+                    context).ToChecked();
             store.emplace_back((float) x);
             store.emplace_back((float) y);
         }
 
         canvas_native_context_draw_points(
-                                          ptr->GetContext(), pointMode,
-                                          store.data(), store.size());
+                ptr->GetContext(), pointMode,
+                store.data(), store.size());
 
 
         ptr->UpdateInvalidateState();
@@ -1877,6 +1887,143 @@ CanvasRenderingContext2DImpl::DrawFocusIfNeeded(const v8::FunctionCallbackInfo<v
 
 
 void
+CanvasRenderingContext2DImpl::DrawAtlas(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+    CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto count = args.Length();
+    auto value = args[0];
+
+    if (value->IsNullOrUndefined() || !value->IsObject()) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto image = value.As<v8::Object>();
+    auto imageType = GetNativeType(image);
+
+
+    auto xformValue = args[1];
+    auto texValue = args[2];
+    auto colorsValue = args[3];
+    auto blendValue = args[4];
+
+    if (xformValue->IsArray() && texValue->IsArray()) {
+
+        std::vector<float> xform;
+        std::vector<float> tex;
+
+        v8::Local<v8::Array> xformArray = xformValue.As<v8::Array>();
+        v8::Local<v8::Array> texArray = texValue.As<v8::Array>();
+
+        auto xformLen = xformArray->Length();
+        xform.reserve(xformLen);
+        auto texLen = texArray->Length();
+        tex.reserve(texLen);
+
+
+        for (int i = 0; i < xformLen; i++) {
+            xform.emplace_back((float) xformArray->Get(context, i).ToLocalChecked()->NumberValue(
+                    context).ToChecked());
+        }
+
+        for (int i = 0; i < texLen; i++) {
+            tex.emplace_back((float) texArray->Get(context, i).ToLocalChecked()->NumberValue(
+                    context).ToChecked());
+        }
+
+        std::vector<std::string> colors;
+        std::vector<const char *> colors_ref;
+
+        // dst-over
+        int32_t mode = 4;
+
+        if (blendValue->IsInt32()) {
+            blendValue->Int32Value(context).To(&mode);
+        }
+
+        if (colorsValue->IsArray()) {
+            auto colorsArray = colorsValue.As<v8::Array>();
+            auto colorsLen = colorsArray->Length();
+            colors.reserve(colorsLen);
+            colors_ref.reserve(colorsLen);
+            for (int i = 0; i < colorsLen; i++) {
+                auto str = ConvertFromV8String(isolate, texArray->Get(context, i).ToLocalChecked());
+                colors.emplace_back(str);
+                colors_ref.emplace_back(str.c_str());
+            }
+        }
+
+        switch (imageType) {
+            case NativeType::ImageAsset: {
+                auto image_asset = ImageAssetImpl::GetPointer(image);
+
+                if (image_asset != nullptr) {
+
+                    if (colors.empty()) {
+                        canvas_native_context_draw_atlas_asset(ptr->GetContext(),
+                                                               image_asset->GetImageAsset(),
+                                                               xform.data(), xform.size(),
+                                                               tex.data(),
+                                                               tex.size(), nullptr,
+                                                               0, mode);
+                    } else {
+                        canvas_native_context_draw_atlas_asset(ptr->GetContext(),
+                                                               image_asset->GetImageAsset(),
+                                                               xform.data(), xform.size(),
+                                                               tex.data(),
+                                                               tex.size(), colors_ref.data(),
+                                                               colors_ref.size(), mode);
+                    }
+
+
+                    ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            case NativeType::ImageBitmap: {
+                auto image_bitmap = ImageBitmapImpl::GetPointer(image);
+                if (image_bitmap != nullptr) {
+                    if (colors.empty()) {
+                        canvas_native_context_draw_atlas_asset(ptr->GetContext(),
+                                                               image_bitmap->GetImageAsset(),
+                                                               xform.data(), xform.size(),
+                                                               tex.data(),
+                                                               tex.size(), nullptr,
+                                                               0, mode);
+                    } else {
+                        canvas_native_context_draw_atlas_asset(ptr->GetContext(),
+                                                               image_bitmap->GetImageAsset(),
+                                                               xform.data(), xform.size(),
+                                                               tex.data(),
+                                                               tex.size(), colors_ref.data(),
+                                                               colors_ref.size(), mode);
+                    }
+                }
+            }
+                break;
+            case NativeType::CanvasRenderingContext2D: {
+                auto image_canvas = CanvasRenderingContext2DImpl::GetPointer(image);
+                if (image_canvas != nullptr) {
+
+                    ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            default:
+                break;
+        }
+    }
+
+
+}
+
+
+void
 CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
@@ -2800,8 +2947,6 @@ CanvasRenderingContext2DImpl::StrokeOval(const v8::FunctionCallbackInfo<v8::Valu
         ptr->UpdateInvalidateState();
     }
 }
-
-
 
 
 void

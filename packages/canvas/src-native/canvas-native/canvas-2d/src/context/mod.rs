@@ -132,16 +132,10 @@ impl State {
         }
     }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
-        let font = "10px sans-serif".to_owned();
-        let mut paint = Paint::default();
-        paint
-            .stroke_paint_mut()
-            .set_stroke_width(1.)
-            .set_stroke_miter(10.);
         Self {
             direction,
-            paint,
-            font,
+            paint: Paint::default(),
+            font: "10px sans-serif".to_owned(),
             font_style: Font::default(),
             text_align: TextAlign::default(),
             text_baseline: TextBaseLine::default(),

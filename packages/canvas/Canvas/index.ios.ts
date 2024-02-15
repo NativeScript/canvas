@@ -47,7 +47,7 @@ export class Canvas extends CanvasBase {
 	_didLayout = false;
 
 	static useSurface = false;
-	
+
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {
@@ -120,7 +120,6 @@ export class Canvas extends CanvasBase {
 	//@ts-ignore
 	get width() {
 		// const measuredWidth = this.getMeasuredWidth();
-		// console.log(measuredWidth);
 		// if (measuredWidth !== 0) {
 		// 	return measuredWidth / Screen.mainScreen.scale;
 		// }

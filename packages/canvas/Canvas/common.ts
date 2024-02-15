@@ -1060,6 +1060,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	};
 
 	private getSize(value, measuredSize, type): number {
+		if (value === 'auto') {
+			return Utils.layout.toDeviceIndependentPixels(Utils.layout.getMeasureSpecSize(Utils.layout.makeMeasureSpec(measuredSize, Utils.layout.UNSPECIFIED)));
+		}
 		if (typeof value === 'string') {
 			value = PercentLength.parse(value);
 		}

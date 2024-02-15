@@ -61,7 +61,7 @@ import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, envi
 // declare var com, java;
 let zen3d;
 import * as Svg from '@nativescript/canvas/SVG';
-import { issue54, issue93 } from './issues';
+import { drawChart, issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
@@ -631,6 +631,64 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
+		const ctx = this.canvas.getContext('2d');
+/*
+
+		const asset = new global.ImageAsset();
+		asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
+			const x: {
+				scos: number;
+				ssin: number;
+				tx: number;
+				ty: number;
+			}[] = [
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
+			];
+
+			const width = 50 //* Screen.mainScreen.scale;
+			const height = 38// * Screen.mainScreen.scale;
+			const t: { x: number; y: number; width: number; height: number }[] = [
+				{ x: 0, y: 0, width: width, height: height },
+				{ x: width, y: 0, width: width, height: height },
+				{ x: width * 2, y: 0, width: width, height: height },
+
+				{ x: 0, y: height, width: width, height: height },
+				{ x: width, y: height, width: width, height: height },
+				{ x: width * 2, y: height, width: width, height: height },
+
+				{ x: 0, y: height * 2, width: width, height: height },
+				{ x: width, y: height * 2, width: width, height: height },
+				{ x: width * 2, y: height * 2, width: width, height: height },
+
+				{ x: 0, y: height * 3, width: width, height: height },
+				{ x: width, y: height * 3, width: width, height: height },
+				{ x: width * 2, y: height * 3, width: width, height: height },
+			];
+
+			ctx.drawAtlas(asset, x, t, null, null);
+
+			// for (var i = 0; i < 4; i++) {
+			// 	for (var j = 0; j < 3; j++) {
+			// 		ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
+			// 	}
+			// }
+		});
+
+		*/
 		//this.pathIssue(this.canvas);
 		//lines(this.canvas);
 		//this.clearIssue(this.canvas);
@@ -721,7 +779,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-		circle_demo(this.canvas);
+		drawChart(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -889,8 +948,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//asset.loadFromUrlSync(`https://pbs.twimg.com/media/FQaPvSZXwAgfun7?format=jpg&name=large`);
 		//asset.loadFromUrlSync('https://upload.wikimedia.org/wikipedia/en/0/00/Spider-Man_No_Way_Home_poster.jpg');
 		//asset.loadFromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
-		console.log(asset.error);
-		console.log(asset.width, asset.height);
 		function draw() {
 			ctx.drawImage(asset, 0, 0, 300 * Screen.mainScreen.scale, 300 * Screen.mainScreen.scale);
 			requestAnimationFrame(draw);

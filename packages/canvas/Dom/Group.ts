@@ -1,8 +1,9 @@
 import { LayoutBase, Property, ShorthandProperty, Style, ViewBase } from '@nativescript/core';
-import { originXProperty, originYProperty } from '@nativescript/core/ui/core/view';
+import { View, originXProperty, originYProperty } from '@nativescript/core/ui/core/view';
 import { Image } from './Image';
 import { Paint } from './Paint';
-import { DOMMatrix } from "../Canvas2D/DOMMatrix"
+import { DOMMatrix } from '../Canvas2D/DOMMatrix';
+import { Canvas } from '../Canvas';
 
 export const matrixProperty = new Property<Group, DOMMatrix>({
 	name: 'matrix',
@@ -213,6 +214,21 @@ export class Group extends Paint {
 	get origin() {
 		// @ts-ignore
 		return this.style.origin;
+	}
+
+	_addCanvas(canvas: Canvas) {
+		this._canvas = canvas;
+		for (const child of this._children) {
+			child._addCanvas(canvas);
+		}
+	}
+
+	addChild(view: View): void {
+		if (view instanceof Paint || view instanceof Image) {
+			view._addCanvas(this._canvas);
+			(view as any)._inGroup = true;
+			this._children.add(view as any);
+		}
 	}
 
 	draw() {

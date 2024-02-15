@@ -16,13 +16,13 @@
 
 class ImageAssetImpl: ObjectWrapperImpl{
 public:
-    
+
     ImageAssetImpl(ImageAsset* asset);
 
     ~ImageAssetImpl();
 
     ImageAsset* GetImageAsset();
-    
+
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
     static ImageAssetImpl *GetPointer(const v8::Local<v8::Object>& object);
@@ -36,6 +36,9 @@ public:
 
     static void GetHeight(v8::Local<v8::String> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetAddr(v8::Local<v8::String> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetError(v8::Local<v8::String> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);

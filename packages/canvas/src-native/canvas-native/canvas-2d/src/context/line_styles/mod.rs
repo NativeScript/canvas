@@ -1,23 +1,31 @@
-use std::borrow::Cow;
 use std::os::raw::c_float;
 
 use skia_safe::PathEffect;
 
+use crate::context::Context;
 use crate::context::line_styles::line_cap::LineCap;
 use crate::context::line_styles::line_join::LineJoin;
-use crate::context::Context;
 
 pub mod line_cap;
 pub mod line_join;
 
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
+        let width = if self.state.use_device_scale {
+            width * self.device.density
+        }else {
+            width
+        };
         self.state.line_width = width;
         self.state.paint.stroke_paint_mut().set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
-        self.state.line_width
+        if self.state.did_use_device_scale {
+            self.state.line_width / self.device.density
+        } else {
+            self.state.line_width
+        }
     }
 
     pub fn set_line_cap(&mut self, cap: LineCap) {

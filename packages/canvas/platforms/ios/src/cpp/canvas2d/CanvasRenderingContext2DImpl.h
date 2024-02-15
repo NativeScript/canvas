@@ -126,6 +126,8 @@ public:
 
     static v8::CFunction fast_translate_;
 
+    static v8::CFunction fast_draw_atlas_;
+
 
     CanvasRenderingContext2DImpl(CanvasRenderingContext2D *context);
 
@@ -572,6 +574,51 @@ public:
             const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void DrawFocusIfNeeded(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void DrawAtlas(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+/*
+    static void FastDrawAtlas(v8::Local<v8::Object> receiver_obj, v8::Local<v8::Object> image_obj, v8::Local<v8::Array> xform, v8::Local<v8::Array> tex, v8::Local<v8::Array> xform) {
+        CanvasRenderingContext2DImpl *ptr = GetPointer(receiver_obj);
+        if (ptr == nullptr) {
+            return;
+        }
+
+
+        auto len = array->Length();
+        std::vector<float> buf;
+        buf.reserve(len);
+
+        auto copied = v8::TryToCopyAndConvertArrayToCppBuffer<v8::CTypeInfoBuilder<float>::Build().GetId(), float>(
+                array, buf.data(), len);
+
+        if (copied) {
+
+        auto imageType = GetNativeType(image_obj);
+        switch (imageType) {
+            case NativeType::ImageAsset: {
+                auto asset = ImageAssetImpl::GetPointer(image_obj);
+
+            }
+                break;
+            case NativeType::ImageBitmap: {
+                auto asset = ImageBitmapImpl::GetPointer(image_obj);
+            }
+                break;
+            case NativeType::CanvasRenderingContext2D: {
+                auto context = CanvasRenderingContext2DImpl::GetPointer(image_obj);
+
+            }
+                break;
+            default:
+                break;
+        }
+
+
+        ptr->UpdateInvalidateState();
+    }
+        */
 
     static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
 

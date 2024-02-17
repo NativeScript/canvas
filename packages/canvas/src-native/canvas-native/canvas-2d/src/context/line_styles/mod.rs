@@ -11,21 +11,23 @@ pub mod line_join;
 
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
-        let width = if self.state.use_device_scale {
-            width * self.device.density
-        }else {
-            width
-        };
+        // let width = if self.state.use_device_scale {
+        //     width * self.device.density
+        // }else {
+        //     width
+        // };
         self.state.line_width = width;
         self.state.paint.stroke_paint_mut().set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
-        if self.state.did_use_device_scale {
+      /*  if self.state.did_use_device_scale {
             self.state.line_width / self.device.density
         } else {
             self.state.line_width
-        }
+        } */
+
+        self.state.line_width
     }
 
     pub fn set_line_cap(&mut self, cap: LineCap) {

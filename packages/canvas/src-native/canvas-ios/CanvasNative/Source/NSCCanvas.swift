@@ -293,7 +293,7 @@ public class NSCCanvas: UIView {
         
         frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
         glkView.frame = bounds
-        
+        resize()
         setNeedsLayout()
         layoutIfNeeded()
     }
@@ -398,6 +398,8 @@ public class NSCCanvas: UIView {
     private func resize(){
         if(nativeGL == 0){return}
         EAGLContext.setCurrent(glkView.context)
+        glkView.deleteDrawable()
+        glkView.bindDrawable()
         if(is2D){
             glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))

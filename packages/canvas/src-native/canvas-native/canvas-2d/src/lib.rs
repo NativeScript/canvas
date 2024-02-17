@@ -1,19 +1,20 @@
 extern crate core;
 
-use base64::Engine;
-use image::EncodableLayout;
-use once_cell::sync::Lazy;
-use skia_safe::image::CachingHint;
-use skia_safe::wrapper::NativeTransmutableWrapper;
-use skia_safe::{
-    images, surfaces, AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point,
-    Surface,
-};
 use std::ffi::c_uint;
 
-use context::filter_quality::FilterQuality;
+use base64::Engine;
+use image::EncodableLayout;
+use skia_safe::{
+    AlphaType, ColorType, EncodedImageFormat, ImageInfo, images, IPoint, ISize, Point, surfaces
+    ,
+};
+use skia_safe::gpu::BackendTexture;
+use skia_safe::image::CachingHint;
+use skia_safe::wrapper::NativeTransmutableWrapper;
+
 use context::{Context, ContextWrapper};
-use parking_lot::Mutex;
+use context::filter_quality::FilterQuality;
+
 pub mod context;
 pub mod ffi;
 pub mod image_bitmap;
@@ -21,6 +22,13 @@ pub mod ios;
 pub mod prelude;
 pub mod svg;
 pub mod utils;
+
+const GR_GL_TEXTURE_2D: c_uint  = 0x0DE1;
+
+pub fn snapshot_to_backend_texture(context: &mut Context) -> Option<BackendTexture> {
+    let snapshot = context.surface.image_snapshot();
+    skia_safe::gpu::images::get_backend_texture_from_image(&snapshot, true).map(|(texture,_)| texture)
+}
 
 pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_uint) -> String {
     let mut ctx = context.surface.direct_context();

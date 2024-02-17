@@ -47,6 +47,7 @@ export class Canvas extends CanvasBase {
 	_didLayout = false;
 
 	static useSurface = false;
+	_renderer;
 
 	constructor(nativeInstance?) {
 		super();
@@ -286,7 +287,7 @@ export class Canvas extends CanvasBase {
 			}
 
 			if (this._canvas === undefined || this._canvas === null) {
-				return 0;
+				return;
 			}
 
 			const size = this._realSize;
@@ -317,7 +318,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					this._layoutNative();
+					this._layoutNative(true);
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
@@ -339,7 +340,7 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					this._layoutNative();
+					this._layoutNative(true);
 					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
@@ -356,7 +357,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._webgl2Context) {
-					this._layoutNative();
+					this._layoutNative(true);
 					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);

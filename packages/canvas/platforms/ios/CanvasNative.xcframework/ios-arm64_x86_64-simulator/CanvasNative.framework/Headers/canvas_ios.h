@@ -160,4 +160,10 @@ long long canvas_native_context_init_context_with_custom_surface(float width,
                                                                  float ppi,
                                                                  int direction);
 
+int64_t canvas_native_context_get_texture_from_2d(int64_t context);
+
+uint32_t canvas_native_context_backend_texture_get_id(int64_t texture);
+
+void canvas_native_context_backend_texture_destroy(int64_t texture);
+
 #endif /* CANVAS_IOS_H */

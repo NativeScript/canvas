@@ -71,8 +71,8 @@ impl Context {
 
         if density > 1. {
             surface.canvas().scale((density, density));
-            state.line_width = density;
-            state.paint.stroke_paint_mut().set_stroke_width(density);
+          //  state.line_width = density;
+          //  state.paint.stroke_paint_mut().set_stroke_width(density);
         } else {
             state.use_device_scale = false;
             state.did_use_device_scale = false;
@@ -152,8 +152,8 @@ impl Context {
 
             if density > 1. {
                 surface.canvas().scale((density, density));
-                context.state.line_width = density;
-                context.state.paint.stroke_paint_mut().set_stroke_width(density);
+              //  context.state.line_width = density;
+               // context.state.paint.stroke_paint_mut().set_stroke_width(density);
             } else {
                 context.state.use_device_scale = false;
                 context.state.did_use_device_scale = false;

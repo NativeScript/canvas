@@ -631,7 +631,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
-		const ctx = this.canvas.getContext('2d');
+	//	const ctx = this.canvas.getContext('2d');
 /*
 
 		const asset = new global.ImageAsset();
@@ -779,7 +779,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
-		drawChart(this.canvas);
+		//drawChart(this.canvas);
 		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
@@ -855,7 +855,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
-		//main(this.canvas);
+		main(this.canvas);
 		//this.letterSpacing(this.canvas);
 		//this.wordSpacing(this.canvas);
 		//imageProcessing(this.canvas);

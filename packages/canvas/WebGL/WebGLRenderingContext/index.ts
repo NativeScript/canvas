@@ -42,6 +42,13 @@ import { ImageBitmap } from '../../ImageBitmap';
 
 import { Helpers } from '../../helpers';
 
+enum ContextType {
+	None,
+	Canvas,
+	WebGL,
+	WebGL2,
+}
+
 let ctor;
 
 export class WebGLRenderingContextBase extends WebGLRenderingCommon {
@@ -834,6 +841,20 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof Canvas) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
+
+				if (global.isAndroid) {
+					this.native.texImage2D(target, level, internalformat, width, height, border.native);
+				} else {
+					if ((border as any)._contextType === ContextType.Canvas) {
+						if (!(border as any)._renderer) {
+							(border as any)._renderer = Utils.setupRender();
+							(border as any)._renderer.createSurface();
+						}
+						(border as any)._renderer.texImage2D(target, level, internalformat, width, height, (border as any)._canvas, this.canvas._canvas, this.native.__flipY);
+					} else {
+						this.native.texImage2D(target, level, internalformat, width, height, border.native);
+					}
+				}
 			} else if (global.isAndroid && border instanceof android.graphics.Bitmap) {
 				// todo ios
 				this.native.texImage2D(target, level, internalformat, width, height, border);
@@ -855,7 +876,19 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 				}
 			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
-				this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
+				if (global.isAndroid) {
+					this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
+				} else {
+					if (border._canvas._contextType === ContextType.Canvas) {
+						if (!border._canvas._renderer) {
+							border._canvas._renderer = Utils.setupRender();
+							border._canvas._renderer.createSurface();
+						}
+						border._canvas._renderer.texImage2D(target, level, internalformat, width, height, border._canvas._canvas, this.canvas._canvas, this.native.__flipY);
+					} else {
+						this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
+					}
+				}
 			}
 		}
 	}

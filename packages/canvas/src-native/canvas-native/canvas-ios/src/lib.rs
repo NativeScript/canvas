@@ -724,3 +724,39 @@ pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
     Box::into_raw(Box::new(ctx_2d)) as i64
 
 }
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_get_texture_from_2d(context: i64) -> i64 {
+    if context == 0 {
+        return 0
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    let mut ctx = context.get_context_mut();
+    canvas_2d::snapshot_to_backend_texture(&mut ctx)
+        .map(|texture| Box::into_raw(Box::new(texture)) as i64)
+        .unwrap_or(0)
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_backend_texture_get_id(texture: i64) -> u32 {
+    if texture == 0 {
+        return 0;
+    }
+
+    let texture = texture as *const skia_safe::gpu::BackendTexture;
+    let texture = unsafe { &*texture };
+    texture.gl_texture_info().map(|info| info.id).unwrap_or(0)
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_backend_texture_destroy(texture: i64) {
+    if texture == 0 {
+        return;
+    }
+
+    let texture = texture as *mut skia_safe::gpu::BackendTexture;
+    let _ = unsafe {Box::from_raw(texture)};
+}

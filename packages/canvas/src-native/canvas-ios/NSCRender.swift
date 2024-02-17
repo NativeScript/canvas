@@ -77,7 +77,188 @@ public class NSCRender: NSObject {
         return cgImage.bitmapInfo.intersection(.byteOrderMask)
     }
 
+    public func texImage2D(_ target: Int32 , _ level: Int32, _ internalFormat: Int32, _ format: Int32, _ type: Int32, _ source: NSCCanvas, _ dest: NSCCanvas,_ flipYWebGL: Bool){
+        
+        canvas_native_gl_make_current(source.nativeGL)
+
+        let source_texture = canvas_native_context_get_texture_from_2d(source.native2DContext)
+        
+        var textureID: GLuint = canvas_native_context_backend_texture_get_id(source_texture)
     
+        canvas_native_gl_make_current(dest.nativeGL)
+        
+        var previousViewPort: [Int32] = Array(repeating: 0, count: 4);
+        var previousActiveTexture = GLint()
+        var previousTexture = GLint()
+        var previousProgram = GLint()
+        var previousFrameBuffer = GLint()
+        var previousRenderBuffer = GLint()
+        var previousVertexArray = GLint()
+        
+        glGetIntegerv(GLenum(GL_VIEWPORT), &previousViewPort)
+        glGetIntegerv(
+            GLenum(GL_ACTIVE_TEXTURE),
+            &previousActiveTexture
+        )
+        glGetIntegerv(
+            GLenum(GL_TEXTURE_BINDING_2D),
+            &previousTexture
+        )
+        glGetIntegerv(
+            GLenum(GL_CURRENT_PROGRAM),
+            &previousProgram
+        )
+        glGetIntegerv(
+            GLenum(GL_FRAMEBUFFER_BINDING),
+            &previousFrameBuffer
+        )
+        
+        glGetIntegerv(
+            GLenum(GL_RENDERBUFFER_BINDING),
+            &previousRenderBuffer
+        )
+        
+        glGetIntegerv(
+            GLenum(GL_VERTEX_ARRAY_BINDING),
+            &previousVertexArray
+        )
+        
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), fbo)
+        glBindRenderbuffer(GLenum(GL_RENDERBUFFER), rbo)
+        
+        let width = Int(source.width)
+        let height = Int(source.height)
+        if (self.width != width || self.height != height) {
+            glRenderbufferStorage(GLenum(GL_RENDERBUFFER), GLenum(GL_DEPTH24_STENCIL8), GLsizei(width), GLsizei(height))
+            glFramebufferRenderbuffer(GLenum(GL_FRAMEBUFFER), GLenum(GL_DEPTH_STENCIL_ATTACHMENT), GLenum(GL_RENDERBUFFER), rbo)
+            glBindTexture(GLenum(GL_TEXTURE_2D), GLuint(previousTexture))
+            
+            
+            glTexImage2D(
+                GLenum(GL_TEXTURE_2D),
+                0,
+                internalFormat,
+                GLsizei(width),
+                GLsizei(height),
+                0,
+                GLenum(format),
+                GLenum(GL_UNSIGNED_BYTE),
+                nil
+            )
+            
+            glTexParameteri(
+                GLenum(GL_TEXTURE_2D),
+                GLenum(GL_TEXTURE_MAG_FILTER),
+                GL_LINEAR
+            )
+            
+            glTexParameteri(
+                GLenum(GL_TEXTURE_2D),
+                GLenum(GL_TEXTURE_MIN_FILTER),
+                GL_LINEAR
+            )
+            
+            glTexParameteri(
+                GLenum(GL_TEXTURE_2D),
+                GLenum(GL_TEXTURE_WRAP_S),
+                GL_CLAMP_TO_EDGE
+            )
+            
+            glTexParameteri(
+                GLenum(GL_TEXTURE_2D),
+                GLenum(GL_TEXTURE_WRAP_T),
+                GL_CLAMP_TO_EDGE
+            )
+            
+            glFramebufferTexture2D(
+                GLenum(GL_FRAMEBUFFER),
+                GLenum(GL_COLOR_ATTACHMENT0),
+                GLenum(GL_TEXTURE_2D),
+                GLuint(previousTexture),
+                0
+            )
+            
+            if (glCheckFramebufferStatus(GLenum(GL_FRAMEBUFFER))
+                    != GL_FRAMEBUFFER_COMPLETE)
+            {
+                print("TextureRender Error: Could not setup frame buffer.")
+            }
+            
+            self.width = Int(width)
+            self.height = Int(height)
+            
+        }
+        
+        glClearColor(0, 0, 0, 1)
+        glClear(GLbitfield(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
+        
+        
+        glUseProgram(mProgram)
+        glBindBuffer(GLenum(GL_ARRAY_BUFFER), ab)
+        
+        glVertexAttribPointer(
+            GLuint(pos),
+            2,
+            GLenum(GL_FLOAT),
+            0,
+            GLsizei(2 * MemoryLayout.size(ofValue: Float.self)),
+            nil
+        )
+        
+        glEnableVertexAttribArray(GLuint(pos))
+        
+        
+        glViewport(0, 0, GLsizei(width), GLsizei(height))
+        
+ 
+        
+        glBindTexture(GLenum(GL_TEXTURE_2D), textureID)
+        
+        
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+        glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+        
+        glUniform1i(
+            samplerPos,
+            previousActiveTexture - GL_TEXTURE0
+        )
+        
+        
+        glViewport(
+            0,
+            0,
+            GLsizei(width),
+            GLsizei(height)
+        )
+        
+        glDrawArrays(GLenum(GL_TRIANGLE_STRIP), 0, 4)
+        
+       // glFinish()
+        
+        glBindRenderbuffer(GLenum(GL_RENDERBUFFER), GLuint(previousRenderBuffer))
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(previousFrameBuffer))
+        
+        glViewport(
+            previousViewPort[0],
+            previousViewPort[1],
+            previousViewPort[2],
+            previousViewPort[3]
+        )
+        
+        glBindTexture(GLenum(GL_TEXTURE_2D), GLuint(previousTexture))
+        
+        glUseProgram(GLuint(previousProgram))
+        
+        glBindVertexArray(GLuint(previousVertexArray))
+        
+        canvas_native_context_backend_texture_destroy(source_texture)
+        
+        
+    }
+    
+        /*
 
     public func texImage2D(_ target: Int32 , _ level: Int32, _ internalFormat: Int32, _ format: Int32, _ type: Int32, _ source: NSCCanvas, _ dest: NSCCanvas,_ flipYWebGL: Bool){
        canvas_native_gl_make_current(source.nativeGL)
@@ -99,7 +280,7 @@ public class NSCRender: NSObject {
         let sourceHeight = source.drawingBufferHeight
         
        
-        var start = CFAbsoluteTimeGetCurrent()
+       // var start = CFAbsoluteTimeGetCurrent()
         
         var previous_framebuffer: GLint = 0
     
@@ -213,9 +394,9 @@ public class NSCRender: NSObject {
         glDeleteTextures(1, &texture)
         glDeleteBuffers(GLsizei(pbos.count), &pbos)
         
-        print("glMapBufferOES", CFAbsoluteTimeGetCurrent() - start)
+      //  print("glMapBufferOES", CFAbsoluteTimeGetCurrent() - start)
         
-        start = CFAbsoluteTimeGetCurrent()
+      //  start = CFAbsoluteTimeGetCurrent()
         canvas_native_gl_make_current(dest.nativeGL)
         
         
@@ -241,7 +422,7 @@ public class NSCRender: NSObject {
 //        glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), unpack)
 //        glPixelStorei(GLenum(GL_PACK_ALIGNMENT), pack)
         
-        print("glTexImage2D \(CFAbsoluteTimeGetCurrent() - start)")
+   //     print("glTexImage2D \(CFAbsoluteTimeGetCurrent() - start)")
         
         let error = glGetError()
         if error != GLenum(GL_NO_ERROR) {
@@ -249,6 +430,7 @@ public class NSCRender: NSObject {
         }
         
     }
+    */
     
     func drawFrame(buffer:CVPixelBuffer, width: Int, height: Int, internalFormat: Int32,
                    format: Int32,

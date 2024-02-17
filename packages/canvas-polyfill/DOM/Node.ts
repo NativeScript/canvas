@@ -77,7 +77,7 @@ export class Node {
 
 	addEventListener(eventName, listener, thisArg) {
 		this._checkEmitter();
-		thisArg = thisArg || this;
+		thisArg = typeof thisArg === 'object' ? thisArg : this;
 		if (this.emitter.on) {
 			this.emitter.on(eventName, listener, thisArg);
 		} else if (this.emitter.addEventListener) {

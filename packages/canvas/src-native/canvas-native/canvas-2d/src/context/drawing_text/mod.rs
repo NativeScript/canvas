@@ -95,10 +95,8 @@ impl Context {
         let slant = self.state.font_style.style;
         let font_style = skia_safe::FontStyle::new(weight, stretch.into(), slant.into());
         let text_direction = self.state.direction;
-        let mut families = vec![];
-        for family in self.state.font_style.family.split(',') {
-            families.push(family);
-        }
+        let mut families: Vec<_> = self.state.font_style.family.split(',').collect();
+
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());
         text_style.set_font_size(self.state.font_style.size);
@@ -261,13 +259,20 @@ impl Context {
                 } else {
                     1.0
                 };
+                self.surface.canvas().save();
                 if need_scale {
-                    self.surface.canvas().save();
-                    self.surface.canvas().scale((ratio, 1.0));
+                    let matrix = skia_safe::Matrix::scale((ratio, 1.0));
+                    self.surface.canvas().concat(&matrix);
+                    // self.surface.canvas().scale((ratio, 1.0));
                 }
                 let paint_y = y + baseline_offset;
 
                 text_style.set_foreground_paint(paint);
+
+                let scale = self.device.density;
+                let matrix = skia_safe::Matrix::scale((scale, scale));
+
+                self.surface.canvas().concat(&matrix);
 
                 paragraph.paint(
                     self.surface.canvas(),
@@ -280,9 +285,8 @@ impl Context {
                         paint_y,
                     ),
                 );
-                if need_scale {
-                    self.surface.canvas().restore();
-                }
+
+                self.surface.canvas().restore();
             }
             Some(text_metrics) => {
                 let offset = -baseline_offset - alphabetic_baseline;

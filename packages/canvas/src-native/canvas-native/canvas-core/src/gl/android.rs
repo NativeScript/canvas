@@ -1140,6 +1140,32 @@ impl GLContext {
             .unwrap_or_default()
     }
 
+
+
+    #[inline(always)]
+    pub fn get_surface_dimensions(&self) -> (i32, i32) {
+        let inner = self.inner.read();
+        inner
+            .surface
+            .as_ref()
+            .map(|v| match v {
+                crate::gl::SurfaceHelper::Window(window) => (
+                    window.width().unwrap_or_default() as i32,
+                    window.height().unwrap_or_default() as i32,
+                ),
+                crate::gl::SurfaceHelper::Pbuffer(buffer) => (
+                    buffer.width().unwrap_or_default() as i32,
+                    buffer.height().unwrap_or_default() as i32,
+                ),
+                crate::gl::SurfaceHelper::Pixmap(pixmap) => (
+                    pixmap.width().unwrap_or_default() as i32,
+                    pixmap.height().unwrap_or_default() as i32,
+                ),
+            })
+            .unwrap_or_default()
+    }
+
+
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
         RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
     }

@@ -7,6 +7,7 @@ use std::ffi::CString;
 use std::os::raw::c_void;
 use std::rc::Rc;
 
+use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gl::GLContext;
 
 pub fn get_sdk_version() -> i32 {
@@ -87,6 +88,69 @@ pub enum WebGLVersion {
     NONE,
 }
 
+impl TryFrom<i32> for WebGLVersion {
+    type Error = &'static str;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::NONE),
+            1 => Ok(Self::V1),
+            2 => Ok(Self::V2),
+            _ => Err("Invalid value!"),
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
+pub enum WebGLPowerPreference {
+    Default,
+    HighPerformance,
+    LowPower,
+}
+
+impl TryFrom<i32> for WebGLPowerPreference {
+    type Error = &'static str;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Default),
+            1 => Ok(Self::HighPerformance),
+            2 => Ok(Self::LowPower),
+            _ => Err("Invalid value!"),
+        }
+    }
+}
+
+impl Into<PowerPreference> for WebGLPowerPreference {
+    fn into(self) -> PowerPreference {
+        match self {
+            WebGLPowerPreference::Default => PowerPreference::Default,
+            WebGLPowerPreference::HighPerformance => PowerPreference::HighPerformance,
+            WebGLPowerPreference::LowPower => PowerPreference::LowPower,
+        }
+    }
+}
+
+impl From<PowerPreference> for WebGLPowerPreference {
+    fn from(value: PowerPreference) -> Self {
+        match value {
+            PowerPreference::Default => WebGLPowerPreference::Default,
+            PowerPreference::HighPerformance => WebGLPowerPreference::HighPerformance,
+            PowerPreference::LowPower => WebGLPowerPreference::LowPower,
+        }
+    }
+}
+
+impl Into<i32> for WebGLPowerPreference {
+    fn into(self) -> i32 {
+        match self {
+            WebGLPowerPreference::Default => 0,
+            WebGLPowerPreference::HighPerformance => 1,
+            WebGLPowerPreference::LowPower => 2,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct WebGLStateInner {
     version: WebGLVersion,
@@ -96,7 +160,7 @@ pub(crate) struct WebGLStateInner {
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: String,
+    power_preference: WebGLPowerPreference,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -143,7 +207,7 @@ impl WebGLState {
             antialias: true,
             depth: true,
             fail_if_major_performance_caveat: false,
-            power_preference: "default".to_string(),
+            power_preference: WebGLPowerPreference::Default,
             premultiplied_alpha: true,
             preserve_drawing_buffer: false,
             stencil: false,
@@ -178,7 +242,7 @@ impl WebGLState {
         antialias: bool,
         depth: bool,
         fail_if_major_performance_caveat: bool,
-        power_preference: &str,
+        power_preference: WebGLPowerPreference,
         premultiplied_alpha: bool,
         preserve_drawing_buffer: bool,
         stencil: bool,
@@ -193,7 +257,7 @@ impl WebGLState {
             antialias,
             depth,
             fail_if_major_performance_caveat,
-            power_preference: power_preference.to_string(),
+            power_preference,
             premultiplied_alpha,
             preserve_drawing_buffer,
             stencil,
@@ -237,6 +301,11 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
+
+    pub fn get_dimensions(&self) -> (i32, i32) {
+        self.get().gl_context.get_surface_dimensions()
+    }
+
     pub(crate) fn set_antialias(&self, value: bool) {
         self.get_mut().antialias = value;
     }
@@ -251,7 +320,7 @@ impl WebGLState {
     pub(crate) fn set_gl_context(&mut self, context: GLContext) {
         self.get_mut().gl_context = context;
     }
-    pub fn get_webgl_version(&mut self) -> WebGLVersion {
+    pub fn get_webgl_version(&self) -> WebGLVersion {
         self.get().version
     }
     pub fn get_context_attributes(&self) -> ContextAttributes {
@@ -261,7 +330,7 @@ impl WebGLState {
             antialias: lock.antialias,
             depth: lock.depth,
             fail_if_major_performance_caveat: lock.fail_if_major_performance_caveat,
-            power_preference: lock.power_preference.clone(),
+            power_preference: lock.power_preference,
             premultiplied_alpha: lock.premultiplied_alpha,
             preserve_drawing_buffer: lock.preserve_drawing_buffer,
             stencil: lock.stencil,
@@ -331,8 +400,8 @@ impl WebGLState {
         self.get().fail_if_major_performance_caveat
     }
 
-    pub fn get_power_preference(&self) -> String {
-        self.get().power_preference.clone()
+    pub fn get_power_preference(&self) -> WebGLPowerPreference {
+        self.get().power_preference
     }
 
     pub fn get_premultiplied_alpha(&self) -> bool {
@@ -412,13 +481,12 @@ impl WebGLState {
     #[inline(always)]
     pub fn make_current_and_swap_buffers(&self) -> bool {
         let current = self.get();
-        if !current.gl_context.make_current(){
+        if !current.gl_context.make_current() {
             return false;
         }
 
-        return  current.gl_context.swap_buffers()
+        return current.gl_context.swap_buffers();
     }
-
 
     pub fn remove_if_current(&self) {
         self.get().gl_context.remove_if_current();
@@ -476,7 +544,7 @@ impl Default for WebGLState {
             antialias: true,
             depth: true,
             fail_if_major_performance_caveat: false,
-            power_preference: "default".to_string(),
+            power_preference: WebGLPowerPreference::Default,
             premultiplied_alpha: true,
             preserve_drawing_buffer: false,
             stencil: false,
@@ -619,7 +687,7 @@ pub struct ContextAttributes {
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: String,
+    power_preference: WebGLPowerPreference,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -634,7 +702,7 @@ impl ContextAttributes {
         antialias: bool,
         depth: bool,
         fail_if_major_performance_caveat: bool,
-        power_preference: &str,
+        power_preference: WebGLPowerPreference,
         premultiplied_alpha: bool,
         preserve_drawing_buffer: bool,
         stencil: bool,
@@ -647,7 +715,7 @@ impl ContextAttributes {
             antialias,
             depth,
             fail_if_major_performance_caveat,
-            power_preference: power_preference.to_string(),
+            power_preference,
             premultiplied_alpha,
             preserve_drawing_buffer,
             stencil,
@@ -672,8 +740,8 @@ impl ContextAttributes {
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.fail_if_major_performance_caveat
     }
-    pub fn get_power_preference(&self) -> String {
-        self.power_preference.clone()
+    pub fn get_power_preference(&self) -> WebGLPowerPreference {
+        self.power_preference
     }
     pub fn get_premultiplied_alpha(&self) -> bool {
         self.premultiplied_alpha
@@ -704,8 +772,8 @@ impl ContextAttributes {
         self.fail_if_major_performance_caveat = value;
     }
 
-    pub fn set_power_preference(&mut self, value: &str) {
-        self.power_preference = value.to_string();
+    pub fn set_power_preference(&mut self, value: WebGLPowerPreference) {
+        self.power_preference = value;
     }
 
     pub fn set_premultiplied_alpha(&mut self, value: bool) {

@@ -7,10 +7,10 @@ use parking_lot::RwLock;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
-pub use canvas_c::*;
 use canvas_c::CanvasRenderingContext2D;
 use canvas_c::PaintStyle;
-use canvas_core::context_attributes::ContextAttributes;
+pub use canvas_c::*;
+use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
 
@@ -28,26 +28,6 @@ pub(crate) struct iOSGLContext {
     ios_view: iOSView,
 }
 
-const VERTEX_SHADER: &str = "
-    precision highp float;
-    attribute vec4 aPosition;
-    uniform mat4 uTextureMatrix;
-    varying vec2 TexCoord;
-    void main(){
-    vec2 clipSpace = (1.0 - 2.0 * aPosition.xy);
-    TexCoord = aPosition.xy;
-    gl_Position = vec4(clipSpace, 0.0, 1.0);
-    }
-    ";
-
-const FRAGMENT_SHADER: &str = "
-    precision highp float;
-    varying vec2 TexCoord;
-    uniform sampler2D uSampler;
-    void main(){
-    gl_FragColor = texture2D(uSampler, TexCoord);
-    }
-    ";
 #[no_mangle]
 pub extern "C" fn canvas_native_init_ios_gl(
     view: i64,
@@ -55,7 +35,7 @@ pub extern "C" fn canvas_native_init_ios_gl(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -70,29 +50,29 @@ pub extern "C" fn canvas_native_init_ios_gl(
 
     env_logger::init();
 
-    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+    if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
+        if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+            let mut attrs = ContextAttributes::new(
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+            );
 
-    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
-        let mut attrs = ContextAttributes::new(
-            alpha,
-            antialias,
-            depth,
-            fail_if_major_performance_caveat,
-            power_preference.as_ref(),
-            premultiplied_alpha,
-            preserve_drawing_buffer,
-            stencil,
-            desynchronized,
-            xr_compatible,
-            is_canvas,
-        );
-
-        if let Some(mut gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
-            return Box::into_raw(Box::new(iOSGLContext {
-                ios_view: iOSView::OnScreen(ios_view),
-                gl_context,
-                context_attributes: attrs,
-            })) as i64;
+            if let Some(mut gl_context) = GLContext::create_window_context(&mut attrs, ios_view) {
+                return Box::into_raw(Box::new(iOSGLContext {
+                    ios_view: iOSView::OnScreen(ios_view),
+                    gl_context,
+                    context_attributes: attrs,
+                })) as i64;
+            }
         }
     }
 
@@ -106,7 +86,7 @@ pub extern "C" fn canvas_native_init_ios_gl_with_shared_gl(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -124,36 +104,36 @@ pub extern "C" fn canvas_native_init_ios_gl_with_shared_gl(
         return 0;
     }
 
-    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+    if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
+        if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+            let mut attrs = ContextAttributes::new(
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+            );
 
-    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
-        let mut attrs = ContextAttributes::new(
-            alpha,
-            antialias,
-            depth,
-            fail_if_major_performance_caveat,
-            power_preference.as_ref(),
-            premultiplied_alpha,
-            preserve_drawing_buffer,
-            stencil,
-            desynchronized,
-            xr_compatible,
-            is_canvas,
-        );
+            let shared_context = shared_context as *mut iOSGLContext;
+            let shared_context = unsafe { &*shared_context };
 
-        let shared_context = shared_context as *mut iOSGLContext;
-        let shared_context = unsafe { &*shared_context };
-
-        if let Some(mut gl_context) = GLContext::create_shared_window_context(
-            &mut attrs,
-            ios_view,
-            &shared_context.gl_context,
-        ) {
-            return Box::into_raw(Box::new(iOSGLContext {
-                ios_view: iOSView::OnScreen(ios_view),
-                gl_context,
-                context_attributes: attrs,
-            })) as i64;
+            if let Some(mut gl_context) = GLContext::create_shared_window_context(
+                &mut attrs,
+                ios_view,
+                &shared_context.gl_context,
+            ) {
+                return Box::into_raw(Box::new(iOSGLContext {
+                    ios_view: iOSView::OnScreen(ios_view),
+                    gl_context,
+                    context_attributes: attrs,
+                })) as i64;
+            }
         }
     }
 
@@ -168,7 +148,7 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -181,28 +161,29 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl(
         return 0;
     }
 
-    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+    if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
+        let mut attrs = ContextAttributes::new(
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference,
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            is_canvas,
+        );
 
-    let mut attrs = ContextAttributes::new(
-        alpha,
-        antialias,
-        depth,
-        fail_if_major_performance_caveat,
-        power_preference.as_ref(),
-        premultiplied_alpha,
-        preserve_drawing_buffer,
-        stencil,
-        desynchronized,
-        xr_compatible,
-        is_canvas,
-    );
-
-    if let Some(mut gl_context) = GLContext::create_offscreen_context(&mut attrs, width, height) {
-        return Box::into_raw(Box::new(iOSGLContext {
-            ios_view: iOSView::OffScreen,
-            gl_context,
-            context_attributes: attrs,
-        })) as i64;
+        if let Some(mut gl_context) = GLContext::create_offscreen_context(&mut attrs, width, height)
+        {
+            return Box::into_raw(Box::new(iOSGLContext {
+                ios_view: iOSView::OffScreen,
+                gl_context,
+                context_attributes: attrs,
+            })) as i64;
+        }
     }
 
     0
@@ -216,7 +197,7 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -234,36 +215,36 @@ pub extern "C" fn canvas_native_init_offscreen_ios_gl_with_shared_gl(
         return 0;
     }
 
-    let power_preference = unsafe { CStr::from_ptr(power_preference).to_string_lossy() };
+    if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
+        let mut attrs = ContextAttributes::new(
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference,
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            is_canvas,
+        );
 
-    let mut attrs = ContextAttributes::new(
-        alpha,
-        antialias,
-        depth,
-        fail_if_major_performance_caveat,
-        power_preference.as_ref(),
-        premultiplied_alpha,
-        preserve_drawing_buffer,
-        stencil,
-        desynchronized,
-        xr_compatible,
-        is_canvas,
-    );
+        let shared_context = shared_context as *mut iOSGLContext;
+        let shared_context = unsafe { &*shared_context };
 
-    let shared_context = shared_context as *mut iOSGLContext;
-    let shared_context = unsafe { &*shared_context };
-
-    if let Some(mut gl_context) = GLContext::create_shared_offscreen_context(
-        &mut attrs,
-        width,
-        height,
-        &shared_context.gl_context,
-    ) {
-        return Box::into_raw(Box::new(iOSGLContext {
-            ios_view: iOSView::OffScreen,
-            gl_context,
-            context_attributes: attrs,
-        })) as i64;
+        if let Some(mut gl_context) = GLContext::create_shared_offscreen_context(
+            &mut attrs,
+            width,
+            height,
+            &shared_context.gl_context,
+        ) {
+            return Box::into_raw(Box::new(iOSGLContext {
+                ios_view: iOSView::OffScreen,
+                gl_context,
+                context_attributes: attrs,
+            })) as i64;
+        }
     }
 
     0
@@ -598,12 +579,8 @@ pub extern "C" fn canvas_native_context_draw_image_with_bytes(
     )
 }
 
-
-
 #[no_mangle]
-pub extern "C" fn canvas_native_svg_draw_from_string(context: i64,
-                                     svg: *const c_char) {
-
+pub extern "C" fn canvas_native_svg_draw_from_string(context: i64, svg: *const c_char) {
     if context == 0 || svg.is_null() {
         return;
     }
@@ -612,7 +589,7 @@ pub extern "C" fn canvas_native_svg_draw_from_string(context: i64,
 
     let context = unsafe { &mut *context };
 
-    let svg = unsafe { CStr::from_ptr(svg)};
+    let svg = unsafe { CStr::from_ptr(svg) };
 
     let mut context = context.get_context_mut();
     let svg = svg.to_string_lossy();
@@ -620,10 +597,7 @@ pub extern "C" fn canvas_native_svg_draw_from_string(context: i64,
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_svg_draw_from_path(
-    context: i64,
-    path: *const c_char,
-) {
+pub extern "C" fn canvas_native_svg_draw_from_path(context: i64, path: *const c_char) {
     if context == 0 || path.is_null() {
         return;
     }
@@ -632,7 +606,7 @@ pub extern "C" fn canvas_native_svg_draw_from_path(
 
     let context = unsafe { &mut *context };
 
-    let path = unsafe { CStr::from_ptr(path)};
+    let path = unsafe { CStr::from_ptr(path) };
 
     let mut context = context.get_context_mut();
     let path = path.to_string_lossy();
@@ -646,7 +620,7 @@ pub extern "C" fn canvas_native_context_custom_with_buffer_flush(
     size: usize,
     width: f32,
     height: f32,
-    alpha: bool
+    alpha: bool,
 ) {
     unsafe {
         if context == 0 {
@@ -670,26 +644,19 @@ pub extern "C" fn canvas_native_context_custom_with_buffer_flush(
         let mut context = context.get_context_mut();
 
         let data = std::slice::from_raw_parts_mut(bytes, size);
-        let mut surface =
-            skia_safe::surfaces::wrap_pixels(&info, data, None, None).unwrap();
+        let mut surface = skia_safe::surfaces::wrap_pixels(&info, data, None, None).unwrap();
         let canvas = surface.canvas();
         let mut paint = skia_safe::Paint::default();
         paint.set_anti_alias(true);
         paint.set_style(skia_safe::PaintStyle::Fill);
         paint.set_blend_mode(skia_safe::BlendMode::Clear);
         canvas.draw_rect(
-            skia_safe::Rect::from_xywh(
-                0f32,
-                0f32,
-                width,
-                height,
-            ),
+            skia_safe::Rect::from_xywh(0f32, 0f32, width, height),
             &paint,
         );
         context.draw_on_surface(&mut surface);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
@@ -701,7 +668,6 @@ pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
     ppi: f32,
     direction: c_int,
 ) -> c_longlong {
-
     let mut ctx_2d = CanvasRenderingContext2D::new(
         canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new(
             width as f32,
@@ -722,14 +688,12 @@ pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
     }
 
     Box::into_raw(Box::new(ctx_2d)) as i64
-
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_texture_from_2d(context: i64) -> i64 {
     if context == 0 {
-        return 0
+        return 0;
     }
 
     let context = context as *mut CanvasRenderingContext2D;
@@ -758,5 +722,5 @@ pub extern "C" fn canvas_native_context_backend_texture_destroy(texture: i64) {
     }
 
     let texture = texture as *mut skia_safe::gpu::BackendTexture;
-    let _ = unsafe {Box::from_raw(texture)};
+    let _ = unsafe { Box::from_raw(texture) };
 }

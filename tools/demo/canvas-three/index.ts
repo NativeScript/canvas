@@ -74,7 +74,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		//this.geoColors(this.canvas);
+		this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);
@@ -111,7 +111,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
 
@@ -1333,8 +1333,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// shadow
 
 			var shadow = document.createElement('canvas');
-			shadow.width = 256;
-			shadow.height = 256;
+			shadow.width = 512;
+			shadow.height = 512;
 
 			var context = shadow.getContext('2d', { alpha: true });
 

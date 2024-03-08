@@ -30,11 +30,11 @@ pub fn to_image(
     let image_slice: &[u8] = unsafe { std::slice::from_raw_parts(image_array, image_size) };
     let info = ImageInfo::new(
         ISize::new(width, height),
-        ColorType::RGB565,
-        AlphaType::Premul,
+        ColorType::RGBA8888,
+        AlphaType::Unpremul,
         None,
     );
-    Image::from_raster_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
+    skia_safe::images::raster_from_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
 }
 
 pub fn to_image_encoded(image_array: *const u8, image_size: usize) -> Option<Image> {
@@ -54,7 +54,13 @@ pub fn from_image_slice_no_copy(image_slice: &[u8], width: c_int, height: c_int)
         None,
     );
 
-    unsafe { Image::from_raster_data(&info, Data::new_bytes(image_slice), info.min_row_bytes()) }
+    unsafe {
+        skia_safe::images::raster_from_data(
+            &info,
+            Data::new_bytes(image_slice),
+            info.min_row_bytes(),
+        )
+    }
 }
 
 pub fn from_bitmap_slice(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
@@ -74,7 +80,7 @@ pub fn from_bitmap_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opt
         );
     }
 
-    Image::from_bitmap(&bm)
+    skia_safe::images::raster_from_bitmap(&bm)
 }
 
 pub fn from_image_encoded_data(data: Data) -> Option<Image> {
@@ -88,7 +94,7 @@ pub fn from_image_slice(image_slice: &[u8], width: c_int, height: c_int) -> Opti
         AlphaType::Unpremul,
         None,
     );
-    Image::from_raster_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
+    skia_safe::images::raster_from_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
 }
 
 pub fn from_image_slice_encoded(image_slice: &[u8]) -> Option<Image> {

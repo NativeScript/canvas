@@ -5,13 +5,16 @@ require('@nativescript/canvas-polyfill');
 const TextDecoderO = TextDecoder;
 // require('@nativescript/canvas-polyfill');
 // import { Canvas } from '@nativescript/canvas';
-declare const jp, GDPerformanceMonitor;
+declare const jp, GDPerformanceMonitor, android, java;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 
 Application.on('discardedError', (args) => {
 	console.log(args.error);
 });
+global.process = {} as any;
+global.process.env = {} as any;
+
 
 // 0.253ms 1
 // 0.438ms 10

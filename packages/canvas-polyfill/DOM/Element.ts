@@ -41,14 +41,14 @@ export class Element extends Node {
 	}
 
 	removeAttribute(key, value) {
-		console.log(this.className, 'removeAttribute', key, value);
+		this._instance?.removeAttribute?.(key, value);
 	}
 
 	setAttributeNS() {}
 
 	removeAttributeNS() {}
 
-	get attributes(){
+	get attributes() {
 		return this._instance?.attributes ?? [];
 	}
 

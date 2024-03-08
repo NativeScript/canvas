@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect, Surface};
+use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
 
+use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -19,34 +19,45 @@ impl Context {
         ppi: f32,
         direction: TextDirection,
     ) -> Self {
-        let device = Device {
+        let device = Device::new_non_gpu(
             width,
             height,
             density,
-            non_gpu: true,
-            samples: 0,
             alpha,
             ppi,
-        };
-
-        let info = ImageInfo::new(
-            ISize::new(width as i32, height as i32),
-            ColorType::RGBA8888,
-            AlphaType::Premul,
-            None,
         );
 
-        let mut surface = surfaces::raster(&info, None, None).unwrap();
         let mut state = State::from_device(device, direction);
 
-        if density > 1. {
-            surface.canvas().scale((density, density));
-          //  state.line_width = density;
-         //   state.paint.stroke_paint_mut().set_stroke_width(density);
+        let color_type = if alpha {
+            ColorType::RGBA8888
         } else {
-            state.use_device_scale = false;
-            state.did_use_device_scale = false;
+            ColorType::RGB565
         };
+
+        let alpha_type = if alpha {
+            AlphaType::Unpremul
+        } else {
+            AlphaType::Premul
+        };
+
+        let info = if device.is_np {
+            ImageInfo::new(
+                ISize::new(1, 1),
+                color_type,
+                alpha_type,
+                None,
+            )
+        }else {
+            ImageInfo::new(
+                ISize::new(width as i32, height as i32),
+                color_type,
+                alpha_type,
+                None,
+            )
+        };
+
+        let surface = surfaces::raster(&info, None, None).unwrap();
 
         Context {
             surface,
@@ -66,47 +77,59 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let device = Device {
+        let device = Device::new_non_gpu(
             width,
             height,
             density,
-            non_gpu: true,
-            samples: 0,
             alpha,
             ppi,
+        );
+
+        let color_type = if alpha {
+            ColorType::RGBA8888
+        } else {
+            ColorType::RGB565
         };
 
-        let info = ImageInfo::new(
-            ISize::new(width as i32, height as i32),
-            ColorType::RGBA8888,
-            AlphaType::Premul,
-            None,
-        );
+        let alpha_type = if alpha {
+            AlphaType::Unpremul
+        } else {
+            AlphaType::Premul
+        };
+
+        let info = if device.is_np {
+            ImageInfo::new(
+                ISize::new(1, 1),
+                color_type,
+                alpha_type,
+                None,
+            )
+        }else {
+            ImageInfo::new(
+                ISize::new(width as i32, height as i32),
+                color_type,
+                alpha_type,
+                None,
+            )
+        };
 
         context.device = device;
         context.path = Path::default();
         context.reset_state();
 
-        if let Some(mut surface) = surfaces::raster(&info, None, None) {
-            if density > 1. {
-                surface.canvas().scale((density, density));
-               // context.state.line_width = density;
-              //  context.state.paint.stroke_paint_mut().set_stroke_width(density);
-            } else {
-                context.state.use_device_scale = false;
-                context.state.did_use_device_scale = false;
-            };
-
+        if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
-
         }
     }
 
     pub fn flush_buffer(context: &mut Context, width: i32, height: i32, buffer: &mut [u8]) {
+        if context.device.is_np {
+            return;
+        }
         let info = ImageInfo::new(
             ISize::new(width, height),
             ColorType::RGBA8888,
-            AlphaType::Premul,
+            AlphaType::Unknown,
             None,
         );
         let mut surface = surfaces::wrap_pixels(&info, buffer, None, None).unwrap();

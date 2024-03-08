@@ -86,6 +86,55 @@ class NSCCanvasRenderingContext2D {
 		}
 
 		@JvmStatic
+		fun drawImage(context: Long, image: Long, dx: Float, dy: Float): Boolean {
+			return nativeDrawImageDxDyWithAsset(context, image, dx, dy)
+		}
+
+		@JvmStatic
+		fun drawImage(
+			context: Long,
+			image: Long,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean {
+			return nativeDrawImageDxDyDwDhWithAsset(
+				context,
+				image,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+		}
+
+		@JvmStatic
+		fun drawImage(
+			context: Long,
+			image: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean {
+			return nativeDrawImageWithAsset(
+				context, image, sx,
+				sy,
+				sWidth,
+				sHeight,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+		}
+
+		@JvmStatic
 		@FastNative
 		private external fun nativeCreatePattern(
 			context: Long,
@@ -125,6 +174,42 @@ class NSCCanvasRenderingContext2D {
 			bitmap: Bitmap,
 			width: Float,
 			height: Float,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean
+
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawImageDxDyWithAsset(
+			context: Long,
+			asset: Long,
+			dx: Float,
+			dy: Float
+		): Boolean
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawImageDxDyDwDhWithAsset(
+			context: Long,
+			asset: Long,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawImageWithAsset(
+			context: Long,
+			asset: Long,
 			sx: Float,
 			sy: Float,
 			sWidth: Float,

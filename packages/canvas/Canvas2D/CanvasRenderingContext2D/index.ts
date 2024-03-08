@@ -131,19 +131,10 @@ export class CanvasRenderingContext2D {
 	}
 
 	constructor(context: any, contextOptions) {
-		/*const width = context.getDrawingBufferWidth(); // can use  getMeasuredWidth / getMeasuredHeight
-		const height = context.getDrawingBufferHeight();
-
-		const ctxPtr = BigInt(context.getNativeContext().toString());
-		let direction = 0;
-		if (androidx.core.text.TextUtilsCompat.getLayoutDirectionFromLocale(java.util.Locale.getDefault()) === androidx.core.view.ViewCompat.LAYOUT_DIRECTION_RTL) {
-			direction = 1;
-		}
-		this.context = ctor(ctxPtr, width, height, Screen.mainScreen.scale, contextOptions.antialias ? 4 : 0, contextOptions.alpha, contextOptions.fontColor, 1, direction);
-		*/
 		this.contextPtr = context;
 		const ctxPtr = BigInt(context.toString());
 		this.context = ctor(ctxPtr);
+		this._type = '2d';
 	}
 
 	_type: string = 'none';

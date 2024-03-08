@@ -2,7 +2,7 @@ import { Element } from '../Element';
 import { Path } from '@nativescript/canvas';
 
 export class SVGPathElement extends Element {
-	__internalElement: Path;
+	//__internalElement: Path;
 	constructor() {
 		super('path');
 		let path = undefined;

@@ -2,7 +2,7 @@ import { Element } from '../Element';
 import { Svg } from '@nativescript/canvas';
 
 export class SVGElement extends Element {
-	__internalElement: Svg;
+	//__internalElement: Svg;
 	constructor() {
 		super('svg');
 		let svg = undefined;
@@ -16,7 +16,7 @@ export class SVGElement extends Element {
 			this.__internalElement = new Svg();
 		}
 	}
-
+	
 	//@ts-ignore
 	get nativeElement() {
 		return this.__internalElement;

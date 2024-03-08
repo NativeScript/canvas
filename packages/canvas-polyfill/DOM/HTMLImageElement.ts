@@ -7,7 +7,7 @@ const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
 	R: 'gif',
-	U: 'webp',
+//	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
@@ -37,6 +37,7 @@ function getUUID() {
 export class HTMLImageElement extends Element {
 	private localUri: any;
 	private _onload: any;
+	private _onerror: any;
 	private _complete: any;
 	private _base64: string;
 	_asset;
@@ -62,6 +63,14 @@ export class HTMLImageElement extends Element {
 		this._onload = value;
 	}
 
+	get onerror() {
+		return this._onerror;
+	}
+
+	set onerror(value) {
+		this._onerror = value;
+	}
+
 	get complete() {
 		return this._complete;
 	}
@@ -73,6 +82,7 @@ export class HTMLImageElement extends Element {
 			this.onload();
 		}
 	}
+	
 
 	constructor(props?) {
 		super('img');
@@ -107,6 +117,7 @@ export class HTMLImageElement extends Element {
 										console.log(`nativescript-browser-polyfill: Error:`, error.message);
 									}
 									this.emitter.emit('error', { target: this, error });
+									this._onerror?.();
 								} else {
 									this.localUri = localUri;
 									this._load();
@@ -122,6 +133,7 @@ export class HTMLImageElement extends Element {
 									success(response) {
 										const owner = ref.get();
 										if (owner) {
+											console.log(response.toString());
 											owner.localUri = response.toString();
 											owner._load();
 										}
@@ -133,16 +145,19 @@ export class HTMLImageElement extends Element {
 										const owner = ref.get();
 										if (owner) {
 											owner.emitter.emit('error', { target: ref.get(), message });
+											owner._onerror?.();
 										}
 									},
 								})
 							);
 						}
 					} catch (error) {
+						this.emitter.emit('loading', { target: this });
 						if ((global as any).__debug_browser_polyfill_image) {
 							console.log(`nativescript-browser-polyfill: Error:`, error.message);
 						}
 						this.emitter.emit('error', { target: this, error });
+						this._onerror?.();
 					}
 				})();
 				return;
@@ -158,8 +173,10 @@ export class HTMLImageElement extends Element {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;
+							this._onload?.();
 						} else {
 							this.emitter.emit('error', { target: this });
+							this._onerror?.();
 						}
 					} else {
 						this._asset
@@ -168,9 +185,11 @@ export class HTMLImageElement extends Element {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
+								this._onload?.();
 							})
 							.catch((e) => {
 								this.emitter.emit('error', { target: this });
+								this._onerror?.();
 							});
 					}
 				} else {
@@ -182,8 +201,10 @@ export class HTMLImageElement extends Element {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
+								this._onload?.();
 							} else {
 								this.emitter.emit('error', { target: this });
+								this._onerror?.();
 							}
 						} else {
 							this._asset
@@ -192,9 +213,11 @@ export class HTMLImageElement extends Element {
 									this.width = this._asset.width;
 									this.height = this._asset.height;
 									this.complete = true;
+									this._onload?.();
 								})
 								.catch((e) => {
 									this.emitter.emit('error', { target: this });
+									this._onerror?.();
 								});
 						}
 					}

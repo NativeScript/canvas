@@ -33,7 +33,9 @@
   "readmeFilename": "README.md",
   "bootstrapper": "nativescript-plugin-seed",
   "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha",
-    "pixi.js": "~7.3.1"
+    "@nativescript/canvas-polyfill": "beta",
+    "pixi.js": "~7.3.1",
+    "pixi.js-legacy": "~7.3.1",
+    "pixi-filters": "~5.3.0"
   }
 }

@@ -15,11 +15,13 @@ const GL_RGBA: u32 = 0x1908;
 const GL_RGBA8: u32 = 0x8058;
 
 pub enum GLImageAssetBytesType {
+    RGB,
     RGBA8,
     Luminance,
     Alpha,
     None,
 }
+
 
 pub fn get_image_asset_bytes_type(format: i32, image_type: i32) -> GLImageAssetBytesType {
     match (format as u32, image_type as u32) {
@@ -96,7 +98,7 @@ pub fn bytes_per_pixel(pixel_type: u32, format: u32) -> u32 {
             bytes_per_component = 2;
         }
         GL_UNSIGNED_SHORT_5_6_5 | GL_UNSIGNED_SHORT_4_4_4_4 | GL_UNSIGNED_SHORT_5_5_5_1 => {
-            return 2;
+            bytes_per_component = 2;
         }
         _ => {}
     }

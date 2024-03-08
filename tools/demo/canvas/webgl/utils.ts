@@ -33,7 +33,7 @@ export function createProgramFromScripts(gl, shaderSources) {
                         lastError
                 );
                 gl.deleteShader(vertexShader);
-                return;
+                return null;
             }
             shaders.push(vertexShader);
         }

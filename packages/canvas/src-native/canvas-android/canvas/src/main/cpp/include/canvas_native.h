@@ -1172,12 +1172,6 @@ const char *canvas_native_image_asset_get_error(struct ImageAsset *asset);
 
 bool canvas_native_image_asset_has_error(struct ImageAsset *asset);
 
-bool canvas_native_image_asset_scale(struct ImageAsset *asset, uint32_t x, uint32_t y);
-
-bool canvas_native_image_asset_save_path(struct ImageAsset *asset,
-                                         const char *path,
-                                         uint32_t format);
-
 float canvas_native_text_metrics_get_width(const struct TextMetrics *metrics);
 
 float canvas_native_text_metrics_get_actual_bounding_box_left(const struct TextMetrics *metrics);
@@ -1353,7 +1347,7 @@ bool canvas_native_webgl_context_attribute_get_get_depth(const struct ContextAtt
 
 bool canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_caveat(const struct ContextAttributes *attr);
 
-const char *canvas_native_webgl_context_attribute_get_get_power_preference(const struct ContextAttributes *attr);
+int32_t canvas_native_webgl_context_attribute_get_get_power_preference(const struct ContextAttributes *attr);
 
 bool canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(const struct ContextAttributes *attr);
 
@@ -1475,12 +1469,12 @@ void canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(uint32_t 
                                                                        const struct OES_vertex_array_object *object);
 
 struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
-                                              const char *version,
+                                              int32_t version,
                                               bool alpha,
                                               bool antialias,
                                               bool depth,
                                               bool fail_if_major_performance_caveat,
-                                              const char *power_preference,
+                                              int32_t power_preference,
                                               bool premultiplied_alpha,
                                               bool preserve_drawing_buffer,
                                               bool stencil,
@@ -1489,12 +1483,12 @@ struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
 
 struct WebGLState *canvas_native_webgl_create_no_window(int32_t width,
                                                         int32_t height,
-                                                        const char *version,
+                                                        int32_t version,
                                                         bool alpha,
                                                         bool antialias,
                                                         bool depth,
                                                         bool fail_if_major_performance_caveat,
-                                                        const char *power_preference,
+                                                        int32_t power_preference,
                                                         bool premultiplied_alpha,
                                                         bool preserve_drawing_buffer,
                                                         bool stencil,

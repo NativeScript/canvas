@@ -12,7 +12,6 @@ impl ScaleUtils for Rect {
         self.top *= y;
         self.bottom *= y;
     }
-
     fn from_scale(rect: Rect, x: f32, y: f32) -> Self {
         Rect::from_xywh(rect.left * x, rect.top * y, rect.right * x, rect.bottom * y)
     }

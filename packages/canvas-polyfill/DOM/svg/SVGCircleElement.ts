@@ -2,7 +2,7 @@ import { Element } from '../Element';
 import { Circle } from '@nativescript/canvas';
 
 export class SVGCircleElement extends Element {
-	__internalElement: Circle;
+	//__internalElement: Circle;
 	constructor() {
 		super('circle');
 		let circle = undefined;

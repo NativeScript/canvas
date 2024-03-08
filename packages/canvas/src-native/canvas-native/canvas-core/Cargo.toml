@@ -11,10 +11,10 @@ edition = "2021"
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.5.2"
 parking_lot = "0.12.0"
-image = { version = "0.24.7", features = ["jpeg", "png", "gif"] }
+stb_image = {git = "https://github.com/triniwiz/rust-stb-image", rev = "869380b"}
 skia-safe = { version = "0.71.0", features = ["gl", "svg", "textlayout"], optional = true }
-once_cell = "1.14.0"
-log = "0.4.17"
+once_cell = "1.19.0"
+log = "0.4.21"
 
 [target.'cfg(target_os = "ios")'.dependencies]
 icrate = { version = "0.0.4", features = ["objc2", "Foundation", "Foundation_NSData"] }
@@ -23,11 +23,9 @@ core-foundation = "0.9.3"
 [target.'cfg(target_os = "android")'.dependencies]
 egl = "0.2.7"
 glutin = "0.31.1"
-#glutin = { git = "https://github.com/triniwiz/glutin", rev = "1b2cbbe" }
 android_log = "0.1.3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 winit = "0.29.4"
 glutin-winit = "0.4.2"
 glutin = "0.31.1"
-#glutin = { git = "https://github.com/triniwiz/glutin", rev = "1b2cbbe" }

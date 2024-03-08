@@ -46,21 +46,6 @@ class NSCSVG : View {
 		}
 	}
 
-
-	var ignorePixelScaling: Boolean = false
-		set(value) {
-			field = value
-			if (value) {
-				val density = resources.displayMetrics.density
-				mMatrix.postScale(density, density)
-			} else {
-				mMatrix.reset()
-			}
-			if (width > 0 || height > 0) {
-				invalidate()
-			}
-		}
-
 	private var currentTask: java.util.concurrent.Future<*>? = null
 	private fun resize(w: Int, h: Int) {
 		if (svgCanvas == 0L) {

@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty, upscaleProperty, DOMRect } from './common';
+import { CanvasBase, doc, autoScaleProperty, ignoreTouchEventsProperty, DOMRect } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -72,12 +72,8 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-	[upscaleProperty.setNative](value: boolean) {
-		this._canvas.setUpscale(value);
-	}
-
-	[ignorePixelScalingProperty.setNative](value: boolean) {
-		this._canvas.setIgnorePixelScaling(value);
+	[autoScaleProperty.setNative](value: boolean) {
+		this._canvas.setAutoScale(value);
 	}
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
@@ -99,74 +95,40 @@ export class Canvas extends CanvasBase {
 
 	_drawingBufferHeight = 0;
 	get drawingBufferHeight() {
-		if (this._drawingBufferHeight === 0) {
-			return this.getMeasuredHeight();
-		}
 		return this._drawingBufferHeight;
 	}
 
 	_drawingBufferWidth = 0;
 	get drawingBufferWidth() {
-		if (this._drawingBufferWidth === 0) {
-			return this.getMeasuredWidth();
-		}
 		return this._drawingBufferWidth;
 	}
 
 	// @ts-ignore
 	get width(): any {
-		if (this.getMeasuredWidth() > 0) {
-			return this.getMeasuredWidth() / Screen.mainScreen.scale;
-		}
-		if (this._canvas === undefined || this._canvas === null) {
-			return 0;
-		}
-
-		const width = this._canvas.getWidth();
-		if (width === 0) {
-			let rootParams = this._canvas.getLayoutParams();
-			if (rootParams) {
-				return rootParams.width / Screen.mainScreen.scale;
-			}
-		}
-		return width / Screen.mainScreen.scale;
-
-		//return this._realSize.width;
+		return this._logicalSize.width;
 	}
 
 	set width(value) {
-		if (this.style.width === value) {
-			return;
+		if (value === undefined || value === null) {
+			this.style.width = 0;
+		} else {
+			this.style.width = value;
 		}
-		this.style.width = value;
 		this._didLayout = false;
 		this._layoutNative();
 	}
 
 	// @ts-ignore
 	get height(): any {
-		if (this.getMeasuredHeight() > 0) {
-			return this.getMeasuredHeight() / Screen.mainScreen.scale;
-		}
-		if (this._canvas === undefined || this._canvas === null) {
-			return 0;
-		}
-		const height = this._canvas.getHeight();
-		if (height === 0) {
-			let rootParams = this._canvas.getLayoutParams();
-			if (rootParams) {
-				return rootParams.height / Screen.mainScreen.scale;
-			}
-		}
-		return height / Screen.mainScreen.scale;
-		//return this._realSize.height;
+		return this._logicalSize.height;
 	}
 
 	set height(value) {
-		if (this.style.height === value) {
-			return;
+		if (value === undefined || value === null) {
+			this.style.height = 0;
+		} else {
+			this.style.height = value;
 		}
-		this.style.height = value;
 		this._didLayout = false;
 		this._layoutNative();
 	}
@@ -188,9 +150,6 @@ export class Canvas extends CanvasBase {
 
 	initNativeView(): void {
 		super.initNativeView();
-		if (this.ignorePixelScaling) {
-			this._canvas.setIgnorePixelScaling(this.ignorePixelScaling);
-		}
 		const ref = new WeakRef(this);
 		this.on(View.layoutChangedEvent, (args) => {
 			const parent = this.parent as any;
@@ -213,15 +172,16 @@ export class Canvas extends CanvasBase {
 					const nativeView = view.android;
 					const width = this.width;
 					const height = this.height;
+					const scale = Screen.mainScreen.scale;
 					return {
-						bottom: nativeView.getBottom() / Screen.mainScreen.scale,
+						bottom: nativeView.getBottom() / scale,
 						height: height,
-						left: nativeView.getLeft() / Screen.mainScreen.scale,
-						right: nativeView.getRight() / Screen.mainScreen.scale,
-						top: nativeView.getTop() / Screen.mainScreen.scale,
+						left: nativeView.getLeft() / scale,
+						right: nativeView.getRight() / scale,
+						top: nativeView.getTop() / scale,
 						width: width,
-						x: nativeView.getX() / Screen.mainScreen.scale,
-						y: nativeView.getY() / Screen.mainScreen.scale,
+						x: nativeView.getX() / scale,
+						y: nativeView.getY() / scale,
 					};
 				};
 			}
@@ -249,8 +209,8 @@ export class Canvas extends CanvasBase {
 					// }
 					const owner = ref.get() as any;
 					if (owner) {
-						owner._drawingBufferWidth = width;
-						owner._drawingBufferHeight = height;
+						owner._drawingBufferWidth = width / Screen.mainScreen.scale;
+						owner._drawingBufferHeight = height / Screen.mainScreen.scale;
 					}
 				},
 			})
@@ -297,10 +257,10 @@ export class Canvas extends CanvasBase {
 	}
 
 	_layoutNative() {
-		if (this._isBatch) {
+		if (!this._isCustom) {
 			return;
 		}
-		if (!this._isCustom) {
+		if (this._isBatch) {
 			return;
 		}
 		if (this._didLayout) {
@@ -315,11 +275,11 @@ export class Canvas extends CanvasBase {
 				return;
 			}
 
-			const size = this._realSize;
+			const size = this._physicalSize;
 			org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
-			this._drawingBufferWidth = size.width;
-			this._drawingBufferHeight = size.height;
+			//	this._drawingBufferWidth = size.width || 1;
+			//	this._drawingBufferHeight = size.height || 1;
 			if (this._is2D) {
 				this._2dContext.native.__resize(size.width, size.height);
 			}
@@ -362,22 +322,20 @@ export class Canvas extends CanvasBase {
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
-					// // @ts-ignore
 					(this._2dContext as any)._canvas = this;
-					// @ts-ignore
 					this._2dContext._type = '2d';
 					this._contextType = ContextType.Canvas;
 					this._is2D = true;
 				}
 
 				return this._2dContext;
-			} else if (type === 'webgl' || type === 'experimental-webgl') {
+			} else if (type === 'webgl') {
 				if (this._2dContext || this._webgl2Context) {
 					return null;
 				}
 				if (!this._webglContext) {
 					this._layoutNative();
-					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, options) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -386,16 +344,14 @@ export class Canvas extends CanvasBase {
 				}
 
 				return this._webglContext;
-			} else if (type === 'webgl2') {
+			} else if (type === 'webgl2' || type === 'experimental-webgl') {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
 				if (!this._webgl2Context) {
 					this._layoutNative();
-					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
-
+					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, options) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
-
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';

@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::os::raw::c_float;
 
-use skia_safe::{PathEffect, Point, Rect, RRect};
+use skia_safe::{PathEffect, Point, RRect, Rect};
 
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::matrix::Matrix;
@@ -34,7 +34,7 @@ impl Into<PathFillType> for skia_safe::PathFillType {
 impl Into<skia_safe::PathFillType> for PathFillType {
     fn into(self) -> skia_safe::PathFillType {
         match self {
-            PathFillType::Winding => skia_safe::PathFillType::Winding ,
+            PathFillType::Winding => skia_safe::PathFillType::Winding,
             PathFillType::EvenOdd => skia_safe::PathFillType::EvenOdd,
             PathFillType::InverseWinding => skia_safe::PathFillType::InverseWinding,
             PathFillType::InverseEvenOdd => skia_safe::PathFillType::InverseEvenOdd,
@@ -304,13 +304,17 @@ impl Path {
         }
     }
 
-    pub fn trim(&mut self, start: f32, end: f32){
+    pub fn trim(&mut self, start: f32, end: f32) {
         if start != 0. && end != 1. {
-           if let Some(effect ) =  PathEffect::trim(start, end, None) {
-               if let Some((mut path, _)) = effect.filter_path(&self.path, &skia_safe::StrokeRec::new_hairline(), Rect::default()) {
-                   self.path.swap(&mut path);
-               }
-           }
+            if let Some(effect) = PathEffect::trim(start, end, None) {
+                if let Some((mut path, _)) = effect.filter_path(
+                    &self.path,
+                    &skia_safe::StrokeRec::new_hairline(),
+                    Rect::default(),
+                ) {
+                    self.path.swap(&mut path);
+                }
+            }
         }
     }
 }

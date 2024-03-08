@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.opengl.GLES20
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.StrictMode
@@ -22,9 +23,9 @@ import org.json.JSONObject
 
 import org.nativescript.canvas.*
 import java.io.*
-import java.lang.Exception
 import java.net.URL
 import java.util.concurrent.Executors
+import kotlin.Exception
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		svg = findViewById(R.id.svgView)
+		//	svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
 //			.addView(canvas)
@@ -59,14 +60,14 @@ class MainActivity : AppCompatActivity() {
 		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
-				canvas?.let { canvas ->
+					/*	canvas?.let { canvas ->
 					val params = canvas.layoutParams
 					val context = canvas.create2DContext(
 						true,
 						true,
 						true,
 						false,
-						"default",
+						0,
 						true,
 						false,
 						false,
@@ -74,8 +75,9 @@ class MainActivity : AppCompatActivity() {
 						false,
 						Color.BLACK
 					)
-
-					NSCCanvas.context2DPathTest(context)
+//
+//					NSCCanvas.context2DImageTest(context)
+//					NSCCanvas.context2DPathTest(context)
 //
 //                    Log.d("com.test", "windows $context")
 
@@ -86,40 +88,83 @@ class MainActivity : AppCompatActivity() {
 //                    canvas.layoutParams = params
 //                    canvas.requestLayout()
 
-					/*
 
 					executor.execute {
-							try {
-									val file = File(filesDir, "canvas_createpattern.svg")
-									if (file.exists()) {
-											file.delete()
-									}
-
-									val url =
-											URL("https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png")
-									val fs = FileOutputStream(file)
-									url.openStream().use { input ->
-											fs.use { output ->
-													input.copyTo(output)
-											}
-									}
-									val bm = BitmapFactory.decodeFile(file.absolutePath)
-									runOnUiThread {
-											NSCCanvasRenderingContext2D.drawImage(context, bm, 0F, 0F)
-									}
-							} catch (e: IOException) {
-									e.printStackTrace()
+						try {
+							//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+							val file = File(filesDir, "canvas_createpattern.jpeg")
+							if (file.exists()) {
+								file.delete()
 							}
+
+							val url =
+								URL("https://picsum.photos/seed/picsum/600/600")
+							val fs = FileOutputStream(file)
+							url.openStream().use { input ->
+								fs.use { output ->
+									input.copyTo(output)
+								}
+							}
+							val bm = BitmapFactory.decodeFile(file.absolutePath)
+
+							val asset = NSCImageAsset.createImageAsset()
+							//val done = NSCImageAsset.loadImageFromBitmap(asset, bm)
+							val done = NSCImageAsset.loadFromPath(asset, file.absolutePath)
+							val dim = NSCImageAsset.getDimensions(asset)
+							var error = ""
+							if (!done) {
+								error = NSCImageAsset.getError(asset)
+							}
+							runOnUiThread {
+								NSCCanvasRenderingContext2D.drawImage(context, asset, 0F, 0F)
+								NSCCanvas.context2DRender(context)
+
+								//	NSCCanvas.context2DPathTest(context)
+							}
+						} catch (e: IOException) {
+							e.printStackTrace()
+						}
 					}
 
-					*/
 
 				}
+				*/
 
 
 				//	draw2D()
 				//drawPatterWithCanvas(canvas!!)
 				//drawText(canvas!!)
+
+
+				val view = NSCCanvas(this@MainActivity)
+				view.layoutParams =  ViewGroup.LayoutParams(512, 512)
+				NSCCanvas.layoutSurface(512, 512, view)
+
+				val ctx = view.create2DContext(
+					true,
+					true,
+					true,
+					true,
+					0,
+					true,
+					true,
+					true,
+					true,
+					true,
+					Color.BLACK
+				)
+
+				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d)
+
+				val scale = resources.displayMetrics.density
+
+				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0f,0f, 512 / scale,512 / scale)
+
+				canvas!!.initContext("webgl2")
+				val gl = canvas!!.nativeContext
+
+
+				NSCCanvas.WebGLContextRender(gl, ctx)
 
 
 			}
@@ -128,6 +173,27 @@ class MainActivity : AppCompatActivity() {
 				Log.d("com.test", "surfaceResize $width $height")
 			}
 		}
+
+//		val view = NSCCanvas(this)
+//
+//		val ctx = view.create2DContext(
+//			true,
+//			true,
+//			true,
+//			true,
+//			0,
+//			true,
+//			true,
+//			true,
+//			true,
+//			true,
+//			Color.BLACK
+//		)
+//
+//		Log.d("com.test", "ctx $ctx ${view.drawingBufferWidth} ${view.drawingBufferHeight}")
+
+		//NSCCanvas.context2DPathTest(ctx)
+
 
 
 		/*
@@ -412,7 +478,7 @@ class MainActivity : AppCompatActivity() {
 //			</svg>
 //		""".trimIndent())
 
-	//	drawTransformMatrixSvg()
+		//	drawTransformMatrixSvg()
 		//drawTransformRotateSvg()
 		//drawTransformScaleSvg()
 		//drawTransformTranslateSvg()
@@ -424,9 +490,9 @@ class MainActivity : AppCompatActivity() {
 
 		//drawRadialGradientCircleSvg()
 
-			//drawTransformGradientSvg()
+		//drawTransformGradientSvg()
 
-			//drawClipPathUnitsSvg()
+		//drawClipPathUnitsSvg()
 		//	downloadSvg()
 //		svg?.setSrc("""
 //			<svg xmlns="http://www.w3.org/2000/svg">
@@ -499,8 +565,8 @@ class MainActivity : AppCompatActivity() {
 
 	override fun onResume() {
 		super.onResume()
-		if (canvas?.nativeContext != 0L){
-			NSCCanvas.context2DPathTest(canvas!!.nativeContext)
+		if (canvas?.native2DContext != 0L) {
+			NSCCanvas.context2DPathTest(canvas!!.native2DContext)
 		}
 	}
 

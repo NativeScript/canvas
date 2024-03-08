@@ -2,7 +2,7 @@ import { Element } from './Element';
 import { HTMLVideoElement } from './HTMLVideoElement';
 import { HTMLImageElement } from './HTMLImageElement';
 import { HTMLCanvasElement } from './HTMLCanvasElement';
-import { SVGElement, SVGCircleElement, SVGRectElement , SVGGElement, SVGPathElement} from './svg';
+import { SVGElement, SVGCircleElement, SVGRectElement, SVGGElement, SVGPathElement } from './svg';
 import { Text } from './Text';
 import { Canvas } from '@nativescript/canvas';
 import { Frame } from '@nativescript/core';

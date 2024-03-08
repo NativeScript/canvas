@@ -6,8 +6,6 @@ source $HOME/.profile
 
 whereis cc
 
-echo $PATH
-
 function to_bool() {
   local arg="$1"
   case "$(echo "$arg" | tr '[:upper:]' '[:lower:]')" in

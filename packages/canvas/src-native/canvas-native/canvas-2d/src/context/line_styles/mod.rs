@@ -2,31 +2,23 @@ use std::os::raw::c_float;
 
 use skia_safe::PathEffect;
 
-use crate::context::Context;
 use crate::context::line_styles::line_cap::LineCap;
 use crate::context::line_styles::line_join::LineJoin;
+use crate::context::Context;
 
 pub mod line_cap;
 pub mod line_join;
 
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
-        // let width = if self.state.use_device_scale {
-        //     width * self.device.density
-        // }else {
-        //     width
-        // };
         self.state.line_width = width;
-        self.state.paint.stroke_paint_mut().set_stroke_width(width);
+        self.state
+            .paint
+            .stroke_paint_mut()
+            .set_stroke_width(width * self.device.density);
     }
 
     pub fn line_width(&self) -> c_float {
-      /*  if self.state.did_use_device_scale {
-            self.state.line_width / self.device.density
-        } else {
-            self.state.line_width
-        } */
-
         self.state.line_width
     }
 
@@ -60,22 +52,32 @@ impl Context {
 
     pub fn set_miter_limit(&mut self, limit: c_float) {
         self.state.miter_limit = limit;
-        self.state.paint.stroke_paint_mut().set_stroke_miter(limit);
+        self.state
+            .paint
+            .stroke_paint_mut()
+            .set_stroke_miter(limit * self.device.density);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
-        let line_dash;
         let is_odd = (dash.len() % 2) != 0;
-        if is_odd {
-            line_dash = [dash, dash].concat();
+        let dash_scaled: Vec<f32> = dash
+            .iter()
+            .map(|value| *value * self.device.density)
+            .collect();
+        let dash_scaled = if is_odd {
+            [dash_scaled.as_slice(), dash_scaled.as_slice()].concat()
         } else {
-            line_dash = dash.to_vec()
-        }
+            dash_scaled
+        };
         let mut effect: Option<PathEffect> = None;
-        if !line_dash.is_empty() {
-            effect = PathEffect::dash(line_dash.as_slice(), self.state.line_dash_offset);
+        if !dash_scaled.is_empty() {
+            // scale line_dash_offset
+            effect = PathEffect::dash(
+                dash_scaled.as_slice(),
+                self.state.line_dash_offset * self.device.density,
+            );
         }
-        self.state.line_dash_list = line_dash;
+        self.state.line_dash_list = dash.to_vec();
         self.state.paint.stroke_paint_mut().set_path_effect(effect);
     }
 

@@ -18,6 +18,7 @@ use once_cell::sync::OnceCell;
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
+use crate::gl::SurfaceHelper;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -318,7 +319,7 @@ impl GLKView {
     pub fn drawable_height(&self) -> NSInteger {
         return unsafe { msg_send![&self.0, drawableHeight] };
     }
-
+    
     pub fn bind_drawable(&self) {
         let _: () = unsafe { msg_send![&self.0, bindDrawable] };
     }
@@ -613,6 +614,22 @@ impl GLContext {
             .map(|v| v.drawable_height().try_into().unwrap_or_default())
             .unwrap()
     }
+
+
+
+    #[inline(always)]
+    pub fn get_surface_dimensions(&self) -> (i32, i32) {
+        self.inner
+            .read()
+            .view
+            .as_ref()
+            .map(|v| (v.drawable_width().try_into().unwrap_or_default(), v.drawable_height().try_into().unwrap_or_default()))
+            .unwrap()
+    }
+
+
+
+
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
         RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)

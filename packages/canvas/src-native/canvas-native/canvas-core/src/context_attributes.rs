@@ -1,10 +1,30 @@
-#[derive(Clone)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
+pub enum PowerPreference {
+    Default,
+    HighPerformance,
+    LowPower,
+}
+
+impl TryFrom<i32> for PowerPreference {
+    type Error = &'static str;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Default),
+            1 => Ok(Self::HighPerformance),
+            2 => Ok(Self::LowPower),
+            _ => Err("Invalid value!"),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct ContextAttributes {
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: String,
+    power_preference: PowerPreference,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -21,7 +41,7 @@ impl Default for ContextAttributes {
             antialias: true,
             depth: true,
             fail_if_major_performance_caveat: false,
-            power_preference: "default".to_string(),
+            power_preference: PowerPreference::Default,
             premultiplied_alpha: true,
             preserve_drawing_buffer: false,
             stencil: false,
@@ -39,7 +59,7 @@ impl ContextAttributes {
         antialias: bool,
         depth: bool,
         fail_if_major_performance_caveat: bool,
-        power_preference: &str,
+        power_preference: PowerPreference,
         premultiplied_alpha: bool,
         preserve_drawing_buffer: bool,
         stencil: bool,
@@ -52,7 +72,7 @@ impl ContextAttributes {
             antialias,
             depth,
             fail_if_major_performance_caveat,
-            power_preference: power_preference.to_string(),
+            power_preference,
             premultiplied_alpha,
             preserve_drawing_buffer,
             stencil,
@@ -86,8 +106,8 @@ impl ContextAttributes {
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.fail_if_major_performance_caveat
     }
-    pub fn get_power_preference(&self) -> String {
-        self.power_preference.clone()
+    pub fn get_power_preference(&self) -> PowerPreference {
+        self.power_preference
     }
     pub fn get_premultiplied_alpha(&self) -> bool {
         self.premultiplied_alpha
@@ -118,8 +138,8 @@ impl ContextAttributes {
         self.fail_if_major_performance_caveat = value;
     }
 
-    pub fn set_power_preference(&mut self, value: &str) {
-        self.power_preference = value.to_string();
+    pub fn set_power_preference(&mut self, value: PowerPreference) {
+        self.power_preference = value;
     }
 
     pub fn set_premultiplied_alpha(&mut self, value: bool) {

@@ -1,4 +1,4 @@
-import { CSSType, PercentLength, View, Screen, Utils, Application, Property, booleanConverter } from '@nativescript/core';
+import { CSSType, PercentLength, View, Utils, Property, booleanConverter, CoreTypes, Screen } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
 
 export interface ICanvasBase {
@@ -337,15 +337,9 @@ class Rectangle {
 	}
 }
 
-export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
-	name: 'ignorePixelScaling',
-	defaultValue: false,
-	valueConverter: booleanConverter,
-});
-
-export const upscaleProperty = new Property<CanvasBase, boolean>({
-	name: 'upscale',
-	defaultValue: false,
+export const autoScaleProperty = new Property<CanvasBase, boolean>({
+	name: 'autoScale',
+	defaultValue: true,
 	valueConverter: booleanConverter,
 });
 
@@ -366,8 +360,7 @@ export const doc = {
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
-	ignorePixelScaling: boolean;
-	upscaleProperty: boolean;
+	autoScale: boolean;
 	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;
 	_classList: Set<any>;
@@ -964,32 +957,55 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this._classList;
 	}
 
-	get _realSize(): { width: number; height: number } {
+	get _physicalSize(): { width: number; height: number } {
 		return {
-			width: this.getSize(this.style.width, this.getMeasuredWidth(), 'width'),
-			height: this.getSize(this.style.height, this.getMeasuredHeight(), 'height'),
+			width: this.getSize(this.style.width, this.getMeasuredWidth(), 'physical'),
+			height: this.getSize(this.style.height, this.getMeasuredHeight(), 'physical'),
 		};
+	}
+
+	get _logicalSize(): { width: number; height: number } {
+		return {
+			width: this.getSize(this.style.width, this.getMeasuredWidth()),
+			height: this.getSize(this.style.height, this.getMeasuredHeight()),
+		};
+	}
+
+	_handlePowerPreference(powerPreference: string) {
+		switch (powerPreference) {
+			case 'default':
+				0;
+			case 'high-performance':
+				return 1;
+			case 'low-power':
+				return 2;
+			default:
+				return -1;
+		}
 	}
 
 	_handleContextOptions(type, contextOpts?) {
 		if (!contextOpts) {
 			if (type === '2d') {
-				return { ...default2DOptions };
+				return { ...default2DOptions, powerPreference: 0 };
 			}
 			if (type.indexOf('webgl') > -1) {
-				return { ...defaultGLOptions };
+				return { ...defaultGLOptions, powerPreference: 0 };
 			}
 		}
 		if (type === '2d') {
 			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
-				return contextOpts;
+				return { ...contextOpts, powerPreference: 0 };
 			} else {
-				return { alpha: true };
+				return { alpha: true, powerPreference: 0 };
 			}
 		}
 		const glOptions = { ...defaultGLOptions };
 		const setIfDefined = (prop, value) => {
 			const property = glOptions[prop];
+			if (property !== undefined && prop === 'powerPreference') {
+				glOptions[prop] = value;
+			}
 			if (property !== undefined && typeof value === typeof property) {
 				glOptions[prop] = value;
 			}
@@ -999,7 +1015,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			setIfDefined('antialias', contextOpts.antialias);
 			setIfDefined('depth', contextOpts.depth);
 			setIfDefined('failIfMajorPerformanceCaveat', contextOpts.failIfMajorPerformanceCaveat);
-			setIfDefined('powerPreference', contextOpts.powerPreference);
+			setIfDefined('powerPreference', this._handlePowerPreference(contextOpts.powerPreference ?? 'default'));
 			setIfDefined('premultipliedAlpha', contextOpts.premultipliedAlpha);
 			setIfDefined('preserveDrawingBuffer', contextOpts.preserveDrawingBuffer);
 			setIfDefined('stencil', contextOpts.stencil);
@@ -1059,35 +1075,49 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		left: number;
 	};
 
-	private getSize(value, measuredSize, type): number {
-		if (value === 'auto') {
-			return Utils.layout.toDeviceIndependentPixels(Utils.layout.getMeasureSpecSize(Utils.layout.makeMeasureSpec(measuredSize, Utils.layout.UNSPECIFIED)));
+	private getSize(value: string | number | CoreTypes.LengthPercentUnit | CoreTypes.LengthDipUnit | CoreTypes.LengthPxUnit | 'auto', measuredSize, type: 'logical' | 'physical' = 'logical'): number {
+		const isPhysical = type === 'physical';
+		if (value === undefined || value === null) {
+			return 0;
 		}
+
+		if (value === 'auto') {
+			const size = Utils.layout.getMeasureSpecSize(Utils.layout.makeMeasureSpec(measuredSize, Utils.layout.UNSPECIFIED));
+			if (isPhysical) {
+				return size;
+			}
+			return Utils.layout.toDeviceIndependentPixels(size);
+		}
+
 		if (typeof value === 'string') {
 			value = PercentLength.parse(value);
 		}
-		if (typeof value === 'number') {
-			if (global.isAndroid) {
-				return Utils.layout.toDevicePixels(value) || 0;
-			}
-			return value || 0;
-		} else if ((value !== null || true) && typeof value === 'object' && typeof value.value && typeof value.unit) {
-			if (value.unit === 'px') {
-				if (global.isIOS) {
-					return Utils.layout.toDeviceIndependentPixels(value.value || 0);
-				}
-				return value.value || 0;
-			} else if (value.unit === 'dip') {
-				if (global.isAndroid) {
-					return Utils.layout.toDevicePixels(value.value) || 0;
-				}
-				return value.value || 0;
-			} else if (value.unit === '%') {
-				return Utils.layout.toDeviceIndependentPixels(measuredSize * value.value ?? 0);
-			}
-		}
 
-		return 0;
+		switch (typeof value) {
+			case 'number': {
+				if (isPhysical) {
+					return (value || 0) * Screen.mainScreen.scale;
+				}
+				return value || 0;
+			}
+			case 'object': {
+				if (value.unit === 'dip' || value.unit === 'px') {
+					if (isPhysical) {
+						return (value.value || 0) * Screen.mainScreen.scale;
+					}
+					return value.value || 0;
+				} else if (value.unit === '%') {
+					if (isPhysical) {
+						return measuredSize * value.value ?? 0;
+					}
+					return (measuredSize * value.value ?? 0) / Screen.mainScreen.scale;
+				}
+
+				return 0;
+			}
+			default:
+				return 0;
+		}
 	}
 
 	setPointerCapture(id) {}
@@ -1095,6 +1125,4 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	releasePointerCapture(id) {}
 }
 
-ignorePixelScalingProperty.register(CanvasBase);
-
-upscaleProperty.register(CanvasBase);
+autoScaleProperty.register(CanvasBase);

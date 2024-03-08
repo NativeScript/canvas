@@ -16,6 +16,17 @@ export class HTMLVideoElement extends Element {
 		}
 	}
 
+	canPlayType(type): '' | 'probably' | 'maybe' {
+		// "video/webm"
+		switch (type) {
+			case 'video/mp4':
+			case 'video/ogg':
+				return 'probably';
+			default:
+				return '';
+		}
+	}
+
 	addEventListener(type: string, listener: Function, useCapture: boolean | any) {
 		this._video?.addEventListener(type, listener, useCapture);
 	}

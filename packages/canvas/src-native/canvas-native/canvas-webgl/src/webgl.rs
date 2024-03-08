@@ -5,11 +5,10 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_uchar, c_void};
 
 use canvas_core::image_asset::ImageAsset;
-use gl_bindings::types::GLenum;
 
 use crate::prelude::*;
 use crate::utils;
-use crate::utils::gl::GLImageAssetBytesType;
+use crate::utils::gl::{bytes_per_pixel, GLImageAssetBytesType};
 
 pub fn canvas_native_webgl_resized(state: &mut WebGLState) {
     state.resized();
@@ -319,7 +318,6 @@ pub fn canvas_native_webgl_buffer_sub_data(
     }
 }
 
-
 pub fn canvas_native_webgl_buffer_sub_data_i8(
     target: u32,
     offset: isize,
@@ -348,13 +346,12 @@ pub fn canvas_native_webgl_buffer_sub_data_i16(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<i16>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<i16>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
 }
-
-
 
 pub fn canvas_native_webgl_buffer_sub_data_u16(
     target: u32,
@@ -367,12 +364,12 @@ pub fn canvas_native_webgl_buffer_sub_data_u16(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<u16>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<u16>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
 }
-
 
 pub fn canvas_native_webgl_buffer_sub_data_i32(
     target: u32,
@@ -385,12 +382,12 @@ pub fn canvas_native_webgl_buffer_sub_data_i32(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<i32>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<i32>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
 }
-
 
 pub fn canvas_native_webgl_buffer_sub_data_u32(
     target: u32,
@@ -403,14 +400,12 @@ pub fn canvas_native_webgl_buffer_sub_data_u32(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<u32>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<u32>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
 }
-
-
-
 
 pub fn canvas_native_webgl_buffer_sub_data_f32(
     target: u32,
@@ -423,12 +418,12 @@ pub fn canvas_native_webgl_buffer_sub_data_f32(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<f32>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<f32>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
 }
-
 
 pub fn canvas_native_webgl_buffer_sub_data_f64(
     target: u32,
@@ -441,7 +436,8 @@ pub fn canvas_native_webgl_buffer_sub_data_f64(
         gl_bindings::BufferSubData(
             target,
             offset.try_into().unwrap(),
-            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap() * std::mem::size_of::<f64>() as isize,
+            <usize as TryInto<isize>>::try_into(src_data.len()).unwrap()
+                * std::mem::size_of::<f64>() as isize,
             src_data.as_ptr() as *const c_void,
         );
     }
@@ -1089,6 +1085,10 @@ pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,
 ) -> Option<Box<dyn WebGLExtension>> {
+    if name.eq("WEBGL_lose_context") {
+        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
+    }
+
     state.make_current();
     let version = state.get_webgl_version();
     let extensions = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) };
@@ -1184,8 +1184,6 @@ pub fn canvas_native_webgl_get_extension(
         && extensions.contains("GL_IMG_texture_compression_pvrtc")
     {
         return Some(Box::new(WEBGL_compressed_texture_pvrtc::new()));
-    } else if name.eq("WEBGL_lose_context") {
-        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
     } else if name.eq("ANGLE_instanced_arrays") {
         if version == WebGLVersion::V2 {
             return if get_sdk_version() >= JELLY_BEAN_MR2 {
@@ -1220,6 +1218,9 @@ pub fn canvas_native_webgl_get_extension(
     name: &str,
     state: &mut WebGLState,
 ) -> Option<Box<dyn WebGLExtension>> {
+    if name.eq("WEBGL_lose_context") {
+        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
+    }
     state.make_current();
     let version = state.get_webgl_version();
     let extensions = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) };
@@ -1231,7 +1232,7 @@ pub fn canvas_native_webgl_get_extension(
     let ext = unsafe { CStr::from_ptr(std::mem::transmute(extensions)) };
     let extensions = ext.to_string_lossy();
 
-    if name == "WEBGL_compressed_texture_etc1"
+    if name == "WEBGL_compressed_texture_pvrtc"
         && extensions.contains("GL_IMG_texture_compression_pvrtc")
     {
         return Some(Box::new(WEBGL_compressed_texture_pvrtc::new()));
@@ -2169,8 +2170,7 @@ pub fn canvas_native_webgl_tex_image2d_asset(
                 utils::gl::flip_in_place(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                        as usize,
+                    (bytes_per_pixel(image_type as u32, format as u32) as i32 * width) as usize,
                     height as usize,
                 );
 
@@ -2207,14 +2207,17 @@ pub fn canvas_native_webgl_tex_image2d_asset(
 pub fn canvas_native_webgl_read_webgl_pixels(
     source: &mut WebGLState,
     context: &mut WebGLState,
+    internalformat: i32,
+    format: i32,
 ) -> (i32, i32, Vec<u8>) {
     context.remove_if_current();
     source.make_current();
     let width = source.get_drawing_buffer_width();
     let height = source.get_drawing_buffer_height();
 
-    let mut buf = vec![0u8; (width * height * 4) as usize];
+    let row_size = bytes_per_pixel(internalformat as u32, format as u32) as i32;
 
+    let mut buf = vec![255u8; (width * height * row_size) as usize];
     unsafe {
         gl_bindings::Flush();
         gl_bindings::ReadPixels(
@@ -2222,15 +2225,15 @@ pub fn canvas_native_webgl_read_webgl_pixels(
             0,
             width,
             height,
-            gl_bindings::RGBA,
-            gl_bindings::UNSIGNED_BYTE,
+            internalformat as u32,
+            format as u32,
             buf.as_mut_ptr() as *mut c_void,
         );
     }
 
     context.make_current();
 
-    (width as i32, height as i32, buf)
+    (width, height, buf)
 }
 
 //    texImage2D(target, level, internalformat, width, height, border, format, type)
@@ -2281,8 +2284,7 @@ pub fn canvas_native_webgl_tex_image2d(
             utils::gl::flip_in_place(
                 buffer.as_mut_ptr(),
                 buffer.len(),
-                (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                    as usize,
+                (bytes_per_pixel(image_type as u32, format as u32) as i32 * width) as usize,
                 height as usize,
             );
 
@@ -2357,98 +2359,50 @@ pub fn canvas_native_webgl_tex_image2d_image_asset(
     let height = image_asset.height() as i32;
     let flip_y = state.get_flip_y();
 
-    match utils::gl::get_image_asset_bytes_type(format, image_type) {
-        GLImageAssetBytesType::RGBA8 => {
-            if let Some(bytes) = image_asset.get_bytes() {
-                unsafe {
-                    if flip_y {
-                        let mut buffer = bytes.to_vec();
-                        utils::gl::flip_in_place(
-                            buffer.as_mut_ptr(),
-                            buffer.len(),
-                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
-                                * width) as usize,
-                            height as usize,
-                        );
 
-                        gl_bindings::TexImage2D(
-                            target as u32,
-                            level,
-                            gl_bindings::RGBA as _,
-                            width as _,
-                            height as _,
-                            0,
-                            gl_bindings::RGBA as _,
-                            gl_bindings::UNSIGNED_BYTE as _,
-                            buffer.as_ptr() as *const c_void,
-                        );
 
-                        return;
-                    }
+    if let Some(bytes) = image_asset.get_bytes() {
+        unsafe {
+            if flip_y {
+                let mut buffer = bytes.to_vec();
+                utils::gl::flip_in_place(
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                    (bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
+                        as usize,
+                    height as usize,
+                );
 
-                    gl_bindings::TexImage2D(
-                        target as u32,
-                        level,
-                        gl_bindings::RGBA as _,
-                        width as _,
-                        height as _,
-                        0,
-                        gl_bindings::RGBA as _,
-                        gl_bindings::UNSIGNED_BYTE as _,
-                        bytes.as_ptr() as *const c_void,
-                    );
-                }
+                gl_bindings::TexImage2D(
+                    target as u32,
+                    level,
+                    gl_bindings::RGBA as _,
+                    width as _,
+                    height as _,
+                    0,
+                    gl_bindings::RGBA as _,
+                    gl_bindings::UNSIGNED_BYTE as _,
+                    buffer.as_ptr() as *const c_void,
+                );
+
+                return;
             }
-        }
-        GLImageAssetBytesType::Luminance => {
-            if let Some(bytes) = image_asset.get_luminance_bytes() {
-                unsafe {
-                    if flip_y {
-                        let mut buffer = bytes.to_vec();
-                        utils::gl::flip_in_place(
-                            buffer.as_mut_ptr(),
-                            buffer.len(),
-                            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32
-                                * width) as usize,
-                            height as usize,
-                        );
 
-                        gl_bindings::TexImage2D(
-                            target as u32,
-                            level,
-                            gl_bindings::LUMINANCE_ALPHA as _,
-                            width as _,
-                            height as _,
-                            0,
-                            gl_bindings::LUMINANCE_ALPHA as _,
-                            gl_bindings::UNSIGNED_BYTE as _,
-                            buffer.as_ptr() as *const c_void,
-                        );
-
-                        return;
-                    }
-
-                    gl_bindings::TexImage2D(
-                        target as u32,
-                        level,
-                        gl_bindings::LUMINANCE_ALPHA as _,
-                        width as _,
-                        height as _,
-                        0,
-                        gl_bindings::LUMINANCE_ALPHA as _,
-                        gl_bindings::UNSIGNED_BYTE as _,
-                        bytes.as_ptr() as *const c_void,
-                    );
-                }
-            }
-        }
-        GLImageAssetBytesType::Alpha => {
-            // todo
-        }
-        GLImageAssetBytesType::None => {
-            // noop
+            gl_bindings::TexImage2D(
+                target as u32,
+                level,
+                gl_bindings::RGBA as _,
+                width as _,
+                height as _,
+                0,
+                gl_bindings::RGBA as _,
+                gl_bindings::UNSIGNED_BYTE as _,
+                bytes.as_ptr() as *const c_void,
+            );
         }
     }
+
+
 }
 
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
@@ -2480,20 +2434,19 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
             utils::gl::flip_in_place(
                 buffer.as_mut_ptr(),
                 bytes.len(),
-                (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width as i32)
-                    as usize,
+                (bytes_per_pixel(image_type as u32, format) as i32 * width) as usize,
                 height as usize,
             );
 
             unsafe {
                 gl_bindings::TexSubImage2D(
-                    target as u32,
+                    target,
                     level,
                     xoffset,
                     yoffset,
                     width,
                     height,
-                    format as u32,
+                    format,
                     image_type as u32,
                     buffer.as_ptr() as *const c_void,
                 );
@@ -2503,13 +2456,13 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
         }
         unsafe {
             gl_bindings::TexSubImage2D(
-                target as u32,
+                target,
                 level,
                 xoffset,
                 yoffset,
                 width,
                 height,
-                format as u32,
+                format,
                 image_type as u32,
                 bytes.as_ptr() as *const c_void,
             );
@@ -2535,8 +2488,7 @@ pub fn canvas_native_webgl_tex_sub_image2d(
         utils::gl::flip_in_place(
             buffer.as_mut_ptr(),
             buf.len(),
-            (utils::gl::bytes_per_pixel(image_type as u32, format as u32) as i32 * width as i32)
-                as usize,
+            (bytes_per_pixel(image_type as u32, format) as i32 * width) as usize,
             height as usize,
         );
 

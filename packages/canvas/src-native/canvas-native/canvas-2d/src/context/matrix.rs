@@ -3,8 +3,8 @@
 use std::ops::{Index, IndexMut};
 use std::os::raw::c_float;
 
-use skia_safe::M44;
 use skia_safe::matrix::AffineMember;
+use skia_safe::M44;
 
 #[derive(Clone, Debug)]
 pub struct Matrix(M44);

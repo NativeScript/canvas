@@ -1,6 +1,6 @@
-use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
+use jni::JNIEnv;
 
 use canvas_2d::context::{Context, ContextWrapper};
 
@@ -21,8 +21,8 @@ pub(crate) fn init_with_custom_surface(
     ppi: jfloat,
     direction: jint,
 ) -> jlong {
-    Box::into_raw(Box::new(canvas_c::CanvasRenderingContext2D::new(ContextWrapper::new(
-        Context::new(
+    Box::into_raw(Box::new(canvas_c::CanvasRenderingContext2D::new(
+        ContextWrapper::new(Context::new(
             width,
             height,
             density,
@@ -30,8 +30,10 @@ pub(crate) fn init_with_custom_surface(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
-        )
-    ), canvas_core::gl::GLContext::default(), alpha == jni::sys::JNI_TRUE))) as jlong
+        )),
+        canvas_core::gl::GLContext::default(),
+        alpha == jni::sys::JNI_TRUE,
+    ))) as jlong
 }
 
 #[no_mangle]
@@ -71,14 +73,12 @@ pub extern "system" fn nativeResizeCustomSurface(
     _alpha: jboolean,
     _ppi: jfloat,
 ) {
-    unsafe {
-        if context == 0 {
-            return;
-        }
-        let context = context as *mut canvas_c::CanvasRenderingContext2D;
-        let context = unsafe { &mut *context };
-        context.resize(width, height);
+    if context == 0 {
+        return;
     }
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    context.resize(width, height);
 }
 
 #[no_mangle]
@@ -92,14 +92,12 @@ pub extern "system" fn nativeResizeCustomSurfaceNormal(
     _alpha: jboolean,
     _ppi: jfloat,
 ) {
-    unsafe {
-        if context == 0 {
-            return;
-        }
-        let context = context as *mut canvas_c::CanvasRenderingContext2D;
-        let context = unsafe { &mut *context };
-        context.resize(width, height);
+    if context == 0 {
+        return;
     }
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    context.resize(width, height);
 }
 
 /*
@@ -155,23 +153,24 @@ pub extern "system" fn nativeDataURL(
     format: JString,
     quality: jfloat,
 ) -> jstring {
-    unsafe {
-        if context == 0 {
-            return env.new_string("").unwrap().into_raw();
-        }
-        let context = context as *mut canvas_c::CanvasRenderingContext2D;
-        let context = unsafe { &mut *context };
-        if let Ok(format) = env.get_string(&format) {
-            let format = format.to_string_lossy();
-
-            return env
-                .new_string(canvas_2d::to_data_url_context(&mut context.get_context_mut(), format.as_ref(),
-                                                           (quality * 100f32) as u32))
-                .unwrap()
-                .into_raw();
-        }
+    if context == 0 {
         return env.new_string("").unwrap().into_raw();
     }
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    if let Ok(format) = env.get_string(&format) {
+        let format = format.to_string_lossy();
+
+        return env
+            .new_string(canvas_2d::to_data_url_context(
+                &mut context.get_context_mut(),
+                format.as_ref(),
+                (quality * 100f32) as u32,
+            ))
+            .unwrap()
+            .into_raw();
+    }
+    return env.new_string("").unwrap().into_raw();
 }
 
 #[repr(transparent)]

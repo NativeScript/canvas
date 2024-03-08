@@ -15,15 +15,60 @@ import { fromObject, Observable } from '@nativescript/core';
 	});
 };
 
+export class Style {
+	proxy;
+	constructor() {
+		const values = new Map();
+		this.proxy = new Proxy(this, {
+			set(target, prop, value) {
+				target.setProperty(prop, value);
+				return true;
+			},
+			get(target, prop, receiver) {
+				return target.getPropertyValue(prop);
+			},
+		});
+		this._values = values;
+	}
+	_values: Map<any, any>;
+	__internalElement;
+	setProperty(key, val) {
+		console.log(this.__internalElement, key, val);
+		// todo check key + val
+		this._values.set(key, val);
+		if (this.__internalElement) {
+			this.__internalElement._dom.documentElement.setAttribute('style', this._styleToString());
+		}
+	}
+	getPropertyValue(key) {
+		return this._values.get(key);
+	}
+
+	_styleToString() {
+		let style = '';
+		this._values.forEach((val, key) => {
+			style = `${style}${key}:${val};`;
+		});
+		return style;
+	}
+}
+
 export class Node {
 	emitter: any;
-	style: any;
 	className: any;
 	nodeName: string;
 	_canvas: any;
-	__internalElement: any;
-	_styleMap = new Map();
+	___internalElement: any;
+	set __internalElement(value) {
+		this.___internalElement = value;
+		this._style.__internalElement = value;
+	}
+	get __internalElement() {
+		return this.___internalElement;
+	}
+
 	_id;
+	_style = new Style();
 	set id(value) {
 		this._id = value;
 		if (this.__internalElement) {
@@ -38,19 +83,6 @@ export class Node {
 		this.addEventListener = this.addEventListener.bind(this);
 		this.removeEventListener = this.removeEventListener.bind(this);
 		this._checkEmitter = this._checkEmitter.bind(this);
-
-		this.style = {
-			setProperty: (key, val) => {
-				// todo check key + val
-				this._styleMap.set(key, val);
-				if (this.__internalElement) {
-					this.__internalElement._dom.documentElement.setAttribute('style', this._styleToString());
-				}
-			},
-			getPropertyValue: (key) => {
-				return this._styleMap.get(key);
-			},
-		};
 		this.className = {
 			baseVal: '',
 		};
@@ -61,12 +93,8 @@ export class Node {
 		return window.document;
 	}
 
-	_styleToString() {
-		let style = '';
-		this._styleMap.forEach((val, key) => {
-			style = `${style}${key}:${val};`;
-		});
-		return style;
+	get style() {
+		return this._style;
 	}
 
 	_checkEmitter() {
@@ -89,7 +117,7 @@ export class Node {
 
 	removeEventListener(eventName, listener, thisArg) {
 		this._checkEmitter();
-		thisArg = thisArg || this;
+		thisArg = typeof thisArg === 'object' ? thisArg : this;
 		if (this.emitter.off) {
 			this.emitter.off(eventName, listener, thisArg);
 		} else if (this.emitter.removeEventListener) {
@@ -133,16 +161,7 @@ export class Node {
 
 	getBoundingClientRect() {
 		if (this._canvas) {
-			return {
-				left: 0,
-				top: 0,
-				right: this._canvas.innerWidth,
-				bottom: this._canvas.innerHeight,
-				x: 0,
-				y: 0,
-				width: this._canvas.innerWidth,
-				height: this._canvas.innerHeight,
-			};
+			return this._canvas.getBoundingClientRect();
 		}
 		return {
 			left: 0,

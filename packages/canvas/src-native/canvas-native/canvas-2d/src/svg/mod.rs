@@ -1,7 +1,7 @@
-use skia_safe::FontMgr;
 use std::io::{Read, Seek, SeekFrom};
 
 use skia_safe::svg::Dom;
+use skia_safe::FontMgr;
 
 use crate::context::Context;
 
@@ -25,7 +25,6 @@ pub fn draw_svg_from_path(context: &mut Context, path: &str) {
                             );
                             let canvas = context.surface.canvas();
                             svg.set_container_size(size);
-                            //  canvas.scale((device.density, device.density));
                             svg.render(canvas)
                         }
                         Err(e) => {
@@ -56,7 +55,6 @@ pub fn draw_svg(context: &mut Context, svg: &str) {
             );
             let canvas = context.surface.canvas();
             svg.set_container_size(size);
-            // canvas.scale((device.density, device.density));
             svg.render(canvas)
         }
         Err(e) => {

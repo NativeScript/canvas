@@ -29,6 +29,7 @@
       <w>uint</w>
       <w>varyings</w>
       <w>webgl</w>
+      <w>xform</w>
     </words>
   </dictionary>
 </component>

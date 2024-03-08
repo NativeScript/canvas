@@ -1,14 +1,11 @@
-use log::log;
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
 use std::os::raw::c_float;
 use std::sync::Arc;
 
-use skia_safe::gpu::gl::TextureInfo;
-use skia_safe::{images, Color, Data, Image, Point, Surface};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
+use skia_safe::{Color, Data, Image, images, Point, Surface};
 
-use crate::context::drawing_text::typography::Font;
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
 use filter_quality::FilterQuality;
@@ -19,6 +16,8 @@ use paths::path::Path;
 use text_styles::{
     text_align::TextAlign, text_baseline::TextBaseLine, text_direction::TextDirection,
 };
+
+use crate::context::drawing_text::typography::Font;
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -77,18 +76,46 @@ pub struct Device {
     pub samples: usize,
     pub alpha: bool,
     pub ppi: c_float,
+    pub is_np: bool,
 }
 
 impl Device {
-    pub fn new_non_gpu(width: c_float, height: c_float, density: c_float, ppi: c_float) -> Self {
+    pub fn new_non_gpu(
+        width: c_float,
+        height: c_float,
+        density: c_float,
+        alpha: bool,
+        ppi: c_float,
+    ) -> Self {
         Self {
             width,
             height,
             density,
             non_gpu: true,
             samples: 0,
-            alpha: false,
+            alpha,
             ppi,
+            is_np: width <= 0. || height <= 0.,
+        }
+    }
+
+    pub fn new(
+        width: c_float,
+        height: c_float,
+        density: c_float,
+        samples: usize,
+        alpha: bool,
+        ppi: c_float,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            density,
+            non_gpu: false,
+            samples,
+            alpha,
+            ppi,
+            is_np: width <= 0. || height <= 0.,
         }
     }
 }
@@ -132,9 +159,14 @@ impl State {
         }
     }
     pub fn from_device(device: Device, direction: TextDirection) -> Self {
+        let mut paint = Paint::default();
+        paint
+            .stroke_paint_mut()
+            .set_stroke_width(device.density)
+            .set_stroke_miter(10. * device.density);
         Self {
             direction,
-            paint: Paint::default(),
+            paint,
             font: "10px sans-serif".to_owned(),
             font_style: Font::default(),
             text_align: TextAlign::default(),
@@ -144,7 +176,7 @@ impl State {
             shadow_blur: 0.0,
             image_smoothing_enabled: false,
             image_smoothing_quality: ImageSmoothingQuality::default(),
-            line_width: 1.0,
+            line_width: 1.,
             line_cap: LineCap::default(),
             line_join: LineJoin::default(),
             miter_limit: 10.0,
@@ -298,6 +330,9 @@ impl Context {
     }
 
     pub fn snapshot_to_raster_data(&mut self) -> Vec<u8> {
+        if self.device.is_np {
+            return vec![];
+        }
         let ss = self.surface.image_snapshot();
 
         let info = ss.image_info();
@@ -331,6 +366,9 @@ impl Context {
     }
 
     pub fn snapshot_to_raster_image(&mut self) -> Option<Image> {
+        if self.device.is_np {
+            return None;
+        }
         let ss = self.surface.image_snapshot();
         ss.make_raster_image(
             &mut self.surface.direct_context(),
@@ -339,6 +377,9 @@ impl Context {
     }
 
     pub fn to_raster_image(&mut self, image: Image) -> Option<Image> {
+        if self.device.is_np {
+            return None;
+        }
         image.make_raster_image(
             &mut self.surface.direct_context(),
             skia_safe::image::CachingHint::Allow,
@@ -351,6 +392,10 @@ impl Context {
         is_alpha: bool,
         premultiply: bool,
     ) -> Option<Vec<u8>> {
+        if self.device.is_np {
+            return None;
+        }
+
         if let Some(image) = image.make_raster_image(
             &mut self.surface.direct_context(),
             skia_safe::image::CachingHint::Disallow,
@@ -360,7 +405,7 @@ impl Context {
             let mut info = skia_safe::ImageInfo::new(
                 info.dimensions(),
                 if is_alpha {
-                    skia_safe::ColorType::RGBA8888
+                    skia_safe::ColorType::Alpha8
                 } else {
                     skia_safe::ColorType::RGB565
                 },
@@ -372,7 +417,7 @@ impl Context {
                 None,
             );
 
-            let mut buf = vec![0_u8; info.compute_byte_size(info.min_row_bytes())];
+            let mut buf = vec![255_u8; info.compute_byte_size(info.min_row_bytes())];
 
             image.read_pixels(
                 &info,
@@ -384,6 +429,77 @@ impl Context {
             return Some(buf);
         }
 
+        None
+    }
+
+    pub fn read_pixels_into_bitmap_with_alpha_premultiply(
+        &mut self,
+        alpha: bool,
+        premultiply: bool,
+    ) -> skia_safe::Bitmap {
+        let mut bm = skia_safe::Bitmap::new();
+        let (width, height) = (self.surface.width(), self.surface.height());
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width, height),
+            if alpha {
+                skia_safe::ColorType::RGBA8888
+            } else {
+                skia_safe::ColorType::RGB565
+            },
+            if premultiply {
+                skia_safe::AlphaType::Premul
+            } else {
+                skia_safe::AlphaType::Unpremul
+            },
+            None,
+        );
+        if !self.device.is_np {
+            if let Some(mut context) = self.surface.direct_context() {
+                context.flush_submit_and_sync_cpu();
+            }
+            let _ = bm.set_info(&info, None);
+            bm.alloc_pixels();
+            self.surface
+                .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
+        }
+        bm
+    }
+
+
+
+    pub fn read_pixels_with_alpha_premultiply(
+        &mut self,
+        image: &Image,
+        alpha: bool,
+        premultiply: bool,
+    ) -> Option<Vec<u8>> {
+        let (width, height) = (image.width(), image.height());
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width, height),
+            if alpha {
+                skia_safe::ColorType::RGBA8888
+            } else {
+                skia_safe::ColorType::RGB565
+            },
+            if premultiply {
+                skia_safe::AlphaType::Premul
+            } else {
+                skia_safe::AlphaType::Unpremul
+            },
+            None,
+        );
+        if !self.device.is_np {
+            let row_bytes = if alpha { 4 } else {3};
+            let mut buf = vec![255_u8; (width * height * row_bytes) as usize];
+
+            log::info!(target: "JS", "info {:?}", &info);
+
+            let rb = info.min_row_bytes();
+            log::info!(target: "JS", "row bytes {} {} {} {}", row_bytes * width, rb, info.compute_byte_size(rb), width * height * row_bytes);
+
+            image.read_pixels(&info, buf.as_mut_slice(), (width * row_bytes) as usize, skia_safe::IPoint::new(0, 0), skia_safe::image::CachingHint::Disallow);
+            return Some(buf)
+        }
         None
     }
 
@@ -404,6 +520,10 @@ impl Context {
     }
 
     pub fn read_pixels(&mut self) -> Vec<u8> {
+        if self.device.is_np {
+            return vec![];
+        }
+
         if let Some(mut context) = self.surface.direct_context() {
             context.flush_submit_and_sync_cpu();
         }
@@ -416,7 +536,7 @@ impl Context {
             info.color_space(),
         );
 
-        let mut buf = vec![0_u8; info.compute_byte_size(info.min_row_bytes())];
+        let mut buf = vec![255_u8; info.compute_byte_size(info.min_row_bytes())];
 
         self.surface.read_pixels(
             &info,
@@ -428,25 +548,36 @@ impl Context {
     }
 
     pub fn read_pixels_to_data(&mut self) -> Option<Vec<u8>> {
-        let buf = self.read_pixels();
-        image::load_from_memory(buf.as_slice())
-            .map(|image| image.into_bytes())
-            .ok()
+        if self.device.is_np {
+            return None;
+        }
+        // let buf = self.read_pixels();
+        // image::load_from_memory(buf.as_slice())
+        //     .map(|image| image.into_bytes())
+        //     .ok()
+
+        // todo
+        Some(self.read_pixels())
     }
 
     pub fn read_pixels_into_bitmap(&mut self) -> skia_safe::Bitmap {
-        if let Some(mut context) = self.surface.direct_context() {
-            context.flush_submit_and_sync_cpu();
-        }
-        let info = self.surface.image_info();
         let mut bm = skia_safe::Bitmap::new();
-        bm.alloc_pixels_flags(&info);
-        self.surface
-            .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
+        if !self.device.is_np {
+            if let Some(mut context) = self.surface.direct_context() {
+                context.flush_submit_and_sync_cpu();
+            }
+            let info = self.surface.image_info();
+            bm.alloc_pixels_flags(&info);
+            self.surface
+                .read_pixels_to_bitmap(&bm, skia_safe::IPoint::new(0, 0));
+        }
         bm
     }
 
     pub fn read_pixels_into_image(&mut self) -> Option<Image> {
+        if self.device.is_np {
+            return None;
+        }
         if let Some(mut context) = self.surface.direct_context() {
             context.flush_submit_and_sync_cpu();
         }
@@ -463,6 +594,9 @@ impl Context {
     }
 
     pub fn image_snapshot_to_non_texture_image(&mut self) -> Option<Image> {
+        if self.device.is_np {
+            return None;
+        }
         let mut context = self.surface.direct_context();
         self.surface
             .image_snapshot()
@@ -470,19 +604,49 @@ impl Context {
     }
 
     pub fn read_pixels_to_encoded_data(&mut self) -> Option<Data> {
+        if self.device.is_np {
+            return None;
+        }
         let image = self.surface.image_snapshot();
         let mut ctx = self.surface.direct_context();
         image.encode(&mut ctx, skia_safe::EncodedImageFormat::PNG, 100)
     }
 
-    pub fn snapshot(&mut self) -> Image {
-        if let Some(mut context) = self.surface.direct_context() {
-            context.flush_submit_and_sync_cpu();
+    pub fn read_pixels_to_encoded_data_rgb(&mut self) -> Option<Data> {
+        if self.device.is_np {
+            return None;
         }
-        self.surface.image_snapshot()
+        let image = self.surface.image_snapshot();
+        let mut ctx = self.surface.direct_context();
+        image.encode(&mut ctx, skia_safe::EncodedImageFormat::JPEG, 100)
+    }
+
+    pub fn snapshot(&mut self) -> Image {
+        let image = self.surface.image_snapshot();
+        if image.is_texture_backed() {
+            if let Some(mut context) = self.surface.direct_context() {
+                context.flush_and_submit_image(&image);
+            }
+        }
+
+        image
+    }
+
+
+    pub fn raster_snapshot(&mut self) -> Option<Image> {
+        let image = self.surface.image_snapshot();
+        if image.is_texture_backed() {
+            if let Some(mut context) = self.surface.direct_context() {
+                return image.make_raster_image(&mut context, None)
+            }
+        }
+        Some(image)
     }
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {
+        if self.device.is_np {
+            return;
+        }
         let src_surface = &mut self.surface;
         src_surface.draw(
             surface.canvas(),

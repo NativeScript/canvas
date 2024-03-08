@@ -11,10 +11,10 @@ use std::sync::Arc;
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
 use canvas_2d::context::{Context, ContextWrapper};
-use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
-pub use canvas_2d::context::drawing_paths::fill_rule::FillRule;
+pub use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
+use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
-pub use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
@@ -23,12 +23,11 @@ use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
-    from_image_slice_no_copy,
 };
-use canvas_core::image_asset::OutputFormat;
-use canvas_webgl::prelude::WebGLVersion;
 // #[cfg(target_os = "android")]
 // use canvas_webgl::prelude::WebGLVersion;
+//#[cfg(target_os = "android")]
+use canvas_webgl::prelude::{WebGLPowerPreference, WebGLVersion};
 #[cfg(target_os = "android")]
 use once_cell::sync::OnceCell;
 
@@ -103,6 +102,7 @@ mod buffers;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
 
+pub mod impl_test;
 pub mod url;
 
 /* Raf */
@@ -670,12 +670,12 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
     canvas_native_webgl_create_no_window_internal(
         width as i32,
         height as i32,
-        "canvas",
+        WebGLVersion::V1,
         alpha,
         false,
         false,
         false,
-        "default",
+        WebGLPowerPreference::Default,
         true,
         false,
         false,
@@ -685,7 +685,17 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
     );
 
     let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-        alpha, false, false, false, "default", true, false, false, false, false, true,
+        alpha,
+        false,
+        false,
+        false,
+        canvas_core::context_attributes::PowerPreference::Default,
+        true,
+        false,
+        false,
+        false,
+        false,
+        true,
     );
 
     let gl_context = canvas_core::gl::GLContext::create_offscreen_context(
@@ -2257,17 +2267,15 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
     dx: f32,
     dy: f32,
 ) {
-    let width: f32;
-    let height: f32;
-    {
-        let asset = unsafe { &*asset };
-        width = asset.width() as f32;
-        height = asset.height() as f32;
-    }
+    assert!(!context.is_null());
+    assert!(!asset.is_null());
+    let context = unsafe { &mut *context };
+    let asset = unsafe { &*asset };
 
-    canvas_native_context_draw_image_asset(
-        context, asset, 0.0, 0.0, width, height, dx, dy, width, height,
-    );
+    context.make_current();
+    context
+        .get_context_mut()
+        .draw_image_asset_dx_dy(&asset.0, dx, dy);
 }
 
 #[inline(always)]
@@ -2280,17 +2288,15 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
     d_width: f32,
     d_height: f32,
 ) {
+    assert!(!context.is_null());
     assert!(!asset.is_null());
-    let width: f32;
-    let height: f32;
-    {
-        let asset = unsafe { &*asset };
-        width = asset.width() as f32;
-        height = asset.height() as f32;
-    }
-    canvas_native_context_draw_image_asset(
-        context, asset, 0.0, 0.0, width, height, dx, dy, d_width, d_height,
-    );
+    let context = unsafe { &mut *context };
+    let asset = unsafe { &*asset };
+
+    context.make_current();
+    context
+        .get_context_mut()
+        .draw_image_asset_dx_dy_dw_dh(&asset.0, dx, dy, d_width, d_height);
 }
 
 #[inline(always)]
@@ -2312,26 +2318,12 @@ pub extern "C" fn canvas_native_context_draw_image_asset(
     let context = unsafe { &mut *context };
     let asset = unsafe { &*asset };
 
-    let width = asset.width();
-    let height = asset.height();
-    let has_alpha = asset.get_channels() == 4;
-    if let Some(bytes) = asset.get_bytes() {
-        if has_alpha {
-            if let Some(image) = from_image_slice_no_copy(bytes, width as c_int, height as c_int) {
-                context.make_current();
-                context.get_context_mut().draw_image_src_xywh_dst_xywh(
-                    &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
-                );
-            }
-        } else {
-            if let Some(image) = from_bitmap_slice(bytes, width as c_int, height as c_int) {
-                context.make_current();
-                context.get_context_mut().draw_image_src_xywh_dst_xywh(
-                    &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
-                );
-            }
-        }
-    }
+    context.make_current();
+    context
+        .get_context_mut()
+        .draw_image_asset_src_xywh_dst_xywh(
+            &asset.0, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+        );
 }
 
 #[inline(always)]
@@ -2430,9 +2422,11 @@ pub extern "C" fn canvas_native_context_draw_image_context(
 
         let bytes = source_ctx.snapshot_to_raster_data();
 
-        if let Some(image) =
-            from_image_slice_no_copy(bytes.as_slice(), width as c_int, height as c_int)
-        {
+        if let Some(image) = canvas_2d::utils::image::from_image_slice_no_copy(
+            bytes.as_slice(),
+            width as c_int,
+            height as c_int,
+        ) {
             let context = unsafe { &mut *context };
             context.make_current();
             context.get_context_mut().draw_image_src_xywh_dst_xywh(
@@ -2441,8 +2435,6 @@ pub extern "C" fn canvas_native_context_draw_image_context(
         }
     }
 }
-
-
 
 #[inline(always)]
 #[no_mangle]
@@ -2489,7 +2481,6 @@ pub extern "C" fn canvas_native_context_draw_atlas(
         );
     }
 }
-
 
 #[inline(always)]
 #[no_mangle]
@@ -2574,7 +2565,6 @@ pub extern "C" fn canvas_native_context_draw_atlas_asset(
         CompositeOperationType::from(blend_mode),
     );
 }
-
 
 /*
 #[repr(C)]
@@ -3897,7 +3887,7 @@ pub extern "C" fn canvas_native_matrix_get_a(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_a(matrix: *mut Matrix, a: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_a(a)
 }
 
@@ -3909,7 +3899,7 @@ pub extern "C" fn canvas_native_matrix_get_b(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_b(matrix: *mut Matrix, b: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_b(b)
 }
 
@@ -3921,7 +3911,7 @@ pub extern "C" fn canvas_native_matrix_get_c(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_c(matrix: *mut Matrix, c: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_c(c)
 }
 
@@ -3933,7 +3923,7 @@ pub extern "C" fn canvas_native_matrix_get_d(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_d(matrix: *mut Matrix, d: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_d(d)
 }
 
@@ -3957,7 +3947,7 @@ pub extern "C" fn canvas_native_matrix_get_f(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_f(matrix: *mut Matrix, f: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_f(f)
 }
 
@@ -3969,7 +3959,7 @@ pub extern "C" fn canvas_native_matrix_get_m11(matrix: *const Matrix) -> f32 {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_set_m11(matrix: *mut Matrix, m11: f32) {
-    let mut matrix = unsafe { &mut *matrix };
+    let matrix = unsafe { &mut *matrix };
     matrix.inner_mut().set_m11(m11)
 }
 
@@ -4212,13 +4202,17 @@ impl ImageAsset {
 
 impl Default for ImageAsset {
     fn default() -> Self {
-        Self(Default::default())
+        Self(canvas_core::image_asset::ImageAsset::new())
     }
 }
 
 impl ImageAsset {
     pub fn is_valid(&self) -> bool {
         self.0.is_valid()
+    }
+
+    pub fn dimensions(&self) -> (c_uint, c_uint) {
+        self.0.dimensions()
     }
 
     pub fn width(&self) -> c_uint {
@@ -4229,10 +4223,6 @@ impl ImageAsset {
         self.0.height()
     }
 
-    pub fn save_path(&mut self, path: &str, format: OutputFormat) -> bool {
-        self.0.save_path(path, format)
-    }
-
     // pub fn size(&self) -> usize {
     //     self.0.size()
     // }
@@ -4240,6 +4230,17 @@ impl ImageAsset {
     #[cfg(any(unix))]
     pub fn load_from_fd(&mut self, fd: c_int) -> bool {
         self.0.load_from_fd(fd)
+    }
+
+    pub fn load_from_raw_bytes(
+        &mut self,
+        width: u32,
+        height: u32,
+        depth: u32,
+        data: Vec<u8>,
+    ) -> bool {
+        self.0
+            .load_from_raw_bytes(width as usize, height as usize, depth as usize, data)
     }
 
     pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
@@ -4255,10 +4256,6 @@ impl ImageAsset {
 
     pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
         self.0.load_from_bytes(buf)
-    }
-
-    pub fn scale(&mut self, x: c_uint, y: c_uint) -> bool {
-        self.0.scale(x, y)
     }
 
     pub fn get_bytes(&self) -> Option<&[u8]> {
@@ -4442,30 +4439,6 @@ pub extern "C" fn canvas_native_image_asset_has_error(asset: *mut ImageAsset) ->
         return false;
     }
     true
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_image_asset_scale(asset: *mut ImageAsset, x: u32, y: u32) -> bool {
-    if asset.is_null() {
-        return false;
-    }
-    let asset = unsafe { &mut *asset };
-    asset.scale(x, y)
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_image_asset_save_path(
-    asset: *mut ImageAsset,
-    path: *const c_char,
-    format: u32,
-) -> bool {
-    if asset.is_null() || path.is_null() {
-        return false;
-    }
-    let asset = unsafe { &mut *asset };
-    let path = unsafe { CStr::from_ptr(path) };
-    let path = path.to_string_lossy();
-    asset.save_path(path.as_ref(), OutputFormat::from(format))
 }
 
 #[allow(dead_code)]
@@ -5116,6 +5089,12 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
 #[derive(Debug)]
 pub struct WebGLState(canvas_webgl::prelude::WebGLState);
 
+impl WebGLState {
+    pub fn get_dimensions(&self) -> (i32, i32) {
+        self.0.get_dimensions()
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
     if state.is_null() {
@@ -5132,7 +5111,7 @@ impl WebGLState {
         antialias: bool,
         depth: bool,
         fail_if_major_performance_caveat: bool,
-        power_preference: &str,
+        power_preference: WebGLPowerPreference,
         premultiplied_alpha: bool,
         preserve_drawing_buffer: bool,
         stencil: bool,
@@ -5218,7 +5197,7 @@ impl ContextAttributes {
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.0.get_fail_if_major_performance_caveat()
     }
-    pub fn get_power_preference(&self) -> String {
+    pub fn get_power_preference(&self) -> WebGLPowerPreference {
         self.0.get_power_preference()
     }
     pub fn get_premultiplied_alpha(&self) -> bool {
@@ -5789,14 +5768,12 @@ pub extern "C" fn canvas_native_webgl_context_attribute_get_get_fail_if_major_pe
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_context_attribute_get_get_power_preference(
     attr: *const ContextAttributes,
-) -> *const c_char {
+) -> i32 {
     if attr.is_null() {
-        return std::ptr::null();
+        return 0;
     }
     let attr = unsafe { &*attr };
-    CString::new(attr.get_power_preference())
-        .unwrap()
-        .into_raw()
+    attr.get_power_preference().into()
 }
 
 #[no_mangle]
@@ -6298,66 +6275,57 @@ pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create(
     gl_context: i64,
-    version: *const c_char,
+    version: i32,
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
     desynchronized: bool,
     xr_compatible: bool,
 ) -> *mut WebGLState {
-    if version.is_null() || power_preference.is_null() {
-        return std::ptr::null_mut();
+    match (
+        WebGLVersion::try_from(version).ok(),
+        WebGLPowerPreference::try_from(power_preference).ok(),
+    ) {
+        (Some(version), Some(power_preference)) => {
+            let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
+            let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
+
+            let inner = WebGLState::new_with_context(
+                gl_context,
+                version,
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                false,
+            );
+            Box::into_raw(Box::new(inner))
+        }
+        _ => std::ptr::null_mut(),
     }
-    let version = unsafe { CStr::from_ptr(version) };
-    let version = version.to_string_lossy();
-
-    let power_preference = unsafe { CStr::from_ptr(power_preference) };
-    let power_preference = power_preference.to_string_lossy();
-
-    let version = if version.eq("v1") {
-        WebGLVersion::V1
-    } else if version.eq("v2") {
-        WebGLVersion::V2
-    } else {
-        WebGLVersion::NONE
-    };
-
-    let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
-    let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
-
-    let inner = WebGLState::new_with_context(
-        gl_context,
-        version,
-        alpha,
-        antialias,
-        depth,
-        fail_if_major_performance_caveat,
-        power_preference.as_ref(),
-        premultiplied_alpha,
-        preserve_drawing_buffer,
-        stencil,
-        desynchronized,
-        xr_compatible,
-        false,
-    );
-    Box::into_raw(Box::new(inner))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create_no_window(
     width: i32,
     height: i32,
-    version: *const c_char,
+    version: i32,
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: *const c_char,
+    power_preference: i32,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -6365,42 +6333,41 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
     xr_compatible: bool,
     is_canvas: bool,
 ) -> *mut WebGLState {
-    if version.is_null() || power_preference.is_null() {
-        return std::ptr::null_mut();
+    match (
+        WebGLVersion::try_from(version).ok(),
+        WebGLPowerPreference::try_from(power_preference).ok(),
+    ) {
+        (Some(version), Some(power_preference)) => {
+            Box::into_raw(Box::new(canvas_native_webgl_create_no_window_internal(
+                width,
+                height,
+                version,
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+            )))
+        }
+        _ => std::ptr::null_mut(),
     }
-    let version = unsafe { CStr::from_ptr(version) };
-    let version = version.to_string_lossy();
-
-    let power_preference = unsafe { CStr::from_ptr(power_preference) };
-    let power_preference = power_preference.to_string_lossy();
-
-    Box::into_raw(Box::new(canvas_native_webgl_create_no_window_internal(
-        width,
-        height,
-        version.as_ref(),
-        alpha,
-        antialias,
-        depth,
-        fail_if_major_performance_caveat,
-        power_preference.as_ref(),
-        premultiplied_alpha,
-        preserve_drawing_buffer,
-        stencil,
-        desynchronized,
-        xr_compatible,
-        is_canvas,
-    )))
 }
 
 fn canvas_native_webgl_create_no_window_internal(
     width: i32,
     height: i32,
-    version: &str,
+    version: WebGLVersion,
     alpha: bool,
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: &str,
+    power_preference: WebGLPowerPreference,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
@@ -6408,20 +6375,12 @@ fn canvas_native_webgl_create_no_window_internal(
     xr_compatible: bool,
     is_canvas: bool,
 ) -> WebGLState {
-    let version = if version.eq("v1") || version.eq("canvas") {
-        WebGLVersion::V1
-    } else if version.eq("v2") {
-        WebGLVersion::V2
-    } else {
-        WebGLVersion::NONE
-    };
-
     let mut attrs = canvas_core::context_attributes::ContextAttributes::new(
         alpha,
         antialias,
         depth,
         fail_if_major_performance_caveat,
-        power_preference,
+        power_preference.into(),
         premultiplied_alpha,
         preserve_drawing_buffer,
         stencil,
@@ -6440,7 +6399,7 @@ fn canvas_native_webgl_create_no_window_internal(
         attrs.get_antialias(),
         attrs.get_depth(),
         attrs.get_fail_if_major_performance_caveat(),
-        attrs.get_power_preference().as_str(),
+        WebGLPowerPreference::from(attrs.get_power_preference()),
         attrs.get_premultiplied_alpha(),
         attrs.get_preserve_drawing_buffer(),
         attrs.get_stencil(),
@@ -8115,67 +8074,120 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
 
-    let width: i32;
-    let height: i32;
-    let source_non_gpu;
-    {
-        let ctx = canvas.get_context();
-        let device = ctx.device();
-        width = device.width as i32;
-        height = device.height as i32;
-        source_non_gpu = device.non_gpu;
-    }
+    canvas.make_current();
+    let mut source_ctx = canvas.get_context_mut();
 
-    if !source_non_gpu {
-        canvas.make_current();
-        let mut source_ctx = canvas.get_context_mut();
+    if let Some(snapshot) = source_ctx.raster_snapshot() {
+        log::info!(target: "JS", "info {:?}", snapshot.image_info());
 
-        let snapshot = source_ctx.snapshot();
+        let width = snapshot.width();
+        let height = snapshot.height();
 
-        if let Some(pixels) = snapshot.peek_pixels() {
-            if let Some(buf) = pixels.bytes() {
-                let buf = buf.to_vec();
-                state.0.make_current();
+        let premultiply = state.get_inner().get_premultiplied_alpha();
 
-                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
-                    target,
-                    level,
-                    internalformat,
-                    width,
-                    height,
-                    0,
-                    format,
-                    image_type,
-                    buf.as_slice(),
-                    state.get_inner_mut(),
-                );
-            }
-        } else {
-            if let Some(buf) = source_ctx.to_raster_pixels(
-                snapshot,
-                if internalformat == gl_bindings::RGBA as i32 {
+        log::info!(target: "JS", "image_type {:?}", image_type);
+
+        match image_type as u32 {
+            gl_bindings::RGBA | gl_bindings::RGB => {
+                let alpha = if image_type == gl_bindings::RGBA as i32 {
                     true
                 } else {
                     false
-                },
-                true,
-            ) {
+                };
+
+                let buf =
+                    source_ctx.read_pixels_with_alpha_premultiply(&snapshot, alpha, premultiply);
+
                 state.0.make_current();
 
-                canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
-                    target,
-                    level,
-                    internalformat,
-                    width,
-                    height,
-                    0,
-                    format,
-                    image_type,
-                    buf.as_slice(),
-                    state.get_inner_mut(),
+                if let Some(bytes) = buf {
+                    canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                        target,
+                        level,
+                        internalformat,
+                        width,
+                        height,
+                        0,
+                        format,
+                        image_type,
+                        bytes.as_slice(),
+                        state.get_inner_mut(),
+                    );
+                }
+            }
+            _ => {}
+        }
+    } else {
+        log::info!(target: "JS", "raster_snapshot failed {:?}", image_type);
+    }
+
+    /*
+
+    if !source_non_gpu {
+        canvas.make_current();
+       /* let mut source_ctx = canvas.get_context_mut();
+        if internalformat == gl_bindings::RGBA as i32 {
+            if let Some(data) = source_ctx.read_pixels_to_encoded_data(){
+                state.0.make_current();
+
+                let mut asset = canvas_core::image_asset::ImageAsset::new();
+                asset.load_from_bytes(data.as_bytes());
+
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d_asset(
+                    target,level, internalformat, format, image_type, &asset, state.get_inner_mut()
                 );
             }
+        }else {
+            if let Some(data) = source_ctx.read_pixels_to_encoded_data_rgb(){
+                state.0.make_current();
+
+
+                let mut asset = canvas_core::image_asset::ImageAsset::new();
+                asset.load_from_bytes(data.as_bytes());
+                let (w,h) = asset.dimensions();
+                canvas_webgl::webgl::canvas_native_webgl_tex_image2d_asset(
+                    target,level, internalformat, format, image_type, &asset, state.get_inner_mut()
+                );
+            }
+        } */
+
+
+
+        let mut source_ctx = canvas.get_context_mut();
+       // source_ctx.flush_and_sync_cpu();
+      //  let snapshot = source_ctx.snapshot();
+
+        let alpha =  if internalformat == gl_bindings::RGBA as i32 {
+            true
+        } else {
+            false };
+
+        let bm =source_ctx.read_pixels_into_bitmap_with_alpha_premultiply( alpha, false);
+
+
+        state.0.make_current();
+
+        let pm = bm.pixmap();
+
+      //  unsafe { gl_bindings::PixelStorei(gl_bindings::UNPACK_ALIGNMENT, 1);}
+
+        if let Some(bytes) = pm.bytes() {
+            canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                0,
+                format,
+                image_type,
+                bytes,
+                state.get_inner_mut(),
+            );
         }
+
+
+
     } else {
         let mut source_ctx = canvas.get_context_mut();
         canvas.make_current();
@@ -8194,15 +8206,17 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
             state.get_inner_mut(),
         );
     }
+
+    */
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     target: i32,
     level: i32,
-    _internalformat: i32,
-    _format: i32,
-    _image_type: i32,
+    internalformat: i32,
+    format: i32,
+    image_type: i32,
     webgl: *mut WebGLState,
     state: *mut WebGLState,
 ) {
@@ -8210,22 +8224,21 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_webgl(
     assert!(!webgl.is_null());
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
-    let mut pixels =
-        canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
-    //   gl_bindings::RGBA,
-    //             gl_bindings::UNSIGNED_BYTE,
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
+        &mut webgl.0,
+        &mut state.0,
+        internalformat,
+        format,
+    );
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
-        // internalformat,
-        gl_bindings::RGBA as _,
+        internalformat,
         pixels.0,
         pixels.1,
         0,
-        // format,
-        gl_bindings::RGBA as _,
-        //image_type,
-        gl_bindings::UNSIGNED_BYTE as _,
+        format,
+        image_type,
         pixels.2.as_mut_slice(),
         state.get_inner_mut(),
     );
@@ -8381,27 +8394,27 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
 
-    let source_non_gpu;
-    {
-        let ctx = canvas.get_context();
-        let device = ctx.device();
-        source_non_gpu = device.non_gpu;
-    }
+    canvas.make_current();
+    let mut source_ctx = canvas.get_context_mut();
+    let snapshot = source_ctx.snapshot();
+    let width = snapshot.width();
+    let height = snapshot.height();
 
-    let mut buf;
-    if !source_non_gpu {
-        canvas.make_current();
-        let mut source_ctx = canvas.get_context_mut();
-        source_ctx.flush_and_sync_cpu();
-        let snapshot = source_ctx.snapshot();
-        let width = snapshot.width();
-        let height = snapshot.height();
+    let premultiply = state.get_inner().get_premultiplied_alpha();
 
-        if let Some(pixels) = snapshot.peek_pixels() {
-            if let Some(buf) = pixels.bytes() {
-                let mut buf = buf.to_vec();
-                state.0.make_current();
+    match image_type as u32 {
+        gl_bindings::RGBA | gl_bindings::RGB => {
+            let alpha = if image_type == gl_bindings::RGBA as i32 {
+                true
+            } else {
+                false
+            };
 
+            let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, alpha, premultiply);
+
+            state.0.make_current();
+
+            if let Some(bytes) = buf {
                 canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
                     target,
                     level,
@@ -8411,56 +8424,12 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
                     height,
                     format,
                     image_type,
-                    buf.as_mut_slice(),
-                    state.get_inner_mut(),
-                );
-            }
-        } else {
-            if let Some(mut buf) = source_ctx.to_raster_pixels(
-                snapshot,
-                if format == gl_bindings::RGBA {
-                    true
-                } else {
-                    false
-                },
-                true,
-            ) {
-                state.0.make_current();
-
-                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
-                    target,
-                    level,
-                    xoffset,
-                    yoffset,
-                    width,
-                    height,
-                    format,
-                    image_type,
-                    buf.as_mut_slice(),
+                    bytes.as_slice(),
                     state.get_inner_mut(),
                 );
             }
         }
-    } else {
-        let mut source_ctx = canvas.get_context_mut();
-        canvas.make_current();
-        let width = source_ctx.device().width;
-        let height = source_ctx.device().height;
-        buf = source_ctx.read_pixels();
-        canvas.remove_if_current();
-
-        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
-            target,
-            level,
-            xoffset,
-            yoffset,
-            width as _,
-            height as _,
-            format,
-            image_type,
-            buf.as_mut_slice(),
-            state.get_inner_mut(),
-        );
+        _ => {}
     }
 }
 
@@ -8470,8 +8439,8 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     level: i32,
     xoffset: i32,
     yoffset: i32,
-    _format: u32,
-    _image_type: i32,
+    format: u32,
+    image_type: i32,
     webgl: *mut WebGLState,
     state: *mut WebGLState,
 ) {
@@ -8488,8 +8457,12 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     let width = source.drawing_buffer_width();
     let height = source.drawing_buffer_height();
 
-    let mut pixels =
-        canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(&mut webgl.0, &mut state.0);
+    let mut pixels = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
+        &mut webgl.0,
+        &mut state.0,
+        image_type,
+        format as i32,
+    );
 
     canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
         target,
@@ -8498,10 +8471,8 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
         yoffset,
         width,
         height,
-        // format,
-        gl_bindings::RGBA as _,
-        // image_type,
-        gl_bindings::UNSIGNED_BYTE as _,
+        format,
+        image_type,
         pixels.2.as_mut_slice(),
         state.get_inner_mut(),
     );

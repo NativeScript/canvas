@@ -33,7 +33,7 @@
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
   "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha",
+    "@nativescript/canvas-polyfill": "beta",
     "phaser-ce": "2.20.0"
   }
 }

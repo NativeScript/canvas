@@ -43,7 +43,7 @@ public:
     static void GetError(v8::Local<v8::String> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
+//    static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void FromUrlSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -57,9 +57,9 @@ public:
 
     static void FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+   /* static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);*/
 
 
 private:

@@ -1,9 +1,12 @@
 import { DemoSharedBase } from '../utils';
 
-let TNSPIXIApplication;
 import { Screen } from '@nativescript/core';
 
-let PIXI;
+import type { Application, Graphics } from 'pixi.js';
+
+import PIXI from '@nativescript/canvas-pixi';
+
+// let PIXI;
 
 export class DemoSharedCanvasPixi extends DemoSharedBase {
 	root = '~/assets/pixi';
@@ -18,8 +21,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		const canvas = args.object;
-		TNSPIXIApplication = require('@nativescript/canvas-pixi').TNSPIXIApplication;
-		PIXI = require('pixi.js');
+		//	PIXI = require('@nativescript/canvas-pixi');
 		// const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 		// const canvas2 = document.createElement('canvas');
 		// const ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
@@ -39,8 +41,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// ctx.fillText('Help!!!', 0, 300);
 		// ctx2.fillText('Help2!!!', 0, 300);
 		// ctx.drawImage(canvas2, 0, 0);
-
 		//this.text(canvas);
+
 		//this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
 		//this.simplePlane(canvas);
@@ -48,10 +50,10 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		//this.dynamicGraphics(canvas);
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
-		this.renderTextureAdvance(canvas);
+		//this.renderTextureAdvance(canvas);
 		//this.starWarp(canvas);
 		//this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
@@ -66,15 +68,16 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 	}
 
 	textureRotate(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		// create a texture from an image path
 		let texture;
 
-		app.loader.add('flowerTop', this.root + '/images/flowerTop.png');
-		app.loader.load((loader, resources) => {
-			texture = resources.flowerTop.texture;
-			init();
-		});
+		// app.loader.add('flowerTop', this.root + '/images/flowerTop.png');
+		// app.loader.load((loader, resources) => {
+		// 	texture = resources.flowerTop.texture;
+		// 	init();
+		// });
 
 		function init() {
 			// create rotated textures
@@ -128,7 +131,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 	}
 
 	multiPassShaderGenMesh(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		app.view.height = 640;
 		// Build geometry.
 		const geometry = new PIXI.Geometry()
@@ -355,7 +359,8 @@ void main()
 	}
 
 	meshSharingGeo(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		const geometry = new PIXI.Geometry()
 			.addAttribute(
 				'aVertexPosition', // the attribute name
@@ -456,7 +461,8 @@ void main()
 	}
 
 	meshShader(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 
 		const geometry = new PIXI.Geometry()
 			.addAttribute(
@@ -546,7 +552,8 @@ void main()
 	}
 
 	renderTextureAdvance(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		// create two render textures... these dynamic textures will be used to draw the scene into itself
 
 		// create two render textures... these dynamic textures will be used to draw the scene into itself
@@ -597,36 +604,37 @@ void main()
 		// used for spinning!
 		let count = 0;
 
-		app.ticker.add(() => {
-			for (let i = 0; i < items.length; i++) {
-				// rotate each item
-				const item = items[i];
-				item.rotation += 0.1;
-			}
+		// app.ticker.add(() => {
+		// 	for (let i = 0; i < items.length; i++) {
+		// 		// rotate each item
+		// 		const item = items[i];
+		// 		item.rotation += 0.1;
+		// 	}
 
-			count += 0.01;
+		// 	count += 0.01;
 
-			// swap the buffers ...
-			const temp = renderTexture;
-			renderTexture = renderTexture2;
-			renderTexture2 = temp;
+		// 	// swap the buffers ...
+		// 	const temp = renderTexture;
+		// 	renderTexture = renderTexture2;
+		// 	renderTexture2 = temp;
 
-			// set the new texture
-			outputSprite.texture = renderTexture;
+		// 	// set the new texture
+		// 	outputSprite.texture = renderTexture;
 
-			// twist this up!
-			stuffContainer.rotation -= 0.01;
-			outputSprite.scale.set(1 + Math.sin(count) * 0.2);
+		// 	// twist this up!
+		// 	stuffContainer.rotation -= 0.01;
+		// 	outputSprite.scale.set(1 + Math.sin(count) * 0.2);
 
-			// render the stage to the texture
-			// the 'true' clears the texture before the content is rendered
-			app.renderer.render(app.stage, renderTexture2, false);
-		});
+		// 	// render the stage to the texture
+		// 	// the 'true' clears the texture before the content is rendered
+		// 	app.renderer.render(app.stage, renderTexture2, false);
+		// });
 	}
 
 	meshBasic(canvas) {
-		// const app = new TNSPIXIApplication({canvas});
-		const app = new TNSPIXIApplication({ canvas });
+		// const app = new PIXI.Application({canvas});
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		let count = 0;
 
 		// build a rope!
@@ -663,7 +671,8 @@ void main()
 	}
 
 	meshAdvance(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		let count = 0;
 
 		// build a rope!
@@ -718,9 +727,15 @@ void main()
 	}
 
 	dynamicGraphics(canvas) {
-		const app = new TNSPIXIApplication({ canvas, antialias: true });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context, antialias: true, resizeTo: canvas }) as any;
 
-		app.stage.interactive = true;
+		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
+
+		//document.body.appendChild(app.view);
+
+		app.stage.eventMode = 'static';
+		app.stage.hitArea = app.screen;
 
 		const graphics = new PIXI.Graphics();
 
@@ -771,6 +786,7 @@ void main()
 
 		// let's create a moving shape
 		const thing = new PIXI.Graphics();
+
 		app.stage.addChild(thing);
 		thing.x = 800 / 2;
 		thing.y = 600 / 2;
@@ -778,14 +794,12 @@ void main()
 		let count = 0;
 
 		// Just click on the stage to draw random lines
-		(window as any).app = app;
-		app.renderer.plugins.interaction.on('pointerdown', onPointerDown);
-
-		function onPointerDown() {
+		// window.app = app;
+		app.stage.on('pointerdown', () => {
 			graphics.lineStyle(Math.random() * 30, Math.random() * 0xffffff, 1);
 			graphics.moveTo(Math.random() * 800, Math.random() * 600);
 			graphics.bezierCurveTo(Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600);
-		}
+		});
 
 		app.ticker.add(() => {
 			count += 0.1;
@@ -806,55 +820,54 @@ void main()
 	}
 
 	bitmapFont(canvas) {
-		const app = new TNSPIXIApplication({ canvas, backgroundColor: 0x1099bb });
-		app.loader.add('desyrel', this.root + '/bitmap-font/desyrel.xml').load(onAssetsLoaded);
-
-		function onAssetsLoaded() {
-			const bitmapFontText = new (PIXI as any).BitmapText('bitmap fonts are supported!\nWoo yay!', { font: '55px Desyrel', align: 'left' });
-
-			bitmapFontText.x = 50;
-			bitmapFontText.y = 200;
-
-			app.stage.addChild(bitmapFontText);
-		}
+		// const app = new PIXI.Application({ canvas, backgroundColor: 0x1099bb });
+		// app.loader.add('desyrel', this.root + '/bitmap-font/desyrel.xml').load(onAssetsLoaded);
+		// function onAssetsLoaded() {
+		// 	const bitmapFontText = new (PIXI as any).BitmapText('bitmap fonts are supported!\nWoo yay!', { font: '55px Desyrel', align: 'left' });
+		// 	bitmapFontText.x = 50;
+		// 	bitmapFontText.y = 200;
+		// 	app.stage.addChild(bitmapFontText);
+		// }
 	}
 
 	explosion(canvas) {
-		const app = new TNSPIXIApplication({ canvas, backgroundColor: 0x1099bb });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb });
 
-		app.stop();
+		// app.stop();
 
-		const onAssetsLoaded = () => {
-			// create an array to store the textures
-			const explosionTextures = [];
-			let i;
+		// const onAssetsLoaded = () => {
+		// 	// create an array to store the textures
+		// 	const explosionTextures = [];
+		// 	let i;
 
-			for (i = 0; i < 26; i++) {
-				const texture = PIXI.Texture.from(`Explosion_Sequence_A ${i + 1}.png`);
-				explosionTextures.push(texture);
-			}
+		// 	for (i = 0; i < 26; i++) {
+		// 		const texture = PIXI.Texture.from(`Explosion_Sequence_A ${i + 1}.png`);
+		// 		explosionTextures.push(texture);
+		// 	}
 
-			for (i = 0; i < 50; i++) {
-				// create an explosion AnimatedSprite
-				const explosion = new PIXI.AnimatedSprite(explosionTextures);
+		// 	for (i = 0; i < 50; i++) {
+		// 		// create an explosion AnimatedSprite
+		// 		const explosion = new PIXI.AnimatedSprite(explosionTextures);
 
-				explosion.x = Math.random() * app.screen.width;
-				explosion.y = Math.random() * app.screen.height;
-				explosion.anchor.set(0.5);
-				explosion.rotation = Math.random() * Math.PI;
-				explosion.scale.set(0.75 + Math.random() * 0.5);
-				explosion.gotoAndPlay(Math.random() * 27);
-				app.stage.addChild(explosion);
-			}
-			// start animating
-			app.start();
-		};
+		// 		explosion.x = Math.random() * app.screen.width;
+		// 		explosion.y = Math.random() * app.screen.height;
+		// 		explosion.anchor.set(0.5);
+		// 		explosion.rotation = Math.random() * Math.PI;
+		// 		explosion.scale.set(0.75 + Math.random() * 0.5);
+		// 		explosion.gotoAndPlay(Math.random() * 27);
+		// 		app.stage.addChild(explosion);
+		// 	}
+		// 	// start animating
+		// 	app.start();
+		// };
 
-		app.loader.add('spritesheet', this.root + '/spritesheet/mc.json').load(onAssetsLoaded);
+		// app.loader.add('spritesheet', this.root + '/spritesheet/mc.json').load(onAssetsLoaded);
 	}
 
 	starWarp(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 
 		// Get the texture for rope.
 		const starTexture = PIXI.Texture.from(this.root + '/images/star.png');
@@ -928,64 +941,56 @@ void main()
 	}
 
 	container(canvas) {
-		const app = new TNSPIXIApplication({ canvas, backgroundColor: 0x1099bb });
-		const container = new PIXI.Container();
-		app.stage.addChild(container);
-		const loader = new PIXI.Loader();
-		loader.add('bunny', this.root + '/images/bunny.png');
-		loader.load((loader, resources) => {
-			// Create a new texture
-			const texture = new PIXI.Texture(resources.bunny.texture);
-
-			// Create a 5x5 grid of bunnies
-			for (let i = 0; i < 25; i++) {
-				const bunny = new PIXI.Sprite(texture);
-				bunny.anchor.set(0.5);
-				bunny.x = (i % 5) * 40;
-				bunny.y = Math.floor(i / 5) * 40;
-				container.addChild(bunny);
-			}
-
-			// Move container to the center
-			container.x = app.screen.width / 2;
-			container.y = app.screen.height / 2;
-
-			// Center bunny sprite in local container coordinates
-			container.pivot.x = container.width / 2;
-			container.pivot.y = container.height / 2;
-
-			// Listen for animate update
-			app.ticker.add((delta) => {
-				// rotate the container!
-				// use delta to create frame-independent transform
-				container.rotation -= 0.01 * delta;
-			});
-		});
+		// const app = new PIXI.Application({ canvas, backgroundColor: 0x1099bb });
+		// const container = new PIXI.Container();
+		// app.stage.addChild(container);
+		// const loader = new PIXI.Loader();
+		// loader.add('bunny', this.root + '/images/bunny.png');
+		// loader.load((loader, resources) => {
+		// 	// Create a new texture
+		// 	const texture = new PIXI.Texture(resources.bunny.texture);
+		// 	// Create a 5x5 grid of bunnies
+		// 	for (let i = 0; i < 25; i++) {
+		// 		const bunny = new PIXI.Sprite(texture);
+		// 		bunny.anchor.set(0.5);
+		// 		bunny.x = (i % 5) * 40;
+		// 		bunny.y = Math.floor(i / 5) * 40;
+		// 		container.addChild(bunny);
+		// 	}
+		// 	// Move container to the center
+		// 	container.x = app.screen.width / 2;
+		// 	container.y = app.screen.height / 2;
+		// 	// Center bunny sprite in local container coordinates
+		// 	container.pivot.x = container.width / 2;
+		// 	container.pivot.y = container.height / 2;
+		// 	// Listen for animate update
+		// 	app.ticker.add((delta) => {
+		// 		// rotate the container!
+		// 		// use delta to create frame-independent transform
+		// 		container.rotation -= 0.01 * delta;
+		// 	});
+		// });
 	}
 
 	transparent(canvas) {
-		const app = new TNSPIXIApplication({ canvas, transparent: true });
-
-		// create a new Sprite from an image path.
-		const bunny = PIXI.Sprite.from(this.root + '/images/bunny.png');
-
-		// center the sprite's anchor point
-		bunny.anchor.set(0.5);
-
-		// move the sprite to the center of the screen
-		bunny.x = app.screen.width / 2;
-		bunny.y = app.screen.height / 2;
-
-		app.stage.addChild(bunny);
-
-		app.ticker.add(() => {
-			// just for fun, let's rotate mr rabbit a little
-			bunny.rotation += 0.1;
-		});
+		// const app = new PIXI.Application({ canvas, transparent: true });
+		// // create a new Sprite from an image path.
+		// const bunny = PIXI.Sprite.from(this.root + '/images/bunny.png');
+		// // center the sprite's anchor point
+		// bunny.anchor.set(0.5);
+		// // move the sprite to the center of the screen
+		// bunny.x = app.screen.width / 2;
+		// bunny.y = app.screen.height / 2;
+		// app.stage.addChild(bunny);
+		// app.ticker.add(() => {
+		// 	// just for fun, let's rotate mr rabbit a little
+		// 	bunny.rotation += 0.1;
+		// });
 	}
 
 	eggHead(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		// holder to store the aliens
 		const aliens = [];
 
@@ -1053,83 +1058,70 @@ void main()
 	}
 
 	cacheAsBitmap(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
-
-		app.stop();
-
-		// load resources
-		app.loader.add('spritesheet', this.root + '/spritesheet/monsters.json').load(onAssetsLoaded);
-
-		// holder to store aliens
-		const aliens = [];
-		const alienFrames = ['eggHead.png', 'flowerTop.png', 'helmlok.png', 'skully.png'];
-
-		let count = 0;
-
-		// create an empty container
-		const alienContainer = new PIXI.Container();
-		alienContainer.x = 400;
-		alienContainer.y = 300;
-
-		// make the stage interactive
-		app.stage.interactive = true;
-		app.stage.addChild(alienContainer);
-
-		function onAssetsLoaded() {
-			// add a bunch of aliens with textures from image paths
-			for (let i = 0; i < 100; i++) {
-				const frameName = alienFrames[i % 4];
-
-				// create an alien using the frame name..
-				const alien = PIXI.Sprite.from(frameName);
-				alien.tint = Math.random() * 0xffffff;
-
-				/*
-				 * fun fact for the day :)
-				 * another way of doing the above would be
-				 * var texture = PIXI.Texture.from(frameName);
-				 * var alien = new PIXI.Sprite(texture);
-				 */
-				alien.x = Math.random() * 800 - 400;
-				alien.y = Math.random() * 600 - 300;
-				alien.anchor.x = 0.5;
-				alien.anchor.y = 0.5;
-				aliens.push(alien);
-				alienContainer.addChild(alien);
-			}
-			app.start();
-		}
-
-		// Combines both mouse click + touch tap
-		app.stage.on('pointertap', onClick);
-
-		function onClick() {
-			alienContainer.cacheAsBitmap = !alienContainer.cacheAsBitmap;
-
-			// feel free to play with what's below
-			// var sprite = new PIXI.Sprite(alienContainer.generateTexture());
-			// app.stage.addChild(sprite);
-			// sprite.x = Math.random() * 800;
-			// sprite.y = Math.random() * 600;
-		}
-
-		app.ticker.add(() => {
-			// let's rotate the aliens a little bit
-			for (let i = 0; i < 100; i++) {
-				const alien = aliens[i];
-				alien.rotation += 0.1;
-			}
-
-			count += 0.01;
-
-			alienContainer.scale.x = Math.sin(count);
-			alienContainer.scale.y = Math.sin(count);
-			alienContainer.rotation += 0.01;
-		});
+		// const context = canvas.getContext('webgl2');
+		// const app = new PIXI.Application({ context });
+		// app.stop();
+		// // load resources
+		// app.loader.add('spritesheet', this.root + '/spritesheet/monsters.json').load(onAssetsLoaded);
+		// // holder to store aliens
+		// const aliens = [];
+		// const alienFrames = ['eggHead.png', 'flowerTop.png', 'helmlok.png', 'skully.png'];
+		// let count = 0;
+		// // create an empty container
+		// const alienContainer = new PIXI.Container();
+		// alienContainer.x = 400;
+		// alienContainer.y = 300;
+		// // make the stage interactive
+		// app.stage.interactive = true;
+		// app.stage.addChild(alienContainer);
+		// function onAssetsLoaded() {
+		// 	// add a bunch of aliens with textures from image paths
+		// 	for (let i = 0; i < 100; i++) {
+		// 		const frameName = alienFrames[i % 4];
+		// 		// create an alien using the frame name..
+		// 		const alien = PIXI.Sprite.from(frameName);
+		// 		alien.tint = Math.random() * 0xffffff;
+		// 		/*
+		// 		 * fun fact for the day :)
+		// 		 * another way of doing the above would be
+		// 		 * var texture = PIXI.Texture.from(frameName);
+		// 		 * var alien = new PIXI.Sprite(texture);
+		// 		 */
+		// 		alien.x = Math.random() * 800 - 400;
+		// 		alien.y = Math.random() * 600 - 300;
+		// 		alien.anchor.x = 0.5;
+		// 		alien.anchor.y = 0.5;
+		// 		aliens.push(alien);
+		// 		alienContainer.addChild(alien);
+		// 	}
+		// 	app.start();
+		// }
+		// // Combines both mouse click + touch tap
+		// app.stage.on('pointertap', onClick);
+		// function onClick() {
+		// 	alienContainer.cacheAsBitmap = !alienContainer.cacheAsBitmap;
+		// 	// feel free to play with what's below
+		// 	// var sprite = new PIXI.Sprite(alienContainer.generateTexture());
+		// 	// app.stage.addChild(sprite);
+		// 	// sprite.x = Math.random() * 800;
+		// 	// sprite.y = Math.random() * 600;
+		// }
+		// app.ticker.add(() => {
+		// 	// let's rotate the aliens a little bit
+		// 	for (let i = 0; i < 100; i++) {
+		// 		const alien = aliens[i];
+		// 		alien.rotation += 0.1;
+		// 	}
+		// 	count += 0.01;
+		// 	alienContainer.scale.x = Math.sin(count);
+		// 	alienContainer.scale.y = Math.sin(count);
+		// 	alienContainer.rotation += 0.01;
+		// });
 	}
 
 	particleContainer(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 		const sprites = new (PIXI.ParticleContainer as any)(10000, {
 			scale: true,
 			position: true,
@@ -1215,7 +1207,8 @@ void main()
 	}
 
 	blendModes(canvas) {
-		const app = new TNSPIXIApplication({ canvas });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
 
 		// create a new background sprite
 		const background = PIXI.Sprite.from(this.root + '/images/bg_rotate.jpg');
@@ -1290,20 +1283,15 @@ void main()
 	}
 
 	simplePlane(canvas) {
-		const app = new TNSPIXIApplication({
-			canvas,
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({
+			context,
 			backgroundColor: 0x1099bb,
 		});
-		app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
-
-		function build() {
-			// Create a new texture
-			const texture = app.loader.resources.bg_grass.texture;
-
-			// Create the simple plane
-			const verticesX = 10;
-			const verticesY = 10;
-			const plane = new PIXI.SimplePlane(texture, verticesX, verticesY);
+		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
+		PIXI.Assets.load(this.root + '/images/bg_grass.jpg').then((texture) => {
+			console.log(texture);
+			const plane = new PIXI.SimplePlane(texture, 10, 10);
 
 			plane.x = 100;
 			plane.y = 100;
@@ -1311,24 +1299,30 @@ void main()
 			app.stage.addChild(plane);
 
 			// Get the buffer for vertice positions.
-			const buffer = plane.geometry.getBuffer('aVertexPosition') as any;
+			const buffer = plane.geometry.getBuffer('aVertexPosition');
+
 			// Listen for animate update
-			app.ticker.add((delta) => {
+			let timer = 0;
+
+			app.ticker.add(() => {
 				// Randomize the vertice positions a bit to create movement.
 				for (let i = 0; i < buffer.data.length; i++) {
-					buffer.data[i] += Math.random() - 0.5;
+					buffer.data[i] += Math.sin(timer / 10 + i) * 0.5;
 				}
 				buffer.update();
+				timer++;
 			});
-		}
+		});
 	}
 
 	animatedJet(canvas) {
-		const app = new TNSPIXIApplication({
-			canvas,
+		const app = new PIXI.Application({
+			context: canvas.getContext('webgl2'),
 		});
 
-		app.loader.add(this.root + '/spritesheet/fighter.json').load(onAssetsLoaded);
+		/*	app.loader.add(this.root + '/spritesheet/fighter.json').load(onAssetsLoaded);
+
+
 
 		function onAssetsLoaded() {
 			// create an array of textures from an image path
@@ -1344,10 +1338,7 @@ void main()
 			// create an AnimatedSprite (brings back memories from the days of Flash, right ?)
 			const anim = new PIXI.AnimatedSprite(frames);
 
-			/*
-			 * An AnimatedSprite inherits all the properties of a PIXI sprite
-			 * so you can change its position, its anchor, mask it, etc
-			 */
+			
 			anim.x = app.screen.width / 2;
 			anim.y = app.screen.height / 2;
 			anim.anchor.set(0.5);
@@ -1361,11 +1352,42 @@ void main()
 				anim.rotation += 0.01;
 			});
 		}
+
+		*/
+
+		PIXI.Assets.load(this.root + '/spritesheet/fighter.json').then(() => {
+			// create an array of textures from an image path
+			const frames = [];
+
+			for (let i = 0; i < 30; i++) {
+				const val = i < 10 ? `0${i}` : i;
+
+				// magically works since the spritesheet was loaded with the pixi loader
+				frames.push(PIXI.Texture.from(`rollSequence00${val}.png`));
+			}
+
+			// create an AnimatedSprite (brings back memories from the days of Flash, right ?)
+			const anim = new PIXI.AnimatedSprite(frames);
+
+			anim.x = app.screen.width / 2;
+			anim.y = app.screen.height / 2;
+			anim.anchor.set(0.5);
+			anim.animationSpeed = 0.5;
+			anim.play();
+
+			app.stage.addChild(anim);
+
+			// Animate the rotation
+			app.ticker.add(() => {
+				anim.rotation += 0.01;
+			});
+		});
 	}
 
 	text(canvas) {
-		const app = new TNSPIXIApplication({
-			canvas,
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({
+			context,
 			backgroundColor: 0x1099bb,
 		});
 
@@ -1375,28 +1397,28 @@ void main()
 
 		app.stage.addChild(basicText);
 
-		const style = new PIXI.TextStyle({
-			fontFamily: 'Arial',
-			fontSize: 300,
-			fontStyle: 'italic',
-			fontWeight: 'bold',
-			fill: ['#ffffff', '#00ff99'], // gradient
-			stroke: '#4a1850',
-			strokeThickness: 5,
-			dropShadow: true,
-			dropShadowColor: '#000000',
-			dropShadowBlur: 4,
-			dropShadowAngle: Math.PI / 6,
-			dropShadowDistance: 6,
-			wordWrap: true,
-			wordWrapWidth: 440,
-		});
+		// const style = new PIXI.TextStyle({
+		// 	fontFamily: 'Arial',
+		// 	fontSize: 300,
+		// 	fontStyle: 'italic',
+		// 	fontWeight: 'bold',
+		// 	fill: ['#ffffff', '#00ff99'], // gradient
+		// 	stroke: '#4a1850',
+		// 	strokeThickness: 5,
+		// 	dropShadow: true,
+		// 	dropShadowColor: '#000000',
+		// 	dropShadowBlur: 4,
+		// 	dropShadowAngle: Math.PI / 6,
+		// 	dropShadowDistance: 6,
+		// 	wordWrap: true,
+		// 	wordWrapWidth: 440,
+		// });
 
-		const richText = new PIXI.Text('Rich text with a lot of options and across multiple lines', style);
-		richText.x = 50;
-		richText.y = 250;
+		// const richText = new PIXI.Text('Rich text with a lot of options and across multiple lines', style);
+		// richText.x = 50;
+		// richText.y = 250;
 
-		app.stage.addChild(richText);
+		// app.stage.addChild(richText);
 	}
 
 	drawPatternWithCanvas(canvas) {
@@ -1423,60 +1445,60 @@ void main()
 
 	/* Graphics */
 	simple(canvas) {
-		const app = new TNSPIXIApplication({
-			canvas,
-			backgroundColor: 0x1099bb,
-		});
-		const graphics = new PIXI.Graphics();
+		const context = canvas.getContext('webgl2', { alpha: true, stencil: true, depth: true });
+		const app = new PIXI.Application({
+			context,
+		}) as Application;
+		const graphics = new PIXI.Graphics() as Graphics;
 
 		// Rectangle
 		graphics.beginFill(0xde3249);
 		graphics.drawRect(50, 50, 100, 100);
 		graphics.endFill();
 
-		// Rectangle + line style 1
+		// // Rectangle + line style 1
 		graphics.lineStyle(2, 0xfeeb77, 1);
 		graphics.beginFill(0x650a5a);
 		graphics.drawRect(200, 50, 100, 100);
 		graphics.endFill();
 
-		// Rectangle + line style 2
+		// // Rectangle + line style 2
 		graphics.lineStyle(10, 0xffbd01, 1);
 		graphics.beginFill(0xc34288);
 		graphics.drawRect(350, 50, 100, 100);
 		graphics.endFill();
 
-		// Rectangle 2
+		// // Rectangle 2
 		graphics.lineStyle(2, 0xffffff, 1);
 		graphics.beginFill(0xaa4f08);
 		graphics.drawRect(530, 50, 140, 100);
 		graphics.endFill();
 
-		// Circle
+		// // Circle
 		graphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
 		graphics.beginFill(0xde3249, 1);
 		graphics.drawCircle(100, 250, 50);
 		graphics.endFill();
 
-		// Circle + line style 1
+		// // Circle + line style 1
 		graphics.lineStyle(2, 0xfeeb77, 1);
 		graphics.beginFill(0x650a5a, 1);
 		graphics.drawCircle(250, 250, 50);
 		graphics.endFill();
 
-		// Circle + line style 2
+		// // Circle + line style 2
 		graphics.lineStyle(10, 0xffbd01, 1);
 		graphics.beginFill(0xc34288, 1);
 		graphics.drawCircle(400, 250, 50);
 		graphics.endFill();
 
-		// Ellipse + line style 2
+		// // Ellipse + line style 2
 		graphics.lineStyle(2, 0xffffff, 1);
 		graphics.beginFill(0xaa4f08, 1);
 		graphics.drawEllipse(600, 250, 80, 50);
 		graphics.endFill();
 
-		// draw a shape
+		// // draw a shape
 		graphics.beginFill(0xff3300);
 		graphics.lineStyle(4, 0xffd900, 1);
 		graphics.moveTo(50, 350);
@@ -1486,29 +1508,29 @@ void main()
 		graphics.closePath();
 		graphics.endFill();
 
-		// draw a rounded rectangle
+		// // draw a rounded rectangle
 		graphics.lineStyle(2, 0xff00ff, 1);
 		graphics.beginFill(0x650a5a, 0.25);
 		graphics.drawRoundedRect(50, 440, 100, 100, 16);
 		graphics.endFill();
 
 		// draw star
-		graphics.lineStyle(2, 0xffffff);
-		graphics.beginFill(0x35cc5a, 1);
-		graphics.drawStar(360, 370, 5, 50);
-		graphics.endFill();
+		// graphics.lineStyle(2, 0xffffff);
+		// graphics.beginFill(0x35cc5a, 1);
+		// graphics.drawStar(360, 370, 5, 50);
+		// graphics.endFill();
 
 		// draw star 2
-		graphics.lineStyle(2, 0xffffff);
-		graphics.beginFill(0xffcc5a, 1);
-		graphics.drawStar(280, 510, 7, 50);
-		graphics.endFill();
+		// graphics.lineStyle(2, 0xffffff);
+		// graphics.beginFill(0xffcc5a, 1);
+		// graphics.drawStar(280, 510, 7, 50);
+		// graphics.endFill();
 
 		// draw star 3
-		graphics.lineStyle(4, 0xffffff);
-		graphics.beginFill(0x55335a, 1);
-		graphics.drawStar(470, 450, 4, 50);
-		graphics.endFill();
+		// graphics.lineStyle(4, 0xffffff);
+		// graphics.beginFill(0x55335a, 1);
+		// graphics.drawStar(470, 450, 4, 50);
+		// graphics.endFill();
 
 		// draw polygon
 		const path = [600, 370, 700, 460, 780, 420, 730, 570, 590, 520];
@@ -1522,8 +1544,8 @@ void main()
 	}
 
 	advance(canvas) {
-		const app = new TNSPIXIApplication({
-			canvas,
+		const app = new PIXI.Application({
+			context: canvas.getContext('webgl2'),
 		});
 		const sprite = PIXI.Sprite.from(this.root + '/images/bg_rotate.jpg');
 

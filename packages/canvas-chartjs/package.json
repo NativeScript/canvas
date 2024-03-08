@@ -33,7 +33,7 @@
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
   "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha",
+    "@nativescript/canvas-polyfill": "beta",
     "chart.js": "~4.4.0"
   }
 }

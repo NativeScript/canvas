@@ -54,6 +54,7 @@ import {
 	clip2,
 	clip3,
 	clearRect,
+	skew,
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
@@ -632,7 +633,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 	draw() {
 	//	const ctx = this.canvas.getContext('2d');
-/*
+		/*
 
 		const asset = new global.ImageAsset();
 		asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
@@ -801,7 +802,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//createChaosLines(this.canvas);
-		//flappyBird(this.canvas);
+		flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
@@ -810,6 +811,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
+		//skew(this.canvas);
 		//this.putImageDataDemo(this.canvas);
 		//	this.drawImage(this.canvas);
 		// ctx.fillStyle = 'blue';
@@ -855,7 +857,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
-		main(this.canvas);
+		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
 		//this.wordSpacing(this.canvas);
 		//imageProcessing(this.canvas);
@@ -1912,14 +1914,12 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	clock(canvas) {
 		let scale = false;
 		var ctx = canvas.getContext('2d');
-		ctx.scale(0.1, 0.1);
-		ctx.translate(100, 100);
-
 		function clock() {
 			var now = new Date();
 			ctx.save();
-			ctx.clearRect(100, 100, 150, 150);
-			ctx.translate(75, 75);
+
+			ctx.clearRect(0, 0, 150, 150);
+			ctx.translate(75 * Screen.mainScreen.scale, 75 * Screen.mainScreen.scale);
 			ctx.scale(0.4, 0.4);
 			ctx.rotate(-Math.PI / 2);
 			ctx.strokeStyle = 'black';

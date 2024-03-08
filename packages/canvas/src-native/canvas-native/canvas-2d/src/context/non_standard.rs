@@ -64,64 +64,123 @@ impl TryFrom<&str> for PointMode {
 }
 
 impl Context {
-
-    pub fn draw_atlas_asset_color(&mut self, image: &ImageAsset, xform: &[f32], tex: &[f32], colors: Option<&[&CStr]>, blend_mode: CompositeOperationType){
+    pub fn draw_atlas_asset_color(
+        &mut self,
+        image: &ImageAsset,
+        xform: &[f32],
+        tex: &[f32],
+        colors: Option<&[&CStr]>,
+        blend_mode: CompositeOperationType,
+    ) {
         let image = image.skia_image();
         if let Some(image) = image {
-            let colors: Option<Vec<Color>> = colors.map(|color|{
-                color.iter().map(|color|{
-                    let color = color.to_string_lossy();
-                    color::parse_color(color.as_ref())
-                }).flatten().collect()
+            let colors: Option<Vec<Color>> = colors.map(|color| {
+                color
+                    .iter()
+                    .map(|color| {
+                        let color = color.to_string_lossy();
+                        color::parse_color(color.as_ref())
+                    })
+                    .flatten()
+                    .collect()
             });
             self.draw_atlas(&image, xform, tex, colors.as_deref(), blend_mode)
         }
     }
-    pub fn draw_atlas_asset(&mut self, image: &ImageAsset, xform: &[f32], tex: &[f32], colors: Option<&[Color]>, blend_mode: CompositeOperationType){
+    pub fn draw_atlas_asset(
+        &mut self,
+        image: &ImageAsset,
+        xform: &[f32],
+        tex: &[f32],
+        colors: Option<&[Color]>,
+        blend_mode: CompositeOperationType,
+    ) {
         let image = image.skia_image();
         if let Some(image) = image {
             self.draw_atlas(&image, xform, tex, colors, blend_mode)
         }
     }
 
-
-    pub fn draw_atlas_color(&mut self, image: &Image, xform: &[f32], tex: &[f32], colors: Option<&[&CStr]>, blend_mode: CompositeOperationType){
-        let colors: Option<Vec<Color>> = colors.map(|color|{
-            color.iter().map(|color|{
-                let color = color.to_string_lossy();
-                color::parse_color(color.as_ref())
-            }).flatten().collect()
+    pub fn draw_atlas_color(
+        &mut self,
+        image: &Image,
+        xform: &[f32],
+        tex: &[f32],
+        colors: Option<&[&CStr]>,
+        blend_mode: CompositeOperationType,
+    ) {
+        let colors: Option<Vec<Color>> = colors.map(|color| {
+            color
+                .iter()
+                .map(|color| {
+                    let color = color.to_string_lossy();
+                    color::parse_color(color.as_ref())
+                })
+                .flatten()
+                .collect()
         });
 
         self.draw_atlas(&image, xform, tex, colors.as_deref(), blend_mode)
     }
 
-    pub fn draw_atlas(&mut self, image: &Image, xform: &[f32], tex: &[f32], colors: Option<&[Color]>, blend_mode: CompositeOperationType){
-        if xform.len() % 4 != 0 { return;  }
-        let xform: Vec<_> = xform.chunks(4).map(|value|{
-            skia_safe::RSXform::new(value[0], value[1], skia_safe::Vector::new(value[2], value[3]))
-        }).collect();
-        if tex.len() % 4 != 0 { return;  }
-        let tex: Vec<_> = tex.chunks(4).map(|value|{
-            skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3])
-        }).collect();
-        self.surface.canvas().draw_atlas(&image, xform.as_slice(), tex.as_slice(), colors, blend_mode.get_blend_mode(), skia_safe::SamplingOptions::default(), None, None);
+    pub fn draw_atlas(
+        &mut self,
+        image: &Image,
+        xform: &[f32],
+        tex: &[f32],
+        colors: Option<&[Color]>,
+        blend_mode: CompositeOperationType,
+    ) {
+        if xform.len() % 4 != 0 {
+            return;
+        }
+        let xform: Vec<_> = xform
+            .chunks(4)
+            .map(|value| {
+                skia_safe::RSXform::new(
+                    value[0],
+                    value[1],
+                    skia_safe::Vector::new(value[2], value[3]),
+                )
+            })
+            .collect();
+        if tex.len() % 4 != 0 {
+            return;
+        }
+        let tex: Vec<_> = tex
+            .chunks(4)
+            .map(|value| skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3]))
+            .collect();
+        self.surface.canvas().draw_atlas(
+            &image,
+            xform.as_slice(),
+            tex.as_slice(),
+            colors,
+            blend_mode.get_blend_mode(),
+            skia_safe::SamplingOptions::default(),
+            None,
+            None,
+        );
     }
 
-
-    pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32){
-        self.surface.canvas().draw_oval(skia_safe::Rect::from_xywh(x, y, width, height), self.state.paint.fill_paint());
+    pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
+        self.surface.canvas().draw_oval(
+            skia_safe::Rect::from_xywh(x, y, width, height),
+            self.state.paint.fill_paint(),
+        );
     }
 
-    pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32){
-        self.surface.canvas().draw_oval(skia_safe::Rect::from_xywh(x, y, width, height), self.state.paint.stroke_paint());
+    pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
+        self.surface.canvas().draw_oval(
+            skia_safe::Rect::from_xywh(x, y, width, height),
+            self.state.paint.stroke_paint(),
+        );
     }
 
     pub fn draw_paint(&mut self, color: &str) {
         if let Some(color) = color::parse_color(color) {
             let mut paint = Paint::default();
-            paint.set_anti_alias(true)
-                .set_color(color);
+            paint.set_anti_alias(true).set_color(color);
             self.surface.canvas().draw_paint(&paint);
         }
     }
@@ -149,12 +208,19 @@ impl Context {
         }
     }
 
-
-    pub fn draw_vertices_color(&mut self, vertices: &[c_float], mode: skia_safe::vertices::VertexMode, indices: &[c_ushort], textures: &[c_float], colors: &[&CStr], blend_mode: CompositeOperationType){
-
-        let colors: Vec<_> = colors.iter()
+    pub fn draw_vertices_color(
+        &mut self,
+        vertices: &[c_float],
+        mode: skia_safe::vertices::VertexMode,
+        indices: &[c_ushort],
+        textures: &[c_float],
+        colors: &[&CStr],
+        blend_mode: CompositeOperationType,
+    ) {
+        let colors: Vec<_> = colors
+            .iter()
             .filter_map(|color| {
-                let color =  color.to_string_lossy();
+                let color = color.to_string_lossy();
                 csscolorparser::Color::from_html(color.as_ref())
                     .map(|color| {
                         let color = color.rgba_u8();
@@ -164,10 +230,25 @@ impl Context {
             })
             .collect();
 
-        self.draw_vertices(vertices, mode,indices,textures, colors.as_slice(), blend_mode);
+        self.draw_vertices(
+            vertices,
+            mode,
+            indices,
+            textures,
+            colors.as_slice(),
+            blend_mode,
+        );
     }
 
-    pub fn draw_vertices(&mut self, vertices: &[c_float], mode: skia_safe::vertices::VertexMode, indices: &[c_ushort], textures: &[c_float], colors: &[Color], blend_mode: CompositeOperationType){
+    pub fn draw_vertices(
+        &mut self,
+        vertices: &[c_float],
+        mode: skia_safe::vertices::VertexMode,
+        indices: &[c_ushort],
+        textures: &[c_float],
+        colors: &[Color],
+        blend_mode: CompositeOperationType,
+    ) {
         let positions: Vec<_> = vertices
             .chunks(2)
             .into_iter()
@@ -180,7 +261,6 @@ impl Context {
             .map(|point| (point[0], point[1]).into())
             .collect();
 
-
         if vertices.len() % 2 == 0 && textures.len() % 2 == 0 {
             let v = skia_safe::vertices::Vertices::new_copy(
                 mode,
@@ -189,11 +269,15 @@ impl Context {
                 &colors,
                 if indices.is_empty() {
                     None
-                }else { Some(indices)}
+                } else {
+                    Some(indices)
+                },
             );
             let mut paint = Paint::default();
-                paint.set_anti_alias(true);
-            self.surface.canvas().draw_vertices(&v, blend_mode.get_blend_mode(), &paint);
+            paint.set_anti_alias(true);
+            self.surface
+                .canvas()
+                .draw_vertices(&v, blend_mode.get_blend_mode(), &paint);
         }
     }
 }

@@ -55,7 +55,7 @@
 		"ng-packagr": "^15.0.0",
 		"phaser": "^3.55.2",
 		"phaser-ce": "^2.20.0",
-		"pixi.js": "^7.3.1",
+		"pixi.js": "~7.3.1",
 		"playcanvas": "^1.66.1",
 		"query-selector": "2.0.0",
 		"react-nativescript": "^4.0.0",
@@ -67,7 +67,10 @@
 		"vexflow": "^4.2.3",
 		"xmldom": "~0.6.0",
 		"zen-3d": "0.0.3",
-		"zone.js": "~0.13.0"
+		"zone.js": "~0.13.0",
+		"util": "~0.12.5",
+		"pixi-filters": "~5.3.0",
+		"pixi.js-legacy": "~7.3.1"
 	},
 	"lint-staged": {
 		"**/*.{js,ts,scss,json,html}": [

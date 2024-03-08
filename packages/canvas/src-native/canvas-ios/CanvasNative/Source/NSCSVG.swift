@@ -16,7 +16,7 @@ public class NSCSVG: UIView {
     var didInitDrawing = false
     var forceResize = false
     var sync = false
-    public var ignorePixelScaling = false {
+    public var autoScale = true {
         didSet {
             forceResize = true
         }
@@ -34,7 +34,7 @@ public class NSCSVG: UIView {
     }
     
     func deviceScale() -> Float32 {
-        if !ignorePixelScaling  {
+        if autoScale  {
             return Float32(UIScreen.main.nativeScale)
         }
         return 1

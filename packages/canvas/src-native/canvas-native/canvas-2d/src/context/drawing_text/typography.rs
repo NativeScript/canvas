@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
-use once_cell::sync::OnceCell;
 use regex::Regex;
 use skia_safe::font_style::Width;
+use once_cell::sync::OnceCell;
 
 pub(crate) static FONT_REGEXP: OnceCell<Regex> = OnceCell::new();
 

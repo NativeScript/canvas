@@ -15,9 +15,10 @@ impl Context {
         x1: c_float,
         y1: c_float,
     ) -> Gradient {
+        let scale = self.device.density;
         Gradient::Linear {
-            start: Point::new(x0, y0),
-            stop: Point::new(x1, y1),
+            start: Point::new(x0 * scale, y0 * scale),
+            stop: Point::new(x1 * scale, y1 * scale),
             colors: Vec::new(),
             stops: Vec::new(),
             matrix: None,
@@ -33,9 +34,10 @@ impl Context {
         y1: c_float,
         matrix: Matrix,
     ) -> Gradient {
+        let scale = self.device.density;
         Gradient::Linear {
-            start: Point::new(x0, y0),
-            stop: Point::new(x1, y1),
+            start: Point::new(x0 * scale, y0 * scale),
+            stop: Point::new(x1 * scale, y1 * scale),
             colors: Vec::new(),
             stops: Vec::new(),
             matrix: Some(matrix),
@@ -44,9 +46,10 @@ impl Context {
     }
 
     pub fn create_conic_gradient(&self, start_angle: c_float, x: c_float, y: c_float) -> Gradient {
+        let scale = self.device.density;
         let angle = crate::utils::geometry::to_degrees(start_angle) - 90.0;
         Gradient::Conic {
-            center: Point::new(x, y),
+            center: Point::new(x * scale, y * scale),
             angle,
             colors: Vec::new(),
             stops: Vec::new(),
@@ -62,8 +65,9 @@ impl Context {
         y: c_float,
         matrix: Matrix,
     ) -> Gradient {
+        let scale = self.device.density;
         Gradient::Conic {
-            center: Point::new(x, y),
+            center: Point::new(x * scale, y * scale),
             angle: start_angle,
             colors: Vec::new(),
             stops: Vec::new(),
@@ -85,11 +89,12 @@ impl Context {
         y1: c_float,
         r1: c_float,
     ) -> Gradient {
+        let scale = self.device.density;
         Gradient::Radial {
-            start: Point::new(x0, y0),
-            start_radius: r0,
-            stop: Point::new(x1, y1),
-            stop_radius: r1,
+            start: Point::new(x0 * scale, y0 * scale),
+            start_radius: r0 * scale,
+            stop: Point::new(x1 * scale, y1 * scale),
+            stop_radius: r1 * scale,
             stops: Vec::new(),
             colors: Vec::new(),
             matrix: None,
@@ -107,11 +112,12 @@ impl Context {
         r1: c_float,
         matrix: Matrix,
     ) -> Gradient {
+        let scale = self.device.density;
         Gradient::Radial {
-            start: Point::new(x0, y0),
-            start_radius: r0,
-            stop: Point::new(x1, y1),
-            stop_radius: r1,
+            start: Point::new(x0 * scale, y0 * scale),
+            start_radius: r0 * scale,
+            stop: Point::new(x1 * scale, y1 * scale),
+            stop_radius: r1 * scale,
             stops: Vec::new(),
             colors: Vec::new(),
             matrix: Some(matrix),

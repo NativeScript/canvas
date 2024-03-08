@@ -325,6 +325,7 @@ export class TNSXMLHttpRequest {
 			password,
 		};
 		this._updateReadyStateChange(this.OPENED);
+		console.log(this._request);
 	}
 
 	setRequestHeader(header: string, value) {
@@ -344,6 +345,7 @@ export class TNSXMLHttpRequest {
 		if (!this._headers['Accept']) {
 			this._headers['Accept'] = '*/*';
 		}
+
 		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
 			let isBlob = false;
@@ -666,6 +668,7 @@ export class TNSXMLHttpRequest {
 			url: this._request.url,
 			headers: this._headers,
 			onLoading: () => {
+				console.log('onLoading');
 				if (this.onloadstart) {
 					this.onloadstart();
 				}
@@ -696,6 +699,7 @@ export class TNSXMLHttpRequest {
 				this._updateReadyStateChange(this.LOADING);
 			},
 			onHeaders: (event) => {
+				console.log('onHeaders', event);
 				if (!isNaN(event.status)) {
 					this._status = event.status;
 				}
@@ -729,10 +733,14 @@ export class TNSXMLHttpRequest {
 		if (this.timeout > 0) {
 			request['timeout'] = this.timeout;
 		}
+		
 		this._currentRequest = this._http.request(request);
+
+		console.log(this._currentRequest);
 
 		this._currentRequest
 			.then((res) => {
+				console.log(res);
 				if (!this._didUserSetResponseType) {
 					this._setResponseType();
 				}
@@ -846,11 +854,15 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
+							console.log(res.content)
 							const buffer = (ArrayBuffer as any).from(res.content);
 							this._response = new Blob([buffer]);
 						}
 					}
 				}
+
+
+				console.log(this.responseType );
 
 				this._addToStringOnResponse();
 
@@ -878,6 +890,7 @@ export class TNSXMLHttpRequest {
 				this._updateReadyStateChange(this.DONE);
 			})
 			.catch((error) => {
+				console.log('error', error);
 				const type: HttpError = error.type;
 				const method = this._request.method.toLowerCase();
 				switch (type) {
@@ -947,6 +960,7 @@ export class TNSXMLHttpRequest {
 				}
 				this._updateReadyStateChange(this.DONE);
 			});
+
 	}
 
 	abort() {

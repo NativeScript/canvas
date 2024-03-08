@@ -1,14 +1,14 @@
 use std::ffi::c_void;
 
-use jni::objects::{JClass, JObject, JString};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
+use jni::objects::{JClass, JObject};
+use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject};
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect, Surface};
+use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect};
 
-use canvas_core::context_attributes::ContextAttributes;
+use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
 
 #[allow(dead_code)]
@@ -27,7 +27,7 @@ pub extern "system" fn nativeInitGL(
     antialias: jboolean,
     depth: jboolean,
     fail_if_major_performance_caveat: jboolean,
-    power_preference: JString,
+    power_preference: jint,
     premultiplied_alpha: jboolean,
     preserve_drawing_buffer: jboolean,
     stencil: jboolean,
@@ -42,37 +42,35 @@ pub extern "system" fn nativeInitGL(
             if version == 2 && !GLContext::has_gl2support() {
                 return 0;
             }
-            let power_preference = match env.get_string(&power_preference) {
-                Ok(value) => value.to_string_lossy().to_string(),
-                Err(_) => "default".to_string(),
-            };
 
-            let mut attrs = ContextAttributes::new(
-                alpha == JNI_TRUE,
-                antialias == JNI_TRUE,
-                depth == JNI_TRUE,
-                fail_if_major_performance_caveat == JNI_TRUE,
-                power_preference.as_ref(),
-                premultiplied_alpha == JNI_TRUE,
-                preserve_drawing_buffer == JNI_TRUE,
-                stencil == JNI_TRUE,
-                desynchronized == JNI_TRUE,
-                xr_compatible == JNI_TRUE,
-                is_canvas == JNI_TRUE,
-            );
-            if let Some(gl_context) = GLContext::create_window_context(
-                &mut attrs,
-                window.width(),
-                window.height(),
-                window.raw_window_handle(),
-            ) {
-                let context = AndroidGLContext {
-                    android_window: Some(window),
-                    gl_context,
-                    contextAttributes: attrs,
-                };
-                drop(env);
-                return Box::into_raw(Box::new(context)) as jlong;
+            if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
+                let mut attrs = ContextAttributes::new(
+                    alpha == JNI_TRUE,
+                    antialias == JNI_TRUE,
+                    depth == JNI_TRUE,
+                    fail_if_major_performance_caveat == JNI_TRUE,
+                    power_preference,
+                    premultiplied_alpha == JNI_TRUE,
+                    preserve_drawing_buffer == JNI_TRUE,
+                    stencil == JNI_TRUE,
+                    desynchronized == JNI_TRUE,
+                    xr_compatible == JNI_TRUE,
+                    is_canvas == JNI_TRUE,
+                );
+                if let Some(gl_context) = GLContext::create_window_context(
+                    &mut attrs,
+                    window.width(),
+                    window.height(),
+                    window.raw_window_handle(),
+                ) {
+                    let context = AndroidGLContext {
+                        android_window: Some(window),
+                        gl_context,
+                        contextAttributes: attrs,
+                    };
+                    drop(env);
+                    return Box::into_raw(Box::new(context)) as jlong;
+                }
             }
         }
     }
@@ -81,7 +79,7 @@ pub extern "system" fn nativeInitGL(
 
 #[no_mangle]
 pub extern "system" fn nativeInitGLNoSurface(
-    mut env: JNIEnv,
+    _: JNIEnv,
     _: JClass,
     width: jint,
     height: jint,
@@ -89,7 +87,7 @@ pub extern "system" fn nativeInitGLNoSurface(
     antialias: jboolean,
     depth: jboolean,
     fail_if_major_performance_caveat: jboolean,
-    power_preference: JString,
+    power_preference: jint,
     premultiplied_alpha: jboolean,
     preserve_drawing_buffer: jboolean,
     stencil: jboolean,
@@ -101,32 +99,29 @@ pub extern "system" fn nativeInitGLNoSurface(
     if version == 2 && !GLContext::has_gl2support() {
         return 0;
     }
-    let power_preference = match env.get_string(&power_preference) {
-        Ok(value) => value.to_string_lossy().to_string(),
-        Err(_) => "default".to_string(),
-    };
 
-    let mut attrs = ContextAttributes::new(
-        alpha == JNI_TRUE,
-        antialias == JNI_TRUE,
-        depth == JNI_TRUE,
-        fail_if_major_performance_caveat == JNI_TRUE,
-        power_preference.as_ref(),
-        premultiplied_alpha == JNI_TRUE,
-        preserve_drawing_buffer == JNI_TRUE,
-        stencil == JNI_TRUE,
-        desynchronized == JNI_TRUE,
-        xr_compatible == JNI_TRUE,
-        is_canvas == JNI_TRUE,
-    );
+    if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
+        let mut attrs = ContextAttributes::new(
+            alpha == JNI_TRUE,
+            antialias == JNI_TRUE,
+            depth == JNI_TRUE,
+            fail_if_major_performance_caveat == JNI_TRUE,
+            power_preference,
+            premultiplied_alpha == JNI_TRUE,
+            preserve_drawing_buffer == JNI_TRUE,
+            stencil == JNI_TRUE,
+            desynchronized == JNI_TRUE,
+            xr_compatible == JNI_TRUE,
+            is_canvas == JNI_TRUE,
+        );
 
-    drop(env);
-    if let Some(gl_context) = GLContext::create_pbuffer(&mut attrs, width, height) {
-        return Box::into_raw(Box::new(AndroidGLContext {
-            android_window: None,
-            gl_context,
-            contextAttributes: attrs,
-        })) as jlong;
+        if let Some(gl_context) = GLContext::create_pbuffer(&mut attrs, width, height) {
+            return Box::into_raw(Box::new(AndroidGLContext {
+                android_window: None,
+                gl_context,
+                contextAttributes: attrs,
+            })) as jlong;
+        }
     }
     0
 }
@@ -470,7 +465,7 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
-    context.make_current();
+    //  context.make_current();
     {
         let mut ctx = context.get_context_mut();
         ctx.set_fill_style_with_color("red");
@@ -564,6 +559,18 @@ pub extern "system" fn nativeContext2DPathTestNormal(_env: JNIEnv, _: JClass, co
 }
 
 #[no_mangle]
+pub extern "system" fn nativeContext2DRender(context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.render();
+}
+
+#[no_mangle]
 pub extern "system" fn nativeWriteCurrentGLContextToBitmap(
     env: JNIEnv,
     _: JClass,
@@ -611,53 +618,81 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
     context: jlong,
     bitmap: JObject,
 ) {
-    unsafe {
-        if context == 0 {
-            return;
-        }
-        crate::utils::image::bitmap_handler(
-            &env,
-            bitmap,
-            Box::new(move |cb| {
-                if let Some((image_data, image_info)) = cb {
-                    let mut ct = ColorType::RGBA8888;
-
-                    if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
-                        ct = ColorType::RGB565;
-                    } else if image_info.format() == ndk::bitmap::BitmapFormat::RGBA_4444 {
-                        ct = ColorType::ARGB4444;
-                    }
-                    let info = ImageInfo::new(
-                        ISize::new(image_info.width() as i32, image_info.height() as i32),
-                        ct,
-                        AlphaType::Premul,
-                        None,
-                    );
-                    let context = context as *mut canvas_c::CanvasRenderingContext2D;
-                    let context = unsafe { &mut *context };
-                    let mut context = context.get_context_mut();
-
-                    let mut surface =
-                        Surface::new_raster_direct(&info, image_data, None, None).unwrap();
-                    let canvas = surface.canvas();
-                    let mut paint = skia_safe::Paint::default();
-                    paint.set_anti_alias(true);
-                    paint.set_style(skia_safe::PaintStyle::Fill);
-                    paint.set_blend_mode(skia_safe::BlendMode::Clear);
-                    canvas.draw_rect(
-                        Rect::from_xywh(
-                            0f32,
-                            0f32,
-                            image_info.width() as f32,
-                            image_info.height() as f32,
-                        ),
-                        &paint,
-                    );
-                    context.draw_on_surface(&mut surface);
-                }
-            }),
-        );
-
-        drop(env);
+    if context == 0 {
+        return;
     }
+    crate::utils::image::bitmap_handler(
+        &env,
+        bitmap,
+        Box::new(move |cb| {
+            if let Some((image_data, image_info)) = cb {
+                let mut ct = ColorType::RGBA8888;
+
+                if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
+                    ct = ColorType::RGB565;
+                } else if image_info.format() == ndk::bitmap::BitmapFormat::RGBA_4444 {
+                    ct = ColorType::ARGB4444;
+                }
+                let info = ImageInfo::new(
+                    ISize::new(image_info.width() as i32, image_info.height() as i32),
+                    ct,
+                    AlphaType::Premul,
+                    None,
+                );
+                let context = context as *mut canvas_c::CanvasRenderingContext2D;
+                let context = unsafe { &mut *context };
+                let mut context = context.get_context_mut();
+
+                let mut surface =
+                    skia_safe::surfaces::wrap_pixels(&info, image_data, None, None).unwrap();
+                let canvas = surface.canvas();
+                let mut paint = skia_safe::Paint::default();
+                paint.set_anti_alias(true);
+                paint.set_style(skia_safe::PaintStyle::Fill);
+                paint.set_blend_mode(skia_safe::BlendMode::Clear);
+                canvas.draw_rect(
+                    Rect::from_xywh(
+                        0f32,
+                        0f32,
+                        image_info.width() as f32,
+                        image_info.height() as f32,
+                    ),
+                    &paint,
+                );
+                context.draw_on_surface(&mut surface);
+            }
+        }),
+    );
+
+    drop(env);
+}
+
+#[no_mangle]
+pub extern "system" fn nativeWebGLC2DRender(
+    _env: JNIEnv,
+    _: JClass,
+    gl_context: jlong,
+    context: jlong,
+) {
+    if gl_context == 0 || context == 0 {
+        return;
+    }
+
+    let state = canvas_c::canvas_native_webgl_create(
+        gl_context, 2, true, true, true, false, 0, true, false, false, false, false,
+    );
+
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    {
+        let state =  unsafe { &mut *state};
+        canvas_c::impl_test::draw_image_space_test(state, context);
+        state.get_inner_mut().swap_buffers();
+    }
+
+
+        let _ = unsafe { Box::from_raw(state) };
+
 }

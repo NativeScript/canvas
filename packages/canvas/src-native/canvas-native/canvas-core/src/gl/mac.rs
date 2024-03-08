@@ -1,24 +1,19 @@
-use once_cell::sync::OnceCell;
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
 use std::ffi::CString;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 
-pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
-
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-use glutin::config::{
-    Api, AsRawConfig, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
-};
-use glutin::context::{AsRawContext, ContextApi, GlContext, RawContext, Version};
-use glutin::display::{AsRawDisplay, DisplayApiPreference};
-use glutin::display::{GetGlDisplay, RawDisplay};
+use glutin::config::{Api, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig};
+use glutin::context::{ContextApi, GlContext, Version};
+use glutin::display::GetGlDisplay;
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
+use once_cell::sync::OnceCell;
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 use raw_window_handle::{
     AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
 };
@@ -26,6 +21,8 @@ use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 use crate::context_attributes::ContextAttributes;
+
+pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 
 #[derive(Debug)]
 pub(crate) enum SurfaceHelper {
@@ -772,6 +769,29 @@ impl GLContext {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
                 SurfaceHelper::Pbuffer(buffer) => buffer.height().unwrap_or_default() as i32,
                 SurfaceHelper::Pixmap(pixmap) => pixmap.height().unwrap_or_default() as i32,
+            })
+            .unwrap_or_default()
+    }
+
+    #[inline(always)]
+    pub fn get_surface_dimensions(&self) -> (i32, i32) {
+        let inner = self.inner.read();
+        inner
+            .surface
+            .as_ref()
+            .map(|v| match v {
+                SurfaceHelper::Window(window) => (
+                    window.width().unwrap_or_default() as i32,
+                    window.height().unwrap_or_default() as i32,
+                ),
+                SurfaceHelper::Pbuffer(buffer) => (
+                    buffer.width().unwrap_or_default() as i32,
+                    buffer.height().unwrap_or_default() as i32,
+                ),
+                SurfaceHelper::Pixmap(pixmap) => (
+                    pixmap.width().unwrap_or_default() as i32,
+                    pixmap.height().unwrap_or_default() as i32,
+                ),
             })
             .unwrap_or_default()
     }

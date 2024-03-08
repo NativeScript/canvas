@@ -41,8 +41,7 @@ public class NSCCanvas: UIView {
             let viewPtr = Int64(Int(bitPattern: ptr))
             
        
-            
-            _shared_context = CanvasHelpers.initGLWithView(viewPtr, true, true, true, false, "default", true, false, false, false, false, 2, false)
+            _shared_context = CanvasHelpers.initGLWithView(viewPtr, true, true, true, false, 0, true, false, false, false, false, 2, false)
             
             
             return _shared_context
@@ -67,12 +66,12 @@ public class NSCCanvas: UIView {
         return ptr!
     }
     
-    public var ignorePixelScaling: Bool = false {
+    public var autoScale: Bool = true {
         didSet {
-            if(ignorePixelScaling){
+            if(!autoScale){
                 glkView.contentScaleFactor = 1
             }else {
-                glkView.contentScaleFactor = UIScreen.main.scale
+                glkView.contentScaleFactor = UIScreen.main.nativeScale
             }
         }
     }
@@ -93,12 +92,12 @@ public class NSCCanvas: UIView {
     }
     public var width: Float {
         get {
-            return Float(glkView.frame.size.width)
+            return Float(frame.size.width)
         }
     }
     public var height: Float {
         get {
-            return Float(glkView.frame.size.height)
+            return Float(frame.size.height)
         }
     }
     
@@ -108,7 +107,7 @@ public class NSCCanvas: UIView {
         _ antialias: Bool = true,
         _ depth: Bool = true,
         _ failIfMajorPerformanceCaveat: Bool = false,
-        _ powerPreference: String = "default",
+        _ powerPreference: Int32 = 0,
         _ premultipliedAlpha: Bool = true,
         _ preserveDrawingBuffer: Bool = false,
         _ stencil: Bool = false,
@@ -139,7 +138,7 @@ public class NSCCanvas: UIView {
         _ antialias: Bool,
         _ depth: Bool,
         _ failIfMajorPerformanceCaveat: Bool,
-        _ powerPreference: String,
+        _ powerPreference: Int32,
         _ premultipliedAlpha: Bool,
         _ preserveDrawingBuffer: Bool,
         _ stencil: Bool,
@@ -153,7 +152,7 @@ public class NSCCanvas: UIView {
         var isCanvas = false
         switch (type) {
         case "2d":
-            version = 0
+            version = 1
             isCanvas = true
             is2D = isCanvas
             break
@@ -164,6 +163,7 @@ public class NSCCanvas: UIView {
             version = 2
             break
         default:
+            version = 0
             break
         }
         
@@ -218,7 +218,7 @@ public class NSCCanvas: UIView {
         
         let shared_context = NSCCanvas.shared_context
         
-        nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, type, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
+        nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
 
         
         // get new fbo
@@ -231,7 +231,7 @@ public class NSCCanvas: UIView {
            _ antialias: Bool,
            _ depth: Bool,
            _ failIfMajorPerformanceCaveat: Bool,
-           _ powerPreference: String,
+           _ powerPreference: Int32,
            _ premultipliedAlpha: Bool,
            _ preserveDrawingBuffer: Bool,
            _ stencil: Bool,
@@ -263,10 +263,10 @@ public class NSCCanvas: UIView {
     
            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
            
-           var density = Float(UIScreen.main.scale)
+           var density = Float(UIScreen.main.nativeScale)
            
            
-           if (ignorePixelScaling) {
+           if (!autoScale) {
                density = 1
            }
            
@@ -280,6 +280,7 @@ public class NSCCanvas: UIView {
             nativeGL, Int32(drawingBufferWidth), Int32(drawingBufferHeight),
             alpha, density, samples, fontColor, density * 160, direction
            )
+           
            return native2DContext
        }
 
@@ -287,13 +288,15 @@ public class NSCCanvas: UIView {
     
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
-        if (width == .zero && height == .zero) {
-            return
-        }
-        
+        if(width == frame.width && height == frame.height) {return}
         frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
-        glkView.frame = bounds
-        resize()
+        
+        
+        let width = width.isZero ? 1 : width
+        let height = height.isZero ? 1 : height
+        let frame = CGRect(x: 0, y: 0, width: width, height: height)
+        
+        glkView.frame = frame
         setNeedsLayout()
         layoutIfNeeded()
     }
@@ -349,38 +352,44 @@ public class NSCCanvas: UIView {
     
     required init?(coder: NSCoder) {
         glkView = CanvasGLKView(coder: coder)!
+        glkView.autoresizingMask = UIView.AutoresizingMask(rawValue: UIView.AutoresizingMask.flexibleWidth.rawValue | UIView.AutoresizingMask.flexibleHeight.rawValue)
+        
+        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
+            glkView.contentScaleFactor = UIScreen.main.nativeScale
+        }
+        
         super.init(coder: coder)
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
-        glkView.contentScaleFactor = UIScreen.main.scale
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-        // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
+        glkView.autoresizingMask = UIView.AutoresizingMask(rawValue: UIView.AutoresizingMask.flexibleWidth.rawValue | UIView.AutoresizingMask.flexibleHeight.rawValue)
+        
+        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
+            glkView.contentScaleFactor = UIScreen.main.nativeScale
+        }
+        
         super.init(frame: frame)
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
-        glkView.contentScaleFactor = UIScreen.main.scale
         addSubview(glkView)
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
-       // addGestureRecognizer(handler!.pinchRecognizer!)
     }
     
     var ignoreTouchEvents = false {
         didSet {
             if(ignoreTouchEvents){
                 removeGestureRecognizer(handler!.gestureRecognizer!)
-             //   removeGestureRecognizer(handler!.pinchRecognizer!)
             }else {
                 addGestureRecognizer(handler!.gestureRecognizer!)
-               // addGestureRecognizer(handler!.pinchRecognizer!)
             }
         }
     }
@@ -407,24 +416,23 @@ public class NSCCanvas: UIView {
     }
     
     public override func layoutSubviews() {
-        if(bounds.isEmpty && lastSize.isEmpty){return}
-        glkView.frame = bounds
+        let width = bounds.width.isZero ? 1 : bounds.width
+        let height = bounds.height.isZero ? 1 : bounds.height
+        let frame = CGRect(x: 0, y: 0, width: width, height: height)
+        if (glkView.frame != frame){
+            glkView.frame = frame
+        }
+       
         
-        if(!isLoaded && drawingBufferWidth > 0 && drawingBufferHeight > 0){
+        if(!isLoaded){
             self.isLoaded = true
             self.readyListener?.contextReady()
         }
         
-        if(drawingBufferWidth == 0 && drawingBufferHeight == 0){
-            if(!isLoaded && (lastSize.width != .zero && lastSize.height != .zero)){
-                self.isLoaded = true
-                self.readyListener?.contextReady()
-            }
-        }else if(isLoaded && nativeGL != 0) {
+        if(isLoaded && nativeGL != 0) {
             resize()
         }
         
-        lastSize = bounds
     }
     
     

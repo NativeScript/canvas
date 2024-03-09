@@ -802,7 +802,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
 		//createChaosLines(this.canvas);
-		flappyBird(this.canvas);
+		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
 		//pattern(this.canvas);
@@ -860,7 +860,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
 		//this.wordSpacing(this.canvas);
-		//imageProcessing(this.canvas);
+		imageProcessing(this.canvas);
 		//subTest(this.canvas);
 		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);

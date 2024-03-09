@@ -160,11 +160,11 @@ class MainActivity : AppCompatActivity() {
 
 				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0f,0f, 512 / scale,512 / scale)
 
-				canvas!!.initContext("webgl2")
+				canvas!!.initContext("webgl2", true)
 				val gl = canvas!!.nativeContext
 
 
-				NSCCanvas.WebGLContextRender(gl, ctx)
+				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
 
 			}

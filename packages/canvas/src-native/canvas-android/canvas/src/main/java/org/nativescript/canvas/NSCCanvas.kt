@@ -321,10 +321,8 @@ class NSCCanvas : FrameLayout {
 		val surface = if (surfaceType == SurfaceType.Surface) {
 			if (alpha) {
 				surfaceView.setZOrderOnTop(true)
-				surfaceView.holder.setFormat(PixelFormat.RGBA_8888)
 			} else {
 				surfaceView.setZOrderOnTop(false)
-				surfaceView.holder.setFormat(PixelFormat.RGB_565)
 			}
 			surfaceView.holder.surface
 		} else {
@@ -924,12 +922,12 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		@FastNative
-		external fun nativeWebGLC2DRender(context: Long, c2d: Long)
+		external fun nativeWebGLC2DRender(context: Long, c2d: Long, internalFormat: Int, format: Int)
 
 
 		@JvmStatic
-		fun WebGLContextRender(gl: Long, context: Long) {
-			nativeWebGLC2DRender(gl, context)
+		fun WebGLContextRender(gl: Long, context: Long, internalFormat: Int, format: Int) {
+			nativeWebGLC2DRender(gl, context, internalFormat, format)
 		}
 
 		@JvmStatic

@@ -2017,6 +2017,19 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
                     return None;
                 }
 
+                #[cfg(target_os = "android")] {
+
+                    let snapshot = source_ctx.raster_snapshot();
+
+                    if let Some(image) = snapshot {
+                        return Some(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
+                            context.get_context().create_pattern(image, repetition),
+                        ))
+                    }
+
+
+                    return None;
+                }
 
                 // todo use gpu image created from snapshot ... need single or shared context or transfer to a texture
                 //let data = source_ctx.snapshot_to_raster_data();
@@ -8078,47 +8091,30 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     let mut source_ctx = canvas.get_context_mut();
 
     if let Some(snapshot) = source_ctx.raster_snapshot() {
-        log::info!(target: "JS", "info {:?}", snapshot.image_info());
 
         let width = snapshot.width();
         let height = snapshot.height();
 
         let premultiply = state.get_inner().get_premultiplied_alpha();
 
-        log::info!(target: "JS", "image_type {:?}", image_type);
+        let buf =
+            source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format, premultiply);
 
-        match image_type as u32 {
-            gl_bindings::RGBA | gl_bindings::RGB => {
-                let alpha = if image_type == gl_bindings::RGBA as i32 {
-                    true
-                } else {
-                    false
-                };
-
-                let buf =
-                    source_ctx.read_pixels_with_alpha_premultiply(&snapshot, alpha, premultiply);
-
-                state.0.make_current();
-
-                if let Some(bytes) = buf {
-                    canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
-                        target,
-                        level,
-                        internalformat,
-                        width,
-                        height,
-                        0,
-                        format,
-                        image_type,
-                        bytes.as_slice(),
-                        state.get_inner_mut(),
-                    );
-                }
-            }
-            _ => {}
+        if let Some(bytes) = buf {
+            state.0.make_current();
+            canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                0,
+                format,
+                image_type,
+                bytes.as_slice(),
+                state.get_inner_mut(),
+            );
         }
-    } else {
-        log::info!(target: "JS", "raster_snapshot failed {:?}", image_type);
     }
 
     /*
@@ -8402,34 +8398,23 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
 
     let premultiply = state.get_inner().get_premultiplied_alpha();
 
-    match image_type as u32 {
-        gl_bindings::RGBA | gl_bindings::RGB => {
-            let alpha = if image_type == gl_bindings::RGBA as i32 {
-                true
-            } else {
-                false
-            };
+    let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
 
-            let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, alpha, premultiply);
+    state.0.make_current();
 
-            state.0.make_current();
-
-            if let Some(bytes) = buf {
-                canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
-                    target,
-                    level,
-                    xoffset,
-                    yoffset,
-                    width,
-                    height,
-                    format,
-                    image_type,
-                    bytes.as_slice(),
-                    state.get_inner_mut(),
-                );
-            }
-        }
-        _ => {}
+    if let Some(bytes) = buf {
+        canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format,
+            image_type,
+            bytes.as_slice(),
+            state.get_inner_mut(),
+        );
     }
 }
 
@@ -10045,6 +10030,57 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_asset(
     )
 }
 
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
+    target: u32,
+    level: i32,
+    internalformat: i32,
+    _width: i32,
+    _height: i32,
+    depth: i32,
+    border: i32,
+    format: u32,
+    type_: u32,
+    canvas: *mut CanvasRenderingContext2D,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    let canvas = unsafe {&mut * canvas};
+
+    canvas.make_current();
+    let mut source_ctx = canvas.get_context_mut();
+    let snapshot = source_ctx.snapshot();
+    let width = snapshot.width();
+    let height = snapshot.height();
+
+    let premultiply = state.get_inner().get_premultiplied_alpha();
+
+    let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+
+    state.0.make_current();
+
+    if let Some(bytes) = buf {
+        canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            depth,
+            border,
+            format,
+            type_,
+            bytes.as_slice(),
+            state.get_inner_mut(),
+        )
+    }
+
+
+
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_tex_image3d(
     target: u32,
@@ -10256,6 +10292,56 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_asset(
         &asset.0,
         state.get_inner_mut(),
     );
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    zoffset: i32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    format: u32,
+    type_: u32,
+    canvas: *mut CanvasRenderingContext2D,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    let canvas = unsafe {&mut *canvas};
+    canvas.make_current();
+    let mut source_ctx = canvas.get_context_mut();
+    let snapshot = source_ctx.snapshot();
+    let width = snapshot.width();
+    let height = snapshot.height();
+
+    let premultiply = state.get_inner().get_premultiplied_alpha();
+
+    let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+
+    state.0.make_current();
+
+    if let Some(bytes) = buf {
+        canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            zoffset,
+            width,
+            height,
+            depth,
+            format,
+            type_,
+            bytes.as_slice(),
+            state.get_inner_mut(),
+        );
+    }
 }
 
 #[no_mangle]

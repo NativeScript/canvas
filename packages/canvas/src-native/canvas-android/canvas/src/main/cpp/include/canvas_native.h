@@ -9,91 +9,91 @@
 #include <stdlib.h>
 
 typedef enum GLConstants {
-    UNPACK_FLIP_Y_WEBGL = 37440,
-    UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441,
-    UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
+  UNPACK_FLIP_Y_WEBGL = 37440,
+  UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441,
+  UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
 } GLConstants;
 
 typedef enum ImageBitmapColorSpaceConversion {
-    ImageBitmapColorSpaceConversionDefault,
-    ImageBitmapColorSpaceConversionNone,
+  ImageBitmapColorSpaceConversionDefault,
+  ImageBitmapColorSpaceConversionNone,
 } ImageBitmapColorSpaceConversion;
 
 typedef enum ImageBitmapPremultiplyAlpha {
-    ImageBitmapPremultiplyAlphaDefault,
-    ImageBitmapPremultiplyAlphaPremultiply,
-    ImageBitmapPremultiplyAlphaNone,
+  ImageBitmapPremultiplyAlphaDefault,
+  ImageBitmapPremultiplyAlphaPremultiply,
+  ImageBitmapPremultiplyAlphaNone,
 } ImageBitmapPremultiplyAlpha;
 
 typedef enum ImageBitmapResizeQuality {
-    ImageBitmapResizeQualityLow,
-    ImageBitmapResizeQualityMedium,
-    ImageBitmapResizeQualityHigh,
-    ImageBitmapResizeQualityPixelated,
+  ImageBitmapResizeQualityLow,
+  ImageBitmapResizeQualityMedium,
+  ImageBitmapResizeQualityHigh,
+  ImageBitmapResizeQualityPixelated,
 } ImageBitmapResizeQuality;
 
 typedef enum InvalidateState {
-    InvalidateStateNone,
-    InvalidateStatePending,
-    InvalidateStateInvalidating,
+  InvalidateStateNone,
+  InvalidateStatePending,
+  InvalidateStateInvalidating,
 } InvalidateState;
 
 typedef enum PaintStyleType {
-    PaintStyleTypeNone,
-    PaintStyleTypeColor,
-    PaintStyleTypeGradient,
-    PaintStyleTypePattern,
+  PaintStyleTypeNone,
+  PaintStyleTypeColor,
+  PaintStyleTypeGradient,
+  PaintStyleTypePattern,
 } PaintStyleType;
 
 typedef enum TextBaseLine {
-    TOP = 0,
-    HANGING = 1,
-    MIDDLE = 2,
-    ALPHABETIC = 3,
-    IDEOGRAPHIC = 4,
-    BOTTOM = 5,
+  TOP = 0,
+  HANGING = 1,
+  MIDDLE = 2,
+  ALPHABETIC = 3,
+  IDEOGRAPHIC = 4,
+  BOTTOM = 5,
 } TextBaseLine;
 
 typedef enum WebGLExtensionType {
-    WebGLExtensionTypeEXT_blend_minmax,
-    WebGLExtensionTypeEXT_color_buffer_half_float,
-    WebGLExtensionTypeEXT_disjoint_timer_query,
-    WebGLExtensionTypeEXT_sRGB,
-    WebGLExtensionTypeEXT_shader_texture_lod,
-    WebGLExtensionTypeEXT_texture_filter_anisotropic,
-    WebGLExtensionTypeOES_element_index_uint,
-    WebGLExtensionTypeOES_standard_derivatives,
-    WebGLExtensionTypeOES_texture_float,
-    WebGLExtensionTypeOES_texture_float_linear,
-    WebGLExtensionTypeOES_texture_half_float,
-    WebGLExtensionTypeOES_texture_half_float_linear,
-    WebGLExtensionTypeOES_vertex_array_object,
-    WebGLExtensionTypeWEBGL_color_buffer_float,
-    WebGLExtensionTypeWEBGL_compressed_texture_atc,
-    WebGLExtensionTypeWEBGL_compressed_texture_etc1,
-    WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
-    WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
-    WebGLExtensionTypeWEBGL_compressed_texture_etc,
-    WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
-    WebGLExtensionTypeWEBGL_lose_context,
-    WebGLExtensionTypeANGLE_instanced_arrays,
-    WebGLExtensionTypeWEBGL_depth_texture,
-    WebGLExtensionTypeWEBGL_draw_buffers,
-    WebGLExtensionTypeOES_fbo_render_mipmap,
-    WebGLExtensionTypeNone,
+  WebGLExtensionTypeEXT_blend_minmax,
+  WebGLExtensionTypeEXT_color_buffer_half_float,
+  WebGLExtensionTypeEXT_disjoint_timer_query,
+  WebGLExtensionTypeEXT_sRGB,
+  WebGLExtensionTypeEXT_shader_texture_lod,
+  WebGLExtensionTypeEXT_texture_filter_anisotropic,
+  WebGLExtensionTypeOES_element_index_uint,
+  WebGLExtensionTypeOES_standard_derivatives,
+  WebGLExtensionTypeOES_texture_float,
+  WebGLExtensionTypeOES_texture_float_linear,
+  WebGLExtensionTypeOES_texture_half_float,
+  WebGLExtensionTypeOES_texture_half_float_linear,
+  WebGLExtensionTypeOES_vertex_array_object,
+  WebGLExtensionTypeWEBGL_color_buffer_float,
+  WebGLExtensionTypeWEBGL_compressed_texture_atc,
+  WebGLExtensionTypeWEBGL_compressed_texture_etc1,
+  WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
+  WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
+  WebGLExtensionTypeWEBGL_compressed_texture_etc,
+  WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
+  WebGLExtensionTypeWEBGL_lose_context,
+  WebGLExtensionTypeANGLE_instanced_arrays,
+  WebGLExtensionTypeWEBGL_depth_texture,
+  WebGLExtensionTypeWEBGL_draw_buffers,
+  WebGLExtensionTypeOES_fbo_render_mipmap,
+  WebGLExtensionTypeNone,
 } WebGLExtensionType;
 
 typedef enum WebGLResultType {
-    WebGLResultTypeBoolean,
-    WebGLResultTypeI32Array,
-    WebGLResultTypeU32Array,
-    WebGLResultTypeF32Array,
-    WebGLResultTypeBooleanArray,
-    WebGLResultTypeU32,
-    WebGLResultTypeI32,
-    WebGLResultTypeF32,
-    WebGLResultTypeString,
-    WebGLResultTypeNone,
+  WebGLResultTypeBoolean,
+  WebGLResultTypeI32Array,
+  WebGLResultTypeU32Array,
+  WebGLResultTypeF32Array,
+  WebGLResultTypeBooleanArray,
+  WebGLResultTypeU32,
+  WebGLResultTypeI32,
+  WebGLResultTypeF32,
+  WebGLResultTypeString,
+  WebGLResultTypeNone,
 } WebGLResultType;
 
 typedef struct ANGLE_instanced_arrays ANGLE_instanced_arrays;
@@ -1993,9 +1993,9 @@ void canvas_native_webgl_tex_image2d_canvas2d(int32_t target,
 
 void canvas_native_webgl_tex_image2d_webgl(int32_t target,
                                            int32_t level,
-                                           int32_t _internalformat,
-                                           int32_t _format,
-                                           int32_t _image_type,
+                                           int32_t internalformat,
+                                           int32_t format,
+                                           int32_t image_type,
                                            struct WebGLState *webgl,
                                            struct WebGLState *state);
 
@@ -2061,8 +2061,8 @@ void canvas_native_webgl_tex_sub_image2d_webgl(uint32_t target,
                                                int32_t level,
                                                int32_t xoffset,
                                                int32_t yoffset,
-                                               uint32_t _format,
-                                               int32_t _image_type,
+                                               uint32_t format,
+                                               int32_t image_type,
                                                struct WebGLState *webgl,
                                                struct WebGLState *state);
 
@@ -2549,6 +2549,18 @@ void canvas_native_webgl2_tex_image3d_asset(uint32_t target,
                                             const struct ImageAsset *asset,
                                             struct WebGLState *state);
 
+void canvas_native_webgl2_tex_image3d_canvas2d(uint32_t target,
+                                               int32_t level,
+                                               int32_t internalformat,
+                                               int32_t _width,
+                                               int32_t _height,
+                                               int32_t depth,
+                                               int32_t border,
+                                               uint32_t format,
+                                               uint32_t type_,
+                                               struct CanvasRenderingContext2D *canvas,
+                                               struct WebGLState *state);
+
 void canvas_native_webgl2_tex_image3d(uint32_t target,
                                       int32_t level,
                                       int32_t internalformat,
@@ -2630,6 +2642,19 @@ void canvas_native_webgl2_tex_sub_image3d_asset(uint32_t target,
                                                 uint32_t type_,
                                                 const struct ImageAsset *asset,
                                                 struct WebGLState *state);
+
+void canvas_native_webgl2_tex_sub_image3d_canvas2d(uint32_t target,
+                                                   int32_t level,
+                                                   int32_t xoffset,
+                                                   int32_t yoffset,
+                                                   int32_t zoffset,
+                                                   int32_t width,
+                                                   int32_t height,
+                                                   int32_t depth,
+                                                   uint32_t format,
+                                                   uint32_t type_,
+                                                   struct CanvasRenderingContext2D *canvas,
+                                                   struct WebGLState *state);
 
 void canvas_native_webgl2_tex_sub_image3d_offset(uint32_t target,
                                                  int32_t level,

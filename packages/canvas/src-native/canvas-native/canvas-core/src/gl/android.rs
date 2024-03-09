@@ -100,18 +100,10 @@ impl Into<ConfigTemplate> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if self.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(self.get_alpha());
 
@@ -135,18 +127,10 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if value.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(value.get_alpha());
 
@@ -170,18 +154,10 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if self.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(self.get_alpha());
 
@@ -205,18 +181,10 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if value.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(value.get_alpha());
 

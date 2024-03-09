@@ -67,14 +67,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//webgl_shadowmap_pointlight(this.canvas);
 		//webgl_shadowmap_vsm(this.canvas);
 
-		//init(this.canvas);
+		init(this.canvas);
 
 		//this.topDown(this.canvas);
 
 		// (canvas as any).scaleX = -1;
 		//this.group(this.canvas);
 		//this.geoTextShapes(this.canvas);
-		this.geoColors(this.canvas);
+		//this.geoColors(this.canvas);
 		//this.threeDepth(this.canvas);
 		//this.threeCrate(this.canvas);
 		//this.skinningAndMorphing(this.canvas);

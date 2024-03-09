@@ -118,7 +118,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)V",
                     "(J)V",
-                    "(JJ)V"
+                    "(JJII)V"
                 ]
             } else {
                 [
@@ -141,7 +141,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)V",
                     "!(J)V",
-                    "!(JJ)V"
+                    "!(JJII)V"
                 ]
             };
 

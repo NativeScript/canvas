@@ -874,10 +874,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 				}
 			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
-				
-				console.time('texImage2D');
 				this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
-				console.timeEnd('texImage2D');
 				/*if (global.isAndroid) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
 				} else {

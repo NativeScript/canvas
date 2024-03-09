@@ -8,6 +8,7 @@ use canvas_core::image_asset::ImageAsset;
 
 use crate::prelude::*;
 use crate::utils;
+use crate::utils::gl::bytes_per_pixel;
 use crate::webgl::canvas_native_webgl_get_parameter;
 
 pub struct GLSync(gl_bindings::types::GLsync);
@@ -1185,7 +1186,7 @@ pub fn canvas_native_webgl2_tex_image3d_none(
 pub fn canvas_native_webgl2_tex_image3d_asset(
     target: u32,
     level: i32,
-    _internalformat: i32,
+    internalformat: i32,
     _width: i32,
     _height: i32,
     depth: i32,
@@ -1195,13 +1196,95 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
     asset: &ImageAsset,
     state: &mut WebGLState,
 ) {
-    if let Some(bytes) = asset.get_bytes() {
+
+
+    let mut is_rgba = false;
+    let bytes = match format {
+        gl_bindings::RGBA => {
+            is_rgba = true;
+            None
+        }
+        gl_bindings::RGB => {
+            asset.get_rgb_bytes()
+        }
+        gl_bindings::LUMINANCE => {
+            asset.get_luminance_bytes()
+        }
+        gl_bindings::LUMINANCE_ALPHA => {
+            asset.get_luminance_alpha_bytes()
+        }
+        gl_bindings::ALPHA => {
+            asset.get_alpha_bytes()
+        }
+        _ => {
+            None
+        }
+    };
+
+    if is_rgba {
+        if let Some(bytes) = asset.get_bytes() {
+            let width = asset.width() as i32;
+            let height = asset.height() as i32;
+            state.make_current();
+            unsafe {
+                if state.get_flip_y() {
+                    let mut buffer = bytes.to_vec();
+                    utils::gl::flip_in_place_3d(
+                        buffer.as_mut_ptr(),
+                        buffer.len(),
+                        (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
+                            as usize,
+                        height as usize,
+                        depth as usize,
+                    );
+
+                    gl_bindings::TexImage3D(
+                        target,
+                        level,
+                        //internalformat,
+                        gl_bindings::RGBA as _,
+                        width,
+                        height,
+                        depth,
+                        border,
+                        // format,
+                        gl_bindings::RGBA as _,
+                        // type_,
+                        gl_bindings::UNSIGNED_BYTE as _,
+                        buffer.as_ptr() as *const c_void,
+                    );
+
+                    return;
+                }
+
+                gl_bindings::TexImage3D(
+                    target,
+                    level,
+                    // internalformat,
+                    gl_bindings::RGBA as _,
+                    width,
+                    height,
+                    depth,
+                    border,
+                    //format,
+                    gl_bindings::RGBA as _,
+                    //type_,
+                    gl_bindings::UNSIGNED_BYTE as _,
+                    bytes.as_ptr() as *const c_void,
+                );
+            }
+        }
+        return;
+    }
+
+
+    if let Some(mut bytes) = bytes {
         let width = asset.width() as i32;
         let height = asset.height() as i32;
         state.make_current();
         unsafe {
             if state.get_flip_y() {
-                let mut buffer = bytes.to_vec();
+                let mut buffer = bytes;
                 utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
@@ -1214,16 +1297,13 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                 gl_bindings::TexImage3D(
                     target,
                     level,
-                    //internalformat,
-                    gl_bindings::RGBA as _,
+                    internalformat,
                     width,
                     height,
                     depth,
                     border,
-                    // format,
-                    gl_bindings::RGBA as _,
-                    // type_,
-                    gl_bindings::UNSIGNED_BYTE as _,
+                    format,
+                    type_,
                     buffer.as_ptr() as *const c_void,
                 );
 
@@ -1233,20 +1313,166 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
             gl_bindings::TexImage3D(
                 target,
                 level,
-                // internalformat,
-                gl_bindings::RGBA as _,
+                internalformat,
                 width,
                 height,
                 depth,
                 border,
-                //format,
-                gl_bindings::RGBA as _,
-                //type_,
-                gl_bindings::UNSIGNED_BYTE as _,
+                format,
+                type_,
                 bytes.as_ptr() as *const c_void,
             );
         }
     }
+
+}
+
+
+
+
+
+pub fn canvas_native_webgl2_tex_image3d_canvas2d(
+    target: u32,
+    level: i32,
+    internalformat: i32,
+    _width: i32,
+    _height: i32,
+    depth: i32,
+    border: i32,
+    format: u32,
+    type_: u32,
+    asset: &ImageAsset,
+    state: &mut WebGLState,
+) {
+
+
+    let mut is_rgba = false;
+    let bytes = match format {
+        gl_bindings::RGBA => {
+            is_rgba = true;
+            None
+        }
+        gl_bindings::RGB => {
+            asset.get_rgb_bytes()
+        }
+        gl_bindings::LUMINANCE => {
+            asset.get_luminance_bytes()
+        }
+        gl_bindings::LUMINANCE_ALPHA => {
+            asset.get_luminance_alpha_bytes()
+        }
+        gl_bindings::ALPHA => {
+            asset.get_alpha_bytes()
+        }
+        _ => {
+            None
+        }
+    };
+
+    if is_rgba {
+        if let Some(bytes) = asset.get_bytes() {
+            let width = asset.width() as i32;
+            let height = asset.height() as i32;
+            state.make_current();
+            unsafe {
+                if state.get_flip_y() {
+                    let mut buffer = bytes.to_vec();
+                    utils::gl::flip_in_place_3d(
+                        buffer.as_mut_ptr(),
+                        buffer.len(),
+                        (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
+                            as usize,
+                        height as usize,
+                        depth as usize,
+                    );
+
+                    gl_bindings::TexImage3D(
+                        target,
+                        level,
+                        //internalformat,
+                        gl_bindings::RGBA as _,
+                        width,
+                        height,
+                        depth,
+                        border,
+                        // format,
+                        gl_bindings::RGBA as _,
+                        // type_,
+                        gl_bindings::UNSIGNED_BYTE as _,
+                        buffer.as_ptr() as *const c_void,
+                    );
+
+                    return;
+                }
+
+                gl_bindings::TexImage3D(
+                    target,
+                    level,
+                    // internalformat,
+                    gl_bindings::RGBA as _,
+                    width,
+                    height,
+                    depth,
+                    border,
+                    //format,
+                    gl_bindings::RGBA as _,
+                    //type_,
+                    gl_bindings::UNSIGNED_BYTE as _,
+                    bytes.as_ptr() as *const c_void,
+                );
+            }
+        }
+        return;
+    }
+
+
+    if let Some(mut bytes) = bytes {
+        let width = asset.width() as i32;
+        let height = asset.height() as i32;
+        state.make_current();
+        unsafe {
+            if state.get_flip_y() {
+                let mut buffer = bytes;
+                utils::gl::flip_in_place_3d(
+                    buffer.as_mut_ptr(),
+                    buffer.len(),
+                    (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32 * width)
+                        as usize,
+                    height as usize,
+                    depth as usize,
+                );
+
+                gl_bindings::TexImage3D(
+                    target,
+                    level,
+                    internalformat,
+                    width,
+                    height,
+                    depth,
+                    border,
+                    format,
+                    type_,
+                    buffer.as_ptr() as *const c_void,
+                );
+
+                return;
+            }
+
+            gl_bindings::TexImage3D(
+                target,
+                level,
+                internalformat,
+                width,
+                height,
+                depth,
+                border,
+                format,
+                type_,
+                bytes.as_ptr() as *const c_void,
+            );
+        }
+    }
+
 }
 
 pub fn canvas_native_webgl2_tex_image3d(
@@ -1477,11 +1703,89 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
     asset: &ImageAsset,
     state: &mut WebGLState,
 ) {
-    if let Some(bytes) = asset.get_bytes() {
+    let mut is_rgba = false;
+    let bytes = match format {
+        gl_bindings::RGBA => {
+            is_rgba = true;
+            None
+        }
+        gl_bindings::RGB => {
+            asset.get_rgb_bytes()
+        }
+        gl_bindings::LUMINANCE => {
+            asset.get_luminance_bytes()
+        }
+        gl_bindings::LUMINANCE_ALPHA => {
+            asset.get_luminance_alpha_bytes()
+        }
+        gl_bindings::ALPHA => {
+            asset.get_alpha_bytes()
+        }
+        _ => {
+            None
+        }
+    };
+
+    if is_rgba {
+        if let Some(bytes) = asset.get_bytes() {
+            state.make_current();
+            unsafe {
+                if state.get_flip_y() {
+                    let mut buffer = bytes.to_vec();
+                    utils::gl::flip_in_place_3d(
+                        buffer.as_mut_ptr(),
+                        buffer.len(),
+                        (utils::gl::bytes_per_pixel(type_ as u32, format as u32) as i32
+                            * asset.width() as i32) as usize,
+                        asset.height() as usize,
+                        depth as usize,
+                    );
+
+                    gl_bindings::TexSubImage3D(
+                        target,
+                        level,
+                        xoffset,
+                        yoffset,
+                        zoffset,
+                        width,
+                        height,
+                        depth,
+                        // format,
+                        gl_bindings::RGBA as _,
+                        //type_,
+                        gl_bindings::UNSIGNED_BYTE as _,
+                        buffer.as_ptr() as *const c_void,
+                    );
+
+                    return;
+                }
+
+                gl_bindings::TexSubImage3D(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    zoffset,
+                    width,
+                    height,
+                    depth,
+                    // format,
+                    gl_bindings::RGBA as _,
+                    // type_,
+                    gl_bindings::UNSIGNED_BYTE as _,
+                    bytes.as_ptr() as *const c_void,
+                );
+            }
+        }
+        return;
+    }
+
+
+    if let Some(mut bytes) = bytes {
         state.make_current();
         unsafe {
             if state.get_flip_y() {
-                let mut buffer = bytes.to_vec();
+                let mut buffer = bytes;
                 utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
@@ -1500,10 +1804,8 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     width,
                     height,
                     depth,
-                    // format,
-                    gl_bindings::RGBA as _,
-                    //type_,
-                    gl_bindings::UNSIGNED_BYTE as _,
+                    format,
+                    type_,
                     buffer.as_ptr() as *const c_void,
                 );
 
@@ -1519,14 +1821,13 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                 width,
                 height,
                 depth,
-                // format,
-                gl_bindings::RGBA as _,
-                // type_,
-                gl_bindings::UNSIGNED_BYTE as _,
+                format,
+                type_,
                 bytes.as_ptr() as *const c_void,
             );
         }
     }
+
 }
 
 pub fn canvas_native_webgl2_tex_sub_image3d_offset(

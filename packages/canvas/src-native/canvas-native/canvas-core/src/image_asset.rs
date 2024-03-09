@@ -359,35 +359,39 @@ impl ImageAsset {
         }
     }
 
+    pub fn get_rgb_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_rgb(slice, width, height)
+        })
+    }
+
     pub fn get_luminance_bytes(&self) -> Option<Vec<u8>> {
         self.read().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
-            let mut buf: Vec<u8> = Vec::with_capacity(slice.len() / 4);
-            for (index, chunk) in slice.chunks(4).enumerate() {
-                let red = chunk[0] as f32;
-                let green = chunk[1] as f32;
-                let blue = chunk[2] as f32;
-
-                buf[index] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
-            }
-            buf
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_luminance(slice, width, height)
         })
     }
 
     pub fn get_luminance_alpha_bytes(&self) -> Option<Vec<u8>> {
         self.read().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
-            let mut buf: Vec<u8> = Vec::with_capacity(slice.len() / 4 * 2);
-            for (rgba, luma) in slice.chunks(4).zip(buf.chunks_mut(2)) {
-                let red = rgba[0] as f32;
-                let green = rgba[1] as f32;
-                let blue = rgba[2] as f32;
-                let alpha = rgba[3];
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_luminance_alpha(slice, width, height)
+        })
+    }
 
-                luma[0] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
-                luma[1] = alpha;
-            }
-            buf
+    pub fn get_alpha_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_alpha(slice, width, height)
         })
     }
 
@@ -414,5 +418,73 @@ impl ImageAsset {
             rgba_data.extend_from_slice(&[r, g, b, a]);
         }
         rgba_data
+    }
+
+    pub fn rgba_to_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+        let mut buf: Vec<u8> = vec![0_u8; width * height];
+        if data.len() < width * height * 4 { return buf  }
+        for i in 0 ..(width * height) {
+            let alpha = data[i * 4 + 3];
+            buf[i] = alpha;
+        }
+        buf
+    }
+    pub fn rgba_to_luminance_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+        let mut buf: Vec<u8> = vec![0_u8; width * height * 2];
+        if data.len() < width * height * 4 { return buf  }
+        for i in 0 ..(width * height) {
+            let red = data[i * 4] as f32;
+            let green = data[i * 4 + 1] as f32;
+            let blue = data[i * 4 + 2] as f32;
+            let alpha = data[i * 4 + 3];
+
+            buf[i * 2] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+            buf[i * 2 + 1] = alpha;
+        }
+        buf
+    }
+
+    pub fn rgba_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+        let mut buf: Vec<u8> = vec![255_u8; width * height];
+        if data.len() < width * height * 4 { return buf  }
+        for i in 0 ..(width * height) {
+            let red = data[i * 4] as f32;
+            let green = data[i * 4 + 1] as f32;
+            let blue = data[i * 4 + 2] as f32;
+
+            buf[i * 2] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+        }
+        buf
+    }
+
+    pub fn rgb_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+        let mut buf: Vec<u8> = vec![255_u8; width * height];
+        if data.len() < width * height * 3 { return buf  }
+        for i in 0 ..(width * height) {
+            let red = data[i * 3] as f32;
+            let green = data[i * 3 + 1] as f32;
+            let blue = data[i * 3 + 2] as f32;
+
+            buf[i] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+        }
+        buf
+    }
+
+    pub fn rgba_to_rgb(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+        let mut buf: Vec<u8> = vec![255_u8; width * height * 3];
+        if data.len() < width * height * 4 { return buf  }
+
+        for i in 0 .. (width * height)  {
+            let red = data[i * 4];
+            let green = data[i * 4 + 1];
+            let blue = data[i * 4 + 2];
+
+            buf[i * 3] = red;
+            buf[i * 3 + 1] = green;
+            buf[i * 3 + 2] = blue;
+
+        }
+        buf
+
     }
 }

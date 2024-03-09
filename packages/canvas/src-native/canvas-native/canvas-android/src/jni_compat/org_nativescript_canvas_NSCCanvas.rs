@@ -673,6 +673,8 @@ pub extern "system" fn nativeWebGLC2DRender(
     _: JClass,
     gl_context: jlong,
     context: jlong,
+    internalFormat: jint,
+    format: jint
 ) {
     if gl_context == 0 || context == 0 {
         return;
@@ -688,7 +690,7 @@ pub extern "system" fn nativeWebGLC2DRender(
 
     {
         let state =  unsafe { &mut *state};
-        canvas_c::impl_test::draw_image_space_test(state, context);
+        canvas_c::impl_test::draw_image_space_test(state, context, internalFormat, format);
         state.get_inner_mut().swap_buffers();
     }
 

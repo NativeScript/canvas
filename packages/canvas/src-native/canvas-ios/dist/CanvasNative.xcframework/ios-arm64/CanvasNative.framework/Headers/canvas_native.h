@@ -2549,6 +2549,18 @@ void canvas_native_webgl2_tex_image3d_asset(uint32_t target,
                                             const struct ImageAsset *asset,
                                             struct WebGLState *state);
 
+void canvas_native_webgl2_tex_image3d_canvas2d(uint32_t target,
+                                               int32_t level,
+                                               int32_t internalformat,
+                                               int32_t _width,
+                                               int32_t _height,
+                                               int32_t depth,
+                                               int32_t border,
+                                               uint32_t format,
+                                               uint32_t type_,
+                                               struct CanvasRenderingContext2D *canvas,
+                                               struct WebGLState *state);
+
 void canvas_native_webgl2_tex_image3d(uint32_t target,
                                       int32_t level,
                                       int32_t internalformat,
@@ -2630,6 +2642,19 @@ void canvas_native_webgl2_tex_sub_image3d_asset(uint32_t target,
                                                 uint32_t type_,
                                                 const struct ImageAsset *asset,
                                                 struct WebGLState *state);
+
+void canvas_native_webgl2_tex_sub_image3d_canvas2d(uint32_t target,
+                                                   int32_t level,
+                                                   int32_t xoffset,
+                                                   int32_t yoffset,
+                                                   int32_t zoffset,
+                                                   int32_t width,
+                                                   int32_t height,
+                                                   int32_t depth,
+                                                   uint32_t format,
+                                                   uint32_t type_,
+                                                   struct CanvasRenderingContext2D *canvas,
+                                                   struct WebGLState *state);
 
 void canvas_native_webgl2_tex_sub_image3d_offset(uint32_t target,
                                                  int32_t level,

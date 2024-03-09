@@ -42,7 +42,7 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-		Log.d("JS", "onSurfaceTextureAvailable $surface $width $height")
+	//	Log.d("JS", "onSurfaceTextureAvailable $surface $width $height")
 		if (isReady) {
 			return
 		}
@@ -67,7 +67,7 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		Log.d("JS", "onSurfaceTextureSizeChanged $surface $width $height")
+	//	Log.d("JS", "onSurfaceTextureSizeChanged $surface $width $height")
 		if (isReady || surface == this.surface) {
 			return
 		}
@@ -92,7 +92,7 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-		Log.d("JS", "onSurfaceTextureDestroyed $surface")
+		//Log.d("JS", "onSurfaceTextureDestroyed $surface")
 		isCreated = false
 		return false
 	}

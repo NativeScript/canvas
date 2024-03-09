@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -21,6 +22,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	fun init() {
+		holder.setFormat(PixelFormat.RGBA_8888)
 		setZOrderOnTop(true)
 		holder.addCallback(this)
 	}

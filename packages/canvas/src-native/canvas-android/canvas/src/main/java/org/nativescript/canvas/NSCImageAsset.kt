@@ -36,6 +36,7 @@ class NSCImageAsset {
 		fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
 			if (bitmap.config == Bitmap.Config.RGB_565 || bitmap.config == Bitmap.Config.ARGB_4444) {
 				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+
 				val canvas = Canvas(bm)
 				canvas.drawBitmap(bitmap, 0F, 0F, null)
 				return nativeLoadFromBitmap(asset, bitmap)

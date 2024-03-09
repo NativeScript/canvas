@@ -1,6 +1,6 @@
 import { DemoSharedBase } from '../utils';
 
-import { Screen } from '@nativescript/core';
+import { Screen, knownFolders } from '@nativescript/core';
 
 import type { Application, Graphics } from 'pixi.js';
 
@@ -13,6 +13,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 	loaded(args) {
 		console.log('loaded', args.object);
+
+		//this.root = knownFolders.currentApp().path + '/assets/pixi'
 	}
 
 	unloaded(args) {
@@ -43,14 +45,14 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// ctx.drawImage(canvas2, 0, 0);
 		//this.text(canvas);
 
-		//this.drawPatternWithCanvas(canvas);
+		this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
 		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		this.dynamicGraphics(canvas);
+		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -820,7 +822,8 @@ void main()
 	}
 
 	bitmapFont(canvas) {
-		// const app = new PIXI.Application({ canvas, backgroundColor: 0x1099bb });
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb });
 		// app.loader.add('desyrel', this.root + '/bitmap-font/desyrel.xml').load(onAssetsLoaded);
 		// function onAssetsLoaded() {
 		// 	const bitmapFontText = new (PIXI as any).BitmapText('bitmap fonts are supported!\nWoo yay!', { font: '55px Desyrel', align: 'left' });
@@ -828,11 +831,32 @@ void main()
 		// 	bitmapFontText.y = 200;
 		// 	app.stage.addChild(bitmapFontText);
 		// }
+
+
+
+
+
+		// PIXI.Assets.load(this.root + '/bitmap-font/desyrel.xml');
+
+		// const bitmapFontText = new PIXI.Text({
+		// 	text: 'bitmap fonts are supported!\nWoo yay!',
+		// 	style: {
+		// 		fontFamily: 'Desyrel',
+		// 		fontSize: 55,
+		// 		align: 'left',
+		// 	},
+		// 	renderMode: 'bitmap',
+		// } as any);
+	
+		// bitmapFontText.x = 50;
+		// bitmapFontText.y = 200;
+	
+		// app.stage.addChild(bitmapFontText);
 	}
 
-	explosion(canvas) {
+	async explosion(canvas) {
 		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb });
+		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb, autoStart: false });
 
 		// app.stop();
 
@@ -863,14 +887,47 @@ void main()
 		// };
 
 		// app.loader.add('spritesheet', this.root + '/spritesheet/mc.json').load(onAssetsLoaded);
+
+
+		const texture = await PIXI.Assets.load('https://pixijs.com/assets/spritesheet/mc.json');
+
+		// Create an array to store the textures
+		const explosionTextures = [];
+		let i;
+	
+		for (i = 0; i < 26; i++)
+		{
+			const texture = PIXI.Texture.from(`Explosion_Sequence_A ${i + 1}.png`);
+	
+			explosionTextures.push(texture);
+		}
+	
+		// Create and randomly place the animated explosion sprites on the stage
+		for (i = 0; i < 50; i++)
+		{
+			// Create an explosion AnimatedSprite
+			const explosion = new PIXI.AnimatedSprite(explosionTextures);
+	
+			explosion.x = Math.random() * app.screen.width;
+			explosion.y = Math.random() * app.screen.height;
+			explosion.anchor.set(0.5);
+			explosion.rotation = Math.random() * Math.PI;
+			explosion.scale.set(0.75 + Math.random() * 0.5);
+			explosion.gotoAndPlay((Math.random() * 26) | 0);
+			app.stage.addChild(explosion);
+		}
+
+	app.start();
+
+		
 	}
 
-	starWarp(canvas) {
+	async starWarp(canvas) {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({ context });
 
 		// Get the texture for rope.
-		const starTexture = PIXI.Texture.from(this.root + '/images/star.png');
+		const starTexture = await PIXI.Assets.load(this.root + '/images/star.png');
 
 		const starAmount = 1000;
 		let cameraZ = 0;
@@ -880,61 +937,75 @@ void main()
 		let warpSpeed = 0;
 		const starStretch = 5;
 		const starBaseSize = 0.05;
-
+	
 		// Create the stars
 		const stars = [];
-		for (let i = 0; i < starAmount; i++) {
+	
+		for (let i = 0; i < starAmount; i++)
+		{
 			const star = {
 				sprite: new PIXI.Sprite(starTexture),
 				z: 0,
 				x: 0,
 				y: 0,
 			};
+	
 			star.sprite.anchor.x = 0.5;
 			star.sprite.anchor.y = 0.7;
 			randomizeStar(star, true);
 			app.stage.addChild(star.sprite);
 			stars.push(star);
 		}
-
-		function randomizeStar(star, initial?) {
+	
+		function randomizeStar(star, initial?)
+		{
 			star.z = initial ? Math.random() * 2000 : cameraZ + Math.random() * 1000 + 2000;
-
+	
 			// Calculate star positions with radial random coordinate so no star hits the camera.
 			const deg = Math.random() * Math.PI * 2;
 			const distance = Math.random() * 50 + 1;
+	
 			star.x = Math.cos(deg) * distance;
 			star.y = Math.sin(deg) * distance;
 		}
-
+	
 		// Change flight speed every 5 seconds
-		setInterval(() => {
+		setInterval(() =>
+		{
 			warpSpeed = warpSpeed > 0 ? 0 : 1;
 		}, 5000);
-
+	
 		// Listen for animate update
-		app.ticker.add((delta) => {
+		app.ticker.add((time: any) =>
+		{
 			// Simple easing. This should be changed to proper easing function when used for real.
 			speed += (warpSpeed - speed) / 20;
-			cameraZ += delta * 10 * (speed + baseSpeed);
-			for (let i = 0; i < starAmount; i++) {
+			cameraZ += time.deltaTime * 10 * (speed + baseSpeed);
+			for (let i = 0; i < starAmount; i++)
+			{
 				const star = stars[i];
+	
 				if (star.z < cameraZ) randomizeStar(star);
-
+	
 				// Map star 3d position to 2d with really simple projection
 				const z = star.z - cameraZ;
+	
 				star.sprite.x = star.x * (fov / z) * app.renderer.screen.width + app.renderer.screen.width / 2;
 				star.sprite.y = star.y * (fov / z) * app.renderer.screen.width + app.renderer.screen.height / 2;
-
+	
 				// Calculate star scale & rotation.
 				const dxCenter = star.sprite.x - app.renderer.screen.width / 2;
 				const dyCenter = star.sprite.y - app.renderer.screen.height / 2;
 				const distanceCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter);
 				const distanceScale = Math.max(0, (2000 - z) / 2000);
+	
 				star.sprite.scale.x = distanceScale * starBaseSize;
 				// Star is looking towards center so that y axis is towards center.
-				// Scale the star depending on how fast we are moving, what the stretchfactor is and depending on how far away it is from the center.
-				star.sprite.scale.y = distanceScale * starBaseSize + (distanceScale * speed * starStretch * distanceCenter) / app.renderer.screen.width;
+				// Scale the star depending on how fast we are moving, what the stretchfactor is
+				// and depending on how far away it is from the center.
+				star.sprite.scale.y
+					= distanceScale * starBaseSize
+					+ (distanceScale * speed * starStretch * distanceCenter) / app.renderer.screen.width;
 				star.sprite.rotation = Math.atan2(dyCenter, dxCenter) + Math.PI / 2;
 			}
 		});
@@ -1387,13 +1458,14 @@ void main()
 	text(canvas) {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
-			context,
-			backgroundColor: 0x1099bb,
+			context
 		});
 
-		const basicText = new PIXI.Text('Basic text in pixi');
-		basicText.x = 50;
-		basicText.y = 100;
+		const c = document.createElement('canvas');
+		c.width = 512 / window.devicePixelRatio;
+		c.height = 512 / window.devicePixelRatio;
+		const basicText = new PIXI.Text('Basic text in pixi', null, c);
+	                                                                                                                                                         
 
 		app.stage.addChild(basicText);
 
@@ -1418,22 +1490,22 @@ void main()
 		// richText.x = 50;
 		// richText.y = 250;
 
-		// app.stage.addChild(richText);
+		// // app.stage.addChild(richText);
 	}
 
 	drawPatternWithCanvas(canvas) {
 		const scale = 1; //Screen.mainScreen.scale;
 		const patternCanvas = document.createElement('canvas');
 		// Give the pattern a width and height of 50
-		patternCanvas.width = 50 * scale;
-		patternCanvas.height = 50 * scale;
+		patternCanvas.width = 50;
+		patternCanvas.height = 50;
 
 		const patternContext = patternCanvas.getContext('2d') as any;
 
 		// Give the pattern a background color and draw an arc
 		patternContext.fillStyle = '#fec';
 		patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-		patternContext.arc(0, 0, 50 * Screen.mainScreen.scale, 0, 0.5 * Math.PI);
+		patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
 		patternContext.stroke();
 
 		// Create our primary canvas and fill it with the pattern

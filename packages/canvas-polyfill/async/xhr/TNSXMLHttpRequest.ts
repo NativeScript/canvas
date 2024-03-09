@@ -325,7 +325,6 @@ export class TNSXMLHttpRequest {
 			password,
 		};
 		this._updateReadyStateChange(this.OPENED);
-		console.log(this._request);
 	}
 
 	setRequestHeader(header: string, value) {
@@ -668,7 +667,6 @@ export class TNSXMLHttpRequest {
 			url: this._request.url,
 			headers: this._headers,
 			onLoading: () => {
-				console.log('onLoading');
 				if (this.onloadstart) {
 					this.onloadstart();
 				}
@@ -699,7 +697,6 @@ export class TNSXMLHttpRequest {
 				this._updateReadyStateChange(this.LOADING);
 			},
 			onHeaders: (event) => {
-				console.log('onHeaders', event);
 				if (!isNaN(event.status)) {
 					this._status = event.status;
 				}
@@ -736,11 +733,8 @@ export class TNSXMLHttpRequest {
 		
 		this._currentRequest = this._http.request(request);
 
-		console.log(this._currentRequest);
-
 		this._currentRequest
 			.then((res) => {
-				console.log(res);
 				if (!this._didUserSetResponseType) {
 					this._setResponseType();
 				}
@@ -854,15 +848,11 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							console.log(res.content)
 							const buffer = (ArrayBuffer as any).from(res.content);
 							this._response = new Blob([buffer]);
 						}
 					}
 				}
-
-
-				console.log(this.responseType );
 
 				this._addToStringOnResponse();
 
@@ -890,7 +880,6 @@ export class TNSXMLHttpRequest {
 				this._updateReadyStateChange(this.DONE);
 			})
 			.catch((error) => {
-				console.log('error', error);
 				const type: HttpError = error.type;
 				const method = this._request.method.toLowerCase();
 				switch (type) {

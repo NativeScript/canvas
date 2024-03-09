@@ -4,11 +4,11 @@ use std::sync::Arc;
 
 #[cfg(target_os = "macos")]
 use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-use glutin::config::{Api, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig};
+use glutin::config::{Api, ColorBufferType, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig};
 use glutin::context::{ContextApi, GlContext, Version};
 use glutin::display::GetGlDisplay;
-use glutin::prelude::GlSurface;
 use glutin::prelude::*;
+use glutin::prelude::GlSurface;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
 use once_cell::sync::OnceCell;
 use parking_lot::{
@@ -78,6 +78,11 @@ impl Into<ConfigTemplate> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
+            })
             .with_transparency(self.get_alpha());
 
         if !self.get_is_canvas() && self.get_antialias() {
@@ -94,6 +99,11 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
+            })
             .with_transparency(value.get_alpha());
 
         if !value.get_is_canvas() && value.get_antialias() {
@@ -110,6 +120,11 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 16 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
+            })
             .with_transparency(self.get_alpha());
 
         if !self.get_is_canvas() && self.get_antialias() {
@@ -127,6 +142,11 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 16 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
+            })
             .with_transparency(value.get_alpha());
 
         if !value.get_is_canvas() && value.get_antialias() {
@@ -144,6 +164,11 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
 //             )
 //             .with_depth_size(if self.get_depth() { 16 } else { 0 })
 //             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
+//             .with_buffer_type(ColorBufferType::Rgb {
+//                 r_size: 8,
+//                 g_size: 8,
+//                 b_size: 8,
+//             })
 //             .with_transparency(self.get_alpha())
 //             .build()
 //     }

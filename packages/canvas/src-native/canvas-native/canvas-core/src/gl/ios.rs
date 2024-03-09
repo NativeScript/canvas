@@ -18,7 +18,6 @@ use once_cell::sync::OnceCell;
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
-use crate::gl::SurfaceHelper;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
 

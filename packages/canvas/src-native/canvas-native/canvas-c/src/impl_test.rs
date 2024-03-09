@@ -6,7 +6,7 @@ use canvas_webgl::utils::{create_program_from_scripts, ShaderSource, ShaderSourc
 use crate::{CanvasRenderingContext2D, WebGLState};
 
 
-pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderingContext2D){
+pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderingContext2D, internalFormat: i32, format: i32){
     {
         let state = state.get_inner_mut();
         state.make_current();
@@ -79,8 +79,8 @@ pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderin
         crate::canvas_native_webgl_tex_image2d_canvas2d(
             gl_bindings::TEXTURE_2D as i32,
             0,
-            gl_bindings::RGBA as i32,
-            gl_bindings::RGBA as i32,
+            internalFormat,
+            format,
             gl_bindings::UNSIGNED_BYTE as i32,
             canvas,
             state

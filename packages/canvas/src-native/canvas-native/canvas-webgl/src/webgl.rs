@@ -8,7 +8,7 @@ use canvas_core::image_asset::ImageAsset;
 
 use crate::prelude::*;
 use crate::utils;
-use crate::utils::gl::{bytes_per_pixel, GLImageAssetBytesType};
+use crate::utils::gl::bytes_per_pixel;
 
 pub fn canvas_native_webgl_resized(state: &mut WebGLState) {
     state.resized();
@@ -2151,6 +2151,9 @@ pub fn canvas_native_webgl_stencil_op_separate(
     unsafe { gl_bindings::StencilOpSeparate(face, fail, zfail, zpass) }
 }
 
+
+
+
 pub fn canvas_native_webgl_tex_image2d_asset(
     target: i32,
     level: i32,
@@ -2160,48 +2163,119 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     asset: &ImageAsset,
     state: &WebGLState,
 ) {
-    if let Some(bytes) = asset.get_bytes() {
-        let width = asset.width() as i32;
-        let height = asset.height() as i32;
-        state.make_current();
-        unsafe {
-            if state.get_flip_y() {
-                let mut buffer = bytes.to_vec();
-                utils::gl::flip_in_place(
-                    buffer.as_mut_ptr(),
-                    buffer.len(),
-                    (bytes_per_pixel(image_type as u32, format as u32) as i32 * width) as usize,
-                    height as usize,
-                );
-
-                gl_bindings::TexImage2D(
-                    target as u32,
-                    level,
-                    internalformat,
-                    width,
-                    height,
-                    0,
-                    format as u32,
-                    image_type as u32,
-                    buffer.as_ptr() as *const c_void,
-                );
-
-                return;
-            }
-
-            gl_bindings::TexImage2D(
-                target as u32,
-                level,
-                internalformat,
-                width,
-                height,
-                0,
-                format as u32,
-                image_type as u32,
-                bytes.as_ptr() as *const c_void,
-            );
+    let mut is_rgba = false;
+    let bytes = match format as u32 {
+        gl_bindings::RGBA => {
+            is_rgba = true;
+            None
         }
-    }
+        gl_bindings::RGB => {
+            asset.get_rgb_bytes()
+        }
+        gl_bindings::LUMINANCE => {
+            asset.get_luminance_bytes()
+        }
+        gl_bindings::LUMINANCE_ALPHA => {
+            asset.get_luminance_alpha_bytes()
+        }
+        gl_bindings::ALPHA => {
+            asset.get_alpha_bytes()
+        }
+        _ => {
+            None
+        }
+    };
+
+        if is_rgba {
+            if let Some(bytes) = asset.get_bytes() {
+                let width = asset.width() as i32;
+                let height = asset.height() as i32;
+                state.make_current();
+                unsafe {
+                    if state.get_flip_y() {
+                        let mut buffer = bytes.to_vec();
+                        utils::gl::flip_in_place(
+                            buffer.as_mut_ptr(),
+                            buffer.len(),
+                            (bytes_per_pixel(image_type as u32, format as u32) as i32 * width) as usize,
+                            height as usize,
+                        );
+
+                        gl_bindings::TexImage2D(
+                            target as u32,
+                            level,
+                            internalformat,
+                            width,
+                            height,
+                            0,
+                            format as u32,
+                            image_type as u32,
+                            buffer.as_ptr() as *const c_void,
+                        );
+
+                        return;
+                    }
+
+                    gl_bindings::TexImage2D(
+                        target as u32,
+                        level,
+                        internalformat,
+                        width,
+                        height,
+                        0,
+                        format as u32,
+                        image_type as u32,
+                        bytes.as_ptr() as *const c_void,
+                    );
+                }
+            }
+            return;
+        }
+
+
+ if let Some(mut bytes) = bytes {
+     let width = asset.width() as i32;
+     let height = asset.height() as i32;
+     state.make_current();
+     unsafe {
+         if state.get_flip_y() {
+             let mut buffer = bytes;
+             utils::gl::flip_in_place(
+                 buffer.as_mut_ptr(),
+                 buffer.len(),
+                 (bytes_per_pixel(image_type as u32, format as u32) as i32 * width) as usize,
+                 height as usize,
+             );
+
+             gl_bindings::TexImage2D(
+                 target as u32,
+                 level,
+                 internalformat,
+                 width,
+                 height,
+                 0,
+                 format as u32,
+                 image_type as u32,
+                 buffer.as_ptr() as *const c_void,
+             );
+
+             return;
+         }
+
+         gl_bindings::TexImage2D(
+             target as u32,
+             level,
+             internalformat,
+             width,
+             height,
+             0,
+             format as u32,
+             image_type as u32,
+             bytes.as_ptr() as *const c_void,
+         );
+     }
+ }
+
 }
 
 pub fn canvas_native_webgl_read_webgl_pixels(
@@ -2344,67 +2418,6 @@ pub fn canvas_native_webgl_tex_image2d_none(
     }
 }
 
-pub fn canvas_native_webgl_tex_image2d_image_asset(
-    target: i32,
-    level: i32,
-    _internalformat: i32,
-    format: i32,
-    image_type: i32,
-    image_asset: &ImageAsset,
-    state: &WebGLState,
-) {
-    state.make_current();
-
-    let width = image_asset.width() as i32;
-    let height = image_asset.height() as i32;
-    let flip_y = state.get_flip_y();
-
-
-
-    if let Some(bytes) = image_asset.get_bytes() {
-        unsafe {
-            if flip_y {
-                let mut buffer = bytes.to_vec();
-                utils::gl::flip_in_place(
-                    buffer.as_mut_ptr(),
-                    buffer.len(),
-                    (bytes_per_pixel(image_type as u32, format as u32) as i32 * width)
-                        as usize,
-                    height as usize,
-                );
-
-                gl_bindings::TexImage2D(
-                    target as u32,
-                    level,
-                    gl_bindings::RGBA as _,
-                    width as _,
-                    height as _,
-                    0,
-                    gl_bindings::RGBA as _,
-                    gl_bindings::UNSIGNED_BYTE as _,
-                    buffer.as_ptr() as *const c_void,
-                );
-
-                return;
-            }
-
-            gl_bindings::TexImage2D(
-                target as u32,
-                level,
-                gl_bindings::RGBA as _,
-                width as _,
-                height as _,
-                0,
-                gl_bindings::RGBA as _,
-                gl_bindings::UNSIGNED_BYTE as _,
-                bytes.as_ptr() as *const c_void,
-            );
-        }
-    }
-
-
-}
-
 pub fn canvas_native_webgl_tex_parameterf(target: u32, pname: u32, param: f32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::TexParameterf(target, pname, param) }
@@ -2425,15 +2438,88 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
     asset: &ImageAsset,
     state: &WebGLState,
 ) {
-    if let Some(bytes) = asset.get_bytes() {
+
+
+    let mut is_rgba = false;
+    let bytes = match format {
+        gl_bindings::RGBA => {
+            is_rgba = true;
+            None
+        }
+        gl_bindings::RGB => {
+            asset.get_rgb_bytes()
+        }
+        gl_bindings::LUMINANCE => {
+            asset.get_luminance_bytes()
+        }
+        gl_bindings::LUMINANCE_ALPHA => {
+            asset.get_luminance_alpha_bytes()
+        }
+        gl_bindings::ALPHA => {
+            asset.get_alpha_bytes()
+        }
+        _ => {
+            None
+        }
+    };
+
+    if is_rgba {
+        if let Some(bytes) = asset.get_bytes() {
+            let width = asset.width() as i32;
+            let height = asset.height() as i32;
+            state.make_current();
+            if state.get_flip_y() {
+                let mut buffer = bytes.to_vec();
+                utils::gl::flip_in_place(
+                    buffer.as_mut_ptr(),
+                    bytes.len(),
+                    (bytes_per_pixel(image_type as u32, format) as i32 * width) as usize,
+                    height as usize,
+                );
+
+                unsafe {
+                    gl_bindings::TexSubImage2D(
+                        target,
+                        level,
+                        xoffset,
+                        yoffset,
+                        width,
+                        height,
+                        format,
+                        image_type as u32,
+                        buffer.as_ptr() as *const c_void,
+                    );
+                }
+
+                return;
+            }
+            unsafe {
+                gl_bindings::TexSubImage2D(
+                    target,
+                    level,
+                    xoffset,
+                    yoffset,
+                    width,
+                    height,
+                    format,
+                    image_type as u32,
+                    bytes.as_ptr() as *const c_void,
+                );
+            }
+        }
+        return;
+    }
+
+
+    if let Some(mut bytes) = bytes {
         let width = asset.width() as i32;
         let height = asset.height() as i32;
         state.make_current();
         if state.get_flip_y() {
-            let mut buffer = bytes.to_vec();
+            let mut buffer = bytes;
             utils::gl::flip_in_place(
                 buffer.as_mut_ptr(),
-                bytes.len(),
+                buffer.len(),
                 (bytes_per_pixel(image_type as u32, format) as i32 * width) as usize,
                 height as usize,
             );
@@ -2468,6 +2554,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
             );
         }
     }
+
 }
 
 pub fn canvas_native_webgl_tex_sub_image2d(

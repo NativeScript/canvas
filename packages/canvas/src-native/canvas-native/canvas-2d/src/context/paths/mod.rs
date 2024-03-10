@@ -5,27 +5,27 @@ use crate::context::Context;
 pub mod path;
 
 impl Context {
-    #[inline(always)]
+
     pub fn begin_path(&mut self) {
         self.path.begin_path();
     }
 
-    #[inline(always)]
+
     pub fn close_path(&mut self) {
         self.path.close_path();
     }
 
-    #[inline(always)]
+
     pub fn move_to(&mut self, x: c_float, y: c_float) {
         self.path.move_to(x, y);
     }
 
-    #[inline(always)]
+
     pub fn line_to(&mut self, x: c_float, y: c_float) {
         self.path.line_to(x, y);
     }
 
-    #[inline(always)]
+
     pub fn bezier_curve_to(
         &mut self,
         cp1x: c_float,
@@ -38,12 +38,12 @@ impl Context {
         self.path.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y);
     }
 
-    #[inline(always)]
+
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
         self.path.quadratic_curve_to(cpx, cpy, x, y);
     }
 
-    #[inline(always)]
+
     pub fn arc(
         &mut self,
         x: c_float,
@@ -57,12 +57,12 @@ impl Context {
             .arc(x, y, radius, start_angle, end_angle, anticlockwise);
     }
 
-    #[inline(always)]
+
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
         self.path.arc_to(x1, y1, x2, y2, radius);
     }
 
-    #[inline(always)]
+
     pub fn ellipse(
         &mut self,
         x: c_float,
@@ -86,12 +86,12 @@ impl Context {
         );
     }
 
-    #[inline(always)]
+
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
         self.path.rect(x, y, width, height);
     }
 
-    #[inline(always)]
+
     pub fn round_rect(
         &mut self,
         x: c_float,

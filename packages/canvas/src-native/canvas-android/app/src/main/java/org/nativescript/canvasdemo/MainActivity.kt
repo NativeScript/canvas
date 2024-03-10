@@ -136,11 +136,40 @@ class MainActivity : AppCompatActivity() {
 				//drawText(canvas!!)
 
 
-				val view = NSCCanvas(this@MainActivity)
-				view.layoutParams =  ViewGroup.LayoutParams(512, 512)
-				NSCCanvas.layoutSurface(512, 512, view)
+//				val view = NSCCanvas(this@MainActivity)
+//				view.layoutParams =  ViewGroup.LayoutParams(512, 512)
+//				NSCCanvas.layoutSurface(512, 512, view)
+//
+//				val ctx = view.create2DContext(
+//					true,
+//					true,
+//					true,
+//					true,
+//					0,
+//					true,
+//					true,
+//					true,
+//					true,
+//					true,
+//					Color.BLACK
+//				)
+//
+				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d)
+//
+//				val scale = resources.displayMetrics.density
+//
+//				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0f,0f, 512 / scale,512 / scale)
+//
+//				canvas!!.initContext("webgl2", true)
+//				val gl = canvas!!.nativeContext
+//
+//
+//				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
-				val ctx = view.create2DContext(
+
+
+
+				val ctx = canvas!!.create2DContext(
 					true,
 					true,
 					true,
@@ -154,18 +183,13 @@ class MainActivity : AppCompatActivity() {
 					Color.BLACK
 				)
 
-				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d)
 
-				val scale = resources.displayMetrics.density
+//				val scale = resources.displayMetrics.density
+//				val maxW = resources.displayMetrics.widthPixels / scale
+//				val maxH = resources.displayMetrics.heightPixels / scale
+				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F,0F, 300f, 300f)
 
-				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0f,0f, 512 / scale,512 / scale)
-
-				canvas!!.initContext("webgl2", true)
-				val gl = canvas!!.nativeContext
-
-
-				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
-
+				NSCCanvas.context2DRender(ctx)
 
 			}
 

@@ -1,8 +1,8 @@
 use std::os::raw::c_void;
 
-use jni::JNIEnv;
 use jni::objects::{GlobalRef, JClass, JObject};
 use jni::sys::jlong;
+use jni::JNIEnv;
 use ndk::bitmap::{AndroidBitmap, AndroidBitmapInfo};
 
 #[allow(dead_code)]
@@ -108,8 +108,8 @@ pub fn get_bytes_from_bitmap(
     bitmap: JObject,
 ) -> Option<(Vec<u8>, AndroidBitmapInfo)> {
     if let Ok(vm) = env.get_java_vm() {
-       let _ = vm.attach_current_thread();
-    }else {
+        let _ = vm.attach_current_thread();
+    } else {
         return None;
     }
     let native_interface = env.get_native_interface();
@@ -139,11 +139,10 @@ pub fn bitmap_handler(
 ) {
     if let Ok(vm) = env.get_java_vm() {
         let _ = vm.attach_current_thread();
-    }else {
+    } else {
         handler(None);
         return;
     }
-
 
     let native_interface = env.get_native_interface();
     let bitmap = bitmap.as_raw();

@@ -670,6 +670,29 @@ void canvas_native_context_draw_image_context(struct CanvasRenderingContext2D *c
                                               float d_width,
                                               float d_height);
 
+void canvas_native_context_draw_image_dx_dy_webgl(struct CanvasRenderingContext2D *context,
+                                                  struct WebGLState *source,
+                                                  float dx,
+                                                  float dy);
+
+void canvas_native_context_draw_image_dx_dy_dw_dh_webgl(struct CanvasRenderingContext2D *context,
+                                                        struct WebGLState *source,
+                                                        float dx,
+                                                        float dy,
+                                                        float d_width,
+                                                        float d_height);
+
+void canvas_native_context_draw_image_webgl(struct CanvasRenderingContext2D *context,
+                                            struct WebGLState *source,
+                                            float sx,
+                                            float sy,
+                                            float s_width,
+                                            float s_height,
+                                            float dx,
+                                            float dy,
+                                            float d_width,
+                                            float d_height);
+
 void canvas_native_context_draw_atlas(struct CanvasRenderingContext2D *context,
                                       const uint8_t *data,
                                       uintptr_t size,

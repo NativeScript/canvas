@@ -4,8 +4,8 @@ use std::sync::Arc;
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
-use skia_safe::{Color, Data, Image, images, Point, Surface};
 use skia_safe::wrapper::NativeTransmutableWrapper;
+use skia_safe::{images, Color, Data, Image, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -466,16 +466,15 @@ impl Context {
         bm
     }
 
-
-
     pub fn read_pixels_with_alpha_premultiply(
         &mut self,
         image: &Image,
         format: i32,
         premultiply: bool,
     ) -> Option<Vec<u8>> {
-
-        if self.device.is_np {return None}
+        if self.device.is_np {
+            return None;
+        }
 
         let mut is_opaque = false;
         let mut is_luminance_alpha = false;
@@ -485,27 +484,27 @@ impl Context {
                 row_byte = 4;
                 is_opaque = true;
                 Some(skia_safe::ColorType::RGBA8888)
-            },
+            }
             gl_bindings::LUMINANCE_ALPHA => {
                 is_luminance_alpha = true;
                 row_byte = 4;
                 Some(skia_safe::ColorType::RGBA8888)
-            },
-            gl_bindings::RGBA => {
-                Some(skia_safe::ColorType::RGBA8888)
-            },
+            }
+            gl_bindings::RGBA => Some(skia_safe::ColorType::RGBA8888),
             gl_bindings::LUMINANCE => {
                 row_byte = 1;
                 Some(skia_safe::ColorType::Gray8)
-            },
+            }
             gl_bindings::ALPHA => {
                 row_byte = 1;
                 Some(skia_safe::ColorType::Alpha8)
-            },
-            _ => None
+            }
+            _ => None,
         };
 
-        if format.is_none() { return None }
+        if format.is_none() {
+            return None;
+        }
 
         let format = format.unwrap();
 
@@ -524,17 +523,33 @@ impl Context {
             None,
         );
 
-        image.read_pixels(&info, slice.as_mut_slice(), (width * row_byte) as usize, skia_safe::IPoint::new(0, 0), skia_safe::image::CachingHint::Disallow);
+        image.read_pixels(
+            &info,
+            slice.as_mut_slice(),
+            (width * row_byte) as usize,
+            skia_safe::IPoint::new(0, 0),
+            skia_safe::image::CachingHint::Disallow,
+        );
 
         if is_luminance_alpha {
-            return Some(canvas_core::image_asset::ImageAsset::rgba_to_luminance_alpha(slice.as_slice(), width as usize, height as usize));
+            return Some(
+                canvas_core::image_asset::ImageAsset::rgba_to_luminance_alpha(
+                    slice.as_slice(),
+                    width as usize,
+                    height as usize,
+                ),
+            );
         }
 
         if is_opaque {
-            return Some(canvas_core::image_asset::ImageAsset::rgba_to_rgb(slice.as_slice(), width as usize, height as usize));
+            return Some(canvas_core::image_asset::ImageAsset::rgba_to_rgb(
+                slice.as_slice(),
+                width as usize,
+                height as usize,
+            ));
         }
 
-        return Some(slice)
+        return Some(slice);
     }
 
     pub fn snapshot_with_texture_id(&mut self) -> (Image, u32) {
@@ -666,12 +681,11 @@ impl Context {
         image
     }
 
-
     pub fn raster_snapshot(&mut self) -> Option<Image> {
         let image = self.surface.image_snapshot();
         if image.is_texture_backed() {
             if let Some(mut context) = self.surface.direct_context() {
-                return image.make_raster_image(&mut context, None)
+                return image.make_raster_image(&mut context, None);
             }
         }
         Some(image)

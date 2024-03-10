@@ -1,13 +1,13 @@
-use jni::JNIEnv;
 use jni::objects::{JClass, JFloatArray, JIntArray, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use skia_safe::Color;
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_c::{CanvasRenderingContext2D, ImageAsset};
 use canvas_c::PaintStyle;
+use canvas_c::{CanvasRenderingContext2D, ImageAsset};
 
 #[no_mangle]
 pub extern "system" fn nativeCreatePattern(
@@ -48,6 +48,65 @@ pub extern "system" fn nativeCreatePattern(
     }
 
     0
+}
+
+
+fn draw_image_dx_dy(
+    context: jlong,
+    image_data: &[u8],
+    width: jfloat,
+    height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+) -> jboolean {
+    if context == 0 {
+        return JNI_FALSE;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    let context = unsafe { &mut *context };
+
+    if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
+        context.make_current();
+        let mut context = context.get_context_mut();
+        context.draw_image_dx_dy(
+            &image, dx, dy
+        );
+        return JNI_TRUE;
+    }
+    JNI_FALSE
+}
+
+
+
+fn draw_image_dx_dy_dw_dh(
+    context: jlong,
+    image_data: &[u8],
+    width: jfloat,
+    height: jfloat,
+    dx: jfloat,
+    dy: jfloat,
+    d_width: jfloat,
+    d_height: jfloat,
+) -> jboolean {
+    if context == 0 {
+        return JNI_FALSE;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    let context = unsafe { &mut *context };
+
+    if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
+        context.make_current();
+        let mut context = context.get_context_mut();
+        context.draw_image_dx_dy_dw_dh(
+            &image, dx, dy, d_width, d_height
+        );
+        return JNI_TRUE;
+    }
+    JNI_FALSE
 }
 
 fn draw_image(
@@ -96,19 +155,13 @@ pub extern "system" fn nativeDrawImageDxDyWithBitmap(
 ) -> jboolean {
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
     if let Some((bytes, _)) = bytes {
-        return draw_image(
+        return draw_image_dx_dy(
             context,
             bytes.as_slice(),
             width,
             height,
-            0.0,
-            0.0,
-            width,
-            height,
             dx,
-            dy,
-            width,
-            height,
+            dy
         );
     }
     JNI_FALSE
@@ -130,13 +183,9 @@ pub extern "system" fn nativeDrawImageDxDyDwDhWithBitmap(
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, _)) = bytes {
-        return draw_image(
+        return draw_image_dx_dy_dw_dh(
             context,
             bytes.as_slice(),
-            width,
-            height,
-            0.0,
-            0.0,
             width,
             height,
             dx,
@@ -263,7 +312,7 @@ fn draw_image_with_asset(
     d_width: jfloat,
     d_height: jfloat,
 ) -> jboolean {
-    if context == 0 || image == 0{
+    if context == 0 || image == 0 {
         return JNI_FALSE;
     }
 
@@ -271,7 +320,7 @@ fn draw_image_with_asset(
     let image = image as *mut ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_asset(
-    context, image,sx, sy, s_width, s_height, dx, dy, d_width, d_height
+        context, image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     );
 
     JNI_TRUE
@@ -286,16 +335,14 @@ pub extern "system" fn nativeDrawImageDxDyWithAsset(
     dx: jfloat,
     dy: jfloat,
 ) -> jboolean {
-    if context == 0 || image == 0{
+    if context == 0 || image == 0 {
         return JNI_FALSE;
     }
 
     let context = context as *mut CanvasRenderingContext2D;
     let image = image as *mut ImageAsset;
 
-    canvas_c::canvas_native_context_draw_image_dx_dy_asset(
-        context, image, dx, dy
-    );
+    canvas_c::canvas_native_context_draw_image_dx_dy_asset(context, image, dx, dy);
 
     JNI_TRUE
 }
@@ -311,7 +358,7 @@ pub extern "system" fn nativeDrawImageDxDyDwDhWithAsset(
     d_width: jfloat,
     d_height: jfloat,
 ) -> jboolean {
-    if context == 0 || image == 0{
+    if context == 0 || image == 0 {
         return JNI_FALSE;
     }
 
@@ -319,11 +366,7 @@ pub extern "system" fn nativeDrawImageDxDyDwDhWithAsset(
     let image = image as *mut ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-        context, image,
-        dx,
-        dy,
-        d_width,
-        d_height,
+        context, image, dx, dy, d_width, d_height,
     );
 
     JNI_TRUE
@@ -344,8 +387,7 @@ pub extern "system" fn nativeDrawImageWithAsset(
     d_width: jfloat,
     d_height: jfloat,
 ) -> jboolean {
-
-    if context == 0 || image == 0{
+    if context == 0 || image == 0 {
         return JNI_FALSE;
     }
 
@@ -353,15 +395,7 @@ pub extern "system" fn nativeDrawImageWithAsset(
     let image = image as *mut ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_asset(
-        context, image,
-        sx,
-        sy,
-        s_width,
-        s_height,
-        dx,
-        dy,
-        d_width,
-        d_height
+        context, image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     );
 
     JNI_TRUE

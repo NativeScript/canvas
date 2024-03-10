@@ -14,7 +14,7 @@ struct ImageAssetInner {
     error: String,
     has_alpha: bool,
     #[cfg(feature = "2d")]
-    skia_image: Option<skia_safe::Image>
+    skia_image: Option<skia_safe::Image>,
 }
 
 unsafe impl Send for ImageAssetInner {}
@@ -51,9 +51,7 @@ enum ByteType {
 
 impl ImageAsset {
     pub fn from_raw_bytes(width: usize, height: usize, depth: usize, data: Vec<u8>) -> Self {
-        let image = stb_image::image::Image::new(
-            width , height, depth , data
-        );
+        let image = stb_image::image::Image::new(width, height, depth, data);
 
         let info = skia_safe::ImageInfo::new(
             skia_safe::ISize::new(width as i32, height as i32),
@@ -62,9 +60,12 @@ impl ImageAsset {
             None,
         );
 
-
         let skia_image = unsafe {
-            skia_safe::images::raster_from_data(&info, skia_safe::Data::new_bytes(image.data.as_slice()), info.min_row_bytes())
+            skia_safe::images::raster_from_data(
+                &info,
+                skia_safe::Data::new_bytes(image.data.as_slice()),
+                info.min_row_bytes(),
+            )
         };
         let has_alpha = image.depth == 4;
         let inner = ImageAssetInner {
@@ -72,7 +73,7 @@ impl ImageAsset {
             error: String::new(),
             has_alpha,
             #[cfg(feature = "2d")]
-            skia_image
+            skia_image,
         };
 
         Self(Arc::new(parking_lot::RwLock::new(inner)))
@@ -100,7 +101,7 @@ impl ImageAsset {
             error: String::new(),
             has_alpha: false,
             #[cfg(feature = "2d")]
-            skia_image: None
+            skia_image: None,
         })))
     }
 
@@ -313,10 +314,14 @@ impl ImageAsset {
         self.load_from_bytes(unsafe { std::mem::transmute(buf) })
     }
 
-    pub fn load_from_raw_bytes(&mut self, width: usize, height: usize, depth: usize, data: Vec<u8>) -> bool  {
-        let image = stb_image::image::Image::new(
-            width , height, depth , data
-        );
+    pub fn load_from_raw_bytes(
+        &mut self,
+        width: usize,
+        height: usize,
+        depth: usize,
+        data: Vec<u8>,
+    ) -> bool {
+        let image = stb_image::image::Image::new(width, height, depth, data);
 
         let info = skia_safe::ImageInfo::new(
             skia_safe::ISize::new(width as i32, height as i32),
@@ -325,9 +330,12 @@ impl ImageAsset {
             None,
         );
 
-
         let skia_image = unsafe {
-            skia_safe::images::raster_from_data(&info, skia_safe::Data::new_bytes(image.data.as_slice()), info.min_row_bytes())
+            skia_safe::images::raster_from_data(
+                &info,
+                skia_safe::Data::new_bytes(image.data.as_slice()),
+                info.min_row_bytes(),
+            )
         };
 
         let mut lock = self.get_lock();
@@ -420,19 +428,23 @@ impl ImageAsset {
         rgba_data
     }
 
-    pub fn rgba_to_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+    pub fn rgba_to_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![0_u8; width * height];
-        if data.len() < width * height * 4 { return buf  }
-        for i in 0 ..(width * height) {
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+        for i in 0..(width * height) {
             let alpha = data[i * 4 + 3];
             buf[i] = alpha;
         }
         buf
     }
-    pub fn rgba_to_luminance_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+    pub fn rgba_to_luminance_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![0_u8; width * height * 2];
-        if data.len() < width * height * 4 { return buf  }
-        for i in 0 ..(width * height) {
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+        for i in 0..(width * height) {
             let red = data[i * 4] as f32;
             let green = data[i * 4 + 1] as f32;
             let blue = data[i * 4 + 2] as f32;
@@ -444,10 +456,12 @@ impl ImageAsset {
         buf
     }
 
-    pub fn rgba_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+    pub fn rgba_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![255_u8; width * height];
-        if data.len() < width * height * 4 { return buf  }
-        for i in 0 ..(width * height) {
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+        for i in 0..(width * height) {
             let red = data[i * 4] as f32;
             let green = data[i * 4 + 1] as f32;
             let blue = data[i * 4 + 2] as f32;
@@ -457,10 +471,12 @@ impl ImageAsset {
         buf
     }
 
-    pub fn rgb_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+    pub fn rgb_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![255_u8; width * height];
-        if data.len() < width * height * 3 { return buf  }
-        for i in 0 ..(width * height) {
+        if data.len() < width * height * 3 {
+            return buf;
+        }
+        for i in 0..(width * height) {
             let red = data[i * 3] as f32;
             let green = data[i * 3 + 1] as f32;
             let blue = data[i * 3 + 2] as f32;
@@ -470,11 +486,13 @@ impl ImageAsset {
         buf
     }
 
-    pub fn rgba_to_rgb(data: &[u8], width: usize, height: usize) -> Vec<u8>{
+    pub fn rgba_to_rgb(data: &[u8], width: usize, height: usize) -> Vec<u8> {
         let mut buf: Vec<u8> = vec![255_u8; width * height * 3];
-        if data.len() < width * height * 4 { return buf  }
+        if data.len() < width * height * 4 {
+            return buf;
+        }
 
-        for i in 0 .. (width * height)  {
+        for i in 0..(width * height) {
             let red = data[i * 4];
             let green = data[i * 4 + 1];
             let blue = data[i * 4 + 2];
@@ -482,9 +500,7 @@ impl ImageAsset {
             buf[i * 3] = red;
             buf[i * 3 + 1] = green;
             buf[i * 3 + 2] = blue;
-
         }
         buf
-
     }
 }

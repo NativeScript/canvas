@@ -5,8 +5,12 @@ use canvas_webgl::utils::{create_program_from_scripts, ShaderSource, ShaderSourc
 
 use crate::{CanvasRenderingContext2D, WebGLState};
 
-
-pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderingContext2D, internalFormat: i32, format: i32){
+pub fn draw_image_space_test(
+    state: &mut WebGLState,
+    canvas: &mut CanvasRenderingContext2D,
+    internalFormat: i32,
+    format: i32,
+) {
     {
         let state = state.get_inner_mut();
         state.make_current();
@@ -42,11 +46,13 @@ pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderin
     }
     "#;
 
-    let program = create_program_from_scripts(state.get_inner_mut(), &[
-        ShaderSource::new(vs, ShaderSourceType::Vertex),
-        ShaderSource::new(fs, ShaderSourceType::Fragment)
-    ]);
-
+    let program = create_program_from_scripts(
+        state.get_inner_mut(),
+        &[
+            ShaderSource::new(vs, ShaderSourceType::Vertex),
+            ShaderSource::new(fs, ShaderSourceType::Fragment),
+        ],
+    );
 
     if let Err(program) = program {
         log::log!(target: "JS", log::Level::Trace, "Failed to compile program {:?}", program);
@@ -55,25 +61,29 @@ pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderin
 
     let program = program.unwrap();
 
-  //  let state = state as *mut _;
+    //  let state = state as *mut _;
     let diffuse = CString::new("diffuse").unwrap();
     let u_imageSize = CString::new("u_imageSize").unwrap();
-    let diffuseLocation = crate::canvas_native_webgl_get_uniform_location(program, diffuse.as_ptr(), state);
-    let imageSizeLocation = crate::canvas_native_webgl_get_uniform_location(program, u_imageSize.as_ptr(), state);
+    let diffuseLocation =
+        crate::canvas_native_webgl_get_uniform_location(program, diffuse.as_ptr(), state);
+    let imageSizeLocation =
+        crate::canvas_native_webgl_get_uniform_location(program, u_imageSize.as_ptr(), state);
 
     // -- Init VertexArray
     let vertexArray = crate::canvas_native_webgl2_create_vertex_array(state);
     crate::canvas_native_webgl2_bind_vertex_array(vertexArray, state);
     crate::canvas_native_webgl2_bind_vertex_array(0, state);
 
-
-
     let texture = crate::canvas_native_webgl_create_texture(state);
     crate::canvas_native_webgl_active_texture(gl_bindings::TEXTURE0, state);
     crate::canvas_native_webgl_bind_texture(gl_bindings::TEXTURE_2D, texture, state);
-    crate::canvas_native_webgl_pixel_storei(crate::GLConstants::UNPACK_FLIP_Y_WEBGL as u32, 0, state);
+    crate::canvas_native_webgl_pixel_storei(
+        crate::GLConstants::UNPACK_FLIP_Y_WEBGL as u32,
+        0,
+        state,
+    );
 
-   // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
+    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
 
     unsafe {
         crate::canvas_native_webgl_tex_image2d_canvas2d(
@@ -83,21 +93,36 @@ pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderin
             format,
             gl_bindings::UNSIGNED_BYTE as i32,
             canvas,
-            state
+            state,
         );
     }
 
-    crate::canvas_native_webgl_tex_parameteri(gl_bindings::TEXTURE_2D, gl_bindings::TEXTURE_MAG_FILTER, gl_bindings::LINEAR as i32, state);
-    crate::canvas_native_webgl_tex_parameteri(gl_bindings::TEXTURE_2D, gl_bindings::TEXTURE_MIN_FILTER, gl_bindings::LINEAR as i32, state);
+    crate::canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_MAG_FILTER,
+        gl_bindings::LINEAR as i32,
+        state,
+    );
+    crate::canvas_native_webgl_tex_parameteri(
+        gl_bindings::TEXTURE_2D,
+        gl_bindings::TEXTURE_MIN_FILTER,
+        gl_bindings::LINEAR as i32,
+        state,
+    );
 
     // -- Render
 
-    crate::canvas_native_webgl_clear_color(0.,0.,0.,0., state);
+    crate::canvas_native_webgl_clear_color(0., 0., 0., 0., state);
     crate::canvas_native_webgl_clear(gl_bindings::COLOR_BUFFER_BIT, state);
 
     crate::canvas_native_webgl_use_program(program, state);
     crate::canvas_native_webgl_uniform1i(diffuseLocation, 0, state);
-    crate::canvas_native_webgl_uniform2f(imageSizeLocation, (drawingBufferWidth / 2) as f32, (drawingBufferHeight / 2) as f32, state);
+    crate::canvas_native_webgl_uniform2f(
+        imageSizeLocation,
+        (drawingBufferWidth / 2) as f32,
+        (drawingBufferHeight / 2) as f32,
+        state,
+    );
 
     crate::canvas_native_webgl2_bind_vertex_array(vertexArray, state);
 
@@ -107,5 +132,4 @@ pub fn draw_image_space_test(state: &mut WebGLState, canvas: &mut CanvasRenderin
     crate::canvas_native_webgl_delete_texture(texture, state);
     crate::canvas_native_webgl_delete_program(program, state);
     crate::canvas_native_webgl2_delete_vertex_array_with_vertex_array(vertexArray, state);
-
 }

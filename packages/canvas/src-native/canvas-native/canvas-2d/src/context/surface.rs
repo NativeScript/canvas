@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
+use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect};
 
-use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -19,13 +19,7 @@ impl Context {
         ppi: f32,
         direction: TextDirection,
     ) -> Self {
-        let device = Device::new_non_gpu(
-            width,
-            height,
-            density,
-            alpha,
-            ppi,
-        );
+        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
 
         let mut state = State::from_device(device, direction);
 
@@ -42,13 +36,8 @@ impl Context {
         };
 
         let info = if device.is_np {
-            ImageInfo::new(
-                ISize::new(1, 1),
-                color_type,
-                alpha_type,
-                None,
-            )
-        }else {
+            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
+        } else {
             ImageInfo::new(
                 ISize::new(width as i32, height as i32),
                 color_type,
@@ -77,13 +66,7 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let device = Device::new_non_gpu(
-            width,
-            height,
-            density,
-            alpha,
-            ppi,
-        );
+        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
 
         let color_type = if alpha {
             ColorType::RGBA8888
@@ -98,13 +81,8 @@ impl Context {
         };
 
         let info = if device.is_np {
-            ImageInfo::new(
-                ISize::new(1, 1),
-                color_type,
-                alpha_type,
-                None,
-            )
-        }else {
+            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
+        } else {
             ImageInfo::new(
                 ISize::new(width as i32, height as i32),
                 color_type,

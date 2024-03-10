@@ -301,7 +301,6 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
-
     pub fn get_dimensions(&self) -> (i32, i32) {
         self.get().gl_context.get_surface_dimensions()
     }
@@ -468,17 +467,17 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
-    #[inline(always)]
+
     pub fn make_current(&self) -> bool {
         self.get().gl_context.make_current()
     }
 
-    #[inline(always)]
+
     pub fn swap_buffers(&self) -> bool {
         self.get().gl_context.swap_buffers()
     }
 
-    #[inline(always)]
+
     pub fn make_current_and_swap_buffers(&self) -> bool {
         let current = self.get();
         if !current.gl_context.make_current() {

@@ -5,6 +5,7 @@
 #include "CanvasRenderingContext2DImpl.h"
 #include "Caches.h"
 #include "OneByteStringResource.h"
+#include "WebGLRenderingContextBase.h"
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_start_raf_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStartRaf));
@@ -2081,6 +2082,17 @@ CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value
                 }
             }
                 break;
+            case NativeType::WebGLRenderingContextBase: {
+                auto gl = WebGLRenderingContextBase::GetPointer(image);
+                if (gl != nullptr) {
+                    canvas_native_context_draw_image_dx_dy_webgl(
+                            ptr->GetContext(),
+                            gl->GetState(),
+                            dx, dy
+                    );
+                }
+            }
+                break;
             default:
                 break;
         }
@@ -2128,6 +2140,17 @@ CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value
                             dWidth,
                             dHeight);
                     ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            case NativeType::WebGLRenderingContextBase: {
+                auto gl = WebGLRenderingContextBase::GetPointer(image);
+                if (gl != nullptr) {
+                    canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
+                            ptr->GetContext(),
+                            gl->GetState(),
+                            dx, dy, dWidth, dHeight
+                    );
                 }
             }
                 break;
@@ -2186,6 +2209,20 @@ CanvasRenderingContext2DImpl::DrawImage(const v8::FunctionCallbackInfo<v8::Value
                             dx,
                             dy, dWidth, dHeight);
                     ptr->UpdateInvalidateState();
+                }
+            }
+                break;
+            case NativeType::WebGLRenderingContextBase: {
+                auto gl = WebGLRenderingContextBase::GetPointer(image);
+                if (gl != nullptr) {
+                    canvas_native_context_draw_image_webgl(
+                            ptr->GetContext(),
+                            gl->GetState(),
+                            sx,
+                            sy, sWidth, sHeight,
+                            dx,
+                            dy, dWidth, dHeight
+                    );
                 }
             }
                 break;

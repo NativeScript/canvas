@@ -94,7 +94,7 @@ pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_uint) 
     let image = context
         .surface
         .image_snapshot()
-        .make_raster_image(&mut ctx, Some(CachingHint::Allow));
+        .make_raster_image(&mut ctx, Some(CachingHint::Disallow));
 
     if let Some(image) = image {
         let mut quality = quality;
@@ -199,7 +199,7 @@ pub fn bytes_to_data_url(
 
 pub(crate) fn to_data_with_context(context: &mut Context) -> Vec<u8> {
     if context.device.is_np {
-        return vec![]
+        return vec![];
     }
 
     let width = context.surface.width();
@@ -226,7 +226,7 @@ pub(crate) fn to_data_with_context(context: &mut Context) -> Vec<u8> {
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {
     let mut context = context.get_context_mut();
     if context.device.is_np {
-        return vec![]
+        return vec![];
     }
     let width = context.surface.width();
     let height = context.surface.height();

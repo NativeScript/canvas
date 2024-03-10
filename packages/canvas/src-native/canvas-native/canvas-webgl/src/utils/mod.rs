@@ -87,18 +87,18 @@ pub fn create_program_from_scripts(
 
             match compiled {
                 WebGLResult::Boolean(compiled) => {
-                   if !compiled {
-                       // Something went wrong during compilation; get the error
-                       let last_error = crate::webgl::canvas_native_webgl_get_shader_info_log(
-                           fragment_shader,
-                           state,
-                       );
-                       crate::webgl::canvas_native_webgl_delete_shader(fragment_shader, state);
-                       return Err(format!(
-                           "*** Error compiling shader {}:{}",
-                           fragment_shader, last_error
-                       ));
-                   }
+                    if !compiled {
+                        // Something went wrong during compilation; get the error
+                        let last_error = crate::webgl::canvas_native_webgl_get_shader_info_log(
+                            fragment_shader,
+                            state,
+                        );
+                        crate::webgl::canvas_native_webgl_delete_shader(fragment_shader, state);
+                        return Err(format!(
+                            "*** Error compiling shader {}:{}",
+                            fragment_shader, last_error
+                        ));
+                    }
                 }
                 _ => {}
             }
@@ -123,11 +123,12 @@ pub fn create_program_from_scripts(
     );
     match linked {
         WebGLResult::Boolean(linked) => {
-           if !linked {
-               let last_error = crate::webgl::canvas_native_webgl_get_program_info_log(program, state);
-               crate::webgl::canvas_native_webgl_delete_program(program, state);
-               return Err(format!("Error in program linking: {}", last_error));
-           }
+            if !linked {
+                let last_error =
+                    crate::webgl::canvas_native_webgl_get_program_info_log(program, state);
+                crate::webgl::canvas_native_webgl_delete_program(program, state);
+                return Err(format!("Error in program linking: {}", last_error));
+            }
         }
         _ => {}
     }

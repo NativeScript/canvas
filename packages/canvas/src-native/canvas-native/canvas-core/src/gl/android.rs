@@ -989,7 +989,7 @@ impl GLContext {
         GLContext::create_pbuffer(config, width, height)
     }
 
-    #[inline(always)]
+
     pub fn set_vsync(&self, sync: bool) -> bool {
         let inner = self.inner.read();
         let vsync = if sync {
@@ -1007,7 +1007,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn make_current(&self) -> bool {
         let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1026,7 +1026,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn remove_if_current(&self) {
         let inner = self.inner.read();
         let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1067,7 +1067,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn swap_buffers(&self) -> bool {
         let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1080,7 +1080,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn get_surface_width(&self) -> i32 {
         let inner = self.inner.read();
         inner
@@ -1094,7 +1094,7 @@ impl GLContext {
             .unwrap_or_default()
     }
 
-    #[inline(always)]
+
     pub fn get_surface_height(&self) -> i32 {
         let inner = self.inner.read();
         inner
@@ -1109,8 +1109,6 @@ impl GLContext {
     }
 
 
-
-    #[inline(always)]
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
         let inner = self.inner.read();
         inner
@@ -1132,7 +1130,6 @@ impl GLContext {
             })
             .unwrap_or_default()
     }
-
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
         RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)

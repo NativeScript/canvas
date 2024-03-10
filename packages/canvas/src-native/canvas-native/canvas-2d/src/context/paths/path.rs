@@ -98,7 +98,7 @@ impl Path {
         self.path.set_fill_type(fill_type.to_fill_type());
     }
 
-    #[inline(always)]
+
     pub(crate) fn add_ellipse(
         &mut self,
         origin: impl Into<Point>,

@@ -1,6 +1,6 @@
-use jni::JNIEnv;
 use jni::objects::{JClass, JIntArray, JObject, JString};
-use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE, jobject};
+use jni::sys::{jboolean, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use ndk::bitmap::BitmapFormat;
 
 use canvas_c::ImageAsset;
@@ -38,25 +38,18 @@ pub extern "system" fn nativeLoadFromBitmap(
 
     if let Some((image_data, info)) = bytes {
         if match info.format() {
-            BitmapFormat::NONE => {
-                false
-            }
+            BitmapFormat::NONE => false,
             BitmapFormat::RGBA_8888 => {
                 asset.load_from_raw_bytes(info.width(), info.height(), 4, image_data)
             }
             BitmapFormat::RGB_565 => {
-                let image = canvas_core::image_asset::ImageAsset::rgb565_to_rgba8888(image_data.as_slice());
+                let image =
+                    canvas_core::image_asset::ImageAsset::rgb565_to_rgba8888(image_data.as_slice());
                 asset.load_from_raw_bytes(info.width(), info.height(), 4, image)
             }
-            BitmapFormat::RGBA_4444 => {
-               false
-            }
-            BitmapFormat::A_8 => {
-                false
-            }
-            BitmapFormat::RGBA_F16 => {
-                false
-            }
+            BitmapFormat::RGBA_4444 => false,
+            BitmapFormat::A_8 => false,
+            BitmapFormat::RGBA_F16 => false,
         } {
             return JNI_TRUE;
         }
@@ -81,7 +74,7 @@ pub extern "system" fn nativeLoadFromPath(
 
     match env.get_string(&path) {
         Ok(path) => {
-            let path: String =  path.into();
+            let path: String = path.into();
             if asset.load_from_path(path.as_str()) {
                 return JNI_TRUE;
             }
@@ -115,13 +108,9 @@ pub extern "system" fn nativeGetDimensions(
 }
 
 #[no_mangle]
-pub extern "system" fn nativeGetError(
-    env: JNIEnv,
-    _: JClass,
-    asset: jlong,
-) -> jobject {
+pub extern "system" fn nativeGetError(env: JNIEnv, _: JClass, asset: jlong) -> jobject {
     if asset == 0 {
-        return JObject::null().into_raw()
+        return JObject::null().into_raw();
     }
 
     let asset = asset as *mut ImageAsset;

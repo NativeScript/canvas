@@ -24,7 +24,6 @@ pub fn string_idx_range(text: &str, start_idx: usize, end_idx: usize) -> Range<u
     }
 }
 
-
 pub fn fit_bounds(width: f32, height: f32, src: Rect, dst: Rect) -> (Rect, Rect) {
     let mut src = src;
     let mut dst = dst;
@@ -41,12 +40,12 @@ pub fn fit_bounds(width: f32, height: f32, src: Rect, dst: Rect) -> (Rect, Rect)
         src.top = 0.0;
     }
 
-    if src.right > width{
+    if src.right > width {
         dst.right -= (src.right - width) * scale_x;
         src.right = width;
     }
 
-    if src.bottom > height{
+    if src.bottom > height {
         dst.bottom -= (src.bottom - height) * scale_y;
         src.bottom = height;
     }

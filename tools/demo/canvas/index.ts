@@ -547,10 +547,10 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		const c2d = c2.getContext('2d');
 		const image = new global.ImageAsset();
 
-		image.fromUrl(`https://source.unsplash.com/random/${512}x${512}`).then(() => {
-			c2d.drawImage(image, 0, 0);
+		image.fromUrl(`https://source.unsplash.com/random/${512 * window?.devicePixelRatio ?? 1}x${512 * window?.devicePixelRatio ?? 1}}`).then(() => {
+			c2d.drawImage(image, 0, 0, c2.width, c2.height);
 			const ctx = canvas.getContext('2d');
-			ctx.drawImage(c2, 0, 0);
+			ctx.drawImage(c2, 0, 0, canvas.width, canvas.height);
 		});
 	}
 
@@ -632,7 +632,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
-	//	const ctx = this.canvas.getContext('2d');
+		//	const ctx = this.canvas.getContext('2d');
 		/*
 
 		const asset = new global.ImageAsset();
@@ -696,7 +696,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
 		//breathe(this.canvas);
-		///this.drawOnCanvasWithCanvas(this.canvas);
+		this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
@@ -860,7 +860,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
 		//this.wordSpacing(this.canvas);
-		imageProcessing(this.canvas);
+		//imageProcessing(this.canvas);
 		//subTest(this.canvas);
 		//imageFilter(this.canvas);
 		//interactiveCube(this.canvas);

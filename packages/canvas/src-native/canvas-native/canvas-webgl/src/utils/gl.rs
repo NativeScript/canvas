@@ -22,7 +22,6 @@ pub enum GLImageAssetBytesType {
     None,
 }
 
-
 pub fn get_image_asset_bytes_type(format: i32, image_type: i32) -> GLImageAssetBytesType {
     match (format as u32, image_type as u32) {
         (GL_RGB, GL_UNSIGNED_BYTE)

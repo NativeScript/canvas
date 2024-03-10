@@ -2,6 +2,7 @@ package org.nativescript.canvas
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import dalvik.annotation.optimization.FastNative
 
 class NSCCanvasRenderingContext2D {

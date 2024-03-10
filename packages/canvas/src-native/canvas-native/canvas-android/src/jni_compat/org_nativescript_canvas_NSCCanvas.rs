@@ -1,12 +1,12 @@
 use std::ffi::c_void;
 
-use jni::JNIEnv;
 use jni::objects::{JClass, JObject};
-use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
 use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect};
+use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect};
 
 use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
@@ -674,7 +674,7 @@ pub extern "system" fn nativeWebGLC2DRender(
     gl_context: jlong,
     context: jlong,
     internalFormat: jint,
-    format: jint
+    format: jint,
 ) {
     if gl_context == 0 || context == 0 {
         return;
@@ -684,17 +684,14 @@ pub extern "system" fn nativeWebGLC2DRender(
         gl_context, 2, true, true, true, false, 0, true, false, false, false, false,
     );
 
-
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
     {
-        let state =  unsafe { &mut *state};
+        let state = unsafe { &mut *state };
         canvas_c::impl_test::draw_image_space_test(state, context, internalFormat, format);
         state.get_inner_mut().swap_buffers();
     }
 
-
-        let _ = unsafe { Box::from_raw(state) };
-
+    let _ = unsafe { Box::from_raw(state) };
 }

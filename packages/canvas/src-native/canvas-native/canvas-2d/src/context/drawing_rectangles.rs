@@ -32,7 +32,7 @@ impl Context {
             rect.height() * scale,
         );
         if let Some(paint) = self.state.paint.fill_shadow_paint(
-            self.state.shadow_offset,
+            self.state.shadow_offset.scaled(scale),
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
@@ -58,7 +58,7 @@ impl Context {
         );
 
         if let Some(paint) = &mut self.state.paint.stroke_shadow_paint(
-            self.state.shadow_offset,
+            self.state.shadow_offset.scaled(scale),
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {

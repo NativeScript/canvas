@@ -5,7 +5,7 @@ require('@nativescript/canvas-polyfill');
 const TextDecoderO = TextDecoder;
 // require('@nativescript/canvas-polyfill');
 // import { Canvas } from '@nativescript/canvas';
-declare const jp, GDPerformanceMonitor, android, java;
+declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 

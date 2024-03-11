@@ -696,7 +696,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
 		//breathe(this.canvas);
-		this.drawOnCanvasWithCanvas(this.canvas);
+		//this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
@@ -808,7 +808,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//pattern(this.canvas);
 		//patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
-		//createLinearGradient(this.canvas);
+		createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
 		//skew(this.canvas);

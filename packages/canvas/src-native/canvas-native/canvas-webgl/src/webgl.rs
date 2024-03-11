@@ -2337,6 +2337,7 @@ pub fn canvas_native_webgl_tex_image2d(
     state: &WebGLState,
 ) {
     state.make_current();
+
     unsafe {
         if state.get_flip_y() {
             let mut buffer = buf.to_vec();

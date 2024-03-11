@@ -20,8 +20,8 @@ const HANGING_AS_PERCENT_OF_ASCENT: f32 = 80.;
 
 impl Context {
     pub fn fill_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        let scale = self.device.density;
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
-        let paint = self.state.paint.fill_paint().clone();
         let shadow_paint = self.state.paint.fill_shadow_paint(
             (0., 0.).into(),
             self.state.shadow_color,
@@ -34,19 +34,20 @@ impl Context {
             self.surface.canvas().save();
             Context::apply_shadow_offset_matrix(
                 self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
+                self.state.shadow_offset.x * scale,
+                self.state.shadow_offset.y * scale,
             );
             self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
             self.surface.canvas().restore();
         }
 
+        let paint = self.state.paint.fill_paint().clone();
         self.draw_text(text.as_str(), x, y, width, None, &paint);
     }
 
     pub fn stroke_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        let scale = self.device.density;
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
-        let paint = self.state.paint.stroke_paint().clone();
         let shadow_paint = self.state.paint.stroke_shadow_paint(
             (0., 0.).into(),
             self.state.shadow_color,
@@ -59,13 +60,14 @@ impl Context {
             self.surface.canvas().save();
             Context::apply_shadow_offset_matrix(
                 self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
+                self.state.shadow_offset.x * scale,
+                self.state.shadow_offset.y * scale,
             );
             self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
             self.surface.canvas().restore();
         }
 
+        let paint = self.state.paint.stroke_paint().clone();
         self.draw_text(text.as_str(), x, y, width, None, &paint);
     }
 

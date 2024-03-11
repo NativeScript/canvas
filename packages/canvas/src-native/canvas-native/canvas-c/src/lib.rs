@@ -7,6 +7,7 @@ use std::os::raw::c_ulong;
 use std::os::raw::c_void;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
+use log::log;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
@@ -5280,9 +5281,9 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
     let state = unsafe { &mut *state };
 
     let info = state.get_inner();
+    info.make_current();
     let width = info.drawing_buffer_width();
     let height = info.drawing_buffer_height();
-    info.make_current();
     // gl_bindings::PixelStorei(gl_bindings::UNPACK_ALIGNMENT, 1);
     let mut buffer = vec![0u8; (width * height * 4) as usize];
     unsafe {
@@ -8299,11 +8300,12 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas.make_current();
     let mut source_ctx = canvas.get_context_mut();
 
+
     if let Some(snapshot) = source_ctx.raster_snapshot() {
         let width = snapshot.width();
         let height = snapshot.height();
 
-        let premultiply = state.get_inner().get_premultiplied_alpha();
+       let premultiply = state.get_inner().get_premultiplied_alpha();
 
         let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format, premultiply);
 

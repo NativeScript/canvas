@@ -2,11 +2,8 @@ require('@nativescript/canvas-polyfill');
 import * as Pixii from 'pixi.js';
 
 let PIXI = Pixii;
-import {Screen} from '@nativescript/core';
 
 // import * as filters from 'pixi-filters';
-// PIXI.filters = { ...(PIXI.filters || {}), ...filters };
-
 
 (global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || PIXI;
 
@@ -25,14 +22,12 @@ class NSCPIXIApplication extends Pixii.Application {
 		const width = props.width || clientWidth;
 		const height = props.height || clientHeight;
 
-
 		super({
 			...props,
-			resolution: Screen.mainScreen.scale,
 			context,
 			view,
-			width, 
-			height
+			width,
+			height,
 		});
 	}
 }

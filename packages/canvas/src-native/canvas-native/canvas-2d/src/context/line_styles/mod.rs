@@ -2,9 +2,9 @@ use std::os::raw::c_float;
 
 use skia_safe::PathEffect;
 
+use crate::context::Context;
 use crate::context::line_styles::line_cap::LineCap;
 use crate::context::line_styles::line_join::LineJoin;
-use crate::context::Context;
 
 pub mod line_cap;
 pub mod line_join;
@@ -15,7 +15,7 @@ impl Context {
         self.state
             .paint
             .stroke_paint_mut()
-            .set_stroke_width(width * self.device.density);
+            .set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
@@ -55,26 +55,22 @@ impl Context {
         self.state
             .paint
             .stroke_paint_mut()
-            .set_stroke_miter(limit * self.device.density);
+            .set_stroke_miter(limit);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
         let is_odd = (dash.len() % 2) != 0;
-        let dash_scaled: Vec<f32> = dash
-            .iter()
-            .map(|value| *value * self.device.density)
-            .collect();
-        let dash_scaled = if is_odd {
-            [dash_scaled.as_slice(), dash_scaled.as_slice()].concat()
+        let line_dash = if is_odd {
+            [dash, dash].concat()
         } else {
-            dash_scaled
+            dash.to_vec()
         };
         let mut effect: Option<PathEffect> = None;
-        if !dash_scaled.is_empty() {
+        if !dash.is_empty() {
             // scale line_dash_offset
             effect = PathEffect::dash(
-                dash_scaled.as_slice(),
-                self.state.line_dash_offset * self.device.density,
+                line_dash.as_slice(),
+                self.state.line_dash_offset,
             );
         }
         self.state.line_dash_list = dash.to_vec();

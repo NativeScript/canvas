@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, autoScaleProperty } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -96,7 +96,11 @@ export class Canvas extends CanvasBase {
 			};
 		}
 	}
-	qqq;
+
+	[ignoreTouchEventsProperty.setNative](value: boolean) {
+		this._canvas.ignoreTouchEvents = value;
+	}
+
 	// @ts-ignore
 	get ios() {
 		return this._canvas;

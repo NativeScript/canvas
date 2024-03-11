@@ -337,11 +337,6 @@ class Rectangle {
 	}
 }
 
-export const autoScaleProperty = new Property<CanvasBase, boolean>({
-	name: 'autoScale',
-	defaultValue: true,
-	valueConverter: booleanConverter,
-});
 
 export const ignoreTouchEventsProperty = new Property<CanvasBase, boolean>({
 	name: 'ignoreTouchEvents',
@@ -360,7 +355,6 @@ export const doc = {
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
-	autoScale: boolean;
 	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;
 	_classList: Set<any>;
@@ -1124,5 +1118,3 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	releasePointerCapture(id) {}
 }
-
-autoScaleProperty.register(CanvasBase);

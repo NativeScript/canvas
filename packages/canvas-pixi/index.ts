@@ -19,6 +19,10 @@ class NSCPIXIApplication extends Pixii.Application {
 			clientWidth = view.clientWidth;
 			clientHeight = view.clientHeight;
 		}
+		if (!view) {
+			view = document.createElement('canvas');
+			view.nativeElement = context.canvas;
+		}
 		const width = props.width || clientWidth;
 		const height = props.height || clientHeight;
 
@@ -27,7 +31,7 @@ class NSCPIXIApplication extends Pixii.Application {
 			context,
 			view,
 			width,
-			height,
+			height
 		});
 	}
 }
@@ -36,7 +40,7 @@ if (!(PIXI.Application instanceof NSCPIXIApplication)) {
 	PIXI.Assets.setPreferences({ preferWorkers: false });
 	PIXI = {
 		...PIXI,
-		Application: NSCPIXIApplication as never,
+		Application: NSCPIXIApplication as never
 	};
 }
 

@@ -1,6 +1,7 @@
 import { TouchEvent, PointerEvent } from './Canvas';
 
 export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
+
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
@@ -19,7 +20,6 @@ export * from './TextEncoder';
 export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
-export * from './SVG';
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,

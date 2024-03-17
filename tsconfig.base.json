@@ -55,6 +55,9 @@
       ],
       "@nativescript/canvas-chartjs": [
         "packages/canvas-chartjs/index.d.ts"
+      ],
+      "@nativescript/canvas-svg": [
+        "packages/canvas-svg/index.d.ts"
       ]
     }
   },

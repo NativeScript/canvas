@@ -43,7 +43,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		// ctx.fillText('Help!!!', 0, 300);
 		// ctx2.fillText('Help2!!!', 0, 300);
 		// ctx.drawImage(canvas2, 0, 0);
-		this.text(canvas);
+		//this.text(canvas);
 
 		//this.drawPatternWithCanvas(canvas);
 		//this.simple(canvas);
@@ -52,7 +52,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		//this.dynamicGraphics(canvas);
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -67,6 +67,60 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.textureRotate(canvas);
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
+	//	this.viewPort(canvas);
+	}
+
+
+	async viewPort(canvas){
+		const context = canvas.getContext('webgl2');
+		const app = new PIXI.Application({ context });
+
+		const graphics = new PIXI.Graphics();
+
+		graphics.beginFill('red');
+		graphics.drawRect(0,0, app.stage.width, app.stage.height);
+		graphics.endFill();
+
+		app.stage.addChild(graphics);
+
+		/*
+
+		const vp = require('pixi-viewport').Viewport;
+
+
+		const width = canvas.width;
+		const height = canvas.height;
+		const worldWidth = width * 5;
+		const worldHeight = height * 5;
+		const world = new vp({
+		  screenWidth: width,
+		  screenHeight: height,
+		  worldWidth,
+		  worldHeight,
+		  events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+		});
+
+		// activate plugins
+		world
+		.drag({
+		  wheel: false,
+		})
+		.pinch({
+		  noDrag: false
+		})
+		.decelerate();
+
+
+		const graphics = new PIXI.Graphics();
+
+		graphics.beginFill('red');
+		graphics.drawRect(0,0, width, height);
+		graphics.endFill();
+
+		world.addChild(graphics);
+
+		*/
+
 	}
 
 	async textureRotate(canvas) {
@@ -1471,7 +1525,7 @@ void main()
 			// create an AnimatedSprite (brings back memories from the days of Flash, right ?)
 			const anim = new PIXI.AnimatedSprite(frames);
 
-			
+
 			anim.x = app.screen.width / 2;
 			anim.y = app.screen.height / 2;
 			anim.anchor.set(0.5);
@@ -1528,9 +1582,9 @@ void main()
 
 		basicText.x = 50;
 		basicText.y = 100;
-		
+
 		app.stage.addChild(basicText);
-		
+
 		const style = new PIXI.TextStyle({
 			fontFamily: 'Arial',
 			fontSize: 36,
@@ -1548,14 +1602,14 @@ void main()
 			wordWrapWidth: 440,
 			lineJoin: 'round',
 		});
-		
+
 		const richText = new PIXI.Text('Rich text with a lot of options and across multiple lines', style);
-		
+
 		richText.x = 50;
 		richText.y = 220;
-		
+
 		app.stage.addChild(richText);
-		
+
 		const skewStyle = new PIXI.TextStyle({
 			fontFamily: 'Arial',
 			dropShadow: true,
@@ -1571,14 +1625,14 @@ void main()
 			lineJoin: 'round',
 			strokeThickness: 12,
 		});
-		
+
 		const skewText = new PIXI.Text('SKEW IS COOL', skewStyle);
-		
+
 		skewText.skew.set(0.65, -0.3);
 		skewText.anchor.set(0.5, 0.5);
 		skewText.x = 300;
 		skewText.y = 480;
-		
+
 		app.stage.addChild(skewText);
 
 

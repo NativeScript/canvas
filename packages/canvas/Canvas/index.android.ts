@@ -4,6 +4,7 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils } from '@nativescript/core';
+
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
 }
@@ -20,16 +21,18 @@ const defaultOpts = {
 	preserveDrawingBuffer: false,
 	stencil: false,
 	desynchronized: false,
-	xrCompatible: false,
+	xrCompatible: false
 };
 
 declare const org;
+
 enum ContextType {
 	None,
 	Canvas,
 	WebGL,
 	WebGL2,
 }
+
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -42,6 +45,7 @@ export class Canvas extends CanvasBase {
 	private _is2D = false;
 	private _isBatch = false;
 	static useSurface = false;
+
 	constructor(nativeInstance?) {
 		super();
 		if (nativeInstance) {
@@ -66,7 +70,7 @@ export class Canvas extends CanvasBase {
 							return;
 						}
 						owner._handleEvents(event);
-					},
+					}
 				})
 			);
 		}
@@ -132,9 +136,9 @@ export class Canvas extends CanvasBase {
 	static createCustomView() {
 		const canvas = new Canvas();
 		canvas._isBatch = true;
+		canvas._isCustom = true;
 		canvas.width = 300;
 		canvas.height = 150;
-		canvas._isCustom = true;
 		canvas._isBatch = false;
 		canvas._layoutNative();
 		return canvas;
@@ -152,18 +156,18 @@ export class Canvas extends CanvasBase {
 			// TODO change DIPs once implemented
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
-					get: function () {
+					get: function() {
 						return parent.getMeasuredWidth() / Screen.mainScreen.scale;
-					},
+					}
 				});
 				Object.defineProperty(parent, 'clientHeight', {
-					get: function () {
+					get: function() {
 						return parent.getMeasuredHeight() / Screen.mainScreen.scale;
-					},
+					}
 				});
 			}
 			if (parent && typeof parent.getBoundingClientRect !== 'function') {
-				parent.getBoundingClientRect = function () {
+				parent.getBoundingClientRect = function() {
 					const view = this;
 					const nativeView = view.android;
 					const width = this.width;
@@ -177,16 +181,16 @@ export class Canvas extends CanvasBase {
 						top: nativeView.getTop() / scale,
 						width: width,
 						x: nativeView.getX() / scale,
-						y: nativeView.getY() / scale,
+						y: nativeView.getY() / scale
 					};
 				};
 			}
 
 			if (parent && parent.ownerDocument === undefined) {
 				Object.defineProperty(parent, 'ownerDocument', {
-					get: function () {
+					get: function() {
 						return global?.window?.document ?? doc;
-					},
+					}
 				});
 			}
 		});
@@ -203,12 +207,13 @@ export class Canvas extends CanvasBase {
 					// if(this._webglContext || this._webgl2Context){
 					// 	(this._webglContext || this._webgl2Context)?.resize();
 					// }
+
 					const owner = ref.get() as any;
 					if (owner) {
 						owner._drawingBufferWidth = width / Screen.mainScreen.scale;
 						owner._drawingBufferHeight = height / Screen.mainScreen.scale;
 					}
-				},
+				}
 			})
 		);
 	}
@@ -314,7 +319,10 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					this._layoutNative();
-					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
+					const opts = {
+						...defaultOpts, ...this._handleContextOptions(type, options),
+						fontColor: this.parent?.style?.color?.android || -16777216
+					};
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
@@ -386,7 +394,9 @@ export class Canvas extends CanvasBase {
 		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}
 
-	setPointerCapture() {}
+	setPointerCapture() {
+	}
 
-	releasePointerCapture() {}
+	releasePointerCapture() {
+	}
 }

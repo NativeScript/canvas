@@ -808,7 +808,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//pattern(this.canvas);
 		//patternWithCanvas(this.canvas);
 		//isPointInStrokeTouch(this.canvas);
-		createLinearGradient(this.canvas);
+		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
 		//skew(this.canvas);
@@ -837,7 +837,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//textures(this.canvas);
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
-		//colorRain(this.canvas);
+		colorRain(this.canvas);
 		//particlesLarge(this.canvas);
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);

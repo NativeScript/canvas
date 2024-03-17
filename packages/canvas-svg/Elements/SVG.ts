@@ -1,69 +1,85 @@
-import { Http, View, Style, CssProperty, AddChildFromBuilder, Frame, Property, path, knownFolders, CSSType, Application, Utils, booleanConverter } from '@nativescript/core';
+import {
+	Http,
+	View,
+	Style,
+	CssProperty,
+	AddChildFromBuilder,
+	Frame,
+	Property,
+	path,
+	knownFolders,
+	CSSType,
+	Application,
+	Utils,
+	booleanConverter
+} from '@nativescript/core';
 
 export const strokeProperty = new CssProperty<Style, any>({
 	name: 'stroke',
 	cssName: 'stroke',
-	defaultValue: undefined,
+	defaultValue: undefined
 });
 
 export const strokeWidthProperty = new CssProperty<Style, number>({
 	name: 'strokeWidth',
 	cssName: 'stroke-width',
-	defaultValue: 1,
+	defaultValue: 1
 });
 
 export const fillProperty = new CssProperty<Style, any>({
 	name: 'fill',
 	cssName: 'fill',
-	defaultValue: undefined,
+	defaultValue: undefined
 });
 
 export const fillRuleProperty = new CssProperty<Style, any>({
 	name: 'fillRule',
 	cssName: 'fill-rule',
-	defaultValue: undefined,
+	defaultValue: undefined
 });
 
 export const fillOpacityProperty = new CssProperty<Style, any>({
 	name: 'fillOpacity',
 	cssName: 'fill-opacity',
-	defaultValue: undefined,
+	defaultValue: undefined
 });
 
 export const stopColorProperty = new CssProperty<Style, any>({
 	name: 'stopColor',
 	cssName: 'stop-color',
-	defaultValue: undefined,
+	defaultValue: undefined
 });
 
 export const strokeLinecapProperty = new CssProperty<Style, any>({
 	name: 'strokeLinecap',
-	cssName: 'stroke-linecap',
+	cssName: 'stroke-linecap'
 });
 
 export const strokeLinejoinProperty = new CssProperty<Style, any>({
 	name: 'strokeLinejoin',
-	cssName: 'stroke-linejoin',
+	cssName: 'stroke-linejoin'
 });
 
 export const strokeMiterlimitProperty = new CssProperty<Style, any>({
 	name: 'strokeMiterlimit',
-	cssName: 'stroke-miterlimit',
+	cssName: 'stroke-miterlimit'
 });
 export const srcProperty = new Property<Svg, string>({
-	name: 'src',
+	name: 'src'
 });
 
 export const syncProperty = new Property<Svg, boolean>({
 	name: 'sync',
 	defaultValue: false,
-	valueConverter: booleanConverter,
+	valueConverter: booleanConverter
 });
 
 declare const TNSSVG, org;
 import { SVGItem } from './SVGItem';
 import { DOMParser, XMLSerializer } from 'xmldom';
+
 const initialSVG = '<svg width="auto" height="auto" xmlns="http://www.w3.org/2000/svg"></svg>';
+
 @CSSType('Svg')
 export class Svg extends View {
 	public static readyEvent = 'ready';
@@ -73,6 +89,7 @@ export class Svg extends View {
 	src: string;
 	__children = [];
 	__attachedToDom = false;
+
 	constructor() {
 		super();
 		if (global.isAndroid) {
@@ -131,6 +148,7 @@ export class Svg extends View {
 			this._svg.sync = value;
 		}
 	}
+
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
 		super.onLayout(left, top, right, bottom);
 		this.__redraw();
@@ -145,6 +163,7 @@ export class Svg extends View {
 		}
 	}
 
+// this.__internalElement._dom.documentElement.setAttribute('id', value);
 	__redraw() {
 		if (this.__attachedToDom) {
 			const domCopy = this._dom.valueOf();
@@ -183,14 +202,14 @@ export class Svg extends View {
 
 	addChild(view: SVGItem) {
 		this._addView(view);
-		view.__attached = true;
+		view._attached = true;
 		this.__children.push(view);
 	}
 
 	removeChild(view: SVGItem) {
-		if (view.__attached) {
+		if (view._attached) {
 			this._removeView(view);
-			view.__attached = false;
+			view._attached = false;
 			this.__children = this.__children.filter((item) => item !== view);
 		}
 	}

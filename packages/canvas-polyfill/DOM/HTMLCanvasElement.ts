@@ -1,51 +1,67 @@
 import { Canvas } from '@nativescript/canvas';
-import { Screen } from '@nativescript/core';
-import { Element } from './Element';
+import { HTMLElement } from './HTMLElement';
+import setValue from 'set-value';
 
-export class HTMLCanvasElement extends Element {
+export class HTMLCanvasElement extends HTMLElement {
 	constructor() {
 		super('canvas');
 		let canvas = undefined;
-		if (arguments.length > 1) {
-			canvas = arguments[1];
+		if (arguments.length > 0) {
+			canvas = arguments[0];
 		}
 
 		if (canvas instanceof Canvas) {
-			this._canvas = canvas;
+			this.nativeElement = canvas;
 		} else {
-			this._canvas = (Canvas as any).createCustomView(true);
+			this.nativeElement = (Canvas as any).createCustomView();
 		}
 	}
 
+	get _canvas() {
+		return this.nativeElement;
+	}
+
 	set width(value) {
-		this._canvas.width = value;
+		setValue(this.nativeElement, 'width', value);
 	}
 
 	get width() {
-		return this._canvas.width;
+		return this.nativeElement['width'];
 	}
 
 	set height(value) {
-		this._canvas.height = value;
+		setValue(this.nativeElement, 'height', value);
 	}
 
 	get height() {
-		return this._canvas.height;
+		return this.nativeElement['height'];
 	}
 
-	toDataURL(type, encoderOptions) {
-		return this._canvas.toDataURL(type, encoderOptions);
+	toDataURL(type: string, encoderOptions: number = 0.92) {
+		const nativeElement = this.nativeElement as never as {
+			toDataURL: (type: string, encoderOptions: number) => string
+		};
+
+		if (nativeElement) {
+			return nativeElement.toDataURL?.(type, encoderOptions);
+		}
+		return 'data:,';
 	}
 
-	getContext(contextType, contextOptions) {
-		return this._canvas.getContext(contextType, contextOptions);
+	getContext(contextType: string, contextOptions) {
+		const nativeElement = this.nativeElement as never as {
+			getContext: (contextType: string, contextOptions) => any
+		};
+		if (nativeElement) {
+			return nativeElement.getContext(contextType, contextOptions);
+		}
+		return null;
 	}
 
-	setPointerCapture(id) {}
-
-	releasePointerCapture(id) {}
-
-	getBoundingClientRect() {
-		return this._canvas.getBoundingClientRect();
+	setPointerCapture(id: string) {
 	}
+
+	releasePointerCapture(id: string) {
+	}
+
 }

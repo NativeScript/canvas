@@ -33,9 +33,12 @@
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
   "dependencies": {
-    "@nativescript/canvas": "alpha",
-    "@nativescript/canvas-media": "alpha",
-    "xmldom": "~0.6.0",
-    "query-selector": "2.0.0"
+    "@nativescript/canvas": "beta",
+    "@nativescript/canvas-media": "beta",
+		"@nativescript/canvas-svg": "beta",
+		"@xmldom/xmldom": "0.8.10",
+    "query-selector": "2.0.0",
+		"set-value": "4.1.0"
+
   }
 }

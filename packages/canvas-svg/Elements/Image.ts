@@ -1,30 +1,32 @@
-import { ImageAsset } from "@nativescript/canvas";
-import { SVGItem } from "./SVGItem";
+// import { ImageAsset } from "@nativescript/canvas";
+import { SVGItem } from './SVGItem';
 
 const b64Extensions = {
-	"/": "jpg",
-	i: "png",
-	R: "gif",
-	U: "webp",
+	'/': 'jpg',
+	i: 'png',
+	R: 'gif',
+	U: 'webp'
 };
 
 function b64WithoutPrefix(b64) {
-	return b64.split(",")[1];
+	return b64.split(',')[1];
 }
 
 function getMIMEforBase64String(b64) {
 	let input = b64;
-	if (b64.includes(",")) {
+	if (b64.includes(',')) {
 		input = b64WithoutPrefix(b64);
 	}
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
 	if (!mime) {
-		throw new Error("Unknown Base64 MIME type: " + b64);
+		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
 	return mime;
 }
-import { DOMParser } from 'xmldom';
+
+import { DOMParser } from '@xmldom/xmldom';
+
 export class Image extends SVGItem {
 	xlink: { href?: string } = {};
 	href: string;
@@ -33,9 +35,9 @@ export class Image extends SVGItem {
 	// @ts-ignore
 	#loadedSrc: string;
 	// @ts-ignore
-	#asset = new ImageAsset();
+	// #asset = new ImageAsset();
 
-	constructor(){
+	constructor() {
 		super();
 		this._dom = new DOMParser().parseFromString('<image></image>');
 	}

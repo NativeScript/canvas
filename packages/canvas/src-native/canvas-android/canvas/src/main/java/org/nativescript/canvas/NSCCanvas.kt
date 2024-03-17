@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
@@ -354,7 +355,7 @@ class NSCCanvas : FrameLayout {
 			nativeContext = nativeGetGLPointer(nativeGL)
 
 		} ?: run {
-			if (drawingBufferWidth == 0 || drawingBufferHeight == 0){
+			if (drawingBufferWidth == 0 || drawingBufferHeight == 0) {
 				nativeGL = nativeInitGLNoSurface(
 					1,
 					1,
@@ -371,7 +372,7 @@ class NSCCanvas : FrameLayout {
 					version,
 					is2D
 				)
-			}else {
+			} else {
 				nativeGL = nativeInitGLNoSurface(
 					this.drawingBufferWidth,
 					this.drawingBufferHeight,
@@ -740,7 +741,7 @@ class NSCCanvas : FrameLayout {
 			return sb.toString()
 		}
 
-		private fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
+		internal fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
 			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
 		}
 
@@ -940,4 +941,38 @@ class NSCCanvas : FrameLayout {
 				return direction
 			}
 	}
+}
+
+fun View.getBoundingClientRect(buffer: FloatBuffer) {
+	val density = context.resources.displayMetrics.density
+	val densityInverse = 1.0f / density
+	buffer.put(0, top * densityInverse)
+	buffer.put(1, right * densityInverse)
+	buffer.put(2, bottom * densityInverse)
+	buffer.put(3, left * densityInverse)
+	buffer.put(4, width * densityInverse)
+	buffer.put(5, height * densityInverse)
+	buffer.put(6, x * densityInverse)
+	buffer.put(7, y * densityInverse)
+}
+
+fun View.getBoundingClientRectJSON(): String {
+	val density = context.resources.displayMetrics.density
+
+	val sb = StringBuilder()
+	sb.append("{")
+	val densityInverse = 1.0f / density
+
+	NSCCanvas.append("top", top * densityInverse, sb)
+	NSCCanvas.append("right", right * densityInverse, sb)
+	NSCCanvas.append("bottom", bottom * densityInverse, sb)
+	NSCCanvas.append("left", left * densityInverse, sb)
+	NSCCanvas.append("width", width * densityInverse, sb)
+	NSCCanvas.append("height", height * densityInverse, sb)
+	NSCCanvas.append("x", x * densityInverse, sb)
+	NSCCanvas.append("y", y * densityInverse, sb, true)
+
+	sb.append("}")
+
+	return sb.toString()
 }

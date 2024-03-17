@@ -15,7 +15,7 @@ const defaultGLOptions = {
 	preserveDrawingBuffer: false,
 	stencil: false,
 	desynchronized: false,
-	xrCompatible: false,
+	xrCompatible: false
 };
 
 const default2DOptions = {
@@ -28,7 +28,7 @@ const default2DOptions = {
 	preserveDrawingBuffer: false,
 	stencil: false,
 	desynchronized: false,
-	xrCompatible: false,
+	xrCompatible: false
 };
 
 interface EventOptions {
@@ -46,6 +46,7 @@ export class DOMRectReadOnly {
 	readonly width: number;
 	readonly x: number;
 	readonly y: number;
+
 	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
 		this.x = x;
 		this.y = y;
@@ -70,6 +71,7 @@ export class Event {
 	readonly cancelable: boolean = false;
 	readonly composed: boolean = false;
 	readonly timeStamp: number;
+
 	constructor(type: string, options: EventOptions) {
 		this.type = type;
 		this.bubbles = options?.bubbles ?? false;
@@ -78,8 +80,11 @@ export class Event {
 		this.composed = options?.composed ?? false;
 	}
 
-	preventDefault() {}
-	stopPropagation() {}
+	preventDefault() {
+	}
+
+	stopPropagation() {
+	}
 }
 
 interface UIEventOptions extends EventOptions {
@@ -92,6 +97,7 @@ export class UIEvent extends Event {
 	readonly detail: number;
 	readonly view: any;
 	readonly sourceCapabilities?: any;
+
 	constructor(type: 'load' | 'unload' | 'abort' | 'error' | 'select', options?: UIEventOptions) {
 		super(type, options);
 		this.detail = options?.detail ?? 0;
@@ -136,6 +142,7 @@ export class MouseEvent extends UIEvent {
 	readonly movementY: number;
 	readonly pageX: number;
 	readonly pageY: number;
+
 	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup', options?: MouseEventOptions) {
 		super(type as any, options);
 		this.screenX = options?.screenX ?? 0;
@@ -182,6 +189,7 @@ export class PointerEvent extends MouseEvent {
 	readonly tiltY?: number;
 	readonly twist?: number;
 	readonly isPrimary?: boolean;
+
 	constructor(type: 'pointerover' | 'pointerenter' | 'pointerdown' | 'pointermove' | 'pointerrawupdate' | 'pointerup' | 'pointercancel' | 'pointerout' | 'pointerleave' | 'gotpointercapture' | 'lostpointercapture', options?: PointerEventOptions) {
 		super(type as any, options);
 		this.pointerType = options?.pointerType ?? '';
@@ -196,8 +204,12 @@ export class PointerEvent extends MouseEvent {
 		this.twist = options?.twist ?? 0;
 		this.isPrimary = options?.isPrimary ?? false;
 	}
-	preventDefault() {}
-	stopPropagation() {}
+
+	preventDefault() {
+	}
+
+	stopPropagation() {
+	}
 }
 
 interface TouchOptions {
@@ -228,6 +240,7 @@ export class Touch {
 	readonly radiusY: number;
 	readonly rotationAngle: number;
 	readonly force: number;
+
 	constructor(options: TouchOptions) {
 		this.identifier = options.identifier;
 		this.target = options.target;
@@ -242,8 +255,12 @@ export class Touch {
 		this.rotationAngle = options?.rotationAngle ?? 0;
 		this.force = options?.force ?? 0;
 	}
-	preventDefault() {}
-	stopPropagation() {}
+
+	preventDefault() {
+	}
+
+	stopPropagation() {
+	}
 }
 
 export class TouchList {
@@ -288,6 +305,7 @@ export class TouchEvent extends UIEvent {
 	readonly shiftKey: boolean;
 	readonly altKey: boolean;
 	readonly metaKey: boolean;
+
 	constructor(type: 'touchstart' | 'touchend' | 'touchmove' | 'touchcancel', options?: TouchEventOptions) {
 		super(type as any, options);
 		this.touches = options?.touches ?? TouchList.empty();
@@ -298,8 +316,12 @@ export class TouchEvent extends UIEvent {
 		this.ctrlKey = options?.ctrlKey ?? false;
 		this.shiftKey = options?.shiftKey ?? false;
 	}
-	preventDefault() {}
-	stopPropagation() {}
+
+	preventDefault() {
+	}
+
+	stopPropagation() {
+	}
 }
 
 interface WheelEventOptions extends UIEventOptions {
@@ -314,6 +336,7 @@ export class WheelEvent extends UIEvent {
 	readonly deltaY?: number;
 	readonly deltaZ?: number;
 	readonly deltaMode?: number;
+
 	constructor(type: 'wheel', options?: WheelEventOptions) {
 		super('wheel' as any, options);
 		this.deltaX = options?.deltaX ?? 0;
@@ -328,7 +351,8 @@ class Rectangle {
 	left: number;
 	width: number;
 	height: number;
-	constructor(top, left, width, height) {
+
+	constructor(top: number, left: number, width: number, height: number) {
 		this.top = top;
 		this.left = left;
 		// check name of fields!
@@ -341,15 +365,15 @@ class Rectangle {
 export const ignoreTouchEventsProperty = new Property<CanvasBase, boolean>({
 	name: 'ignoreTouchEvents',
 	defaultValue: false,
-	valueConverter: booleanConverter,
+	valueConverter: booleanConverter
 });
 
 export const doc = {
 	defaultView: {
-		getComputedStyle: function () {
+		getComputedStyle: function() {
 			return null;
-		},
-	},
+		}
+	}
 };
 
 @CSSType('Canvas')
@@ -371,15 +395,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_mouseCancelCallbacks = [];
 	_mouseWheelCallbacks = [];
 
-	_touchStartCallbacks = new Array<(TouchEvent) => void>();
-	_touchEndCallbacks = new Array<(TouchEvent) => void>();
-	_touchMoveCallbacks = new Array<(TouchEvent) => void>();
-	_touchCancelCallbacks = new Array<(TouchEvent) => void>();
+	_touchStartCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchEndCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchMoveCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchCancelCallbacks = new Array<(arg0: TouchEvent) => void>();
 
 	_touches: Touch[] = [];
 	_touchesById: Touch[] = [];
 
-	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = new Array();
+	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = [];
 
 	protected constructor() {
 		super();
@@ -530,7 +554,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						isPrimary: pointer.isPrimary,
-						button: -1,
+						button: -1
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -548,7 +572,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1,
+						button: -1
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {
@@ -575,7 +599,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						screenX: pointer.x,
 						screenY: pointer.y,
 						pageX: pointer.x,
-						pageY: pointer.y,
+						pageY: pointer.y
 					})
 				);
 			}
@@ -585,7 +609,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const event = new TouchEvent('touchmove', {
 				touches,
 				targetTouches: touches,
-				changedTouches,
+				changedTouches
 			});
 
 			for (const callback of this._touchMoveCallbacks) {
@@ -610,7 +634,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					isPrimary,
 					pageX: x,
-					pageY: y,
+					pageY: y
 				});
 
 				for (const callback of this._pointerUpCallbacks) {
@@ -625,7 +649,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenX: x,
 					screenY: y,
 					pageX: x,
-					pageY: y,
+					pageY: y
 				});
 
 				for (const callback of this._mouseUpCallbacks) {
@@ -661,14 +685,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenX: x,
 					screenY: y,
 					pageX: x,
-					pageY: y,
-				}),
+					pageY: y
+				})
 			];
 
 			const event = new TouchEvent('touchend', {
 				touches,
 				targetTouches: touches,
-				changedTouches,
+				changedTouches
 			});
 
 			for (const callback of this._touchEndCallbacks) {
@@ -693,7 +717,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					isPrimary,
 					pageX: x,
-					pageY: y,
+					pageY: y
 				});
 
 				for (const callback of this._pointerDownCallbacks) {
@@ -708,7 +732,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenX: x,
 					screenY: y,
 					pageX: x,
-					pageY: y,
+					pageY: y
 				});
 
 				for (const callback of this._mouseDownCallbacks) {
@@ -728,7 +752,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				screenX: x,
 				screenY: y,
 				pageX: x,
-				pageY: y,
+				pageY: y
 			});
 			this._touches.push(touch);
 			this._touchesById[ptrId] = touch;
@@ -737,7 +761,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const touchEvent = new TouchEvent('touchstart', {
 				touches,
 				targetTouches: touches,
-				changedTouches: this._touches,
+				changedTouches: this._touches
 			});
 
 			for (const callback of this._touchStartCallbacks) {
@@ -761,7 +785,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
-					isPrimary,
+					isPrimary
 				});
 
 				for (const callback of this._pointerCancelCallbacks) {
@@ -776,7 +800,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenX: x,
 					screenY: y,
 					pageX: x,
-					pageY: y,
+					pageY: y
 				});
 
 				for (const callback of this._mouseCancelCallbacks) {
@@ -794,7 +818,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				screenX: x,
 				screenY: y,
 				pageX: x,
-				pageY: y,
+				pageY: y
 			});
 			const touchesList = [touch];
 			const touchesById = [];
@@ -803,7 +827,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const touchEvent = new TouchEvent('touchcancel', {
 				touches,
 				targetTouches: touches,
-				changedTouches: touchesList,
+				changedTouches: touchesList
 			});
 
 			for (const callback of this._touchCancelCallbacks) {
@@ -812,7 +836,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _pinchCallback(data: { event: string; deltaX: number; deltaY: number; deltaMode: number; pointers: { ptrId: number; x: number; y: number }[]; isInProgress: boolean }) {
+	private _pinchCallback(data: {
+		event: string;
+		deltaX: number;
+		deltaY: number;
+		deltaMode: number;
+		pointers: { ptrId: number; x: number; y: number }[];
+		isInProgress: boolean
+	}) {
 		// move callback
 
 		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
@@ -845,7 +876,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1,
+						button: -1
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -863,7 +894,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						pageY: pointer.y,
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
-						button: -1,
+						button: -1
 					});
 
 					for (const callback of this._mouseMoveCallbacks) {
@@ -876,7 +907,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						deltaX: data.deltaX,
 						deltaY: data.deltaY,
 						deltaZ: 0,
-						deltaMode: data.deltaMode,
+						deltaMode: data.deltaMode
 					});
 
 					for (const callback of this._mouseWheelCallbacks) {
@@ -903,7 +934,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						screenX: pointer.x,
 						screenY: pointer.y,
 						pageX: pointer.x,
-						pageY: pointer.y,
+						pageY: pointer.y
 					})
 				);
 			}
@@ -913,7 +944,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const event = new TouchEvent('touchmove', {
 				touches,
 				targetTouches: touches,
-				changedTouches,
+				changedTouches
 			});
 
 			for (const callback of this._touchMoveCallbacks) {
@@ -944,7 +975,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				default:
 					break;
 			}
-		} catch (error) {}
+		} catch (error) {
+		}
 	}
 
 	get classList() {
@@ -954,21 +986,21 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	get _physicalSize(): { width: number; height: number } {
 		return {
 			width: this.getSize(this.style.width, this.getMeasuredWidth(), 'physical'),
-			height: this.getSize(this.style.height, this.getMeasuredHeight(), 'physical'),
+			height: this.getSize(this.style.height, this.getMeasuredHeight(), 'physical')
 		};
 	}
 
 	get _logicalSize(): { width: number; height: number } {
 		return {
 			width: this.getSize(this.style.width, this.getMeasuredWidth()),
-			height: this.getSize(this.style.height, this.getMeasuredHeight()),
+			height: this.getSize(this.style.height, this.getMeasuredHeight())
 		};
 	}
 
 	_handlePowerPreference(powerPreference: string) {
 		switch (powerPreference) {
 			case 'default':
-				0;
+				return 0;
 			case 'high-performance':
 				return 1;
 			case 'low-power':
@@ -978,7 +1010,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_handleContextOptions(type, contextOpts?) {
+	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl', contextOpts?) {
 		if (!contextOpts) {
 			if (type === '2d') {
 				return { ...default2DOptions, powerPreference: 0 };
@@ -995,16 +1027,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 		const glOptions = { ...defaultGLOptions };
-		const setIfDefined = (prop, value) => {
+		const setIfDefined = (prop: string, value: unknown) => {
 			const property = glOptions[prop];
 			if (property !== undefined && prop === 'powerPreference') {
-				glOptions[prop] = value;
+				// converts to int
+				glOptions[prop] = value as never;
 			}
 			if (property !== undefined && typeof value === typeof property) {
 				glOptions[prop] = value;
 			}
 		};
-		if (type.indexOf('webgl') > -1) {
+		if (type.indexOf('webgl') > -1 || type === 'experimental-webgl') {
 			setIfDefined('alpha', contextOpts.alpha);
 			setIfDefined('antialias', contextOpts.antialias);
 			setIfDefined('depth', contextOpts.depth);
@@ -1022,7 +1055,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_readyEvent() {
 		this.notify({
 			eventName: 'ready',
-			object: this,
+			object: this
 		});
 	}
 
@@ -1114,7 +1147,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	setPointerCapture(id) {}
+	setPointerCapture(id) {
+	}
 
-	releasePointerCapture(id) {}
+	releasePointerCapture(id) {
+	}
 }

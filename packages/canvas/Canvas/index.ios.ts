@@ -287,7 +287,7 @@ export class Canvas extends CanvasBase {
 				return;
 			}
 
-			let size = this._logicalSize;
+			const size = this._logicalSize;
 
 			// todo revisit
 
@@ -309,7 +309,7 @@ export class Canvas extends CanvasBase {
 			return null;
 		}
 		if (typeof type === 'string') {
-			if (type === '2d') { 
+			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context) {
 					return null;
 				}
@@ -377,7 +377,7 @@ export class Canvas extends CanvasBase {
 				return this._2dContext.native;
 			case ContextType.WebGL:
 				return this._webglContext.native;
-			case ContextType.Canvas:
+			case ContextType.WebGL2:
 				return this._webgl2Context.native;
 			default:
 				return null;

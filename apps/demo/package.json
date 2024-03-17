@@ -24,11 +24,12 @@
     "pixi.js": "file:../../node_modules/pixi.js",
     "three": "file:../../node_modules/three",
     "vexflow": "file:../../node_modules/vexflow",
-    "zen-3d": "file:../../node_modules/zen-3d"
+    "zen-3d": "file:../../node_modules/zen-3d",
+    "@nativescript/canvas-svg": "file:../../packages/canvas-svg"
   },
   "devDependencies": {
     "@nativescript/android": "8.6.2",
-    "@nativescript/ios": "8.6.1",
+    "@nativescript/ios": "8.6.4",
     "@nativescript/visionos": "8.6.0"
   }
 }

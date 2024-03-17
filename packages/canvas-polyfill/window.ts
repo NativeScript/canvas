@@ -5,14 +5,20 @@ import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { Device, fromObject, View } from '@nativescript/core';
-import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
+import {
+	CanvasRenderingContext2D,
+	WebGLRenderingContext,
+	WebGL2RenderingContext,
+	ImageData,
+	ImageBitmap
+} from '@nativescript/canvas';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
 	console: console,
 	WEBGL_RENDERER: 'true',
-	CANVAS_RENDERER: 'true',
+	CANVAS_RENDERER: 'true'
 };
 (global as any).window.self = (global as any).self = (global as any).self || window;
 (global as any).window.HTMLImageElement = (global as any).HTMLImageElement = (global as any).HTMLImageElement || HTMLImageElement;
@@ -70,11 +76,12 @@ function checkEmitter() {
 	}
 };
 
-import { DOMParser as Parser } from 'xmldom';
+import { DOMParser as Parser } from '@xmldom/xmldom';
 
-export class DOMParser extends Parser {
-	parseFromString(string, mimeType) {
-		return XMLDocument.fromParser(super.parseFromString(string, mimeType));
+export class DOMParser {
+	parseFromString(xmlsource: string, mimeType?: string) {
+		const instance = new Parser().parseFromString(xmlsource, mimeType);
+		return XMLDocument.fromParser(instance);
 	}
 }
 
@@ -93,7 +100,7 @@ const agent = 'chrome';
 (global as any).window.navigator.standalone = (global as any).navigator.standalone = (global as any).navigator.standalone === null ? true : (global as any).navigator.standalone;
 
 (global as any).window['chrome'] = (global as any)['chrome'] = (global as any)['chrome'] || {
-	extension: {},
+	extension: {}
 };
 /// https://www.w3schools.com/js/js_window_location.asp
 (global as any).window.location = (global as any).location = (global as any).location || {
@@ -101,7 +108,7 @@ const agent = 'chrome';
 	hostname: '', // window.location.hostname returns the domain name of the web host
 	pathname: '', // window.location.pathname returns the path and filename of the current page
 	protocol: 'https', // window.location.protocol returns the web protocol used (http: or https:)
-	assign: null, // window.location.assign loads a new document
+	assign: null // window.location.assign loads a new document
 };
 
 if ((global as any).document) {
@@ -112,9 +119,9 @@ if ((global as any).document) {
 (global as any).window.setInterval = setInterval;
 (global as any).window.requestAnimationFrame = requestAnimationFrame;
 (global as any).window.cancelAnimationFrame = cancelAnimationFrame;
-(global as any).window.getComputedStyle = function (element, pseudoEltOptional) {
+(global as any).window.getComputedStyle = function(element, pseudoEltOptional) {
 	const obj: any = {};
-	obj.getPropertyValue = function (prop) {
+	obj.getPropertyValue = function(prop) {
 		if (element instanceof View) {
 			let val = element.style.get(prop);
 			if (val !== undefined && typeof val.value && typeof val.unit) {

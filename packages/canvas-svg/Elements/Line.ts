@@ -1,6 +1,5 @@
-import {Property} from "@nativescript/core/ui/core/view";
-import {Path2D} from "../Canvas2D";
-import {SVGItem} from "./SVGItem";
+import { Property } from '@nativescript/core';
+import { SVGItem } from './SVGItem';
 
 export const x1Property = new Property<Line, any>({
 	name: 'x1'
@@ -14,14 +13,15 @@ export const x2Property = new Property<Line, any>({
 export const y2Property = new Property<Line, any>({
 	name: 'y2'
 });
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
+
 export class Line extends SVGItem {
 	x1: any;
 	y1: any;
 	x2: any;
 	y2: any;
 
-	constructor(){
+	constructor() {
 		super();
 		this._dom = new DOMParser().parseFromString('<line></line>');
 	}

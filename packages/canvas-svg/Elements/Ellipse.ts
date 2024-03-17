@@ -1,6 +1,5 @@
-import {Property} from "@nativescript/core";
-import {Path2D} from "../Canvas2D";
-import {SVGItem} from "./SVGItem";
+import { Property } from '@nativescript/core';
+import { SVGItem } from './SVGItem';
 
 export const cxProperty = new Property<Ellipse, any>({
 	name: 'cx'
@@ -14,14 +13,15 @@ export const rxProperty = new Property<Ellipse, any>({
 export const ryProperty = new Property<Ellipse, any>({
 	name: 'ry'
 });
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
+
 export class Ellipse extends SVGItem {
 	cx: any;
 	cy: any;
 	rx: any;
 	ry: any;
 
-	constructor(){
+	constructor() {
 		super();
 		this._dom = new DOMParser().parseFromString('<ellipse></ellipse>');
 	}

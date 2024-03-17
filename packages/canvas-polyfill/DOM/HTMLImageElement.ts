@@ -1,12 +1,14 @@
-import { Element } from './Element';
-import { knownFolders, path, File, Utils } from '@nativescript/core';
+import { knownFolders, path, File, Utils, Image } from '@nativescript/core';
+// @ts-ignore
 import { ImageAsset } from '@nativescript/canvas';
+import { HTMLElement } from './HTMLElement';
+
 declare const NSSCanvasHelpers;
 declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
-	R: 'gif',
+	R: 'gif'
 //	U: 'webp',
 };
 
@@ -34,14 +36,13 @@ function getUUID() {
 	return java.util.UUID.randomUUID().toString();
 }
 
-export class HTMLImageElement extends Element {
+export class HTMLImageElement extends HTMLElement {
 	private localUri: any;
 	private _onload: any;
 	private _onerror: any;
 	private _complete: any;
 	private _base64: string;
-	_asset;
-	_imageSource: any;
+	_asset: ImageAsset;
 	__id: any;
 
 	decoding = 'auto';
@@ -78,17 +79,19 @@ export class HTMLImageElement extends Element {
 	set complete(value) {
 		this._complete = value;
 		if (value) {
-			this.emitter.emit('load', this);
+			this.dispatchEvent('load');
 			this.onload();
 		}
 	}
-	
+
 
 	constructor(props?) {
 		super('img');
+		//	this.nativeElement = new Image();
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
-		this._onload = () => {};
+		this._onload = () => {
+		};
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -116,7 +119,7 @@ export class HTMLImageElement extends Element {
 									if ((global as any).__debug_browser_polyfill_image) {
 										console.log(`nativescript-browser-polyfill: Error:`, error.message);
 									}
-									this.emitter.emit('error', { target: this, error });
+									this.dispatchEvent({ type: 'error', target: this, error });
 									this._onerror?.();
 								} else {
 									this.localUri = localUri;
@@ -133,7 +136,6 @@ export class HTMLImageElement extends Element {
 									success(response) {
 										const owner = ref.get();
 										if (owner) {
-											console.log(response.toString());
 											owner.localUri = response.toString();
 											owner._load();
 										}
@@ -144,19 +146,19 @@ export class HTMLImageElement extends Element {
 										}
 										const owner = ref.get();
 										if (owner) {
-											owner.emitter.emit('error', { target: ref.get(), message });
+											owner.dispatchEvent({ type: 'error', target: ref.get(), message });
 											owner._onerror?.();
 										}
-									},
+									}
 								})
 							);
 						}
 					} catch (error) {
-						this.emitter.emit('loading', { target: this });
+						//	this.dispatchEvent({type: 'loading', target: this });
 						if ((global as any).__debug_browser_polyfill_image) {
 							console.log(`nativescript-browser-polyfill: Error:`, error.message);
 						}
-						this.emitter.emit('error', { target: this, error });
+						this.dispatchEvent({ type: 'error', target: this, error });
 						this._onerror?.();
 					}
 				})();
@@ -164,7 +166,7 @@ export class HTMLImageElement extends Element {
 			}
 
 			if (typeof this.src === 'string') {
-				this.emitter.emit('loading', { target: this });
+				this.dispatchEvent({ type: 'loading', target: this });
 				let async = this.decoding !== 'sync';
 				if (this.src.startsWith('http')) {
 					if (!async) {
@@ -175,7 +177,7 @@ export class HTMLImageElement extends Element {
 							this.complete = true;
 							this._onload?.();
 						} else {
-							this.emitter.emit('error', { target: this });
+							this.dispatchEvent({ type: 'error', target: this });
 							this._onerror?.();
 						}
 					} else {
@@ -188,7 +190,7 @@ export class HTMLImageElement extends Element {
 								this._onload?.();
 							})
 							.catch((e) => {
-								this.emitter.emit('error', { target: this });
+								this.dispatchEvent({ type: 'error', target: this, e });
 								this._onerror?.();
 							});
 					}
@@ -203,7 +205,7 @@ export class HTMLImageElement extends Element {
 								this.complete = true;
 								this._onload?.();
 							} else {
-								this.emitter.emit('error', { target: this });
+								this.dispatchEvent({ type: 'error', target: this });
 								this._onerror?.();
 							}
 						} else {
@@ -216,7 +218,7 @@ export class HTMLImageElement extends Element {
 									this._onload?.();
 								})
 								.catch((e) => {
-									this.emitter.emit('error', { target: this });
+									this.dispatchEvent({ type: 'error', target: this, e });
 									this._onerror?.();
 								});
 						}

@@ -124,6 +124,13 @@ module.exports = {
 					description: '@nativescript/canvas-chartjs: Build',
 				},
 			},
+			// @nativescript/canvas-svg
+			'canvas-svg': {
+				build: {
+					script: 'nx run canvas-svg:build.all',
+					description: '@nativescript/canvas-svg: Build',
+				},
+			},
 			'build-all': {
 				script: 'nx run-many --target=build.all --all',
 				description: 'Build all packages',
@@ -179,6 +186,10 @@ module.exports = {
 			'canvas-chartjs': {
 				script: 'nx run canvas-chartjs:focus',
 				description: 'Focus on @nativescript/canvas-chartjs',
+			},
+			'canvas-svg': {
+				script: 'nx run canvas-svg:focus',
+				description: 'Focus on @nativescript/canvas-svg',
 			},
 			reset: {
 				script: 'nx g @nativescript/plugin-tools:focus-packages',

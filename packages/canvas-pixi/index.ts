@@ -4,9 +4,6 @@ import * as Pixii from 'pixi.js';
 let PIXI = Pixii;
 
 // import * as filters from 'pixi-filters';
-
-(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || PIXI;
-
 class NSCPIXIApplication extends Pixii.Application {
 	constructor({ context, view, ...props }) {
 		let clientWidth = 300;
@@ -43,5 +40,7 @@ if (!(PIXI.Application instanceof NSCPIXIApplication)) {
 		Application: NSCPIXIApplication as never
 	};
 }
+
+(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || PIXI;
 
 export default PIXI;

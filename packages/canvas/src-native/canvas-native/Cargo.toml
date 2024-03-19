@@ -3,17 +3,15 @@
 resolver = "2"
 
 members = [
-    "gl-bindings",
-    "canvas-core",
-    "canvas-2d",
-    "canvas-webgl",
-    "canvas-android",
-    "canvas-ios",
-#    "canvas-ffi",
-    "playground",
-    "canvas-cxx",
-    "canvas-c"
-]
+	"gl-bindings",
+	"canvas-core",
+	"canvas-2d",
+	"canvas-webgl",
+	"canvas-android",
+	"canvas-ios",
+	"playground",
+	"canvas-cxx",
+	"canvas-c"]
 
 [profile.release]
 panic = "abort"

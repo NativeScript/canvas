@@ -4,13 +4,14 @@ import { SVGItem } from './Elements/SVGItem';
 
 declare const org;
 
-export class SVG extends SVGBase {
+export class Svg extends SVGBase {
 	_svg;
 
 	constructor() {
 		super();
 		const context = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
-		this._svg = new org.nativescript.canvas.NSCSVG(context);
+		this._svg = new org.nativescript.canvas.svg.NSCSVG(context);
+		this._svg.setSync(true);
 	}
 
 	createNativeView() {
@@ -32,9 +33,9 @@ export class SVG extends SVGBase {
 				} else if (value.startsWith('/')) {
 					this._svg.setSrcPath(value);
 				} else if (value.startsWith('http')) {
-					Http.getString(value)
+					Http.getFile(value)
 						.then((res) => {
-							this._svg.setSrc(res);
+							this._svg.setSrcPath(res.path);
 						})
 						.catch((e) => {
 							console.log(e);

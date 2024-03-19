@@ -3,22 +3,21 @@ extern crate core;
 use std::ffi::c_uint;
 
 use base64::Engine;
+use skia_safe::{
+    AlphaType, ColorType, EncodedImageFormat, ImageInfo, images, IPoint, ISize, Point, surfaces,
+};
 use skia_safe::gpu::BackendTexture;
 use skia_safe::image::CachingHint;
 use skia_safe::wrapper::NativeTransmutableWrapper;
-use skia_safe::{
-    images, surfaces, AlphaType, ColorType, EncodedImageFormat, IPoint, ISize, ImageInfo, Point,
-};
 
-use context::filter_quality::FilterQuality;
 use context::{Context, ContextWrapper};
+use context::filter_quality::FilterQuality;
 
 pub mod context;
 pub mod ffi;
 pub mod image_bitmap;
 pub mod ios;
 pub mod prelude;
-pub mod svg;
 pub mod utils;
 
 const GR_GL_TEXTURE_2D: c_uint = 0x0DE1;

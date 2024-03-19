@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="0b691f8d-7941-48de-b02d-ad1274c1d2fa" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/HTMLDivElement.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/.name" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/gradle.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/kotlinc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/migrations.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/proguard-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/androidTest/java/org/nativescript/canvas/svgdemo/ExampleInstrumentedTest.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/java/org/nativescript/canvas/svgdemo/MainActivity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/drawable/ic_launcher_background.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-hdpi/ic_launcher.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-mdpi/ic_launcher.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/values-night/themes.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/values/colors.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/values/strings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/values/themes.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/xml/backup_rules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/main/res/xml/data_extraction_rules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/app/src/test/java/org/nativescript/canvas/svgdemo/ExampleUnitTest.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/consumer-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/proguard-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/androidTest/java/org/nativescript/canvas/svg/ExampleInstrumentedTest.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/AndroidManifest.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/java/org/nativescript/canvas/svg/NSCSVG.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/jniLibs/arm64-v8a/libcanvassvg.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/jniLibs/armeabi-v7a/libcanvassvg.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/jniLibs/x86/libcanvassvg.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/main/jniLibs/x86_64/libcanvassvg.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/canvassvg/src/test/java/org/nativescript/canvas/svg/ExampleUnitTest.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/gradle.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/gradlew" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/gradlew.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/android/settings.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/canvas-svg/Cargo.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/canvas-svg/src/android.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/canvas-svg/src/ios.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG.xcodeproj/project.pbxproj" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG.xcodeproj/project.xcworkspace/contents.xcworkspacedata" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG.xcodeproj/project.xcworkspace/xcuserdata/triniwiz.xcuserdatad/UserInterfaceState.xcuserstate" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG.xcodeproj/xcuserdata/triniwiz.xcuserdatad/xcschemes/xcschememanagement.plist" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG/CanvasSVG.docc/CanvasSVG.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG/CanvasSVG.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVG/NSCSVG.swift" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/ios/CanvasSVGTests/CanvasSVGTests.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Document.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Document.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Element.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Element.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/EventTarget.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/EventTarget.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/HTMLElement.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/HTMLElement.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Node.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/DOM/Node.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-polyfill/window.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-polyfill/window.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../canvas-svg/project.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-svg/project.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Canvas/common.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Canvas/common.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../CanvasNative.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../CanvasNative.xcodeproj/project.pbxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../CanvasNative.xcodeproj/project.xcworkspace/xcuserdata/triniwiz.xcuserdatad/UserInterfaceState.xcuserstate" beforeDir="false" afterPath="$PROJECT_DIR$/../CanvasNative.xcodeproj/project.xcworkspace/xcuserdata/triniwiz.xcuserdatad/UserInterfaceState.xcuserstate" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/NSCSVG.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/.idea/canvas-native.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/.idea/canvas-native.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-2d/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-2d/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-2d/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-2d/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-2d/src/svg/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../canvas-svg/src-native/canvas-svg/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-android/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-android/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-android/src/jni_compat/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-android/src/jni_compat/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-android/src/jni_compat/org_nativescript_canvas_NSCSVG.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-android/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-android/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-core/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-core/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../canvas-native/canvas-ios/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../canvas-native/canvas-ios/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../../tools/demo/canvas-pixi/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../../tools/demo/canvas-pixi/index.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../../.." />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="y8t8cxh3" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2023" />
+    <option name="minorVersion" value="3.4" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="2dr5viAhYRahZ9LRqxua1eAt9i4" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "chore/polish",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0b691f8d-7941-48de-b02d-ad1274c1d2fa" name="Changes" comment="" />
+      <created>1710753589164</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1710753589164</updated>
+      <workItem from="1710753590586" duration="27000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

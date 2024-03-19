@@ -6,7 +6,58 @@ import type { Application, Graphics } from 'pixi.js';
 
 import PIXI from '@nativescript/canvas-pixi';
 
+import { Viewport } from 'pixi-viewport';
+
 // let PIXI;
+
+
+interface Grid {
+	width: number;
+	height: number;
+	color?: [number, number, number];
+	lineThickness?: number;
+	pitch?: { x: number; y: number };
+}
+
+const shaderCode = `
+  precision mediump float;
+
+  uniform float vpw;
+  uniform float vph;
+  uniform float thickness;
+
+  uniform vec2 offset;
+  uniform vec2 pitch;
+  uniform vec4 color;
+
+  void main() {
+    float offX = ( offset[0]) + gl_FragCoord.x;
+    float offY = ( offset[1]) + (vph-  gl_FragCoord.y);
+    float rX = min(abs(pitch[0] - mod(offX, pitch[0])),
+                   abs(mod(offX, pitch[0])));
+    float rY = min(abs(pitch[1] - mod(offY, pitch[1])),
+                   abs(mod(offY, pitch[1])));
+    if ( int(rX) <= int(thickness/2.0) ||
+         int(rY) <= int(thickness/2.0)  ) {
+      gl_FragColor = color;
+    } else {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    }
+  }
+`;
+function makeGridFilter(grid: Grid) {
+	const uniforms = {
+		thickness: grid.lineThickness,
+		color: [...(grid?.color ?? [1.0, 1.0, 1.0]), 1.0],
+		vpw: grid.width * 2,
+		vph: grid.height * 2,
+		offset: [0, 0],
+		pitch: [grid.pitch?.x ?? 50 * 2, grid.pitch?.y ?? 50 * 2],
+	};
+
+	return new global.PIXI.Filter(undefined, shaderCode, uniforms);
+}
+
 
 export class DemoSharedCanvasPixi extends DemoSharedBase {
 	root = '~/assets/pixi';
@@ -52,7 +103,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		this.dynamicGraphics(canvas);
+		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -67,59 +118,82 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.textureRotate(canvas);
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
-	//	this.viewPort(canvas);
+		this.viewPort(canvas);
 	}
 
 
-	async viewPort(canvas){
+	async viewPort(canvas) {
 		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context });
+		const app = new PIXI.Application({
+			context, resizeTo: canvas,
+			// eventFeatures: {
+			// 	globalMove: false,
+			// 	move: false,
+			// 	click: false,
+			// 	wheel: false
+			// }
+		});
 
-		const graphics = new PIXI.Graphics();
-
-		graphics.beginFill('red');
-		graphics.drawRect(0,0, app.stage.width, app.stage.height);
-		graphics.endFill();
-
-		app.stage.addChild(graphics);
-
-		/*
-
-		const vp = require('pixi-viewport').Viewport;
-
+		// pixi attaches to the document for pointermove in {N} we want to use the canvas passed for this
+		canvas.addEventListener('pointermove', event =>{
+			//@ts-ignore
+			app.renderer.events.onPointerMove(event);
+		});
 
 		const width = canvas.width;
 		const height = canvas.height;
 		const worldWidth = width * 5;
 		const worldHeight = height * 5;
-		const world = new vp({
-		  screenWidth: width,
-		  screenHeight: height,
-		  worldWidth,
-		  worldHeight,
-		  events: app.renderer.events, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+		const world = new Viewport({
+			screenWidth: width,
+			screenHeight: height,
+			worldWidth,
+			worldHeight,
+			events: app.renderer.events // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
 		});
 
 		// activate plugins
 		world
-		.drag({
-		  wheel: false,
-		})
-		.pinch({
-		  noDrag: false
-		})
-		.decelerate();
+			.drag({
+				//	wheel: false
+			})
+			.pinch({
+				//		noDrag: false
+			})
+			.decelerate();
+
+
+		const grid = makeGridFilter({
+			width,
+			height
+		});
+
+		// const g = new PIXI.Graphics();
+		// g.width = worldWidth;
+		// g.height = worldHeight;
+		// g.filters = [this._grid];
+
+
+
+		app.stage.addChild(world);
+
+		world.fit();
+
+		world.moveCenter(worldWidth / 2, worldHeight / 2);
 
 
 		const graphics = new PIXI.Graphics();
 
 		graphics.beginFill('red');
-		graphics.drawRect(0,0, width, height);
+		graphics.drawRect(worldWidth / 2 - width / 2, worldHeight / 2 - height / 2, width, height);
+		graphics.endFill();
+
+
+		graphics.beginFill('blue');
+		graphics.drawRect(worldWidth / 2 - (width / 2) / 2, worldHeight / 2 - (height / 2)/ 2, width, height);
 		graphics.endFill();
 
 		world.addChild(graphics);
-
-		*/
 
 	}
 
@@ -206,7 +280,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					frame,
 					orig: crop,
 					trim,
-					rotate,
+					rotate
 				} as any);
 			} else {
 				rotatedTexture = new PIXI.Texture({
@@ -214,7 +288,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					frame,
 					orig: crop,
 					trim,
-					rotate,
+					rotate
 				} as any);
 			}
 			textures.push(rotatedTexture);
@@ -242,8 +316,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					fontFamily: 'Courier New',
 					fontSize: '12px',
 					fill: 'white',
-					align: 'left',
-				},
+					align: 'left'
+				}
 			} as any);
 
 			text.x = dude.x;
@@ -268,7 +342,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					200,
 					200,
 					0,
-					200,
+					200
 				], // x, y
 				2
 			) // the size of the attribute
@@ -282,7 +356,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					1,
 					1,
 					0,
-					1,
+					1
 				], // u, v
 				2
 			) // the size of the attribute
@@ -331,7 +405,7 @@ void main()
 }`;
 
 		const gridUniforms = {
-			zoom: 10,
+			zoom: 10
 		};
 		const gridShader: any = PIXI.Shader.from(vertexSrc, fragmentGridSrc, gridUniforms);
 		// Sharing textures and meshes is possible. But for simplicity each pass has it's own output texture and mesh in this example.
@@ -361,7 +435,7 @@ void main()
 		const rippleUniforms = {
 			amount: 0.5,
 			phase: 0,
-			texIn: gridTexture,
+			texIn: gridTexture
 		};
 		const rippleShader: any = PIXI.Shader.from(vertexSrc, fragmentRippleSrc, rippleUniforms);
 		const rippleTexture = (PIXI as any).RenderTexture.create(200, 200);
@@ -384,7 +458,7 @@ void main()
 }`;
 		const noiseUniforms = {
 			limit: 0.5,
-			noise: perlinTexture,
+			noise: perlinTexture
 		};
 		const noiseShader: any = PIXI.Shader.from(vertexSrc, fragmentNoiseSrc, noiseUniforms);
 		const noiseTexture = (PIXI as any).RenderTexture.create(200, 200);
@@ -416,7 +490,7 @@ void main()
 }`;
 		const waveUniforms = {
 			amplitude: 0.75,
-			time: 0,
+			time: 0
 		};
 		const waveShader: any = PIXI.Shader.from(vertexSrc, fragmentWaveSrc, waveUniforms);
 		const waveTexture = (PIXI as any).RenderTexture.create(200, 200);
@@ -445,7 +519,7 @@ void main()
 		const combineUniforms = {
 			texRipple: rippleTexture,
 			texNoise: noiseTexture,
-			texWave: waveTexture,
+			texWave: waveTexture
 		};
 		const combineShader: any = PIXI.Shader.from(vertexSrc, fragmentCombineSrc, combineUniforms);
 		const combineQuad = new PIXI.Mesh(geometry, combineShader);
@@ -492,7 +566,7 @@ void main()
 					100,
 					-100, // x, y
 					100,
-					100,
+					100
 				], // x, y
 				2
 			) // the size of the attribute
@@ -505,7 +579,7 @@ void main()
 					1,
 					0, // u, v
 					1,
-					1,
+					1
 				], // u, v
 				2
 			); // the size of the attribute
@@ -547,21 +621,21 @@ void main()
 		const triangle = new PIXI.Mesh(
 			geometry,
 			new (PIXI as any).Shader(program, {
-				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_scene_rotate.jpg'),
+				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_scene_rotate.jpg')
 			})
 		);
 
 		const triangle2 = new PIXI.Mesh(
 			geometry,
 			new (PIXI as any).Shader(program, {
-				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_rotate.jpg'),
+				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_rotate.jpg')
 			})
 		);
 
 		const triangle3 = new PIXI.Mesh(
 			geometry,
 			new (PIXI as any).Shader(program, {
-				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_displacement.jpg'),
+				uSamplerTexture: PIXI.Texture.from(this.root + '/images/bg_displacement.jpg')
 			})
 		);
 
@@ -597,7 +671,7 @@ void main()
 					100,
 					100,
 					-100,
-					100,
+					100
 				], // x, y
 				2
 			) // the size of the attribute
@@ -611,7 +685,7 @@ void main()
 					1,
 					1,
 					0,
-					1,
+					1
 				], // u, v
 				2
 			) // the size of the attribute
@@ -652,7 +726,7 @@ void main()
 
 		const uniforms = {
 			uSampler2: PIXI.Texture.from(this.root + '/images/bg_scene_rotate.jpg'),
-			time: 0,
+			time: 0
 		};
 
 		const shader: any = PIXI.Shader.from(vertexSrc, fragmentSrc, uniforms);
@@ -681,11 +755,11 @@ void main()
 		// create two render textures... these dynamic textures will be used to draw the scene into itself
 		let renderTexture = PIXI.RenderTexture.create({
 			width: app.screen.width,
-			height: app.screen.height,
+			height: app.screen.height
 		});
 		let renderTexture2 = PIXI.RenderTexture.create({
 			width: app.screen.width,
-			height: app.screen.height,
+			height: app.screen.height
 		});
 		const currentTexture = renderTexture;
 
@@ -851,6 +925,7 @@ void main()
 	dynamicGraphics(canvas) {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({ context, antialias: true, resizeTo: canvas }) as any;
+
 
 		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
 
@@ -1057,7 +1132,7 @@ void main()
 				sprite: new PIXI.Sprite(starTexture),
 				z: 0,
 				x: 0,
-				y: 0,
+				y: 0
 			};
 
 			star.sprite.anchor.x = 0.5;
@@ -1313,7 +1388,7 @@ void main()
 			position: true,
 			rotation: true,
 			uvs: true,
-			alpha: true,
+			alpha: true
 		});
 		app.stage.addChild(sprites);
 
@@ -1472,7 +1547,7 @@ void main()
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
 			context,
-			backgroundColor: 0x1099bb,
+			backgroundColor: 0x1099bb
 		});
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
 		PIXI.Assets.load(this.root + '/images/bg_grass.jpg').then((texture) => {
@@ -1504,7 +1579,7 @@ void main()
 	animatedJet(canvas) {
 		const app = new PIXI.Application({
 			context: canvas.getContext('webgl2'),
-			background: '#1099bb',
+			background: '#1099bb'
 		});
 
 		/*	app.loader.add(this.root + '/spritesheet/fighter.json').load(onAssetsLoaded);
@@ -1600,7 +1675,7 @@ void main()
 			dropShadowDistance: 6,
 			wordWrap: true,
 			wordWrapWidth: 440,
-			lineJoin: 'round',
+			lineJoin: 'round'
 		});
 
 		const richText = new PIXI.Text('Rich text with a lot of options and across multiple lines', style);
@@ -1623,7 +1698,7 @@ void main()
 			fontSize: 60,
 			fontWeight: 'lighter',
 			lineJoin: 'round',
-			strokeThickness: 12,
+			strokeThickness: 12
 		});
 
 		const skewText = new PIXI.Text('SKEW IS COOL', skewStyle);
@@ -1664,7 +1739,7 @@ void main()
 	simple(canvas) {
 		const context = canvas.getContext('webgl2', { alpha: true, stencil: true, depth: true });
 		const app = new PIXI.Application({
-			context,
+			context
 		}) as Application;
 		const graphics = new PIXI.Graphics() as Graphics;
 
@@ -1762,7 +1837,7 @@ void main()
 
 	advance(canvas) {
 		const app = new PIXI.Application({
-			context: canvas.getContext('webgl2'),
+			context: canvas.getContext('webgl2')
 		});
 		const sprite = PIXI.Sprite.from(this.root + '/images/bg_rotate.jpg');
 
@@ -1809,7 +1884,7 @@ void main()
 		const bezier2 = new PIXI.Graphics();
 		bezier2.lineTextureStyle({
 			width: 10,
-			texture: sprite.texture,
+			texture: sprite.texture
 		});
 		bezier2.bezierCurveTo(0, -100, 150, 150, 240, 100);
 
@@ -1839,7 +1914,7 @@ void main()
 
 		arc3.lineTextureStyle({
 			width: 10,
-			texture: sprite.texture,
+			texture: sprite.texture
 		});
 		arc3.arc(650, 420, 60, 2 * Math.PI, (2.5 * Math.PI) / 2);
 
@@ -1864,7 +1939,7 @@ void main()
 
 		beatifulRect.lineTextureStyle({
 			width: 10,
-			texture: sprite.texture,
+			texture: sprite.texture
 		});
 		beatifulRect.beginFill(0xff0000);
 		beatifulRect.drawRect(80, 350, 150, 150);

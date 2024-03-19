@@ -36,7 +36,7 @@ export class DOMRect extends DOMRectReadOnly {
 
 export class Element extends Node {
 	private _classList = new Set();
-	private _nativeElement: ViewBase;
+	_nativeElement: ViewBase;
 	private _width: number;
 	private _height: number;
 	private _attrs: Map<string, any> = new Map<string, unknown>();
@@ -185,22 +185,40 @@ export class Element extends Node {
 	}
 
 	get width() {
+		if (this.nativeElement) {
+			return this.nativeElement['width'];
+		}
 		return this._width;
 	}
 
 	set width(value: number) {
 		this._width = value;
+		if (this.nativeElement) {
+			setValue(this.nativeElement, 'width', value);
+		}
 	}
 
 	get height() {
+		if (this.nativeElement) {
+			return this.nativeElement['height'];
+		}
 		return this._height;
 	}
 
 	set height(value: number) {
 		this._height = value;
+		if (this.nativeElement) {
+			setValue(this.nativeElement, 'height', value);
+		}
 	}
 
 	get ontouchstart() {
 		return {};
+	}
+
+	setPointerCapture(id: string) {
+	}
+
+	releasePointerCapture(id: string) {
 	}
 }

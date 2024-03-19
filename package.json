@@ -18,7 +18,9 @@
 		"build.canvas.ios.release": "nx run canvas:build.native.ios.release",
 		"build.canvas.ios.debug": "nx run canvas:build.native.ios.debug",
 		"build.canvas.ios.framework.release": "nx run canvas:build.native.ios.framework.release",
-		"build.canvas.ios.framework.debug": "nx run canvas:build.native.ios.framework.debug"
+		"build.canvas.ios.framework.debug": "nx run canvas:build.native.ios.framework.debug",
+		"build.canvas.svg.ios.framework.release": "nx run canvas-svg:build.native.ios.framework.release",
+		"build.canvas.svg.ios.framework.debug": "nx run canvas-svg:build.native.ios.framework.debug"
 	},
 	"private": true,
 	"devDependencies": {

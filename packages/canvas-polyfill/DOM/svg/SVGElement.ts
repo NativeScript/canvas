@@ -15,7 +15,7 @@ export class SVGElement extends Element {
 	appendChild(view) {
 		if (view?.nativeElement?._dom) {
 			this.nativeValue?._dom?.documentElement?.appendChild?.(view.nativeElement._dom);
-			this.nativeValue.__redraw();
+			(<any>this.nativeValue).__redraw();
 			return view;
 		}
 		return null;

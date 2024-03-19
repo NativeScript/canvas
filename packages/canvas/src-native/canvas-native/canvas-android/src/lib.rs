@@ -38,7 +38,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
     nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
     nativeLoadFromBitmap, nativeLoadFromPath,
 };
-use crate::jni_compat::org_nativescript_canvas_NSCSVG::{nativeDrawSVG, nativeDrawSVGFromPath};
+
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
 use crate::utils::gl::texture_render::nativeDrawFrame;
 use crate::utils::{
@@ -294,30 +294,6 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             let _ = env.register_native_methods(
                 &canvas_rendering_context_2d_class,
                 canvas_rendering_context_2d_native_methods.as_slice(),
-            );
-
-            let svg_class = env.find_class("org/nativescript/canvas/NSCSVG").unwrap();
-
-            let nativeDrawSVGMethod = if ret >= ANDROID_O {
-                "(JLjava/lang/String;)V"
-            } else {
-                "!(JLjava/lang/String;)V"
-            };
-
-            let _ = env.register_native_methods(
-                &svg_class,
-                &[
-                    NativeMethod {
-                        name: "nativeDrawSVG".into(),
-                        sig: nativeDrawSVGMethod.into(),
-                        fn_ptr: nativeDrawSVG as *mut c_void,
-                    },
-                    NativeMethod {
-                        name: "nativeDrawSVGFromPath".into(),
-                        sig: nativeDrawSVGMethod.into(),
-                        fn_ptr: nativeDrawSVGFromPath as *mut c_void,
-                    },
-                ],
             );
 
             let image_asset_class = env

@@ -29,7 +29,6 @@ export class EventTarget {
 		if (global.isIOS) {
 			emitter = this._emitter?.deref?.();
 		}
-
 		if (emitter !== null && emitter !== undefined) {
 			emitter.addEventListener(event, handler);
 		}

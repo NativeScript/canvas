@@ -385,6 +385,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	_pointerMoveCallbacks = [];
 	_pointerUpCallbacks = [];
+	_pointerOutCallbacks = [];
+	_pointerLeaveCallbacks = [];
 	_pointerDownCallbacks = [];
 	_pointerCancelCallbacks = [];
 
@@ -440,7 +442,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			case 'pointerup':
 				this._pointerUpCallbacks.push(callback);
 				break;
-			case 'moveout':
+			case 'pointerout':
+				this._pointerOutCallbacks.push(callback);
+				break;
+			case 'pointerleave':
+				this._pointerLeaveCallbacks.push(callback);
+				break;
+			case 'mouseout':
 			case 'mousecancel':
 				this._mouseCancelCallbacks.push(callback);
 				break;
@@ -498,7 +506,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			case 'pointerup':
 				this._removeItemFromArray(this._pointerUpCallbacks, callback);
 				break;
-			case 'moveout':
+			case 'pointerout':
+				this._removeItemFromArray(this._pointerOutCallbacks, callback);
+				break;
+			case 'pointerleave':
+				this._removeItemFromArray(this._pointerLeaveCallbacks, callback);
+				break;
+			case 'mouseout':
 			case 'mousecancel':
 				this._removeItemFromArray(this._mouseCancelCallbacks, callback);
 				break;
@@ -534,7 +548,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				const index = this._lastPointerEventById.findIndex((item) => {
 					return item?.pointerId === pointerId;
 				});
-				let previousEvent;
+				let previousEvent: { pointerId: number, x: number, y: number };
 				if (index > -1) {
 					previousEvent = this._lastPointerEventById[index];
 				} else {
@@ -618,14 +632,36 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _upCallback(ptrId, x, y, isPrimary) {
-		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0;
+	private _upCallback(ptrId: number, x: number, y: number, isPrimary: boolean = false) {
+		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0 || this._pointerOutCallbacks.length > 0 || this._pointerLeaveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
-				const event = new PointerEvent('pointerup', {
+				const up = new PointerEvent('pointerup', {
+					pointerType: 'touch',
+					pointerId,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					isPrimary,
+					pageX: x,
+					pageY: y
+				});
+				const out = new PointerEvent('pointerout', {
+					pointerType: 'touch',
+					pointerId,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					isPrimary,
+					pageX: x,
+					pageY: y
+				});
+				const leave = new PointerEvent('pointerleave', {
 					pointerType: 'touch',
 					pointerId,
 					clientX: x,
@@ -638,7 +674,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				});
 
 				for (const callback of this._pointerUpCallbacks) {
-					callback(event);
+					callback(up);
+				}
+
+				for (const callback of this._pointerOutCallbacks) {
+					callback(out);
+				}
+
+				for (const callback of this._pointerLeaveCallbacks) {
+					callback(leave);
 				}
 			}
 
@@ -701,7 +745,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _downCallback(ptrId, x, y, isPrimary = false) {
+	private _downCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
 
@@ -770,11 +814,11 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _cancelCallback(ptrid, x, y, isPrimary = false) {
+	private _cancelCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
-			const pointerId = ptrid;
+			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointercancel', {
 					pointerType: 'touch',
@@ -811,7 +855,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		if (this._touchCancelCallbacks.length > 0) {
 			const touch = new Touch({
-				identifier: ptrid,
+				identifier: ptrId,
 				target: this,
 				clientX: x,
 				clientY: y,
@@ -822,7 +866,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			});
 			const touchesList = [touch];
 			const touchesById = [];
-			touchesById[ptrid] = touch;
+			touchesById[ptrId] = touch;
 			const touches = TouchList.fromList(touchesList);
 			const touchEvent = new TouchEvent('touchcancel', {
 				touches,

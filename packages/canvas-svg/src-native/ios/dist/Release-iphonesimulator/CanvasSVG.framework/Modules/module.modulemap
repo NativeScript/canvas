@@ -1,0 +1,6 @@
+framework module CanvasSVG {
+  umbrella header "CanvasSVG.h"
+  export *
+
+  module * { export * }
+}

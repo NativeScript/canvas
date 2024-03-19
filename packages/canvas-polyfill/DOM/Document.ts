@@ -2,10 +2,10 @@ import { HTMLElement } from './HTMLElement';
 import { HTMLVideoElement } from './HTMLVideoElement';
 import { HTMLImageElement } from './HTMLImageElement';
 import { HTMLCanvasElement } from './HTMLCanvasElement';
-import { SVGElement, SVGCircleElement, SVGRectElement, SVGGElement, SVGPathElement } from './svg';
+import { HTMLDivElement } from './HTMLDivElement';
 import { Text } from './Text';
 import { Canvas } from '@nativescript/canvas';
-import { Frame } from '@nativescript/core';
+import { Frame, StackLayout } from '@nativescript/core';
 import { Node } from './Node';
 import { Element } from './Element';
 
@@ -29,6 +29,8 @@ export class Document extends Node {
 
 	createElement(tagName: string) {
 		switch ((tagName || '').toLowerCase()) {
+			case 'div':
+				return new HTMLDivElement();
 			case 'video':
 				return new HTMLVideoElement();
 			case 'img':
@@ -38,16 +40,16 @@ export class Document extends Node {
 			case 'iframe':
 				// Return nothing to keep firebase working.
 				return null;
-			// case 'svg':
-			// 	return new SVGElement();
-			// case 'rect':
-			// 	return new SVGRectElement();
-			// case 'circle':
-			// 	return new SVGCircleElement();
-			// case 'g':
-			// 	return new SVGGElement();
-			// case 'path':
-			// 	return new SVGPathElement();
+			case 'svg':
+				return new SVGElement();
+			case 'rect':
+				return new SVGRectElement();
+			case 'circle':
+				return new SVGCircleElement();
+			case 'g':
+				return new SVGGElement();
+			case 'path':
+				return new SVGPathElement();
 			default:
 				return new Element(tagName);
 		}
@@ -75,6 +77,10 @@ export class Document extends Node {
 					const canvas = new HTMLCanvasElement();
 					canvas.nativeElement = nativeElement;
 					return canvas;
+				} else if (nativeElement instanceof StackLayout) {
+					const div = new HTMLDivElement();
+					div.nativeElement = nativeElement;
+					return div;
 				}
 				const element = new HTMLElement();
 				element.nativeElement = nativeElement;
@@ -93,23 +99,25 @@ export class Document extends Node {
 	}
 
 	//@ts-ignore
-	set documentElement(value) {}
+	set documentElement(value) {
+	}
 
 	querySelectorAll(selector) {
-		return (this as any)._instance?.querySelectorAll?.(selector) ?? [];
+		return [];
+		//return (this as any)._instance?.querySelectorAll?.(selector) ?? [];
 	}
 
 	querySelector(selector) {
-		const ret = (this as any)._instance?.querySelectorAll?.(selector);
-		let element = ret?.[0] ?? null;
-		if (ret === undefined) {
-			const items = (this as any)._instance.getElementsByTagName(selector);
-			element = items[0];
-		}
-
-		if (element) {
-			return new (Element as any)(element);
-		}
+		// const ret = (this as any)._instance?.querySelectorAll?.(selector);
+		// let element = ret?.[0] ?? null;
+		// if (ret === undefined) {
+		// 	const items = (this as any)._instance.getElementsByTagName(selector);
+		// 	element = items[0];
+		// }
+		//
+		// if (element) {
+		// 	return new (Element as any)(element);
+		// }
 		return null;
 	}
 }

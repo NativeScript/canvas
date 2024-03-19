@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F11A1ABB25C238F100E60484 /* NSCSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11A1ABA25C238F100E60484 /* NSCSVG.swift */; };
 		F11C5D142524403700538D04 /* CanvasNative.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F11C5D0A2524403700538D04 /* CanvasNative.framework */; };
 		F11C5D192524403700538D04 /* CanvasNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11C5D182524403700538D04 /* CanvasNativeTests.swift */; };
 		F11C5D1B2524403700538D04 /* CanvasNative.h in Headers */ = {isa = PBXBuildFile; fileRef = F11C5D0D2524403700538D04 /* CanvasNative.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -61,7 +60,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		F11A1ABA25C238F100E60484 /* NSCSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCSVG.swift; path = CanvasNative/Source/NSCSVG.swift; sourceTree = "<group>"; };
 		F11C5D0A2524403700538D04 /* CanvasNative.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CanvasNative.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11C5D0D2524403700538D04 /* CanvasNative.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CanvasNative.h; sourceTree = "<group>"; };
 		F11C5D0E2524403700538D04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -121,7 +119,6 @@
 				F181661C26228CBA0051F06B /* NSCImageBitmap.swift */,
 				F18165C62621CECC0051F06B /* NSCRender.swift */,
 				F1DE2E4E2612F7CA0000D48F /* Utils.swift */,
-				F11A1ABA25C238F100E60484 /* NSCSVG.swift */,
 				F1A87C74255D00BA00394387 /* NSCCanvas.xib */,
 				F1FF6A5A25248CFE001DAE0D /* NSCCanvasRenderingContext2D.swift */,
 				F1FF6A6025248CFF001DAE0D /* GLRenderer.swift */,
@@ -356,7 +353,6 @@
 				F1FF6A8225248CFF001DAE0D /* GLUtils.swift in Sources */,
 				F18165C72621CECC0051F06B /* NSCRender.swift in Sources */,
 				F14908972AEA0F8D007C6693 /* NSCTouchHandler.swift in Sources */,
-				F11A1ABB25C238F100E60484 /* NSCSVG.swift in Sources */,
 				F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */,
 				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
 				F1FF6A9225248CFF001DAE0D /* NSCCanvasRenderingContext2D.swift in Sources */,

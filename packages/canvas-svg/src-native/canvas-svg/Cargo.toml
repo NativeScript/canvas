@@ -1,0 +1,28 @@
+[package]
+name = "canvas-svg"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = 3
+debug = false
+incremental = false
+strip = true
+
+
+[build]
+rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
+
+[lib]
+name = "canvassvg"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+skia-safe = { version = "0.72.0", features = ["svg"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"
+ndk = { version = "0.7.0", features = ["bitmap"] }

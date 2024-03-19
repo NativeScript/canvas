@@ -6,7 +6,7 @@ export * from './Elements';
 
 declare const TNSSVG;
 
-export class SVG extends SVGBase {
+export class Svg extends SVGBase {
 	_svg;
 
 	constructor() {
@@ -34,9 +34,9 @@ export class SVG extends SVGBase {
 				} else if (value.startsWith('/')) {
 					this._svg.srcPath = value;
 				} else if (value.startsWith('http')) {
-					Http.getString(value)
+					Http.getFile(value)
 						.then((res) => {
-							this._svg.src = res;
+							this._svg.srcPath = res.path;
 						})
 						.catch((e) => {
 							console.log(e);

@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-svg",
-  "version": "2.0.0-beta.15",
+  "version": "2.0.0-beta.16",
   "description": "Add a plugin description",
   "main": "index",
   "typings": "index.d.ts",
@@ -32,9 +32,9 @@
   "homepage": "https://github.com/NativeScript/plugins",
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
-	"dependencies": {
-		"@xmldom/xmldom": "0.8.10",
-		"query-selector": "2.0.0",
-		"set-value": "4.1.0"
-	}
+  "dependencies": {
+    "@xmldom/xmldom": "0.8.10",
+    "query-selector": "2.0.0",
+    "set-value": "4.1.0"
+  }
 }

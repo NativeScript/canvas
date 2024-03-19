@@ -51,6 +51,24 @@
         }
       ]
     },
+		"build.native.ios.framework.release": {
+			"outputs": ["{workspaceRoot}/dist/packages"],
+			"options": {
+				"commands": ["sh canvas-svg-build.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "nx:run-commands"
+		},
+		"build.native.ios.framework.debug": {
+			"outputs": ["{workspaceRoot}/dist/packages"],
+			"options": {
+				"commands": ["sh canvas-svg-build-debug.sh"],
+				"cwd": "tools/scripts",
+				"parallel": false
+			},
+			"executor": "nx:run-commands"
+		},
     "focus": {
       "executor": "nx:run-commands",
       "options": {

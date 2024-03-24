@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas",
-  "version": "2.0.0-beta.17",
+  "version": "2.0.0-beta.18",
   "description": "DOM Canvas API for NativeScript",
   "main": "index",
   "typings": "index.d.ts",
@@ -31,8 +31,5 @@
   "license": "Apache-2.0",
   "homepage": "https://github.com/NativeScript/canvas",
   "readmeFilename": "README.md",
-  "bootstrapper": "@nativescript/plugin-seed",
-  "dependencies": {
-    "xmldom": "~0.6.0"
-  }
+  "bootstrapper": "@nativescript/plugin-seed"
 }

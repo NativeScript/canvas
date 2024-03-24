@@ -1,7 +1,7 @@
-import { SVGElement } from './SVGElement';
+import { SVGGeometryElement } from './SVGGeometryElement';
 import { Circle } from '@nativescript/canvas-svg';
 
-export class SVGCircleElement extends SVGElement {
+export class SVGCircleElement extends SVGGeometryElement {
 	//__internalElement: Circle;
 	constructor() {
 		super('circle');

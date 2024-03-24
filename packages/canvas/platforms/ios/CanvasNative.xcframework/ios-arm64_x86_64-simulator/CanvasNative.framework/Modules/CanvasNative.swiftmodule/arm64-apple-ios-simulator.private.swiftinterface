@@ -91,26 +91,6 @@ import _SwiftConcurrencyShims
   @objc public func createSurface()
   @objc deinit
 }
-@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSSVG) @_Concurrency.MainActor(unsafe) public class NSCSVG : UIKit.UIView {
-  @objc @_Concurrency.MainActor(unsafe) public var autoScale: Swift.Bool {
-    @objc get
-    @objc set
-  }
-  @objc @_Concurrency.MainActor(unsafe) public var src: Swift.String? {
-    @objc get
-    @objc set
-  }
-  @objc @_Concurrency.MainActor(unsafe) public var srcPath: Swift.String? {
-    @objc get
-    @objc set
-  }
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
-  @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
-  @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
-  @objc deinit
-}
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageBitmap) public class NSCImageBitmap : ObjectiveC.NSObject {
   @objc public static let queue: Dispatch.DispatchQueue
   @objc override dynamic public init()

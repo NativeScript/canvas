@@ -3,7 +3,6 @@
 use std::ops::{Index, IndexMut};
 use std::os::raw::c_float;
 
-use skia_safe::matrix::AffineMember;
 use skia_safe::M44;
 
 #[derive(Clone, Debug)]
@@ -384,5 +383,142 @@ impl Matrix {
 
     pub fn to_m33(&self) -> skia_safe::Matrix {
         self.0.to_m33()
+    }
+
+    pub fn translate(x: f32, y: f32, multiply: &Matrix) -> Matrix {
+        let mut matrix = M44::new_identity();
+        matrix.set_translate(x, y, 0.);
+        let mut new_matrix = M44::new_identity();
+        new_matrix.set_concat(&matrix, &multiply.0);
+
+        Self(new_matrix)
+    }
+
+    pub fn translate_self(&mut self, x: f32, y: f32) -> &Matrix {
+        self.0.post_translate(x, y, None);
+        self
+    }
+
+    pub fn multiply_self(&mut self, matrix: &Matrix) -> &Matrix {
+        self.0.post_concat(&matrix.0);
+        self
+    }
+
+    pub fn premultiply_self(&mut self, matrix: &Matrix) -> &Matrix {
+        self.0.pre_concat(&matrix.0);
+        self
+    }
+
+    pub fn scale_non_uniform(sx: f32, sy: f32, multiply: &Matrix) -> Matrix {
+        let mut matrix = M44::new_identity();
+        matrix.set_translate(sx, sy, 1.);
+        let mut new_matrix = M44::new_identity();
+        new_matrix.set_concat(&matrix, &multiply.0);
+        Self(new_matrix)
+    }
+
+    pub fn scale_non_uniform_self(&mut self, sx: f32, sy: f32) -> &Matrix {
+        let mut matrix = M44::new_identity();
+        matrix.set_translate(sx, sy, 1.);
+        self.0.post_concat(&matrix);
+        self
+    }
+
+    pub fn rotate(angle: f32, cx: f32, cy: f32, multiply: &Matrix) -> Matrix {
+        let mut matrix = M44::new_identity();
+        let mut new_matrix = M44::new_identity();
+
+        let deg = angle * std::f32::consts::PI / 180.0;
+
+        if cx == 0. && cy == 0. {
+            let axis = skia_safe::V3::new(0., 0., 1.);
+            matrix.set_rotate(axis, deg);
+        } else {
+            let mut translate = M44::new_identity();
+            translate.set_translate(-cx, -cy, 0.);
+
+            let mut rotate = M44::new_identity();
+
+            let axis = skia_safe::V3::new(0., 0., 1.);
+            rotate.set_rotate(axis, deg);
+
+            let mut revert = M44::new_identity();
+            revert.set_translate(cx, cy, 0.);
+
+            new_matrix.pre_concat(&revert);
+            new_matrix.pre_concat(&rotate);
+            new_matrix.pre_concat(&translate);
+        }
+
+        new_matrix.set_concat(&matrix, &multiply.0);
+        Self(new_matrix)
+    }
+
+    pub fn rotate_self(&mut self, angle: f32, cx: f32, cy: f32) -> &Matrix {
+        let mut matrix = M44::new_identity();
+        let mut new_matrix = M44::new_identity();
+
+        let deg = angle * std::f32::consts::PI / 180.0;
+
+        if cx == 0. && cy == 0. {
+            let axis = skia_safe::V3::new(0., 0., 1.);
+            matrix.set_rotate(axis, deg);
+        } else {
+            let mut translate = M44::new_identity();
+            translate.set_translate(-cx, -cy, 0.);
+
+            let mut rotate = M44::new_identity();
+
+            let axis = skia_safe::V3::new(0., 0., 1.);
+            rotate.set_rotate(axis, deg);
+
+            let mut revert = M44::new_identity();
+            revert.set_translate(cx, cy, 0.);
+
+            new_matrix.pre_concat(&revert);
+            new_matrix.pre_concat(&rotate);
+            new_matrix.pre_concat(&translate);
+        }
+
+        self.0.post_concat(&matrix);
+        self
+    }
+
+    pub fn skew_x_matrix(angle: f32, multiply: &Matrix) -> Matrix {
+        let mut matrix = skia_safe::Matrix::new_identity();
+        let deg = angle * std::f32::consts::PI / 180.0;
+        matrix.set_skew_x(deg.tan());
+        let matrix = M44::from(matrix);
+        let mut new_matrix = M44::new_identity();
+        new_matrix.set_concat(&matrix, &multiply.0);
+        Self(new_matrix)
+    }
+
+    pub fn skew_y_matrix(angle: f32, multiply: &Matrix) -> Matrix {
+        let mut matrix = skia_safe::Matrix::new_identity();
+        let deg = angle * std::f32::consts::PI / 180.0;
+        matrix.set_skew_y(deg.tan());
+        let matrix = M44::from(matrix);
+        let mut new_matrix = M44::new_identity();
+        new_matrix.set_concat(&matrix, &multiply.0);
+        Self(new_matrix)
+    }
+
+    pub fn skew_x_self(&mut self, angle: f32) -> &Matrix {
+        let mut matrix = skia_safe::Matrix::new_identity();
+        let deg = angle * std::f32::consts::PI / 180.0;
+        matrix.set_skew_x(deg.tan());
+        let matrix = M44::from(matrix);
+        self.0.post_concat(&matrix);
+        self
+    }
+
+    pub fn skew_y_self(&mut self, angle: f32) -> &Matrix {
+        let mut matrix = skia_safe::Matrix::new_identity();
+        let deg = angle * std::f32::consts::PI / 180.0;
+        matrix.set_skew_y(deg.tan());
+        let matrix = M44::from(matrix);
+        self.0.post_concat(&matrix);
+        self
     }
 }

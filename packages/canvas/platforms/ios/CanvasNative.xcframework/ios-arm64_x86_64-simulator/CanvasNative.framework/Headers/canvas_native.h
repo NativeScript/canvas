@@ -1161,6 +1161,35 @@ float canvas_native_matrix_get_m44(const struct Matrix *matrix);
 
 void canvas_native_matrix_set_m44(struct Matrix *matrix, float m44);
 
+struct Matrix *canvas_native_matrix_translate(float x, float y, const struct Matrix *matrix);
+
+void canvas_native_matrix_translate_self(struct Matrix *matrix, float x, float y);
+
+void canvas_native_matrix_multiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+void canvas_native_matrix_premultiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+struct Matrix *canvas_native_matrix_scale_non_uniform(float sx,
+                                                      float sy,
+                                                      const struct Matrix *matrix);
+
+void canvas_native_matrix_scale_non_uniform_self(struct Matrix *matrix, float sx, float sy);
+
+struct Matrix *canvas_native_matrix_rotate(float angle,
+                                           float cx,
+                                           float cy,
+                                           const struct Matrix *matrix);
+
+void canvas_native_matrix_rotate_self(struct Matrix *matrix, float angle, float cx, float cy);
+
+struct Matrix *canvas_native_matrix_skew_x(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_x_self(struct Matrix *matrix, float angle);
+
+struct Matrix *canvas_native_matrix_skew_y(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_y_self(struct Matrix *matrix, float angle);
+
 struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
 
 int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);

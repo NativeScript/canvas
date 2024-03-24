@@ -14,6 +14,7 @@
     "@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
     "@nativescript/canvas-three": "file:../../packages/canvas-three",
     "@nativescript/core": "file:../../node_modules/@nativescript/core",
+    "@pixi-essentials/svg": "file:../../node_modules/@pixi-essentials/svg",
     "babylonjs": "file:../../node_modules/babylonjs",
     "babylonjs-materials": "file:../../node_modules/babylonjs-materials",
     "chart.js": "file:../../node_modules/chart.js",

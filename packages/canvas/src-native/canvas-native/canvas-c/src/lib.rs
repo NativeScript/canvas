@@ -3,14 +3,14 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
+use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
-use log::log;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -19,8 +19,7 @@ use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
-use canvas_2d::context::text_styles::text_direction::TextDirection;
-pub use canvas_2d::context::{Context, ContextWrapper};
+pub use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -34,7 +33,6 @@ use canvas_webgl::utils::gl::bytes_per_pixel;
 use once_cell::sync::OnceCell;
 
 use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
-
 
 
 #[repr(C)]
@@ -425,11 +423,9 @@ impl PaintStyle {
         Self(style)
     }
 
-
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
     }
-
 
     pub fn style_type(&self) -> PaintStyleType {
         if let Some(style) = self.0.as_ref() {
@@ -1076,7 +1072,6 @@ pub extern "C" fn canvas_native_context_get_shadow_offset_x(
     context.get_context().shadow_offset_x()
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_shadow_offset_x(
     context: *mut CanvasRenderingContext2D,
@@ -1087,7 +1082,6 @@ pub extern "C" fn canvas_native_context_set_shadow_offset_x(
     context.get_context_mut().set_shadow_offset_x(x)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_shadow_offset_y(
     context: *const CanvasRenderingContext2D,
@@ -1097,7 +1091,6 @@ pub extern "C" fn canvas_native_context_get_shadow_offset_y(
     context.get_context().shadow_offset_y()
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_shadow_offset_y(
     context: *mut CanvasRenderingContext2D,
@@ -1106,7 +1099,6 @@ pub extern "C" fn canvas_native_context_set_shadow_offset_y(
     let context = unsafe { &mut *context };
     context.get_context_mut().set_shadow_offset_y(y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_text_align(
@@ -1122,7 +1114,6 @@ pub extern "C" fn canvas_native_context_get_text_align(
     };
     CString::new(ret).unwrap().into_raw()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_text_align(
@@ -1144,7 +1135,6 @@ pub extern "C" fn canvas_native_context_set_text_align(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_text_baseline_str(
     context: *const CanvasRenderingContext2D,
@@ -1160,7 +1150,6 @@ pub extern "C" fn canvas_native_context_get_text_baseline_str(
     };
     CString::new(ret).unwrap().into_raw()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_text_baseline_str(
@@ -1195,7 +1184,6 @@ pub extern "C" fn canvas_native_context_set_text_baseline_str(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_text_baseline(
     context: *mut CanvasRenderingContext2D,
@@ -1206,7 +1194,6 @@ pub extern "C" fn canvas_native_context_set_text_baseline(
     context.get_context_mut().set_text_baseline(baseline.into());
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_text_baseline(
     context: *const CanvasRenderingContext2D,
@@ -1214,7 +1201,6 @@ pub extern "C" fn canvas_native_context_get_text_baseline(
     let context = unsafe { &*context };
     context.get_context().text_baseline().into()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_global_composition(
@@ -1224,7 +1210,6 @@ pub extern "C" fn canvas_native_context_get_global_composition(
     let ret = context.get_context().global_composite_operation().to_str();
     CString::new(ret).unwrap().into_raw()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_global_composition(
@@ -1245,7 +1230,6 @@ pub extern "C" fn canvas_native_context_set_global_composition(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_set_fill_color_with_c_string(
     context: *mut CanvasRenderingContext2D,
@@ -1260,7 +1244,6 @@ pub extern "C" fn canvas_native_paint_style_set_fill_color_with_c_string(
     paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_set_stroke_color_with_c_string(
     context: *mut CanvasRenderingContext2D,
@@ -1274,7 +1257,6 @@ pub extern "C" fn canvas_native_paint_style_set_stroke_color_with_c_string(
     let color = color.to_string_lossy();
     paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_set_stroke_color_with_rgba(
@@ -1295,7 +1277,6 @@ pub extern "C" fn canvas_native_paint_style_set_stroke_color_with_rgba(
     );
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_set_fill_color_with_rgba(
     context: *mut CanvasRenderingContext2D,
@@ -1315,7 +1296,6 @@ pub extern "C" fn canvas_native_paint_style_set_fill_color_with_rgba(
     );
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_parse_css_color_rgba(
     value: *const c_char,
@@ -1330,7 +1310,6 @@ pub extern "C" fn canvas_native_parse_css_color_rgba(
     let value = unsafe { CStr::from_ptr(value) };
     canvas_2d::utils::color::parse_color_rgba(value.to_string_lossy().as_ref(), r, g, b, a)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_color_string(
@@ -1353,7 +1332,6 @@ pub extern "C" fn canvas_native_paint_style_get_color_string(
     std::ptr::null()
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_string(
     context: *const CanvasRenderingContext2D,
@@ -1373,7 +1351,6 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_string(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_buf(
@@ -1395,7 +1372,6 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_buf(
 
     Box::into_raw(Box::new(U8Buffer::from(ret)))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
@@ -1419,7 +1395,6 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
     context: *const CanvasRenderingContext2D,
@@ -1442,7 +1417,6 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_fill_color_string(
     context: *const CanvasRenderingContext2D,
@@ -1462,7 +1436,6 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_string(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_paint_style_get_current_fill_color_buf(
@@ -1485,14 +1458,12 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_buf(
     Box::into_raw(Box::new(U8Buffer::from(ret)))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_style_type(style: *const PaintStyle) -> PaintStyleType {
     assert!(!style.is_null());
     let style = unsafe { &*style };
     style.style_type()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_current_fill_style_type(
@@ -1514,7 +1485,6 @@ pub extern "C" fn canvas_native_context_get_current_fill_style_type(
     };
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     context: *mut CanvasRenderingContext2D,
@@ -1535,7 +1505,6 @@ pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     };
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_fill_style(
     context: *const CanvasRenderingContext2D,
@@ -1546,7 +1515,6 @@ pub extern "C" fn canvas_native_context_get_fill_style(
         context.get_context().fill_style().clone(),
     ))))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_fill_style(
@@ -1564,7 +1532,6 @@ pub extern "C" fn canvas_native_context_set_fill_style(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_stroke_style(
     context: *const CanvasRenderingContext2D,
@@ -1575,7 +1542,6 @@ pub extern "C" fn canvas_native_context_get_stroke_style(
         context.get_context().stroke_style().clone(),
     ))))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_stroke_style(
@@ -1593,7 +1559,6 @@ pub extern "C" fn canvas_native_context_set_stroke_style(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_line_width(
     context: *const CanvasRenderingContext2D,
@@ -1602,7 +1567,6 @@ pub extern "C" fn canvas_native_context_get_line_width(
     let context = unsafe { &*context };
     context.get_context().line_width()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_line_width(
@@ -1614,7 +1578,6 @@ pub extern "C" fn canvas_native_context_set_line_width(
     context.get_context_mut().set_line_width(width);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_line_dash_offset(
     context: *const CanvasRenderingContext2D,
@@ -1623,7 +1586,6 @@ pub extern "C" fn canvas_native_context_get_line_dash_offset(
     let context = unsafe { &*context };
     context.get_context().line_dash_offset()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_line_dash_offset(
@@ -1634,7 +1596,6 @@ pub extern "C" fn canvas_native_context_set_line_dash_offset(
     let context = unsafe { &mut *context };
     context.get_context_mut().set_line_dash_offset(offset)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_line_dash(
@@ -1647,7 +1608,6 @@ pub extern "C" fn canvas_native_context_get_line_dash(
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_line_dash(
     context: *mut CanvasRenderingContext2D,
@@ -1659,7 +1619,6 @@ pub extern "C" fn canvas_native_context_set_line_dash(
     let dash = unsafe { std::slice::from_raw_parts(dash, size) };
     context.get_context_mut().set_line_dash(dash)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_arc(
@@ -1678,7 +1637,6 @@ pub extern "C" fn canvas_native_context_arc(
         .arc(x, y, radius, start_angle, end_angle, anticlockwise)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_arc_to(
     context: *mut CanvasRenderingContext2D,
@@ -1692,13 +1650,11 @@ pub extern "C" fn canvas_native_context_arc_to(
     context.get_context_mut().arc_to(x1, y1, x2, y2, radius)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_begin_path(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
     context.get_context_mut().begin_path()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_bezier_curve_to(
@@ -1716,7 +1672,6 @@ pub extern "C" fn canvas_native_context_bezier_curve_to(
         .bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clear_rect(
     context: *mut CanvasRenderingContext2D,
@@ -1729,7 +1684,6 @@ pub extern "C" fn canvas_native_context_clear_rect(
     context.make_current();
     context.get_context_mut().clear_rect(x, y, width, height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clip_str(
@@ -1749,7 +1703,6 @@ pub extern "C" fn canvas_native_context_clip_str(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clip_rule_str(
     context: *mut CanvasRenderingContext2D,
@@ -1764,7 +1717,6 @@ pub extern "C" fn canvas_native_context_clip_rule_str(
         context.get_context_mut().clip(None, Some(rule));
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clip(
@@ -1783,7 +1735,6 @@ pub extern "C" fn canvas_native_context_clip(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_clip_rule(
     context: *mut CanvasRenderingContext2D,
@@ -1797,14 +1748,12 @@ pub extern "C" fn canvas_native_context_clip_rule(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_close_path(context: *mut CanvasRenderingContext2D) {
     assert!(!context.is_null());
     let context = unsafe { &mut *context };
     context.get_context_mut().close_path()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_image_data(
@@ -1815,7 +1764,6 @@ pub extern "C" fn canvas_native_context_create_image_data(
         width, height,
     ))))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_image_data_with_data(
@@ -1831,7 +1779,6 @@ pub extern "C" fn canvas_native_context_create_image_data_with_data(
         ),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_linear_gradient(
@@ -1850,7 +1797,6 @@ pub extern "C" fn canvas_native_context_create_linear_gradient(
     ))))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_conic_gradient(
     context: *mut CanvasRenderingContext2D,
@@ -1868,7 +1814,6 @@ pub extern "C" fn canvas_native_context_create_conic_gradient(
         ),
     ))))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern(
@@ -1894,7 +1839,6 @@ pub extern "C" fn canvas_native_context_create_pattern(
         }),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_asset(
@@ -1941,7 +1885,6 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
     Box::into_raw(Box::new(PaintStyle::new(None)))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_encoded(
     context: *mut CanvasRenderingContext2D,
@@ -1965,7 +1908,6 @@ pub extern "C" fn canvas_native_context_create_pattern_encoded(
         }),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
@@ -2078,7 +2020,6 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_radial_gradient(
     context: *mut CanvasRenderingContext2D,
@@ -2100,7 +2041,6 @@ pub extern "C" fn canvas_native_context_create_radial_gradient(
     ))))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_paint(
     context: *mut CanvasRenderingContext2D,
@@ -2114,7 +2054,6 @@ pub extern "C" fn canvas_native_context_draw_paint(
     context.get_context_mut().draw_paint(color.as_ref());
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_point(
     context: *mut CanvasRenderingContext2D,
@@ -2126,7 +2065,6 @@ pub extern "C" fn canvas_native_context_draw_point(
     context.make_current();
     context.get_context_mut().draw_point(x, y);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_points(
@@ -2144,7 +2082,6 @@ pub extern "C" fn canvas_native_context_draw_points(
         .draw_points(mode.try_into().unwrap(), points);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy(
     context: *mut CanvasRenderingContext2D,
@@ -2161,12 +2098,9 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy(
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
         let context = unsafe { &mut *context };
         context.make_current();
-        context.get_context_mut().draw_image_dx_dy(
-            &image, dx, dy
-        );
+        context.get_context_mut().draw_image_dx_dy(&image, dx, dy);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
@@ -2186,12 +2120,11 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
         let context = unsafe { &mut *context };
         context.make_current();
-        context.get_context_mut().draw_image_dx_dy_dw_dh(
-            &image, dx, dy, d_width, d_height
-        );
+        context
+            .get_context_mut()
+            .draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image(
@@ -2219,7 +2152,6 @@ pub extern "C" fn canvas_native_context_draw_image(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
     context: *mut CanvasRenderingContext2D,
@@ -2239,7 +2171,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
             .draw_image_src_xywh_dst_xywh(&image, 0.0, 0.0, width, height, dx, dy, width, height);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
@@ -2262,7 +2193,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
         );
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_encoded(
@@ -2288,7 +2218,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
     context: *mut CanvasRenderingContext2D,
@@ -2306,7 +2235,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
         .get_context_mut()
         .draw_image_asset_dx_dy(&asset.0, dx, dy);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
@@ -2327,7 +2255,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
         .get_context_mut()
         .draw_image_asset_dx_dy_dw_dh(&asset.0, dx, dy, d_width, d_height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_asset(
@@ -2355,7 +2282,6 @@ pub extern "C" fn canvas_native_context_draw_image_asset(
         );
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
     context: *mut CanvasRenderingContext2D,
@@ -2380,9 +2306,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
             let mut ctx = context.get_context_mut();
 
             if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
-                ctx.draw_image_dx_dy(
-                    &image, dx, dy,
-                );
+                ctx.draw_image_dx_dy(&image, dx, dy);
             }
         }
     }
@@ -2401,13 +2325,10 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
         ) {
             let context = unsafe { &mut *context };
             context.make_current();
-            context.get_context_mut().draw_image_dx_dy(
-                &image, dx, dy
-            );
+            context.get_context_mut().draw_image_dx_dy(&image, dx, dy);
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
@@ -2435,9 +2356,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
             let mut ctx = context.get_context_mut();
 
             if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
-                ctx.draw_image_dx_dy_dw_dh(
-                    &image, dx, dy, d_width, d_height,
-                );
+                ctx.draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
             }
         }
     }
@@ -2456,13 +2375,12 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
         ) {
             let context = unsafe { &mut *context };
             context.make_current();
-            context.get_context_mut().draw_image_dx_dy_dw_dh(
-                &image, dx, dy, d_width, d_height,
-            );
+            context
+                .get_context_mut()
+                .draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_context(
@@ -2497,7 +2415,15 @@ pub extern "C" fn canvas_native_context_draw_image_context(
 
             if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
                 ctx.draw_image_src_xywh_dst_xywh(
-                    &image, sx * scale, sy * scale, s_width * scale, s_height * scale, dx, dy, d_width, d_height,
+                    &image,
+                    sx * scale,
+                    sy * scale,
+                    s_width * scale,
+                    s_height * scale,
+                    dx,
+                    dy,
+                    d_width,
+                    d_height,
                 );
             }
         }
@@ -2518,7 +2444,15 @@ pub extern "C" fn canvas_native_context_draw_image_context(
             let context = unsafe { &mut *context };
             context.make_current();
             context.get_context_mut().draw_image_src_xywh_dst_xywh(
-                &image, sx * scale, sy * scale, s_width * scale, s_height * scale, dx, dy, d_width, d_height,
+                &image,
+                sx * scale,
+                sy * scale,
+                s_width * scale,
+                s_height * scale,
+                dx,
+                dy,
+                d_width,
+                d_height,
             );
         }
     }
@@ -2552,7 +2486,6 @@ fn canvas_native_context_read_webgl_pixels(
     (width, height, buf)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_webgl(
     context: *mut CanvasRenderingContext2D,
@@ -2581,7 +2514,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_webgl(
     let size = pixels.2.len();
     canvas_native_context_draw_image_dx_dy(context, ptr, size, width, height, dx, dy);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
@@ -2617,7 +2549,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_webgl(
         context, ptr, size, width, height, dx, dy, d_width, d_height,
     );
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_webgl(
@@ -2655,10 +2586,21 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
 
     let scale = context.get_context().device().density;
     canvas_native_context_draw_image(
-        context, ptr, size, width, height, sx * scale, sy * scale, s_width * scale, s_height * scale, dx, dy, d_width, d_height,
+        context,
+        ptr,
+        size,
+        width,
+        height,
+        sx * scale,
+        sy * scale,
+        s_width * scale,
+        s_height * scale,
+        dx,
+        dy,
+        d_width,
+        d_height,
     );
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_atlas(
@@ -2705,7 +2647,6 @@ pub extern "C" fn canvas_native_context_draw_atlas(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_atlas_encoded(
     context: *mut CanvasRenderingContext2D,
@@ -2748,7 +2689,6 @@ pub extern "C" fn canvas_native_context_draw_atlas_encoded(
         );
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_atlas_asset(
@@ -2834,7 +2774,6 @@ pub extern "C" fn canvas_native_context_draw_vertices(
     );
 } */
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_ellipse(
     context: *mut CanvasRenderingContext2D,
@@ -2860,7 +2799,6 @@ pub extern "C" fn canvas_native_context_ellipse(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_str(
     context: *mut CanvasRenderingContext2D,
@@ -2877,7 +2815,6 @@ pub extern "C" fn canvas_native_context_fill_str(
         context.get_context_mut().fill_rule(None, rule);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_with_path_str(
@@ -2899,7 +2836,6 @@ pub extern "C" fn canvas_native_context_fill_with_path_str(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill(context: *mut CanvasRenderingContext2D, rule: u32) {
     if let Ok(rule) = FillRule::try_from(rule) {
@@ -2908,7 +2844,6 @@ pub extern "C" fn canvas_native_context_fill(context: *mut CanvasRenderingContex
         context.get_context_mut().fill_rule(None, rule);
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_with_path(
@@ -2925,7 +2860,6 @@ pub extern "C" fn canvas_native_context_fill_with_path(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_rect(
     context: *mut CanvasRenderingContext2D,
@@ -2940,7 +2874,6 @@ pub extern "C" fn canvas_native_context_fill_rect(
         .get_context_mut()
         .fill_rect_xywh(x, y, width, height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_text(
@@ -2960,7 +2893,6 @@ pub extern "C" fn canvas_native_context_fill_text(
         .get_context_mut()
         .fill_text(text.as_ref(), x, y, None);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_text_width(
@@ -2982,7 +2914,6 @@ pub extern "C" fn canvas_native_context_fill_text_width(
         .fill_text(text.as_ref(), x, y, Some(width));
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_oval(
     context: *mut CanvasRenderingContext2D,
@@ -2995,7 +2926,6 @@ pub extern "C" fn canvas_native_context_fill_oval(
     context.make_current();
     context.get_context_mut().fill_oval(x, y, width, height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_image_data(
@@ -3013,7 +2943,6 @@ pub extern "C" fn canvas_native_context_get_image_data(
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_transform(
     context: *mut CanvasRenderingContext2D,
@@ -3024,7 +2953,6 @@ pub extern "C" fn canvas_native_context_get_transform(
         context.get_context_mut().get_transform(),
     ))))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_str(
@@ -3047,7 +2975,6 @@ pub extern "C" fn canvas_native_context_is_point_in_path_str(
         ret
     })
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
@@ -3074,7 +3001,6 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
     })
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path(
     context: *mut CanvasRenderingContext2D,
@@ -3090,7 +3016,6 @@ pub extern "C" fn canvas_native_context_is_point_in_path(
         ret
     })
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
@@ -3111,7 +3036,6 @@ pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
     })
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_stroke(
     context: *mut CanvasRenderingContext2D,
@@ -3125,7 +3049,6 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke(
 
     ret
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
@@ -3143,7 +3066,6 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
     ret
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_line_to(
     context: *mut CanvasRenderingContext2D,
@@ -3153,7 +3075,6 @@ pub extern "C" fn canvas_native_context_line_to(
     let context = unsafe { &mut *context };
     context.get_context_mut().line_to(x, y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_measure_text(
@@ -3171,7 +3092,6 @@ pub extern "C" fn canvas_native_context_measure_text(
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_move_to(
     context: *mut CanvasRenderingContext2D,
@@ -3181,7 +3101,6 @@ pub extern "C" fn canvas_native_context_move_to(
     let context = unsafe { &mut *context };
     context.get_context_mut().move_to(x, y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_put_image_data(
@@ -3207,7 +3126,6 @@ pub extern "C" fn canvas_native_context_put_image_data(
     );
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_quadratic_curve_to(
     context: *mut CanvasRenderingContext2D,
@@ -3219,7 +3137,6 @@ pub extern "C" fn canvas_native_context_quadratic_curve_to(
     let context = unsafe { &mut *context };
     context.get_context_mut().quadratic_curve_to(cpx, cpy, x, y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_rect(
@@ -3252,7 +3169,6 @@ pub extern "C" fn canvas_native_context_round_rect(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_round_rect_tl_tr_br_bl(
     context: *mut CanvasRenderingContext2D,
@@ -3281,7 +3197,6 @@ pub extern "C" fn canvas_native_context_round_rect_tl_tr_br_bl(
         .round_rect(x, y, width, height, radii.as_ref())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_reset_transform(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
@@ -3289,13 +3204,11 @@ pub extern "C" fn canvas_native_context_reset_transform(context: *mut CanvasRend
     context.get_context_mut().reset_transform();
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_restore(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
     context.get_context_mut().restore()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_rotate(context: *mut CanvasRenderingContext2D, angle: f32) {
@@ -3304,13 +3217,11 @@ pub extern "C" fn canvas_native_context_rotate(context: *mut CanvasRenderingCont
     context.get_context_mut().rotate(angle);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_save(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
     context.get_context_mut().save()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_scale(
@@ -3322,7 +3233,6 @@ pub extern "C" fn canvas_native_context_scale(
     context.make_current();
     context.get_context_mut().scale(x, y);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_transform(
@@ -3339,7 +3249,6 @@ pub extern "C" fn canvas_native_context_set_transform(
     context.get_context_mut().set_transform(a, b, c, d, e, f);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_transform_matrix(
     context: *mut CanvasRenderingContext2D,
@@ -3352,14 +3261,12 @@ pub extern "C" fn canvas_native_context_set_transform_matrix(
     context.get_context_mut().set_transform_matrix(&matrix);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
     context.make_current();
     context.get_context_mut().stroke(None);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_with_path(
@@ -3370,7 +3277,6 @@ pub extern "C" fn canvas_native_context_stroke_with_path(
     context.make_current();
     context.get_context_mut().stroke(Some(path.inner_mut()));
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_rect(
@@ -3386,7 +3292,6 @@ pub extern "C" fn canvas_native_context_stroke_rect(
         .get_context_mut()
         .stroke_rect_xywh(x, y, width, height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_text(
@@ -3406,7 +3311,6 @@ pub extern "C" fn canvas_native_context_stroke_text(
         .get_context_mut()
         .stroke_text(text.as_ref(), x, y, None);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_text_width(
@@ -3428,7 +3332,6 @@ pub extern "C" fn canvas_native_context_stroke_text_width(
         .stroke_text(text.as_ref(), x, y, Some(width));
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_oval(
     context: *mut CanvasRenderingContext2D,
@@ -3441,7 +3344,6 @@ pub extern "C" fn canvas_native_context_stroke_oval(
     context.make_current();
     context.get_context_mut().stroke_oval(x, y, width, height);
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_transform(
@@ -3458,7 +3360,6 @@ pub extern "C" fn canvas_native_context_transform(
     context.get_context_mut().transform(a, b, c, d, e, f);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_translate(
     context: *mut CanvasRenderingContext2D,
@@ -3470,14 +3371,12 @@ pub extern "C" fn canvas_native_context_translate(
     context.get_context_mut().translate(x, y);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_flush(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
     context.make_current();
     context.get_context_mut().flush();
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_render(context: *const CanvasRenderingContext2D) {
@@ -3487,7 +3386,6 @@ pub extern "C" fn canvas_native_context_render(context: *const CanvasRenderingCo
     let context = unsafe { &*context };
     context.render();
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_to_data_url(
@@ -3510,7 +3408,6 @@ pub extern "C" fn canvas_native_to_data_url(
 /* CanvasRenderingContext2D */
 
 /* ImageBitmap */
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_asset(
@@ -3540,7 +3437,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset(
         ),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
@@ -3574,7 +3470,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
     bytes: *const u8,
@@ -3600,7 +3495,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
         ),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -3632,7 +3526,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
     output.is_valid()
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     bytes: *const u8,
@@ -3662,7 +3555,6 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
         ),
     )))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
@@ -3739,12 +3631,10 @@ pub extern "C" fn canvas_native_path_add_path(path: *mut Path, path_to_add: *con
     path.0.add_path(&path_to_add.0, None);
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_create() -> *mut Path {
     Box::into_raw(Box::new(Path::default()))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_create_with_path(path: *const Path) -> *mut Path {
@@ -3754,7 +3644,6 @@ pub extern "C" fn canvas_native_path_create_with_path(path: *const Path) -> *mut
     let path = unsafe { &*path };
     Box::into_raw(Box::new(path.clone()))
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_create_with_string(string: *const c_char) -> *mut Path {
@@ -3768,7 +3657,6 @@ pub extern "C" fn canvas_native_path_create_with_string(string: *const c_char) -
     )))
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_close_path(path: *mut Path) {
     if path.is_null() {
@@ -3777,7 +3665,6 @@ pub extern "C" fn canvas_native_path_close_path(path: *mut Path) {
     let path = unsafe { &mut *path };
     path.0.close_path()
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_move_to(path: *mut Path, x: f32, y: f32) {
@@ -3788,7 +3675,6 @@ pub extern "C" fn canvas_native_path_move_to(path: *mut Path, x: f32, y: f32) {
     path.0.move_to(x, y)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_line_to(path: *mut Path, x: f32, y: f32) {
     if path.is_null() {
@@ -3797,7 +3683,6 @@ pub extern "C" fn canvas_native_path_line_to(path: *mut Path, x: f32, y: f32) {
     let path = unsafe { &mut *path };
     path.0.line_to(x, y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_bezier_curve_to(
@@ -3816,7 +3701,6 @@ pub extern "C" fn canvas_native_path_bezier_curve_to(
     path.0.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_quadratic_curve_to(
     path: *mut Path,
@@ -3831,7 +3715,6 @@ pub extern "C" fn canvas_native_path_quadratic_curve_to(
     let path = unsafe { &mut *path };
     path.0.quadratic_curve_to(cpx, cpy, x, y)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_arc(
@@ -3851,7 +3734,6 @@ pub extern "C" fn canvas_native_path_arc(
         .arc(x, y, radius, start_angle, end_angle, anti_clockwise)
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_arc_to(
     path: *mut Path,
@@ -3867,7 +3749,6 @@ pub extern "C" fn canvas_native_path_arc_to(
     let path = unsafe { &mut *path };
     path.0.arc_to(x1, y1, x2, y2, radius)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_ellipse(
@@ -3897,7 +3778,6 @@ pub extern "C" fn canvas_native_path_ellipse(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_rect(
     path: *mut Path,
@@ -3912,7 +3792,6 @@ pub extern "C" fn canvas_native_path_rect(
     let path = unsafe { &mut *path };
     path.0.rect(x, y, width, height)
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_round_rect(
@@ -3992,7 +3871,6 @@ pub extern "C" fn canvas_native_path_round_rect(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_path_round_rect_tl_tr_br_bl(
     path: *mut Path,
@@ -4025,7 +3903,6 @@ pub extern "C" fn canvas_native_path_round_rect_tl_tr_br_bl(
         ],
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_path_to_string(path: *const Path) -> *const c_char {
@@ -4366,6 +4243,139 @@ pub extern "C" fn canvas_native_matrix_set_m44(matrix: *mut Matrix, m44: f32) {
     matrix.inner_mut().set_m44(m44)
 }
 
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_translate(
+    x: f32,
+    y: f32,
+    matrix: *const Matrix,
+) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+
+    let ret = canvas_2d::context::matrix::Matrix::translate(x, y, &matrix.0);
+
+    Box::into_raw(Box::new(Matrix(ret)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_translate_self(matrix: *mut Matrix, x: f32, y: f32) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    matrix.0.translate_self(x, y);
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_multiply_self(matrix: *mut Matrix, value: *const Matrix) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    let value = unsafe { &*value };
+    matrix.0.multiply_self(&value.0);
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_premultiply_self(matrix: *mut Matrix, value: *const Matrix) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    let value = unsafe { &*value };
+    matrix.0.premultiply_self(&value.0);
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_scale_non_uniform(
+    sx: f32,
+    sy: f32,
+    matrix: *const Matrix,
+) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+    let ret = canvas_2d::context::matrix::Matrix::scale_non_uniform(sx, sy, &matrix.0);
+
+    Box::into_raw(Box::new(Matrix(ret)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_scale_non_uniform_self(
+    matrix: *mut Matrix,
+    sx: f32,
+    sy: f32,
+) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    matrix.0.scale_non_uniform_self(sx, sy);
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_rotate(
+    angle: f32,
+    cx: f32,
+    cy: f32,
+    matrix: *const Matrix,
+) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+    let ret = canvas_2d::context::matrix::Matrix::rotate(angle, cx, cy, &matrix.0);
+    Box::into_raw(Box::new(Matrix(ret)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_rotate_self(
+    matrix: *mut Matrix,
+    angle: f32,
+    cx: f32,
+    cy: f32
+) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    matrix.0.rotate_self(angle, cx, cy);
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_skew_x(
+    angle: f32,
+    matrix: *const Matrix,
+) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+    let ret = canvas_2d::context::matrix::Matrix::skew_x_matrix(angle, &matrix.0);
+    Box::into_raw(Box::new(Matrix(ret)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_skew_x_self(
+    matrix: *mut Matrix,
+    angle: f32,
+) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    matrix.0.skew_x_self(angle);
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_skew_y(
+    angle: f32,
+    matrix: *const Matrix,
+) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+    let ret = canvas_2d::context::matrix::Matrix::skew_y_matrix(angle, &matrix.0);
+    Box::into_raw(Box::new(Matrix(ret)))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_skew_y_self(
+    matrix: *mut Matrix,
+    angle: f32,
+) {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &mut *matrix };
+    matrix.0.skew_y_self(angle);
+}
 /* DOMMatrix */
 
 /* ImageData */
@@ -7127,13 +7137,11 @@ pub extern "C" fn canvas_native_webgl_check_frame_buffer_status(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_clear(mask: u32, state: *mut WebGLState) {
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_clear(mask, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_clear_color(
@@ -7153,20 +7161,17 @@ pub extern "C" fn canvas_native_webgl_clear_color(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_clear_depth(depth: f32, state: *mut WebGLState) {
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_clear_depth(depth, state.get_inner_mut())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_clear_stencil(stencil: i32, state: *mut WebGLState) {
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_clear_stencil(stencil, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_color_mask(
@@ -7463,7 +7468,6 @@ pub extern "C" fn canvas_native_webgl_disable_vertex_attrib_array(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_draw_arrays(
     mode: u32,
@@ -7475,7 +7479,6 @@ pub extern "C" fn canvas_native_webgl_draw_arrays(
     canvas_webgl::webgl::canvas_native_webgl_draw_arrays(mode, first, count, state.get_inner_mut())
     // Flush Context
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_draw_elements(
@@ -8300,12 +8303,11 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas.make_current();
     let mut source_ctx = canvas.get_context_mut();
 
-
     if let Some(snapshot) = source_ctx.raster_snapshot() {
         let width = snapshot.width();
         let height = snapshot.height();
 
-       let premultiply = state.get_inner().get_premultiplied_alpha();
+        let premultiply = state.get_inner().get_premultiplied_alpha();
 
         let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format, premultiply);
 
@@ -8703,14 +8705,12 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1f(location: i32, v0: f32, state: *mut WebGLState) {
     assert!(!state.is_null());
     let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform1f(location, v0, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1fv(
@@ -8725,14 +8725,12 @@ pub extern "C" fn canvas_native_webgl_uniform1fv(
     canvas_webgl::webgl::canvas_native_webgl_uniform1fv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1i(location: i32, v0: i32, state: *mut WebGLState) {
     assert!(!state.is_null());
     let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform1i(location, v0, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform1iv(
@@ -8747,7 +8745,6 @@ pub extern "C" fn canvas_native_webgl_uniform1iv(
     canvas_webgl::webgl::canvas_native_webgl_uniform1iv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2f(
     location: i32,
@@ -8759,7 +8756,6 @@ pub extern "C" fn canvas_native_webgl_uniform2f(
     let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform2f(location, v0, v1, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2fv(
@@ -8775,7 +8771,6 @@ pub extern "C" fn canvas_native_webgl_uniform2fv(
     canvas_webgl::webgl::canvas_native_webgl_uniform2fv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2i(
     location: i32,
@@ -8787,7 +8782,6 @@ pub extern "C" fn canvas_native_webgl_uniform2i(
     let state = unsafe { &*state };
     canvas_webgl::webgl::canvas_native_webgl_uniform2i(location, v0, v1, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform2iv(
@@ -8802,7 +8796,6 @@ pub extern "C" fn canvas_native_webgl_uniform2iv(
     canvas_webgl::webgl::canvas_native_webgl_uniform2iv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3f(
     location: i32,
@@ -8815,7 +8808,6 @@ pub extern "C" fn canvas_native_webgl_uniform3f(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform3f(location, v0, v1, v2, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3fv(
@@ -8830,7 +8822,6 @@ pub extern "C" fn canvas_native_webgl_uniform3fv(
     canvas_webgl::webgl::canvas_native_webgl_uniform3fv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3i(
     location: i32,
@@ -8843,7 +8834,6 @@ pub extern "C" fn canvas_native_webgl_uniform3i(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform3i(location, v0, v1, v2, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform3iv(
@@ -8858,7 +8848,6 @@ pub extern "C" fn canvas_native_webgl_uniform3iv(
     canvas_webgl::webgl::canvas_native_webgl_uniform3iv(location, value, state.get_inner())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4f(
     location: i32,
@@ -8872,7 +8861,6 @@ pub extern "C" fn canvas_native_webgl_uniform4f(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform4f(location, v0, v1, v2, v3, state.get_inner())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4fv(
@@ -8908,7 +8896,6 @@ pub extern "C" fn canvas_native_webgl_uniform4i(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform4iv(
     location: i32,
@@ -8921,7 +8908,6 @@ pub extern "C" fn canvas_native_webgl_uniform4iv(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_uniform4iv(location, value, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
@@ -8942,7 +8928,6 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix2fv(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
     location: i32,
@@ -8961,7 +8946,6 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix3fv(
         state.get_inner_mut(),
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_uniform_matrix4fv(
@@ -8982,14 +8966,12 @@ pub extern "C" fn canvas_native_webgl_uniform_matrix4fv(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_use_program(program: u32, state: *mut WebGLState) {
     assert!(!state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_use_program(program, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_validate_program(program: u32, state: *mut WebGLState) {
@@ -8998,14 +8980,12 @@ pub extern "C" fn canvas_native_webgl_validate_program(program: u32, state: *mut
     canvas_webgl::webgl::canvas_native_webgl_validate_program(program, state.get_inner_mut())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib1f(index: u32, v0: f32, state: *mut WebGLState) {
     assert!(!state.is_null());
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1f(index, v0, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib1fv(
@@ -9020,7 +9000,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib1fv(
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib1fv(index, value, state.get_inner_mut())
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib2f(
     index: u32,
@@ -9032,7 +9011,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib2f(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2f(index, v0, v1, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib2fv(
@@ -9046,7 +9024,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib2fv(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib2fv(index, value, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib3f(
@@ -9067,7 +9044,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib3f(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib3fv(
     index: u32,
@@ -9080,7 +9056,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib3fv(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib3fv(index, value, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib4f(
@@ -9103,7 +9078,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib4f(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib4fv(
     index: u32,
@@ -9116,7 +9090,6 @@ pub extern "C" fn canvas_native_webgl_vertex_attrib4fv(
     let state = unsafe { &mut *state };
     canvas_webgl::webgl::canvas_native_webgl_vertex_attrib4fv(index, value, state.get_inner_mut())
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_vertex_attrib_pointer(
@@ -10749,7 +10722,6 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x3fv(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
     location: i32,
@@ -10768,7 +10740,6 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix2x4fv(
         state.get_inner_mut(),
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
@@ -10789,7 +10760,6 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x2fv(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
     location: i32,
@@ -10809,7 +10779,6 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix3x4fv(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
     location: i32,
@@ -10828,7 +10797,6 @@ pub extern "C" fn canvas_native_webgl2_uniform_matrix4x2fv(
         state.get_inner_mut(),
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_uniform_matrix4x3fv(
@@ -10864,7 +10832,6 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_divisor(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4i(
     index: u32,
@@ -10886,7 +10853,6 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4i(
     )
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4iv(
     index: u32,
@@ -10903,7 +10869,6 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4iv(
         state.get_inner_mut(),
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4ui(
@@ -10925,7 +10890,6 @@ pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4ui(
         state.get_inner_mut(),
     )
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_vertex_attrib_i4uiv(

@@ -18,7 +18,11 @@ rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
 
 [lib]
 name = "canvassvg"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["staticlib"]
+
+
+#name = "canvassvg"
+#crate-type = ["cdylib"]
 
 [dependencies]
 skia-safe = { version = "0.72.0", features = ["svg"] }

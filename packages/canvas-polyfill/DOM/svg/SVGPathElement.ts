@@ -1,7 +1,7 @@
-import { SVGElement } from './SVGElement';
+import { SVGGraphicsElement } from './SVGGraphicsElement';
 import { Path } from '@nativescript/canvas-svg';
 
-export class SVGPathElement extends SVGElement {
+export class SVGPathElement extends SVGGraphicsElement {
 	constructor() {
 		super('path');
 		this.nativeElement = new Path();

@@ -446,20 +446,6 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (void)createSurface;
 @end
 
-
-SWIFT_CLASS_NAMED("NSCSVG")
-@interface TNSSVG : UIView
-@property (nonatomic) BOOL autoScale;
-@property (nonatomic, copy) NSString * _Nullable src;
-@property (nonatomic, copy) NSString * _Nullable srcPath;
-- (void)layoutSubviews;
-- (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
-- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
-- (void)drawRect:(CGRect)rect;
-- (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
-- (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
-@end
-
 @class AVPlayer;
 @class AVPlayerItemVideoOutput;
 
@@ -927,20 +913,6 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
 - (void)createSurface;
-@end
-
-
-SWIFT_CLASS_NAMED("NSCSVG")
-@interface TNSSVG : UIView
-@property (nonatomic) BOOL autoScale;
-@property (nonatomic, copy) NSString * _Nullable src;
-@property (nonatomic, copy) NSString * _Nullable srcPath;
-- (void)layoutSubviews;
-- (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
-- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
-- (void)drawRect:(CGRect)rect;
-- (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
-- (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
 @end
 
 @class AVPlayer;

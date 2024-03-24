@@ -141,10 +141,6 @@ bool canvas_native_context_draw_image_with_bytes(int64_t context,
                                                  float d_width,
                                                  float d_height);
 
-void canvas_native_svg_draw_from_string(int64_t context, const char *svg);
-
-void canvas_native_svg_draw_from_path(int64_t context, const char *path);
-
 void canvas_native_context_custom_with_buffer_flush(int64_t context,
                                                     uint8_t *bytes,
                                                     uintptr_t size,

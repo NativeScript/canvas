@@ -200,6 +200,87 @@ export class DOMMatrix {
 		this.nativeInstance.m44 = value;
 	}
 
+	translate(x: number, y: number) {
+		const val = this.native.translate(x, y, this.native);
+		if (val) {
+			return new DOMMatrix(val);
+		}
+
+		return null;
+	}
+
+	translateSelf(x: number, y: number) {
+		this.native.translateSelf(x, y);
+	}
+
+	multiplySelf(matrix: DOMMatrix) {
+		this.native.multiplySelf(matrix);
+	}
+
+	preMultiplySelf(matrix: DOMMatrix) {
+		this.native.premultiplySelf(matrix);
+	}
+
+	scaleNonUniform(x: number, y: number) {
+		const val = this.native.scaleNonUniform(x, y, this.native);
+		if (val) {
+			return new DOMMatrix(val);
+		}
+
+		return null;
+	}
+
+	scale(x: number, y: number) {
+		return this.scaleNonUniform(x, y);
+	}
+
+	scaleNonUniformSelf(x: number, y: number) {
+		this.native.scaleNonUniformSelf(x, y);
+	}
+
+	scaleSelf(x: number, y: number) {
+		this.scaleNonUniformSelf(x, y);
+	}
+
+	rotate(angle: number, cx: number, cy: number) {
+		const val = this.native.rotate(angle, cx, cy, this.native);
+		if (val) {
+			return new DOMMatrix(val);
+		}
+
+		return null;
+	}
+
+	rotateSelf(angle: number, cx: number, cy: number) {
+		this.native.rotateSelf(angle, cx, cy);
+	}
+
+	skewX(angle: number) {
+		const val = this.native.skewX(angle, this.native);
+		if (val) {
+			return new DOMMatrix(val);
+		}
+
+		return null;
+	}
+
+	skewXSelf(angle: number) {
+		this.native.skewXSelf(angle);
+	}
+
+	skewY(angle: number) {
+		const val = this.native.skewY(angle, this.native);
+		if (val) {
+			return new DOMMatrix(val);
+		}
+
+		return null;
+	}
+
+	skewYSelf(angle: number) {
+		this.native.skewYSelf(angle);
+	}
+
 	toJSON() {
 		return {
 			a: this.a,

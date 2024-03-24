@@ -1,6 +1,6 @@
 import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 export const cxProperty = new Property<Circle, any>({
 	name: 'cx',
 });

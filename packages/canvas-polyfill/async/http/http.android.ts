@@ -81,7 +81,8 @@ const textTypes: string[] = [
     'application/xml',
     'application/rss+xml',
     'text/html',
-    'text/xml'
+    'text/xml',
+    'image/svg+xml'
 ];
 
 const isTextContentType = (contentType: string): boolean => {

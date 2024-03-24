@@ -579,6 +579,7 @@ pub extern "C" fn canvas_native_context_draw_image_with_bytes(
     )
 }
 
+/*
 #[no_mangle]
 pub extern "C" fn canvas_native_svg_draw_from_string(context: i64, svg: *const c_char) {
     if context == 0 || svg.is_null() {
@@ -612,6 +613,9 @@ pub extern "C" fn canvas_native_svg_draw_from_path(context: i64, path: *const c_
     let path = path.to_string_lossy();
     canvas_2d::svg::draw_svg_from_path(&mut context, path.as_ref());
 }
+
+*/
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_custom_with_buffer_flush(

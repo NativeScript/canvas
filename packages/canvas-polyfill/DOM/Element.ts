@@ -33,7 +33,6 @@ export class DOMRect extends DOMRectReadOnly {
 	}
 }
 
-
 export class Element extends Node {
 	private _classList = new Set();
 	_nativeElement: ViewBase;
@@ -42,7 +41,6 @@ export class Element extends Node {
 	private _attrs: Map<string, any> = new Map<string, unknown>();
 	private _attributeOriginalValue: Map<string, unknown> = new Map();
 	private _jsBuffer: Float32Array;
-
 
 	set nativeElement(value) {
 		this._nativeElement = value;
@@ -74,6 +72,61 @@ export class Element extends Node {
 
 	get tagName() {
 		return this.nodeName;
+	}
+
+	get children() {
+		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		if (element) {
+			const ret = [];
+			const length = element?.childNodes?.length ?? 0;
+
+			for (let i = 0; i < length; i++) {
+				const node = element.childNodes.item(i);
+				if (node) {
+					switch (node.nodeName) {
+						case 'line':
+							{
+								const line = new SVGLineElement() as any;
+								line.__instance = node;
+								ret.push(line);
+							}
+							break;
+						case 'polyline':
+							{
+								const polyline = new SVGPolylineElement() as any;
+								polyline.__instance = node;
+								ret.push(polyline);
+							}
+							break;
+						case 'g':
+							{
+								const g = new SVGGElement() as any;
+								g.__instance = node;
+								ret.push(g);
+							}
+							break;
+						case 'path':
+							{
+								const path = new SVGPathElement() as any;
+								path.__instance = node;
+								ret.push(path);
+							}
+							break;
+						case 'rect':
+							{
+								const rect = new SVGRectElement() as any;
+								rect.__instance = node;
+								ret.push(rect);
+							}
+							break;
+					}
+				}
+			}
+
+			return ret;
+		}
+
+		return [];
 	}
 
 	getAttribute(key: string): unknown {
@@ -108,11 +161,9 @@ export class Element extends Node {
 		}
 	}
 
-	setAttributeNS() {
-	}
+	setAttributeNS() {}
 
-	removeAttributeNS() {
-	}
+	removeAttributeNS() {}
 
 	querySelector(selector: string) {
 		const selection = querySelector(selector, this);
@@ -125,7 +176,6 @@ export class Element extends Node {
 	querySelectorAll(selector: string) {
 		return querySelector(selector, this);
 	}
-
 
 	getBoundingClientRect() {
 		const nativeElement = this['nativeElement'];
@@ -152,7 +202,7 @@ export class Element extends Node {
 			x: 0,
 			y: 0,
 			width: this.innerWidth,
-			height: this.innerHeight
+			height: this.innerHeight,
 		};
 	}
 
@@ -216,9 +266,7 @@ export class Element extends Node {
 		return {};
 	}
 
-	setPointerCapture(id: string) {
-	}
+	setPointerCapture(id: string) {}
 
-	releasePointerCapture(id: string) {
-	}
+	releasePointerCapture(id: string) {}
 }

@@ -8,16 +8,16 @@ import { Canvas } from '@nativescript/canvas';
 import { Frame, StackLayout } from '@nativescript/core';
 import { Node } from './Node';
 import { Element } from './Element';
-
+import { SVGSVGElement } from './svg/SVGSVGElement';
 export class Document extends Node {
 	readonly body: Element;
 	private _documentElement: Element;
 	private readyState: string;
 	readonly head: Element;
-
+	__instance: Document;
 	get defaultView() {
 		return global.window;
-	};
+	}
 
 	constructor() {
 		super('#document');
@@ -41,7 +41,7 @@ export class Document extends Node {
 				// Return nothing to keep firebase working.
 				return null;
 			case 'svg':
-				return new SVGElement();
+				return new SVGSVGElement('svg');
 			case 'rect':
 				return new SVGRectElement();
 			case 'circle':
@@ -69,6 +69,9 @@ export class Document extends Node {
 	}
 
 	getElementById(id: string) {
+		if (this.__instance) {
+			return this.__instance.getElementById(id);
+		}
 		const topmost = Frame.topmost();
 		if (topmost) {
 			const nativeElement = topmost.getViewById(id);
@@ -91,24 +94,34 @@ export class Document extends Node {
 	}
 
 	getElementsByTagName(tagname: string) {
+		if (this.__instance) {
+			return this.__instance.getElementsByTagName(tagname);
+		}
 		return [];
 	}
 
 	get documentElement() {
-		return this._documentElement;
+		if (this._documentElement) {
+			return this._documentElement;
+		}
+		if (this.__instance) {
+			return this.__instance?.documentElement;
+		}
+		return null;
 	}
 
 	//@ts-ignore
-	set documentElement(value) {
-	}
+	set documentElement(value) {}
 
 	querySelectorAll(selector) {
+		if (this.__instance) {
+			return this.__instance.querySelectorAll?.(selector) ?? [];
+		}
 		return [];
-		//return (this as any)._instance?.querySelectorAll?.(selector) ?? [];
 	}
 
 	querySelector(selector) {
-		// const ret = (this as any)._instance?.querySelectorAll?.(selector);
+		const ret = this.__instance?.querySelectorAll?.(selector);
 		// let element = ret?.[0] ?? null;
 		// if (ret === undefined) {
 		// 	const items = (this as any)._instance.getElementsByTagName(selector);

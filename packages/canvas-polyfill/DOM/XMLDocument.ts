@@ -19,6 +19,7 @@ export class XMLDocument extends Doc {
 			const doc = new XMLDocument();
 			doc.__instance = instance;
 			const documentElement = instance?.documentElement;
+
 			if (documentElement?.nodeName === 'svg' && documentElement?.namespaceURI === 'http://www.w3.org/2000/svg') {
 				const svg = new SVGSVGElement('svg') as any;
 				svg.__instance = instance.documentElement;

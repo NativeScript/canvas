@@ -1184,6 +1184,27 @@ void MatrixImpl::SkewYSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 }
 
+void MatrixImpl::Clone(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    auto matrix = canvas_native_matrix_clone(ptr->GetMatrix());
+
+
+    auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+    auto object = new MatrixImpl(matrix);
+
+    ret->SetAlignedPointerInInternalField(0, object);
+
+    SetNativeType(ret, NativeType::Matrix);
+
+    object->BindFinalizer(isolate, ret);
+
+    args.GetReturnValue().Set(ret);
+}
+
 
 Matrix *MatrixImpl::GetMatrix() {
     return this->matrix_;

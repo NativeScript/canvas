@@ -7,19 +7,29 @@ const SVG_TRANSFORM_SKEWX = 5;
 const SVG_TRANSFORM_SKEWY = 6;
 
 export class SVGTransformList extends Array {
-	clear() {}
+	clear() {
+		this.splice(0);
+	}
 
 	getItem(index: number) {
 		return this[index];
 	}
 
-	insertItemBefore(newItem: SVGTransform, index: number) {}
+	insertItemBefore(newItem: SVGTransform, index: number) {
+		this.splice(index - 1, 0, newItem);
+	}
 
-	replaceItem(newItem: SVGTransform, index: number) {}
+	replaceItem(newItem: SVGTransform, index: number) {
+		this[index] = newItem;
+	}
 
-	removeItem(index: number) {}
+	removeItem(index: number) {
+		this.splice(index, 1);
+	}
 
-	appendItem(newItem: SVGTransform) {}
+	appendItem(newItem: SVGTransform) {
+		this.push(newItem);
+	}
 
 	consolidate() {}
 

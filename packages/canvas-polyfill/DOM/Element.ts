@@ -2,7 +2,7 @@ import { Node } from './Node';
 import { ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 import querySelector from 'query-selector';
-
+import { HTMLCollection } from './HTMLCollection';
 declare const NSCanvas;
 
 export class DOMRectReadOnly {
@@ -77,7 +77,7 @@ export class Element extends Node {
 	get children() {
 		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
 		if (element) {
-			const ret = [];
+			const ret = new HTMLCollection();
 			const length = element?.childNodes?.length ?? 0;
 
 			for (let i = 0; i < length; i++) {

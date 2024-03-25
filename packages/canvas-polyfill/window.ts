@@ -4,8 +4,10 @@ import { HTMLImageElement } from './DOM/HTMLImageElement';
 import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
+import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
 import { Device, fromObject, View } from '@nativescript/core';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
+import { HTMLCollection } from './DOM/HTMLCollection';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
@@ -26,9 +28,12 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 (global as any).window.WebGLRenderingContext = (global as any).WebGLRenderingContext = (global as any).WebGLRenderingContext || WebGLRenderingContext;
 (global as any).window.WebGL2RenderingContext = (global as any).WebGL2RenderingContext = (global as any).WebGL2RenderingContext || WebGL2RenderingContext;
 (global as any).window.ImageData = (global as any).ImageData = (global as any).ImageData || ImageData;
+(global as any).window.DOMPoint = (global as any).DOMPoint = (global as any).DOMPoint || DOMPoint;
+(global as any).window.DOMPointReadOnly = (global as any).DOMPointReadOnly = (global as any).DOMPointReadOnly || DOMPointReadOnly;
+(global as any).window.HTMLCollection = (global as any).HTMLCollection = (global as any).HTMLCollection || HTMLCollection;
 
 // svg
-import { SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement } from './DOM/svg';
+import { SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
 
 (global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
 (global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
@@ -38,11 +43,22 @@ import { SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMas
 (global as any).window.SVGLineElement = (global as any).SVGLineElement = (global as any).SVGLineElement || SVGLineElement;
 (global as any).window.SVGLength = (global as any).SVGLength = (global as any).SVGLength || SVGLength;
 (global as any).window.SVGAnimatedLength = (global as any).SVGAnimatedLength = (global as any).SVGAnimatedLength || SVGAnimatedLength;
-
 (global as any).window.SVGPolylineElement = (global as any).SVGPolylineElement = (global as any).SVGPolylineElement || SVGPolylineElement;
 (global as any).window.SVGGElement = (global as any).SVGGElement = (global as any).SVGGElement || SVGGElement;
 (global as any).window.SVGPathElement = (global as any).SVGPathElement = (global as any).SVGPathElement || SVGPathElement;
 (global as any).window.SVGRectElement = (global as any).SVGRectElement = (global as any).SVGRectElement || SVGRectElement;
+(global as any).window.SVGAnimatedString = (global as any).SVGAnimatedString = (global as any).SVGAnimatedString || SVGAnimatedString;
+
+(global as any).window.SVGPoint = (global as any).SVGPoint = (global as any).SVGPoint || SVGPoint;
+(global as any).window.SVGAngle = (global as any).SVGAngle = (global as any).SVGAngle || SVGAngle;
+(global as any).window.SVGMatrix = (global as any).SVGMatrix = (global as any).SVGMatrix || SVGMatrix;
+(global as any).window.SVGNumber = (global as any).SVGNumber = (global as any).SVGNumber || SVGNumber;
+(global as any).window.SVGRect = (global as any).SVGRect = (global as any).SVGRect || SVGRect;
+(global as any).window.SVGTransform = (global as any).SVGTransform = (global as any).SVGTransform || SVGTransform;
+(global as any).window.SVGPointList = (global as any).SVGPointList = (global as any).SVGPointList || SVGPointList;
+(global as any).window.SVGTransformList = (global as any).SVGTransformList = (global as any).SVGTransformList || SVGTransformList;
+(global as any).window.SVGAnimatedRect = (global as any).SVGAnimatedRect = (global as any).SVGAnimatedRect || SVGAnimatedRect;
+
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {

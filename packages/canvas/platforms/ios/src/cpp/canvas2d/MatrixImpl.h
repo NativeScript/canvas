@@ -209,6 +209,8 @@ public:
 
     static void SkewYSelf(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void Clone(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 private:
     Matrix* matrix_;
 };

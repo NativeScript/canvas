@@ -10,11 +10,14 @@ let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
 
 Application.on('discardedError', (args) => {
-	console.log(args.error);
+	console.log('discardedError', args.error, args);
+});
+
+Application.on('uncaughtError', (args) => {
+	console.log('uncaughtError', args.error, args);
 });
 global.process = {} as any;
 global.process.env = {} as any;
-
 
 // 0.253ms 1
 // 0.438ms 10
@@ -82,7 +85,6 @@ const age = parseInt(params.get("age") as any); // is the number 18
 
 // const path = new Path2D();
 
-
 // slow 0.484
 // eval(`
 // function arc(x, y) { return path.arc(x, y); }
@@ -122,7 +124,6 @@ const age = parseInt(params.get("age") as any); // is the number 18
 // }
 // console.timeEnd('fast');
 
-
 // const pathToAdd = new Path2D();
 // pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
 // const path1 = new Path2D();
@@ -130,7 +131,6 @@ const age = parseInt(params.get("age") as any); // is the number 18
 // path1.addPath(pathToAdd);
 // console.timeEnd('fast:addPath');
 
-
 // eval(`
 // const pathToAdd = new Path2D();
 // pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
@@ -141,7 +141,6 @@ const age = parseInt(params.get("age") as any); // is the number 18
 // console.timeEnd('fast:addPath');
 // `);
 
-
 // eval(`
 // const pathToAdd = new Path2D();
 // pathToAdd.arc(100, 75, 50, 0, 2 * Math.PI);
@@ -151,12 +150,10 @@ const age = parseInt(params.get("age") as any); // is the number 18
 // path.addPath(pathToAdd);
 // console.timeEnd('fast:addPath');
 // `);
-
 
 // for (let i = 0; i < 1_000; i++) {
 // 	path2.addPath(path);
 // }
-
 
 // console.time('url');
 // for (let i = 0; i < 1_000_000; i++) {

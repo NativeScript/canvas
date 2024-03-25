@@ -1,4 +1,5 @@
 export * from './SVGAnimatedLength';
+export * from './SVGAnimatedString';
 export * from './SVGCircleElement';
 export * from './SVGElement';
 export * from './SVGEllipseElement';
@@ -13,3 +14,7 @@ export * from './SVGPolygonElement';
 export * from './SVGPolylineElement';
 export * from './SVGRectElement';
 export * from './SVGSVGElement';
+export * from './SVGUnits';
+export * from './SVGMatrix';
+export * from './SVGTransform';
+export * from './SVGAnimatedRect';

@@ -18,8 +18,8 @@ use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
-use canvas_2d::context::text_styles::text_align::TextAlign;
-pub use canvas_2d::context::text_styles::text_direction::TextDirection;
+pub use canvas_2d::context::text_styles::text_align::TextAlign;
+use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -33,7 +33,6 @@ use canvas_webgl::utils::gl::bytes_per_pixel;
 use once_cell::sync::OnceCell;
 
 use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -4304,8 +4303,6 @@ pub extern "C" fn canvas_native_matrix_scale_non_uniform_self(
     matrix.0.scale_non_uniform_self(sx, sy);
 }
 
-
-
 #[no_mangle]
 pub extern "C" fn canvas_native_matrix_rotate(
     angle: f32,
@@ -4324,20 +4321,15 @@ pub extern "C" fn canvas_native_matrix_rotate_self(
     matrix: *mut Matrix,
     angle: f32,
     cx: f32,
-    cy: f32
+    cy: f32,
 ) {
     assert!(!matrix.is_null());
     let matrix = unsafe { &mut *matrix };
     matrix.0.rotate_self(angle, cx, cy);
 }
 
-
-
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_skew_x(
-    angle: f32,
-    matrix: *const Matrix,
-) -> *mut Matrix {
+pub extern "C" fn canvas_native_matrix_skew_x(angle: f32, matrix: *const Matrix) -> *mut Matrix {
     assert!(!matrix.is_null());
     let matrix = unsafe { &*matrix };
     let ret = canvas_2d::context::matrix::Matrix::skew_x_matrix(angle, &matrix.0);
@@ -4345,22 +4337,14 @@ pub extern "C" fn canvas_native_matrix_skew_x(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_skew_x_self(
-    matrix: *mut Matrix,
-    angle: f32,
-) {
+pub extern "C" fn canvas_native_matrix_skew_x_self(matrix: *mut Matrix, angle: f32) {
     assert!(!matrix.is_null());
     let matrix = unsafe { &mut *matrix };
     matrix.0.skew_x_self(angle);
 }
 
-
-
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_skew_y(
-    angle: f32,
-    matrix: *const Matrix,
-) -> *mut Matrix {
+pub extern "C" fn canvas_native_matrix_skew_y(angle: f32, matrix: *const Matrix) -> *mut Matrix {
     assert!(!matrix.is_null());
     let matrix = unsafe { &*matrix };
     let ret = canvas_2d::context::matrix::Matrix::skew_y_matrix(angle, &matrix.0);
@@ -4368,14 +4352,19 @@ pub extern "C" fn canvas_native_matrix_skew_y(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_matrix_skew_y_self(
-    matrix: *mut Matrix,
-    angle: f32,
-) {
+pub extern "C" fn canvas_native_matrix_skew_y_self(matrix: *mut Matrix, angle: f32) {
     assert!(!matrix.is_null());
     let matrix = unsafe { &mut *matrix };
     matrix.0.skew_y_self(angle);
 }
+
+#[no_mangle]
+pub extern "C" fn canvas_native_matrix_clone(matrix: *const Matrix) -> *mut Matrix {
+    assert!(!matrix.is_null());
+    let matrix = unsafe { &*matrix };
+    Box::into_raw(Box::new(matrix.clone()))
+}
+
 /* DOMMatrix */
 
 /* ImageData */

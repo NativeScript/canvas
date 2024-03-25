@@ -1190,6 +1190,8 @@ struct Matrix *canvas_native_matrix_skew_y(float angle, const struct Matrix *mat
 
 void canvas_native_matrix_skew_y_self(struct Matrix *matrix, float angle);
 
+struct Matrix *canvas_native_matrix_clone(const struct Matrix *matrix);
+
 struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
 
 int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);

@@ -1,6 +1,7 @@
 import { Element } from '../Element';
 import { Svg } from '@nativescript/canvas-svg';
 import { SVGTransformList } from './SVGTransform';
+import { SVGAnimatedString } from './SVGAnimatedString';
 
 function parseViewBox(value: string) {
 	if (typeof value === 'string') {
@@ -50,6 +51,9 @@ function parseTransform(value: string) {
 
 export class SVGElement extends Element {
 	//__internalElement: Svg;
+
+	private _className = new SVGAnimatedString(this);
+
 	constructor(tagName: string) {
 		super(tagName ?? '');
 	}
@@ -68,15 +72,17 @@ export class SVGElement extends Element {
 		return null;
 	}
 
-	get viewBox() {
-		const viewBox = (this._xmlDom?.documentElement ?? this._xmlDom)?.getAttribute?.('viewBox');
-		return parseViewBox(viewBox);
-	}
-
 	get transform() {
 		const transform = (this._xmlDom?.documentElement ?? this._xmlDom)?.getAttribute?.('transform');
 		return parseTransform(transform);
 	}
+
+	// @ts-ignore
+	get className() {
+		return this._className;
+	}
+
+	set className(value: unknown) {}
 
 	appendChild(view) {
 		if (view?.nativeElement?._dom) {
@@ -99,22 +105,26 @@ export class SVGElement extends Element {
 	removeChild(view) {}
 
 	setAttribute(key, value) {
-		super.setAttribute(key, value);
-		if (this.nativeElement) {
-			this.nativeValue._dom.documentElement.setAttribute(key, value);
+		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+		if (dom) {
+			dom.setAttribute?.(key, value);
+		} else {
+			super.setAttribute(key, value);
 		}
 	}
 
 	getAttribute(key) {
-		if (this.nativeElement) {
-			return this.nativeValue._dom.documentElement.getAttribute(key) ?? super.getAttribute(key);
+		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+		if (dom) {
+			return dom.getAttribute?.(key);
 		}
 		return super.getAttribute(key);
 	}
 
 	removeAttribute(key) {
-		if (this.nativeElement) {
-			this.nativeValue._dom.documentElement.removeAttribute(key);
+		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+		if (dom) {
+			return dom.removeAttribute?.(key);
 		}
 	}
 }

@@ -1,42 +1,30 @@
-import { SVGAnimatedLengthEmpty } from './SVGAnimatedLength';
+import { SVGAnimatedLengthEmpty, SVGAnimatedLength } from './SVGAnimatedLength';
 import { SVGGeometryElement } from './SVGGeometryElement';
 import { Line } from '@nativescript/canvas-svg';
 
 export class SVGLineElement extends SVGGeometryElement {
+	_x1 = new SVGAnimatedLength(this, 'x1');
+	_y1 = new SVGAnimatedLength(this, 'y1');
+	_x2 = new SVGAnimatedLength(this, 'x2');
+	_y2 = new SVGAnimatedLength(this, 'y2');
 	constructor() {
 		super('line');
 		this.nativeElement = new Line();
 	}
 
 	get x1() {
-		const x1 = this.getAttribute('x1');
-		if (!x1) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._x1;
 	}
 
 	get y1() {
-		const y1 = this.getAttribute('y1');
-		if (!y1) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._y1;
 	}
 
 	get x2() {
-		const x2 = this.getAttribute('x2');
-		if (!x2) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._x2;
 	}
 
 	get y2() {
-		const y2 = this.getAttribute('y2');
-		if (!y2) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._y2;
 	}
 }

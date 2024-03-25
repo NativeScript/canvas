@@ -1,60 +1,45 @@
 import { SVGAnimatedLengthEmpty } from './SVGAnimatedLength';
 import { SVGGeometryElement } from './SVGGeometryElement';
 import { Rect } from '@nativescript/canvas-svg';
-
+import { SVGAnimatedLength } from './SVGAnimatedLength';
 export class SVGRectElement extends SVGGeometryElement {
+	_x = new SVGAnimatedLength(this, 'x');
+	_y = new SVGAnimatedLength(this, 'y');
+	// @ts-ignore
+	_width = new SVGAnimatedLength(this, 'width');
+	// @ts-ignore
+	_height = new SVGAnimatedLength(this, 'height');
+	_rx = new SVGAnimatedLength(this, 'rx');
+	_ry = new SVGAnimatedLength(this, 'ry');
+
 	constructor() {
 		super('rect');
 		this.nativeElement = new Rect();
 	}
 
 	get x() {
-		const x = this.getAttribute('x');
-		if (!x) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._x;
 	}
 
 	get y() {
-		const y = this.getAttribute('y');
-		if (!y) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._y;
 	}
 
 	// @ts-ignore
 	get width() {
-		const width = this.getAttribute('width');
-		if (!width) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._width;
 	}
 
 	// @ts-ignore
 	get height() {
-		const height = this.getAttribute('height');
-		if (!height) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._height;
 	}
 
 	get rx() {
-		const rx = this.getAttribute('rx');
-		if (!rx) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._rx;
 	}
 
 	get ry() {
-		const ry = this.getAttribute('ry');
-		if (!ry) {
-			return SVGAnimatedLengthEmpty;
-		}
-		return null;
+		return this._rx;
 	}
 }

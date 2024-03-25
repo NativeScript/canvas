@@ -127,9 +127,14 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		const app = new PIXI.Application({
 			context,
 			resizeTo: canvas,
+			background: 'white',
 		});
 		try {
-			const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/fa/De_Groot_academic_genealogy.svg');
+			// const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/fa/De_Groot_academic_genealogy.svg');
+
+			//	const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg');
+
+			const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
 
 			app.stage.addChild(scene);
 		} catch (error) {

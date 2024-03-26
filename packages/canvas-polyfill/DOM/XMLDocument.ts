@@ -15,13 +15,13 @@ export class XMLDocument extends Doc {
 			documentPrototype.querySelectorAll = function (selector: string) {
 				return querySelector(selector, this);
 			};
-
+			
 			const doc = new XMLDocument();
 			doc.__instance = instance;
 			const documentElement = instance?.documentElement;
 
 			if (documentElement?.nodeName === 'svg' && documentElement?.namespaceURI === 'http://www.w3.org/2000/svg') {
-				const svg = new SVGSVGElement('svg') as any;
+				const svg = new SVGSVGElement() as any;
 				svg.__instance = instance.documentElement;
 				(<any>doc)._documentElement = svg;
 			}

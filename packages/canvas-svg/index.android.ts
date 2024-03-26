@@ -2,6 +2,8 @@ import { initialSVG, SVGBase, srcProperty, syncProperty } from './common';
 import { Application, Http, knownFolders, path, Utils } from '@nativescript/core';
 import { SVGItem } from './Elements/SVGItem';
 
+export * from './Elements';
+
 declare const org;
 
 export class Svg extends SVGBase {
@@ -11,7 +13,9 @@ export class Svg extends SVGBase {
 		super();
 		const context = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 		this._svg = new org.nativescript.canvas.svg.NSCSVG(context);
-		this._svg.setSync(true);
+		this.on('layoutChanged', (args) => {
+			this.__redraw();
+		});
 	}
 
 	createNativeView() {
@@ -21,7 +25,6 @@ export class Svg extends SVGBase {
 	get native() {
 		return this._svg;
 	}
-
 
 	[srcProperty.setNative](value: string) {
 		if (typeof value === 'string') {
@@ -49,24 +52,27 @@ export class Svg extends SVGBase {
 		this._svg.setSync(value);
 	}
 
-	public onLayout(left: number, top: number, right: number, bottom: number): void {
-		super.onLayout(left, top, right, bottom);
-		this.__redraw();
-	}
-
-// this.__internalElement._dom.documentElement.setAttribute('id', value);
 	__redraw() {
 		if (this._attachedToDom) {
 			const domCopy: Document = this._dom.valueOf() as never;
-			const serialized = this._serializer.serializeToString(domCopy);
 			const width = domCopy.documentElement.getAttribute('width');
 			const height = domCopy.documentElement.getAttribute('height');
+			const viewBox = domCopy.documentElement.getAttribute('viewBox');
 			if (width === 'auto') {
-				domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}px`);
+				domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}`);
 			}
 			if (height === 'auto') {
-				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}px`);
+				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}`);
 			}
+
+			if (!viewBox) {
+				const width = domCopy.documentElement.getAttribute('width');
+				const height = domCopy.documentElement.getAttribute('height');
+				domCopy.documentElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
+			}
+
+			const serialized = this._serializer.serializeToString(domCopy);
+
 			if (serialized !== initialSVG) {
 				this.src = serialized;
 			}
@@ -76,13 +82,13 @@ export class Svg extends SVGBase {
 	onLoaded() {
 		super.onLoaded();
 		this._attachedToDom = true;
+		console.log('onLoaded');
 	}
 
 	onUnloaded() {
 		this._attachedToDom = false;
 		super.onUnloaded();
 	}
-
 
 	addChild(view: SVGItem) {
 		this._addView(view);

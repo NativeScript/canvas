@@ -74,42 +74,50 @@ export class Element extends Node {
 		return this.nodeName;
 	}
 
+	_children = new HTMLCollection();
 	get children() {
+		if (this._children.length) {
+			return this._children;
+		}
 		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
 		if (element) {
-			const ret = new HTMLCollection();
 			const length = element?.childNodes?.length ?? 0;
 
 			for (let i = 0; i < length; i++) {
 				const node = element.childNodes.item(i);
 				if (node) {
 					switch (node.nodeName) {
+						case 'image': {
+							const image = new SVGImageElement() as any;
+							image.__instance = node;
+							this._children.push(image);
+						}
 						case 'line':
 							{
 								const line = new SVGLineElement() as any;
 								line.__instance = node;
-								ret.push(line);
+								this._children.push(line);
 							}
 							break;
 						case 'polyline':
 							{
 								const polyline = new SVGPolylineElement() as any;
 								polyline.__instance = node;
-								ret.push(polyline);
+								this._children.push(polyline);
 							}
 							break;
 						case 'g':
 							{
 								const g = new SVGGElement() as any;
 								g.__instance = node;
-								ret.push(g);
+								this._children.push(g);
 							}
 							break;
 						case 'path':
 							{
 								const path = new SVGPathElement() as any;
 								path.__instance = node;
-								ret.push(path);
+								this._children.push(path);
 							}
 							break;
 						case 'rect':
@@ -119,11 +127,21 @@ export class Element extends Node {
 								ret.push(rect);
 							}
 							break;
+						case 'stop':
+							{
+								const stop = new SVGStopElement() as any;
+								stop.__instance = node;
+								ret.push(stop);
+							}
+							break;
+						default:
+							//	ret.push(node);
+							break;
 					}
 				}
 			}
 
-			return ret;
+			return this._children;
 		}
 
 		return [];
@@ -131,9 +149,9 @@ export class Element extends Node {
 
 	getAttribute(key: string): unknown {
 		if (this.nativeElement) {
-			return this.nativeElement[key];
+			return this.nativeElement[key] ?? null;
 		}
-		return this._attrs.get(key);
+		return this._attrs.get(key) ?? null;
 	}
 
 	setAttribute(key: string, value: unknown) {
@@ -166,9 +184,19 @@ export class Element extends Node {
 	removeAttributeNS() {}
 
 	querySelector(selector: string) {
-		const selection = querySelector(selector, this);
+		const context = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		const selection = querySelector(selector, context);
 		if (Array.isArray(selection)) {
-			return selection[0];
+			const item = selection[0];
+			if (item) {
+				switch (item.nodeName) {
+					case 'linearGradient': {
+						const ret = new SVGLinearGradientElement() as any;
+						ret.__instance = item;
+						return ret;
+					}
+				}
+			}
 		}
 		return null;
 	}

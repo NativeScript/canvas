@@ -2,7 +2,7 @@ import { Element } from '../Element';
 import { Svg } from '@nativescript/canvas-svg';
 import { SVGTransformList } from './SVGTransform';
 import { SVGAnimatedString } from './SVGAnimatedString';
-
+import { Text } from '../Text';
 function parseViewBox(value: string) {
 	if (typeof value === 'string') {
 		const vb = value.split(' ');
@@ -52,7 +52,7 @@ function parseTransform(value: string) {
 export class SVGElement extends Element {
 	//__internalElement: Svg;
 
-	private _className = new SVGAnimatedString(this);
+	private _className = new SVGAnimatedString(this, 'className');
 
 	constructor(tagName: string) {
 		super(tagName ?? '');
@@ -84,13 +84,37 @@ export class SVGElement extends Element {
 
 	set className(value: unknown) {}
 
-	appendChild(view) {
+	_appendChild(view, redraw = true) {
 		if (view?.nativeElement?._dom) {
 			this.nativeValue?._dom?.documentElement?.appendChild?.(view.nativeElement._dom);
-			(<any>this.nativeValue).__redraw();
+			if (redraw) {
+				(<any>this.nativeValue).__redraw();
+			}
+			(<any>this.nativeValue)?.addChild?.(view.nativeElement);
+			return view;
+		} else if (view instanceof Text) {
+			const dom = this._xmlDom;
+			const text = dom?.createTextNode?.(view.data);
+			view.__instance = text;
+			dom?.documentElement?.appendChild?.(text);
+			return view;
+		} else if (view.__instance) {
+			const dom = this._xmlDom;
+			dom?.documentElement?.appendChild?.(view.__instance);
 			return view;
 		}
 		return null;
+	}
+
+	appendChild(view) {
+		return this._appendChild(view, true);
+	}
+
+	append(views: Array<any>) {
+		for (const view of arguments) {
+			this._appendChild(view, false);
+		}
+		(<any>this.nativeValue).__redraw();
 	}
 
 	insertBefore(view) {
@@ -116,9 +140,9 @@ export class SVGElement extends Element {
 	getAttribute(key) {
 		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
 		if (dom) {
-			return dom.getAttribute?.(key);
+			return dom.getAttribute?.(key) ?? null;
 		}
-		return super.getAttribute(key);
+		return super.getAttribute(key) ?? null;
 	}
 
 	removeAttribute(key) {

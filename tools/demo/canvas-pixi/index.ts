@@ -126,17 +126,51 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
 			context,
-			resizeTo: canvas,
 			background: 'white',
+			autoDensity: true,
+
 		});
 		try {
-			// const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/fa/De_Groot_academic_genealogy.svg');
+			const data = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+			<image width="300" height="300" xlink:href="https://staticg.sportskeeda.com/editor/2023/06/6a942-16869513670522-1920.jpg"/>
+		  </svg>
+		  `;
 
-			//	const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg');
+			/*
+		  		const data = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+			<path
+			  d="M 10,30
+					 A 20,20 0,0,1 50,30
+					 A 20,20 0,0,1 90,30
+					 Q 90,60 50,90
+					 Q 10,60 10,30 z"  fill="black"/>
+		  </svg>
+		  `;
+		  */
+			const path = new DOMParser().parseFromString(data, 'image/svg+xml');
 
-			const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
+			const svg = path.documentElement;
 
-			app.stage.addChild(scene);
+			const scene = new SVGScene(svg as any, { disableHrefSVGLoading: false });
+
+			const c = new PIXI.Container();
+
+			//  const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/fa/De_Groot_academic_genealogy.svg');
+
+			//const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg');
+
+			//const scene = await SVGScene.from('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
+
+			//const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/6/61/Figure_in_Manga_style.svg');
+
+			///const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/f1/Vitejs-logo.svg');
+
+			
+			app.stage.addChild(c);
+
+			c.addChild(scene);
+
+			app.renderer.render(app.stage);
 		} catch (error) {
 			console.log('svg', error);
 		}

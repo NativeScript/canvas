@@ -1,4 +1,4 @@
-import { SVGAnimatedLengthEmpty, SVGAnimatedLength } from './SVGAnimatedLength';
+import { SVGAnimatedLength } from './SVGAnimatedLength';
 import { SVGGeometryElement } from './SVGGeometryElement';
 import { Line } from '@nativescript/canvas-svg';
 

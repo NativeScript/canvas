@@ -8,6 +8,7 @@ import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
 import { Device, fromObject, View } from '@nativescript/core';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
+import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
@@ -31,9 +32,10 @@ import { HTMLCollection } from './DOM/HTMLCollection';
 (global as any).window.DOMPoint = (global as any).DOMPoint = (global as any).DOMPoint || DOMPoint;
 (global as any).window.DOMPointReadOnly = (global as any).DOMPointReadOnly = (global as any).DOMPointReadOnly || DOMPointReadOnly;
 (global as any).window.HTMLCollection = (global as any).HTMLCollection = (global as any).HTMLCollection || HTMLCollection;
+(global as any).window.HTMLUnknownElement = (global as any).HTMLUnknownElement = (global as any).HTMLUnknownElement || HTMLUnknownElement;
 
 // svg
-import { SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
+import { SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
 
 (global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
 (global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
@@ -44,6 +46,7 @@ import { SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect,
 (global as any).window.SVGLength = (global as any).SVGLength = (global as any).SVGLength || SVGLength;
 (global as any).window.SVGAnimatedLength = (global as any).SVGAnimatedLength = (global as any).SVGAnimatedLength || SVGAnimatedLength;
 (global as any).window.SVGPolylineElement = (global as any).SVGPolylineElement = (global as any).SVGPolylineElement || SVGPolylineElement;
+(global as any).window.SVGPolygonElement = (global as any).SVGPolygonElement = (global as any).SVGPolygonElement || SVGPolygonElement;
 (global as any).window.SVGGElement = (global as any).SVGGElement = (global as any).SVGGElement || SVGGElement;
 (global as any).window.SVGPathElement = (global as any).SVGPathElement = (global as any).SVGPathElement || SVGPathElement;
 (global as any).window.SVGRectElement = (global as any).SVGRectElement = (global as any).SVGRectElement || SVGRectElement;
@@ -59,6 +62,14 @@ import { SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect,
 (global as any).window.SVGTransformList = (global as any).SVGTransformList = (global as any).SVGTransformList || SVGTransformList;
 (global as any).window.SVGAnimatedRect = (global as any).SVGAnimatedRect = (global as any).SVGAnimatedRect || SVGAnimatedRect;
 
+(global as any).window.SVGImageElement = (global as any).SVGImageElement = (global as any).SVGImageElement || SVGImageElement;
+(global as any).window.SVGEllipseElement = (global as any).SVGEllipseElement = (global as any).SVGEllipseElement || SVGEllipseElement;
+(global as any).window.SVGTextElement = (global as any).SVGTextElement = (global as any).SVGTextElement || SVGTextElement;
+
+(global as any).window.SVGGradientElement = (global as any).SVGGradientElement = (global as any).SVGGradientElement || SVGGradientElement;
+(global as any).window.SVGRadialGradientElement = (global as any).SVGRadialGradientElement = (global as any).SVGRadialGradientElement || SVGRadialGradientElement;
+(global as any).window.SVGLinearGradientElement = (global as any).SVGLinearGradientElement = (global as any).SVGLinearGradientElement || SVGLinearGradientElement;
+(global as any).window.SVGStopElement = (global as any).SVGStopElement = (global as any).SVGStopElement || SVGStopElement;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {

@@ -4,3 +4,8 @@ framework module CanvasSVG {
 
   module * { export * }
 }
+
+module CanvasSVG.Swift {
+  header "CanvasSVG-Swift.h"
+  requires objc
+}

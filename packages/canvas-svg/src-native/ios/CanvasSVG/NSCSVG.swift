@@ -73,10 +73,7 @@ public class NSCSVG: UIView {
         
             
             CanvasSVGHelper.draw(fromString: buf, size: self.buf_size, width: Float(self.data_size.width), height: Float(self.data_size.height), svg: source as String)
-            
-            
-            
-                
+
                 self.didInitDrawing = true
                 self.setNeedsDisplay()
             

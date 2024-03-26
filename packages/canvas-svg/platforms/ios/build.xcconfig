@@ -1,0 +1,1 @@
+OTHER_LDFLAGS[sdk=*] = $(inherited) -framework Foundation -framework CanvasSVG -framework OpenGLES -framework GLKit

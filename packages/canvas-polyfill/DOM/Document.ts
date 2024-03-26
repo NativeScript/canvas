@@ -9,6 +9,9 @@ import { Frame, StackLayout } from '@nativescript/core';
 import { Node } from './Node';
 import { Element } from './Element';
 import { SVGSVGElement } from './svg/SVGSVGElement';
+import { SVGElement } from './svg/SVGElement';
+import { HTMLUnknownElement } from './HTMLUnknownElement';
+
 export class Document extends Node {
 	readonly body: Element;
 	private _documentElement: Element;
@@ -27,7 +30,39 @@ export class Document extends Node {
 		this.head = new Element('HEAD');
 	}
 
-	createElement(tagName: string) {
+	_createElement(namespaceURI: string | null, tagName: string, options?: {}) {
+		if (namespaceURI === 'http://www.w3.org/2000/svg') {
+			switch ((tagName || '').toLowerCase()) {
+				case 'svg':
+					return new SVGSVGElement();
+				case 'rect':
+					return new SVGRectElement();
+				case 'circle':
+					return new SVGCircleElement();
+				case 'g':
+					return new SVGGElement();
+				case 'path':
+					return new SVGPathElement();
+				case 'image':
+					return new SVGImageElement();
+				case 'polyline':
+					return new SVGPolylineElement();
+				case 'polygon':
+					return new SVGPolygonElement();
+				case 'ellipse':
+					return new SVGEllipseElement();
+				case 'line':
+					return new SVGLineElement();
+				case 'text':
+					return new SVGTextElement();
+				case 'radialGradient':
+					return new SVGRadialGradientElement();
+				case 'linearGradient':
+					return new SVGLinearGradientElement();
+				default:
+					return new SVGElement(tagName ?? `${tagName}`);
+			}
+		}
 		switch ((tagName || '').toLowerCase()) {
 			case 'div':
 				return new HTMLDivElement();
@@ -40,23 +75,17 @@ export class Document extends Node {
 			case 'iframe':
 				// Return nothing to keep firebase working.
 				return null;
-			case 'svg':
-				return new SVGSVGElement('svg');
-			case 'rect':
-				return new SVGRectElement();
-			case 'circle':
-				return new SVGCircleElement();
-			case 'g':
-				return new SVGGElement();
-			case 'path':
-				return new SVGPathElement();
 			default:
-				return new Element(tagName);
+				return new HTMLUnknownElement(tagName ?? 'null');
 		}
 	}
 
-	createElementNS(namespaceURI: string, qualifiedName?: string, options?: {}) {
-		const element = this.createElement(qualifiedName) as any;
+	createElement(tagName: string, options?: {}) {
+		return this._createElement(null, tagName, options);
+	}
+
+	createElementNS(namespaceURI: string | null, qualifiedName?: string, options?: {}) {
+		const element = this._createElement(namespaceURI, qualifiedName, options) as any;
 		element.namespaceURI = namespaceURI;
 		if (qualifiedName?.toLowerCase?.() !== 'canvas') {
 			element.toDataURL = () => ({});

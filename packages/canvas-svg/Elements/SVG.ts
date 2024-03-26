@@ -60,7 +60,7 @@ export const syncProperty = new Property<Svg, boolean>({
 	valueConverter: booleanConverter,
 });
 
-declare const TNSSVG, org;
+declare const NSCSVG, org;
 import { SVGItem } from './SVGItem';
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 
@@ -82,7 +82,7 @@ export class Svg extends View {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity;
 			this._svg = new org.nativescript.canvas.NSCSVG(activity);
 		} else if (global.isIOS) {
-			this._svg = TNSSVG.alloc().initWithFrame(CGRectZero);
+			this._svg = NSCSVG.alloc().initWithFrame(CGRectZero);
 			this._svg.backgroundColor = UIColor.clearColor;
 		}
 		this._dom = new DOMParser().parseFromString(initialSVG);

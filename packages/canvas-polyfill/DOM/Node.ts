@@ -1,8 +1,8 @@
 import { EventTarget } from './EventTarget';
 import setValue from 'set-value';
 
-
-let id = 0;
+const DOCUMENT_POSITION_DISCONNECTED = 1;
+const DOCUMENT_POSITION_CONTAINS = 8;
 
 export class Node extends EventTarget {
 	className: any;
@@ -14,7 +14,7 @@ export class Node extends EventTarget {
 		super();
 
 		this.className = {
-			baseVal: ''
+			baseVal: '',
 		};
 		this.nodeName = nodeName;
 	}
@@ -35,15 +35,20 @@ export class Node extends EventTarget {
 		return window.document;
 	}
 
-	appendChild(view) {
-	}
+	appendChild(view) {}
 
-	insertBefore(view) {
-	}
+	insertBefore(view) {}
 
-	removeChild(view) {
-	}
+	removeChild(view) {}
 
-	setAttributeNS() {
+	setAttributeNS() {}
+
+	compareDocumentPosition(otherNode) {
+		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		if (this.nodeName === '#document') {
+			return DOCUMENT_POSITION_CONTAINS;
+		}
+
+		return DOCUMENT_POSITION_DISCONNECTED;
 	}
 }

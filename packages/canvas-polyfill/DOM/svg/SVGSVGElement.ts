@@ -4,6 +4,7 @@ import { SVGPoint, SVGAngle, SVGRect } from './SVGUnits';
 import { SVGMatrix } from './SVGMatrix';
 import { SVGTransform } from './SVGTransform';
 import { SVGAnimatedRect } from './SVGAnimatedRect';
+import { Svg } from '@nativescript/canvas-svg';
 export class SVGSVGElement extends SVGGraphicsElement {
 	private _x = new SVGAnimatedLength(this, 'x');
 	private _y = new SVGAnimatedLength(this, 'y');
@@ -13,6 +14,11 @@ export class SVGSVGElement extends SVGGraphicsElement {
 	private _height = new SVGAnimatedLength(this, 'height');
 
 	private _viewBox = new SVGAnimatedRect(this, 'viewBox');
+
+	constructor() {
+		super('svg');
+		this._nativeElement = new Svg();
+	}
 
 	get viewBox() {
 		return this._viewBox;

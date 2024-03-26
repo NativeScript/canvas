@@ -31,7 +31,14 @@ export class SVGTransformList extends Array {
 		this.push(newItem);
 	}
 
-	consolidate() {}
+	consolidate() {
+		const ret = new SVGTransform();
+		ret._type = SVG_TRANSFORM_MATRIX;
+		for (const transform of this) {
+			ret._matrix.multiplySelf(transform._matrix);
+		}
+		return ret;
+	}
 
 	get numberOfItems() {
 		return this.length;

@@ -4,14 +4,14 @@ import { SVGItem } from './Elements/SVGItem';
 
 export * from './Elements';
 
-declare const TNSSVG;
+declare const NSCSVG, CanvasSVGHelper;
 
 export class Svg extends SVGBase {
 	_svg;
 
 	constructor() {
 		super();
-		this._svg = TNSSVG.alloc().initWithFrame(CGRectZero);
+		this._svg = NSCSVG.alloc().initWithFrame(CGRectZero);
 		this._svg.backgroundColor = UIColor.clearColor;
 	}
 
@@ -22,7 +22,6 @@ export class Svg extends SVGBase {
 	get native() {
 		return this._svg;
 	}
-
 
 	[srcProperty.setNative](value: string) {
 		if (typeof value === 'string') {
@@ -39,7 +38,7 @@ export class Svg extends SVGBase {
 							this._svg.srcPath = res.path;
 						})
 						.catch((e) => {
-							console.log(e);
+							console.error(e);
 						});
 				}
 			}
@@ -57,6 +56,7 @@ export class Svg extends SVGBase {
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
 		const nativeView = this.nativeView;
+
 		if (nativeView) {
 			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
 			const height = Utils.layout.getMeasureSpecSize(heightMeasureSpec);
@@ -67,15 +67,22 @@ export class Svg extends SVGBase {
 	__redraw() {
 		if (this._attachedToDom) {
 			const domCopy: Document = this._dom.valueOf() as never;
-			const serialized = this._serializer.serializeToString(domCopy);
 			const width = domCopy.documentElement.getAttribute('width');
 			const height = domCopy.documentElement.getAttribute('height');
+			const viewBox = domCopy.documentElement.getAttribute('viewBox');
 			if (width === 'auto') {
-				domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}px`);
+				domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}`);
 			}
 			if (height === 'auto') {
-				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}px`);
+				domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}`);
 			}
+
+			if (!viewBox) {
+				const width = domCopy.documentElement.getAttribute('width');
+				const height = domCopy.documentElement.getAttribute('height');
+				domCopy.documentElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
+			}
+			const serialized = this._serializer.serializeToString(domCopy);
 			if (serialized !== initialSVG) {
 				this.src = serialized;
 			}

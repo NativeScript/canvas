@@ -7,4 +7,4 @@ edition = "2021"
 
 [build-dependencies]
 gl_generator = "0.14"
-cfg_aliases = "0.1.1"
+cfg_aliases = "0.2.0"

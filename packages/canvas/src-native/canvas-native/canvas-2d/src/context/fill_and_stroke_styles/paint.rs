@@ -97,7 +97,7 @@ impl Paint {
         self.image_smoothing_quality = image_smoothing_quality
     }
 
-    #[inline]
+
     fn update_paint_style(&mut self, is_fill: bool) {
         let style;
         if is_fill {
@@ -137,7 +137,7 @@ impl Paint {
         }
     }
 
-    #[inline]
+
     pub fn set_style(&mut self, is_fill: bool, style: PaintStyle) {
         if is_fill {
             self.fill_style = style;
@@ -147,7 +147,7 @@ impl Paint {
         self.update_paint_style(is_fill);
     }
 
-    #[inline]
+
     pub fn style(&self, is_fill: bool) -> &PaintStyle {
         if is_fill {
             &self.fill_style
@@ -263,7 +263,7 @@ impl Default for Paint {
     }
 }
 
-#[inline]
+
 pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: bool, color: &str) {
     let mut context = context.get_context_mut();
     if let Ok(color) = color.parse::<csscolorparser::Color>() {
@@ -277,7 +277,7 @@ pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: 
     }
 }
 
-#[inline]
+
 pub fn paint_style_set_color_with_rgba(
     context: &mut ContextWrapper,
     is_fill: bool,

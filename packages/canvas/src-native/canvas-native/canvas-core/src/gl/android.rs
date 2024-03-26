@@ -100,18 +100,10 @@ impl Into<ConfigTemplate> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if self.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(self.get_alpha());
 
@@ -135,18 +127,10 @@ impl From<&mut ContextAttributes> for ConfigTemplate {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if value.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(value.get_alpha());
 
@@ -170,18 +154,10 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
             .with_depth_size(if self.get_depth() { 24 } else { 0 })
             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if self.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(self.get_alpha());
 
@@ -205,18 +181,10 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
             .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
             .with_depth_size(if value.get_depth() { 24 } else { 0 })
             .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(if value.get_alpha() {
-                ColorBufferType::Rgb {
-                    r_size: 8,
-                    g_size: 8,
-                    b_size: 8,
-                }
-            } else {
-                ColorBufferType::Rgb {
-                    r_size: 5,
-                    g_size: 6,
-                    b_size: 5,
-                }
+            .with_buffer_type(ColorBufferType::Rgb {
+                r_size: 8,
+                g_size: 8,
+                b_size: 8,
             })
             .with_transparency(value.get_alpha());
 
@@ -1021,7 +989,7 @@ impl GLContext {
         GLContext::create_pbuffer(config, width, height)
     }
 
-    #[inline(always)]
+
     pub fn set_vsync(&self, sync: bool) -> bool {
         let inner = self.inner.read();
         let vsync = if sync {
@@ -1039,7 +1007,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn make_current(&self) -> bool {
         let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1058,7 +1026,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn remove_if_current(&self) {
         let inner = self.inner.read();
         let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1099,7 +1067,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn swap_buffers(&self) -> bool {
         let inner = self.inner.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
@@ -1112,7 +1080,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn get_surface_width(&self) -> i32 {
         let inner = self.inner.read();
         inner
@@ -1126,7 +1094,7 @@ impl GLContext {
             .unwrap_or_default()
     }
 
-    #[inline(always)]
+
     pub fn get_surface_height(&self) -> i32 {
         let inner = self.inner.read();
         inner
@@ -1136,6 +1104,29 @@ impl GLContext {
                 SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
                 SurfaceHelper::Pbuffer(buffer) => buffer.height().unwrap_or_default() as i32,
                 SurfaceHelper::Pixmap(pixmap) => pixmap.height().unwrap_or_default() as i32,
+            })
+            .unwrap_or_default()
+    }
+
+
+    pub fn get_surface_dimensions(&self) -> (i32, i32) {
+        let inner = self.inner.read();
+        inner
+            .surface
+            .as_ref()
+            .map(|v| match v {
+                crate::gl::SurfaceHelper::Window(window) => (
+                    window.width().unwrap_or_default() as i32,
+                    window.height().unwrap_or_default() as i32,
+                ),
+                crate::gl::SurfaceHelper::Pbuffer(buffer) => (
+                    buffer.width().unwrap_or_default() as i32,
+                    buffer.height().unwrap_or_default() as i32,
+                ),
+                crate::gl::SurfaceHelper::Pixmap(pixmap) => (
+                    pixmap.width().unwrap_or_default() as i32,
+                    pixmap.height().unwrap_or_default() as i32,
+                ),
             })
             .unwrap_or_default()
     }

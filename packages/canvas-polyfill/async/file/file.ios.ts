@@ -11,9 +11,7 @@ export class FileManager {
 			native = NSData.dataWithData(bytes as any);
 		}
 
-		console.log('writeFile');
 		NSSCanvasHelpers.writeFile(bytes, path, (error, result) => {
-			console.log('writeFile', error, result);
 			if (error) {
 				callback(new Error(error), null);
 			} else {
@@ -49,7 +47,6 @@ export class FileManager {
 	}
 
 	public static deleteFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
-		console.log('deleteFile');
 		NSSCanvasHelpers.deleteFile(path, (error, done) => {
 			if (error) {
 				callback(new Error(error), null);

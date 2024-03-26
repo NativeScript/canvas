@@ -72,7 +72,7 @@ impl FontLibrary {
 
         let mut assets = TypefaceFontProvider::new();
         for (font, alias) in &self.fonts {
-            assets.register_typeface(font.clone(), alias.as_ref());
+            assets.register_typeface(font.clone(), alias.as_deref());
         }
 
         let mut collection = FontCollection::new();
@@ -131,7 +131,7 @@ impl FontLibrary {
                         let face = font.clone_with_arguments(&args).unwrap();
 
                         let mut dynamic = TypefaceFontProvider::new();
-                        dynamic.register_typeface(face, alias);
+                        dynamic.register_typeface(face, alias.as_deref());
 
                         let mut collection = FontCollection::new();
                         collection.set_default_font_manager(FontMgr::new(), None);

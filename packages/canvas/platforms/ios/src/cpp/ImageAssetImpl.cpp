@@ -28,7 +28,7 @@ void ImageAssetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "ImageAsset"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "ImageAsset"), func).IsJust();
 }
 
 ImageAssetImpl *ImageAssetImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -66,9 +66,9 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "__addr"),
             GetAddr);
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "scale"),
-            v8::FunctionTemplate::New(isolate, &Scale));
+//    tmpl->Set(
+//            ConvertToV8String(isolate, "scale"),
+//            v8::FunctionTemplate::New(isolate, &Scale));
 
     tmpl->Set(
             ConvertToV8String(isolate, "fromUrlSync"),
@@ -97,14 +97,14 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &FromBytesCb));
 
 
-    tmpl->Set(
+ /*   tmpl->Set(
             ConvertToV8String(isolate, "saveSync"),
             v8::FunctionTemplate::New(isolate, &SaveSync));
 
     tmpl->Set(
             ConvertToV8String(isolate, "saveCb"),
             v8::FunctionTemplate::New(isolate, &SaveCb));
-
+*/
 
     cache->ImageAssetTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -180,26 +180,6 @@ ImageAssetImpl::GetError(v8::Local<v8::String> name,
         return;
     }
     info.GetReturnValue().SetEmptyString();
-}
-
-void ImageAssetImpl::Scale(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    ImageAssetImpl *ptr = GetPointer(args.This());
-    if (ptr == nullptr) {
-        args.GetReturnValue().SetUndefined();
-        return;
-    }
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-
-    if (args.Length() > 1) {
-        auto x = args[0]->Uint32Value(context).ToChecked();
-        auto y = args[1]->Uint32Value(context).ToChecked();
-        if (x > 0 && y > 0) {
-            canvas_native_image_asset_scale(
-                    ptr->GetImageAsset(), x,
-                    y);
-        }
-    }
 }
 
 void ImageAssetImpl::FromUrlSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -671,7 +651,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 #endif
 
 }
-
+/*
 void ImageAssetImpl::SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     ImageAssetImpl *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -814,6 +794,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 
 }
+*/
 
 ImageAsset *ImageAssetImpl::GetImageAsset() {
     return this->asset_;

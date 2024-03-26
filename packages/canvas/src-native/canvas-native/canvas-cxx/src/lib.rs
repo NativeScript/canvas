@@ -200,12 +200,12 @@ impl PaintStyle {
         Self(style)
     }
 
-    #[inline]
+
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
     }
 
-    #[inline]
+
     pub fn style_type(&self) -> ffi::PaintStyleType {
         if let Some(style) = self.0.as_ref() {
             return match style {
@@ -3681,7 +3681,7 @@ pub fn canvas_native_context_set_global_composition(
     }
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_set_fill_color_with_string(
     context: &mut CanvasRenderingContext2D,
     color: &str,
@@ -3697,7 +3697,7 @@ pub fn canvas_native_paint_style_set_fill_color_with_cxx_string(
     paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_set_fill_color_with_c_string(
     context: &mut CanvasRenderingContext2D,
     color: *const c_char,
@@ -3710,7 +3710,7 @@ pub fn canvas_native_paint_style_set_fill_color_with_c_string(
     paint_style_set_color_with_string(&mut context.context, true, color.as_ref());
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_set_stroke_color_with_string(
     context: &mut CanvasRenderingContext2D,
     color: &str,
@@ -3738,7 +3738,7 @@ pub fn canvas_native_paint_style_set_stroke_color_with_c_string(
     paint_style_set_color_with_string(&mut context.context, false, color.as_ref());
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_set_stroke_color_with_rgba(
     context: &mut CanvasRenderingContext2D,
     r: u8,
@@ -3756,7 +3756,7 @@ pub fn canvas_native_paint_style_set_stroke_color_with_rgba(
     );
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_set_fill_color_with_rgba(
     context: &mut CanvasRenderingContext2D,
     r: u8,
@@ -3774,7 +3774,7 @@ pub fn canvas_native_paint_style_set_fill_color_with_rgba(
     );
 }
 
-#[inline(always)]
+
 pub fn canvas_native_parse_css_color_rgba(
     value: &str,
     r: &mut u8,
@@ -3785,7 +3785,7 @@ pub fn canvas_native_parse_css_color_rgba(
     canvas_2d::utils::color::parse_color_rgba(value, r, g, b, a)
 }
 
-#[inline]
+
 pub fn canvas_native_paint_style_get_color_string(color: &mut PaintStyle) -> String {
     if let Some(color) = color.0.as_ref() {
         return match color {
@@ -3944,12 +3944,12 @@ pub fn canvas_native_context_get_current_stroke_style_type(
     };
 }
 
-#[inline]
+
 pub fn canvas_native_context_get_fill_style(context: &CanvasRenderingContext2D) -> Box<PaintStyle> {
     Box::new(PaintStyle(Some(context.get_context().fill_style().clone())))
 }
 
-#[inline]
+
 pub fn canvas_native_context_set_fill_style(
     context: &mut CanvasRenderingContext2D,
     style: &PaintStyle,
@@ -3961,7 +3961,7 @@ pub fn canvas_native_context_set_fill_style(
     }
 }
 
-#[inline]
+
 pub fn canvas_native_context_get_stroke_style(
     context: &CanvasRenderingContext2D,
 ) -> Box<PaintStyle> {
@@ -3970,7 +3970,7 @@ pub fn canvas_native_context_get_stroke_style(
     )))
 }
 
-#[inline]
+
 pub fn canvas_native_context_set_stroke_style(
     context: &mut CanvasRenderingContext2D,
     style: &PaintStyle,
@@ -4034,7 +4034,7 @@ pub fn canvas_native_context_arc_to(
     context.get_context_mut().arc_to(x1, y1, x2, y2, radius)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_begin_path(context: &mut CanvasRenderingContext2D) {
     context.get_context_mut().begin_path()
 }
@@ -4084,7 +4084,7 @@ pub fn canvas_native_context_clip_rule(context: &mut CanvasRenderingContext2D, r
     }
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_close_path(context: &mut CanvasRenderingContext2D) {
     context.get_context_mut().close_path()
 }
@@ -4578,7 +4578,7 @@ pub fn canvas_native_context_fill_with_path(
     }
 }
 
-#[inline]
+
 pub fn canvas_native_context_fill_rect(
     context: &mut CanvasRenderingContext2D,
     x: f32,
@@ -4592,7 +4592,7 @@ pub fn canvas_native_context_fill_rect(
         .fill_rect_xywh(x, y, width, height);
 }
 
-#[inline]
+
 pub fn canvas_native_context_fill_text(
     context: &mut CanvasRenderingContext2D,
     text: &str,
@@ -4684,7 +4684,7 @@ pub fn canvas_native_context_is_point_in_stroke_with_path(
     ret
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_line_to(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
     context.get_context_mut().line_to(x, y)
 }
@@ -4696,7 +4696,7 @@ pub fn canvas_native_context_measure_text(
     Box::new(TextMetrics(context.get_context().measure_text(text)))
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_move_to(context: &mut CanvasRenderingContext2D, x: f32, y: f32) {
     context.get_context_mut().move_to(x, y)
 }
@@ -4789,7 +4789,7 @@ pub fn canvas_native_context_reset_transform(context: &mut CanvasRenderingContex
     context.get_context_mut().reset_transform();
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_restore(context: &mut CanvasRenderingContext2D) {
     context.get_context_mut().restore()
 }
@@ -4799,7 +4799,7 @@ pub fn canvas_native_context_rotate(context: &mut CanvasRenderingContext2D, angl
     context.get_context_mut().rotate(angle);
 }
 
-#[inline(always)]
+
 pub fn canvas_native_context_save(context: &mut CanvasRenderingContext2D) {
     context.get_context_mut().save()
 }
@@ -5107,45 +5107,45 @@ pub fn canvas_native_path_add_path(path: &mut Path, path_to_add: &Path) {
     path.0.add_path(&path_to_add.0, None);
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_create() -> Box<Path> {
     Box::new(Path::default())
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_create_with_path(path: &Path) -> Box<Path> {
     Box::new(path.clone())
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_create_with_string(string: String) -> Box<Path> {
     Box::new(Path(canvas_2d::context::paths::path::Path::from_str(
         string.as_str(),
     )))
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_create_with_str(string: &str) -> Box<Path> {
     let path = Path(canvas_2d::context::paths::path::Path::from_str(string));
     Box::new(path)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_close_path(path: &mut Path) {
     path.0.close_path()
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_move_to(path: &mut Path, x: f32, y: f32) {
     path.0.move_to(x, y)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_line_to(path: &mut Path, x: f32, y: f32) {
     path.0.line_to(x, y)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_bezier_curve_to(
     path: &mut Path,
     cp1x: f32,
@@ -5158,12 +5158,12 @@ pub fn canvas_native_path_bezier_curve_to(
     path.0.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_quadratic_curve_to(path: &mut Path, cpx: f32, cpy: f32, x: f32, y: f32) {
     path.0.quadratic_curve_to(cpx, cpy, x, y)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_arc(
     path: &mut Path,
     x: f32,
@@ -5177,12 +5177,12 @@ pub fn canvas_native_path_arc(
         .arc(x, y, radius, start_angle, end_angle, anti_clockwise)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_arc_to(path: &mut Path, x1: f32, y1: f32, x2: f32, y2: f32, radius: f32) {
     path.0.arc_to(x1, y1, x2, y2, radius)
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_ellipse(
     path: &mut Path,
     x: f32,
@@ -5206,12 +5206,12 @@ pub fn canvas_native_path_ellipse(
     )
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_rect(path: &mut Path, x: f32, y: f32, width: f32, height: f32) {
     path.0.rect(x, y, width, height)
 }
 
-#[inline(always)]
+
 fn canvas_native_path_round_rect(
     path: &mut Path,
     x: f32,
@@ -5284,7 +5284,7 @@ fn canvas_native_path_round_rect(
     }
 }
 
-#[inline(always)]
+
 fn canvas_native_path_round_rect_tl_tr_br_bl(
     path: &mut Path,
     x: f32,
@@ -5314,7 +5314,7 @@ fn canvas_native_path_round_rect_tl_tr_br_bl(
     )
 }
 
-#[inline(always)]
+
 pub fn canvas_native_path_to_string(path: &Path) -> String {
     path.0.path().to_svg()
 }

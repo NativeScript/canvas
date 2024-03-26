@@ -1,6 +1,7 @@
 import { TouchEvent, PointerEvent } from './Canvas';
 
 export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
+
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
@@ -19,90 +20,89 @@ export * from './TextEncoder';
 export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
-export * from './SVG';
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'WebGLRenderingContext', {
 	value: WebGLRenderingContext,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'WebGL2RenderingContext', {
 	value: WebGL2RenderingContext,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'CanvasPattern', {
 	value: CanvasPattern,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'CanvasGradient', {
 	value: CanvasGradient,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'TextEncoder', {
 	value: TextEncoder,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'TextDecoder', {
 	value: TextDecoder,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'Path2D', {
 	value: Path2D,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'ImageData', {
 	value: ImageData,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'DOMMatrix', {
 	value: DOMMatrix,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'ImageBitmap', {
 	value: ImageBitmap,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'TouchEvent', {
 	value: TouchEvent,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'PointerEvent', {
 	value: PointerEvent,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 Object.defineProperty(global, 'ImageAsset', {
 	value: ImageAsset,
 	configurable: true,
-	writable: true,
+	writable: true
 });
 
 export { ImageBitmap } from './ImageBitmap';

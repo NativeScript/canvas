@@ -34,7 +34,6 @@ impl TryFrom<&str> for FillRule {
     }
 }
 
-
 impl TryFrom<u32> for FillRule {
     type Error = &'static str;
 

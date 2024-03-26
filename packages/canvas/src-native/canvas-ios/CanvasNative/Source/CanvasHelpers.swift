@@ -28,7 +28,7 @@ public class CanvasHelpers: NSObject {
             let size = width * height * bytesPerPixel
             var buffer = NSMutableData(length: size)
             let colorSpace = CGColorSpaceCreateDeviceRGB()
-            let _ = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            let _ = CGContext(data: buffer?.mutableBytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
             
             return buffer!
         }
@@ -42,40 +42,40 @@ public class CanvasHelpers: NSObject {
         let width = Int32(image.size.width * UIScreen.main.scale)
         let height = Int32(image.size.width * UIScreen.main.scale)
         let repetition = (repetition as NSString).utf8String
-        return canvas_native_context_create_pattern_raw(context, width, height, &bytes, UInt(bytes.count), repetition)
+        return canvas_native_context_create_pattern_raw(context, width, height, bytes.mutableBytes, UInt(bytes.count), repetition)
     }
     
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
         var bytes = getBytesFromUIImage(image)
-        return canvas_native_imageasset_load_from_bytes(asset, &bytes, UInt(bytes.count))
+        return canvas_native_imageasset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
     }
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float) {
         var bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
-        canvas_native_context_draw_image_dx_dy_with_bytes(context, &bytes, UInt(bytes.count),width, height,dx, dy)
+        canvas_native_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy)
     }
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float, dw: Float, dh: Float) {
         var bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
-       canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(context, &bytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
+        canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
     }
     
     public static func drawImage(context: Int64, image: UIImage, sx: Float, sy: Float, sw: Float, sh: Float ,dx: Float, dy: Float, dw: Float, dh: Float) {
         var bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
-        canvas_native_context_draw_image_with_bytes(context, &bytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
+        canvas_native_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
     }
     
     public static func initGLWithView(_ view: Int64, _ alpha: Bool,
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:String,
+                      _ power_preference:Int32,
                    _ premultiplied_alpha: Bool,
                _ preserve_drawing_buffer:Bool,
                                _ stencil:Bool,
@@ -83,11 +83,6 @@ public class CanvasHelpers: NSObject {
                          _ xr_compatible:Bool,
                                _ version:Int32,
                              _ is_canvas:Bool) -> Int64{
-        
-        let power_preference = (power_preference as NSString).utf8String
-        
-        
-    
         return canvas_native_init_ios_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
     }
     
@@ -95,7 +90,7 @@ public class CanvasHelpers: NSObject {
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:String,
+                      _ power_preference:Int32,
                    _ premultiplied_alpha: Bool,
                _ preserve_drawing_buffer:Bool,
                                _ stencil:Bool,
@@ -104,9 +99,7 @@ public class CanvasHelpers: NSObject {
                                _ version:Int32,
                              _ is_canvas:Bool,
                                             _ shared_context: Int64) -> Int64{
-        
-        let power_preference = (power_preference as NSString).utf8String
-        
+    
         
         return canvas_native_init_ios_gl_with_shared_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
     }
@@ -117,7 +110,7 @@ public class CanvasHelpers: NSObject {
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:String,
+                      _ power_preference:Int32,
                    _ premultiplied_alpha: Bool,
                _ preserve_drawing_buffer:Bool,
                                _ stencil:Bool,
@@ -126,9 +119,6 @@ public class CanvasHelpers: NSObject {
                                _ version:Int32,
                              _ is_canvas:Bool) -> Int64{
         
-        let power_preference = (power_preference as NSString).utf8String
-        
-        
         return canvas_native_init_offscreen_ios_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
     }
     
@@ -136,7 +126,7 @@ public class CanvasHelpers: NSObject {
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:String,
+                      _ power_preference:Int32,
                    _ premultiplied_alpha: Bool,
                _ preserve_drawing_buffer:Bool,
                                _ stencil:Bool,
@@ -145,9 +135,6 @@ public class CanvasHelpers: NSObject {
                                _ version:Int32,
                              _ is_canvas:Bool,
                                             _ shared_context: Int64) -> Int64{
-        
-        let power_preference = (power_preference as NSString).utf8String
-        
         
         return canvas_native_init_offscreen_ios_gl_with_shared_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
     }

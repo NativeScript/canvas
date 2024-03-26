@@ -11,7 +11,8 @@
     "@nativescript/canvas-three": "file:../../dist/packages/canvas-three",
     "@nativescript/core": "file:../../node_modules/@nativescript/core",
     "three": "file:../../node_modules/three",
-    "@nativescript/canvas-chartjs": "file:../../dist/packages/canvas-chartjs"
+    "@nativescript/canvas-chartjs": "file:../../dist/packages/canvas-chartjs",
+    "@nativescript/canvas-svg": "file:../../dist/packages/canvas-svg"
   },
   "devDependencies": {
     "@nativescript/android": "~8.5.0",

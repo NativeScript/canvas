@@ -52,6 +52,8 @@ endif ()
 
 set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasnative${CMAKE_SHARED_LIBRARY_SUFFIX})
 
+message(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB})
+
 if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
   set(COMMON_CMAKE_ARGUMENTS "${COMMON_CMAKE_ARGUMENTS} -DV8_COMPRESS_POINTERS")
@@ -73,9 +75,7 @@ add_definitions(-DTARGET_OS_ANDROID)
 
 include_directories(
         canvasnativev8
-
         PUBLIC
-
         ${PROJECT_SOURCE_DIR}/src/main/cpp
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
@@ -153,29 +153,9 @@ add_library(
 
         ${CPP_DIR}/CanvasJSIModule.cpp
 
-        ${CPP_DIR}/PerIsolateData.cpp
-
         ${CPP_DIR}/JSIRuntime.cpp
 )
 
-
-#add_custom_command(
-#        TARGET canvasnativev8
-#        #COMMAND RUSTFLAGS='-Cpanic=abort -C target-cpu=native -C target-feature=-outline-atomics' cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
-#        DEPENDS ${CANVAS_ANDROID_LIB}
-#        #USES_TERMINAL
-#)
-
-
-#add_custom_command(
-#        TARGET canvasnativev8 PRE_BUILD
-#        COMMAND cbindgen --config ${CANVAS_C}/cbindgen.toml  ${CANVAS_C}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_native.h
-#        DEPENDS ${CANVAS_INCLUDE}/canvas_native.h
-#        #USES_TERMINAL
-#)
 
 set_target_properties(
         canvasnativev8 PROPERTIES
@@ -203,7 +183,6 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
           #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
           ${CANVAS_ANDROID_LIB}
           android
-          #            ${canvasnative}
           )
 
 else ()
@@ -221,7 +200,7 @@ endif ()
 
 
 add_custom_command(TARGET canvasnativev8
-        POST_BUILD
+        PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CANVAS_ANDROID_LIB}
         ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasnative.so

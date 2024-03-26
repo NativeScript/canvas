@@ -344,6 +344,7 @@ export class TNSXMLHttpRequest {
 		if (!this._headers['Accept']) {
 			this._headers['Accept'] = '*/*';
 		}
+
 		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
 			let isBlob = false;
@@ -729,6 +730,7 @@ export class TNSXMLHttpRequest {
 		if (this.timeout > 0) {
 			request['timeout'] = this.timeout;
 		}
+
 		this._currentRequest = this._http.request(request);
 
 		this._currentRequest
@@ -837,8 +839,14 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							const buffer = interop.bufferFromData(res.content);
-							this._response = new Blob([buffer]);
+							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
+								const encoder = new TextEncoder();
+								const buffer = encoder.encode(res.content.toString());
+								this._response = new Blob([buffer]);
+							} else {
+								const buffer = interop.bufferFromData(res.content);
+								this._response = new Blob([buffer]);
+							}
 						}
 					} else {
 						if (typeof res.content === 'string') {
@@ -846,8 +854,14 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							const buffer = (ArrayBuffer as any).from(res.content);
-							this._response = new Blob([buffer]);
+							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
+								const encoder = new TextEncoder();
+								const buffer = encoder.encode(res.content.toString());
+								this._response = new Blob([buffer]);
+							} else {
+								const buffer = (ArrayBuffer as any).from(res.content);
+								this._response = new Blob([buffer]);
+							}
 						}
 					}
 				}

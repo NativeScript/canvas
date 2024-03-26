@@ -67,7 +67,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//webgl_shadowmap_pointlight(this.canvas);
 		//webgl_shadowmap_vsm(this.canvas);
 
-		//init(this.canvas);
+		init(this.canvas);
 
 		//this.topDown(this.canvas);
 
@@ -111,7 +111,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
+		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
 
@@ -1333,8 +1333,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// shadow
 
 			var shadow = document.createElement('canvas');
-			shadow.width = 256;
-			shadow.height = 256;
+			shadow.width = 512;
+			shadow.height = 512;
 
 			var context = shadow.getContext('2d', { alpha: true });
 

@@ -7,4 +7,5 @@ export * from './canvas-phaser';
 export * from './canvas-phaser-ce';
 export * from './canvas-pixi';
 export * from './canvas-polyfill';
+export * from './canvas-svg';
 export * from './canvas-three';

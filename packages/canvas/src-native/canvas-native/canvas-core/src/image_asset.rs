@@ -1,20 +1,18 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
-use std::io::{BufRead, Read, Seek, SeekFrom};
+use std::io::{BufRead, Read, Seek};
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null;
 use std::sync::Arc;
 
-use image::imageops::FilterType;
-use image::{DynamicImage, EncodableLayout, GenericImageView, ImageFormat, Pixel};
 use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::RawRwLock;
+use stb_image::image::LoadResult;
 
 struct ImageAssetInner {
-    image: Option<DynamicImage>,
-    luma_image: Option<DynamicImage>,
+    image: Option<stb_image::image::Image<u8>>,
     error: String,
-
+    has_alpha: bool,
     #[cfg(feature = "2d")]
     skia_image: Option<skia_safe::Image>,
 }
@@ -45,38 +43,6 @@ pub enum PixelType {
     RGBA = 1,
 }
 
-#[repr(C)]
-pub enum OutputFormat {
-    JPG = 0,
-    PNG = 1,
-    ICO = 2,
-    BMP = 3,
-    TIFF = 4,
-}
-
-impl From<u32> for OutputFormat {
-    fn from(format: u32) -> Self {
-        match format {
-            1 => OutputFormat::PNG,
-            3 => OutputFormat::BMP,
-            4 => OutputFormat::TIFF,
-            _ => OutputFormat::JPG,
-        }
-    }
-}
-
-impl From<i32> for OutputFormat {
-    fn from(format: i32) -> Self {
-        match format {
-            1 => OutputFormat::PNG,
-            2 => OutputFormat::ICO,
-            3 => OutputFormat::BMP,
-            4 => OutputFormat::TIFF,
-            _ => OutputFormat::JPG,
-        }
-    }
-}
-
 enum ByteType {
     Default,
     RGBA,
@@ -84,24 +50,56 @@ enum ByteType {
 }
 
 impl ImageAsset {
+    pub fn from_raw_bytes(width: usize, height: usize, depth: usize, data: Vec<u8>) -> Self {
+        let image = stb_image::image::Image::new(width, height, depth, data);
+
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width as i32, height as i32),
+            skia_safe::ColorType::RGBA8888,
+            skia_safe::AlphaType::Unpremul,
+            None,
+        );
+
+        let skia_image = unsafe {
+            skia_safe::images::raster_from_data(
+                &info,
+                skia_safe::Data::new_bytes(image.data.as_slice()),
+                info.min_row_bytes(),
+            )
+        };
+        let has_alpha = image.depth == 4;
+        let inner = ImageAssetInner {
+            image: Some(image),
+            error: String::new(),
+            has_alpha,
+            #[cfg(feature = "2d")]
+            skia_image,
+        };
+
+        Self(Arc::new(parking_lot::RwLock::new(inner)))
+    }
     pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
         let asset = asset.0.write();
+        let mut has_alpha = false;
+        let image = asset.image.as_ref().map(|image| {
+            has_alpha = image.depth == 4;
+            stb_image::image::Image::new(image.width, image.height, image.depth, image.data.clone())
+        });
         let inner = ImageAssetInner {
-            image: asset.image.clone(),
-            luma_image: asset.luma_image.clone(),
+            image,
             error: String::new(),
-
+            has_alpha,
             #[cfg(feature = "2d")]
             skia_image: asset.skia_image.as_ref().cloned(),
         };
-        return Some(Self(Arc::new(parking_lot::RwLock::new(inner))));
+        Some(Self(Arc::new(parking_lot::RwLock::new(inner))))
     }
 
     pub fn new() -> Self {
         Self(Arc::new(parking_lot::RwLock::new(ImageAssetInner {
             image: None,
-            luma_image: None,
             error: String::new(),
+            has_alpha: false,
             #[cfg(feature = "2d")]
             skia_image: None,
         })))
@@ -128,6 +126,10 @@ impl ImageAsset {
         self.0.read().error.clone().into()
     }
 
+    pub fn error_string(&self) -> String {
+        self.0.read().error.clone()
+    }
+
     pub fn set_error(&self, error: &str) {
         let mut lock = self.0.write();
         lock.error.clear();
@@ -142,11 +144,15 @@ impl ImageAsset {
         CString::new(lock.error.as_str()).unwrap().into_raw()
     }
 
+    pub fn has_alpha(&self) -> bool {
+        self.read().has_alpha
+    }
+
     pub fn is_valid(&self) -> bool {
         self.read()
             .image
             .as_ref()
-            .map(|v| v.width() > 0 && v.height() > 0)
+            .map(|v| v.width > 0 && v.height > 0)
             .unwrap_or_default()
     }
 
@@ -154,7 +160,7 @@ impl ImageAsset {
         self.read()
             .image
             .as_ref()
-            .map(|v| v.width())
+            .map(|v| v.width as c_uint)
             .unwrap_or_default()
     }
 
@@ -162,7 +168,15 @@ impl ImageAsset {
         self.read()
             .image
             .as_ref()
-            .map(|v| v.height())
+            .map(|v| v.height as c_uint)
+            .unwrap_or_default()
+    }
+
+    pub fn dimensions(&self) -> (c_uint, c_uint) {
+        self.read()
+            .image
+            .as_ref()
+            .map(|v| (v.width as c_uint, v.height as c_uint))
             .unwrap_or_default()
     }
 
@@ -180,7 +194,17 @@ impl ImageAsset {
         use std::os::fd::FromRawFd;
         let file = unsafe { std::fs::File::from_raw_fd(fd) };
         let mut reader = std::io::BufReader::new(file);
-        self.load_from_reader(&mut reader)
+        let mut buf: Vec<u8> = Vec::new();
+        match reader.read_to_end(&mut buf) {
+            Ok(_) => self.load_from_bytes(buf.as_slice()),
+            Err(e) => {
+                let mut lock = self.get_lock();
+                let error = e.to_string();
+                lock.error.clear();
+                lock.error.push_str(error.as_str());
+                false
+            }
+        }
     }
 
     pub fn load_from_path(&mut self, path: &str) -> bool {
@@ -207,101 +231,16 @@ impl ImageAsset {
     where
         R: Read + Seek + BufRead,
     {
-        {
-            let mut lock = self.get_lock();
-
-            if !lock.error.is_empty() {
-                lock.error.clear()
-            }
-            lock.image = None;
-        }
-
-        let mut bytes = [0; 23];
-        let position = reader.stream_position();
-
-        match reader.read(&mut bytes) {
-            Ok(_) => {
-                if let Ok(position) = position {
-                    let _ = reader.seek(SeekFrom::Start(position));
-                }
-
-                let mut lock = self.get_lock();
-
-                match image::guess_format(&bytes) {
-                    Ok(mime) => match image::load(reader, mime) {
-                        Ok(mut data) => {
-                            data = DynamicImage::ImageRgba8(match data {
-                                DynamicImage::ImageRgba8(image) => image,
-                                _ => data.into_rgba8(),
-                            });
-
-                            #[cfg(feature = "2d")]
-                            {
-                                if let Some(image) = data.as_rgba8() {
-                                    let width = image.width() as i32;
-                                    let height = image.height() as i32;
-
-                                    let info = skia_safe::ImageInfo::new(
-                                        skia_safe::ISize::new(width, height),
-                                        skia_safe::ColorType::RGBA8888,
-                                        skia_safe::AlphaType::Unpremul,
-                                        None,
-                                    );
-                                    let skia_image = unsafe {
-                                        skia_safe::Image::from_raster_data(
-                                            &info,
-                                            skia_safe::Data::new_bytes(image.as_bytes()),
-                                            info.min_row_bytes(),
-                                        )
-                                    };
-                                    lock.skia_image = skia_image;
-                                } else if let Some(image) = data.as_rgb8() {
-                                    let width = image.width() as i32;
-                                    let height = image.height() as i32;
-
-                                    let info = skia_safe::ImageInfo::new(
-                                        skia_safe::ISize::new(width, height),
-                                        skia_safe::ColorType::RGB888x,
-                                        skia_safe::AlphaType::Unpremul,
-                                        None,
-                                    );
-                                    let skia_image = unsafe {
-                                        skia_safe::Image::from_raster_data(
-                                            &info,
-                                            skia_safe::Data::new_bytes(image.as_bytes()),
-                                            info.min_row_bytes(),
-                                        )
-                                    };
-                                    lock.skia_image = skia_image;
-                                }
-                            }
-
-                            let mut image = data.grayscale();
-                            image.invert();
-                            lock.luma_image = Some(image);
-                            lock.image = Some(data);
-
-                            true
-                        }
-                        Err(e) => {
-                            let error = e.to_string();
-                            lock.error.clear();
-                            lock.error.push_str(error.as_str());
-                            false
-                        }
-                    },
-                    Err(e) => {
-                        let error = e.to_string();
-                        lock.error.clear();
-                        lock.error.push_str(error.as_str());
-                        false
-                    }
-                }
-            }
+        let mut buf = Vec::new();
+        match reader.read_to_end(&mut buf) {
+            Ok(_) => self.load_from_bytes(buf.as_slice()),
             Err(e) => {
                 let mut lock = self.get_lock();
+                if !lock.error.is_empty() {
+                    lock.error.clear()
+                }
+                lock.image = None;
                 let error = e.to_string();
-                lock.error.clear();
                 lock.error.push_str(error.as_str());
                 false
             }
@@ -326,69 +265,47 @@ impl ImageAsset {
             lock.image = None;
         }
 
-        match image::load_from_memory(buf) {
-            Err(e) => {
+        unsafe {
+            stb_image::stb_image::stbi_set_unpremultiply_on_load(1);
+            stb_image::stb_image::stbi_convert_iphone_png_to_rgb(1);
+        }
+
+        match stb_image::image::load_from_memory_with_depth(buf, 4, true) {
+            LoadResult::Error(e) => {
                 let mut lock = self.get_lock();
                 let error = e.to_string();
-                lock.error.clear();
                 lock.error.push_str(error.as_str());
                 false
             }
-            Ok(mut data) => {
+            LoadResult::ImageU8(image) => {
                 let mut lock = self.get_lock();
-
-                data = DynamicImage::ImageRgba8(match data {
-                    DynamicImage::ImageRgba8(image) => image.clone(),
-                    _ => data.into_rgba8(),
-                });
+                let width = image.width as i32;
+                let height = image.height as i32;
 
                 #[cfg(feature = "2d")]
                 {
-                    if let Some(image) = data.as_rgba8() {
-                        let width = image.width() as i32;
-                        let height = image.height() as i32;
+                    let color_type = skia_safe::ColorType::RGBA8888;
+                    let alpha_type = skia_safe::AlphaType::Unpremul;
+                    let info = skia_safe::ImageInfo::new(
+                        skia_safe::ISize::new(width, height),
+                        color_type,
+                        alpha_type,
+                        None,
+                    );
 
-                        let info = skia_safe::ImageInfo::new(
-                            skia_safe::ISize::new(width, height),
-                            skia_safe::ColorType::RGBA8888,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-                        let skia_image = unsafe {
-                            skia_safe::Image::from_raster_data(
-                                &info,
-                                skia_safe::Data::new_bytes(image.as_bytes()),
-                                info.min_row_bytes(),
-                            )
-                        };
-                        lock.skia_image = skia_image;
-                    } else if let Some(image) = data.as_rgb8() {
-                        let width = image.width() as i32;
-                        let height = image.height() as i32;
-
-                        let info = skia_safe::ImageInfo::new(
-                            skia_safe::ISize::new(width, height),
-                            skia_safe::ColorType::RGB888x,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-                        let skia_image = unsafe {
-                            skia_safe::Image::from_raster_data(
-                                &info,
-                                skia_safe::Data::new_bytes(image.as_bytes()),
-                                info.min_row_bytes(),
-                            )
-                        };
-                        lock.skia_image = skia_image;
-                    }
+                    lock.skia_image = skia_safe::images::raster_from_data(
+                        &info,
+                        unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) },
+                        info.min_row_bytes(),
+                    );
                 }
-
-                let mut image = data.grayscale();
-                image.invert();
-                lock.luma_image = Some(image);
-                lock.image = Some(data);
-
+                lock.image = Some(image);
                 true
+            }
+            LoadResult::ImageF32(_) => {
+                let mut lock = self.get_lock();
+                lock.image = None;
+                false
             }
         }
     }
@@ -397,77 +314,43 @@ impl ImageAsset {
         self.load_from_bytes(unsafe { std::mem::transmute(buf) })
     }
 
-    pub fn scale(&mut self, x: c_uint, y: c_uint) -> bool {
+    pub fn load_from_raw_bytes(
+        &mut self,
+        width: usize,
+        height: usize,
+        depth: usize,
+        data: Vec<u8>,
+    ) -> bool {
+        let image = stb_image::image::Image::new(width, height, depth, data);
+
+        let info = skia_safe::ImageInfo::new(
+            skia_safe::ISize::new(width as i32, height as i32),
+            skia_safe::ColorType::RGBA8888,
+            skia_safe::AlphaType::Unpremul,
+            None,
+        );
+
+        let skia_image = unsafe {
+            skia_safe::images::raster_from_data(
+                &info,
+                skia_safe::Data::new_bytes(image.data.as_slice()),
+                info.min_row_bytes(),
+            )
+        };
+
         let mut lock = self.get_lock();
-        if !lock.error.is_empty() {
-            lock.error.clear()
-        }
-        match &mut lock.image {
-            Some(image) => {
-                let data = image.resize(x, y, FilterType::Nearest);
+        lock.error.clear();
+        lock.image = Some(image);
+        lock.has_alpha = depth > 3;
+        lock.skia_image = skia_image;
 
-                let data = DynamicImage::ImageRgba8(match data {
-                    DynamicImage::ImageRgba8(data) => data,
-                    _ => data.into_rgba8(),
-                });
-
-                let width = data.width() as i32;
-                let height = data.height() as i32;
-
-                #[cfg(feature = "2d")]
-                {
-                    if let Some(image) = data.as_rgba8() {
-                        let info = skia_safe::ImageInfo::new(
-                            skia_safe::ISize::new(width, height),
-                            skia_safe::ColorType::RGBA8888,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-
-                        let skia_image = unsafe {
-                            skia_safe::Image::from_raster_data(
-                                &info,
-                                skia_safe::Data::new_bytes(image.as_ref()),
-                                (width * 4) as usize,
-                            )
-                        };
-                        lock.skia_image = skia_image;
-                    } else if let Some(image) = data.as_rgb8() {
-                        let info = skia_safe::ImageInfo::new(
-                            skia_safe::ISize::new(width, height),
-                            skia_safe::ColorType::RGB888x,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-
-                        let skia_image = unsafe {
-                            skia_safe::Image::from_raster_data(
-                                &info,
-                                skia_safe::Data::new_bytes(image.as_ref()),
-                                (width * 3) as usize,
-                            )
-                        };
-                        lock.skia_image = skia_image;
-                    }
-                }
-
-                lock.image = Some(data);
-
-                true
-            }
-            _ => {
-                lock.error.push_str("No Image loaded");
-                false
-            }
-        }
+        true
     }
 
     fn byte_swap(data: &mut [u8]) {
         let length = data.len();
         for i in (0..length).step_by(4) {
-            let r = data[i + 2];
-            data[i + 2] = data[i + 0];
-            data[i + 0] = r;
+            data.swap(i + 2, i);
         }
     }
 
@@ -476,57 +359,148 @@ impl ImageAsset {
         for i in (0..length).step_by(4) {
             let r = data[i + 2];
             let g = data[i + 1];
-            let b = data[i + 0];
+            let b = data[i];
             let a = data[i + 3];
-            data[i + 0] = ((r as u32) * (a as u32) / 255) as u8;
+            data[i] = ((r as u32) * (a as u32) / 255) as u8;
             data[i + 1] = ((g as u32) * (a as u32) / 255) as u8;
             data[i + 2] = ((b as u32) * (a as u32) / 255) as u8;
         }
     }
 
-    pub fn get_luminance_bytes(&self) -> Option<&[u8]> {
-        self.get_lock().luma_image.as_ref().map(|d| {
-            let slice = d.as_bytes();
-            unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
+    pub fn get_rgb_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_rgb(slice, width, height)
+        })
+    }
+
+    pub fn get_luminance_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_luminance(slice, width, height)
+        })
+    }
+
+    pub fn get_luminance_alpha_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_luminance_alpha(slice, width, height)
+        })
+    }
+
+    pub fn get_alpha_bytes(&self) -> Option<Vec<u8>> {
+        self.read().image.as_ref().map(|image| {
+            let slice = image.data.as_slice();
+            let width = image.width;
+            let height = image.height;
+            Self::rgba_to_alpha(slice, width, height)
         })
     }
 
     pub fn get_bytes(&self) -> Option<&[u8]> {
-        self.get_lock().image.as_ref().map(|d| {
-            let slice = d.as_bytes();
-            unsafe { std::slice::from_raw_parts(slice.as_ptr(), slice.len()) }
-        })
+        self.read()
+            .image
+            .as_ref()
+            .map(|d| unsafe { std::slice::from_raw_parts(d.data.as_ptr(), d.data.len()) })
     }
 
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
-        self.get_lock()
-            .image
-            .as_ref()
-            .map(|d| d.as_bytes().to_vec())
+        self.read().image.as_ref().map(|d| d.data.clone())
     }
 
-    pub fn save_path_raw(&mut self, path: *const c_char, format: OutputFormat) -> bool {
-        let real_path = unsafe { CStr::from_ptr(path) };
-        self.save_path(real_path.to_string_lossy().as_ref(), format)
+    pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {
+        let mut rgba_data = Vec::with_capacity(data.len() * 2);
+        for chunk in data.chunks(2) {
+            let r = (chunk[0] & 0xF8) >> 3;
+            let g = ((chunk[0] & 0x07) << 5) | ((chunk[1] & 0xE0) >> 3);
+            let b = (chunk[1] & 0x1F) << 3;
+
+            let a = 255;
+
+            rgba_data.extend_from_slice(&[r, g, b, a]);
+        }
+        rgba_data
     }
 
-    pub fn save_path(&mut self, path: &str, format: OutputFormat) -> bool {
-        let mut lock = self.get_lock();
-        if !lock.error.is_empty() {
-            lock.error.clear()
+    pub fn rgba_to_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let mut buf: Vec<u8> = vec![0_u8; width * height];
+        if data.len() < width * height * 4 {
+            return buf;
         }
-        match lock.image.as_ref() {
-            Some(image) => match format {
-                OutputFormat::PNG => image.save_with_format(path, ImageFormat::Png).is_ok(),
-                OutputFormat::ICO => image.save_with_format(path, ImageFormat::Ico).is_ok(),
-                OutputFormat::BMP => image.save_with_format(path, ImageFormat::Bmp).is_ok(),
-                OutputFormat::TIFF => image.save_with_format(path, ImageFormat::Tiff).is_ok(),
-                _ => image.save_with_format(path, ImageFormat::Jpeg).is_ok(),
-            },
-            _ => {
-                lock.error.push_str("No Image loaded");
-                false
-            }
+        for i in 0..(width * height) {
+            let alpha = data[i * 4 + 3];
+            buf[i] = alpha;
         }
+        buf
+    }
+    pub fn rgba_to_luminance_alpha(data: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let mut buf: Vec<u8> = vec![0_u8; width * height * 2];
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+        for i in 0..(width * height) {
+            let red = data[i * 4] as f32;
+            let green = data[i * 4 + 1] as f32;
+            let blue = data[i * 4 + 2] as f32;
+            let alpha = data[i * 4 + 3];
+
+            buf[i * 2] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+            buf[i * 2 + 1] = alpha;
+        }
+        buf
+    }
+
+    pub fn rgba_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let mut buf: Vec<u8> = vec![255_u8; width * height];
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+        for i in 0..(width * height) {
+            let red = data[i * 4] as f32;
+            let green = data[i * 4 + 1] as f32;
+            let blue = data[i * 4 + 2] as f32;
+
+            buf[i * 2] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+        }
+        buf
+    }
+
+    pub fn rgb_to_luminance(data: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let mut buf: Vec<u8> = vec![255_u8; width * height];
+        if data.len() < width * height * 3 {
+            return buf;
+        }
+        for i in 0..(width * height) {
+            let red = data[i * 3] as f32;
+            let green = data[i * 3 + 1] as f32;
+            let blue = data[i * 3 + 2] as f32;
+
+            buf[i] = (0.299 * red + 0.587 * green + 0.114 * blue) as u8;
+        }
+        buf
+    }
+
+    pub fn rgba_to_rgb(data: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let mut buf: Vec<u8> = vec![255_u8; width * height * 3];
+        if data.len() < width * height * 4 {
+            return buf;
+        }
+
+        for i in 0..(width * height) {
+            let red = data[i * 4];
+            let green = data[i * 4 + 1];
+            let blue = data[i * 4 + 2];
+
+            buf[i * 3] = red;
+            buf[i * 3 + 1] = green;
+            buf[i * 3 + 2] = blue;
+        }
+        buf
     }
 }

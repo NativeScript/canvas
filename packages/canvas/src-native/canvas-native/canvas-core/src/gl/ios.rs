@@ -516,12 +516,12 @@ impl GLContext {
         inner.view.as_ref().map(|view| view.snapshot())
     }
 
-    #[inline(always)]
+
     pub fn set_vsync(&self, _sync: bool) -> bool {
         true
     }
 
-    #[inline(always)]
+
     pub fn make_current(&self) -> bool {
         let inner = self.inner.read();
 
@@ -564,7 +564,7 @@ impl GLContext {
         false
     }
 
-    #[inline(always)]
+
     pub fn remove_if_current(&self) {
         let inner = self.inner.read();
         if let Some(context) = inner.context.as_ref() {
@@ -572,7 +572,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn bind_drawable(&self) {
         let inner = self.inner.read();
         if let Some(view) = inner.view.as_ref() {
@@ -580,7 +580,7 @@ impl GLContext {
         }
     }
 
-    #[inline(always)]
+
     pub fn swap_buffers(&self) -> bool {
         let inner = self.inner.read();
         if let Some(view) = inner.view.as_ref() {
@@ -594,7 +594,7 @@ impl GLContext {
         false
     }
 
-    #[inline(always)]
+
     pub fn get_surface_width(&self) -> i32 {
         self.inner
             .read()
@@ -604,13 +604,28 @@ impl GLContext {
             .unwrap()
     }
 
-    #[inline(always)]
+
     pub fn get_surface_height(&self) -> i32 {
         self.inner
             .read()
             .view
             .as_ref()
             .map(|v| v.drawable_height().try_into().unwrap_or_default())
+            .unwrap()
+    }
+
+
+    pub fn get_surface_dimensions(&self) -> (i32, i32) {
+        self.inner
+            .read()
+            .view
+            .as_ref()
+            .map(|v| {
+                (
+                    v.drawable_width().try_into().unwrap_or_default(),
+                    v.drawable_height().try_into().unwrap_or_default(),
+                )
+            })
             .unwrap()
     }
 

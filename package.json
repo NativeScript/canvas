@@ -18,7 +18,9 @@
 		"build.canvas.ios.release": "nx run canvas:build.native.ios.release",
 		"build.canvas.ios.debug": "nx run canvas:build.native.ios.debug",
 		"build.canvas.ios.framework.release": "nx run canvas:build.native.ios.framework.release",
-		"build.canvas.ios.framework.debug": "nx run canvas:build.native.ios.framework.debug"
+		"build.canvas.ios.framework.debug": "nx run canvas:build.native.ios.framework.debug",
+		"build.canvas.svg.ios.framework.release": "nx run canvas-svg:build.native.ios.framework.release",
+		"build.canvas.svg.ios.framework.debug": "nx run canvas-svg:build.native.ios.framework.debug"
 	},
 	"private": true,
 	"devDependencies": {
@@ -38,7 +40,9 @@
 		"@nativescript/types": "~8.5.0",
 		"@nativescript/webpack": "~5.0.5",
 		"@ngtools/webpack": "^15.0.0",
+		"@pixi-essentials/svg": "^2.0.1",
 		"@types/three": "^0.157.0",
+		"@xmldom/xmldom": "0.8.10",
 		"babylonjs": "^6.0.0",
 		"babylonjs-materials": "^6.0.0",
 		"canvg": "^4.0.1",
@@ -55,7 +59,10 @@
 		"ng-packagr": "^15.0.0",
 		"phaser": "^3.55.2",
 		"phaser-ce": "^2.20.0",
-		"pixi.js": "^7.3.1",
+		"pixi-filters": "~5.3.0",
+		"pixi.js": "~7.3.1",
+		"pixi.js-legacy": "~7.3.1",
+		"pixi-viewport": "^5.0.2",
 		"playcanvas": "^1.66.1",
 		"query-selector": "2.0.0",
 		"react-nativescript": "^4.0.0",
@@ -64,8 +71,8 @@
 		"svelte-native": "^1.0.5",
 		"three": "^0.157.0",
 		"typescript": "~4.8.0",
+		"util": "~0.12.5",
 		"vexflow": "^4.2.3",
-		"xmldom": "~0.6.0",
 		"zen-3d": "0.0.3",
 		"zone.js": "~0.13.0"
 	},

@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignorePixelScalingProperty, ignoreTouchEventsProperty, DOMRect } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -97,10 +97,6 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-	[ignorePixelScalingProperty.setNative](value: boolean) {
-		this._canvas.ignorePixelScaling = value;
-	}
-
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = value;
 	}
@@ -120,17 +116,10 @@ export class Canvas extends CanvasBase {
 
 	//@ts-ignore
 	get width() {
-		// const measuredWidth = this.getMeasuredWidth();
-		// if (measuredWidth !== 0) {
-		// 	return measuredWidth / Screen.mainScreen.scale;
-		// }
-		return this._realSize.width;
+		return this._logicalSize.width;
 	}
 
 	set width(value) {
-		if (value === this.style.width) {
-			return;
-		}
 		this.style.width = value;
 		this._didLayout = false;
 		this._layoutNative(true);
@@ -138,18 +127,11 @@ export class Canvas extends CanvasBase {
 
 	//@ts-ignore
 	get height() {
-		// const measuredHeight = this.getMeasuredHeight();
-		// if (measuredHeight !== 0) {
-		// 	return measuredHeight / Screen.mainScreen.scale;
-		// }
-		return this._realSize.height;
+		return this._logicalSize.height;
 	}
 
 	set height(value) {
-		if (value === this.style.height) {
-			return;
-		}
-		this.style.height = value;
+		this.style.height = value ?? 0;
 		this._didLayout = false;
 		this._layoutNative(true);
 	}
@@ -185,25 +167,41 @@ export class Canvas extends CanvasBase {
 
 	onLayout(left: number, top: number, right: number, bottom: number) {
 		super.onLayout(left, top, right, bottom);
-		const parent = this.parent as any;
-		// TODO change DIPs once implemented
-		if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
-			Object.defineProperty(parent, 'clientWidth', {
-				get: function () {
-					return parent.getMeasuredWidth() / Screen.mainScreen.scale;
+		if (!this.parent) {
+			return;
+		}
+		if (!Object.hasOwn(this.parent, 'clientWidth') && !Object.hasOwn(this.parent, 'clientHeight')) {
+			Object.defineProperties(this.parent, {
+				clientWidth: {
+					get: function () {
+						return this.getMeasuredWidth() / Screen.mainScreen.scale;
+					},
 				},
-			});
-			Object.defineProperty(parent, 'clientHeight', {
-				get: function () {
-					return parent.getMeasuredHeight() / Screen.mainScreen.scale;
+				clientHeight: {
+					get: function () {
+						return this.getMeasuredHeight() / Screen.mainScreen.scale;
+					},
 				},
 			});
 		}
 
-		if (parent && typeof parent.getBoundingClientRect !== 'function') {
-			parent.getBoundingClientRect = function () {
+		if (typeof (<any>this.parent).getBoundingClientRect !== 'function') {
+			(<any>this.parent).getBoundingClientRect = function () {
 				const view = this;
-				const frame = view.ios.frame as CGRect;
+				const nativeView = view.nativeView ?? view.ios;
+				if (!nativeView) {
+					return {
+						bottom: 0,
+						height: 0,
+						left: 0,
+						right: 0,
+						top: 0,
+						width: 0,
+						x: 0,
+						y: 0,
+					};
+				}
+				const frame = nativeView.frame as CGRect;
 				const width = view.width;
 				const height = view.height;
 				return {
@@ -219,8 +217,8 @@ export class Canvas extends CanvasBase {
 			};
 		}
 
-		if (parent && parent.ownerDocument === undefined) {
-			Object.defineProperty(parent, 'ownerDocument', {
+		if (!Object.hasOwn(this.parent, 'ownerDocument')) {
+			Object.defineProperty(this.parent, 'ownerDocument', {
 				get: function () {
 					return global?.window?.document ?? doc;
 				},
@@ -243,7 +241,6 @@ export class Canvas extends CanvasBase {
 
 	initNativeView() {
 		super.initNativeView();
-		this._canvas.ignorePixelScaling = this.ignorePixelScaling;
 	}
 
 	onUnloaded() {
@@ -290,18 +287,18 @@ export class Canvas extends CanvasBase {
 				return;
 			}
 
-			const size = this._realSize;
+			const size = this._logicalSize;
 
 			// todo revisit
 
-			const width = Utils.layout.toDevicePixels(size.width || 1);
-			const height = Utils.layout.toDevicePixels(size.height || 1);
+		//	const width = Utils.layout.toDevicePixels(size.width || 1);
+		//	const height = Utils.layout.toDevicePixels(size.height || 1);
 
 			this._canvas.forceLayout(size.width, size.height);
 
-			if (this._is2D) {
-				this._2dContext?.native?.__resize?.(width, height);
-			}
+			// if (this._is2D) {
+			// 	this._2dContext?.native?.__resize?.(width, height);
+			// }
 
 			this._didLayout = true;
 		}
@@ -319,6 +316,7 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					this._layoutNative(true);
+
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
@@ -341,7 +339,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					this._layoutNative(true);
-					const opts = { version: 'v1', ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -358,7 +356,7 @@ export class Canvas extends CanvasBase {
 
 				if (!this._webgl2Context) {
 					this._layoutNative(true);
-					const opts = { version: 'v2', ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -379,7 +377,7 @@ export class Canvas extends CanvasBase {
 				return this._2dContext.native;
 			case ContextType.WebGL:
 				return this._webglContext.native;
-			case ContextType.Canvas:
+			case ContextType.WebGL2:
 				return this._webgl2Context.native;
 			default:
 				return null;

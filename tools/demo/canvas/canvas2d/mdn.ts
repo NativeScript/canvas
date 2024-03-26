@@ -37,7 +37,7 @@ export function createConicGradient(canvas) {
 
 export function font(canvas) {
 	const ctx = canvas.getContext('2d');
-	ctx.font = 'bold 48px serif';
+	ctx.font = 'bold 50px serif';
 	ctx.strokeText('Hello world', 50, 100);
 }
 
@@ -100,7 +100,7 @@ export function imageBlock(canvas) {
 	asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
 		for (var i = 0; i < 4; i++) {
 			for (var j = 0; j < 3; j++) {
-				ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
+				ctx.drawImage(asset, j * 50, i * 38, 50, 38);
 			}
 		}
 	});
@@ -149,8 +149,6 @@ export function lineJoin(canvas) {
 
 export function lineWidth(canvas) {
 	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
-	console.log(ctx.getContextAttributes());
 
 	ctx.lineWidth = 15;
 
@@ -630,12 +628,30 @@ export function isPointInStrokeTouch(canvas) {
 	ctx.stroke(ellipse);
 
 	// Listen for mouse moves
+	canvas.addEventListener('touchstart', function (args: TouchEvent) {
+		// Check whether point is inside ellipse's stroke
+		const event = args.changedTouches[0];
+		//console.log(event.clientX, event.clientY);
+		// event.offsetX, event.offsetY
+		if (ctx.isPointInStroke(ellipse, event.clientX, event.clientY)) {
+			ctx.strokeStyle = 'green';
+		} else {
+			ctx.strokeStyle = 'red';
+		}
+
+		// Draw ellipse
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.fill(ellipse);
+		ctx.stroke(ellipse);
+	});
+
+	// Listen for mouse moves
 	canvas.addEventListener('touchmove', function (args) {
 		// Check whether point is inside ellipse's stroke
 		const event = args.changedTouches[0];
 		//console.log(event.clientX, event.clientY);
 		// event.offsetX, event.offsetY
-		if (ctx.isPointInStroke(ellipse, event.offsetX, event.offsetY)) {
+		if (ctx.isPointInStroke(ellipse, event.clientX, event.clientY)) {
 			ctx.strokeStyle = 'green';
 		} else {
 			ctx.strokeStyle = 'red';
@@ -651,16 +667,16 @@ export function isPointInStrokeTouch(canvas) {
 export function march(canvas) {
 	const ctx = canvas.getContext('2d');
 	var offset = 0;
-
 	function draw() {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.setLineDash([4, 2]);
+		ctx.setLineDash([4 , 2]);
 		ctx.lineDashOffset = -offset;
 		ctx.strokeRect(10, 10, 100, 100);
 	}
 
 	function _march() {
 		offset++;
+		offset = offset;
 		if (offset > 16) {
 			offset = 0;
 		}
@@ -669,4 +685,10 @@ export function march(canvas) {
 	}
 
 	_march();
+}
+
+export function skew(canvas) {
+	const ctx = canvas.getContext('2d');
+	ctx.transform(1, 0.2, 0.8, 1, 0, 0);
+	ctx.fillRect(0, 0, 100, 100);
 }

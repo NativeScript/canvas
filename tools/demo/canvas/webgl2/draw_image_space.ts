@@ -1,6 +1,4 @@
 import { createProgramFromScripts } from '../webgl/utils';
-import { ImageAsset } from '@nativescript/canvas';
-import { knownFolders } from '@nativescript/core';
 
 export function draw_image_space(canvas) {
 	const vs = `#version 300 es

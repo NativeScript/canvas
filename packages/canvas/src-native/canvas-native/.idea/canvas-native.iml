@@ -682,6 +682,7 @@
       <sourceFolder url="file://$MODULE_DIR$/playground/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-cxx/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/canvas-c/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/canvas-svg/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stb/stb/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/canvas-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

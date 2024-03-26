@@ -26,7 +26,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		var scene: BABYLON.Scene = null;
 		var sceneToRender: BABYLON.Scene = null;
 		var createDefaultEngine = function () {
-			return new BABYLON.Engine(gl, true, { preserveDrawingBuffer: false, stencil: true, antialias: false });
+			return new BABYLON.Engine(gl, true, { preserveDrawingBuffer: false, stencil: true, antialias: false , adaptToDeviceRatio: true});
 		};
 		// You have to create a function called createScene. This function must return a BABYLON.Scene object
 		// You can reference the following variables: scene, canvas

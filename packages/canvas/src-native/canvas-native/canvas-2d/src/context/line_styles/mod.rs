@@ -11,22 +11,14 @@ pub mod line_join;
 
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
-        // let width = if self.state.use_device_scale {
-        //     width * self.device.density
-        // }else {
-        //     width
-        // };
         self.state.line_width = width;
-        self.state.paint.stroke_paint_mut().set_stroke_width(width);
+        self.state
+            .paint
+            .stroke_paint_mut()
+            .set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
-      /*  if self.state.did_use_device_scale {
-            self.state.line_width / self.device.density
-        } else {
-            self.state.line_width
-        } */
-
         self.state.line_width
     }
 
@@ -60,22 +52,28 @@ impl Context {
 
     pub fn set_miter_limit(&mut self, limit: c_float) {
         self.state.miter_limit = limit;
-        self.state.paint.stroke_paint_mut().set_stroke_miter(limit);
+        self.state
+            .paint
+            .stroke_paint_mut()
+            .set_stroke_miter(limit);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
-        let line_dash;
         let is_odd = (dash.len() % 2) != 0;
-        if is_odd {
-            line_dash = [dash, dash].concat();
+        let line_dash = if is_odd {
+            [dash, dash].concat()
         } else {
-            line_dash = dash.to_vec()
-        }
+            dash.to_vec()
+        };
         let mut effect: Option<PathEffect> = None;
-        if !line_dash.is_empty() {
-            effect = PathEffect::dash(line_dash.as_slice(), self.state.line_dash_offset);
+        if !dash.is_empty() {
+            // scale line_dash_offset
+            effect = PathEffect::dash(
+                line_dash.as_slice(),
+                self.state.line_dash_offset,
+            );
         }
-        self.state.line_dash_list = line_dash;
+        self.state.line_dash_list = dash.to_vec();
         self.state.paint.stroke_paint_mut().set_path_effect(effect);
     }
 

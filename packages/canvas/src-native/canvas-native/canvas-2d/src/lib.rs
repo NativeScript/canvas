@@ -3,10 +3,8 @@ extern crate core;
 use std::ffi::c_uint;
 
 use base64::Engine;
-use image::EncodableLayout;
 use skia_safe::{
-    AlphaType, ColorType, EncodedImageFormat, ImageInfo, images, IPoint, ISize, Point, surfaces
-    ,
+    AlphaType, ColorType, EncodedImageFormat, ImageInfo, images, IPoint, ISize, Point, surfaces,
 };
 use skia_safe::gpu::BackendTexture;
 use skia_safe::image::CachingHint;
@@ -20,17 +18,20 @@ pub mod ffi;
 pub mod image_bitmap;
 pub mod ios;
 pub mod prelude;
-pub mod svg;
 pub mod utils;
 
-const GR_GL_TEXTURE_2D: c_uint  = 0x0DE1;
+const GR_GL_TEXTURE_2D: c_uint = 0x0DE1;
 
 pub fn snapshot_to_backend_texture(context: &mut Context) -> Option<BackendTexture> {
     let snapshot = context.surface.image_snapshot();
-    skia_safe::gpu::images::get_backend_texture_from_image(&snapshot, true).map(|(texture,_)| texture)
+    skia_safe::gpu::images::get_backend_texture_from_image(&snapshot, true)
+        .map(|(texture, _)| texture)
 }
 
 pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_uint) -> String {
+    if context.device.is_np {
+        return "data:,".to_string();
+    }
     let mut ctx = context.surface.direct_context();
     let image = context
         .surface
@@ -83,11 +84,16 @@ pub fn to_data_url_context(context: &mut Context, format: &str, quality: c_uint)
 
 pub fn to_data_url(context: &mut ContextWrapper, format: &str, quality: c_uint) -> String {
     let mut context = context.get_context_mut();
+
+    if context.device.is_np {
+        return "data:,".to_string();
+    }
+
     let mut ctx = context.surface.direct_context();
     let image = context
         .surface
         .image_snapshot()
-        .make_raster_image(&mut ctx, Some(CachingHint::Allow));
+        .make_raster_image(&mut ctx, Some(CachingHint::Disallow));
 
     if let Some(image) = image {
         let mut quality = quality;
@@ -145,12 +151,7 @@ pub fn bytes_to_data_url(
     encoded_prefix.push_str("data:");
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
-    let image_info = ImageInfo::new(
-        (width, height),
-        ColorType::N32,
-        AlphaType::Unpremul,
-        None,
-    );
+    let image_info = ImageInfo::new((width, height), ColorType::N32, AlphaType::Unpremul, None);
     if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize) {
         let mut quality = quality;
         if quality > 100 || quality < 0 {
@@ -196,6 +197,10 @@ pub fn bytes_to_data_url(
 }
 
 pub(crate) fn to_data_with_context(context: &mut Context) -> Vec<u8> {
+    if context.device.is_np {
+        return vec![];
+    }
+
     let width = context.surface.width();
     let height = context.surface.height();
     let image = context.surface.image_snapshot();
@@ -219,6 +224,9 @@ pub(crate) fn to_data_with_context(context: &mut Context) -> Vec<u8> {
 
 pub(crate) fn to_data(context: &mut ContextWrapper) -> Vec<u8> {
     let mut context = context.get_context_mut();
+    if context.device.is_np {
+        return vec![];
+    }
     let width = context.surface.width();
     let height = context.surface.height();
     let image = context.surface.image_snapshot();
@@ -248,6 +256,9 @@ pub(crate) fn flush_custom_surface(
 ) {
     unsafe {
         let mut context = context.get_context_mut();
+        if context.device.is_np {
+            return;
+        }
         if let Some(mut context) = context.surface.direct_context() {
             context.flush_and_submit();
         }
@@ -278,6 +289,11 @@ pub(crate) fn flush_custom_surface(
 pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
     unsafe {
         let mut context = context.get_context_mut();
+
+        if context.device.is_np {
+            return None;
+        }
+
         if let Some(mut context) = context.surface.direct_context() {
             context.flush_and_submit();
         }
@@ -294,6 +310,11 @@ pub(crate) fn snapshot_canvas(context: &mut ContextWrapper) -> Option<Vec<u8>> {
 pub(crate) fn snapshot_canvas_raw(context: &mut ContextWrapper) -> Vec<u8> {
     unsafe {
         let mut context = context.get_context_mut();
+
+        if context.device.is_np {
+            return vec![];
+        }
+
         let info = ImageInfo::new(
             ISize::new(context.surface.width(), context.surface.height()),
             ColorType::RGBA8888,

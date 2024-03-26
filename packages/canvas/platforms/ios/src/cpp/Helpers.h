@@ -7,7 +7,6 @@
 #include <memory>
 #include "Common.h"
 #include "OneByteStringResource.h"
-#include "PerIsolateData.h"
 #include "v8-fast-api-calls.h"
 //#ifdef __APPLE__
 //#ifdef __OBJC__
@@ -176,7 +175,7 @@ static void SetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &o
                             const v8::Local<v8::String> &propName,
                             const v8::Local<v8::Value> &value) {
     v8::Local<v8::Context> context;
-    obj->GetCreationContext().ToLocal(&context);
+    auto succcess = obj->GetCreationContext().ToLocal(&context);
     v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, propName);
     obj->SetPrivate(context, privateKey, value);
 }
@@ -185,7 +184,7 @@ static v8::Local<v8::Value>
 GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
                 const v8::Local<v8::String> &propName) {
     v8::Local<v8::Context> context;
-    obj->GetCreationContext().ToLocal(&context);
+    auto succcess = obj->GetCreationContext().ToLocal(&context);
     v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, propName);
 
     v8::Maybe<bool> hasPrivate = obj->HasPrivate(context, privateKey);
@@ -196,7 +195,7 @@ GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
 
     v8::Local<v8::Value> result;
 
-    obj->GetPrivate(context, privateKey).ToLocal(&result);
+    succcess = obj->GetPrivate(context, privateKey).ToLocal(&result);
 
     return result;
 }

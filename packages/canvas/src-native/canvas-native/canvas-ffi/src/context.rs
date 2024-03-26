@@ -145,7 +145,7 @@ pub extern "C" fn canvas_native_context_data_url(
     }
 }
 
-#[inline]
+
 pub(crate) fn canvas_native_context_to_data(
     context: *mut canvas_core::context::ContextWrapper,
 ) -> Vec<u8> {
@@ -157,7 +157,7 @@ pub(crate) fn canvas_native_context_to_data(
     }
 }
 
-#[inline]
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_snapshot_canvas(
     context: *mut canvas_core::context::ContextWrapper,

@@ -12,7 +12,7 @@
 				"production": true,
 				"uglify": true,
 				"release": true,
-				"forDevice": true,
+				"forDevice": true
 			},
 			"dependsOn": [
 				{
@@ -25,7 +25,8 @@
 			"executor": "@nativescript/nx:build",
 			"options": {
 				"platform": "ios",
-				"noHmr": true
+				"noHmr": true,
+				"flags": "--env.watchNodeModules"
 			},
 			"dependsOn": [
 				{

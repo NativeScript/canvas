@@ -50,7 +50,7 @@ public class Utils: NSObject {
         return parentPath
     }
     
-    enum TNSError: Error {
+    enum NSCError: Error {
         case customError(String)
     }
     
@@ -69,7 +69,7 @@ public class Utils: NSObject {
             
             
             if(failed && !fileManager.createFile(atPath: path, contents: nil, attributes: nil)){
-                throw TNSError.customError("Failed to create file at path '" + path + "'")
+                throw NSCError.customError("Failed to create file at path '" + path + "'")
             }
         }
         

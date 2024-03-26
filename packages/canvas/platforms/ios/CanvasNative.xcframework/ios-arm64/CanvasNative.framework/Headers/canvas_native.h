@@ -670,6 +670,29 @@ void canvas_native_context_draw_image_context(struct CanvasRenderingContext2D *c
                                               float d_width,
                                               float d_height);
 
+void canvas_native_context_draw_image_dx_dy_webgl(struct CanvasRenderingContext2D *context,
+                                                  struct WebGLState *source,
+                                                  float dx,
+                                                  float dy);
+
+void canvas_native_context_draw_image_dx_dy_dw_dh_webgl(struct CanvasRenderingContext2D *context,
+                                                        struct WebGLState *source,
+                                                        float dx,
+                                                        float dy,
+                                                        float d_width,
+                                                        float d_height);
+
+void canvas_native_context_draw_image_webgl(struct CanvasRenderingContext2D *context,
+                                            struct WebGLState *source,
+                                            float sx,
+                                            float sy,
+                                            float s_width,
+                                            float s_height,
+                                            float dx,
+                                            float dy,
+                                            float d_width,
+                                            float d_height);
+
 void canvas_native_context_draw_atlas(struct CanvasRenderingContext2D *context,
                                       const uint8_t *data,
                                       uintptr_t size,
@@ -1138,6 +1161,37 @@ float canvas_native_matrix_get_m44(const struct Matrix *matrix);
 
 void canvas_native_matrix_set_m44(struct Matrix *matrix, float m44);
 
+struct Matrix *canvas_native_matrix_translate(float x, float y, const struct Matrix *matrix);
+
+void canvas_native_matrix_translate_self(struct Matrix *matrix, float x, float y);
+
+void canvas_native_matrix_multiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+void canvas_native_matrix_premultiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+struct Matrix *canvas_native_matrix_scale_non_uniform(float sx,
+                                                      float sy,
+                                                      const struct Matrix *matrix);
+
+void canvas_native_matrix_scale_non_uniform_self(struct Matrix *matrix, float sx, float sy);
+
+struct Matrix *canvas_native_matrix_rotate(float angle,
+                                           float cx,
+                                           float cy,
+                                           const struct Matrix *matrix);
+
+void canvas_native_matrix_rotate_self(struct Matrix *matrix, float angle, float cx, float cy);
+
+struct Matrix *canvas_native_matrix_skew_x(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_x_self(struct Matrix *matrix, float angle);
+
+struct Matrix *canvas_native_matrix_skew_y(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_y_self(struct Matrix *matrix, float angle);
+
+struct Matrix *canvas_native_matrix_clone(const struct Matrix *matrix);
+
 struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
 
 int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);
@@ -1171,12 +1225,6 @@ uint32_t canvas_native_image_asset_height(struct ImageAsset *asset);
 const char *canvas_native_image_asset_get_error(struct ImageAsset *asset);
 
 bool canvas_native_image_asset_has_error(struct ImageAsset *asset);
-
-bool canvas_native_image_asset_scale(struct ImageAsset *asset, uint32_t x, uint32_t y);
-
-bool canvas_native_image_asset_save_path(struct ImageAsset *asset,
-                                         const char *path,
-                                         uint32_t format);
 
 float canvas_native_text_metrics_get_width(const struct TextMetrics *metrics);
 
@@ -1353,7 +1401,7 @@ bool canvas_native_webgl_context_attribute_get_get_depth(const struct ContextAtt
 
 bool canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_caveat(const struct ContextAttributes *attr);
 
-const char *canvas_native_webgl_context_attribute_get_get_power_preference(const struct ContextAttributes *attr);
+int32_t canvas_native_webgl_context_attribute_get_get_power_preference(const struct ContextAttributes *attr);
 
 bool canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(const struct ContextAttributes *attr);
 
@@ -1475,12 +1523,12 @@ void canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(uint32_t 
                                                                        const struct OES_vertex_array_object *object);
 
 struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
-                                              const char *version,
+                                              int32_t version,
                                               bool alpha,
                                               bool antialias,
                                               bool depth,
                                               bool fail_if_major_performance_caveat,
-                                              const char *power_preference,
+                                              int32_t power_preference,
                                               bool premultiplied_alpha,
                                               bool preserve_drawing_buffer,
                                               bool stencil,
@@ -1489,12 +1537,12 @@ struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
 
 struct WebGLState *canvas_native_webgl_create_no_window(int32_t width,
                                                         int32_t height,
-                                                        const char *version,
+                                                        int32_t version,
                                                         bool alpha,
                                                         bool antialias,
                                                         bool depth,
                                                         bool fail_if_major_performance_caveat,
-                                                        const char *power_preference,
+                                                        int32_t power_preference,
                                                         bool premultiplied_alpha,
                                                         bool preserve_drawing_buffer,
                                                         bool stencil,
@@ -1999,9 +2047,9 @@ void canvas_native_webgl_tex_image2d_canvas2d(int32_t target,
 
 void canvas_native_webgl_tex_image2d_webgl(int32_t target,
                                            int32_t level,
-                                           int32_t _internalformat,
-                                           int32_t _format,
-                                           int32_t _image_type,
+                                           int32_t internalformat,
+                                           int32_t format,
+                                           int32_t image_type,
                                            struct WebGLState *webgl,
                                            struct WebGLState *state);
 
@@ -2067,8 +2115,8 @@ void canvas_native_webgl_tex_sub_image2d_webgl(uint32_t target,
                                                int32_t level,
                                                int32_t xoffset,
                                                int32_t yoffset,
-                                               uint32_t _format,
-                                               int32_t _image_type,
+                                               uint32_t format,
+                                               int32_t image_type,
                                                struct WebGLState *webgl,
                                                struct WebGLState *state);
 
@@ -2555,6 +2603,18 @@ void canvas_native_webgl2_tex_image3d_asset(uint32_t target,
                                             const struct ImageAsset *asset,
                                             struct WebGLState *state);
 
+void canvas_native_webgl2_tex_image3d_canvas2d(uint32_t target,
+                                               int32_t level,
+                                               int32_t internalformat,
+                                               int32_t _width,
+                                               int32_t _height,
+                                               int32_t depth,
+                                               int32_t border,
+                                               uint32_t format,
+                                               uint32_t type_,
+                                               struct CanvasRenderingContext2D *canvas,
+                                               struct WebGLState *state);
+
 void canvas_native_webgl2_tex_image3d(uint32_t target,
                                       int32_t level,
                                       int32_t internalformat,
@@ -2636,6 +2696,19 @@ void canvas_native_webgl2_tex_sub_image3d_asset(uint32_t target,
                                                 uint32_t type_,
                                                 const struct ImageAsset *asset,
                                                 struct WebGLState *state);
+
+void canvas_native_webgl2_tex_sub_image3d_canvas2d(uint32_t target,
+                                                   int32_t level,
+                                                   int32_t xoffset,
+                                                   int32_t yoffset,
+                                                   int32_t zoffset,
+                                                   int32_t width,
+                                                   int32_t height,
+                                                   int32_t depth,
+                                                   uint32_t format,
+                                                   uint32_t type_,
+                                                   struct CanvasRenderingContext2D *canvas,
+                                                   struct WebGLState *state);
 
 void canvas_native_webgl2_tex_sub_image3d_offset(uint32_t target,
                                                  int32_t level,

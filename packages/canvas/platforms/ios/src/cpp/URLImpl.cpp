@@ -141,6 +141,14 @@ void URLImpl::GetHash(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_hash(ptr->GetURL());
+    
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -170,6 +178,12 @@ void URLImpl::GetHost(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_host(ptr->GetURL());
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -199,6 +213,10 @@ void URLImpl::GetHostName(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_host_name(ptr->GetURL());
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -228,6 +246,14 @@ void URLImpl::GetHref(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_href(ptr->GetURL());
+    
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -256,6 +282,14 @@ void URLImpl::GetOrigin(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_origin(ptr->GetURL());
+    
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -271,6 +305,13 @@ void URLImpl::GetPassword(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_password(ptr->GetURL());
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -299,6 +340,12 @@ void URLImpl::GetPathName(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_pathname(ptr->GetURL());
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -327,6 +374,13 @@ void URLImpl::GetPort(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_port(ptr->GetURL());
+    
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -355,6 +409,13 @@ void URLImpl::GetProtocol(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_protocol(ptr->GetURL());
+    
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -384,6 +445,12 @@ void URLImpl::GetSearch(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_search(ptr->GetURL());
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 
@@ -413,6 +480,12 @@ void URLImpl::GetUserName(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     auto value = canvas_url_username(ptr->GetURL());
+    
+    if (value == nullptr) {
+        info.GetReturnValue().SetEmptyString();
+        return;
+    }
+    
     info.GetReturnValue().Set(ConvertToV8String(isolate, value));
     canvas_native_string_destroy((char *) value);
 

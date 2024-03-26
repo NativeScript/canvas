@@ -13,8 +13,10 @@ fn main() {
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCCanvas.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCCanvasRenderingContext2D.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCImageAsset.rs");
+    println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCSVG.rs");
 }
 
+#[allow(dead_code)]
 fn setup_x86_64_android_workaround() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS not set");
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").expect("CARGO_CFG_TARGET_ARCH not set");
@@ -34,21 +36,18 @@ fn setup_x86_64_android_workaround() {
             ),
         };
 
-
-        let ndk_clang_version = if let Ok(mut android_version_txt) = File::open(&format!("{android_ndk_home}/toolchains/llvm/prebuilt/{build_os}-x86_64/AndroidVersion.txt")){
+        let ndk_clang_version = if let Ok(mut android_version_txt) = File::open(format!(
+            "{android_ndk_home}/toolchains/llvm/prebuilt/{build_os}-x86_64/AndroidVersion.txt"
+        )) {
             let mut data = String::new();
             let _ = android_version_txt.read_to_string(&mut data);
             let line = data.lines().take(1).next();
             line.unwrap_or("").to_string()
-        }else {
+        } else {
             DEFAULT_CLANG_VERSION.to_string()
         };
 
-        let clang_version =
-            env::var("NDK_CLANG_VERSION")
-                .unwrap_or_else(|_| ndk_clang_version);
-
-
+        let clang_version = env::var("NDK_CLANG_VERSION").unwrap_or(ndk_clang_version);
 
         let linux_x86_64_lib_dir = format!(
             "toolchains/llvm/prebuilt/{build_os}-x86_64/lib64/clang/{clang_version}/lib/linux/"
@@ -82,19 +81,18 @@ fn setup_aarch64_android_workaround() {
             ),
         };
 
-
-        let ndk_clang_version = if let Ok(mut android_version_txt) = File::open(&format!("{android_ndk_home}/toolchains/llvm/prebuilt/{build_os}-x86_64/AndroidVersion.txt")){
+        let ndk_clang_version = if let Ok(mut android_version_txt) = File::open(format!(
+            "{android_ndk_home}/toolchains/llvm/prebuilt/{build_os}-x86_64/AndroidVersion.txt"
+        )) {
             let mut data = String::new();
             let _ = android_version_txt.read_to_string(&mut data);
             let line = data.lines().take(1).next();
             line.unwrap_or("").to_string()
-        }else {
+        } else {
             DEFAULT_CLANG_VERSION.to_string()
         };
 
-        let clang_version =
-            env::var("NDK_CLANG_VERSION")
-                .unwrap_or_else(|_| ndk_clang_version);
+        let clang_version = env::var("NDK_CLANG_VERSION").unwrap_or(ndk_clang_version);
 
         let linux_aarch64_lib_dir = format!(
             "toolchains/llvm/prebuilt/{build_os}-x86_64/lib64/clang/{clang_version}/lib/linux/"

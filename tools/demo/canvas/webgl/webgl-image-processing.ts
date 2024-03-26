@@ -58,7 +58,7 @@ export function imageProcessing(canvas) {
 	}
 
 	function render(image) {
-		var gl = canvas.getContext('webgl');
+		var gl = canvas.getContext('webgl') as WebGLRenderingContext;
 		if (!gl) {
 			return;
 		}
@@ -96,8 +96,9 @@ export function imageProcessing(canvas) {
 		// Upload the image into the texture.
 		//(<WebGL2RenderingContext>gl).texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
-		(<WebGL2RenderingContext>gl).texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
-		//gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+		//(<WebGL2RenderingContext>gl).texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
+		
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
 		// lookup uniforms
 		var resolutionLocation = gl.getUniformLocation(program, 'u_resolution');

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import Stats from 'three/examples/jsm/libs/stats.module.js';
+// import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -8,6 +8,8 @@ let camera, scene, renderer; //stats;
 let pointLight, pointLight2;
 
 let context;
+
+
 
 function init(canvas) {
 	context = canvas.getContext('webgl2') as WebGLRenderingContext;
@@ -81,7 +83,7 @@ function init(canvas) {
 
 	renderer = new THREE.WebGLRenderer({ context, antialias: true });
 	renderer.setPixelRatio(window.devicePixelRatio);
-	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setSize(canvas.width, canvas.height);
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.BasicShadowMap;
 	//document.body.appendChild(renderer.domElement);
@@ -99,8 +101,8 @@ function init(canvas) {
 }
 
 function onWindowResize() {
-	const width = window.innerWidth;
-	const height = window.innerHeight;
+	const width = context.canvas.width;
+	const height = context.canvas.height;
 
 	camera.aspect = width / height;
 

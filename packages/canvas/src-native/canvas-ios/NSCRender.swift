@@ -235,7 +235,7 @@ public class NSCRender: NSObject {
         
         glDrawArrays(GLenum(GL_TRIANGLE_STRIP), 0, 4)
         
-       // glFinish()
+       glFinish()
         
         glBindRenderbuffer(GLenum(GL_RENDERBUFFER), GLuint(previousRenderBuffer))
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(previousFrameBuffer))

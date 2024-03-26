@@ -1,6 +1,6 @@
 {
   "name": "@nativescript/canvas-phaser",
-  "version": "2.0.0-beta.11",
+  "version": "2.0.0-beta.19",
   "description": "Build awesome 2D games with Phaser.js and NativeScript",
   "main": "index",
   "typings": "index.d.ts",
@@ -33,7 +33,7 @@
   "readmeFilename": "README.md",
   "bootstrapper": "@nativescript/plugin-seed",
   "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha",
+    "@nativescript/canvas-polyfill": "beta",
     "phaser": "~3.60.0"
   }
 }

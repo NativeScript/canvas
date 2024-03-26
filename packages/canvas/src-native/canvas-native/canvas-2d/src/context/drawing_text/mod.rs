@@ -20,8 +20,8 @@ const HANGING_AS_PERCENT_OF_ASCENT: f32 = 80.;
 
 impl Context {
     pub fn fill_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        let scale = self.device.density;
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
-        let paint = self.state.paint.fill_paint().clone();
         let shadow_paint = self.state.paint.fill_shadow_paint(
             (0., 0.).into(),
             self.state.shadow_color,
@@ -34,19 +34,20 @@ impl Context {
             self.surface.canvas().save();
             Context::apply_shadow_offset_matrix(
                 self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
+                self.state.shadow_offset.x * scale,
+                self.state.shadow_offset.y * scale,
             );
             self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
             self.surface.canvas().restore();
         }
 
+        let paint = self.state.paint.fill_paint().clone();
         self.draw_text(text.as_str(), x, y, width, None, &paint);
     }
 
     pub fn stroke_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        let scale = self.device.density;
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
-        let paint = self.state.paint.stroke_paint().clone();
         let shadow_paint = self.state.paint.stroke_shadow_paint(
             (0., 0.).into(),
             self.state.shadow_color,
@@ -59,13 +60,14 @@ impl Context {
             self.surface.canvas().save();
             Context::apply_shadow_offset_matrix(
                 self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
+                self.state.shadow_offset.x * scale,
+                self.state.shadow_offset.y * scale,
             );
             self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
             self.surface.canvas().restore();
         }
 
+        let paint = self.state.paint.stroke_paint().clone();
         self.draw_text(text.as_str(), x, y, width, None, &paint);
     }
 
@@ -95,10 +97,8 @@ impl Context {
         let slant = self.state.font_style.style;
         let font_style = skia_safe::FontStyle::new(weight, stretch.into(), slant.into());
         let text_direction = self.state.direction;
-        let mut families = vec![];
-        for family in self.state.font_style.family.split(',') {
-            families.push(family);
-        }
+        let mut families: Vec<_> = self.state.font_style.family.split(',').collect();
+
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());
         text_style.set_font_size(self.state.font_style.size);
@@ -261,13 +261,20 @@ impl Context {
                 } else {
                     1.0
                 };
+                self.surface.canvas().save();
                 if need_scale {
-                    self.surface.canvas().save();
-                    self.surface.canvas().scale((ratio, 1.0));
+                    let matrix = skia_safe::Matrix::scale((ratio, 1.0));
+                    self.surface.canvas().concat(&matrix);
+                    // self.surface.canvas().scale((ratio, 1.0));
                 }
                 let paint_y = y + baseline_offset;
 
                 text_style.set_foreground_paint(paint);
+
+                let scale = self.device.density;
+                let matrix = skia_safe::Matrix::scale((scale, scale));
+
+                self.surface.canvas().concat(&matrix);
 
                 paragraph.paint(
                     self.surface.canvas(),
@@ -280,9 +287,8 @@ impl Context {
                         paint_y,
                     ),
                 );
-                if need_scale {
-                    self.surface.canvas().restore();
-                }
+
+                self.surface.canvas().restore();
             }
             Some(text_metrics) => {
                 let offset = -baseline_offset - alphabetic_baseline;

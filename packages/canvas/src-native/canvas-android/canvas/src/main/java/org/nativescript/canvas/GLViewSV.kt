@@ -1,6 +1,7 @@
 package org.nativescript.canvas
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -10,24 +11,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	private var isCreatedWithZeroSized = false
 	internal var canvas: NSCCanvas? = null
 
-	private fun setScaling() {
-		val density = resources.displayMetrics.density
-		if (ignorePixelScaling) {
-			scaleX = density
-			scaleY = density
-		} else {
-			scaleX = 1f
-			scaleY = 1f
-		}
-	}
-
 	internal var isReady = false
-
-	var ignorePixelScaling: Boolean = false
-		set(value) {
-			field = value
-			setScaling()
-		}
 
 	constructor(context: Context) : super(context) {
 		init()
@@ -38,6 +22,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	fun init() {
+		holder.setFormat(PixelFormat.RGBA_8888)
 		setZOrderOnTop(true)
 		holder.addCallback(this)
 	}

@@ -174,6 +174,8 @@ export function flappyBird(canvas) {
 		canvas.height = height;
 		ctx = canvas.getContext('2d');
 
+		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
 		currentstate = states.Splash;
 
 		img = document.createElement('img');

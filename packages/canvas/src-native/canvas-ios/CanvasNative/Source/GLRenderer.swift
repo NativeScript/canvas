@@ -26,15 +26,6 @@ public class CanvasGLKView: GLKView {
         super.init(coder: coder)
     }
     
-    public override func setNeedsDisplay() {
-        super.setNeedsDisplay()
-        //isDirty = true
-    }
-    
-    public override func setNeedsDisplay(_ rect: CGRect) {
-        super.setNeedsDisplay(rect)
-        // isDirty = true
-    }
     public override func bindDrawable() {
         super.bindDrawable()
         var fbo: UInt32 = 0

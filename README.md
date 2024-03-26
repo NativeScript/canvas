@@ -1,10 +1,3 @@
-# @nativescript/canvas\* plugins
-
-```
-npm run setup
-npm start
-```
-
 - [@nativescript/canvas](packages/canvas/README.md)
 - [@nativescript/canvas-babylon](packages/canvas-babylon/README.md)
 - [@nativescript/canvas-chartjs](packages/canvas-chartjs/README.md)
@@ -13,6 +6,7 @@ npm start
 - [@nativescript/canvas-phaser-ce](packages/canvas-phaser-ce/README.md)
 - [@nativescript/canvas-pixi](packages/canvas-pixi/README.md)
 - [@nativescript/canvas-polyfill](packages/canvas-polyfill/README.md)
+- [@nativescript/canvas-svg](packages/canvas-svg/README.md)
 - [@nativescript/canvas-three](packages/canvas-three/README.md)
 
 # How to use?

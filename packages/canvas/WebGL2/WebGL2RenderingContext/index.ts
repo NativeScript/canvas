@@ -181,7 +181,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	}
 
 	drawBuffers(buffers: number[]): void {
-		this._checkArgs('drawBuffers', arguments);
 		this.native.drawBuffers(buffers);
 	}
 
@@ -262,7 +261,6 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 
 	//@ts-ignore
 	getParameter(pname: number): number[] | number | WebGLBuffer | WebGLProgram | WebGLFramebuffer | WebGLRenderbuffer | WebGLTexture | Uint32Array | Int32Array | Float32Array | string | null {
-		this._checkArgs('getParameter', arguments);
 		const value = this.native.getParameter(pname);
 		switch (pname) {
 			case this.COPY_READ_BUFFER_BINDING:

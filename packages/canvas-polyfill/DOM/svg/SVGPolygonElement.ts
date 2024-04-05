@@ -4,7 +4,7 @@ import { SVGPointList } from './SVGUnits';
 export class SVGPolygonElement extends SVGGeometryElement {
 	constructor() {
 		super('polygon');
-		this.nativeElement = new Polygon();
+		this.nativeElement = new Polygon() as never;
 	}
 
 	_points = new SVGPointList();
@@ -12,7 +12,7 @@ export class SVGPolygonElement extends SVGGeometryElement {
 	_animatedPoints = new SVGPointList();
 
 	get points() {
-		const points = (this._xmlDom?.documentElement ?? this._xmlDom)?.getAttribute?.('points');
+		const points = this.getAttribute?.('points');
 
 		if (points) {
 			const items = SVGPointList.fromString(points);

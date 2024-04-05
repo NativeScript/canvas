@@ -9,6 +9,6 @@ export class Rect extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<rect></rect>');
+		this.__domElement = new DOMParser().parseFromString('<rect></rect>', 'image/svg+xml').documentElement;
 	}
 }

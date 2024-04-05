@@ -38,6 +38,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
     nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
     nativeLoadFromBitmap, nativeLoadFromPath,
 };
+use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{nativeTexImage2D, nativeTexSubImage2D};
 
 use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
 use crate::utils::gl::texture_render::nativeDrawFrame;
@@ -352,6 +353,49 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
             let _ = env
                 .register_native_methods(&image_asset_class, image_asset_native_methods.as_slice());
+
+
+
+            let webgl_rendering_class = env
+                .find_class("org/nativescript/canvas/NSCWebGLRenderingContext")
+                .unwrap();
+
+            let webgl_rendering_method_names = [
+                "nativeTexImage2D",
+                "nativeTexSubImage2D"
+            ];
+
+            let webgl_rendering_signatures = if ret >= ANDROID_O {
+                [
+                    "(JIIIIILandroid/graphics/Bitmap;Z)V",
+                    "(JIIIIIILandroid/graphics/Bitmap;Z)V",
+                ]
+            } else {
+                [
+                    "!(JIIIIILandroid/graphics/Bitmap;Z)V",
+                    "!(JIIIIIILandroid/graphics/Bitmap;Z)v",
+                ]
+            };
+
+            let webgl_rendering_methods = [
+                nativeTexImage2D as *mut c_void,
+                nativeTexSubImage2D as *mut c_void,
+            ];
+
+            let webgl_rendering_native_methods: Vec<NativeMethod> = izip!(
+                webgl_rendering_method_names,
+                webgl_rendering_signatures,
+                webgl_rendering_methods
+            )
+                .map(|(name, signature, method)| NativeMethod {
+                    name: name.into(),
+                    sig: signature.into(),
+                    fn_ptr: method,
+                })
+                .collect();
+
+            let _ = env
+                .register_native_methods(&webgl_rendering_class, webgl_rendering_native_methods.as_slice());
 
             ret
         });

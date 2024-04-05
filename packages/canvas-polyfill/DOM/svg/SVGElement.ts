@@ -1,80 +1,18 @@
 import { Element } from '../Element';
 import { Svg } from '@nativescript/canvas-svg';
-import { SVGTransformList } from './SVGTransform';
 import { SVGAnimatedString } from './SVGAnimatedString';
 import { Text } from '../Text';
-function parseViewBox(value: string) {
-	if (typeof value === 'string') {
-		const vb = value.split(' ');
-		const rect = { x: 0, y: 0, width: 0, height: 0 };
-		if (vb?.length > 0) {
-			const x = parseFloat(vb[0]);
-			const y = parseFloat(vb[1]);
-			const width = parseFloat(vb[2]);
-			const height = parseFloat(vb[3]);
-			if (isNaN(x)) {
-				rect.x = x;
-			}
-
-			if (isNaN(y)) {
-				rect.y = y;
-			}
-
-			if (isNaN(width)) {
-				rect.width = width;
-			}
-
-			if (isNaN(height)) {
-				rect.height = height;
-			}
-		}
-		return {
-			baseVal: rect,
-			animVal: rect,
-		};
-	}
-	return null;
-}
-
-function parseTransform(value: string) {
-	if (typeof value === 'string') {
-		const vb = value.split(' ');
-		const list = new SVGTransformList();
-		if (vb?.length > 0) {
-		}
-		return {
-			baseVal: list,
-			animVal: list,
-		};
-	}
-}
+import { SVGAnimatedTransformList } from './SVGAnimatedTransformList';
 
 export class SVGElement extends Element {
-	//__internalElement: Svg;
-
 	private _className = new SVGAnimatedString(this, 'className');
-
+	__domElement: Element;
 	constructor(tagName: string) {
 		super(tagName ?? '');
 	}
 
 	private get nativeValue(): Svg {
 		return this.nativeElement as never;
-	}
-
-	get _xmlDom() {
-		if ((<any>this).__instance) {
-			return (<any>this).__instance;
-		}
-		if (this.nativeValue) {
-			return this.nativeValue?._dom;
-		}
-		return null;
-	}
-
-	get transform() {
-		const transform = (this._xmlDom?.documentElement ?? this._xmlDom)?.getAttribute?.('transform');
-		return parseTransform(transform);
 	}
 
 	// @ts-ignore
@@ -85,22 +23,22 @@ export class SVGElement extends Element {
 	set className(value: unknown) {}
 
 	_appendChild(view, redraw = true) {
-		if (view?.nativeElement?._dom) {
-			this.nativeValue?._dom?.documentElement?.appendChild?.(view.nativeElement._dom);
+		if (view?.nativeElement?.__domElement) {
+			this.nativeValue?.__domElement?.appendChild?.(view.nativeElement.__domElement);
 			if (redraw) {
 				(<any>this.nativeValue).__redraw();
 			}
 			(<any>this.nativeValue)?.addChild?.(view.nativeElement);
 			return view;
 		} else if (view instanceof Text) {
-			const dom = this._xmlDom;
-			const text = dom?.createTextNode?.(view.data);
-			view.__instance = text;
-			dom?.documentElement?.appendChild?.(text);
+			const dom = this.__domElement ?? this.nativeElement.__domElement;
+			const text = dom.ownerDocument?.createTextNode?.(view.data);
+			view.__domNode = text;
+			dom?.appendChild?.(text);
 			return view;
-		} else if (view.__instance) {
-			const dom = this._xmlDom;
-			dom?.documentElement?.appendChild?.(view.__instance);
+		} else if (view.__domNode) {
+			const dom = this.__domElement ?? this.nativeElement.__domElement;
+			dom?.appendChild?.(view.__domNode);
 			return view;
 		}
 		return null;
@@ -117,19 +55,12 @@ export class SVGElement extends Element {
 		(<any>this.nativeValue).__redraw();
 	}
 
-	insertBefore(view) {
-		// const v = arguments[0];
-		// const c = arguments[1];
-		// if (v && c) {
-		// 	this.__internalElement._dom.documentElement.insertBefore(v.__internalElement._dom, c.__internalElement._dom);
-		// 	return v;
-		// }
-	}
+	insertBefore(view) {}
 
 	removeChild(view) {}
 
 	setAttribute(key, value) {
-		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+		const dom = this.nativeElement.__domElement;
 		if (dom) {
 			dom.setAttribute?.(key, value);
 		} else {
@@ -137,16 +68,16 @@ export class SVGElement extends Element {
 		}
 	}
 
-	getAttribute(key) {
-		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+	getAttribute(key): string | null {
+		const dom = this.nativeElement.__domElement;
 		if (dom) {
-			return dom.getAttribute?.(key) ?? null;
+			return (dom.getAttribute?.(key) as never) ?? null;
 		}
-		return super.getAttribute(key) ?? null;
+		return (super.getAttribute(key) as never) ?? null;
 	}
 
 	removeAttribute(key) {
-		const dom = this._xmlDom?.documentElement ?? this._xmlDom;
+		const dom = this.nativeElement.__domElement;
 		if (dom) {
 			return dom.removeAttribute?.(key);
 		}

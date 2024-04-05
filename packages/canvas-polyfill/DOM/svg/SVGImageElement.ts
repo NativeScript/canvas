@@ -11,11 +11,11 @@ export class SVGImageElement extends SVGGraphicsElement {
 
 	constructor() {
 		super('image');
-		this._nativeElement = new Image();
+		this.nativeElement = new Image() as never;
 	}
 
 	get decoding() {
-		return this.getAttribute('decoding') ?? 'default';
+		return (this.getAttribute('decoding') as never) ?? 'default';
 	}
 
 	set decoding(value: 'sync' | 'async' | 'default') {

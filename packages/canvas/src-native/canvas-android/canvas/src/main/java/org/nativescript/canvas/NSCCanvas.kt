@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PixelFormat
+import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
 import android.util.Log
@@ -440,6 +441,8 @@ class NSCCanvas : FrameLayout {
 			0
 		}
 
+		GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
+
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
 			this.drawingBufferWidth,
@@ -486,11 +489,15 @@ class NSCCanvas : FrameLayout {
 			surface?.let {
 				nativeUpdateGLSurface(it, nativeGL)
 				if (is2D) {
+					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 					nativeUpdate2DSurface(it, native2DContext)
 				}
 			} ?: run {
 				nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferHeight, nativeGL)
 				if (is2D) {
+
+					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
+
 					nativeUpdate2DSurfaceNoSurface(
 						this.drawingBufferWidth,
 						this.drawingBufferHeight,
@@ -631,7 +638,6 @@ class NSCCanvas : FrameLayout {
 			}
 		}
 
-
 		@JvmStatic
 		var enableDebug = false
 
@@ -648,7 +654,6 @@ class NSCCanvas : FrameLayout {
 			if (rootParams == null) {
 				rootParams = LayoutParams(0, 0)
 			}
-
 
 			if (width == rootParams.width && height == rootParams.height) {
 				return
@@ -680,10 +685,12 @@ class NSCCanvas : FrameLayout {
 
 			var rootParams = view.layoutParams
 
-
 			if (rootParams == null) {
 				rootParams = LayoutParams(0, 0)
 			}
+
+			rootParams.width = width
+			rootParams.height = height
 
 
 			if (rootParams.width == 0) {
@@ -693,9 +700,6 @@ class NSCCanvas : FrameLayout {
 			if (rootParams.height == 0) {
 				rootParams.height = 1
 			}
-
-			rootParams.width = width
-			rootParams.height = height
 
 			val w = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
 			val h = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)

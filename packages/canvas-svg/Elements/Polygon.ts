@@ -2,7 +2,7 @@ import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
 
 export const pointsProperty = new Property<Polygon, any>({
-	name: 'points'
+	name: 'points',
 });
 import { DOMParser } from '@xmldom/xmldom';
 
@@ -11,7 +11,7 @@ export class Polygon extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<polygon></polygon>');
+		this.__domElement = new DOMParser().parseFromString('<polygon></polygon>', 'image/svg+xml').documentElement;
 	}
 }
 

@@ -162,4 +162,29 @@ uint32_t canvas_native_context_backend_texture_get_id(int64_t texture);
 
 void canvas_native_context_backend_texture_destroy(int64_t texture);
 
+void canvas_native_webgl_tex_image_2d(int64_t context,
+                                      int32_t target,
+                                      int32_t level,
+                                      int32_t internalformat,
+                                      int32_t format,
+                                      int32_t type_,
+                                      uint8_t *bytes,
+                                      uintptr_t size,
+                                      float width,
+                                      float height,
+                                      bool flip_y);
+
+void canvas_native_webgl_tex_sub_image_2d(int64_t context,
+                                          int32_t target,
+                                          int32_t level,
+                                          int32_t xoffset,
+                                          int32_t yoffset,
+                                          int32_t format,
+                                          int32_t type_,
+                                          uint8_t *bytes,
+                                          uintptr_t size,
+                                          float width,
+                                          float height,
+                                          bool flip_y);
+
 #endif /* CANVAS_IOS_H */

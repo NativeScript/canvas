@@ -24,6 +24,7 @@ class NSCPIXIApplication extends Pixii.Application {
 		const height = props.height || clientHeight;
 
 		super({
+			resolution: global.isAndroid ? window.devicePixelRatio : 1,
 			...props,
 			context,
 			view,
@@ -37,7 +38,7 @@ if (!(PIXI.Application instanceof NSCPIXIApplication)) {
 	PIXI.Assets.setPreferences({ preferWorkers: false });
 	PIXI = {
 		...PIXI,
-		Application: NSCPIXIApplication as never
+		Application: NSCPIXIApplication as never,
 	};
 }
 

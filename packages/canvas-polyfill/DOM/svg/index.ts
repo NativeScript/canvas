@@ -23,3 +23,6 @@ export * from './SVGTransform';
 export * from './SVGAnimatedRect';
 export * from './SVGTextElement';
 export * from './SVGStopElement';
+export * from './SVGUseElement';
+export * from './SVGAnimatedTransformList';
+export * from './SVGMarkerElement';

@@ -3,11 +3,7 @@ import { Observable } from '@nativescript/core';
 export class EventTarget {
 	_emitter?: WeakRef<Observable>;
 
-	addEventListener(
-		event: string,
-		handler: any,
-		options: AddEventListenerOptions = {}
-	) {
+	addEventListener(event: string, handler: any, options: AddEventListenerOptions = {}) {
 		const { capture, once } = options;
 		if (capture) {
 			//   debug("Bubble propagation is not supported");
@@ -30,7 +26,7 @@ export class EventTarget {
 			emitter = this._emitter?.deref?.();
 		}
 		if (emitter !== null && emitter !== undefined) {
-			emitter.addEventListener(event, handler);
+			emitter.addEventListener(event, handler, this);
 		}
 	}
 
@@ -62,7 +58,7 @@ export class EventTarget {
 		}
 
 		if (emitter !== null && emitter !== undefined) {
-			emitter.notify({ ...event, eventName: event.type, object: event.target as never ?? this });
+			emitter.notify({ ...event, eventName: event.type, object: emitter });
 		}
 	}
 }

@@ -12,6 +12,6 @@ export class LinearGradient extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<linearGradient></linearGradient>');
+		this.__domElement = new DOMParser().parseFromString('<linearGradient></linearGradient>', 'image/svg+xml').documentElement;
 	}
 }

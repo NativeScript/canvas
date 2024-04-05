@@ -21,15 +21,15 @@ export class FileManager {
 		}
 	}
 
-	static _readFile;
+	static supportFastRead;
 
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
 		//const opts = new com.github.triniwiz.async.Async2.FileManager.Options();
 		//opts.asStream = options.asStream;
-		if (this._readFile === undefined) {
-			this._readFile = !!global?.CanvasModule?.readFile;
+		if (this.supportFastRead === undefined) {
+			this.supportFastRead = typeof global?.CanvasModule?.readFile === 'function';
 		}
-		if (this._readFile) {
+		if (this.supportFastRead) {
 			global?.CanvasModule?.readFile(path, (error, buffer: ArrayBuffer) => {
 				if (error) {
 					callback(new Error(error), null);

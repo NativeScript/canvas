@@ -8,7 +8,11 @@ export class Node extends EventTarget {
 	className: any;
 	readonly nodeName: string;
 
-	private _id: string;
+	_ownerDocument: Document;
+
+	get ownerDocument() {
+		return this._ownerDocument;
+	}
 
 	constructor(nodeName: string) {
 		super();
@@ -19,32 +23,25 @@ export class Node extends EventTarget {
 		this.nodeName = nodeName;
 	}
 
-	set id(value) {
-		this._id = value;
-		const nativeElement = this['nativeElement'];
-		if (nativeElement) {
-			setValue(nativeElement, 'id', value);
+	append(view) {
+		
+	}
+
+	appendChild(view) {
+		if (view instanceof Document) {
+			return;
+		}
+		if(view instanceof Element){
+			
 		}
 	}
-
-	get id() {
-		return this._id;
-	}
-
-	get ownerDocument() {
-		return window.document;
-	}
-
-	appendChild(view) {}
 
 	insertBefore(view) {}
 
 	removeChild(view) {}
 
-	setAttributeNS() {}
-
 	compareDocumentPosition(otherNode) {
-		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		// const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
 		if (this.nodeName === '#document') {
 			return DOCUMENT_POSITION_CONTAINS;
 		}

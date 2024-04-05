@@ -13,6 +13,7 @@ void canvas_native_svg_draw_from_string(uint8_t *data,
                                         uintptr_t size,
                                         float width,
                                         float height,
+                                        float scale,
                                         const char *svg);
 #endif
 
@@ -21,6 +22,7 @@ void canvas_native_svg_draw_from_path(uint8_t *data,
                                       uintptr_t size,
                                       float width,
                                       float height,
+                                      float scale,
                                       const char *path);
 #endif
 

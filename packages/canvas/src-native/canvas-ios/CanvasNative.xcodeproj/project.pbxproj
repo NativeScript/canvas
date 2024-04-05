@@ -17,6 +17,7 @@
 		F18165C72621CECC0051F06B /* NSCRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18165C62621CECC0051F06B /* NSCRender.swift */; };
 		F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181661C26228CBA0051F06B /* NSCImageBitmap.swift */; };
 		F1A87C75255D00BA00394387 /* NSCCanvas.xib in Resources */ = {isa = PBXBuildFile; fileRef = F1A87C74255D00BA00394387 /* NSCCanvas.xib */; };
+		F1CB77132BBFC05900481C3F /* NSCWebGLRenderingContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */; };
 		F1D1AE292ADAAEAA005C140B /* canvas_ios.h in Headers */ = {isa = PBXBuildFile; fileRef = F1D1AE252ADAAEAA005C140B /* canvas_ios.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE2E4E2612F7CA0000D48F /* Utils.swift */; };
 		F1FF6A6C25248CFF001DAE0D /* NSCCanvasListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FF6A3425248CFE001DAE0D /* NSCCanvasListener.swift */; };
@@ -77,6 +78,7 @@
 		F18165C62621CECC0051F06B /* NSCRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCRender.swift; sourceTree = "<group>"; };
 		F181661C26228CBA0051F06B /* NSCImageBitmap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCImageBitmap.swift; sourceTree = "<group>"; };
 		F1A87C74255D00BA00394387 /* NSCCanvas.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NSCCanvas.xib; sourceTree = "<group>"; };
+		F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCWebGLRenderingContext.swift; sourceTree = "<group>"; };
 		F1D1AE252ADAAEAA005C140B /* canvas_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = canvas_ios.h; path = CanvasNative/include/canvas_ios.h; sourceTree = "<group>"; };
 		F1DE2E4E2612F7CA0000D48F /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		F1FF6A3425248CFE001DAE0D /* NSCCanvasListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NSCCanvasListener.swift; path = CanvasNative/Source/NSCCanvasListener.swift; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 		F11C5D002524403700538D04 = {
 			isa = PBXGroup;
 			children = (
+				F1CB77122BBFC05900481C3F /* NSCWebGLRenderingContext.swift */,
 				F14908962AEA0F8D007C6693 /* NSCTouchHandler.swift */,
 				F1D1AE252ADAAEAA005C140B /* canvas_ios.h */,
 				F134FE7229D0BA210051057B /* canvas_native.h */,
@@ -356,6 +359,7 @@
 				F181661D26228CBA0051F06B /* NSCImageBitmap.swift in Sources */,
 				F1DE2E4F2612F7CA0000D48F /* Utils.swift in Sources */,
 				F1FF6A9225248CFF001DAE0D /* NSCCanvasRenderingContext2D.swift in Sources */,
+				F1CB77132BBFC05900481C3F /* NSCWebGLRenderingContext.swift in Sources */,
 				F1FF6A9825248CFF001DAE0D /* GLRenderer.swift in Sources */,
 				F1FF6A9C25248CFF001DAE0D /* NSCImageAsset.swift in Sources */,
 				F1FF6A9D25248CFF001DAE0D /* NSCCanvasRenderingContext.swift in Sources */,

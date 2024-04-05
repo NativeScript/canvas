@@ -728,3 +728,129 @@ pub extern "C" fn canvas_native_context_backend_texture_destroy(texture: i64) {
     let texture = texture as *mut skia_safe::gpu::BackendTexture;
     let _ = unsafe { Box::from_raw(texture) };
 }
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_image_2d(
+    context: i64,
+    target: i32,
+    level: i32,
+    internalformat: i32,
+    format: i32,
+    type_: i32,
+    bytes: *mut u8,
+    size: usize,
+    width: f32,
+    height: f32,
+    flip_y: bool
+)  {
+    if context == 0 {
+        return;
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
+
+    let gl_context = context as *mut iOSGLContext;
+    let gl_context = unsafe { &*gl_context };
+    gl_context.gl_context.make_current();
+
+    unsafe {
+        if flip_y {
+            let mut buffer = bytes.to_vec();
+            canvas_webgl::utils::gl::flip_in_place(
+                buffer.as_mut_ptr(),
+                buffer.len(),
+                canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
+                height as usize,
+            );
+
+            gl_bindings::TexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width as i32,
+                height as i32,
+                0,
+                format as u32,
+                type_ as u32,
+                buffer.as_ptr() as *const std::os::raw::c_void,
+            );
+        } else {
+            gl_bindings::TexImage2D(
+                target as u32,
+                level,
+                internalformat,
+                width as i32,
+                height as i32,
+                0,
+                format as u32,
+                type_ as u32,
+                bytes.as_ptr() as *const std::os::raw::c_void,
+            );
+        }
+    }
+  
+}
+
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_sub_image_2d(
+    context: i64,
+    target: i32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format: i32,
+    type_: i32,
+    bytes: *mut u8,
+    size: usize,
+    width: f32,
+    height: f32,
+    flip_y: bool
+)  {
+    if context == 0 {
+        return;
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
+
+    let gl_context = context as *mut iOSGLContext;
+    let gl_context = unsafe { &*gl_context };
+    gl_context.gl_context.make_current();
+
+    unsafe {
+        if flip_y {
+            let mut buffer = bytes.to_vec();
+            canvas_webgl::utils::gl::flip_in_place(
+                buffer.as_mut_ptr(),
+                buffer.len(),
+                canvas_webgl::utils::gl::bytes_per_pixel(type_ as _, format as _) as _,
+                height as usize,
+            );
+
+            gl_bindings::TexSubImage2D(
+                target as u32,
+                level,
+                xoffset,
+                yoffset,
+                width as i32,
+                height as i32,
+                format as u32,
+                type_ as u32,
+                buffer.as_ptr() as *const std::os::raw::c_void,
+            );
+        } else {
+            gl_bindings::TexSubImage2D(
+                target as u32,
+                level,
+                xoffset,
+                yoffset,
+                width as i32,
+                height as i32,
+                format as u32,
+                type_ as u32,
+                bytes.as_ptr() as *const std::os::raw::c_void,
+            );
+        }
+    }
+
+}

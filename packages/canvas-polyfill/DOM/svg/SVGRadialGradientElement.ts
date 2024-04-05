@@ -11,7 +11,7 @@ export class SVGRadialGradientElement extends SVGGradientElement {
 	private _fy = new SVGAnimatedLength(this, 'fy');
 	constructor() {
 		super('radialGradient');
-		this.nativeElement = new RadialGradient();
+		this.nativeElement = new RadialGradient() as never;
 	}
 
 	get cx() {

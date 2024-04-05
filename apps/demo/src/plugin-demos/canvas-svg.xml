@@ -5,7 +5,7 @@
 		</ActionBar>
 	</Page.actionBar>
 	<GridLayout columns="*,*" rows="*,*" loaded="{{ viewLoaded }}">
-		<ui:Svg id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/>
+		<!-- <ui:Svg id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/> -->
 		<!--<ui:Svg id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/>
 		<ui:Svg id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/>
 		<ui:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/>-->

@@ -66,6 +66,7 @@ import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
+import { Svg } from '@nativescript/canvas-svg';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -121,7 +122,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.fillText(baseline, x + 5, 50);
 		});
 	}
-
 
 	urlTests() {
 		this.urlConstructor();
@@ -341,6 +341,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 	draw() {
+		this.drawSVG(this.canvas);
 		//	const ctx = this.canvas.getContext('2d');
 		/*
 
@@ -546,7 +547,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//textures(this.canvas);
 		//scaleTriangle(this.canvas);
 		//setTimeout(()=>{
-		colorRain(this.canvas);
+		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
@@ -604,6 +605,19 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
 		//this.textBaseLine2(this.canvas);
+	}
+
+	drawSVG(canvas) {
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		const data = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+		<rect width="100" height="500" stroke="red" fill="none"></rect>
+		<line x1="0" y1="80" x2="100" y2="20" stroke="black" />
+	  </svg>
+	  `;
+
+		const svg = Svg.fromSrcSync(data) as any;
+		const img = (<any>HTMLImageElement)._fromSvg(svg);
+		ctx.drawImage(img, 0, 0, img.width, img.height);
 	}
 
 	letterSpacing(canvas) {

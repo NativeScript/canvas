@@ -9,7 +9,7 @@ export class SVGLineElement extends SVGGeometryElement {
 	_y2 = new SVGAnimatedLength(this, 'y2');
 	constructor() {
 		super('line');
-		this.nativeElement = new Line();
+		this.nativeElement = new Line() as never;
 	}
 
 	get x1() {

@@ -41,6 +41,7 @@ import _SwiftConcurrencyShims
   @objc public static func readFile(_ path: Swift.String, _ callback: @escaping (Swift.String?, Foundation.NSData?) -> Swift.Void)
   @objc public static func deleteFile(_ path: Swift.String, _ callback: @escaping (Foundation.NSError?, Swift.Bool) -> Swift.Void)
   @objc public static func handleBase64Image(_ mime: Swift.String, _ dir: Swift.String, _ base64: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
+  @objc public static func getPixelsPerInchForCurrentDevice() -> Swift.String
   @objc override dynamic public init()
   @objc deinit
 }
@@ -110,6 +111,12 @@ import _SwiftConcurrencyShims
   @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float)
   @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
   @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ sx: Swift.Float, _ sy: Swift.Float, _ sWidth: Swift.Float, _ sHeight: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc(NSCWebGLRenderingContext) @objcMembers public class NSCWebGLRenderingContext : ObjectiveC.NSObject {
+  @objc public static func texImage2D(_ context: Swift.Int64, _ target: Swift.Int32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ data: Swift.UnsafeMutablePointer<Swift.UInt8>, _ size: Swift.UInt, _ dimensions: CoreFoundation.CGSize, _ flipY: Swift.Bool)
+  @objc public static func texSubImage2D(_ context: Swift.Int64, _ target: Swift.Int32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ data: Swift.UnsafeMutablePointer<Swift.UInt8>, _ size: Swift.UInt, _ dimensions: CoreFoundation.CGSize, _ flipY: Swift.Bool)
   @objc override dynamic public init()
   @objc deinit
 }

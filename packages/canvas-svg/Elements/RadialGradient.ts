@@ -13,6 +13,6 @@ export class RadialGradient extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<radialGradient></radialGradient>');
+		this.__domElement = new DOMParser().parseFromString('<radialGradient></radialGradient>', 'image/svg+xml').documentElement;
 	}
 }

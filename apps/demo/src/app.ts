@@ -3,11 +3,12 @@ Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
 const TextDecoderO = TextDecoder;
-// require('@nativescript/canvas-polyfill');
+require('@nativescript/canvas-polyfill');
+import { Svg } from '@nativescript/canvas-svg';
 // import { Canvas } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
-import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace } from '@nativescript/core';
+import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
 
 Application.on('discardedError', (args) => {
 	console.log('discardedError', args.error, args);

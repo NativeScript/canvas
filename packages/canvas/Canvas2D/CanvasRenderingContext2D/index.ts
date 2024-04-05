@@ -602,6 +602,12 @@ export class CanvasRenderingContext2D {
 			} else if (global.isAndroid && image._image instanceof android.graphics.Bitmap) {
 				drawNativeImage(args, image._image);
 				return;
+			} else if (global.isAndroid && image._svg) {
+				const bitmap = image._svg?._svg?.getBitmap?.();
+				if (bitmap) {
+					drawNativeImage(args, bitmap);
+				}
+				return;
 			} else if (global.isIOS && image._image instanceof UIImage) {
 				drawNativeImage(args, image._image);
 				return;

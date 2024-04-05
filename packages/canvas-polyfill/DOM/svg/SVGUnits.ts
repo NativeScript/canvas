@@ -28,13 +28,13 @@ export function getValueAndUnit(value: string) {
 
 export class SVGAngle {
 	_element;
+	_key: string;
 	_unitType: number = SVG_ANGLETYPE_UNKNOWN;
-
 	_value: number = 0;
 	_valueInSpecifiedUnits: number = 0;
 	_valueAsString: string = '0';
 
-	constructor(element?) {
+	constructor(element?, key?: string) {
 		this._element = element;
 	}
 

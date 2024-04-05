@@ -3,6 +3,6 @@ import { Text } from '@nativescript/canvas-svg';
 export class SVGTextElement extends SVGTextPositioningElement {
 	constructor() {
 		super('text');
-		this._nativeElement = new Text();
+		this.nativeElement = new Text() as never;
 	}
 }

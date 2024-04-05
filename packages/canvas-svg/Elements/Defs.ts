@@ -5,6 +5,6 @@ import { DOMParser } from '@xmldom/xmldom';
 export class Defs extends SVGItem {
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<def></defs>');
+		this.__domElement = new DOMParser().parseFromString('<def></defs>', 'image/svg+xml').documentElement;
 	}
 }

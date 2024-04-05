@@ -8,14 +8,13 @@ export class G extends SVGItem {
 	__children = [];
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<g></g>');
+		this.__domElement = new DOMParser().parseFromString('<g></g>', 'image/svg+xml').documentElement;
 	}
 
 	__redraw() {
 		let parent = this.parent;
 		while (parent) {
 			const next = parent.parent;
-			console.log(next);
 			if (!next) {
 				(<any>parent)?.__redraw?.();
 			}
@@ -30,10 +29,8 @@ export class G extends SVGItem {
 	}
 
 	removeChild(view: SVGItem) {
-		if (view._attached) {
-			this._removeView(view);
-			view._attached = false;
-			this.__children = this.__children.filter((item) => item !== view);
-		}
+		this._removeView(view);
+		view._attached = false;
+		this.__children = this.__children.filter((item) => item !== view);
 	}
 }

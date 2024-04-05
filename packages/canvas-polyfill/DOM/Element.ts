@@ -1,5 +1,5 @@
 import { Node } from './Node';
-import { ViewBase } from '@nativescript/core';
+import { View, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 import querySelector from 'query-selector';
 import { HTMLCollection } from './HTMLCollection';
@@ -33,16 +33,112 @@ export class DOMRect extends DOMRectReadOnly {
 	}
 }
 
+export function parseChildren(element, children) {
+	if (element) {
+		const length = element?.childNodes?.length ?? 0;
+
+		for (let i = 0; i < length; i++) {
+			const node = element.childNodes.item(i);
+			if (node) {
+				switch (node.nodeName) {
+					case 'image': {
+						const image = new SVGImageElement() as unknown as Element;
+						image.nativeElement.__domElement = node;
+						children.push(image);
+					}
+					case 'line':
+						{
+							const line = new SVGLineElement() as unknown as Element;
+							line.nativeElement.__domElement = node;
+							children.push(line);
+						}
+						break;
+					case 'polyline':
+						{
+							const polyline = new SVGPolylineElement() as unknown as Element;
+							polyline.nativeElement.__domElement = node;
+							children.push(polyline);
+						}
+						break;
+					case 'polygon':
+						{
+							const polygon = new SVGPolygonElement() as unknown as Element;
+							polygon.nativeElement.__domElement = node;
+							children.push(polygon);
+						}
+						break;
+					case 'g':
+						{
+							const g = new SVGGElement() as unknown as Element;
+							g.nativeElement.__domElement = node;
+							children.push(g);
+						}
+						break;
+					case 'path':
+						{
+							const path = new SVGPathElement() as unknown as Element;
+							path.nativeElement.__domElement = node;
+							children.push(path);
+						}
+						break;
+					case 'rect':
+						{
+							const rect = new SVGRectElement() as unknown as Element;
+							rect.nativeElement.__domElement = node;
+							children.push(rect);
+						}
+						break;
+					case 'stop':
+						{
+							const stop = new SVGStopElement() as unknown as Element;
+							stop.nativeElement.__domElement = node;
+							children.push(stop);
+						}
+						break;
+					case 'use':
+						{
+							const use = new SVGUseElement() as unknown as Element;
+							use.nativeElement.__domElement = node;
+							children.push(use);
+						}
+						break;
+					default:
+						//	ret.push(node);
+						break;
+				}
+			}
+		}
+	}
+}
+
+type NativeElement = View & { __domElement?: Element };
 export class Element extends Node {
 	private _classList = new Set();
-	_nativeElement: ViewBase;
-	private _width: number;
-	private _height: number;
+	_nativeElement: NativeElement;
 	private _attrs: Map<string, any> = new Map<string, unknown>();
 	private _attributeOriginalValue: Map<string, unknown> = new Map();
 	private _jsBuffer: Float32Array;
+	private _id: string = '';
 
-	set nativeElement(value) {
+	_children = new HTMLCollection();
+
+	_namespaceURI: string | null = null;
+
+	get namespaceURI() {
+		return this._namespaceURI;
+	}
+
+	set id(value) {
+		this._id = value;
+		setValue(this.nativeElement, 'id', value);
+		setValue(this.nativeElement?.__domElement, 'id', value);
+	}
+
+	get id() {
+		return this._id;
+	}
+
+	set nativeElement(value: NativeElement) {
 		this._nativeElement = value;
 		if (value) {
 			this._emitter = new WeakRef(value);
@@ -51,7 +147,7 @@ export class Element extends Node {
 		}
 	}
 
-	get nativeElement() {
+	get nativeElement(): NativeElement {
 		return this._nativeElement;
 	}
 
@@ -74,80 +170,25 @@ export class Element extends Node {
 		return this.nodeName;
 	}
 
-	_children = new HTMLCollection();
 	get children() {
 		if (this._children.length) {
 			return this._children;
 		}
-		const element = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		if (this.ownerDocument?.nodeName === '#document' && this.ownerDocument?.body?.nodeName?.toLowerCase?.() === 'html') {
+			this._children.push(document.documentElement);
+			this._children.push(document.head);
+			this._children.push(document.body);
+		}
+		const element = (<any>this).nativeElement?.__domElement;
 		if (element) {
-			const length = element?.childNodes?.length ?? 0;
-
-			for (let i = 0; i < length; i++) {
-				const node = element.childNodes.item(i);
-				if (node) {
-					switch (node.nodeName) {
-						case 'image': {
-							const image = new SVGImageElement() as any;
-							image.__instance = node;
-							this._children.push(image);
-						}
-						case 'line':
-							{
-								const line = new SVGLineElement() as any;
-								line.__instance = node;
-								this._children.push(line);
-							}
-							break;
-						case 'polyline':
-							{
-								const polyline = new SVGPolylineElement() as any;
-								polyline.__instance = node;
-								this._children.push(polyline);
-							}
-							break;
-						case 'g':
-							{
-								const g = new SVGGElement() as any;
-								g.__instance = node;
-								this._children.push(g);
-							}
-							break;
-						case 'path':
-							{
-								const path = new SVGPathElement() as any;
-								path.__instance = node;
-								this._children.push(path);
-							}
-							break;
-						case 'rect':
-							{
-								const rect = new SVGRectElement() as any;
-								rect.__instance = node;
-								ret.push(rect);
-							}
-							break;
-						case 'stop':
-							{
-								const stop = new SVGStopElement() as any;
-								stop.__instance = node;
-								ret.push(stop);
-							}
-							break;
-						default:
-							//	ret.push(node);
-							break;
-					}
-				}
-			}
-
+			parseChildren(element, this._children);
 			return this._children;
 		}
 
 		return [];
 	}
 
-	getAttribute(key: string): unknown {
+	getAttribute(key: string): string {
 		if (this.nativeElement) {
 			return this.nativeElement[key] ?? null;
 		}
@@ -159,6 +200,7 @@ export class Element extends Node {
 			if (!this._attributeOriginalValue.has(key)) {
 				this._attributeOriginalValue.set(key, this.nativeElement[key]);
 				setValue(this.nativeElement, key, value);
+				this.nativeElement?.__domElement?.setAttribute(key, value);
 			}
 		} else {
 			if (!this._attributeOriginalValue.has(key)) {
@@ -174,6 +216,7 @@ export class Element extends Node {
 
 		if (this.nativeElement) {
 			setValue(this.nativeElement, key, originalValue);
+			this.nativeElement?.__domElement?.removeAttribute(key);
 		} else {
 			setValue(this._attrs, key, originalValue);
 		}
@@ -235,6 +278,9 @@ export class Element extends Node {
 	}
 
 	get attributes() {
+		if (this.nativeElement) {
+			return this.nativeElement.__domElement?.attributes;
+		}
 		return [];
 	}
 
@@ -255,16 +301,23 @@ export class Element extends Node {
 	}
 
 	get innerWidth() {
-		return this.width;
+		if (this.nativeElement) {
+			return this.nativeElement['width'] as never;
+		}
+		return this['width'];
 	}
 
 	get innerHeight() {
-		return this.height;
+		if (this.nativeElement) {
+			return this.nativeElement['height'] as never;
+		}
+		return this['height'];
 	}
+	/*
 
 	get width() {
 		if (this.nativeElement) {
-			return this.nativeElement['width'];
+			return this.nativeElement['width'] as never;
 		}
 		return this._width;
 	}
@@ -278,7 +331,7 @@ export class Element extends Node {
 
 	get height() {
 		if (this.nativeElement) {
-			return this.nativeElement['height'];
+			return this.nativeElement['height'] as never;
 		}
 		return this._height;
 	}
@@ -289,6 +342,7 @@ export class Element extends Node {
 			setValue(this.nativeElement, 'height', value);
 		}
 	}
+	*/
 
 	get ontouchstart() {
 		return {};

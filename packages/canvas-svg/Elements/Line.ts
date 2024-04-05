@@ -2,16 +2,16 @@ import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
 
 export const x1Property = new Property<Line, any>({
-	name: 'x1'
+	name: 'x1',
 });
 export const y1Property = new Property<Line, any>({
-	name: 'y1'
+	name: 'y1',
 });
 export const x2Property = new Property<Line, any>({
-	name: 'x2'
+	name: 'x2',
 });
 export const y2Property = new Property<Line, any>({
-	name: 'y2'
+	name: 'y2',
 });
 import { DOMParser } from '@xmldom/xmldom';
 
@@ -23,7 +23,7 @@ export class Line extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<line></line>');
+		this.__domElement = new DOMParser().parseFromString('<line></line>', 'image/svg+xml').documentElement;
 	}
 }
 

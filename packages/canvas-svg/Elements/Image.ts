@@ -5,7 +5,7 @@ const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
 	R: 'gif',
-	U: 'webp'
+	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
@@ -39,6 +39,6 @@ export class Image extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<image></image>');
+		this.__domElement = new DOMParser().parseFromString('<image></image>', 'image/svg+xml').documentElement;
 	}
 }

@@ -6,6 +6,6 @@ export class Stop extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<stop></stop>');
+		this.__domElement = new DOMParser().parseFromString('<stop></stop>', 'image/svg+xml').documentElement;
 	}
 }

@@ -17,9 +17,9 @@ export class Circle extends SVGItem {
 	cx: any;
 	cy: any;
 	r: any;
-	constructor(){
+	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<circle></circle>');
+		this.__domElement = new DOMParser().parseFromString('<circle></circle>', 'image/svg+xml').documentElement;
 	}
 }
 

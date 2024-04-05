@@ -7,6 +7,7 @@ pub extern "C" fn canvas_native_svg_draw_from_string(
     size: usize,
     width: f32,
     height: f32,
+    scale: f32,
     svg: *const c_char,
 ) {
     if data.is_null() {
@@ -25,6 +26,7 @@ pub extern "C" fn canvas_native_svg_draw_from_string(
     let svg = svg.to_string_lossy();
 
     if let Some(mut surface) = skia_safe::surface::surfaces::wrap_pixels(&info, slice, None, None) {
+        // surface.canvas().scale((scale, scale));
         crate::draw_svg(&mut surface, svg.as_ref())
     }
 }
@@ -35,6 +37,7 @@ pub extern "C" fn canvas_native_svg_draw_from_path(
     size: usize,
     width: f32,
     height: f32,
+    scale: f32,
     path: *const c_char,
 ) {
     if data.is_null() {
@@ -53,6 +56,7 @@ pub extern "C" fn canvas_native_svg_draw_from_path(
     let path = path.to_string_lossy();
 
     if let Some(mut surface) = skia_safe::surface::surfaces::wrap_pixels(&info, slice, None, None) {
+        // surface.canvas().scale((scale, scale));
         crate::draw_svg_from_path(&mut surface, path.as_ref())
     }
 }

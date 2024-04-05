@@ -20,15 +20,15 @@ export class FileManager {
 		});
 	}
 
-	static _readFile;
+	static supportFastRead;
 
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
-		if (this._readFile === undefined) {
-			this._readFile = global?.CanvasModule?.readFile;
+		if (this.supportFastRead === undefined) {
+			this.supportFastRead = typeof global?.CanvasModule?.readFile === 'function';
 		}
 
-		if (this._readFile) {
-			this._readFile(path, (error, buffer) => {
+		if (this.supportFastRead) {
+			global?.CanvasModule?.readFile(path, (error, buffer) => {
 				if (error) {
 					callback(new Error(error), null);
 				} else {

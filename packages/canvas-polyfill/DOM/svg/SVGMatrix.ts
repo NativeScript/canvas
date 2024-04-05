@@ -78,4 +78,12 @@ export class SVGMatrix {
 		ret._matrix = this._matrix.skewY(sy);
 		return ret;
 	}
+
+	translate(scaleX?: number, scaleY?: number) {
+		const ret = new SVGMatrix();
+		ret._matrix = this._matrix.translate(scaleX, scaleY);
+		return ret;
+	}
+
+	[Symbol.toStringTag] = 'SVGMatrix';
 }

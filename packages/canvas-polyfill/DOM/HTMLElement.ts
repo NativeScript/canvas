@@ -3,48 +3,51 @@ import { ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 
 export class Style {
-	proxy;
-
+	_proxy;
 	constructor() {
 		const values = new Map();
-		this.proxy = new Proxy(this, {
+		this._values = values;
+		this._proxy = new Proxy(this, {
 			set(target, prop, value) {
 				target.setProperty(prop, value);
 				return true;
 			},
 			get(target, prop, receiver) {
 				return target.getPropertyValue(prop);
-			}
+			},
 		});
-		this._values = values;
 	}
 
 	_values: Map<any, any>;
 	nativeElement: WeakRef<ViewBase>;
 
 	setProperty(key: string | symbol, val: unknown) {
+		const nativeElement = this.nativeElement?.deref?.();
+		let value = val;
+		if (typeof value === 'string' && value.includes('px')) {
+			value = value.replace('px', '');
+		}
+		if (nativeElement !== null) {
+			setValue(nativeElement, key, val);
+		}
 		this._values.set(key, val);
-		// const nativeElement = this.nativeElement?.deref?.();
-		// if (nativeElement !== null) {
-		// 	setValue(nativeElement, key, val);
-		// }
 	}
 
 	getPropertyValue(key: string | symbol) {
-		// const nativeElement = this.nativeElement?.deref?.();
-		// if (nativeElement !== null) {
-		// 	return nativeElement[key];
-		// }
+		const nativeElement = this.nativeElement?.deref?.();
+		if (nativeElement !== null) {
+			return nativeElement[key];
+		}
 		return this._values.get(key);
 	}
 }
 
 export class HTMLElement extends Element {
-
-	private _style = new Style();
+	private _style: Style;
 
 	constructor(tagName: string = '') {
 		super(tagName ?? '');
+		this._style = new Style();
 	}
 
 	get style() {
@@ -54,4 +57,18 @@ export class HTMLElement extends Element {
 		return this._style;
 	}
 
+	set nativeElement(value) {
+		this._nativeElement = value;
+		if (value) {
+			this._emitter = new WeakRef(value);
+			this._style.nativeElement = new WeakRef(value);
+		} else {
+			this._emitter = value as never;
+			this._style.nativeElement = value as never;
+		}
+	}
+
+	get nativeElement() {
+		return this._nativeElement;
+	}
 }

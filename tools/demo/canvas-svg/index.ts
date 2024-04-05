@@ -1,3 +1,4 @@
+import { Screen } from '@nativescript/core';
 import { DemoSharedBase } from '../utils';
 import { Svg } from '@nativescript/canvas-svg';
 require('@nativescript/canvas-polyfill');
@@ -8,104 +9,155 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 	private svg4: Svg;
 
 	viewLoaded(args) {
-		// const view = args.object;
-		// const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		const view = args.object;
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('width', '500');
+		svg.setAttribute('height', '500');
 
-		// const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-		// circle.setAttribute('cx', '100');
-		// circle.setAttribute('cy', '100');
-		// circle.setAttribute('r', '50');
-		// circle.setAttribute('fill', 'gold');
-		// circle.id = 'circle';
-		// svg.appendChild(circle);
 
-		// const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		// rect.setAttribute('x', '0');
-		// rect.setAttribute('y', '200');
-		// rect.setAttribute('width', '150');
-		// rect.setAttribute('height', '150');
-		// rect.setAttribute('stroke', 'green');
-		// rect.setAttribute('fill', 'none');
-		// rect.id = 'rect';
-		// svg.appendChild(rect);
-
-		// const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-		// image.setAttribute('xlink:href', 'https://staticg.sportskeeda.com/editor/2023/06/6a942-16869513670522-1920.jpg');
-		// image.setAttribute('x', '0');
-		// image.setAttribute('y', '300');
-		// image.setAttribute('width', '500');
-		// image.setAttribute('height', '500');
-		// image.setAttribute('decoding', 'sync');
-		// svg.appendChild(image);
-
-		// const image2 = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-		// image2.setAttribute('xlink:href', 'https://source.unsplash.com/1600x900/?nature');
-		// image2.setAttribute('x', '600');
-		// image2.setAttribute('y', '600');
-		// image2.setAttribute('width', '500');
-		// image2.setAttribute('height', '500');
-		// image2.setAttribute('decoding', 'sync');
-		// svg.appendChild(image2);
-
-		// const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		// path.setAttribute('d', 'M150 0 L75 200 L225 200 Z');
-		// svg.appendChild(path);
-
-		// const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-		// ellipse.setAttribute('cx', '500');
-		// ellipse.setAttribute('cy', '80');
-		// ellipse.setAttribute('rx', '100');
-		// ellipse.setAttribute('ry', '50');
-		// ellipse.setAttribute('style', 'fill:yellow;stroke:purple;stroke-width:2');
-		// svg.appendChild(ellipse);
-
-		// const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-		// line.setAttribute('x1', '0');
-		// line.setAttribute('y1', '0');
-		// line.setAttribute('x2', '200');
-		// line.setAttribute('y2', '200');
-		// line.setAttribute('style', 'stroke:rgb(255,0,0);stroke-width:2');
-		// svg.appendChild(line);
-
-		// const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-		// polygon.setAttribute('points', '200,10 250,190 160,210');
-		// polygon.setAttribute('style', 'fill:lime;stroke:purple;stroke-width:1');
-		// svg.appendChild(polygon);
-
-		// const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-		// polyline.setAttribute('points', '20,20 40,25 60,40 80,120 120,140 200,180');
-		// polyline.setAttribute('style', 'fill:none;stroke:pink;stroke-width:3');
-		// svg.appendChild(polyline);
-
-		// const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+		const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 		// text.setAttribute('x', '0');
 		// text.setAttribute('y', '0');
-		// text.setAttribute('font-size', '100px');
+		text.setAttribute('font-size', '10');
+		text.setAttribute('fill', 'red');
+		text.setAttribute('stroke', 'blue');
 
-		// const textContent = document.createTextNode('I love SVG!');
-		// text.appendChild(textContent);
+		const textContent = document.createTextNode('I love SVG!');
+		text.appendChild(textContent);
 
-		// svg.appendChild(text);
+		svg.appendChild(text);
 
-		// const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		(<any>svg).nativeElement.src = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" height = "256" width = "256">
+		<path d="M30,1h40l29,29v40l-29,29h-40l-29-29v-40z" stroke="#000" fill="none"/>
+		<path d="M31,3h38l28,28v38l-28,28h-38l-28-28v-38z" fill="#a23"/>
+		<text x="50" y="68" font-size="48" fill="#FFF" text-anchor="middle"><![CDATA[410]]></text>
+		</svg>`;
 
-		// const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		// path1.setAttribute('d', 'M5 20 l215 0');
-		// path1.setAttribute('stroke', 'red');
+		/*
 
-		// const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		// path2.setAttribute('d', 'M5 40 l215 0');
-		// path2.setAttribute('stroke', 'black');
+		const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		circle.setAttribute('cx', '100');
+		circle.setAttribute('cy', '100');
+		circle.setAttribute('r', '50');
+		circle.setAttribute('fill', 'gold');
+		circle.id = 'circle';
+		svg.appendChild(circle);
 
-		// const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		// path3.setAttribute('d', 'M5 60 l215 0');
-		// path3.setAttribute('stroke', 'blue');
+		const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		rect.setAttribute('x', '0');
+		rect.setAttribute('y', '200');
+		rect.setAttribute('width', '150');
+		rect.setAttribute('height', '150');
+		rect.setAttribute('stroke', 'green');
+		rect.setAttribute('fill', 'none');
+		rect.id = 'rect';
+		svg.appendChild(rect);
 
-		// g.append(path1, path2, path3);
+		const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+		image.setAttribute('xlink:href', 'https://staticg.sportskeeda.com/editor/2023/06/6a942-16869513670522-1920.jpg');
+		image.setAttribute('x', '400');
+		image.setAttribute('y', '300');
+		image.setAttribute('width', '500');
+		image.setAttribute('height', '500');
+		image.setAttribute('decoding', 'sync');
+		svg.appendChild(image);
 
-		// svg.appendChild(g);
+		const image2 = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+		image2.setAttribute('xlink:href', 'https://source.unsplash.com/1600x900/?nature');
+		image2.setAttribute('x', '100');
+		image2.setAttribute('y', '600');
+		image2.setAttribute('width', '500');
+		image2.setAttribute('height', '500');
+		image2.setAttribute('decoding', 'sync');
+		svg.appendChild(image2);
 
-		// view.addChild((<any>svg).nativeElement);
+		const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		path.setAttribute('d', 'M150 0 L75 200 L225 200 Z');
+		svg.appendChild(path);
+
+		const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+		ellipse.setAttribute('cx', '500');
+		ellipse.setAttribute('cy', '80');
+		ellipse.setAttribute('rx', '100');
+		ellipse.setAttribute('ry', '50');
+		ellipse.setAttribute('style', 'fill:yellow;stroke:purple;stroke-width:2');
+		svg.appendChild(ellipse);
+
+		const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+		line.setAttribute('x1', '0');
+		line.setAttribute('y1', '0');
+		line.setAttribute('x2', '200');
+		line.setAttribute('y2', '200');
+		line.setAttribute('style', 'stroke:rgb(255,0,0);stroke-width:2');
+		svg.appendChild(line);
+
+		const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		polygon.setAttribute('points', '200,10 250,190 160,210');
+		polygon.setAttribute('style', 'fill:lime;stroke:purple;stroke-width:1');
+		svg.appendChild(polygon);
+
+		const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+		polyline.setAttribute('points', '20,20 40,25 60,40 80,120 120,140 200,180');
+		polyline.setAttribute('style', 'fill:none;stroke:pink;stroke-width:3');
+		svg.appendChild(polyline);
+
+		const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+		text.setAttribute('x', '0');
+		text.setAttribute('y', '0');
+		text.setAttribute('font-size', '100px');
+
+		const textContent = document.createTextNode('I love SVG!');
+		text.appendChild(textContent);
+
+		svg.appendChild(text);
+
+		const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+		const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		path1.setAttribute('d', 'M5 20 l215 0');
+		path1.setAttribute('stroke', 'red');
+
+		const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		path2.setAttribute('d', 'M5 40 l215 0');
+		path2.setAttribute('stroke', 'black');
+
+		const path3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+		path3.setAttribute('d', 'M5 60 l215 0');
+		path3.setAttribute('stroke', 'blue');
+
+		g.append(path1, path2, path3);
+
+		svg.appendChild(g);
+
+		const useCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+		useCircle.setAttribute('cx', '5');
+		useCircle.setAttribute('cy', '5');
+		useCircle.setAttribute('r', '4');
+		useCircle.setAttribute('fill', 'blue');
+		useCircle.id = 'myCircle';
+		svg.appendChild(useCircle);
+
+		const use1 = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+		use1.setAttribute('href', '#myCircle');
+		use1.setAttribute('x', '10');
+		use1.setAttribute('fill', 'blue');
+
+		svg.appendChild(use1);
+
+		const use2 = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+		use2.setAttribute('href', '#myCircle');
+		use2.setAttribute('x', '20');
+		use2.setAttribute('fill', 'white');
+		use2.setAttribute('stroke', 'red');
+
+		svg.appendChild(use2);
+
+		*/
+
+		const svgView: Svg = (<any>svg).nativeElement;
+		svgView.rowSpan = 2;
+		svgView.colSpan = 2;
+		view.addChild(svgView);
 	}
 
 	testIt() {
@@ -289,24 +341,24 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		// https://upload.wikimedia.org/wikipedia/commons/6/61/Figure_in_Manga_style.svg
 		// https://upload.wikimedia.org/wikipedia/commons/a/a0/Plan_des_Forts_de_Lyon_premi%C3%A8re_ceinture_-_OSM.svg
 
-// 		this.set('src1', `
-// 		<svg viewBox="0 0 100 100">
-//   <!-- No translation -->
-//   <rect x="5" y="5" width="40" height="40" fill="green" />
+		// 		this.set('src1', `
+		// 		<svg viewBox="0 0 100 100">
+		//   <!-- No translation -->
+		//   <rect x="5" y="5" width="40" height="40" fill="green" />
 
-//   <!-- Horizontal translation -->
-//   <rect x="5" y="5" width="40" height="40" fill="blue"
-// 		transform="translate(50)" />
+		//   <!-- Horizontal translation -->
+		//   <rect x="5" y="5" width="40" height="40" fill="blue"
+		// 		transform="translate(50)" />
 
-//   <!-- Vertical translation -->
-//   <rect x="5" y="5" width="40" height="40" fill="red"
-// 		transform="translate(0 50)" />
+		//   <!-- Vertical translation -->
+		//   <rect x="5" y="5" width="40" height="40" fill="red"
+		// 		transform="translate(0 50)" />
 
-//   <!-- Both horizontal and vertical translation -->
-//   <rect x="5" y="5" width="40" height="40" fill="yellow"
-// 		 transform="translate(50,50)" />
-// </svg>
-// 		`) 
+		//   <!-- Both horizontal and vertical translation -->
+		//   <rect x="5" y="5" width="40" height="40" fill="yellow"
+		// 		 transform="translate(50,50)" />
+		// </svg>
+		// 		`)
 
 		/*
 		const circle = new Svg.Circle();

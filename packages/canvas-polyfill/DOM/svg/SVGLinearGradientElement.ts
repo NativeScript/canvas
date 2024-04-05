@@ -4,12 +4,12 @@ import { SVGAnimatedLength } from './SVGAnimatedLength';
 export class SVGLinearGradientElement extends SVGGradientElement {
 	private _x1 = new SVGAnimatedLength(this, 'x1');
 	private _y1 = new SVGAnimatedLength(this, 'y1');
-	private _x2 = new SVGAnimatedLength(this, 'x2');
+	private _x2 = new SVGAnimatedLength(this, 'x2', '100%');
 	private _y2 = new SVGAnimatedLength(this, 'y2');
 
 	constructor() {
 		super('linearGradient');
-		this.nativeElement = new LinearGradient();
+		this.nativeElement = new LinearGradient() as never;
 	}
 
 	get x1() {

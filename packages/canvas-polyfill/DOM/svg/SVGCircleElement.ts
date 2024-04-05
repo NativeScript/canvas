@@ -8,7 +8,7 @@ export class SVGCircleElement extends SVGGeometryElement {
 	private _r = new SVGAnimatedLength(this, 'r');
 	constructor() {
 		super('circle');
-		this.nativeElement = new Circle();
+		this.nativeElement = new Circle() as never;
 	}
 
 	get cx() {

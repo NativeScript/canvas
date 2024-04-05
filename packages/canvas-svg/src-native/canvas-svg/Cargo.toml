@@ -25,7 +25,7 @@ crate-type = ["staticlib"]
 #crate-type = ["cdylib"]
 
 [dependencies]
-skia-safe = { version = "0.72.0", features = ["svg"] }
+skia-safe = { version = "0.72.0", features = ["svg", "textlayout", "embed-icudtl"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21.1"

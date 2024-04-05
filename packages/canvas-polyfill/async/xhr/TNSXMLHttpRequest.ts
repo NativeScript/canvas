@@ -526,7 +526,7 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
-					const fastRead = (FileManager as any)._readFile !== undefined;
+					const fastRead = FileManager.supportFastRead;
 
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {

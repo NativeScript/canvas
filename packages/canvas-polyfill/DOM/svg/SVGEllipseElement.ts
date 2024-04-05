@@ -8,7 +8,7 @@ export class SVGEllipseElement extends SVGGeometryElement {
 	private _ry = new SVGAnimatedLength(this, 'ry');
 	constructor() {
 		super('ellipse');
-		this.nativeElement = new Ellipse();
+		this.nativeElement = new Ellipse() as never;
 	}
 
 	get cx() {

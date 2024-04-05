@@ -5,7 +5,7 @@ const SVG_TRANSFORM_SCALE = 3;
 const SVG_TRANSFORM_ROTATE = 4;
 const SVG_TRANSFORM_SKEWX = 5;
 const SVG_TRANSFORM_SKEWY = 6;
-
+import { SVGMatrix } from './SVGMatrix';
 export class SVGTransformList extends Array {
 	clear() {
 		this.splice(0);
@@ -35,7 +35,7 @@ export class SVGTransformList extends Array {
 		const ret = new SVGTransform();
 		ret._type = SVG_TRANSFORM_MATRIX;
 		for (const transform of this) {
-			ret._matrix.multiplySelf(transform._matrix);
+			ret._matrix._matrix.multiplySelf(transform.matrix);
 		}
 		return ret;
 	}
@@ -48,10 +48,10 @@ export class SVGTransformList extends Array {
 export class SVGTransform {
 	_type: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 	_rotate = 0;
-	_matrix: DOMMatrix;
+	_matrix: SVGMatrix;
 	constructor() {
-		this._type = SVG_TRANSFORM_UNKNOWN;
-		this._matrix = new DOMMatrix();
+		this._type = SVG_TRANSFORM_MATRIX;
+		this._matrix = new SVGMatrix();
 	}
 
 	get type() {
@@ -66,9 +66,23 @@ export class SVGTransform {
 		return this._matrix;
 	}
 
-	setMatrix(matrix: DOMMatrix) {
-		this._matrix = matrix;
-		this._type = SVG_TRANSFORM_MATRIX;
+	static SVG_TRANSFORM_UNKNOWN = SVG_TRANSFORM_UNKNOWN;
+	static SVG_TRANSFORM_MATRIX = SVG_TRANSFORM_MATRIX;
+	static SVG_TRANSFORM_TRANSLATE = SVG_TRANSFORM_TRANSLATE;
+	static SVG_TRANSFORM_SCALE = SVG_TRANSFORM_SCALE;
+	static SVG_TRANSFORM_ROTATE = SVG_TRANSFORM_ROTATE;
+	static SVG_TRANSFORM_SKEWX = SVG_TRANSFORM_SKEWX;
+	static SVG_TRANSFORM_SKEWY = SVG_TRANSFORM_SKEWY;
+
+	setMatrix(matrix: SVGMatrix) {
+		if (matrix?._matrix instanceof DOMMatrix) {
+			this._matrix = new SVGMatrix();
+			this._matrix._matrix = matrix._matrix;
+			this._type = SVG_TRANSFORM_MATRIX;
+		} else if (matrix instanceof SVGMatrix) {
+			this._matrix = matrix;
+			this._type = SVG_TRANSFORM_MATRIX;
+		}
 	}
 
 	setTranslate(x: number, y: number) {

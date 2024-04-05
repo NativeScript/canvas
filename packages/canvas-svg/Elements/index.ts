@@ -1,4 +1,3 @@
-export * from './SVG';
 export { Circle } from './Circle';
 export { G } from './G';
 export { Path } from './Path';

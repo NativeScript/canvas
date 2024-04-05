@@ -67,7 +67,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//webgl_shadowmap_pointlight(this.canvas);
 		//webgl_shadowmap_vsm(this.canvas);
 
-		init(this.canvas);
+		//init(this.canvas);
 
 		//this.topDown(this.canvas);
 
@@ -101,7 +101,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		//this.gtlfLoader(this.canvas);
+		this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);
@@ -1801,7 +1801,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		controls.enablePan = false;
 		controls.enableDamping = true;
 
-
 		const light = new THREE.SpotLight();
 		light.position.set(-1.8, 0.6, 2.7 * 1.2);
 		scene.add(light);
@@ -2753,8 +2752,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			light.position.set(0, 20, 0);
 			scene.add(light);
 
-			
-
 			light = new THREE.DirectionalLight(0xffffff) as any;
 			light.position.set(0, 20, 10);
 			scene.add(light);
@@ -3270,6 +3267,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			particleCount: 500,
 		};
 
+		const context = canvas.getContext('webgl2');
+
 		init();
 		animate();
 
@@ -3298,7 +3297,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			*/
 		}
 
-		const context = canvas.getContext('webgl2');
 
 		function init() {
 			initGUI();

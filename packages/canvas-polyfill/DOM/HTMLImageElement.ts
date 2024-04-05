@@ -1,4 +1,4 @@
-import { knownFolders, path, File, Utils, Image } from '@nativescript/core';
+import { knownFolders, path, File, Utils, Image, Screen } from '@nativescript/core';
 // @ts-ignore
 import { ImageAsset } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
@@ -8,8 +8,8 @@ declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
-	R: 'gif'
-//	U: 'webp',
+	R: 'gif',
+	//	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
@@ -42,7 +42,10 @@ export class HTMLImageElement extends HTMLElement {
 	private _onerror: any;
 	private _complete: any;
 	private _base64: string;
+	width: number = 0;
+	height: number = 0;
 	_asset: ImageAsset;
+	_svg;
 	__id: any;
 
 	decoding = 'auto';
@@ -79,19 +82,39 @@ export class HTMLImageElement extends HTMLElement {
 	set complete(value) {
 		this._complete = value;
 		if (value) {
-			this.dispatchEvent('load');
+			this.dispatchEvent({ type: 'load', target: this });
 			this.onload();
 		}
 	}
 
+	// we're {N} :D
+	static _fromSvg(svg) {
+		const img = new HTMLImageElement();
+		if (svg) {
+			const nativeSvg = svg?._svg;
+			if (nativeSvg) {
+				img._svg = svg;
+				img.width = svg.width;
+				img.height = svg.height;
+				img.complete = true;
+				return img;
+			}
+		}
+
+		return null;
+	}
 
 	constructor(props?) {
 		super('img');
-		//	this.nativeElement = new Image();
+		this.nativeElement = new Image();
+
+		if (!this.nativeElement.__domElement) {
+			this.nativeElement.__domElement = new DOMParser().parseFromString('<img></img>', 'text/html').documentElement as never;
+		}
+
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
-		this._onload = () => {
-		};
+		this._onload = () => {};
 		if (props !== null && typeof props === 'object') {
 			this.src = props.localUri;
 			this.width = props.width;
@@ -149,7 +172,7 @@ export class HTMLImageElement extends HTMLElement {
 											owner.dispatchEvent({ type: 'error', target: ref.get(), message });
 											owner._onerror?.();
 										}
-									}
+									},
 								})
 							);
 						}
@@ -195,33 +218,35 @@ export class HTMLImageElement extends HTMLElement {
 							});
 					}
 				} else {
-					if (!this.width || !this.height) {
-						this.complete = false;
-						if (!async) {
-							const loaded = this._asset.fromFileSync(this.src);
-							if (loaded) {
+					this.complete = false;
+					let src = this.src;
+					if (src.startsWith('~')) {
+						src = knownFolders.currentApp().path + src.replace('~', '');
+					}
+					if (!async) {
+						const loaded = this._asset.fromFileSync(src);
+						if (loaded) {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+							this._onload?.();
+						} else {
+							this.dispatchEvent({ type: 'error', target: this });
+							this._onerror?.();
+						}
+					} else {
+						this._asset
+							.fromFile(src)
+							.then((done) => {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
 								this._onload?.();
-							} else {
-								this.dispatchEvent({ type: 'error', target: this });
+							})
+							.catch((e) => {
+								this.dispatchEvent({ type: 'error', target: this, e });
 								this._onerror?.();
-							}
-						} else {
-							this._asset
-								.fromFile(this.src)
-								.then((done) => {
-									this.width = this._asset.width;
-									this.height = this._asset.height;
-									this.complete = true;
-									this._onload?.();
-								})
-								.catch((e) => {
-									this.dispatchEvent({ type: 'error', target: this, e });
-									this._onerror?.();
-								});
-						}
+							});
 					}
 				}
 			}

@@ -309,5 +309,17 @@ public class CanvasHelpers: NSObject {
             
         }
     }
-
+    
+    public static func  getPixelsPerInchForCurrentDevice() -> String{
+        var size: Int = 0;
+        sysctlbyname("hw.machine", nil, &size, nil, 0);
+        var machine = malloc(size);
+        sysctlbyname("hw.machine", machine, &size, nil, 0);
+        guard let machine = machine else {
+            return ""
+        }
+        let platform = NSString(utf8String: machine) ?? ""
+        free(machine);
+        return platform as String
+    }
 }

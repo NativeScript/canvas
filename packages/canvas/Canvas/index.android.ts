@@ -21,7 +21,7 @@ const defaultOpts = {
 	preserveDrawingBuffer: false,
 	stencil: false,
 	desynchronized: false,
-	xrCompatible: false
+	xrCompatible: false,
 };
 
 declare const org;
@@ -55,7 +55,7 @@ export class Canvas extends CanvasBase {
 		} else {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 			if (Canvas.useSurface) {
-				this._canvas = new org.nativescript.canvas.NSCCanvas(activity, org.nativescript.canvas.NSCCanvas.SurfaceType.Surface);
+				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			} else {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
@@ -70,7 +70,7 @@ export class Canvas extends CanvasBase {
 							return;
 						}
 						owner._handleEvents(event);
-					}
+					},
 				})
 			);
 		}
@@ -156,18 +156,18 @@ export class Canvas extends CanvasBase {
 			// TODO change DIPs once implemented
 			if (parent && parent.clientWidth === undefined && parent.clientHeight === undefined) {
 				Object.defineProperty(parent, 'clientWidth', {
-					get: function() {
+					get: function () {
 						return parent.getMeasuredWidth() / Screen.mainScreen.scale;
-					}
+					},
 				});
 				Object.defineProperty(parent, 'clientHeight', {
-					get: function() {
+					get: function () {
 						return parent.getMeasuredHeight() / Screen.mainScreen.scale;
-					}
+					},
 				});
 			}
 			if (parent && typeof parent.getBoundingClientRect !== 'function') {
-				parent.getBoundingClientRect = function() {
+				parent.getBoundingClientRect = function () {
 					const view = this;
 					const nativeView = view.android;
 					const width = this.width;
@@ -181,16 +181,16 @@ export class Canvas extends CanvasBase {
 						top: nativeView.getTop() / scale,
 						width: width,
 						x: nativeView.getX() / scale,
-						y: nativeView.getY() / scale
+						y: nativeView.getY() / scale,
 					};
 				};
 			}
 
 			if (parent && parent.ownerDocument === undefined) {
 				Object.defineProperty(parent, 'ownerDocument', {
-					get: function() {
+					get: function () {
 						return global?.window?.document ?? doc;
-					}
+					},
 				});
 			}
 		});
@@ -213,7 +213,7 @@ export class Canvas extends CanvasBase {
 						owner._drawingBufferWidth = width / Screen.mainScreen.scale;
 						owner._drawingBufferHeight = height / Screen.mainScreen.scale;
 					}
-				}
+				},
 			})
 		);
 	}
@@ -267,25 +267,20 @@ export class Canvas extends CanvasBase {
 		if (this._didLayout) {
 			return;
 		}
-		if (!this.parent) {
-			if ((typeof this.width === 'string' && this.width.indexOf('%')) || (typeof this.height === 'string' && this.height.indexOf('%'))) {
-				return;
-			}
 
-			if (this._canvas === undefined || this._canvas === null) {
-				return;
-			}
-
-			const size = this._physicalSize;
-			org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
-
-			//	this._drawingBufferWidth = size.width || 1;
-			//	this._drawingBufferHeight = size.height || 1;
-			if (this._is2D) {
-				this._2dContext.native.__resize(size.width, size.height);
-			}
-			this._didLayout = true;
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
 		}
+
+		const size = this._physicalSize;
+		org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
+
+		//	this._drawingBufferWidth = size.width || 1;
+		//	this._drawingBufferHeight = size.height || 1;
+		if (this._is2D) {
+			this._2dContext.native.__resize(size.width, size.height);
+		}
+		this._didLayout = true;
 	}
 
 	get __native__context() {
@@ -320,8 +315,9 @@ export class Canvas extends CanvasBase {
 				if (!this._2dContext) {
 					this._layoutNative();
 					const opts = {
-						...defaultOpts, ...this._handleContextOptions(type, options),
-						fontColor: this.parent?.style?.color?.android || -16777216
+						...defaultOpts,
+						...this._handleContextOptions(type, options),
+						fontColor: this.parent?.style?.color?.android || -16777216,
 					};
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
@@ -394,9 +390,7 @@ export class Canvas extends CanvasBase {
 		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}
 
-	setPointerCapture() {
-	}
+	setPointerCapture() {}
 
-	releasePointerCapture() {
-	}
+	releasePointerCapture() {}
 }

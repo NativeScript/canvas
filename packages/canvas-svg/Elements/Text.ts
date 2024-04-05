@@ -2,19 +2,19 @@ import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
 
 export const xProperty = new Property<Text, any>({
-	name: 'x'
+	name: 'x',
 });
 
 export const yProperty = new Property<Text, any>({
-	name: 'y'
+	name: 'y',
 });
 
 export const dxProperty = new Property<Text, any>({
-	name: 'dx'
+	name: 'dx',
 });
 
 export const dyProperty = new Property<Text, any>({
-	name: 'dy'
+	name: 'dy',
 });
 import { DOMParser } from '@xmldom/xmldom';
 
@@ -27,10 +27,9 @@ export class Text extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<text></text>');
+		this.__domElement = new DOMParser().parseFromString('<text></text>', 'image/svg+xml').documentElement;
 	}
 }
-
 
 xProperty.register(Text);
 yProperty.register(Text);

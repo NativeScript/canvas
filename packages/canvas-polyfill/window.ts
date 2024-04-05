@@ -35,7 +35,7 @@ import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 (global as any).window.HTMLUnknownElement = (global as any).HTMLUnknownElement = (global as any).HTMLUnknownElement || HTMLUnknownElement;
 
 // svg
-import { SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
+import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
 
 (global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
 (global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
@@ -70,6 +70,9 @@ import { SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVG
 (global as any).window.SVGRadialGradientElement = (global as any).SVGRadialGradientElement = (global as any).SVGRadialGradientElement || SVGRadialGradientElement;
 (global as any).window.SVGLinearGradientElement = (global as any).SVGLinearGradientElement = (global as any).SVGLinearGradientElement || SVGLinearGradientElement;
 (global as any).window.SVGStopElement = (global as any).SVGStopElement = (global as any).SVGStopElement || SVGStopElement;
+(global as any).window.SVGUseElement = (global as any).SVGUseElement = (global as any).SVGUseElement || SVGUseElement;
+(global as any).window.SVGAnimatedTransformList = (global as any).SVGAnimatedTransformList = (global as any).SVGAnimatedTransformList || SVGAnimatedTransformList;
+(global as any).window.SVGMarkerElement = (global as any).SVGMarkerElement = (global as any).SVGMarkerElement || SVGMarkerElement;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
@@ -90,6 +93,10 @@ function checkEmitter() {
 			(global as any).emitter.addListener(eventName, listener);
 		}
 	};
+
+	if (typeof listener !== 'function') {
+		return;
+	}
 
 	addListener();
 
@@ -115,10 +122,22 @@ function checkEmitter() {
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
 
+type DOMParserSupportedType = 'application/xhtml+xml' | 'application/xml' | 'image/svg+xml' | 'text/html' | 'text/xml';
+
 export class DOMParser {
-	parseFromString(xmlsource: string, mimeType?: string) {
+	parseFromString(xmlsource: string, mimeType?: DOMParserSupportedType) {
 		const instance = new Parser().parseFromString(xmlsource, mimeType);
-		return XMLDocument.fromParser(instance);
+		if (mimeType === 'image/svg+xml' || mimeType === 'application/xhtml+xml' || mimeType === 'text/xml' || mimeType === 'application/xml') {
+			return XMLDocument.fromParser(instance);
+		} else {
+			if (instance) {
+				const doc = new Document();
+				doc.__instance = instance as never;
+				return doc;
+			}
+		}
+
+		return null;
 	}
 }
 

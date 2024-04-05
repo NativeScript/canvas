@@ -1,7 +1,7 @@
 use std::io::{Read, Seek, SeekFrom};
 
-use skia_safe::svg::Dom;
 use skia_safe::FontMgr;
+use skia_safe::svg::Dom;
 
 #[cfg(target_os = "android")]
 pub mod android;
@@ -57,6 +57,21 @@ fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
         }
         Err(e) => {
             println!("svg read to string error: {}", e);
+        }
+    }
+}
+
+fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
+    let mgr = FontMgr::new();
+    match Dom::from_bytes(bytes, mgr) {
+        Ok(mut svg) => {
+            let size = skia_safe::Size::new(surface.width() as f32, surface.height() as f32);
+            let canvas = surface.canvas();
+            svg.set_container_size(size);
+            svg.render(canvas)
+        }
+        Err(e) => {
+            println!("svg from bytes error: {}", e);
         }
     }
 }

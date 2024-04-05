@@ -360,6 +360,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)readFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSData * _Nullable))callback;
 + (void)deleteFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSError * _Nullable, BOOL))callback;
 + (void)handleBase64Image:(NSString * _Nonnull)mime :(NSString * _Nonnull)dir :(NSString * _Nonnull)base64 :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
++ (NSString * _Nonnull)getPixelsPerInchForCurrentDevice SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -444,6 +445,14 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 - (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
 - (void)createSurface;
+@end
+
+
+SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
+@interface NSCWebGLRenderingContext : NSObject
++ (void)texImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
++ (void)texSubImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 @class AVPlayer;

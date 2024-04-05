@@ -5,18 +5,109 @@ import { HTMLCanvasElement } from './HTMLCanvasElement';
 import { HTMLDivElement } from './HTMLDivElement';
 import { Text } from './Text';
 import { Canvas } from '@nativescript/canvas';
-import { Frame, StackLayout } from '@nativescript/core';
+import { ContentView, Frame, StackLayout, eachDescendant } from '@nativescript/core';
 import { Node } from './Node';
-import { Element } from './Element';
+import { Element, parseChildren } from './Element';
 import { SVGSVGElement } from './svg/SVGSVGElement';
 import { SVGElement } from './svg/SVGElement';
 import { HTMLUnknownElement } from './HTMLUnknownElement';
+import { HTMLCollection } from './HTMLCollection';
+
+function getElementsByClassName(v, clsName) {
+	var retVal = [];
+	if (!v) {
+		return retVal;
+	}
+
+	if (v.classList.contains(clsName)) {
+		retVal.push(v);
+	}
+
+	const classNameCallback = function (child) {
+		if (child.classList.contains(clsName)) {
+			retVal.push(child);
+		}
+
+		// Android patch for ListView
+		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
+			for (var key in child._realizedItems) {
+				if (child._realizedItems.hasOwnProperty(key)) {
+					classNameCallback(child._realizedItems[key]);
+				}
+			}
+		}
+
+		return true;
+	};
+
+	eachDescendant(v, classNameCallback);
+
+	// Android patch for ListView
+	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
+		for (var key in v._realizedItems) {
+			if (v._realizedItems.hasOwnProperty(key)) {
+				classNameCallback(v._realizedItems[key]);
+			}
+		}
+	}
+
+	return retVal;
+}
+
+function getElementsByTagName(v, tagName) {
+	// TagName is case-Insensitive
+	var tagNameLC = tagName.toLowerCase();
+
+	var retVal = [],
+		allTags = false;
+	if (!v) {
+		return retVal;
+	}
+
+	if (tagName === '*') {
+		allTags = true;
+	}
+
+	if ((v.typeName && v.typeName.toLowerCase() === tagNameLC) || allTags) {
+		retVal.push(v);
+	}
+
+	const tagNameCallback = function (child) {
+		if ((child.typeName && child.typeName.toLowerCase() === tagNameLC) || allTags) {
+			retVal.push(child);
+		}
+
+		// Android patch for ListView
+		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
+			for (var key in child._realizedItems) {
+				if (child._realizedItems.hasOwnProperty(key)) {
+					tagNameCallback(child._realizedItems[key]);
+				}
+			}
+		}
+
+		return true;
+	};
+
+	eachDescendant(v, tagNameCallback);
+
+	// Android patch for ListView
+	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
+		for (var key in v._realizedItems) {
+			if (v._realizedItems.hasOwnProperty(key)) {
+				tagNameCallback(v._realizedItems[key]);
+			}
+		}
+	}
+
+	return retVal;
+}
 
 export class Document extends Node {
-	readonly body: Element;
-	private _documentElement: Element;
-	private readyState: string;
-	readonly head: Element;
+	readonly body: Element = null;
+	_documentElement: Element;
+	readonly readyState: string;
+	readonly head: Element = null;
 	__instance: Document;
 	get defaultView() {
 		return global.window;
@@ -25,9 +116,22 @@ export class Document extends Node {
 	constructor() {
 		super('#document');
 		this.body = new Element('BODY');
-		this.documentElement = new Element('HTML');
+		this._documentElement = new Element('HTML');
 		this.readyState = 'complete';
 		this.head = new Element('HEAD');
+	}
+
+	get children() {
+		const children = new HTMLCollection();
+		children.push(this._documentElement);
+		if (this.body) {
+			children.push(this.head);
+			children.push(this.body);
+		}
+		if (this.__instance) {
+			parseChildren(this.__instance, children);
+		}
+		return children;
 	}
 
 	_createElement(namespaceURI: string | null, tagName: string, options?: {}) {
@@ -59,6 +163,10 @@ export class Document extends Node {
 					return new SVGRadialGradientElement();
 				case 'linearGradient':
 					return new SVGLinearGradientElement();
+				case 'use':
+					return new SVGUseElement();
+				case 'stop':
+					return new SVGStopElement();
 				default:
 					return new SVGElement(tagName ?? `${tagName}`);
 			}
@@ -81,29 +189,54 @@ export class Document extends Node {
 	}
 
 	createElement(tagName: string, options?: {}) {
-		return this._createElement(null, tagName, options);
+		const element = this._createElement(null, tagName, options) as Element;
+		if (element) {
+			if (!element.nativeElement) {
+				// set dummy nativeElement
+				element.nativeElement = new ContentView();
+				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName}/>`, 'text/html').documentElement as never;
+			}
+
+			element._ownerDocument = this as never;
+		}
+		return element;
 	}
 
 	createElementNS(namespaceURI: string | null, qualifiedName?: string, options?: {}) {
-		const element = this._createElement(namespaceURI, qualifiedName, options) as any;
-		element.namespaceURI = namespaceURI;
-		if (qualifiedName?.toLowerCase?.() !== 'canvas') {
-			element.toDataURL = () => ({});
+		const element = this._createElement(namespaceURI, qualifiedName, options) as Element;
+		element._namespaceURI = namespaceURI;
+		if (element) {
+			if (!element.nativeElement) {
+				// set dummy nativeElement
+				element.nativeElement = new ContentView();
+				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName}/>`, 'image/svg+xml').documentElement as never;
+			}
+
+			element._ownerDocument = this as never;
 		}
 		return element;
 	}
 
 	createTextNode(data) {
-		return new Text(data);
+		const text = new Text(data);
+		text._ownerDocument = this as never;
+		return text;
 	}
 
 	getElementById(id: string) {
 		if (this.__instance) {
 			return this.__instance.getElementById(id);
 		}
+		console.log('getElementsByTagName', id);
 		const topmost = Frame.topmost();
 		if (topmost) {
-			const nativeElement = topmost.getViewById(id);
+			let nativeElement;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				nativeElement = topmost.getViewById(id);
+			} else {
+				nativeElement = topmost.currentPage.modal.getViewById(id);
+			}
+
 			if (nativeElement) {
 				if (nativeElement instanceof Canvas) {
 					const canvas = new HTMLCanvasElement();
@@ -126,23 +259,51 @@ export class Document extends Node {
 		if (this.__instance) {
 			return this.__instance.getElementsByTagName(tagname);
 		}
+		console.log('getElementsByTagName', tagname);
+		const topmost = Frame.topmost();
+		if (topmost) {
+			let view;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				view = topmost;
+			} else {
+				view = topmost.currentPage.modal;
+			}
+			const elements = getElementsByTagName(view, tagname);
+
+			return elements;
+		}
+		return [];
+	}
+
+	getElementsByClassName(className: string) {
+		if (this.__instance) {
+			return this.__instance.getElementsByClassName(className);
+		}
+		console.log('getElementsByClassName', className);
+		const topmost = Frame.topmost();
+		if (topmost) {
+			let view;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				view = topmost;
+			} else {
+				view = topmost.currentPage.modal;
+			}
+			const elements = getElementsByClassName(view, className);
+
+			return elements;
+		}
 		return [];
 	}
 
 	get documentElement() {
-		if (this._documentElement) {
-			return this._documentElement;
-		}
-		if (this.__instance) {
-			return this.__instance?.documentElement;
-		}
-		return null;
+		return this._documentElement;
 	}
 
 	//@ts-ignore
 	set documentElement(value) {}
 
 	querySelectorAll(selector) {
+		console.log('querySelectorAll', selector);
 		if (this.__instance) {
 			return this.__instance.querySelectorAll?.(selector) ?? [];
 		}
@@ -150,6 +311,7 @@ export class Document extends Node {
 	}
 
 	querySelector(selector) {
+		console.log('querySelector', selector);
 		const ret = this.__instance?.querySelectorAll?.(selector);
 		// let element = ret?.[0] ?? null;
 		// if (ret === undefined) {

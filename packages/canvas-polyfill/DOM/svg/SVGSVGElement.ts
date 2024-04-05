@@ -8,7 +8,7 @@ import { Svg } from '@nativescript/canvas-svg';
 export class SVGSVGElement extends SVGGraphicsElement {
 	private _x = new SVGAnimatedLength(this, 'x');
 	private _y = new SVGAnimatedLength(this, 'y');
-	// @ts-ignore
+
 	private _width = new SVGAnimatedLength(this, 'width');
 	// @ts-ignore
 	private _height = new SVGAnimatedLength(this, 'height');
@@ -17,7 +17,9 @@ export class SVGSVGElement extends SVGGraphicsElement {
 
 	constructor() {
 		super('svg');
-		this._nativeElement = new Svg();
+		this.nativeElement = new Svg() as never;
+		this._width.baseVal.newValueSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PERCENTAGE, 100);
+		this._width.animVal.newValueSpecifiedUnits(SVGLength.SVG_LENGTHTYPE_PERCENTAGE, 100);
 	}
 
 	get viewBox() {
@@ -76,6 +78,7 @@ export class SVGSVGElement extends SVGGraphicsElement {
 	createSVGTransform() {
 		return new SVGTransform();
 	}
+
 	createSVGTransformFromMatrix(matrix: DOMMatrix | SVGMatrix) {
 		const ret = new SVGTransform();
 		if (matrix instanceof DOMMatrix) {

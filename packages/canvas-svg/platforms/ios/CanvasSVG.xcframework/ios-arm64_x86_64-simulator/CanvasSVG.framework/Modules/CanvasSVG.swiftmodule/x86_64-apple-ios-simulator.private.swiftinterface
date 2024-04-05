@@ -9,6 +9,15 @@ import _Concurrency
 import _StringProcessing
 import _SwiftConcurrencyShims
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCSVG) @_Concurrency.MainActor(unsafe) public class NSCSVG : UIKit.UIView {
+  @objc @_Concurrency.MainActor(unsafe) public var data: Swift.UnsafeMutableRawPointer? {
+    get
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var data_size: CoreFoundation.CGSize {
+    get
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var buf_size: Swift.UInt {
+    get
+  }
   @objc @_Concurrency.MainActor(unsafe) public var autoScale: Swift.Bool {
     @objc get
     @objc set
@@ -26,5 +35,11 @@ import _SwiftConcurrencyShims
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
   @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
   @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromStringSync(_ source: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromPathSync(_ path: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromRemoteSync(_ path: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromString(_ source: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
+  @objc @_Concurrency.MainActor(unsafe) public static func fromPath(_ path: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
+  @objc @_Concurrency.MainActor(unsafe) public static func fromRemote(_ path: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
   @objc deinit
 }

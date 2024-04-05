@@ -12,12 +12,15 @@ export class HTMLVideoElement extends HTMLElement {
 				// @ts-ignore
 				const video = require('@nativescript/canvas-media');
 				Video = video.Video;
-			} catch (e) {
-			}
+			} catch (e) {}
 		}
 		if (Video) {
 			this._video = Video.createCustomView();
 			this.nativeElement = this._video;
+
+			if (!this.nativeElement.__domElement) {
+				this.nativeElement.__domElement = new DOMParser().parseFromString('<video></video>', 'text/html').documentElement as never;
+			}
 		}
 	}
 

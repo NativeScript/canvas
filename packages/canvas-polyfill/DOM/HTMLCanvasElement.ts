@@ -1,7 +1,7 @@
 import { Canvas } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
 import setValue from 'set-value';
-
+import { DOMParser } from '@xmldom/xmldom';
 export class HTMLCanvasElement extends HTMLElement {
 	constructor() {
 		super('canvas');
@@ -15,6 +15,10 @@ export class HTMLCanvasElement extends HTMLElement {
 		} else {
 			this.nativeElement = (Canvas as any).createCustomView();
 		}
+
+		if (!this.nativeElement.__domElement) {
+			this.nativeElement.__domElement = new DOMParser().parseFromString('<canvas></canvas>', 'text/html').documentElement as never;
+		}
 	}
 
 	get _canvas() {
@@ -26,7 +30,7 @@ export class HTMLCanvasElement extends HTMLElement {
 	}
 
 	get width() {
-		return this.nativeElement['width'];
+		return this.nativeElement['width'] as never;
 	}
 
 	set height(value) {
@@ -34,12 +38,12 @@ export class HTMLCanvasElement extends HTMLElement {
 	}
 
 	get height() {
-		return this.nativeElement['height'];
+		return this.nativeElement['height'] as never;
 	}
 
 	toDataURL(type: string, encoderOptions: number = 0.92) {
 		const nativeElement = this.nativeElement as never as {
-			toDataURL: (type: string, encoderOptions: number) => string
+			toDataURL: (type: string, encoderOptions: number) => string;
 		};
 
 		if (nativeElement) {
@@ -50,7 +54,7 @@ export class HTMLCanvasElement extends HTMLElement {
 
 	getContext(contextType: string, contextOptions) {
 		const nativeElement = this.nativeElement as never as {
-			getContext: (contextType: string, contextOptions) => any
+			getContext: (contextType: string, contextOptions) => any;
 		};
 		if (nativeElement) {
 			return nativeElement.getContext(contextType, contextOptions);
@@ -58,10 +62,7 @@ export class HTMLCanvasElement extends HTMLElement {
 		return null;
 	}
 
-	setPointerCapture(id: string) {
-	}
+	setPointerCapture(id: string) {}
 
-	releasePointerCapture(id: string) {
-	}
-
+	releasePointerCapture(id: string) {}
 }

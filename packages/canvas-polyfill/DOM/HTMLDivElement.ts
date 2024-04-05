@@ -12,5 +12,9 @@ export class HTMLDivElement extends HTMLElement {
 		} else {
 			this.nativeElement = arguments[0];
 		}
+
+		if (!this.nativeElement.__domElement) {
+			this.nativeElement.__domElement = new DOMParser().parseFromString('<div></div>', 'text/html').documentElement as never;
+		}
 	}
 }

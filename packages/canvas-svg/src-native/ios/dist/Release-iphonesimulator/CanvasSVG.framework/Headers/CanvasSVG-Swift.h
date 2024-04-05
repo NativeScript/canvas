@@ -306,6 +306,9 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 
 SWIFT_CLASS_NAMED("NSCSVG")
 @interface NSCSVG : UIView
+@property (nonatomic, readonly) void * _Nullable data;
+@property (nonatomic, readonly) CGSize data_size;
+@property (nonatomic, readonly) NSUInteger buf_size;
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
@@ -315,6 +318,12 @@ SWIFT_CLASS_NAMED("NSCSVG")
 - (void)drawRect:(CGRect)rect;
 - (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
 - (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromStringSync:(NSString * _Nonnull)source SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromPathSync:(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromRemoteSync:(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (void)fromString:(NSString * _Nonnull)source :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
++ (void)fromPath:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
++ (void)fromRemote:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
 @end
 
 #endif
@@ -633,6 +642,9 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 
 SWIFT_CLASS_NAMED("NSCSVG")
 @interface NSCSVG : UIView
+@property (nonatomic, readonly) void * _Nullable data;
+@property (nonatomic, readonly) CGSize data_size;
+@property (nonatomic, readonly) NSUInteger buf_size;
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
@@ -642,6 +654,12 @@ SWIFT_CLASS_NAMED("NSCSVG")
 - (void)drawRect:(CGRect)rect;
 - (UIImage * _Nullable)toImage SWIFT_WARN_UNUSED_RESULT;
 - (NSData * _Nullable)toData SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromStringSync:(NSString * _Nonnull)source SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromPathSync:(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (NSCSVG * _Nullable)fromRemoteSync:(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (void)fromString:(NSString * _Nonnull)source :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
++ (void)fromPath:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
++ (void)fromRemote:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSCSVG * _Nullable))callback;
 @end
 
 #endif

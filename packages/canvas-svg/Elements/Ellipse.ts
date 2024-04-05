@@ -2,16 +2,16 @@ import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
 
 export const cxProperty = new Property<Ellipse, any>({
-	name: 'cx'
+	name: 'cx',
 });
 export const cyProperty = new Property<Ellipse, any>({
-	name: 'cy'
+	name: 'cy',
 });
 export const rxProperty = new Property<Ellipse, any>({
-	name: 'rx'
+	name: 'rx',
 });
 export const ryProperty = new Property<Ellipse, any>({
-	name: 'ry'
+	name: 'ry',
 });
 import { DOMParser } from '@xmldom/xmldom';
 
@@ -23,7 +23,7 @@ export class Ellipse extends SVGItem {
 
 	constructor() {
 		super();
-		this._dom = new DOMParser().parseFromString('<ellipse></ellipse>');
+		this.__domElement = new DOMParser().parseFromString('<ellipse></ellipse>', 'image/svg+xml').documentElement;
 	}
 }
 

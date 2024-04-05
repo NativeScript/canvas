@@ -9,6 +9,8 @@ import PIXI from '@nativescript/canvas-pixi';
 import { Viewport } from 'pixi-viewport';
 
 import { SVGScene } from '@pixi-essentials/svg';
+import { context } from 'three/examples/jsm/nodes/Nodes';
+import { Svg } from '@nativescript/canvas-svg';
 
 // let PIXI;
 
@@ -127,33 +129,33 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		const app = new PIXI.Application({
 			context,
 			background: 'white',
-			autoDensity: true,
-
 		});
 		try {
 			const data = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-			<image width="300" height="300" xlink:href="https://staticg.sportskeeda.com/editor/2023/06/6a942-16869513670522-1920.jpg"/>
+			<rect width="100" height="500" stroke="red" fill="none"></rect>
+			<line x1="0" y1="80" x2="100" y2="20" stroke="black" />
 		  </svg>
 		  `;
 
-			/*
-		  		const data = `<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-			<path
-			  d="M 10,30
-					 A 20,20 0,0,1 50,30
-					 A 20,20 0,0,1 90,30
-					 Q 90,60 50,90
-					 Q 10,60 10,30 z"  fill="black"/>
-		  </svg>
-		  `;
-		  */
-			const path = new DOMParser().parseFromString(data, 'image/svg+xml');
+		  const svg = await Svg.fromSrc('~/assets/file-assets/svg/trinidadAndTobagoHigh.svg');
+			//    const svg = Svg.fromSrcSync(data);
 
-			const svg = path.documentElement;
+			//const svg = await Svg.fromSrc('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg');
+			// const svg = await Svg.fromSrc('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
+			//   const img = (<any>HTMLImageElement)._fromSvg(svg);
+			//   const texture = PIXI.Texture.from(img);
+			//   const sprite = new PIXI.Sprite(texture);
+			//   app.stage.addChild(sprite);
 
-			const scene = new SVGScene(svg as any, { disableHrefSVGLoading: false });
-
-			const c = new PIXI.Container();
+			//	const svg = Svg.fromSrcSync('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg') as any;
+			const img = (<any>HTMLImageElement)._fromSvg(svg);
+			const texture = PIXI.Texture.from(img);
+			const sprite = new PIXI.Sprite(texture);
+			app.stage.addChild(sprite);
+			//canvas.parent.addChild(svg);
+			// graphics.beginFill('blue');
+			// graphics.drawRect(200, 600, 100, 500);
+			// graphics.endFill();
 
 			//  const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/fa/De_Groot_academic_genealogy.svg');
 
@@ -164,13 +166,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 			//const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/6/61/Figure_in_Manga_style.svg');
 
 			///const scene = await SVGScene.from('https://upload.wikimedia.org/wikipedia/commons/f/f1/Vitejs-logo.svg');
-
-			
-			app.stage.addChild(c);
-
-			c.addChild(scene);
-
-			app.renderer.render(app.stage);
 		} catch (error) {
 			console.log('svg', error);
 		}
@@ -180,7 +175,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
 			context,
-			resizeTo: canvas,
 			// eventFeatures: {
 			// 	globalMove: false,
 			// 	move: false,
@@ -378,7 +372,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 	multiPassShaderGenMesh(canvas) {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({ context });
-		app.view.height = 640;
+		//app.view.height = 640;
 		// Build geometry.
 		const geometry = new PIXI.Geometry()
 			.addAttribute(
@@ -973,7 +967,7 @@ void main()
 
 	dynamicGraphics(canvas) {
 		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, antialias: true, resizeTo: canvas }) as any;
+		const app = new PIXI.Application({ context, antialias: true }) as any;
 
 		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
 
@@ -1064,7 +1058,7 @@ void main()
 		});
 	}
 
-	bitmapFont(canvas) {
+	async bitmapFont(canvas) {
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb });
 		// app.loader.add('desyrel', this.root + '/bitmap-font/desyrel.xml').load(onAssetsLoaded);
@@ -1075,22 +1069,25 @@ void main()
 		// 	app.stage.addChild(bitmapFontText);
 		// }
 
-		// PIXI.Assets.load(this.root + '/bitmap-font/desyrel.xml');
+		await PIXI.Assets.load(this.root + '/bitmap-font/desyrel.xml');
 
-		// const bitmapFontText = new PIXI.Text({
-		// 	text: 'bitmap fonts are supported!\nWoo yay!',
-		// 	style: {
-		// 		fontFamily: 'Desyrel',
-		// 		fontSize: 55,
-		// 		align: 'left',
-		// 	},
-		// 	renderMode: 'bitmap',
-		// } as any);
+		const bitmapFontText = new PIXI.BitmapText('bitmap fonts are supported!\nWoo yay!', {
+			fontName: 'Desyrel',
+			fontSize: 16,
+			align: 'left',
+		});
 
-		// bitmapFontText.x = 50;
-		// bitmapFontText.y = 200;
+		// const nameText = new (PIXI.BitmapText as typeof BitmapText)(options.nameInfo?.text ?? '', {
+		// 	fontName: 'Desyrel',
+		// 	tint: info?.nameInfo?.textColor ?? 'black',
+		// 	fontSize: 16,
+		// 	align: (info?.nameInfo?.textAlignment as never) ?? 'left',
+		//   });
 
-		// app.stage.addChild(bitmapFontText);
+		bitmapFontText.x = 50;
+		bitmapFontText.y = 200;
+
+		app.stage.addChild(bitmapFontText);
 	}
 
 	async explosion(canvas) {
@@ -1219,7 +1216,7 @@ void main()
 				// Map star 3d position to 2d with really simple projection
 				const z = star.z - cameraZ;
 
-				star.sprite.x = star.x * (fov / z) * app.renderer.screen.width + app.renderer.screen.width / 2;
+				//star.sprite.x = star.x * (fov / z) * app.renderer.screen.width + app.renderer.screen.width / 2;
 				star.sprite.y = star.y * (fov / z) * app.renderer.screen.width + app.renderer.screen.height / 2;
 
 				// Calculate star scale & rotation.
@@ -1253,8 +1250,6 @@ void main()
 		// const texture = await  PIXI.Assets.load('https://pixijs.com/assets/bunny.png');
 
 		const texture = await PIXI.Assets.load(this.root + '/images/bunny.png');
-
-		console.log(texture.width, texture.height);
 
 		// Create a 5x5 grid of bunnies in the container
 		for (let i = 0; i < 25; i++) {
@@ -1599,7 +1594,6 @@ void main()
 		});
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
 		PIXI.Assets.load(this.root + '/images/bg_grass.jpg').then((texture) => {
-			console.log(texture);
 			const plane = new PIXI.SimplePlane(texture, 10, 10);
 
 			plane.x = 100;
@@ -1625,8 +1619,9 @@ void main()
 	}
 
 	animatedJet(canvas) {
+		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
-			context: canvas.getContext('webgl2'),
+			context,
 			background: '#1099bb',
 		});
 

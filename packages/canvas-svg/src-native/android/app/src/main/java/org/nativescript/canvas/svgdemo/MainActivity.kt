@@ -3,6 +3,7 @@ package org.nativescript.canvas.svgdemo
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import org.nativescript.canvas.svg.NSCSVG
@@ -18,12 +19,38 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 
-		val svg = NSCSVG(this)
-	//	svg.sync = true
+		val svg = NSCSVG.fromRemoteSync(
+			this,
+			"https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")
+
 
 		val content = findViewById<ViewGroup>(android.R.id.content)
-		content.addView(svg)
-		downloadSvg(svg)
+		content.addView(svg!!)
+
+//		NSCSVG.fromRemote(
+//			this,
+//			"https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg",
+//			object :
+//				NSCSVG.Callback {
+//				override fun onSuccess(view: NSCSVG?) {
+//					view?.let { svg ->
+//						Log.d("com.test", "svg $svg")
+//						runOnUiThread {
+//							val content = findViewById<ViewGroup>(android.R.id.content)
+//							content.addView(svg)
+//						}
+//					}
+//
+//				}
+//			})
+
+
+		//	svg.sync = true
+
+//		val svg = NSCSVG(this)
+//		val content = findViewById<ViewGroup>(android.R.id.content)
+//		content.addView(svg)
+//		downloadSvg(svg)
 	}
 
 
@@ -45,7 +72,8 @@ class MainActivity : AppCompatActivity() {
 						input.copyTo(output)
 					}
 				}
-				svg.setSrcPath(svgFile.absolutePath)
+				svg.setSrc(svgFile.readText())
+//				svg.setSrcPath(svgFile.absolutePath)
 			} catch (e: IOException) {
 				e.printStackTrace()
 			}

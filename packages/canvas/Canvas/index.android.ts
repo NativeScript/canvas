@@ -55,7 +55,7 @@ export class Canvas extends CanvasBase {
 		} else {
 			const activity = Application.android.foregroundActivity || Application.android.startActivity || Utils.android.getApplicationContext();
 			if (Canvas.useSurface) {
-				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
+				this._canvas = new org.nativescript.canvas.NSCCanvas(activity, org.nativescript.canvas.NSCCanvas.SurfaceType.Surface);
 			} else {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
@@ -93,14 +93,12 @@ export class Canvas extends CanvasBase {
 		return this.height;
 	}
 
-	_drawingBufferHeight = 0;
 	get drawingBufferHeight() {
-		return this._drawingBufferHeight;
+		return this._canvas.getDrawingBufferHeight();
 	}
 
-	_drawingBufferWidth = 0;
 	get drawingBufferWidth() {
-		return this._drawingBufferWidth;
+		return this._canvas.getDrawingBufferWidth();
 	}
 
 	// @ts-ignore
@@ -203,38 +201,9 @@ export class Canvas extends CanvasBase {
 						owner._readyEvent();
 					}
 				},
-				surfaceResize(width, height) {
-					// if(this._webglContext || this._webgl2Context){
-					// 	(this._webglContext || this._webgl2Context)?.resize();
-					// }
-
-					const owner = ref.get() as any;
-					if (owner) {
-						owner._drawingBufferWidth = width / Screen.mainScreen.scale;
-						owner._drawingBufferHeight = height / Screen.mainScreen.scale;
-					}
-				},
+				surfaceResize(width, height) {},
 			})
 		);
-	}
-
-	onUnloaded() {
-		this._didPause = true;
-		// if (this._canvas) {
-		// 	this._canvas.onPause();
-		// }
-		super.onUnloaded();
-	}
-
-	@profile
-	onLoaded() {
-		super.onLoaded();
-		if (this._didPause) {
-			this._didPause = false;
-			// if (this._canvas) {
-			// 	this._canvas.onResume();
-			// }
-		}
 	}
 
 	disposeNativeView(): void {
@@ -244,6 +213,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
+		if (this.width === 0 || this.height === 0) {
+			return 'data:,';
+		}
 		return this.native.__toDataURL(type, encoderOptions);
 	}
 
@@ -275,11 +247,10 @@ export class Canvas extends CanvasBase {
 		const size = this._physicalSize;
 		org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
-		//	this._drawingBufferWidth = size.width || 1;
-		//	this._drawingBufferHeight = size.height || 1;
 		if (this._is2D) {
 			this._2dContext.native.__resize(size.width, size.height);
 		}
+
 		this._didLayout = true;
 	}
 
@@ -312,12 +283,17 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 
+				this._isBatch = true;
+				this.width = 500;
+				this.height = 500;
+				this._isBatch = false;
+			
 				if (!this._2dContext) {
 					this._layoutNative();
 					const opts = {
 						...defaultOpts,
 						...this._handleContextOptions(type, options),
-						fontColor: this.parent?.style?.color?.android || -16777216,
+						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);

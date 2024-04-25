@@ -1,6 +1,6 @@
 require('@nativescript/canvas-polyfill');
 import * as Pixii from 'pixi.js';
-
+import { Screen } from '@nativescript/core';
 let PIXI = Pixii;
 
 // import * as filters from 'pixi-filters';
@@ -20,16 +20,19 @@ class NSCPIXIApplication extends Pixii.Application {
 			view = document.createElement('canvas');
 			view.nativeElement = context.canvas;
 		}
-		const width = props.width || clientWidth;
-		const height = props.height || clientHeight;
+		const width = props.width || clientWidth //* Screen.mainScreen.scale;
+		const height = props.height || clientHeight //* Screen.mainScreen.scale;
 
+		PIXI.settings.RESOLUTION = 1;
+
+
+		console.log(width, height, Screen.mainScreen.widthDIPs,  Screen.mainScreen.heightDIPs, Screen.mainScreen.widthPixels,  Screen.mainScreen.heightPixels,)
 		super({
-			resolution: global.isAndroid ? window.devicePixelRatio : 1,
 			...props,
-			context,
+			resolution: 1,
 			view,
 			width,
-			height
+			height,
 		});
 	}
 }

@@ -82,7 +82,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		//this.threeOcean(this.canvas);
+		this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 
@@ -101,7 +101,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//tiny_poly_world(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
-		this.gtlfLoader(this.canvas);
+		//this.gtlfLoader(this.canvas);
 		//this.rayCasting(this.canvas);
 		//this.ThreeDS(this.canvas);
 		//this.ThreeMF(this.canvas);

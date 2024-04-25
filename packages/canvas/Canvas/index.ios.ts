@@ -120,7 +120,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value) {
-		this.style.width = value;
+		this.style.width = value ?? 0;
 		this._didLayout = false;
 		this._layoutNative(true);
 	}
@@ -239,25 +239,6 @@ export class Canvas extends CanvasBase {
 		return this._canvas;
 	}
 
-	initNativeView() {
-		super.initNativeView();
-	}
-
-	onUnloaded() {
-		//	this.ios.pause();
-		this._didPause = true;
-		super.onUnloaded();
-	}
-
-	@profile
-	onLoaded() {
-		super.onLoaded();
-		if (this._didPause) {
-			//	this.ios.resume();
-			this._didPause = false;
-		}
-	}
-
 	disposeNativeView(): void {
 		this._canvas?.setListener?.(null);
 		this._readyListener = undefined;
@@ -289,16 +270,11 @@ export class Canvas extends CanvasBase {
 
 			const size = this._logicalSize;
 
-			// todo revisit
+			// this._canvas.forceLayout(size.width, size.height);
 
-		//	const width = Utils.layout.toDevicePixels(size.width || 1);
-		//	const height = Utils.layout.toDevicePixels(size.height || 1);
-
-			this._canvas.forceLayout(size.width, size.height);
-
-			// if (this._is2D) {
-			// 	this._2dContext?.native?.__resize?.(width, height);
-			// }
+			if (this._is2D) {
+				this._2dContext?.native?.__resize?.(size.width, size.height);
+			}
 
 			this._didLayout = true;
 		}
@@ -389,6 +365,9 @@ export class Canvas extends CanvasBase {
 	}
 
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
+		if (this.width === 0 || this.height === 0) {
+			return 'data:,';
+		}
 		return this.native?.__toDataURL?.(type, encoderOptions);
 	}
 

@@ -57,7 +57,7 @@ android {
 			cmake {
 				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
-					"-DANDROID_STL=c++_static",
+					"-DANDROID_STL=c++_shared",
 					"-DANDROID_NDK_ROOT=${NDK_PATH}"
 			}
 		}
@@ -100,8 +100,6 @@ dependencies {
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 	//noinspection KtxExtensionAvailable
 	implementation "androidx.core:core:1.9.0"
-//	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$computeKotlinVersion"
-	implementation "org.jetbrains.kotlin:kotlin-stdlib:$computeKotlinVersion"
 }
 
 tasks.withType(Javadoc) {

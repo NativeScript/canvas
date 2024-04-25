@@ -179,7 +179,7 @@ if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND
           ${system-z}
           ${egl}
           ${OPENGL_LIB}
-          ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
+          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
           #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
           ${CANVAS_ANDROID_LIB}
           android
@@ -192,7 +192,7 @@ else ()
           ${egl}
           ${OPENGL_LIB}
           ${graphics}
-          ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
+          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
           ${CANVAS_ANDROID_LIB}
           android
           )

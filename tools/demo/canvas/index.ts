@@ -340,8 +340,124 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.resetTransform();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
+
+	drawChart(canvas) {
+		canvas.backgroundColor = 'black';
+		let ctx = canvas.getContext('2d');
+
+		if (!ctx) {
+			console.error('missing draw context');
+			return;
+		}
+
+		let chartList = [];
+		console.log('*** drawChart: ' + canvas + ', #arcs=' + chartList.length);
+		let { width, height } = canvas;
+		let bgRadius = Math.floor(Math.min(width, height) / 2);
+		let bgWidth = bgRadius * 0.5;
+		let borderWidth = bgRadius * 0.02;
+		let contentWidth = bgRadius - 2 * borderWidth;
+		let outerContentRadius = bgRadius - borderWidth;
+		let centerX = Math.round(width / 2);
+		let centerY = Math.round(height / 2);
+
+		ctx.clearRect(0, 0, width, height);
+
+		const _2_PI = Math.PI * 2;
+
+		// background donut
+		ctx.strokeStyle = '#363636';
+		ctx.lineWidth = bgWidth;
+		console.log(bgWidth);
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius - bgWidth / 2, 0, Math.PI * 2);
+		ctx.stroke();
+		// background donut outer
+		ctx.strokeStyle = 'white';
+		ctx.lineWidth = borderWidth;
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius - borderWidth / 2, 0, _2_PI);
+		ctx.stroke();
+		// background donut inner
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius / 2 + borderWidth / 2, 0, _2_PI);
+		ctx.stroke();
+
+		//<TEMP>
+		chartList = [
+			{
+				color: '#eeeeeeff',
+				minAngle: -1.9634954084936207,
+				maxAngle: -1.1780972450961724,
+				outerRadius: 1.278232843017578,
+				width: 0.768232843017578,
+			},
+			{
+				color: '#b82433',
+				minAngle: -1.9474526277449578,
+				maxAngle: -1.1941400258448356,
+				outerRadius: 1.268232843017578,
+				width: 0.758232843017578,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: 1.1780972450961724,
+				maxAngle: 1.9634954084936207,
+				outerRadius: 1.2404586791992187,
+				width: 0.7304586791992187,
+			},
+			{
+				color: '#b82433',
+				minAngle: 1.1941400258448356,
+				maxAngle: 1.9474526277449578,
+				outerRadius: 1.2304586791992187,
+				width: 0.7204586791992187,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: -3.5342917352885173,
+				maxAngle: -2.748893571891069,
+				outerRadius: 1.2133154541015623,
+				width: 0.7033154541015624,
+			},
+			{
+				color: '#b82433',
+				minAngle: -3.518248954539854,
+				maxAngle: -2.764936352639732,
+				outerRadius: 1.2033154541015623,
+				width: 0.6933154541015624,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: -0.39269908169872414,
+				maxAngle: 0.39269908169872414,
+				outerRadius: 0.9305414001464843,
+				width: 0.42054140014648433,
+			},
+			{
+				color: '#b82433',
+				minAngle: -0.37665630095006103,
+				maxAngle: 0.37665630095006103,
+				outerRadius: 0.9205414001464843,
+				width: 0.4105414001464843,
+			},
+		];
+
+		for (let item of chartList) {
+			let outerRadius = borderWidth + item.outerRadius * outerContentRadius;
+
+			console.log('*** draw arc: ' + JSON.stringify(item, null, 4));
+			ctx.strokeStyle = item.color;
+			ctx.lineWidth = item.width * bgRadius; //contentWidth;
+			ctx.beginPath();
+			ctx.arc(centerX, centerY, outerRadius - ctx.lineWidth / 2, item.minAngle, item.maxAngle);
+			ctx.stroke();
+		}
+	}
+
 	draw() {
-		this.drawSVG(this.canvas);
+		//this.drawChart(this.canvas);
+		//this.drawSVG(this.canvas);
 		//	const ctx = this.canvas.getContext('2d');
 		/*
 
@@ -553,7 +669,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
-		//createConicGradient(this.canvas);
+		createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -983,6 +1099,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	onLayout(args) {
 		console.log('onLayout');
+		this.canvasLoaded(args);
 	}
 
 	vexFlow(canvas) {

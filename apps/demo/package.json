@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@nativescript/android": "8.6.2",
-    "@nativescript/ios": "8.6.4",
+    "@nativescript/ios": "8.7.0",
     "@nativescript/visionos": "8.6.0"
   }
 }

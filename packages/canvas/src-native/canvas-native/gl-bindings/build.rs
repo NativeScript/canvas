@@ -12,7 +12,7 @@ fn main() {
         wasm: { target_arch = "wasm32" },
         macos: { target_os = "macos" },
         ios: { target_os = "ios" },
-        apple: { any(target_os = "ios", target_os = "macos") },
+        // apple: { any(target_os = "ios", target_os = "macos") },
         free_unix: { all(unix, not(apple), not(android)) },
 
         // Native displays.
@@ -33,9 +33,9 @@ fn main() {
     let mut file = File::create(dest.join("gl_bindings.rs")).unwrap();
     Registry::new(
         Api::Gles2,
-        (4, 0),
-        Profile::Compatibility,
-        Fallbacks::All,
+        (3, 0),
+        Profile::Core,
+        Fallbacks::None,
         [
             "GL_AMD_compressed_ATC_texture",
             "GL_OES_compressed_ETC1_RGB8_texture",

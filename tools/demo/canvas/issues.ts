@@ -3,7 +3,6 @@ import { ImageSource } from '@nativescript/core';
 export function issue54(canvas) {
 	const ctx = canvas.getContext('2d');
 	ImageSource.fromUrl('https://mdn.mozillademos.org/files/222/Canvas_createpattern.png').then(function (img) {
-		console.log('issue54');
 		const pattern = ctx.createPattern(img, 'repeat');
 		ctx.fillStyle = pattern;
 		ctx.fillRect(0, 0, 300, 300);
@@ -25,7 +24,6 @@ export function drawChart(canvas) {
 	let centerX = width / 2;
 	let centerY = height / 2;
 	ctx.clearRect(0, 0, width, height);
-	
 
 	ctx.strokeStyle = 'cyan';
 	ctx.lineWidth = 1;

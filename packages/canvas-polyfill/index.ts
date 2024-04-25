@@ -16,8 +16,7 @@ import './process';
 import './localStorage';
 import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import { URL } from './URL';
-import { getPixelsPerInchForCurrentDevice } from './utils';
-console.log('ppi', getPixelsPerInchForCurrentDevice());
+
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 
 (global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
@@ -97,7 +96,7 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 	});
 }
 
-if (!((global as any).URL instanceof URL)) {
+if (typeof global?.URL?.createObjectURL !== 'function') {
 	Object.defineProperty(global, 'URL', {
 		value: URL,
 		configurable: true,

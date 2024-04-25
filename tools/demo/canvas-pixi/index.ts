@@ -99,7 +99,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.text(canvas);
 
 		//this.drawPatternWithCanvas(canvas);
-		//this.simple(canvas);
+		this.simple(canvas);
 		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
@@ -121,7 +121,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
 		//this.viewPort(canvas);
-		this.svg(canvas);
+		//this.svg(canvas);
 	}
 
 	async svg(canvas) {
@@ -137,7 +137,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		  </svg>
 		  `;
 
-		  const svg = await Svg.fromSrc('~/assets/file-assets/svg/trinidadAndTobagoHigh.svg');
+			const svg = await Svg.fromSrc('~/assets/file-assets/svg/trinidadAndTobagoHigh.svg');
 			//    const svg = Svg.fromSrcSync(data);
 
 			//const svg = await Svg.fromSrc('https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg');
@@ -967,7 +967,7 @@ void main()
 
 	dynamicGraphics(canvas) {
 		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, antialias: true }) as any;
+		const app = new PIXI.Application({ context, antialias: false }) as any;
 
 		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
 
@@ -1590,8 +1590,9 @@ void main()
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
 			context,
-			backgroundColor: 0x1099bb,
+			backgroundColor: 0x1099bb
 		});
+
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
 		PIXI.Assets.load(this.root + '/images/bg_grass.jpg').then((texture) => {
 			const plane = new PIXI.SimplePlane(texture, 10, 10);
@@ -1782,6 +1783,9 @@ void main()
 		const app = new PIXI.Application({
 			context,
 		}) as Application;
+
+
+
 		const graphics = new PIXI.Graphics() as Graphics;
 
 		// Rectangle
@@ -1874,6 +1878,10 @@ void main()
 		graphics.endFill();
 
 		app.stage.addChild(graphics);
+
+		requestAnimationFrame(()=>{
+			console.log(context.canvas.toDataURL());
+		})
 	}
 
 	advance(canvas) {

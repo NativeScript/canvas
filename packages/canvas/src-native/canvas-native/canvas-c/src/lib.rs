@@ -104,7 +104,6 @@ mod buffers;
 mod raf;
 
 pub mod impl_test;
-pub mod url;
 
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]

@@ -69,9 +69,9 @@ public class NSCCanvas: UIView {
     public var autoScale: Bool = true {
         didSet {
             if(!autoScale){
-                glkView.contentScaleFactor = 1
+                glkView.contentScaleFactor = 2
             }else {
-                glkView.contentScaleFactor = UIScreen.main.nativeScale
+                glkView.contentScaleFactor = UIScreen.main.scale
             }
         }
     }
@@ -174,14 +174,14 @@ public class NSCCanvas: UIView {
             return
         }
         
-        if(frame.size.width.isZero || frame.size.height.isZero){
+//        if(frame.size.width.isZero || frame.size.height.isZero){
             let width = frame.size.width.isZero ? 1 : frame.size.width
             let height = frame.size.height.isZero ? 1 : frame.size.height
             frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
             zeroSize = true
             setNeedsLayout()
             layoutIfNeeded()
-        }
+//        }
         
         
         var properties: [String: Any] = [:]
@@ -279,11 +279,11 @@ public class NSCCanvas: UIView {
         
         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
         
-        var density = Float(UIScreen.main.nativeScale)
+        var density = Float(UIScreen.main.scale)
         
         
         if (!autoScale) {
-            density = 1
+            density = 2
         }
         
         
@@ -365,9 +365,9 @@ public class NSCCanvas: UIView {
         glkView = CanvasGLKView(coder: coder)!
         glkView.translatesAutoresizingMaskIntoConstraints = false
         
-        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
-            glkView.contentScaleFactor = UIScreen.main.nativeScale
-        }
+//        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.scale))){
+//            glkView.contentScaleFactor = UIScreen.main.scale
+//        }
         
         super.init(coder: coder)
         
@@ -379,12 +379,12 @@ public class NSCCanvas: UIView {
         glkView.enableSetNeedsDisplay = false
         addSubview(glkView)
         
-        NSLayoutConstraint.activate([
-            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            glkView.topAnchor.constraint(equalTo: topAnchor),
-            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
+//        NSLayoutConstraint.activate([
+//            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
+//            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
+//            glkView.topAnchor.constraint(equalTo: topAnchor),
+//            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
+//        ])
         
         
         self.isOpaque = false
@@ -394,9 +394,9 @@ public class NSCCanvas: UIView {
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
         glkView.translatesAutoresizingMaskIntoConstraints = false
-        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
-            glkView.contentScaleFactor = UIScreen.main.nativeScale
-        }
+//        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.scale))){
+//            glkView.contentScaleFactor = UIScreen.main.scale
+//        }
         super.init(frame: frame)
         glkView.canvas = self
         
@@ -405,12 +405,12 @@ public class NSCCanvas: UIView {
         glkView.enableSetNeedsDisplay = false
         addSubview(glkView)
         
-        NSLayoutConstraint.activate([
-            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            glkView.topAnchor.constraint(equalTo: topAnchor),
-            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
+//        NSLayoutConstraint.activate([
+//            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
+//            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
+//            glkView.topAnchor.constraint(equalTo: topAnchor),
+//            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
+//        ])
         
         
         self.isOpaque = false
@@ -454,18 +454,20 @@ public class NSCCanvas: UIView {
     private var zeroSize = false
     private var isReady = false
     public override func layoutSubviews() {
-        if(viewSize.equalTo(frame.size)){
-            return
-        }
+//        if(viewSize.equalTo(frame.size)){
+//            return
+//        }
         
-        if(!zeroSize){
-            realViewSize.width = frame.size.width
-            realViewSize.height = frame.size.height
-        }
         
-        if(!isReady && nativeGL == 0 && !realViewSize.width.isZero && !realViewSize.height.isZero){
+//        if(!zeroSize){
+//            realViewSize.width = frame.size.width
+//            realViewSize.height = frame.size.height
+//        }   
+        
+        if(!isReady && nativeGL == 0){
             viewSize.width = frame.size.width
             viewSize.height = frame.size.height
+            glkView.frame = CGRect(x: 0, y: 0, width: frame.size.width, height: frame.size.height)
             isReady = true
             readyListener?.contextReady()
         }
@@ -477,9 +479,9 @@ public class NSCCanvas: UIView {
             frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
         }
         */
-        if(!frame.width.isZero && !frame.height.isZero){
-            viewSize = CGSize(width: frame.size.width, height: frame.size.height)
-        }
+//        if(!frame.width.isZero && !frame.height.isZero){
+//            viewSize = CGSize(width: frame.size.width, height: frame.size.height)
+//        }
         if(nativeGL != 0) {
             resize()
         }

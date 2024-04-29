@@ -570,6 +570,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					previousEvent = { pointerId, x: 0, y: 0 };
 				}
 
+				pointer.x = pointer.x*Screen.mainScreen.scale;
+				pointer.y = pointer.y*Screen.mainScreen.scale;
+
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
 						pointerType: 'touch',
@@ -916,6 +919,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					previousEvent = { pointerId, x: 0, y: 0 };
 				}
 
+				pointer.x = pointer.x*Screen.mainScreen.scale;
+				pointer.y = pointer.y*Screen.mainScreen.scale;
+
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
 						pointerType: 'touch',
@@ -1010,19 +1016,19 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const data = JSON.parse(event);
 			switch (data.event) {
 				case 'down':
-					this._downCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._downCallback(data.ptrId, data.x*Screen.mainScreen.scale, data.y*Screen.mainScreen.scale, data.isPrimary);
 					break;
 				case 'move':
 					this._moveCallback(data.pointers);
 					break;
 				case 'up':
-					this._upCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._upCallback(data.ptrId, data.x*Screen.mainScreen.scale, data.y*Screen.mainScreen.scale, data.isPrimary);
 					break;
 				case 'scale':
 					this._pinchCallback(data);
 					break;
 				case 'cancel':
-					this._cancelCallback(data.ptrId, data.x, data.y, data.isPrimary);
+					this._cancelCallback(data.ptrId, data.x*Screen.mainScreen.scale, data.y*Screen.mainScreen.scale, data.isPrimary);
 					break;
 				default:
 					break;

@@ -20,11 +20,10 @@ class NSCPIXIApplication extends Pixii.Application {
 			view = document.createElement('canvas');
 			view.nativeElement = context.canvas;
 		}
-		const width = props.width || clientWidth * Screen.mainScreen.scale;
-		const height = props.height || clientHeight * Screen.mainScreen.scale;
+		const width = props.width || clientWidth;// * Screen.mainScreen.scale;
+		const height = props.height || clientHeight;// * Screen.mainScreen.scale;
 
-	//	PIXI.settings.RESOLUTION = 1;
-
+		PIXI.settings.RESOLUTION = 1;
 		super({
 			...props,
 			resolution: Screen.mainScreen.scale,

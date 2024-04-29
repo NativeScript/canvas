@@ -175,6 +175,7 @@ export class Canvas extends CanvasBase {
 		if (!this.parent) {
 			return;
 		}
+		this._canvas.subviews.objectAtIndex(0).frame = CGRectMake(0,0,this._canvas.frame.size.width,this._canvas.frame.size.height)
 		if (!Object.hasOwn(this.parent, 'clientWidth') && !Object.hasOwn(this.parent, 'clientHeight')) {
 			Object.defineProperties(this.parent, {
 				clientWidth: {
@@ -265,11 +266,11 @@ export class Canvas extends CanvasBase {
 		}
 
 		if (!this.parent || force) {
-			if (!force || (typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
+			if (this._canvas === undefined || this._canvas === null) {
 				return;
 			}
 
-			if (this._canvas === undefined || this._canvas === null) {
+			if (!force || (typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
 				return;
 			}
 

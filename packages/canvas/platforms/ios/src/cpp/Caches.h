@@ -177,9 +177,6 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> WebGLUniformLocationTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
-    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> URLTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
-            nullptr);
-
 
 private:
     static std::shared_ptr<ConcurrentMap<v8::Isolate *,

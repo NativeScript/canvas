@@ -149,7 +149,6 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         CanvasPattern::Init(canvasMod, isolate);
         MatrixImpl::Init(canvasMod, isolate);
         TextMetricsImpl::Init(canvasMod, isolate);
-        URLImpl::Init(canvasMod, isolate);
 
         v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),

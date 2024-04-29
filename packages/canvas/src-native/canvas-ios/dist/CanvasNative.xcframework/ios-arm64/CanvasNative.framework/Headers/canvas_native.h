@@ -172,8 +172,6 @@ typedef struct U32Buffer U32Buffer;
 
 typedef struct U8Buffer U8Buffer;
 
-typedef struct URL URL;
-
 typedef struct WEBGL_color_buffer_float WEBGL_color_buffer_float;
 
 typedef struct WEBGL_compressed_texture_atc WEBGL_compressed_texture_atc;
@@ -2905,55 +2903,5 @@ uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buff
 char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
 
 void canvas_native_string_buffer_destroy(struct StringBuffer *buffer);
-
-bool canvas_url_can_parse(const char *value, const char *base);
-
-struct URL *canvas_url_create(const char *value, const char *base);
-
-void canvas_url_destroy(struct URL *url);
-
-struct CCow *canvas_url_to_string(struct URL *url);
-
-const char *canvas_url_hash(struct URL *url);
-
-void canvas_url_set_hash(struct URL *url, const char *hash);
-
-const char *canvas_url_host(struct URL *url);
-
-void canvas_url_set_host(struct URL *url, const char *host);
-
-const char *canvas_url_host_name(struct URL *url);
-
-void canvas_url_set_host_name(struct URL *url, const char *hostname);
-
-const char *canvas_url_href(struct URL *url);
-
-void canvas_url_set_href(struct URL *url, const char *href);
-
-const char *canvas_url_origin(struct URL *url);
-
-const char *canvas_url_password(struct URL *url);
-
-void canvas_url_set_password(struct URL *url, const char *password);
-
-const char *canvas_url_pathname(struct URL *url);
-
-void canvas_url_set_pathname(struct URL *url, const char *pathname);
-
-const char *canvas_url_port(struct URL *url);
-
-void canvas_url_set_port(struct URL *url, const char *port);
-
-const char *canvas_url_protocol(struct URL *url);
-
-void canvas_url_set_protocol(struct URL *url, const char *protocol);
-
-const char *canvas_url_search(struct URL *url);
-
-void canvas_url_set_search(struct URL *url, const char *search);
-
-const char *canvas_url_username(struct URL *url);
-
-void canvas_url_set_username(struct URL *url, const char *username);
 
 #endif /* CANVAS_C_H */

@@ -5434,336 +5434,336 @@
   },
   "ConstValues": [
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 328,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 334,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 344,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 355,
       "length": 1,
       "value": "1"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 412,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
       "offset": 2137,
       "length": 1,
-      "value": "1"
+      "value": "2"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
       "offset": 2040,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 2316,
+      "offset": 2310,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 2374,
+      "offset": 2368,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 2427,
+      "offset": 2421,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 2498,
+      "offset": 2492,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 2996,
+      "offset": 2990,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3030,
+      "offset": 3024,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3060,
+      "offset": 3054,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3113,
+      "offset": 3107,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "IntegerLiteral",
-      "offset": 3155,
+      "offset": 3149,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3195,
+      "offset": 3189,
       "length": 4,
       "value": "true"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3241,
+      "offset": 3235,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3274,
+      "offset": 3268,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3314,
+      "offset": 3308,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 3352,
+      "offset": 3346,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 12748,
+      "offset": 12752,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 13229,
+      "offset": 13233,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 13772,
+      "offset": 13776,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCCanvas.swift",
       "kind": "BooleanLiteral",
-      "offset": 13804,
+      "offset": 13808,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "IntegerLiteral",
       "offset": 316,
       "length": 2,
       "value": "-1"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "IntegerLiteral",
       "offset": 341,
       "length": 2,
       "value": "-1"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "IntegerLiteral",
       "offset": 386,
       "length": 2,
       "value": "-1"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "IntegerLiteral",
       "offset": 479,
       "length": 1,
       "value": "4"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "StringLiteral",
       "offset": 512,
       "length": 274,
       "value": "\"precision highp float;\nattribute vec4 aPosition;\nuniform mat4 uTextureMatrix;\nvarying vec2 TexCoord;\nvoid main(){\nvec2 clipSpace = (1.0 - 2.0 * aPosition.xy);\nTexCoord = aPosition.xy;\ngl_Position = vec4(clipSpace, 0.0, 1.0);\n}\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
       "kind": "StringLiteral",
       "offset": 833,
       "length": 170,
       "value": "\"precision highp float;\nvarying vec2 TexCoord;\nuniform sampler2D uSampler;\nvoid main(){\ngl_FragColor = texture2D(uSampler, TexCoord);\n}\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "Array",
       "offset": 383,
       "length": 2,
       "value": "[]"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "IntegerLiteral",
       "offset": 421,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "BooleanLiteral",
       "offset": 10963,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "BooleanLiteral",
       "offset": 11130,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "BooleanLiteral",
       "offset": 11299,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "BooleanLiteral",
       "offset": 11470,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "BooleanLiteral",
       "offset": 11640,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCTouchHandler.swift",
       "kind": "StringLiteral",
       "offset": 133,
       "length": 15,
       "value": "\"CanvasNative.NSCTouchHandler\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCImageBitmap.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCImageBitmap.swift",
       "kind": "StringLiteral",
       "offset": 233,
       "length": 22,
       "value": "\"Failed to load image\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCImageBitmap.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCImageBitmap.swift",
       "kind": "StringLiteral",
       "offset": 313,
       "length": 21,
       "value": "\"NSCImageBitmapQueue\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/Utils.swift",
       "kind": "IntegerLiteral",
       "offset": 242,
       "length": 1,
       "value": "4"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
       "offset": 246,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "IntegerLiteral",
       "offset": 352,
       "length": 1,
       "value": "0"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "StringLiteral",
       "offset": 180,
       "length": 13,
       "value": "\"CanvasNative.CanvasGLKView\""
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
       "offset": 2249,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/GLRenderer.swift",
       "kind": "BooleanLiteral",
       "offset": 2325,
       "length": 5,
       "value": "false"
     },
     {
-      "filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCImageAsset.swift",
+      "filePath": "\/Users\/nstudio\/Documents\/github\/NativeScript\/canvas\/packages\/canvas\/src-native\/canvas-ios\/CanvasNative\/Source\/NSCImageAsset.swift",
       "kind": "StringLiteral",
       "offset": 246,
       "length": 20,

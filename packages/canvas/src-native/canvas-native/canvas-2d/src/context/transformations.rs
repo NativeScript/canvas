@@ -64,10 +64,11 @@ impl Context {
 
     pub fn set_transform_matrix(&mut self, matrix: &Matrix) {
         self.surface.canvas().reset_matrix();
-        let mut matrix = matrix.clone();
+        let matrix = matrix.clone();
 
         let m44 = M44::from(matrix);
         self.surface.canvas().set_matrix(&m44);
+      
     }
 
     pub fn reset_transform(&mut self) {

@@ -360,10 +360,20 @@ impl CanvasRenderingContext2D {
 
     pub fn render(&self) {
         self.gl_context.make_current();
+        
+        #[cfg(target_os = "ios")]
         {
-            self.get_context_mut().flush();
+            self.gl_context.swap_buffers();
         }
-        self.gl_context.swap_buffers();
+
+
+        #[cfg(not(target_os = "ios"))]
+        {
+            {
+                self.get_context_mut().flush();
+            }
+            self.gl_context.swap_buffers();
+        }
     }
 
     pub fn get_context(&self) -> MappedRwLockReadGuard<Context> {
@@ -2401,9 +2411,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     source.make_current();
     // gl context is shared so snapshots should work
     let mut source_ctx = source.get_context_mut();
-    // scale the source pixel values
-    let scale = source_ctx.device().density;
-
+    
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     {
         let snapshot = source_ctx.snapshot();
@@ -2415,10 +2423,10 @@ pub extern "C" fn canvas_native_context_draw_image_context(
             if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
                 ctx.draw_image_src_xywh_dst_xywh(
                     &image,
-                    sx * scale,
-                    sy * scale,
-                    s_width * scale,
-                    s_height * scale,
+                    sx,
+                    sy,
+                    s_width,
+                    s_height,
                     dx,
                     dy,
                     d_width,
@@ -2444,10 +2452,10 @@ pub extern "C" fn canvas_native_context_draw_image_context(
             context.make_current();
             context.get_context_mut().draw_image_src_xywh_dst_xywh(
                 &image,
-                sx * scale,
-                sy * scale,
-                s_width * scale,
-                s_height * scale,
+                sx,
+                sy,
+                s_width,
+                s_height,
                 dx,
                 dy,
                 d_width,
@@ -2582,18 +2590,17 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
 
     let ptr = pixels.2.as_ptr();
     let size = pixels.2.len();
-
-    let scale = context.get_context().device().density;
+    
     canvas_native_context_draw_image(
         context,
         ptr,
         size,
         width,
         height,
-        sx * scale,
-        sy * scale,
-        s_width * scale,
-        s_height * scale,
+        sx,
+        sy,
+        s_width,
+        s_height,
         dx,
         dy,
         d_width,

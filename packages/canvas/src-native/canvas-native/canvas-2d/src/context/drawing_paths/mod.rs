@@ -22,16 +22,14 @@ impl Context {
             paint = self.state.paint.stroke_paint();
         }
 
-        let scale = self.device.density;
-
         if let Some(rule) = fill_rule {
             let path = path.unwrap_or(self.path.borrow_mut());
             path.path.set_fill_type(rule.to_fill_type());
 
-            let path = path.path().clone().make_scale((scale, scale));
+            let path = path.path();
 
             if let Some(paint) = self.state.paint.fill_shadow_paint(
-                self.state.shadow_offset.scaled(scale),
+                self.state.shadow_offset,
                 self.state.shadow_color,
                 self.state.shadow_blur,
             ) {
@@ -42,11 +40,11 @@ impl Context {
         } else {
             let path = path.unwrap_or(self.path.borrow_mut());
 
-            let path = path.path().clone().make_scale((scale, scale));
+            let path = path.path();
 
             if is_fill {
                 if let Some(paint) = self.state.paint.fill_shadow_paint(
-                    self.state.shadow_offset.scaled(scale),
+                    self.state.shadow_offset,
                     self.state.shadow_color,
                     self.state.shadow_blur,
                 ) {
@@ -54,7 +52,7 @@ impl Context {
                 }
             } else {
                 if let Some(paint) = self.state.paint.stroke_shadow_paint(
-                    self.state.shadow_offset.scaled(scale),
+                    self.state.shadow_offset,
                     self.state.shadow_color,
                     self.state.shadow_blur,
                 ) {
@@ -79,24 +77,22 @@ impl Context {
     }
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-        let scale = self.device.density;
         match path {
             None => {
                 self.path
                     .path
                     .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = self.path.path().clone().make_scale((scale, scale));
                 self.surface
                     .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
+                    .clip_path(self.path.path(), Some(ClipOp::Intersect), Some(true));
             }
             Some(path) => {
                 path.path
                     .set_fill_type(fill_rule.unwrap_or(FillRule::NonZero).to_fill_type());
-                let path = path.path().clone().make_scale((scale, scale));
+
                 self.surface
                     .canvas()
-                    .clip_path(&path, Some(ClipOp::Intersect), Some(true));
+                    .clip_path(path.path(), Some(ClipOp::Intersect), Some(true));
             }
         }
     }
@@ -108,11 +104,9 @@ impl Context {
         y: f32,
         rule: FillRule,
     ) -> bool {
-        let scale = self.device.density;
         let path = path
-            .unwrap_or(&self.path)
-            .clone()
-            .make_scale((scale, scale));
+            .unwrap_or(&self.path);
+        
         let total_matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&total_matrix);
         if !invertible {
@@ -123,7 +117,7 @@ impl Context {
         }
         let matrix = total_matrix.clone();
         let inverse = matrix.invert().unwrap();
-        let point: Point = (x * scale, y * scale).into();
+        let point: Point = (x, y).into();
         let transformed_point = inverse.map_point(point);
         let mut path_to_compare = path.path().clone();
         path_to_compare.set_fill_type(rule.to_fill_type());
@@ -131,11 +125,8 @@ impl Context {
     }
 
     pub fn is_point_in_stroke(&mut self, path: Option<&Path>, x: f32, y: f32) -> bool {
-        let scale = self.device.density;
         let path = path
-            .unwrap_or(&self.path)
-            .clone()
-            .make_scale((scale, scale));
+            .unwrap_or(&self.path);
         let matrix = self.surface.canvas().local_to_device_as_3x3();
         let invertible = is_invertible(&matrix);
         if !invertible {
@@ -145,9 +136,9 @@ impl Context {
             return false;
         }
         let inverse = matrix.invert().unwrap();
-        let point: Point = (x * scale, y * scale).into();
+        let point: Point = (x, y).into();
         let transformed_point = inverse.map_point(point);
-        let path_to_compare = path.path().clone();
+        let path_to_compare = path.path();
         path_to_compare.contains(transformed_point)
     }
 }

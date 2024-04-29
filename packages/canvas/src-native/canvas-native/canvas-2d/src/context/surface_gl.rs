@@ -65,7 +65,7 @@ impl Context {
             if !alpha {
                 color_type = ColorType::RGB565;
             }
-            gpu::surfaces::wrap_backend_render_target(
+            let mut surface = gpu::surfaces::wrap_backend_render_target(
                 &mut ctx,
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
@@ -73,7 +73,13 @@ impl Context {
                 None,
                 Some(&surface_props),
             )
-            .unwrap()
+            .unwrap();
+            
+            if density > 1. {
+                surface.canvas().scale((density, density));
+            }
+            
+            surface
         };
 
         let mut state = State::from_device(device, direction);
@@ -158,14 +164,23 @@ impl Context {
                 color_type = ColorType::RGB565;
             }
 
-            gpu::surfaces::wrap_backend_render_target(
+           let mut surface = gpu::surfaces::wrap_backend_render_target(
                 &mut ctx,
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
                 color_type,
                 None,
                 Some(&surface_props),
-            )
+            );
+
+
+            if density > 1. {
+                if let Some(mut surface) = surface.as_mut() {
+                    surface.canvas().scale((density, density));
+                }
+            }
+            
+            surface
         };
 
         if let Some(surface) = surface {

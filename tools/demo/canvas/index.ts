@@ -602,7 +602,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//clip2(this.canvas);
 		//clip3(this.canvas);
 		//fillStyle(this.canvas);
-		//font(this.canvas);
+		font(this.canvas);
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
@@ -669,7 +669,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
-		createConicGradient(this.canvas);
+		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -1099,7 +1099,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 	onLayout(args) {
 		console.log('onLayout');
-		this.canvasLoaded(args);
 	}
 
 	vexFlow(canvas) {

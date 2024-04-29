@@ -18,7 +18,6 @@ class ViewController: UIViewController {
     }
     
     required init?(coder: NSCoder) {
-        canvas = NSCCanvas()
         super.init(coder: coder)
     }
         
@@ -26,7 +25,9 @@ class ViewController: UIViewController {
    // var svg: TNSSVG?
     override func viewDidLoad() {
        // super.viewDidLoad()
+        canvas = NSCCanvas(frame: .zero)
         view.addSubview(canvas!)
+        canvas?.frame = view.frame
         view.backgroundColor = .white
         let c = NSCCanvas(frame: .zero)
         
@@ -44,9 +45,10 @@ class ViewController: UIViewController {
                                      -16777216
          )
         
-      print(cc, CACurrentMediaTime(), c)
+    
+        print(canvas?.subviews[0], canvas)
         
-        canvas?.forceLayout(view.bounds.width, view.bounds.height)
+      //  canvas?.forceLayout(view.bounds.width, view.bounds.height)
        // canvas = NSCCanvas(frame: view.bounds)
         //view.addSubview(canvas!)
 //        canvas?.frame = view.frame
@@ -94,7 +96,9 @@ class ViewController: UIViewController {
         )
             
   
-        canvas2.forceLayout(300, 300)
+      //  canvas2.forceLayout(300, 300)
+        
+        print(canvas2.subviews[0])
 
             
         

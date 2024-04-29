@@ -1,7 +1,7 @@
 use std::os::raw::c_float;
 
-use skia_safe::paint::Style;
 use skia_safe::{BlendMode, Paint, Rect};
+use skia_safe::paint::Style;
 
 use crate::context::Context;
 
@@ -10,11 +10,9 @@ impl Context {
         let mut paint = Paint::default();
         paint.set_anti_alias(true);
         paint.set_color(skia_safe::Color::from_argb(0, 0, 0, 0));
-        paint.set_stroke_miter(10.0);
         paint.set_style(Style::Fill);
         paint.set_blend_mode(BlendMode::Clear);
-        let scale = self.device.density;
-        let rect = Rect::from_xywh(x * scale, y * scale, width * scale, height * scale);
+        let rect = Rect::from_xywh(x, y, width, height);
         self.surface.canvas().draw_rect(rect, &paint);
     }
 
@@ -24,15 +22,8 @@ impl Context {
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
-        let scale = self.device.density;
-        let rect = Rect::from_xywh(
-            rect.x() * scale,
-            rect.y() * scale,
-            rect.width() * scale,
-            rect.height() * scale,
-        );
         if let Some(paint) = self.state.paint.fill_shadow_paint(
-            self.state.shadow_offset.scaled(scale),
+            self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {
@@ -49,16 +40,8 @@ impl Context {
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
-        let scale = self.device.density;
-        let rect = Rect::from_xywh(
-            rect.x() * scale,
-            rect.y() * scale,
-            rect.width() * scale,
-            rect.height() * scale,
-        );
-
         if let Some(paint) = &mut self.state.paint.stroke_shadow_paint(
-            self.state.shadow_offset.scaled(scale),
+            self.state.shadow_offset,
             self.state.shadow_color,
             self.state.shadow_blur,
         ) {

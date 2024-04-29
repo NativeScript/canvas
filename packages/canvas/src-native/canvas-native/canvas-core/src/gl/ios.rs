@@ -271,7 +271,7 @@ pub(crate) struct GLKView(Id<NSObject>);
 
 impl GLKView {
     pub fn new() -> Self {
-        let cls = class!(GLKView);
+        let cls = class!(CanvasGLKView);
         let instance = unsafe { msg_send_id![cls, alloc] };
         GLKView(unsafe {
             msg_send_id![
@@ -283,7 +283,7 @@ impl GLKView {
 
     pub fn new_with_frame(x: f32, y: f32, width: f32, height: f32) -> Self {
         unsafe {
-            let cls = class!(GLKView);
+            let cls = class!(CanvasGLKView);
             let instance = msg_send_id![cls, alloc];
             let point = icrate::Foundation::CGPoint::new(x as f64, y as f64);
             let size = icrate::Foundation::CGSize::new(width as f64, height as f64);
@@ -468,8 +468,9 @@ impl GLContext {
         view.set_context(context.as_ref());
 
         EAGLContext::set_current_context(context.as_ref());
-
-        view.bind_drawable();
+        //
+        // view.bind_drawable();
+        view.display();
 
         let inner = GLContextInner {
             context,

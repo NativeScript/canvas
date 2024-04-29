@@ -134,8 +134,7 @@ loaded="{{ rectLoaded }}"
 
 
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/>
+		 <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}" />
     <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->
 
     <!-- <ScrollView  rowSpan="4" visibility="{{ show ? 'visible': 'collapse' }}" orientation="vertical">

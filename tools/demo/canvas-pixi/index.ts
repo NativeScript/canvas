@@ -99,13 +99,13 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.text(canvas);
 
 		//this.drawPatternWithCanvas(canvas);
-		this.simple(canvas);
+		//this.simple(canvas);
 		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		//this.dynamicGraphics(canvas);
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);

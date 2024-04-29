@@ -78,18 +78,20 @@ public class NSCCanvas: UIView {
     
     
     private(set) public var nativeGL: Int64 = 0
+    
     private(set) public var nativeContext: Int64 = 0
+    
     private(set) var native2DContext: Int64 = 0
     
     internal var glkView: CanvasGLKView
-    private var is2D = false
+    internal var is2D = false
     
     
     public var drawingBufferWidth: Int {
-        return glkView.drawableWidth
+        return Int(glkView.frame.size.width)
     }
     public var drawingBufferHeight: Int {
-        return glkView.drawableHeight
+        return Int(glkView.frame.size.height)
     }
     public var width: Float {
         get {
@@ -176,6 +178,7 @@ public class NSCCanvas: UIView {
             let width = frame.size.width.isZero ? 1 : frame.size.width
             let height = frame.size.height.isZero ? 1 : frame.size.height
             frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
+            zeroSize = true
             setNeedsLayout()
             layoutIfNeeded()
         }
@@ -223,13 +226,17 @@ public class NSCCanvas: UIView {
         }
         
         let viewPtr = Int64(Int(bitPattern: getViewPtr()))
-        
+                        
         
         let shared_context = NSCCanvas.shared_context
         
         nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
         
         
+        if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
+            glkView.bindDrawable()
+        }
+                
         // get new fbo
         
         nativeContext = CanvasHelpers.getGLPointer(nativeGL)
@@ -364,6 +371,8 @@ public class NSCCanvas: UIView {
         
         super.init(coder: coder)
         
+        glkView.canvas = self
+        
         
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
@@ -389,7 +398,7 @@ public class NSCCanvas: UIView {
             glkView.contentScaleFactor = UIScreen.main.nativeScale
         }
         super.init(frame: frame)
-        
+        glkView.canvas = self
         
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
@@ -430,10 +439,9 @@ public class NSCCanvas: UIView {
     
     private func resize(){
         if(nativeGL == 0){return}
-        GLKViewController
         EAGLContext.setCurrent(glkView.context)
-        glkView.deleteDrawable()
-        glkView.bindDrawable()
+       // glkView.deleteDrawable()
+       // glkView.bindDrawable()
         if(is2D){
             glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
@@ -443,27 +451,40 @@ public class NSCCanvas: UIView {
     
     private var viewSize = CGSize.zero
     private var realViewSize = CGSize.zero
+    private var zeroSize = false
+    private var isReady = false
     public override func layoutSubviews() {
-        if(viewSize == frame.size){
+        if(viewSize.equalTo(frame.size)){
             return
         }
-        realViewSize.width = frame.size.width
-        realViewSize.height = frame.size.height
         
-        if(nativeGL == 0 && !realViewSize.width.isZero && !realViewSize.height.isZero){
+        if(!zeroSize){
+            realViewSize.width = frame.size.width
+            realViewSize.height = frame.size.height
+        }
+        
+        if(!isReady && nativeGL == 0 && !realViewSize.width.isZero && !realViewSize.height.isZero){
+            viewSize.width = frame.size.width
+            viewSize.height = frame.size.height
+            isReady = true
             readyListener?.contextReady()
         }
         
+        /*
         if((!viewSize.width.isZero && !viewSize.height.isZero) && frame.width.isZero || frame.height.isZero){
             let width = width.isZero ? 1 : width
             let height = height.isZero ? 1 : height
             frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
         }
-        viewSize = CGSize(width: frame.size.width, height: frame.size.height)
+        */
+        if(!frame.width.isZero && !frame.height.isZero){
+            viewSize = CGSize(width: frame.size.width, height: frame.size.height)
+        }
         if(nativeGL != 0) {
             resize()
         }
         
+        zeroSize = false
     }
     
     

@@ -120,11 +120,15 @@ import _SwiftConcurrencyShims
   @objc override dynamic public init()
   @objc deinit
 }
-@_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor(unsafe) public class CanvasGLKView : GLKit.GLKView {
+@_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor(unsafe) public class CanvasGLKView : GLKit.GLKView, GLKit.GLKViewDelegate {
+  @objc @_Concurrency.MainActor(unsafe) weak public var canvas: CanvasNative.NSCCanvas? {
+    get
+  }
   @_Concurrency.MainActor(unsafe) @objc dynamic public init()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func bindDrawable()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func deleteDrawable()
+  @_Concurrency.MainActor(unsafe) @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
   @objc deinit
 }
 extension GLKit.GLKView {

@@ -163,8 +163,8 @@ impl State {
         let mut paint = Paint::default();
         paint
             .stroke_paint_mut()
-            .set_stroke_width(device.density)
-            .set_stroke_miter(10. * device.density);
+            .set_stroke_width(1.0)
+            .set_stroke_miter(10.0);
         Self {
             direction,
             paint,

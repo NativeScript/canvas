@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect};
+use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
 
+use crate::context::{Context, Device, State};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -46,7 +46,11 @@ impl Context {
             )
         };
 
-        let surface = surfaces::raster(&info, None, None).unwrap();
+        let mut surface = surfaces::raster(&info, None, None).unwrap();
+
+        if density > 1. {
+            surface.canvas().scale((density, density));
+        }
 
         Context {
             surface,
@@ -95,7 +99,12 @@ impl Context {
         context.path = Path::default();
         context.reset_state();
 
-        if let Some(surface) = surfaces::raster(&info, None, None) {
+        if let Some(mut surface) = surfaces::raster(&info, None, None) {
+
+            if density > 1. {
+                surface.canvas().scale((density, density));
+            }
+            
             context.surface = surface;
         }
     }

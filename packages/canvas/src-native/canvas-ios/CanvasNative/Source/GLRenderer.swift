@@ -11,8 +11,10 @@ import UIKit
 
 @objcMembers
 @objc(CanvasGLKView)
-public class CanvasGLKView: GLKView {
+public class CanvasGLKView: GLKView, GLKViewDelegate {
     var isDirty: Bool = false
+    internal(set) public weak var canvas: NSCCanvas? = nil
+    
     private (set) var fbo: UInt32 = 0
     
     public init() {
@@ -20,10 +22,12 @@ public class CanvasGLKView: GLKView {
     }
     public override init(frame: CGRect) {
         super.init(frame: frame)
+        delegate = self
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        delegate = self
     }
     
     public override func bindDrawable() {
@@ -37,31 +41,39 @@ public class CanvasGLKView: GLKView {
         super.deleteDrawable()
         self.fbo = 0
     }
+    
+    public func glkView(_ view: GLKView, drawIn rect: CGRect) {
+        guard let canvas = canvas else {return}
+        if(canvas.is2D){
+            CanvasHelpers.flush2DContext(canvas.native2DContext)
+        }
+    }
+    
 }
 
 
 extension GLKView {
     @objc public func snapshotWithData(_ data: Data){
         let pixels = self.snapshot
-                 
-                 var cgImage: CGImage?
-                 
-                 if let image = pixels.cgImage {
-                     cgImage = image
-                 } else if let image = pixels.ciImage {
-                     let ctx = CIContext()
-                     cgImage = ctx.createCGImage(image, from: image.extent)
-                 }
-                 
-                 if let image = cgImage {
-                     let width = Int(pixels.size.width)
-                     let height = Int(pixels.size.height)
-                     let row = width * 4
-                     var buffer = [UInt8](data)
-                     let colorSpace = CGColorSpaceCreateDeviceRGB()
-                     let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-                     imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-                 }
+        
+        var cgImage: CGImage?
+        
+        if let image = pixels.cgImage {
+            cgImage = image
+        } else if let image = pixels.ciImage {
+            let ctx = CIContext()
+            cgImage = ctx.createCGImage(image, from: image.extent)
+        }
+        
+        if let image = cgImage {
+            let width = Int(pixels.size.width)
+            let height = Int(pixels.size.height)
+            let row = width * 4
+            var buffer = [UInt8](data)
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let imageCtx = CGContext(data: &buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: row, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            imageCtx!.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
     }
 }
 
@@ -101,7 +113,7 @@ public class CanvasCPUView: UIView {
                 let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: size)
                 let colorSpace = CGColorSpaceCreateDeviceRGB()
                 let ctx = CGContext(data: buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-//                context_custom_with_buffer_flush(renderer.context, buffer, UInt(size), Float(width), Float(height))
+                //                context_custom_with_buffer_flush(renderer.context, buffer, UInt(size), Float(width), Float(height))
                 if let image = ctx?.makeImage() {
                     let currentContext = UIGraphicsGetCurrentContext()
                     currentContext?.clear(bounds)

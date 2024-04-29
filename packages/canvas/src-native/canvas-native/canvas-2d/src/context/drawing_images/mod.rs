@@ -152,8 +152,7 @@ impl Context {
         x: f32,
         y: f32
     ) {
-        let scale = self.device.density;
-
+        
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
@@ -163,8 +162,8 @@ impl Context {
         self.surface.canvas().draw_image_with_sampling_options(
             image,
             skia_safe::Point::new(
-                x * scale,
-                y * scale
+                x,
+                y
             ),
             self.state.image_smoothing_quality,
             Some(paint)
@@ -189,11 +188,9 @@ impl Context {
         src_rect: impl Into<Rect>,
         dst_rect: impl Into<Rect>,
     ) {
-        let density = self.device.density;
         let src_rect = src_rect.into();
-        let mut dst_rect = dst_rect.into();
-
-        dst_rect.scale(density, density);
+        let dst_rect = dst_rect.into();
+        
 
         let dimensions = image.dimensions();
         let (src, dst) = crate::utils::fit_bounds(
@@ -221,14 +218,12 @@ impl Context {
 
 
     fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
-        let density = self.device.density;
 
         let dimensions = image.dimensions();
 
         let src_rect = Rect::from_xywh(0., 0., dimensions.width as f32, dimensions.height as f32);
-        let mut dst_rect = dst_rect.into();
-
-        dst_rect.scale(density, density);
+        let dst_rect = dst_rect.into();
+        
 
         let (src, dst) = crate::utils::fit_bounds(
             dimensions.width as f32,

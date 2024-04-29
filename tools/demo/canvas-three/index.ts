@@ -2959,7 +2959,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
-			renderer.setPixelRatio(window.devicePixelRatio);
+		//	renderer.setPixelRatio(window.devicePixelRatio);
 			//renderer.setSize(canvas.width, canvas.height);
 			renderer.setSize(width, height);
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;

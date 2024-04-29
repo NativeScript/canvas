@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { ImageSource, Utils, profile, Screen } from '@nativescript/core';
+import { ImageSource, Utils, profile, Screen, PercentLength } from '@nativescript/core';
 declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
@@ -95,6 +95,7 @@ export class Canvas extends CanvasBase {
 				this._handleEvents(event);
 			};
 		}
+		this._canvas.autoScale = false;
 	}
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
@@ -120,9 +121,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value) {
-		this.style.width = value ?? 0;
-		this._didLayout = false;
-		this._layoutNative(true);
+		if (value !== null || value !== undefined) {
+			this.style.width = value;
+			this._didLayout = false;
+			this._layoutNative(true);
+		}
 	}
 
 	//@ts-ignore
@@ -131,9 +134,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value) {
-		this.style.height = value ?? 0;
-		this._didLayout = false;
-		this._layoutNative(true);
+		if (value !== null || value !== undefined) {
+			this.style.height = value;
+			this._didLayout = false;
+			this._layoutNative(true);
+		}
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -227,7 +232,7 @@ export class Canvas extends CanvasBase {
 	}
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
-		const nativeView = this.nativeView;
+		const nativeView = this._canvas;
 		if (nativeView) {
 			const width = Utils.layout.getMeasureSpecSize(widthMeasureSpec);
 			const height = Utils.layout.getMeasureSpecSize(heightMeasureSpec);
@@ -270,7 +275,7 @@ export class Canvas extends CanvasBase {
 
 			const size = this._logicalSize;
 
-			// this._canvas.forceLayout(size.width, size.height);
+			this._canvas.forceLayout(size.width, size.height);
 
 			if (this._is2D) {
 				this._2dContext?.native?.__resize?.(size.width, size.height);
@@ -279,6 +284,13 @@ export class Canvas extends CanvasBase {
 			this._didLayout = true;
 		}
 	}
+
+
+	_setNativeViewFrame(nativeView: any, frame: any): void {
+		nativeView.frame = frame;
+		this._canvas.forceLayout(frame.size.width, frame.size.height);
+	}
+
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
 		if (!this._canvas) {
@@ -291,7 +303,8 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					this._layoutNative(true);
+					//this._layoutNative(true);
+					console.log(this.width, this.height, this._canvas.frame.size.width, this._canvas.frame.size.height, this._canvas.subviews[0].frame.size.width, this._canvas.subviews[0].frame.size.height);
 
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 

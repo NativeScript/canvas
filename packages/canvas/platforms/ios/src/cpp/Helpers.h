@@ -18,6 +18,17 @@
 //#endif
 
 
+struct AsyncCallback {
+    v8::Isolate *isolate;
+    v8::Global<v8::Function> callback;
+    void* data;
+};
+
+struct PromiseCallback {
+    v8::Isolate *isolate;
+    v8::Global<v8::Promise::Resolver> callback;
+    void* data;
+};
 
 static const char *LOG_TAG = "JS";
 static int m_maxLogcatObjectSize = 4096;
@@ -125,7 +136,12 @@ enum class NativeType {
     WebGLUniformLocation,
     WebGLSampler,
     WebGLTransformFeedback,
-    WebGLSync
+    WebGLSync,
+    GPUAdapter,
+    GPUSupportedLimits,
+    GPUDevice,
+    GPUQueue,
+    GPUBuffer
 };
 
 inline static v8::Local<v8::String>
@@ -214,7 +230,7 @@ inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
             auto value = *static_cast<int32_t *>(info);
             auto ret = value;
             if (ret >= (int) NativeType::CanvasGradient &&
-                ret <= (int) NativeType::WebGLSync) {
+                ret <= (int) NativeType::GPUBuffer) {
                 return (NativeType) ret;
             }
         }

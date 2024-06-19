@@ -124,6 +124,7 @@ export class CanvasRenderingContext2D {
 	public static isDebug = true;
 	private context;
 	private contextPtr: any;
+	_type: string;
 	static {
 		Helpers.initialize();
 		//ctor = global.CanvasJSIModule.create2DContext;
@@ -137,7 +138,6 @@ export class CanvasRenderingContext2D {
 		this._type = '2d';
 	}
 
-	_type: string = 'none';
 	get type() {
 		return this._type;
 	}

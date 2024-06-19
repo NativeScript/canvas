@@ -1590,7 +1590,7 @@ void main()
 		const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({
 			context,
-			backgroundColor: 0x1099bb
+			backgroundColor: 0x1099bb,
 		});
 
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
@@ -1784,8 +1784,6 @@ void main()
 			context,
 		}) as Application;
 
-
-
 		const graphics = new PIXI.Graphics() as Graphics;
 
 		// Rectangle
@@ -1879,9 +1877,9 @@ void main()
 
 		app.stage.addChild(graphics);
 
-		requestAnimationFrame(()=>{
+		requestAnimationFrame(() => {
 			console.log(context.canvas.toDataURL());
-		})
+		});
 	}
 
 	advance(canvas) {

@@ -30,13 +30,16 @@ endif ()
 
 get_filename_component(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
-get_filename_component(PROJECT_NATIVE_ROOT_DIR ${PROJECT_ROOT_DIR} DIRECTORY)
+get_filename_component(PROJECT_NATIVE_ROOT_DIR "${PROJECT_ROOT_DIR}/../../../../.." DIRECTORY)
 
-set(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR}/canvas-native)
+set(PROJECT_NATIVE_ROOT_DIR "${PROJECT_NATIVE_ROOT_DIR}")
 
 set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
+
+
+message(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR})
 
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
 
@@ -84,6 +87,7 @@ include_directories(
         ../../../platforms/ios/src/cpp/webgl
         ../../../platforms/ios/src/cpp/webgl/extensions
         ../../../platforms/ios/src/cpp/webgl2
+        ../../../platforms/ios/src/cpp/webgpu
 )
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
@@ -130,7 +134,6 @@ add_library(
         ${CPP_DIR}/ImageBitmapImpl.cpp
         ${CPP_DIR}/TextDecoderImpl.cpp
         ${CPP_DIR}/TextEncoderImpl.cpp
-        ${CPP_DIR}/URLImpl.cpp
 
 
         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp
@@ -151,9 +154,18 @@ add_library(
 
         ${CPP_DIR}/webgl2/WebGL2RenderingContext.cpp
 
+        ${CPP_DIR}/webgpu/GPUImpl.cpp
+        ${CPP_DIR}/webgpu/GPUAdapterImpl.cpp
+        ${CPP_DIR}/webgpu/GPUSupportedLimitsImpl.cpp
+        ${CPP_DIR}/webgpu/GPUDeviceImpl.cpp
+        ${CPP_DIR}/webgpu/GPUQueueImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBufferImpl.cpp
+
+
         ${CPP_DIR}/CanvasJSIModule.cpp
 
         ${CPP_DIR}/JSIRuntime.cpp
+
 )
 
 

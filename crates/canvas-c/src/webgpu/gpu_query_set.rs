@@ -1,0 +1,1 @@
+pub struct CanvasGPUQuerySet(pub(crate) wgpu::QuerySet);

@@ -177,8 +177,21 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> WebGLUniformLocationTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
-    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> URLTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUAdapterTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUSupportedLimitsTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUDeviceTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUBufferTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
 
 
 private:

@@ -27,8 +27,8 @@ function to_bool() {
   esac
 }
 
-CWD="$SRCROOT/../canvas-native"
-pushd "$SRCROOT/../canvas-native"
+CWD="$SRCROOT/../../../../crates"
+pushd "$SRCROOT/../../../.."
 
 IS_SIMULATOR=false
 

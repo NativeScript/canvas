@@ -8,97 +8,121 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef enum CanvasGPUPowerPreference {
+  None,
+  LowPower,
+  HighPerformance,
+} CanvasGPUPowerPreference;
+
 typedef enum GLConstants {
-    UNPACK_FLIP_Y_WEBGL = 37440,
-    UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441,
-    UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
+  UNPACK_FLIP_Y_WEBGL = 37440,
+  UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441,
+  UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
 } GLConstants;
 
 typedef enum ImageBitmapColorSpaceConversion {
-    ImageBitmapColorSpaceConversionDefault,
-    ImageBitmapColorSpaceConversionNone,
+  ImageBitmapColorSpaceConversionDefault,
+  ImageBitmapColorSpaceConversionNone,
 } ImageBitmapColorSpaceConversion;
 
 typedef enum ImageBitmapPremultiplyAlpha {
-    ImageBitmapPremultiplyAlphaDefault,
-    ImageBitmapPremultiplyAlphaPremultiply,
-    ImageBitmapPremultiplyAlphaNone,
+  ImageBitmapPremultiplyAlphaDefault,
+  ImageBitmapPremultiplyAlphaPremultiply,
+  ImageBitmapPremultiplyAlphaNone,
 } ImageBitmapPremultiplyAlpha;
 
 typedef enum ImageBitmapResizeQuality {
-    ImageBitmapResizeQualityLow,
-    ImageBitmapResizeQualityMedium,
-    ImageBitmapResizeQualityHigh,
-    ImageBitmapResizeQualityPixelated,
+  ImageBitmapResizeQualityLow,
+  ImageBitmapResizeQualityMedium,
+  ImageBitmapResizeQualityHigh,
+  ImageBitmapResizeQualityPixelated,
 } ImageBitmapResizeQuality;
 
 typedef enum InvalidateState {
-    InvalidateStateNone,
-    InvalidateStatePending,
-    InvalidateStateInvalidating,
+  InvalidateStateNone,
+  InvalidateStatePending,
+  InvalidateStateInvalidating,
 } InvalidateState;
 
 typedef enum PaintStyleType {
-    PaintStyleTypeNone,
-    PaintStyleTypeColor,
-    PaintStyleTypeGradient,
-    PaintStyleTypePattern,
+  PaintStyleTypeNone,
+  PaintStyleTypeColor,
+  PaintStyleTypeGradient,
+  PaintStyleTypePattern,
 } PaintStyleType;
 
 typedef enum TextBaseLine {
-    TOP = 0,
-    HANGING = 1,
-    MIDDLE = 2,
-    ALPHABETIC = 3,
-    IDEOGRAPHIC = 4,
-    BOTTOM = 5,
+  TOP = 0,
+  HANGING = 1,
+  MIDDLE = 2,
+  ALPHABETIC = 3,
+  IDEOGRAPHIC = 4,
+  BOTTOM = 5,
 } TextBaseLine;
 
 typedef enum WebGLExtensionType {
-    WebGLExtensionTypeEXT_blend_minmax,
-    WebGLExtensionTypeEXT_color_buffer_half_float,
-    WebGLExtensionTypeEXT_disjoint_timer_query,
-    WebGLExtensionTypeEXT_sRGB,
-    WebGLExtensionTypeEXT_shader_texture_lod,
-    WebGLExtensionTypeEXT_texture_filter_anisotropic,
-    WebGLExtensionTypeOES_element_index_uint,
-    WebGLExtensionTypeOES_standard_derivatives,
-    WebGLExtensionTypeOES_texture_float,
-    WebGLExtensionTypeOES_texture_float_linear,
-    WebGLExtensionTypeOES_texture_half_float,
-    WebGLExtensionTypeOES_texture_half_float_linear,
-    WebGLExtensionTypeOES_vertex_array_object,
-    WebGLExtensionTypeWEBGL_color_buffer_float,
-    WebGLExtensionTypeWEBGL_compressed_texture_atc,
-    WebGLExtensionTypeWEBGL_compressed_texture_etc1,
-    WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
-    WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
-    WebGLExtensionTypeWEBGL_compressed_texture_etc,
-    WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
-    WebGLExtensionTypeWEBGL_lose_context,
-    WebGLExtensionTypeANGLE_instanced_arrays,
-    WebGLExtensionTypeWEBGL_depth_texture,
-    WebGLExtensionTypeWEBGL_draw_buffers,
-    WebGLExtensionTypeOES_fbo_render_mipmap,
-    WebGLExtensionTypeNone,
+  WebGLExtensionTypeEXT_blend_minmax,
+  WebGLExtensionTypeEXT_color_buffer_half_float,
+  WebGLExtensionTypeEXT_disjoint_timer_query,
+  WebGLExtensionTypeEXT_sRGB,
+  WebGLExtensionTypeEXT_shader_texture_lod,
+  WebGLExtensionTypeEXT_texture_filter_anisotropic,
+  WebGLExtensionTypeOES_element_index_uint,
+  WebGLExtensionTypeOES_standard_derivatives,
+  WebGLExtensionTypeOES_texture_float,
+  WebGLExtensionTypeOES_texture_float_linear,
+  WebGLExtensionTypeOES_texture_half_float,
+  WebGLExtensionTypeOES_texture_half_float_linear,
+  WebGLExtensionTypeOES_vertex_array_object,
+  WebGLExtensionTypeWEBGL_color_buffer_float,
+  WebGLExtensionTypeWEBGL_compressed_texture_atc,
+  WebGLExtensionTypeWEBGL_compressed_texture_etc1,
+  WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
+  WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
+  WebGLExtensionTypeWEBGL_compressed_texture_etc,
+  WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
+  WebGLExtensionTypeWEBGL_lose_context,
+  WebGLExtensionTypeANGLE_instanced_arrays,
+  WebGLExtensionTypeWEBGL_depth_texture,
+  WebGLExtensionTypeWEBGL_draw_buffers,
+  WebGLExtensionTypeOES_fbo_render_mipmap,
+  WebGLExtensionTypeNone,
 } WebGLExtensionType;
 
 typedef enum WebGLResultType {
-    WebGLResultTypeBoolean,
-    WebGLResultTypeI32Array,
-    WebGLResultTypeU32Array,
-    WebGLResultTypeF32Array,
-    WebGLResultTypeBooleanArray,
-    WebGLResultTypeU32,
-    WebGLResultTypeI32,
-    WebGLResultTypeF32,
-    WebGLResultTypeString,
-    WebGLResultTypeNone,
+  WebGLResultTypeBoolean,
+  WebGLResultTypeI32Array,
+  WebGLResultTypeU32Array,
+  WebGLResultTypeF32Array,
+  WebGLResultTypeBooleanArray,
+  WebGLResultTypeU32,
+  WebGLResultTypeI32,
+  WebGLResultTypeF32,
+  WebGLResultTypeString,
+  WebGLResultTypeNone,
 } WebGLResultType;
 
 typedef struct ANGLE_instanced_arrays ANGLE_instanced_arrays;
 
 typedef struct CCow CCow;
+
+typedef struct CanvasGPUAdapter CanvasGPUAdapter;
+
+typedef struct CanvasGPUAdapterInfo CanvasGPUAdapterInfo;
+
+typedef struct CanvasGPUBuffer CanvasGPUBuffer;
+
+typedef struct CanvasGPUCommandEncoder CanvasGPUCommandEncoder;
+
+typedef struct CanvasGPUComputePassEncoder CanvasGPUComputePassEncoder;
+
+typedef struct CanvasGPUDevice CanvasGPUDevice;
+
+typedef struct CanvasGPUQuerySet CanvasGPUQuerySet;
+
+typedef struct CanvasGPUQueue CanvasGPUQueue;
+
+typedef struct CanvasGPUShaderModule CanvasGPUShaderModule;
 
 typedef struct CanvasRenderingContext2D CanvasRenderingContext2D;
 
@@ -172,8 +196,6 @@ typedef struct U32Buffer U32Buffer;
 
 typedef struct U8Buffer U8Buffer;
 
-typedef struct URL URL;
-
 typedef struct WEBGL_color_buffer_float WEBGL_color_buffer_float;
 
 typedef struct WEBGL_compressed_texture_atc WEBGL_compressed_texture_atc;
@@ -209,6 +231,48 @@ typedef struct WebGLShaderPrecisionFormat WebGLShaderPrecisionFormat;
 typedef struct WebGLState WebGLState;
 
 typedef struct WebGLSync WebGLSync;
+
+typedef struct CanvasGPURequestAdapterOptions {
+  enum CanvasGPUPowerPreference power_preference;
+  bool force_fallback_adapter;
+} CanvasGPURequestAdapterOptions;
+
+typedef struct CanvasGPUSupportedLimits {
+  uint32_t max_texture_dimension_1d;
+  uint32_t max_texture_dimension_2d;
+  uint32_t max_texture_dimension_3d;
+  uint32_t max_texture_array_layers;
+  uint32_t max_bind_groups;
+  uint32_t max_bindings_per_bind_group;
+  uint32_t max_dynamic_uniform_buffers_per_pipeline_layout;
+  uint32_t max_dynamic_storage_buffers_per_pipeline_layout;
+  uint32_t max_sampled_textures_per_shader_stage;
+  uint32_t max_samplers_per_shader_stage;
+  uint32_t max_storage_buffers_per_shader_stage;
+  uint32_t max_storage_textures_per_shader_stage;
+  uint32_t max_uniform_buffers_per_shader_stage;
+  uint32_t max_uniform_buffer_binding_size;
+  uint32_t max_storage_buffer_binding_size;
+  uint32_t max_vertex_buffers;
+  uint64_t max_buffer_size;
+  uint32_t max_vertex_attributes;
+  uint32_t max_vertex_buffer_array_stride;
+  uint32_t min_uniform_buffer_offset_alignment;
+  uint32_t min_storage_buffer_offset_alignment;
+  uint32_t max_inter_stage_shader_components;
+  uint32_t max_color_attachments;
+  uint32_t max_color_attachment_bytes_per_sample;
+  uint32_t max_compute_workgroup_storage_size;
+  uint32_t max_compute_invocations_per_workgroup;
+  uint32_t max_compute_workgroup_size_x;
+  uint32_t max_compute_workgroup_size_y;
+  uint32_t max_compute_workgroup_size_z;
+  uint32_t max_compute_workgroups_per_dimension;
+  uint32_t min_subgroup_size;
+  uint32_t max_subgroup_size;
+  uint32_t max_push_constant_size;
+  uint32_t max_non_sampler_bindings;
+} CanvasGPUSupportedLimits;
 
 void canvas_native_image_filter_destroy(struct ImageFilter *value);
 
@@ -2850,6 +2914,86 @@ void canvas_native_matrix_destroy(struct Matrix *value);
 
 void canvas_native_path_destroy(struct Path *value);
 
+#if !defined(TARGET_OS_ANDROID)
+void canvas_native_webgpu_request_adapter(const struct CanvasGPURequestAdapterOptions *options,
+                                          void (*callback)(struct CanvasGPUAdapter*, void*),
+                                          void *callback_data);
+#endif
+
+#if defined(TARGET_OS_ANDROID)
+void canvas_native_webgpu_request_adapter(const struct CanvasGPURequestAdapterOptions *options,
+                                          void (*callback)(struct CanvasGPUAdapter*, void*),
+                                          void *callback_data);
+#endif
+
+char *canvas_native_webgpu_adapter_info_vendor(const struct CanvasGPUAdapterInfo *info);
+
+char *canvas_native_webgpu_adapter_info_architecture(const struct CanvasGPUAdapterInfo *info);
+
+char *canvas_native_webgpu_adapter_info_device(const struct CanvasGPUAdapterInfo *info);
+
+char *canvas_native_webgpu_adapter_info_description(const struct CanvasGPUAdapterInfo *info);
+
+struct StringBuffer *canvas_native_webgpu_adapter_get_features(const struct CanvasGPUAdapter *adapter);
+
+bool canvas_native_webgpu_adapter_is_fallback_adapter(const struct CanvasGPUAdapter *adapter);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_adapter_get_limits(const struct CanvasGPUAdapter *adapter);
+
+struct CanvasGPUAdapterInfo *canvas_native_webgpu_request_adapter_info(struct CanvasGPUAdapter *adapter);
+
+void canvas_native_webgpu_request_device(struct CanvasGPUAdapter *adapter,
+                                         const char *label,
+                                         const char *const *required_features,
+                                         uintptr_t required_features_length,
+                                         const struct CanvasGPUSupportedLimits *required_limits,
+                                         void (*callback)(char*, struct CanvasGPUDevice*, void*),
+                                         void *callback_data);
+
+uint64_t canvas_native_webgpu_buffer_size(const struct CanvasGPUBuffer *buffer);
+
+uint32_t canvas_native_webgpu_buffer_usage(const struct CanvasGPUBuffer *buffer);
+
+void canvas_native_webgpu_buffer_destroy(const struct CanvasGPUBuffer *buffer);
+
+struct CanvasGPUComputePassEncoder *canvas_native_webgpu_command_encoder_begin_compute_pass(struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                            const struct CanvasGPUQuerySet *query_set,
+                                                                                            const char *label,
+                                                                                            int32_t beginning_of_pass_write_index,
+                                                                                            int32_t end_of_pass_write_index);
+
+struct StringBuffer *canvas_native_webgpu_device_get_features(const struct CanvasGPUDevice *device);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_device_get_limits(const struct CanvasGPUDevice *device);
+
+struct CanvasGPUQueue *canvas_native_webgpu_device_get_queue(const struct CanvasGPUDevice *device);
+
+void canvas_native_webgpu_device_set_lost_callback(const struct CanvasGPUDevice *device,
+                                                   void (*callback)(int32_t, char*, void*),
+                                                   void *callback_data);
+
+void canvas_native_webgpu_device_destroy(const struct CanvasGPUDevice *device);
+
+void canvas_native_webgpu_device_destroy_destory(struct CanvasGPUDevice *device);
+
+struct CanvasGPUCommandEncoder *canvas_native_webgpu_device_create_command_encoder(const struct CanvasGPUDevice *device,
+                                                                                   const char *label);
+
+struct CanvasGPUShaderModule *canvas_native_webgpu_device_create_shader_module(const struct CanvasGPUDevice *device,
+                                                                               const char *label,
+                                                                               const char *source);
+
+struct CanvasGPUBuffer *canvas_native_webgpu_device_create_buffer(const struct CanvasGPUDevice *device,
+                                                                  const char *label,
+                                                                  uint64_t size,
+                                                                  uint32_t usage,
+                                                                  bool mapped_at_creation,
+                                                                  char *error);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
+
+void canvas_native_webgpu_limits_destroy(struct CanvasGPUSupportedLimits *limits);
+
 const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
 
 uint8_t *canvas_native_u8_buffer_get_bytes_mut(struct U8Buffer *buffer);
@@ -2905,55 +3049,5 @@ uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buff
 char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
 
 void canvas_native_string_buffer_destroy(struct StringBuffer *buffer);
-
-bool canvas_url_can_parse(const char *value, const char *base);
-
-struct URL *canvas_url_create(const char *value, const char *base);
-
-void canvas_url_destroy(struct URL *url);
-
-struct CCow *canvas_url_to_string(struct URL *url);
-
-const char *canvas_url_hash(struct URL *url);
-
-void canvas_url_set_hash(struct URL *url, const char *hash);
-
-const char *canvas_url_host(struct URL *url);
-
-void canvas_url_set_host(struct URL *url, const char *host);
-
-const char *canvas_url_host_name(struct URL *url);
-
-void canvas_url_set_host_name(struct URL *url, const char *hostname);
-
-const char *canvas_url_href(struct URL *url);
-
-void canvas_url_set_href(struct URL *url, const char *href);
-
-const char *canvas_url_origin(struct URL *url);
-
-const char *canvas_url_password(struct URL *url);
-
-void canvas_url_set_password(struct URL *url, const char *password);
-
-const char *canvas_url_pathname(struct URL *url);
-
-void canvas_url_set_pathname(struct URL *url, const char *pathname);
-
-const char *canvas_url_port(struct URL *url);
-
-void canvas_url_set_port(struct URL *url, const char *port);
-
-const char *canvas_url_protocol(struct URL *url);
-
-void canvas_url_set_protocol(struct URL *url, const char *protocol);
-
-const char *canvas_url_search(struct URL *url);
-
-void canvas_url_set_search(struct URL *url, const char *search);
-
-const char *canvas_url_username(struct URL *url);
-
-void canvas_url_set_username(struct URL *url, const char *username);
 
 #endif /* CANVAS_C_H */

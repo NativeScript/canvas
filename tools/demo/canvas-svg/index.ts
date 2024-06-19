@@ -15,7 +15,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		svg.setAttribute('height', '500');
 
 
-		const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+		/*const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 		// text.setAttribute('x', '0');
 		// text.setAttribute('y', '0');
 		text.setAttribute('font-size', '10');
@@ -27,10 +27,12 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 
 		svg.appendChild(text);
 
+		*/
+
 		(<any>svg).nativeElement.src = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" height = "256" width = "256">
 		<path d="M30,1h40l29,29v40l-29,29h-40l-29-29v-40z" stroke="#000" fill="none"/>
 		<path d="M31,3h38l28,28v38l-28,28h-38l-28-28v-38z" fill="#a23"/>
-		<text x="50" y="68" font-size="48" fill="#FFF" text-anchor="middle"><![CDATA[410]]></text>
+		<text x="50" y="68" font-size="48" fill="#FFF" text-anchor="middle">Stop</text>
 		</svg>`;
 
 		/*
@@ -157,7 +159,8 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		const svgView: Svg = (<any>svg).nativeElement;
 		svgView.rowSpan = 2;
 		svgView.colSpan = 2;
-		view.addChild(svgView);
+		 view.addChild(svgView);
+		svgView.src = 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg';
 	}
 
 	testIt() {

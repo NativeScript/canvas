@@ -455,7 +455,45 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		}
 	}
 
+	async webgpuTest() {
+		if (navigator.gpu) {
+			const adapter = await navigator.gpu.requestAdapter();
+			// console.log(adapter);
+			// console.log(adapter.features);
+			// console.log(adapter.limits);
+			// const info = await adapter.requestAdapterInfo();
+			//console.log(info);
+			const requiredFeatures = Array.from(adapter.features.values()) as any;
+			const device = await adapter.requestDevice({
+				label: '',
+				requiredFeatures,
+				requiredLimits: adapter.limits,
+			});
+
+			// device.lost.then((lost) => {
+			// 	console.log('lost', lost.reason, lost.message);
+			// });
+
+			// device.destroy();
+
+			// navigator.gpu.getPreferredCanvasFormat();
+
+			const output = device.createBuffer({
+				size: 100,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+			} as any);
+
+			const stagingBuffer = device.createBuffer({
+				size: 200,
+				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+			} as any);
+
+			console.log(output, stagingBuffer);
+		}
+	}
+
 	draw() {
+		this.webgpuTest();
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);
 		//	const ctx = this.canvas.getContext('2d');
@@ -602,7 +640,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//clip2(this.canvas);
 		//clip3(this.canvas);
 		//fillStyle(this.canvas);
-		font(this.canvas);
+		//font(this.canvas);
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);

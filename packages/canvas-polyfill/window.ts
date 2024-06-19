@@ -9,7 +9,7 @@ import { Device, fromObject, View } from '@nativescript/core';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
-
+import { Navigator } from './navigator';
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -145,15 +145,7 @@ export class DOMParser {
 
 (global as any).window.XMLDocument = (global as any).XMLDocument = XMLDocument;
 
-const agent = 'chrome';
-(global as any).window.navigator = (global as any).navigator = (global as any).navigator || {};
-(global as any).window.userAgent = (global as any).userAgent = (global as any).userAgent || agent;
-(global as any).window.navigator.userAgent = (global as any).navigator.userAgent = (global as any).navigator.userAgent || agent;
-(global as any).window.navigator.product = (global as any).navigator.product = 'NativeScript';
-(global as any).window.navigator.platform = (global as any).navigator.platform = (global as any).navigator.platform || [];
-(global as any).window.navigator.appVersion = (global as any).navigator.appVersion = (global as any).navigator.appVersion || Device.osVersion;
-(global as any).window.navigator.maxTouchPoints = (global as any).navigator.maxTouchPoints = (global as any).navigator.maxTouchPoints || 5;
-(global as any).window.navigator.standalone = (global as any).navigator.standalone = (global as any).navigator.standalone === null ? true : (global as any).navigator.standalone;
+(global as any).window.navigator = (global as any).navigator = (global as any).navigator || new Navigator();
 
 (global as any).window['chrome'] = (global as any)['chrome'] = (global as any)['chrome'] || {
 	extension: {},

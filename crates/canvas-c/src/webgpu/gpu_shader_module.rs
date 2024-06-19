@@ -1,0 +1,1 @@
+pub struct CanvasGPUShaderModule(pub(crate) wgpu::ShaderModule);

@@ -26,7 +26,7 @@ public class CanvasHelpers: NSObject {
             let bytesPerRow = cgImage!.bytesPerRow
             let bytesPerPixel = bytesPerRow / width
             let size = width * height * bytesPerPixel
-            var buffer = NSMutableData(length: size)
+            let buffer = NSMutableData(length: size)
             let colorSpace = CGColorSpaceCreateDeviceRGB()
             let _ = CGContext(data: buffer?.mutableBytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
             
@@ -38,7 +38,7 @@ public class CanvasHelpers: NSObject {
     
 
     public static func createPattern(_ context: Int64, _ image: UIImage, _ repetition: String) -> Int64 {
-        var bytes = getBytesFromUIImage(image)
+        let bytes = getBytesFromUIImage(image)
         let width = Int32(image.size.width * UIScreen.main.scale)
         let height = Int32(image.size.width * UIScreen.main.scale)
         let repetition = (repetition as NSString).utf8String
@@ -46,26 +46,26 @@ public class CanvasHelpers: NSObject {
     }
     
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
-        var bytes = getBytesFromUIImage(image)
+        let bytes = getBytesFromUIImage(image)
         return canvas_native_imageasset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
     }
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float) {
-        var bytes = getBytesFromUIImage(image)
+        let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
         canvas_native_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy)
     }
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float, dw: Float, dh: Float) {
-        var bytes = getBytesFromUIImage(image)
+        let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
         canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
     }
     
     public static func drawImage(context: Int64, image: UIImage, sx: Float, sy: Float, sw: Float, sh: Float ,dx: Float, dy: Float, dw: Float, dh: Float) {
-        var bytes = getBytesFromUIImage(image)
+        let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width * UIScreen.main.scale)
         let height = Float(image.size.width * UIScreen.main.scale)
         canvas_native_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
@@ -313,7 +313,7 @@ public class CanvasHelpers: NSObject {
     public static func  getPixelsPerInchForCurrentDevice() -> String{
         var size: Int = 0;
         sysctlbyname("hw.machine", nil, &size, nil, 0);
-        var machine = malloc(size);
+        let machine = malloc(size);
         sysctlbyname("hw.machine", machine, &size, nil, 0);
         guard let machine = machine else {
             return ""

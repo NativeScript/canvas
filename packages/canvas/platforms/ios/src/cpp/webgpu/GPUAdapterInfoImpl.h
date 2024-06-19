@@ -1,0 +1,14 @@
+//
+// Created by Osei Fortune on 17/06/2024.
+//
+
+#ifndef CANVAS_ANDROID_GPUADAPTERINFOIMPL_H
+#define CANVAS_ANDROID_GPUADAPTERINFOIMPL_H
+
+
+class GPUAdapterInfoImpl {
+
+};
+
+
+#endif //CANVAS_ANDROID_GPUADAPTERINFOIMPL_H

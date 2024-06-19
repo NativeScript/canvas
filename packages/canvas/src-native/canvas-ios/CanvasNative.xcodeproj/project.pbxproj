@@ -546,8 +546,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
@@ -557,8 +556,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
@@ -568,8 +566,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
@@ -633,8 +630,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
@@ -644,8 +640,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/aarch64-apple-ios-sim/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",
@@ -655,8 +650,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-native/target/x86_64-apple-ios/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvasnative",
 					"-ObjC",

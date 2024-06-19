@@ -22,15 +22,15 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		PWsa1Gr0OVXaZEFvAgbyTHUsqPE=
+		6YTw7neh0I3yEWLpqUZX2QDNQ0Q=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo</key>
 		<data>
-		WJU3NV4XwkGg/fNg1Gjdj+UqiiM=
+		wpsursu/U/QNrjE1wdrUZrj20Ak=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo</key>
 		<data>
-		YjsYcjO1t/yNQSCkXXb7wSRN7aY=
+		LnvUnFaYBg7Vp0dfGl+3325Tqk4=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<data>
@@ -50,7 +50,7 @@
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		mFsOxCkj1beMB1DjsUYWnUH+Z78=
+		bG0kmbUshwLfBbtieVHQjzabHn0=
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<data>
@@ -70,7 +70,7 @@
 		</data>
 		<key>Modules/CanvasSVG.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		9BjWMQxhldKz/O2IEY+Q0EHyE08=
+		svsS7o5Rq5goPJgakXMy1n0rQvc=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -111,14 +111,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			2vBZ5Jl610W0fAxD5XPoIEnsLfpeUba+Z+/DHGMiSXA=
+			ZHAufVBTHnNeBrNfXfR8Z2FAMtWh73zBAp92hBgTxhY=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			VpYfi5yDQVkxiatS/yKs+kcrKx4Ss+B5iaTyrIlrX4s=
+			B2Z4qC/aiejnJZ8Nw09TKpeapp96oxnMeAZJZlED3CQ=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
@@ -153,7 +153,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			4r9mLc8LRv2OeKE31ifcFB0CDrSgjSuORQUVoN4dCSo=
+			RAD6GbwG40ndkEmFdEw46M0cJln4SQEvH/ATnx7GPzc=
 			</data>
 		</dict>
 		<key>Modules/CanvasSVG.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
@@ -188,7 +188,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			nViWN07julrmUbOhSp+l1ytYhCRnKxYR0givXY+sdR4=
+			Wia391xicA/vTYY0xE4v7e8bDJlM4LTqMp/QSCbiDYc=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

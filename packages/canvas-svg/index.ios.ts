@@ -82,6 +82,7 @@ export class Svg extends SVGBase {
 		if (typeof value === 'string') {
 			if (value.indexOf('<svg') > -1) {
 				this._svg.src = value;
+				console.log(this._svg.src);
 			} else {
 				if (value.startsWith('~')) {
 					this._svg.srcPath = path.join(knownFolders.currentApp().path, value.replace('~', ''));
@@ -120,7 +121,7 @@ export class Svg extends SVGBase {
 	}
 
 	__redraw() {
-		if (this._attachedToDom) {
+		if (this._attachedToDom && !this.src) {
 			const domCopy = this.__domElement.valueOf() as Element;
 			const width = domCopy.getAttribute('width');
 			const height = domCopy.getAttribute('height');
@@ -135,6 +136,7 @@ export class Svg extends SVGBase {
 			if (!viewBox) {
 				domCopy.setAttribute('viewBox', '0 0 100 100');
 			}
+
 			const serialized = this._serializer.serializeToString(domCopy);
 			if (serialized !== initialSVG) {
 				this.src = serialized;

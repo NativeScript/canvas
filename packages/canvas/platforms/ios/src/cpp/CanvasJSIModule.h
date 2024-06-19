@@ -19,7 +19,10 @@
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 
-#include "URLImpl.h"
+#include "webgpu/GPUImpl.h"
+#include "webgpu/GPUSupportedLimitsImpl.h"
+#include "webgpu/GPUDeviceImpl.h"
+#include "webgpu/GPUQueueImpl.h"
 
 class CanvasJSIModule {
 public:

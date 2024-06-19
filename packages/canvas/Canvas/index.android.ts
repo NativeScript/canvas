@@ -3,7 +3,8 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils, widthProperty } from '@nativescript/core';
+import { GPUCanvasContext } from '../WebGPU';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
@@ -31,6 +32,7 @@ enum ContextType {
 	Canvas,
 	WebGL,
 	WebGL2,
+	WebGPU,
 }
 
 export class Canvas extends CanvasBase {
@@ -38,6 +40,7 @@ export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
+	private _webgpuContext: GPUCanvasContext;
 	private _canvas;
 	private _didPause: boolean = false;
 
@@ -59,6 +62,12 @@ export class Canvas extends CanvasBase {
 			} else {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
+
+			const textureView = this._canvas.getChildAt(0) as android.view.TextureView;
+
+			const matrix = new android.graphics.Matrix();
+			matrix.setScale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+			//textureView.setTransform(matrix);
 
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
@@ -107,11 +116,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value) {
-		if (value === undefined || value === null) {
-			this.style.width = 0;
-		} else {
-			this.style.width = value;
-		}
 		this._didLayout = false;
 		this._layoutNative();
 	}
@@ -122,11 +126,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value) {
-		if (value === undefined || value === null) {
-			this.style.height = 0;
-		} else {
-			this.style.height = value;
-		}
 		this._didLayout = false;
 		this._layoutNative();
 	}
@@ -135,8 +134,8 @@ export class Canvas extends CanvasBase {
 		const canvas = new Canvas();
 		canvas._isBatch = true;
 		canvas._isCustom = true;
-		canvas.width = 300;
-		canvas.height = 150;
+		canvas.style.width = 300;
+		canvas.style.height = 150;
 		canvas._isBatch = false;
 		canvas._layoutNative();
 		return canvas;
@@ -273,7 +272,7 @@ export class Canvas extends CanvasBase {
 
 	_didLayout = false;
 
-	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
+	getContext(type: string, contextAttributes?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas) {
 			return null;
 		}
@@ -287,12 +286,12 @@ export class Canvas extends CanvasBase {
 				this.width = 500;
 				this.height = 500;
 				this._isBatch = false;
-			
+
 				if (!this._2dContext) {
 					this._layoutNative();
 					const opts = {
 						...defaultOpts,
-						...this._handleContextOptions(type, options),
+						...this._handleContextOptions(type, contextAttributes),
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
 
@@ -311,7 +310,7 @@ export class Canvas extends CanvasBase {
 				}
 				if (!this._webglContext) {
 					this._layoutNative();
-					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -320,13 +319,13 @@ export class Canvas extends CanvasBase {
 				}
 
 				return this._webglContext;
-			} else if (type === 'webgl2' || type === 'experimental-webgl') {
+			} else if (type === 'webgl2') {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
 				if (!this._webgl2Context) {
 					this._layoutNative();
-					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;
@@ -334,6 +333,15 @@ export class Canvas extends CanvasBase {
 					this._contextType = ContextType.WebGL2;
 				}
 				return this._webgl2Context;
+			} else if (type === 'webgpu') {
+				if (this._2dContext || this._webglContext || this._webgl2Context) {
+					return null;
+				}
+
+				if (!this._webgpuContext) {
+				}
+
+				return this._webgpuContext;
 			}
 		}
 		return null;

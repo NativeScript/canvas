@@ -43,10 +43,10 @@ public class Utils: NSObject {
     
     
     private static func getParent(_ path: String) -> String {
-        let fileManager = FileManager.default
+      //  let fileManager = FileManager.default
         let nsString = NSString(string: path)
         let parentPath = nsString.deletingLastPathComponent
-        let name = fileManager.displayName(atPath: parentPath)
+        // let name = fileManager.displayName(atPath: parentPath)
         return parentPath
     }
     

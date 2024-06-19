@@ -1051,7 +1051,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl', contextOpts?) {
+	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'webgpu', contextOpts?) {
 		if (!contextOpts) {
 			if (type === '2d') {
 				return { ...default2DOptions, powerPreference: 0 };
@@ -1143,18 +1143,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		left: number;
 	};
 
-	_getSize(value: string | number | CoreTypes.LengthPercentUnit | CoreTypes.LengthDipUnit | CoreTypes.LengthPxUnit | 'auto', measuredSize, type: 'logical' | 'physical' = 'logical'): number {
+	_getSize(value: string | number | CoreTypes.LengthPercentUnit | CoreTypes.LengthDipUnit | CoreTypes.LengthPxUnit | 'auto', measuredSize: number, type: 'logical' | 'physical' = 'logical'): number {
 		const isPhysical = type === 'physical';
 		if (value === undefined || value === null) {
 			return 0;
 		}
 
 		if (value === 'auto') {
-			const size = Utils.layout.getMeasureSpecSize(Utils.layout.makeMeasureSpec(measuredSize, Utils.layout.UNSPECIFIED));
+			const size = measuredSize;
 			if (isPhysical) {
 				return size;
 			}
-			return Utils.layout.toDeviceIndependentPixels(size);
+			return size / Screen.mainScreen.scale;
 		}
 
 		if (typeof value === 'string') {

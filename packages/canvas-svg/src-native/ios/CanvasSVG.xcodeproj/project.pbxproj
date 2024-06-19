@@ -431,8 +431,7 @@
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "";
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/aarch64-apple-ios/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",
@@ -440,8 +439,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/aarch64-apple-ios-sim/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",
@@ -449,8 +447,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/x86_64-apple-ios/debug\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/debug\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",
@@ -512,8 +509,7 @@
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "";
 				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/aarch64-apple-ios/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",
@@ -521,8 +517,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/aarch64-apple-ios-sim/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",
@@ -530,8 +525,7 @@
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
 					"$(inherited)",
-					"-L\"$(SRCROOT)/../canvas-svg/target/x86_64-apple-ios/release\"",
-					"-Wl,-keep_dwarf_unwind",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/release\"",
 					"-Wl,-no_compact_unwind",
 					"-lcanvassvg",
 					"-ObjC",

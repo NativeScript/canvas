@@ -29,7 +29,7 @@
     "@nativescript/canvas-svg": "file:../../packages/canvas-svg"
   },
   "devDependencies": {
-    "@nativescript/android": "8.6.2",
+    "@nativescript/android": "alpha",
     "@nativescript/ios": "8.7.0",
     "@nativescript/visionos": "8.6.0"
   }

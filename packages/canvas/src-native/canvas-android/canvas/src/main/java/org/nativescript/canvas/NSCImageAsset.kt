@@ -34,7 +34,7 @@ class NSCImageAsset {
 
 		@JvmStatic
 		fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
-			if (bitmap.config == Bitmap.Config.RGB_565 || bitmap.config == Bitmap.Config.ARGB_4444) {
+			if (bitmap.config != Bitmap.Config.ARGB_8888) {
 				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
 
 				val canvas = Canvas(bm)
@@ -75,10 +75,8 @@ class NSCImageAsset {
 		@JvmStatic
 		private external fun nativeCreateImageAsset(): Long
 
-
 		@JvmStatic
 		private external fun nativeDestroyImageAsset(asset: Long)
-
 
 		@JvmStatic
 		private external fun nativeLoadFromBitmap(asset: Long, bitmap: Bitmap): Boolean
@@ -92,8 +90,7 @@ class NSCImageAsset {
 		@JvmStatic
 		private external fun nativeGetError(asset: Long): String?
 
-
-		private val executorService = Executors.newFixedThreadPool(10)
+		private val executorService = Executors.newFixedThreadPool(4)
 	}
 
 }

@@ -1,5 +1,6 @@
 require('globals');
 
+
 if (global.android && !(global as any).__canvasLoaded) {
 	try {
 		// load canvas lib if polyfill is called before
@@ -16,6 +17,14 @@ import './process';
 import './localStorage';
 import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import { URL } from './URL';
+
+if (!global.Document) {
+	Object.defineProperty(global, 'Document', {
+		value: Document,
+		configurable: true,
+		writable: true,
+	});
+}
 
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 

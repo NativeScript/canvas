@@ -32,10 +32,6 @@ class NSCSVG : View {
 		init(context)
 	}
 
-	constructor(context: Context, useCpu: Boolean) : super(context, null) {
-		init(context)
-	}
-
 	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
 		init(context)
 	}

@@ -31,16 +31,6 @@ CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
     return static_cast<CanvasPattern *>(ptr);
 }
 
-static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pattern) {
-    auto context = isolate->GetCurrentContext();
-    v8::EscapableHandleScope scope(isolate);
-    auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
-            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-    SetNativeType(object, NativeType::CanvasPattern);
-    object->SetAlignedPointerInInternalField(0, pattern);
-    return scope.Escape(object);
-}
-
 v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto ctor = cache->CanvasPatternTmpl.get();

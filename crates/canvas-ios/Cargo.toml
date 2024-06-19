@@ -3,9 +3,6 @@ name = "canvas-ios"
 version = "2.0.0"
 edition = "2021"
 
-[build]
-rustflags = ["-Cpanic=abort", "-C target-cpu=native"]
-
 [lib]
 name = "canvasnative"
 crate-type = ["staticlib"]
@@ -21,6 +18,6 @@ ureq = "2.9.1"
 parking_lot = "0.12.0"
 once_cell = "1.10.0"
 utf16string = "0.2.0"
-log = "0.4.17"
+log = "0.4.21"
 env_logger = "0.11.2"
-skia-safe = { version = "0.72.0", features = ["gl", "textlayout"] }
+skia-safe = { version = "0.75.0", features = ["gl", "textlayout"] }

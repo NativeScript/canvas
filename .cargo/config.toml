@@ -19,7 +19,6 @@ rustflags = [
 rustflags = [
   "-C", "link-arg=-undefined",
   "-C", "link-arg=dynamic_lookup",
-  "-C", "target-cpu=native",
   "-C", "panic=abort"
 ]
 

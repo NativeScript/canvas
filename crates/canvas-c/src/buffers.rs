@@ -189,6 +189,13 @@ impl From<Vec<String>> for StringBuffer {
     }
 }
 
+// todo use convert StringBuffer to enum
+impl From<Vec<&str>> for StringBuffer {
+    fn from(value: Vec<&str>) -> Self {
+        Self(value.into_iter().map(|v| v.to_string()).collect())
+    }
+}
+
 impl StringBuffer {
     pub fn get_buffer(&self) -> &[String] {
         self.0.as_slice()

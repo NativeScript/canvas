@@ -1,0 +1,24 @@
+[workspace]
+
+resolver = "2"
+
+members = [
+	"crates/gl-bindings",
+	"crates/canvas-core",
+	"crates/canvas-2d",
+	"crates/canvas-webgl",
+	"crates/canvas-android",
+	"crates/canvas-ios",
+	"crates/playground",
+	"crates/canvas-cxx",
+	"crates/canvas-c",
+	"crates/canvas-svg"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = 3
+debug = false
+incremental = false
+strip = true

@@ -37,9 +37,9 @@ pub struct CanvasGPUSupportedLimits {
     pub max_non_sampler_bindings: u32,
 }
 
-impl Into<wgpu::Limits> for CanvasGPUSupportedLimits {
-    fn into(self) -> wgpu::Limits {
-        wgpu::Limits {
+impl Into<wgpu_types::Limits> for CanvasGPUSupportedLimits {
+    fn into(self) -> wgpu_types::Limits {
+        wgpu_types::Limits {
             max_texture_dimension_1d: self.max_texture_dimension_1d,
             max_texture_dimension_2d: self.max_texture_dimension_2d,
             max_texture_dimension_3d: self.max_texture_dimension_3d,
@@ -80,8 +80,8 @@ impl Into<wgpu::Limits> for CanvasGPUSupportedLimits {
     }
 }
 
-impl From<wgpu::Limits> for CanvasGPUSupportedLimits {
-    fn from(value: wgpu::Limits) -> Self {
+impl From<wgpu_types::Limits> for CanvasGPUSupportedLimits {
+    fn from(value: wgpu_types::Limits) -> Self {
         CanvasGPUSupportedLimits {
             max_texture_dimension_1d: value.max_texture_dimension_1d,
             max_texture_dimension_2d: value.max_texture_dimension_2d,
@@ -123,9 +123,15 @@ impl From<wgpu::Limits> for CanvasGPUSupportedLimits {
     }
 }
 
+impl Default for CanvasGPUSupportedLimits {
+    fn default() -> Self {
+        wgpu_types::Limits::default().into()
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_create_limits() -> *mut CanvasGPUSupportedLimits {
-    Box::into_raw(Box::new(wgpu::Limits::default().into()))
+    Box::into_raw(Box::new(wgpu_types::Limits::default().into()))
 }
 
 #[no_mangle]

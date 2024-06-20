@@ -1,5 +1,5 @@
 import { GPUAdapter } from './GPUAdapter';
-
+let gpu;
 export class GPU {
 	private _wgslLanguageFeatures = new Set();
 	get wgslLanguageFeatures() {
@@ -15,7 +15,12 @@ export class GPU {
 
 	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean } = { powerPreference: undefined, isFallbackAdapter: false }) {
 		return new Promise<GPUAdapter>((resolve, reject) => {
-			global.CanvasModule.GPU.requestAdapter(options, (error, adapter) => {
+			if (!gpu) {
+				gpu = new global.CanvasModule.GPU();
+			}
+
+			gpu.requestAdapter(options, (error, adapter) => {
+				console.log(error, adapter);
 				if (error) {
 					reject(error);
 				} else {

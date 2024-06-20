@@ -1,6 +1,6 @@
 use std::{ffi::CString, os::raw::c_char};
 
-pub struct CanvasGPUAdapterInfo(pub(crate) wgpu::AdapterInfo);
+pub struct CanvasGPUAdapterInfo(pub(crate) wgpu_types::AdapterInfo);
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(

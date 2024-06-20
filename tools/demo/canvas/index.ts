@@ -479,11 +479,20 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			// navigator.gpu.getPreferredCanvasFormat();
 
 			const output = device.createBuffer({
+				label:'output',
 				size: 100,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
 			} as any);
 
+			output.mapAsync(1)
+			.then(()=>{
+				console.log('map');
+				console.log(output.getMappedRange());
+			})
+			
+
 			const stagingBuffer = device.createBuffer({
+				label:'stagingBuffer',
 				size: 200,
 				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 			} as any);

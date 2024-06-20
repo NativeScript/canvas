@@ -10,3 +10,8 @@ export enum GPUBufferUsage {
 	INDIRECT = 0x0100,
 	QUERY_RESOLVE = 0x0200,
 }
+
+export enum GPUMapMode {
+	READ = 0x0001,
+	WRITE = 0x0002,
+}

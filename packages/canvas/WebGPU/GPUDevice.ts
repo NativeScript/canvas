@@ -104,12 +104,7 @@ export class GPUDevice extends EventTarget {
 	createBuffer(descriptor: { label?: string; mappedAtCreation?: boolean; size: number; usage: number }) {
 		const buffer = this._native.createBuffer(descriptor);
 		if (buffer) {
-			const ret = new GPUBuffer();
-			if (descriptor.mappedAtCreation) {
-				ret['_mapState'] = 'mapped';
-			}
-			ret.native_ = buffer;
-			return ret;
+			return GPUBuffer.fromNative(buffer, descriptor.mappedAtCreation);
 		}
 		return undefined;
 	}

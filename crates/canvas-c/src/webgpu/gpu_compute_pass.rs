@@ -1,6 +1,6 @@
 use super::gpu::CanvasWebGPUInstance;
 
-pub struct CanvasGPUQuerySet {
+pub struct CanvasGPUComputePass {
     pub(crate) instance: CanvasWebGPUInstance,
-    pub(crate) query: wgpu_core::id::QuerySetId,
+    pub(crate) pass: wgpu_core::command::ComputePass,
 }

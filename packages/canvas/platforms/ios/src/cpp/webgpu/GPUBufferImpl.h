@@ -43,6 +43,12 @@ public:
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void UnMap(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void MapAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 
 private:
     CanvasGPUBuffer *buffer_;

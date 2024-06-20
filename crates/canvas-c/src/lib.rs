@@ -3,14 +3,13 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
-use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
+use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -20,6 +19,7 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 pub use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -360,12 +360,11 @@ impl CanvasRenderingContext2D {
 
     pub fn render(&self) {
         self.gl_context.make_current();
-        
+
         #[cfg(target_os = "ios")]
         {
             self.gl_context.swap_buffers();
         }
-
 
         #[cfg(not(target_os = "ios"))]
         {
@@ -2411,7 +2410,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     source.make_current();
     // gl context is shared so snapshots should work
     let mut source_ctx = source.get_context_mut();
-    
+
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     {
         let snapshot = source_ctx.snapshot();
@@ -2422,15 +2421,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
 
             if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
                 ctx.draw_image_src_xywh_dst_xywh(
-                    &image,
-                    sx,
-                    sy,
-                    s_width,
-                    s_height,
-                    dx,
-                    dy,
-                    d_width,
-                    d_height,
+                    &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
                 );
             }
         }
@@ -2451,15 +2442,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
             let context = unsafe { &mut *context };
             context.make_current();
             context.get_context_mut().draw_image_src_xywh_dst_xywh(
-                &image,
-                sx,
-                sy,
-                s_width,
-                s_height,
-                dx,
-                dy,
-                d_width,
-                d_height,
+                &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
             );
         }
     }
@@ -2590,21 +2573,9 @@ pub extern "C" fn canvas_native_context_draw_image_webgl(
 
     let ptr = pixels.2.as_ptr();
     let size = pixels.2.len();
-    
+
     canvas_native_context_draw_image(
-        context,
-        ptr,
-        size,
-        width,
-        height,
-        sx,
-        sy,
-        s_width,
-        s_height,
-        dx,
-        dy,
-        d_width,
-        d_height,
+        context, ptr, size, width, height, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     );
 }
 

@@ -20,6 +20,11 @@ typedef enum GLConstants {
   UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
 } GLConstants;
 
+typedef enum GPUMapMode {
+  Read,
+  Write,
+} GPUMapMode;
+
 typedef enum ImageBitmapColorSpaceConversion {
   ImageBitmapColorSpaceConversionDefault,
   ImageBitmapColorSpaceConversionNone,
@@ -114,7 +119,7 @@ typedef struct CanvasGPUBuffer CanvasGPUBuffer;
 
 typedef struct CanvasGPUCommandEncoder CanvasGPUCommandEncoder;
 
-typedef struct CanvasGPUComputePassEncoder CanvasGPUComputePassEncoder;
+typedef struct CanvasGPUComputePass CanvasGPUComputePass;
 
 typedef struct CanvasGPUDevice CanvasGPUDevice;
 
@@ -125,6 +130,8 @@ typedef struct CanvasGPUQueue CanvasGPUQueue;
 typedef struct CanvasGPUShaderModule CanvasGPUShaderModule;
 
 typedef struct CanvasRenderingContext2D CanvasRenderingContext2D;
+
+typedef struct CanvasWebGPUInstance CanvasWebGPUInstance;
 
 typedef struct ContextAttributes ContextAttributes;
 
@@ -2914,17 +2921,14 @@ void canvas_native_matrix_destroy(struct Matrix *value);
 
 void canvas_native_path_destroy(struct Path *value);
 
-#if !defined(TARGET_OS_ANDROID)
-void canvas_native_webgpu_request_adapter(const struct CanvasGPURequestAdapterOptions *options,
-                                          void (*callback)(struct CanvasGPUAdapter*, void*),
-                                          void *callback_data);
-#endif
+struct CanvasWebGPUInstance *canvas_native_webgpu_instance_create(void);
 
-#if defined(TARGET_OS_ANDROID)
-void canvas_native_webgpu_request_adapter(const struct CanvasGPURequestAdapterOptions *options,
+void canvas_native_webgpu_instance_destroy(struct CanvasWebGPUInstance *instance);
+
+void canvas_native_webgpu_request_adapter(const struct CanvasWebGPUInstance *instance,
+                                          const struct CanvasGPURequestAdapterOptions *options,
                                           void (*callback)(struct CanvasGPUAdapter*, void*),
                                           void *callback_data);
-#endif
 
 char *canvas_native_webgpu_adapter_info_vendor(const struct CanvasGPUAdapterInfo *info);
 
@@ -2950,17 +2954,32 @@ void canvas_native_webgpu_request_device(struct CanvasGPUAdapter *adapter,
                                          void (*callback)(char*, struct CanvasGPUDevice*, void*),
                                          void *callback_data);
 
+uint32_t canvas_native_webgpu_buffer_usage(const struct CanvasGPUBuffer *buffer);
+
 uint64_t canvas_native_webgpu_buffer_size(const struct CanvasGPUBuffer *buffer);
 
-uint32_t canvas_native_webgpu_buffer_usage(const struct CanvasGPUBuffer *buffer);
+char *canvas_native_webgpu_buffer_get_mapped_range(const struct CanvasGPUBuffer *buffer,
+                                                   int64_t offset,
+                                                   int64_t size,
+                                                   uint8_t *dst,
+                                                   uintptr_t dst_size);
 
 void canvas_native_webgpu_buffer_destroy(const struct CanvasGPUBuffer *buffer);
 
-struct CanvasGPUComputePassEncoder *canvas_native_webgpu_command_encoder_begin_compute_pass(struct CanvasGPUCommandEncoder *command_encoder,
-                                                                                            const struct CanvasGPUQuerySet *query_set,
-                                                                                            const char *label,
-                                                                                            int32_t beginning_of_pass_write_index,
-                                                                                            int32_t end_of_pass_write_index);
+void canvas_native_webgpu_buffer_unmap(const struct CanvasGPUBuffer *buffer);
+
+void canvas_native_webgpu_buffer_map_async(const struct CanvasGPUBuffer *buffer,
+                                           enum GPUMapMode mode,
+                                           int64_t offset,
+                                           int64_t size,
+                                           void (*callback)(char*, void*),
+                                           void *callback_data);
+
+struct CanvasGPUComputePass *canvas_native_webgpu_command_encoder_begin_compute_pass(struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                     const struct CanvasGPUQuerySet *query_set,
+                                                                                     const char *label,
+                                                                                     int32_t beginning_of_pass_write_index,
+                                                                                     int32_t end_of_pass_write_index);
 
 struct StringBuffer *canvas_native_webgpu_device_get_features(const struct CanvasGPUDevice *device);
 

@@ -257,7 +257,6 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
             mappedAtCreation = mappedAtCreationVal->BooleanValue(isolate);
         }
 
-
         v8::Local<v8::Value> sizeVal;
         options->Get(context, ConvertToV8String(isolate, "size")).ToLocal(&sizeVal);
 
@@ -283,7 +282,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         args.GetReturnValue().Set(ret);
 
     } else {
-        if(error != nullptr){
+        if (error != nullptr) {
             isolate->ThrowError(ConvertToV8String(isolate, error));
         }
 

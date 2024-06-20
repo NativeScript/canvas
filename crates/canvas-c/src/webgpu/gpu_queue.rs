@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub struct CanvasGPUQueue(pub(crate) Arc<parking_lot::RwLock<wgpu::Queue>>);
+use super::gpu::CanvasWebGPUInstance;
+
+#[derive(Clone)]
+pub struct CanvasGPUQueue {
+    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) queue: wgpu_core::id::QueueId,
+}
 
 unsafe impl Send for CanvasGPUQueue {}

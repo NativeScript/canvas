@@ -22,3 +22,8 @@ opt-level = 3
 debug = false
 incremental = false
 strip = true
+
+
+[workspace.dependencies.wgt]
+package = "wgpu-types"
+version = "0.20.0"

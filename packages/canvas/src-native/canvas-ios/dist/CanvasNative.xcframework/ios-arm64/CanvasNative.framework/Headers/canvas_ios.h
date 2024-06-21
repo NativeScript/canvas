@@ -8,6 +8,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+long long canvas_native_init_ios_webgpu(int64_t instance,
+                                        int64_t view,
+                                        uint32_t width,
+                                        uint32_t height);
+
 long long canvas_native_init_ios_gl(int64_t view,
                                     bool alpha,
                                     bool antialias,

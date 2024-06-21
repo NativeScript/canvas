@@ -4,6 +4,7 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, profile, Screen, PercentLength } from '@nativescript/core';
+import { GPUCanvasContext } from '../WebGPU';
 declare var NSCCanvas, NSCCanvasListener;
 
 export * from './common';
@@ -36,6 +37,7 @@ export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
+	private _gpuContext: GPUCanvasContext;
 	private _canvas: any;
 	private _didPause: boolean = false;
 	private _isReady: boolean = false;
@@ -285,14 +287,12 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
-
 	_setNativeViewFrame(nativeView: any, frame: any): void {
 		nativeView.frame = frame;
 		this._canvas.forceLayout(frame.size.width, frame.size.height);
 	}
 
-
-	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null {
+	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas) {
 			return null;
 		}
@@ -304,7 +304,6 @@ export class Canvas extends CanvasBase {
 
 				if (!this._2dContext) {
 					//this._layoutNative(true);
-					console.log(this.width, this.height, this._canvas.frame.size.width, this._canvas.frame.size.height, this._canvas.subviews[0].frame.size.width, this._canvas.subviews[0].frame.size.height);
 
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
@@ -355,6 +354,22 @@ export class Canvas extends CanvasBase {
 					this._contextType = ContextType.WebGL2;
 				}
 				return this._webgl2Context;
+			} else if (type === 'webgpu') {
+				if (this._2dContext || this._webglContext || this._webgl2Context) {
+					return null;
+				}
+
+				if (!this._gpuContext) {
+					this._layoutNative(true);
+					const ptr = navigator.gpu.native.__getPointer();
+					const number = NSNumber.numberWithLong(Number(ptr));
+					this._canvas.initWebGPUContext(number);
+		
+					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
+					
+				}
+
+				return this._gpuContext;
 			}
 		}
 		return null;

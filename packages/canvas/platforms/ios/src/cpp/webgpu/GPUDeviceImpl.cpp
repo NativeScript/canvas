@@ -76,6 +76,11 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "createBuffer"),
             v8::FunctionTemplate::New(isolate, &CreateBuffer));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "createTexture"),
+            v8::FunctionTemplate::New(isolate, &CreateTexture));
+
+
     cache->GPUDeviceTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -279,6 +284,143 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     if (buffer != nullptr) {
         auto bufImpl = new GPUBufferImpl(buffer);
         auto ret = GPUBufferImpl::NewInstance(isolate, bufImpl);
+        args.GetReturnValue().Set(ret);
+
+    } else {
+        if (error != nullptr) {
+            isolate->ThrowError(ConvertToV8String(isolate, error));
+        }
+
+        args.GetReturnValue().SetUndefined();
+    }
+}
+
+
+void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    CanvasCreateTextureDescriptor descriptor{};
+    descriptor.dimension = CanvasTextureDimension::D2;
+    descriptor.depthOrArrayLayers = 1;
+    descriptor.sampleCount = 1;
+    descriptor.mipLevelCount = 1;
+    descriptor.view_formats = nullptr;
+    descriptor.view_formats_size = 0;
+
+
+    char *error = nullptr;
+
+
+    auto optionsVal = args[0];
+
+
+    if (optionsVal->IsObject()) {
+        auto options = optionsVal.As<v8::Object>();
+        v8::Local<v8::Value> depthOrArrayLayersVal;
+        options->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
+                &depthOrArrayLayersVal);
+
+        if (depthOrArrayLayersVal->IsUint32()) {
+            descriptor.depthOrArrayLayers = depthOrArrayLayersVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> widthVal;
+        options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(
+                &widthVal);
+
+        if (widthVal->IsUint32()) {
+            descriptor.width = widthVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> heightVal;
+        options->Get(context, ConvertToV8String(isolate, "height")).ToLocal(
+                &heightVal);
+
+        if (heightVal->IsUint32()) {
+            descriptor.height = heightVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> usageVal;
+        options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
+                &usageVal);
+
+        if (usageVal->IsUint32()) {
+            descriptor.usage = usageVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> sampleCountVal;
+        options->Get(context, ConvertToV8String(isolate, "sampleCount")).ToLocal(
+                &sampleCountVal);
+
+        if (sampleCountVal->IsUint32()) {
+            descriptor.sampleCount = sampleCountVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> mipLevelCountVal;
+        options->Get(context, ConvertToV8String(isolate, "mipLevelCount")).ToLocal(
+                &mipLevelCountVal);
+
+        if (mipLevelCountVal->IsUint32()) {
+            descriptor.mipLevelCount = mipLevelCountVal.As<v8::Uint32>()->Value();
+        }
+
+
+        v8::Local<v8::Value> dimensionVal;
+        options->Get(context, ConvertToV8String(isolate, "dimension")).ToLocal(
+                &dimensionVal);
+
+        if (dimensionVal->IsString()) {
+            auto dimension = ConvertFromV8String(isolate, dimensionVal);
+
+            // todo use enum
+            if (strcmp(dimension.c_str(), "d1") == 0) {
+                descriptor.dimension = CanvasTextureDimension::D1;
+            } else if (strcmp(dimension.c_str(), "d2") == 0) {
+                descriptor.dimension = CanvasTextureDimension::D2;
+            } else if (strcmp(dimension.c_str(), "d3") == 0) {
+                descriptor.dimension = CanvasTextureDimension::D3;
+            }
+
+        }
+
+
+        v8::Local<v8::Value> formatVal;
+        options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
+                &formatVal);
+
+        if (formatVal->IsString()) {
+            auto format = ConvertFromV8String(isolate, formatVal);
+
+            // todo use enum
+            CanvasGPUTextureFormat fmt{};
+            if (strcmp(format.c_str(), "bgra8unorm") == 0) {
+                fmt.tag = CanvasGPUTextureFormat_Tag::Bgra8Unorm;
+                descriptor.format = fmt;
+            } else if (strcmp(format.c_str(), "rgba8unorm") == 0) {
+                fmt.tag = CanvasGPUTextureFormat_Tag::Rgba8Unorm;
+                descriptor.format = fmt;
+            }
+
+        }
+
+    }
+
+    auto texture = canvas_native_webgpu_device_create_texture(ptr->GetGPUDevice(), &descriptor,
+                                                              error);
+
+    if (texture != nullptr) {
+        auto textureImpl = new GPUTextureImpl(texture);
+        auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
         args.GetReturnValue().Set(ret);
 
     } else {

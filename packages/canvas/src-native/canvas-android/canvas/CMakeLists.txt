@@ -161,6 +161,10 @@ add_library(
         ${CPP_DIR}/webgpu/GPUQueueImpl.cpp
         ${CPP_DIR}/webgpu/GPUBufferImpl.cpp
 
+        ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
+        ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
+
+
 
         ${CPP_DIR}/CanvasJSIModule.cpp
 

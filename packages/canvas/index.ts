@@ -12,7 +12,7 @@ import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './C
 import { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
-import { GPUBufferUsage, GPUMapMode } from './WebGPU/Constants';
+import { GPUBufferUsage, GPUMapMode, GPUTextureUsage } from './WebGPU/Constants';
 
 export * from './Canvas2D';
 export * from './ImageBitmap';
@@ -109,6 +109,12 @@ Object.defineProperty(global, 'ImageAsset', {
 
 Object.defineProperty(global, 'GPUBufferUsage', {
 	value: GPUBufferUsage,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'GPUTextureUsage', {
+	value: GPUTextureUsage,
 	configurable: true,
 	writable: true,
 });

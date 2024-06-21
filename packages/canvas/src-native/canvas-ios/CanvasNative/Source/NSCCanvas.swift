@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 import GLKit
 import WebKit
+import MetalKit
 
 @objcMembers
 @objc(NSCCanvas)
@@ -58,6 +59,7 @@ public class NSCCanvas: UIView {
     }
     
     var ptr: UnsafeMutableRawPointer? = nil
+    var mtlPtr: UnsafeMutableRawPointer? = nil
     
     public func getViewPtr() -> UnsafeMutableRawPointer {
         if(ptr == nil){
@@ -65,6 +67,15 @@ public class NSCCanvas: UIView {
         }
         return ptr!
     }
+    
+    public func getMtlViewPtr() -> UnsafeMutableRawPointer {
+        if(mtlPtr == nil){
+            mtlPtr = Unmanaged.passRetained(mtlView.layer).toOpaque()
+        }
+        return mtlPtr!
+    }
+    
+    
     
     public var autoScale: Bool = true {
         didSet {
@@ -83,14 +94,22 @@ public class NSCCanvas: UIView {
     
     private(set) var native2DContext: Int64 = 0
     
+    internal var mtlView: MTKView
     internal var glkView: CanvasGLKView
     internal var is2D = false
+    internal var isMetal = false
     
     
     public var drawingBufferWidth: Int {
+        if(isMetal){
+            return Int(mtlView.frame.size.width)
+        }
         return Int(glkView.frame.size.width)
     }
     public var drawingBufferHeight: Int {
+        if(isMetal){
+            return Int(mtlView.frame.size.height)
+        }
         return Int(glkView.frame.size.height)
     }
     public var width: Float {
@@ -132,7 +151,14 @@ public class NSCCanvas: UIView {
             xrCompatible
         )
     }
-    
+    @objc public func initWebGPUContext(_ instance: Int64){
+        if (nativeContext != 0) {
+            return
+        }
+        let viewPtr = Int64(Int(bitPattern: getMtlViewPtr()))
+        nativeContext = CanvasHelpers.initWebGPUWithView(instance, viewPtr, UInt32(width) as UInt32, UInt32(height) as UInt32)
+        mtlView.isHidden = false
+    }
     
     
     func initContextWithContextAttributes(
@@ -148,7 +174,7 @@ public class NSCCanvas: UIView {
         _ desynchronized: Bool,
         _ xrCompatible: Bool
     ) {
-        if (nativeGL != 0) {
+        if (nativeGL != 0 || nativeContext != 0) {
             return
         }
         var version = -1
@@ -183,63 +209,67 @@ public class NSCCanvas: UIView {
             layoutIfNeeded()
         }
         
+    
+            var properties: [String: Any] = [:]
+            let useWebGL = !isCanvas
+            if(useWebGL && preserveDrawingBuffer){
+                properties[kEAGLDrawablePropertyRetainedBacking] = NSNumber(value: preserveDrawingBuffer)
+            }
+            
+            if(alpha){
+                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+                isOpaque = false
+                glkView.isOpaque = false
+                (glkView.layer as! CAEAGLLayer).isOpaque = false
+            }else {
+                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+                isOpaque = true
+                (glkView.layer as! CAEAGLLayer).isOpaque = true
+                glkView.isOpaque = true
+            }
+            
+            
+            if(!properties.isEmpty){
+                let eaglLayer = self.glkView.layer as! CAEAGLLayer
+                eaglLayer.drawableProperties = properties
+            }
+            
+            if(useWebGL && depth){
+                glkView.drawableDepthFormat = .format24
+            }else {
+                glkView.drawableDepthFormat = .formatNone
+            }
+            
+            if(useWebGL && stencil){
+                glkView.drawableStencilFormat = .format8
+            }else if(isCanvas) {
+                glkView.drawableStencilFormat = .format8
+            }
+            
+            // antialias fails in 2D
+            if(useWebGL && antialias){
+                glkView.drawableMultisample = .multisample4X
+            }
+            
+            let viewPtr = Int64(Int(bitPattern: getViewPtr()))
+                            
+            
+            let shared_context = NSCCanvas.shared_context
+            
+            nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
+            
+            
+            if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
+                glkView.bindDrawable()
+            }
+                    
+            // get new fbo
+            
+            nativeContext = CanvasHelpers.getGLPointer(nativeGL)
         
-        var properties: [String: Any] = [:]
-        let useWebGL = !isCanvas
-        if(useWebGL && preserveDrawingBuffer){
-            properties[kEAGLDrawablePropertyRetainedBacking] = NSNumber(value: preserveDrawingBuffer)
-        }
-        
-        if(alpha){
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
-            isOpaque = false
-            glkView.isOpaque = false
-            (glkView.layer as! CAEAGLLayer).isOpaque = false
-        }else {
-            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
-            isOpaque = true
-            (glkView.layer as! CAEAGLLayer).isOpaque = true
-            glkView.isOpaque = true
-        }
+            glkView.isHidden = false
         
         
-        if(!properties.isEmpty){
-            let eaglLayer = self.glkView.layer as! CAEAGLLayer
-            eaglLayer.drawableProperties = properties
-        }
-        
-        if(useWebGL && depth){
-            glkView.drawableDepthFormat = .format24
-        }else {
-            glkView.drawableDepthFormat = .formatNone
-        }
-        
-        if(useWebGL && stencil){
-            glkView.drawableStencilFormat = .format8
-        }else if(isCanvas) {
-            glkView.drawableStencilFormat = .format8
-        }
-        
-        // antialias fails in 2D
-        if(useWebGL && antialias){
-            glkView.drawableMultisample = .multisample4X
-        }
-        
-        let viewPtr = Int64(Int(bitPattern: getViewPtr()))
-                        
-        
-        let shared_context = NSCCanvas.shared_context
-        
-        nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
-        
-        
-        if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
-            glkView.bindDrawable()
-        }
-                
-        // get new fbo
-        
-        nativeContext = CanvasHelpers.getGLPointer(nativeGL)
     }
     
     @objc public func create2DContext(
@@ -362,11 +392,14 @@ public class NSCCanvas: UIView {
     public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
     
     required init?(coder: NSCoder) {
+        mtlView = MTKView(coder: coder)
         glkView = CanvasGLKView(coder: coder)!
         glkView.translatesAutoresizingMaskIntoConstraints = false
+        mtlView.translatesAutoresizingMaskIntoConstraints = false
         
         if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
             glkView.contentScaleFactor = UIScreen.main.nativeScale
+            mtlView.contentScaleFactor = UIScreen.main.nativeScale
         }
         
         super.init(coder: coder)
@@ -377,13 +410,24 @@ public class NSCCanvas: UIView {
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
+        glkView.isHidden = true
+        mtlView.isHidden = true
         addSubview(glkView)
+        addSubview(mtlView)
+        
         
         NSLayoutConstraint.activate([
             glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
             glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
             glkView.topAnchor.constraint(equalTo: topAnchor),
             glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            mtlView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            mtlView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            mtlView.topAnchor.constraint(equalTo: topAnchor),
+            mtlView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
         
         
@@ -393,9 +437,12 @@ public class NSCCanvas: UIView {
     
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
+        mtlView = MTKView(frame: frame)
         glkView.translatesAutoresizingMaskIntoConstraints = false
+        mtlView.translatesAutoresizingMaskIntoConstraints = false
         if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
             glkView.contentScaleFactor = UIScreen.main.nativeScale
+            mtlView.contentScaleFactor = UIScreen.main.nativeScale
         }
         super.init(frame: frame)
         glkView.canvas = self
@@ -403,13 +450,23 @@ public class NSCCanvas: UIView {
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
+        glkView.isHidden = true
+        mtlView.isHidden = true
         addSubview(glkView)
+        addSubview(mtlView)
         
         NSLayoutConstraint.activate([
             glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
             glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
             glkView.topAnchor.constraint(equalTo: topAnchor),
             glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            mtlView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            mtlView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            mtlView.topAnchor.constraint(equalTo: topAnchor),
+            mtlView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
         
         
@@ -491,7 +548,10 @@ public class NSCCanvas: UIView {
     
     deinit {
         if(nativeContext != 0){
-            CanvasHelpers.releaseGLPointer(nativeContext)
+            if(nativeGL != 0){
+                CanvasHelpers.releaseGLPointer(nativeContext)
+            }
+            
             nativeContext = 0
         }
         if(nativeGL != 0){
@@ -502,6 +562,11 @@ public class NSCCanvas: UIView {
         if(ptr != nil){
             let _ = Unmanaged<AnyObject>.fromOpaque(ptr!).takeRetainedValue()
         }
+        
+        if(mtlPtr != nil){
+            let _ = Unmanaged<AnyObject>.fromOpaque(mtlPtr!).takeRetainedValue()
+        }
+        
         
         if(enterBackgroundNotification != nil){
             NotificationCenter.default.removeObserver(enterBackgroundNotification!)

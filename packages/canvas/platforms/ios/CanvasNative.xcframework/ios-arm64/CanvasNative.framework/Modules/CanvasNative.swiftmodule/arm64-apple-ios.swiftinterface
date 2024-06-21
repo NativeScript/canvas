@@ -6,6 +6,7 @@ import AVFoundation
 import CoreVideo
 import Foundation
 import GLKit
+import MetalKit
 import OpenGLES
 import Swift
 import UIKit
@@ -23,6 +24,7 @@ import _SwiftConcurrencyShims
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float)
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
+  @objc public static func initWebGPUWithView(_ instance: Swift.Int64, _ view: Swift.Int64, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
   @objc public static func initGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
   @objc public static func initSharedGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool, _ shared_context: Swift.Int64) -> Swift.Int64
   @objc public static func initGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
@@ -49,6 +51,7 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor(unsafe) public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
   @objc @_Concurrency.MainActor(unsafe) public func getViewPtr() -> Swift.UnsafeMutableRawPointer
+  @objc @_Concurrency.MainActor(unsafe) public func getMtlViewPtr() -> Swift.UnsafeMutableRawPointer
   @objc @_Concurrency.MainActor(unsafe) public var autoScale: Swift.Bool {
     @objc get
     @objc set
@@ -72,6 +75,7 @@ import _SwiftConcurrencyShims
     @objc get
   }
   @objc @_Concurrency.MainActor(unsafe) public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.Int32 = 0, _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false)
+  @objc @_Concurrency.MainActor(unsafe) public func initWebGPUContext(_ instance: Swift.Int64)
   @objc @_Concurrency.MainActor(unsafe) public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.Int32, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32) -> Swift.Int64
   @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @objc @_Concurrency.MainActor(unsafe) public func snapshot(_ flip: Swift.Bool) -> UIKit.UIImage?

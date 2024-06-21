@@ -13,6 +13,7 @@ pub use canvas_c::*;
 use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
+use webgpu::gpu::CanvasWebGPUInstance;
 
 #[allow(non_camel_case_types)]
 pub(crate) enum iOSView {
@@ -26,6 +27,40 @@ pub(crate) struct iOSGLContext {
     pub(crate) context_attributes: ContextAttributes,
     pub(crate) gl_context: GLContext,
     ios_view: iOSView,
+}
+
+#[allow(dead_code)]
+#[allow(non_camel_case_types)]
+pub(crate) struct iOSWebGPUContext {
+    ios_view: iOSView,
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_init_ios_webgpu(
+    instance: i64,
+    view: i64,
+    width: u32,
+    height: u32,
+) -> c_longlong {
+    env_logger::init();
+
+    if instance == 0 {
+        return 0;
+    }
+
+    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+        let instance = unsafe { instance as *mut CanvasWebGPUInstance };
+        return unsafe {
+            webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
+                instance,
+                view as *mut c_void,
+                width,
+                height,
+            ) as i64
+        };
+    }
+
+    0
 }
 
 #[no_mangle]
@@ -616,7 +651,6 @@ pub extern "C" fn canvas_native_svg_draw_from_path(context: i64, path: *const c_
 
 */
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_custom_with_buffer_flush(
     context: i64,
@@ -729,7 +763,6 @@ pub extern "C" fn canvas_native_context_backend_texture_destroy(texture: i64) {
     let _ = unsafe { Box::from_raw(texture) };
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_tex_image_2d(
     context: i64,
@@ -742,8 +775,8 @@ pub extern "C" fn canvas_native_webgl_tex_image_2d(
     size: usize,
     width: f32,
     height: f32,
-    flip_y: bool
-)  {
+    flip_y: bool,
+) {
     if context == 0 {
         return;
     }
@@ -788,10 +821,7 @@ pub extern "C" fn canvas_native_webgl_tex_image_2d(
             );
         }
     }
-  
 }
-
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_tex_sub_image_2d(
@@ -806,8 +836,8 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image_2d(
     size: usize,
     width: f32,
     height: f32,
-    flip_y: bool
-)  {
+    flip_y: bool,
+) {
     if context == 0 {
         return;
     }
@@ -852,5 +882,4 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image_2d(
             );
         }
     }
-
 }

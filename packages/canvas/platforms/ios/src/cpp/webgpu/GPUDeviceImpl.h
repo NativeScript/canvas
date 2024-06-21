@@ -9,6 +9,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 #include "GPUBufferImpl.h"
+#include "GPUTextureImpl.h"
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 
@@ -57,6 +58,8 @@ public:
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     CanvasGPUDevice *device_;

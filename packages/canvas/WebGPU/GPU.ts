@@ -1,7 +1,15 @@
+import { native_ } from './Constants';
 import { GPUAdapter } from './GPUAdapter';
-let gpu;
 export class GPU {
 	private _wgslLanguageFeatures = new Set();
+	static [native_];
+
+	get native() {
+		if (!this[native_]) {
+			this[native_] = new global.CanvasModule.GPU();
+		}
+		return this[native_];
+	}
 	get wgslLanguageFeatures() {
 		return this._wgslLanguageFeatures;
 	}
@@ -15,18 +23,12 @@ export class GPU {
 
 	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean } = { powerPreference: undefined, isFallbackAdapter: false }) {
 		return new Promise<GPUAdapter>((resolve, reject) => {
-			if (!gpu) {
-				gpu = new global.CanvasModule.GPU();
-			}
-
-			gpu.requestAdapter(options, (error, adapter) => {
+			this.native.requestAdapter(options, (error, adapter) => {
 				console.log(error, adapter);
 				if (error) {
 					reject(error);
 				} else {
-					const ret = new GPUAdapter();
-					ret._native = adapter;
-					resolve(ret);
+					resolve(GPUAdapter.fromNative(adapter));
 				}
 			});
 		});

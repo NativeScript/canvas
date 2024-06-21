@@ -43,6 +43,8 @@ public:
         return scope.Escape(object);
     }
 
+    static void __GetPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:

@@ -166,6 +166,13 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContextWithPointer"),
                        v8::FunctionTemplate::New(isolate, &Create2DContextWithPointer)->GetFunction(
                                context).ToLocalChecked()).FromJust();
+
+        canvasMod->Set(context, ConvertToV8String(isolate, "createWebGPUContextWithPointer"),
+                       v8::FunctionTemplate::New(isolate,
+                                                 &CreateWebGPUContextWithPointer)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
+
         canvasMod->Set(context, ConvertToV8String(isolate, "readFile"),
                        v8::FunctionTemplate::New(isolate, &ReadFile)->GetFunction(
                                context).ToLocalChecked()).FromJust();
@@ -1495,4 +1502,17 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
         args.GetReturnValue().Set(renderingContext);
         return;
     }
+}
+
+void
+CanvasJSIModule::CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = args[0]->ToBigInt(context).ToLocalChecked()->Int64Value();
+
+    auto wgpu = static_cast<CanvasGPUCanvasContext *>((void *) ptr);
+
+    auto ret = GPUCanvasContextImpl::NewInstance(isolate, new GPUCanvasContextImpl(
+            wgpu));
+    args.GetReturnValue().Set(ret);
 }

@@ -192,7 +192,11 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUBufferTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUCanvasContextTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUTextureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
 
 private:
     static std::shared_ptr<ConcurrentMap<v8::Isolate *,

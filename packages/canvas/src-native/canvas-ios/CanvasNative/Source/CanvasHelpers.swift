@@ -71,6 +71,11 @@ public class CanvasHelpers: NSObject {
         canvas_native_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
     }
     
+    
+    public static func initWebGPUWithView(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
+        return canvas_native_init_ios_webgpu(instance, view, width, height)
+    }
+    
     public static func initGLWithView(_ view: Int64, _ alpha: Bool,
                                  _ antialias: Bool,
                                  _ depth: Bool,
@@ -164,8 +169,7 @@ public class CanvasHelpers: NSObject {
     public static func releaseGLPointer(_ context: Int64) {
         canvas_native_release_gl_pointer(context)
     }
-
-
+    
     public static func create2DContext(_ context: Int64,
                         _ width:Int32,
                        _ height:Int32,

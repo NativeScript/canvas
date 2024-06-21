@@ -67,6 +67,7 @@ import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
 import { Svg } from '@nativescript/canvas-svg';
+import { GPUMapMode } from '@nativescript/canvas/WebGPU/Constants';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -470,6 +471,22 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				requiredLimits: adapter.limits,
 			});
 
+			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+
+			context.configure({
+				device,
+				format: navigator.gpu.getPreferredCanvasFormat(),
+			});
+
+			const texture = device.createTexture({
+				size: [100, 100, 1],
+				format: 'rgba8unorm',
+				usage: global.GPUTextureUsage.TEXTURE_BINDING | global.GPUTextureUsage.COPY_DST | global.GPUTextureUsage.RENDER_ATTACHMENT,
+			});
+
+			console.log(texture);
+
+			/*
 			// device.lost.then((lost) => {
 			// 	console.log('lost', lost.reason, lost.message);
 			// });
@@ -484,20 +501,27 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
 			} as any);
 
-			output.mapAsync(1)
-			.then(()=>{
-				console.log('map');
-				console.log(output.getMappedRange());
-			})
 			
 
 			const stagingBuffer = device.createBuffer({
 				label:'stagingBuffer',
 				size: 200,
-				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+				usage: GPUBufferUsage.MAP_READ,
 			} as any);
 
 			console.log(output, stagingBuffer);
+
+
+			stagingBuffer.mapAsync(GPUMapMode.READ)
+			.then(()=>{
+				console.log('map');
+				console.log(stagingBuffer.getMappedRange());
+			})
+			.catch(e =>{
+				console.log('e', e)
+			})
+
+			*/
 		}
 	}
 

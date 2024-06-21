@@ -142,7 +142,9 @@ enum class NativeType {
     GPUDevice,
     GPUQueue,
     GPUBuffer,
-    GPUInstance
+    GPUInstance,
+    GPUCanvasContext,
+    GPUTexture
 };
 
 inline static v8::Local<v8::String>
@@ -231,7 +233,7 @@ inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
             auto value = *static_cast<int32_t *>(info);
             auto ret = value;
             if (ret >= (int) NativeType::CanvasGradient &&
-                ret <= (int) NativeType::GPUInstance) {
+                ret <= (int) NativeType::GPUTexture) {
                 return (NativeType) ret;
             }
         }

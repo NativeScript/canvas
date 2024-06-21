@@ -44,3 +44,7 @@ pub mod gpu_supported_limits;
 pub mod prelude;
 pub mod gpu_render_pass_encoder;
 pub mod gpu_shader_module;
+pub mod gpu_canvas_context;
+pub mod enums;
+pub mod gpu_texture;
+pub mod gpu_texture_view;

@@ -3,13 +3,17 @@ use std::{
     os::raw::{c_char, c_void},
 };
 
-
 use crate::buffers::StringBuffer;
 
 use super::{
-    gpu::CanvasWebGPUInstance, gpu_buffer::CanvasGPUBuffer,
-    gpu_command_encoder::CanvasGPUCommandEncoder, gpu_queue::CanvasGPUQueue,
-    gpu_shader_module::CanvasGPUShaderModule, gpu_supported_limits::CanvasGPUSupportedLimits,
+    enums::{CanvasGPUTextureFormat, CanvasTextureDimension},
+    gpu::CanvasWebGPUInstance,
+    gpu_buffer::CanvasGPUBuffer,
+    gpu_command_encoder::CanvasGPUCommandEncoder,
+    gpu_queue::CanvasGPUQueue,
+    gpu_shader_module::CanvasGPUShaderModule,
+    gpu_supported_limits::CanvasGPUSupportedLimits,
+    gpu_texture::CanvasGPUTexture,
     prelude::*,
 };
 
@@ -65,7 +69,7 @@ impl CanvasGPUDevice {
                 let (buffer, err) =
                     gfx_select!(device_id => global.device_create_buffer(device_id, &desc, None));
 
-                    // todo handle error
+                // todo handle error
                 if let Some(_) = err {
                     error = CString::new("usage is not valid").unwrap().into_raw();
                     std::ptr::null_mut()
@@ -279,4 +283,92 @@ pub extern "C" fn canvas_native_webgpu_device_create_buffer(
     let device = unsafe { &*device };
 
     device.create_buffer(label, size, usage, mapped_at_creation, error)
+}
+
+#[repr(C)]
+pub struct CanvasCreateTextureDescriptor {
+    label: *const c_char,
+    dimension: CanvasTextureDimension,
+    format: CanvasGPUTextureFormat,
+    mipLevelCount: u32,
+    sampleCount: u32,
+    width: u32,
+    height: u32,
+    depthOrArrayLayers: u32,
+    usage: u32,
+    view_formats: *const CanvasGPUTextureFormat,
+    view_formats_size: usize,
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgpu_device_create_texture(
+    device: *const CanvasGPUDevice,
+    descriptor: *const CanvasCreateTextureDescriptor,
+    mut error: *mut c_char,
+) -> *mut CanvasGPUTexture {
+    if device.is_null() || descriptor.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let device = unsafe { &*device };
+    let descriptor = unsafe { &*descriptor };
+    let device_id = device.device;
+
+    let global = &device.instance.0;
+
+    let label = if !descriptor.label.is_null() {
+        Some(unsafe { CStr::from_ptr(descriptor.label).to_string_lossy() })
+    } else {
+        None
+    };
+
+    let view_formats = if !descriptor.view_formats.is_null() && descriptor.view_formats_size > 0 {
+        unsafe {
+            std::slice::from_raw_parts(descriptor.view_formats, descriptor.view_formats_size)
+                .to_vec()
+                .into_iter()
+                .map(|v| v.into())
+                .collect::<Vec<wgpu_types::TextureFormat>>()
+        }
+    } else {
+        vec![]
+    };
+
+    let desc = wgpu_core::resource::TextureDescriptor {
+        label,
+        format: descriptor.format.into(),
+        size: wgpu_types::Extent3d {
+            width: descriptor.width,
+            height: descriptor.height,
+            depth_or_array_layers: descriptor.width,
+        },
+        mip_level_count: descriptor.mipLevelCount,
+        sample_count: descriptor.sampleCount,
+        dimension: descriptor.dimension.into(),
+        usage: wgpu_types::TextureUsages::from_bits_truncate(descriptor.usage),
+        view_formats,
+    };
+
+    let (texture_id, err) =
+        gfx_select!(device_id => global.device_create_texture(device_id, &desc, None));
+
+    if let Some(err) = err {
+        let err = err.to_string();
+        error = CString::new(err).unwrap().into_raw();
+        return std::ptr::null_mut();
+    }
+
+    Box::into_raw(Box::new(CanvasGPUTexture {
+        instance: device.instance.clone(),
+        texture: texture_id,
+        owned: true,
+        depth_or_array_layers: descriptor.depthOrArrayLayers,
+        dimension: descriptor.dimension,
+        format: descriptor.format,
+        mipLevelCount: descriptor.mipLevelCount,
+        sampleCount: descriptor.sampleCount,
+        width: descriptor.width,
+        height: descriptor.height,
+        usage: descriptor.usage,
+    }))
 }

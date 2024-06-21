@@ -1,3 +1,4 @@
+import { native_ } from './Constants';
 import { GPUAdapterInfo } from './GPUAdapterInfo';
 import { GPUDevice } from './GPUDevice';
 
@@ -8,27 +9,40 @@ export class GPUSupportedFeatures extends Set {
 }
 
 export class GPUAdapter {
-	_native;
+	[native_];
 
 	_features: GPUSupportedFeatures;
 	get features() {
 		if (!this._features) {
-			this._features = new GPUSupportedFeatures(this._native.features as any);
+			this._features = new GPUSupportedFeatures(this[native_].features as any);
 		}
 		return this._features;
 	}
 
 	get isFallbackAdapter() {
-		return this._native?.isFallbackAdapter ?? false;
+		return this[native_]?.isFallbackAdapter ?? false;
 	}
 
 	get limits() {
-		return this._native?.limits;
+		return this[native_]?.limits;
+	}
+
+	get native() {
+		return this[native_];
+	}
+
+	static fromNative(adapter) {
+		if (adapter) {
+			const ret = new GPUAdapter();
+			ret[native_] = adapter;
+			return ret;
+		}
+		return null;
 	}
 
 	requestAdapterInfo(): Promise<GPUAdapterInfo> {
 		return new Promise((resolve, reject) => {
-			const info = this._native.requestAdapterInfo();
+			const info = this[native_].requestAdapterInfo();
 			const ret = new GPUAdapterInfo();
 			ret._native = info;
 			resolve(ret);
@@ -38,12 +52,11 @@ export class GPUAdapter {
 	requestDevice(desc?): Promise<GPUDevice> {
 		return new Promise((resolve, reject) => {
 			const options = desc ?? {};
-			this._native.requestDevice(options, (error, device) => {
+			this[native_].requestDevice(options, (error, device) => {
 				if (error) {
 					reject(error);
 				} else {
-					const ret = new GPUDevice();
-					ret._native = device;
+					const ret = GPUDevice.fromNative(device);
 					resolve(ret);
 				}
 			});

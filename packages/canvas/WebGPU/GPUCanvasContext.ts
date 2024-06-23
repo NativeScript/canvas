@@ -1,6 +1,7 @@
 import { Helpers } from '../helpers';
 import { contextPtr_, native_ } from './Constants';
 import { GPUDevice } from './GPUDevice';
+import { GPUTexture } from './GPUTexture';
 
 export class GPUCanvasContext {
 	_type;
@@ -48,7 +49,19 @@ export class GPUCanvasContext {
 		};
 
 		opts.device = options?.device?.native;
+		this[native_].configure(opts);
+	}
 
-		this[native_].configure(opts);;
+	unconfigure() {
+		this[native_].unconfigure();
+	}
+
+	getCurrentTexture() {
+		const texture = this[native_].getCurrentTexture();
+		if (texture) {
+			return GPUTexture.fromNative(texture);
+		}
+
+		return null;
 	}
 }

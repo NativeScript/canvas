@@ -144,58 +144,16 @@ void GPUAdapterImpl::RequestAdapterInfo(const v8::FunctionCallbackInfo<v8::Value
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto info = canvas_native_webgpu_request_adapter_info(ptr->GetGPUAdapter());
 
-    auto ret = v8::Object::New(isolate);
-
-
-    auto architecture = canvas_native_webgpu_adapter_info_architecture(info);
-
-    if (architecture != nullptr) {
-        ret->Set(context, ConvertToV8String(isolate, "architecture"),
-                 ConvertToV8String(isolate, architecture));
-        canvas_native_string_destroy(architecture);
+    if (info != nullptr) {
+        auto value = new GPUAdapterInfoImpl(info);
+        auto ret = GPUAdapterInfoImpl::NewInstance(isolate, value);
+        args.GetReturnValue().Set(ret);
     } else {
-        ret->Set(context, ConvertToV8String(isolate, "architecture"), v8::String::Empty(isolate));
+        args.GetReturnValue().SetUndefined();
     }
-
-
-    auto description = canvas_native_webgpu_adapter_info_description(info);
-
-    if (description != nullptr) {
-        ret->Set(context, ConvertToV8String(isolate, "description"),
-                 ConvertToV8String(isolate, description));
-        canvas_native_string_destroy(description);
-    } else {
-        ret->Set(context, ConvertToV8String(isolate, "description"), v8::String::Empty(isolate));
-    }
-
-
-    auto device = canvas_native_webgpu_adapter_info_device(info);
-
-    if (device != nullptr) {
-        ret->Set(context, ConvertToV8String(isolate, "device"),
-                 ConvertToV8String(isolate, device));
-        canvas_native_string_destroy(device);
-    } else {
-        ret->Set(context, ConvertToV8String(isolate, "device"), v8::String::Empty(isolate));
-    }
-
-
-    auto vendor = canvas_native_webgpu_adapter_info_vendor(info);
-
-    if (vendor != nullptr) {
-        ret->Set(context, ConvertToV8String(isolate, "vendor"),
-                 ConvertToV8String(isolate, vendor));
-        canvas_native_string_destroy(device);
-    } else {
-        ret->Set(context, ConvertToV8String(isolate, "vendor"), v8::String::Empty(isolate));
-    }
-
-
-    args.GetReturnValue().Set(ret);
 
 }
 

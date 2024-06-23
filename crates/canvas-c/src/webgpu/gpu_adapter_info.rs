@@ -44,3 +44,15 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_description(
     let info = unsafe { &*info };
     CString::new(info.0.name.clone()).unwrap().into_raw()
 }
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_adapter_info_destroy(
+    info: *mut CanvasGPUAdapterInfo,
+) {
+    if info.is_null() {
+        return;
+    }
+   
+    let _ = Box::from_raw(info);
+}

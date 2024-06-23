@@ -6,6 +6,8 @@
 #include "Caches.h"
 #include "GPUAdapterImpl.h"
 #include "GPUQueueImpl.h"
+#include "GPUCommandEncoderImpl.h"
+#include "GPUShaderModuleImpl.h"
 
 GPUDeviceImpl::GPUDeviceImpl(CanvasGPUDevice *device) : device_(device) {}
 
@@ -77,8 +79,16 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &CreateBuffer));
 
     tmpl->Set(
+            ConvertToV8String(isolate, "CreateCommandEncoder"),
+            v8::FunctionTemplate::New(isolate, &CreateCommandEncoder));
+
+    tmpl->Set(
             ConvertToV8String(isolate, "createTexture"),
             v8::FunctionTemplate::New(isolate, &CreateTexture));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "createShaderModule"),
+            v8::FunctionTemplate::New(isolate, &CreateShaderModule));
 
 
     cache->GPUDeviceTmpl =
@@ -251,7 +261,10 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         auto options = optionsVal.As<v8::Object>();
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
-        label = *v8::String::Utf8Value(isolate, labelVal);
+
+        if (!labelVal.IsEmpty() && labelVal->IsString()) {
+            label = *v8::String::Utf8Value(isolate, labelVal);
+        }
 
         v8::Local<v8::Value> mappedAtCreationVal;
 
@@ -295,6 +308,33 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 }
 
+void GPUDeviceImpl::CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+
+    char *label = nullptr;
+
+    auto labelVal = args[0];
+
+    if (!labelVal.IsEmpty() && labelVal->IsString()) {
+        label = *v8::String::Utf8Value(isolate, labelVal);
+    }
+
+    auto encoder = canvas_native_webgpu_device_create_command_encoder(ptr->GetGPUDevice(), label);
+
+    if (encoder != nullptr) {
+        auto instance = new GPUCommandEncoderImpl(encoder);
+        auto ret = GPUCommandEncoderImpl::NewInstance(isolate, instance);
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+
+    args.GetReturnValue().SetUndefined();
+
+}
 
 void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     GPUDeviceImpl *ptr = GetPointer(args.This());
@@ -430,4 +470,53 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         args.GetReturnValue().SetUndefined();
     }
+}
+
+void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUDeviceImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto descVal = args[0];
+
+
+    if (!descVal->IsNullOrUndefined() && descVal->IsObject()) {
+        auto desc = descVal.As<v8::Object>();
+
+
+        v8::Local<v8::Value> labelVal;
+        desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
+
+        char *label = nullptr;
+
+        if (!labelVal.IsEmpty() && labelVal->IsString()) {
+            label = *v8::String::Utf8Value(isolate, labelVal);
+        }
+
+        v8::Local<v8::Value> codeVal;
+        desc->Get(context, ConvertToV8String(isolate, "code")).ToLocal(&codeVal);
+
+        char *code = nullptr;
+        if (!codeVal.IsEmpty() && codeVal->IsString()) {
+            code = *v8::String::Utf8Value(isolate, codeVal);
+        }
+
+        auto module = canvas_native_webgpu_device_create_shader_module(ptr->GetGPUDevice(), label,
+                                                                       code);
+
+        if (module != nullptr) {
+            auto instance = new GPUShaderModuleImpl(module);
+            auto ret = GPUShaderModuleImpl::NewInstance(isolate, instance);
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+
+    }
+
+    args.GetReturnValue().SetUndefined();
+
+
 }

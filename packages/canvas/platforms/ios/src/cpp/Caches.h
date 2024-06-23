@@ -198,6 +198,21 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUTextureTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUAdapterInfoTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUCommandEncoderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUQuerySetTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUComputePassTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUShaderModuleTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
 private:
     static std::shared_ptr<ConcurrentMap<v8::Isolate *,
             std::shared_ptr<Caches>>>

@@ -151,8 +151,6 @@ pub extern "C" fn canvas_native_webgpu_context_configure(
 
     let config = unsafe { &*config };
 
-    println!("config {:?}", config);
-
     let view_formats = if !config.view_formats.is_null() && config.view_formats_size > 0 {
         unsafe {
             std::slice::from_raw_parts(config.view_formats, config.view_formats_size)
@@ -165,8 +163,6 @@ pub extern "C" fn canvas_native_webgpu_context_configure(
         vec![]
     };
 
-    print!("view_formats {:?}", view_formats.as_slice());
-
     let config = wgpu_types::SurfaceConfiguration::<Vec<wgpu_types::TextureFormat>> {
         desired_maximum_frame_latency: 2,
         usage: wgpu_types::TextureUsages::from_bits_truncate(config.usage),
@@ -178,10 +174,8 @@ pub extern "C" fn canvas_native_webgpu_context_configure(
         view_formats: view_formats,
     };
 
-    print!("SurfaceConfiguration {:?}", &config);
-
     // todo handle error
-    if let Some(_) =
+    if let Some(err) =
         gfx_select!(device_id => global.surface_configure(surface_id, device_id, &config))
     {}
 }
@@ -210,30 +204,34 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
     if context.is_null() {
         return std::ptr::null_mut();
     }
+
+
     let context = unsafe { &*context };
     let surface_id = context.surface;
     let global = &context.instance.0;
 
     match gfx_select!(surface_id => global.surface_get_current_texture(surface_id, None)) {
-        Ok(texture) => match texture.status {
-            wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
-                Box::into_raw(Box::new(CanvasGPUTexture {
-                    instance: context.instance.clone(),
-                    texture: texture.texture_id.unwrap(),
-                    owned: false,
-                    depth_or_array_layers: 1,
-                    dimension: super::enums::CanvasTextureDimension::D2,
-                    format: context.format.into(),
-                    mipLevelCount: 1,
-                    sampleCount: 1,
-                    width: context.width,
-                    height: context.height,
-                    usage: context.usage,
-                }))
+        Ok(texture) => {
+            match texture.status {
+                wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
+                    Box::into_raw(Box::new(CanvasGPUTexture {
+                        instance: context.instance.clone(),
+                        texture: texture.texture_id.unwrap(),
+                        owned: false,
+                        depth_or_array_layers: 1,
+                        dimension: super::enums::CanvasTextureDimension::D2,
+                        format: context.format.into(),
+                        mipLevelCount: 1,
+                        sampleCount: 1,
+                        width: context.width,
+                        height: context.height,
+                        usage: context.usage,
+                    }))
+                }
+                _ => std::ptr::null_mut(),
             }
-            _ => std::ptr::null_mut(),
         },
-        Err(_) => {
+        Err(error) => {
             // todo handle error
             std::ptr::null_mut()
         }

@@ -164,8 +164,10 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
         args.GetReturnValue().SetUndefined();
         return;
     }
+    
+    auto ctx = ptr->GetContext();
 
-    auto texture = canvas_native_webgpu_context_get_current_texture(ptr->GetContext());
+    auto texture = canvas_native_webgpu_context_get_current_texture(ctx);
 
     if (texture != nullptr) {
         auto textureImpl = new GPUTextureImpl(texture);

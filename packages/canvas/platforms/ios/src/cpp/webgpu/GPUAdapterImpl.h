@@ -10,6 +10,7 @@
 #include "ObjectWrapperImpl.h"
 #include "GPUSupportedLimitsImpl.h"
 #include "GPUDeviceImpl.h"
+#include "GPUAdapterInfoImpl.h"
 
 class GPUAdapterImpl : ObjectWrapperImpl {
 public:

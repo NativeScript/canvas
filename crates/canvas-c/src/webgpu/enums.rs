@@ -336,16 +336,194 @@ pub enum CanvasGPUTextureFormat {
 
 impl From<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
     fn from(value: wgpu_types::TextureFormat) -> Self {
-        unsafe {
-            std::mem::transmute_copy::<wgpu_types::TextureFormat, CanvasGPUTextureFormat>(&value)
+        match value {
+            wgpu_types::TextureFormat::Rgba8Unorm => CanvasGPUTextureFormat::Rgba8Unorm,
+            wgpu_types::TextureFormat::Bgra8Unorm => CanvasGPUTextureFormat::Bgra8Unorm,
+            wgpu_types::TextureFormat::R8Unorm => CanvasGPUTextureFormat::R8Unorm,
+            wgpu_types::TextureFormat::R8Snorm => CanvasGPUTextureFormat::R8Snorm,
+            wgpu_types::TextureFormat::R8Uint => CanvasGPUTextureFormat::R8Uint,
+            wgpu_types::TextureFormat::R8Sint => CanvasGPUTextureFormat::R8Sint,
+            wgpu_types::TextureFormat::R16Uint => CanvasGPUTextureFormat::R16Uint,
+            wgpu_types::TextureFormat::R16Sint => CanvasGPUTextureFormat::R16Sint,
+            wgpu_types::TextureFormat::R16Unorm => CanvasGPUTextureFormat::R16Unorm,
+            wgpu_types::TextureFormat::R16Snorm => CanvasGPUTextureFormat::R16Snorm,
+            wgpu_types::TextureFormat::R16Float => CanvasGPUTextureFormat::R16Float,
+            wgpu_types::TextureFormat::Rg8Unorm => CanvasGPUTextureFormat::Rg8Unorm,
+            wgpu_types::TextureFormat::Rg8Snorm => CanvasGPUTextureFormat::Rg8Snorm,
+            wgpu_types::TextureFormat::Rg8Uint => CanvasGPUTextureFormat::Rg8Uint,
+            wgpu_types::TextureFormat::Rg8Sint => CanvasGPUTextureFormat::Rg8Sint,
+            wgpu_types::TextureFormat::R32Uint => CanvasGPUTextureFormat::R32Uint,
+            wgpu_types::TextureFormat::R32Sint => CanvasGPUTextureFormat::R32Sint,
+            wgpu_types::TextureFormat::R32Float => CanvasGPUTextureFormat::R32Float,
+            wgpu_types::TextureFormat::Rg16Uint => CanvasGPUTextureFormat::Rg16Uint,
+            wgpu_types::TextureFormat::Rg16Sint => CanvasGPUTextureFormat::Rg16Sint,
+            wgpu_types::TextureFormat::Rg16Unorm => CanvasGPUTextureFormat::Rg16Unorm,
+            wgpu_types::TextureFormat::Rg16Snorm => CanvasGPUTextureFormat::Rg16Snorm,
+            wgpu_types::TextureFormat::Rg16Float => CanvasGPUTextureFormat::Rg16Float,
+            wgpu_types::TextureFormat::Rgba8Unorm => CanvasGPUTextureFormat::Rgba8Unorm,
+            wgpu_types::TextureFormat::Rgba8UnormSrgb => CanvasGPUTextureFormat::Rgba8UnormSrgb,
+            wgpu_types::TextureFormat::Rgba8Snorm => CanvasGPUTextureFormat::Rgba8Snorm,
+            wgpu_types::TextureFormat::Rgba8Uint => CanvasGPUTextureFormat::Rgba8Uint,
+            wgpu_types::TextureFormat::Rgba8Sint => CanvasGPUTextureFormat::Rgba8Sint,
+            wgpu_types::TextureFormat::Bgra8Unorm => CanvasGPUTextureFormat::Bgra8Unorm,
+            wgpu_types::TextureFormat::Bgra8UnormSrgb => CanvasGPUTextureFormat::Bgra8UnormSrgb,
+            wgpu_types::TextureFormat::Rgb9e5Ufloat => CanvasGPUTextureFormat::Rgb9e5Ufloat,
+            wgpu_types::TextureFormat::Rgb10a2Uint => CanvasGPUTextureFormat::Rgb10a2Uint,
+            wgpu_types::TextureFormat::Rgb10a2Unorm => CanvasGPUTextureFormat::Rgb10a2Unorm,
+            wgpu_types::TextureFormat::Rg11b10Float => CanvasGPUTextureFormat::Rg11b10Float,
+            wgpu_types::TextureFormat::Rg32Uint => CanvasGPUTextureFormat::Rg32Uint,
+            wgpu_types::TextureFormat::Rg32Sint => CanvasGPUTextureFormat::Rg32Sint,
+            wgpu_types::TextureFormat::Rg32Float => CanvasGPUTextureFormat::Rg32Float,
+            wgpu_types::TextureFormat::Rgba16Uint => CanvasGPUTextureFormat::Rgba16Uint,
+            wgpu_types::TextureFormat::Rgba16Sint => CanvasGPUTextureFormat::Rgba16Sint,
+            wgpu_types::TextureFormat::Rgba16Unorm => CanvasGPUTextureFormat::Rgba16Unorm,
+            wgpu_types::TextureFormat::Rgba16Snorm => CanvasGPUTextureFormat::Rgba16Snorm,
+            wgpu_types::TextureFormat::Rgba16Float => CanvasGPUTextureFormat::Rgba16Float,
+            wgpu_types::TextureFormat::Rgba32Uint => CanvasGPUTextureFormat::Rgba32Uint,
+            wgpu_types::TextureFormat::Rgba32Sint => CanvasGPUTextureFormat::Rgba32Sint,
+            wgpu_types::TextureFormat::Rgba32Float => CanvasGPUTextureFormat::Rgba32Float,
+            wgpu_types::TextureFormat::Stencil8 => CanvasGPUTextureFormat::Stencil8,
+            wgpu_types::TextureFormat::Depth16Unorm => CanvasGPUTextureFormat::Depth16Unorm,
+            wgpu_types::TextureFormat::Depth24Plus => CanvasGPUTextureFormat::Depth24Plus,
+            wgpu_types::TextureFormat::Depth24PlusStencil8 => {
+                CanvasGPUTextureFormat::Depth24PlusStencil8
+            }
+            wgpu_types::TextureFormat::Depth32Float => CanvasGPUTextureFormat::Depth32Float,
+            wgpu_types::TextureFormat::Depth32FloatStencil8 => {
+                CanvasGPUTextureFormat::Depth32FloatStencil8
+            }
+            wgpu_types::TextureFormat::NV12 => CanvasGPUTextureFormat::NV12,
+            wgpu_types::TextureFormat::Bc1RgbaUnorm => CanvasGPUTextureFormat::Bc1RgbaUnorm,
+            wgpu_types::TextureFormat::Bc1RgbaUnormSrgb => CanvasGPUTextureFormat::Bc1RgbaUnormSrgb,
+            wgpu_types::TextureFormat::Bc2RgbaUnorm => CanvasGPUTextureFormat::Bc2RgbaUnorm,
+            wgpu_types::TextureFormat::Bc2RgbaUnormSrgb => CanvasGPUTextureFormat::Bc2RgbaUnormSrgb,
+            wgpu_types::TextureFormat::Bc3RgbaUnorm => CanvasGPUTextureFormat::Bc3RgbaUnorm,
+            wgpu_types::TextureFormat::Bc3RgbaUnormSrgb => CanvasGPUTextureFormat::Bc3RgbaUnormSrgb,
+            wgpu_types::TextureFormat::Bc4RUnorm => CanvasGPUTextureFormat::Bc4RUnorm,
+            wgpu_types::TextureFormat::Bc4RSnorm => CanvasGPUTextureFormat::Bc4RSnorm,
+            wgpu_types::TextureFormat::Bc5RgUnorm => CanvasGPUTextureFormat::Bc5RgUnorm,
+            wgpu_types::TextureFormat::Bc5RgSnorm => CanvasGPUTextureFormat::Bc5RgSnorm,
+            wgpu_types::TextureFormat::Bc6hRgbUfloat => CanvasGPUTextureFormat::Bc6hRgbUfloat,
+            wgpu_types::TextureFormat::Bc6hRgbFloat => CanvasGPUTextureFormat::Bc6hRgbFloat,
+            wgpu_types::TextureFormat::Bc7RgbaUnorm => CanvasGPUTextureFormat::Bc7RgbaUnorm,
+            wgpu_types::TextureFormat::Bc7RgbaUnormSrgb => CanvasGPUTextureFormat::Bc7RgbaUnormSrgb,
+            wgpu_types::TextureFormat::Etc2Rgb8Unorm => CanvasGPUTextureFormat::Etc2Rgb8Unorm,
+            wgpu_types::TextureFormat::Etc2Rgb8UnormSrgb => {
+                CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb
+            }
+            wgpu_types::TextureFormat::Etc2Rgb8A1Unorm => CanvasGPUTextureFormat::Etc2Rgb8A1Unorm,
+            wgpu_types::TextureFormat::Etc2Rgb8A1UnormSrgb => {
+                CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb
+            }
+            wgpu_types::TextureFormat::Etc2Rgba8Unorm => CanvasGPUTextureFormat::Etc2Rgba8Unorm,
+            wgpu_types::TextureFormat::Etc2Rgba8UnormSrgb => {
+                CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb
+            }
+            wgpu_types::TextureFormat::EacR11Unorm => CanvasGPUTextureFormat::EacR11Unorm,
+            wgpu_types::TextureFormat::EacR11Snorm => CanvasGPUTextureFormat::EacR11Snorm,
+            wgpu_types::TextureFormat::EacRg11Unorm => CanvasGPUTextureFormat::EacRg11Unorm,
+            wgpu_types::TextureFormat::EacRg11Snorm => CanvasGPUTextureFormat::EacRg11Snorm,
+            wgpu_types::TextureFormat::Astc { block, channel } => CanvasGPUTextureFormat::Astc {
+                block: block.into(),
+                channel: channel.into(),
+            },
         }
     }
 }
 
 impl Into<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
     fn into(self) -> wgpu_types::TextureFormat {
-        unsafe {
-            std::mem::transmute_copy::<CanvasGPUTextureFormat, wgpu_types::TextureFormat>(&self)
+        match self {
+            CanvasGPUTextureFormat::Rgba8Unorm => wgpu_types::TextureFormat::Rgba8Unorm,
+            CanvasGPUTextureFormat::Bgra8Unorm => wgpu_types::TextureFormat::Bgra8Unorm,
+            CanvasGPUTextureFormat::R8Unorm => wgpu_types::TextureFormat::R8Unorm,
+            CanvasGPUTextureFormat::R8Snorm => wgpu_types::TextureFormat::R8Snorm,
+            CanvasGPUTextureFormat::R8Uint => wgpu_types::TextureFormat::R8Uint,
+            CanvasGPUTextureFormat::R8Sint => wgpu_types::TextureFormat::R8Sint,
+            CanvasGPUTextureFormat::R16Uint => wgpu_types::TextureFormat::R16Uint,
+            CanvasGPUTextureFormat::R16Sint => wgpu_types::TextureFormat::R16Sint,
+            CanvasGPUTextureFormat::R16Unorm => wgpu_types::TextureFormat::R16Unorm,
+            CanvasGPUTextureFormat::R16Snorm => wgpu_types::TextureFormat::R16Snorm,
+            CanvasGPUTextureFormat::R16Float => wgpu_types::TextureFormat::R16Float,
+            CanvasGPUTextureFormat::Rg8Unorm => wgpu_types::TextureFormat::Rg8Unorm,
+            CanvasGPUTextureFormat::Rg8Snorm => wgpu_types::TextureFormat::Rg8Snorm,
+            CanvasGPUTextureFormat::Rg8Uint => wgpu_types::TextureFormat::Rg8Uint,
+            CanvasGPUTextureFormat::Rg8Sint => wgpu_types::TextureFormat::Rg8Sint,
+            CanvasGPUTextureFormat::R32Uint => wgpu_types::TextureFormat::R32Uint,
+            CanvasGPUTextureFormat::R32Sint => wgpu_types::TextureFormat::R32Sint,
+            CanvasGPUTextureFormat::R32Float => wgpu_types::TextureFormat::R32Float,
+            CanvasGPUTextureFormat::Rg16Uint => wgpu_types::TextureFormat::Rg16Uint,
+            CanvasGPUTextureFormat::Rg16Sint => wgpu_types::TextureFormat::Rg16Sint,
+            CanvasGPUTextureFormat::Rg16Unorm => wgpu_types::TextureFormat::Rg16Unorm,
+            CanvasGPUTextureFormat::Rg16Snorm => wgpu_types::TextureFormat::Rg16Snorm,
+            CanvasGPUTextureFormat::Rg16Float => wgpu_types::TextureFormat::Rg16Float,
+            CanvasGPUTextureFormat::Rgba8Unorm => wgpu_types::TextureFormat::Rgba8Unorm,
+            CanvasGPUTextureFormat::Rgba8UnormSrgb => wgpu_types::TextureFormat::Rgba8UnormSrgb,
+            CanvasGPUTextureFormat::Rgba8Snorm => wgpu_types::TextureFormat::Rgba8Snorm,
+            CanvasGPUTextureFormat::Rgba8Uint => wgpu_types::TextureFormat::Rgba8Uint,
+            CanvasGPUTextureFormat::Rgba8Sint => wgpu_types::TextureFormat::Rgba8Sint,
+            CanvasGPUTextureFormat::Bgra8Unorm => wgpu_types::TextureFormat::Bgra8Unorm,
+            CanvasGPUTextureFormat::Bgra8UnormSrgb => wgpu_types::TextureFormat::Bgra8UnormSrgb,
+            CanvasGPUTextureFormat::Rgb9e5Ufloat => wgpu_types::TextureFormat::Rgb9e5Ufloat,
+            CanvasGPUTextureFormat::Rgb10a2Uint => wgpu_types::TextureFormat::Rgb10a2Uint,
+            CanvasGPUTextureFormat::Rgb10a2Unorm => wgpu_types::TextureFormat::Rgb10a2Unorm,
+            CanvasGPUTextureFormat::Rg11b10Float => wgpu_types::TextureFormat::Rg11b10Float,
+            CanvasGPUTextureFormat::Rg32Uint => wgpu_types::TextureFormat::Rg32Uint,
+            CanvasGPUTextureFormat::Rg32Sint => wgpu_types::TextureFormat::Rg32Sint,
+            CanvasGPUTextureFormat::Rg32Float => wgpu_types::TextureFormat::Rg32Float,
+            CanvasGPUTextureFormat::Rgba16Uint => wgpu_types::TextureFormat::Rgba16Uint,
+            CanvasGPUTextureFormat::Rgba16Sint => wgpu_types::TextureFormat::Rgba16Sint,
+            CanvasGPUTextureFormat::Rgba16Unorm => wgpu_types::TextureFormat::Rgba16Unorm,
+            CanvasGPUTextureFormat::Rgba16Snorm => wgpu_types::TextureFormat::Rgba16Snorm,
+            CanvasGPUTextureFormat::Rgba16Float => wgpu_types::TextureFormat::Rgba16Float,
+            CanvasGPUTextureFormat::Rgba32Uint => wgpu_types::TextureFormat::Rgba32Uint,
+            CanvasGPUTextureFormat::Rgba32Sint => wgpu_types::TextureFormat::Rgba32Sint,
+            CanvasGPUTextureFormat::Rgba32Float => wgpu_types::TextureFormat::Rgba32Float,
+            CanvasGPUTextureFormat::Stencil8 => wgpu_types::TextureFormat::Stencil8,
+            CanvasGPUTextureFormat::Depth16Unorm => wgpu_types::TextureFormat::Depth16Unorm,
+            CanvasGPUTextureFormat::Depth24Plus => wgpu_types::TextureFormat::Depth24Plus,
+            CanvasGPUTextureFormat::Depth24PlusStencil8 => {
+                wgpu_types::TextureFormat::Depth24PlusStencil8
+            }
+            CanvasGPUTextureFormat::Depth32Float => wgpu_types::TextureFormat::Depth32Float,
+            CanvasGPUTextureFormat::Depth32FloatStencil8 => {
+                wgpu_types::TextureFormat::Depth32FloatStencil8
+            }
+            CanvasGPUTextureFormat::NV12 => wgpu_types::TextureFormat::NV12,
+            CanvasGPUTextureFormat::Bc1RgbaUnorm => wgpu_types::TextureFormat::Bc1RgbaUnorm,
+            CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => wgpu_types::TextureFormat::Bc1RgbaUnormSrgb,
+            CanvasGPUTextureFormat::Bc2RgbaUnorm => wgpu_types::TextureFormat::Bc2RgbaUnorm,
+            CanvasGPUTextureFormat::Bc2RgbaUnormSrgb => wgpu_types::TextureFormat::Bc2RgbaUnormSrgb,
+            CanvasGPUTextureFormat::Bc3RgbaUnorm => wgpu_types::TextureFormat::Bc3RgbaUnorm,
+            CanvasGPUTextureFormat::Bc3RgbaUnormSrgb => wgpu_types::TextureFormat::Bc3RgbaUnormSrgb,
+            CanvasGPUTextureFormat::Bc4RUnorm => wgpu_types::TextureFormat::Bc4RUnorm,
+            CanvasGPUTextureFormat::Bc4RSnorm => wgpu_types::TextureFormat::Bc4RSnorm,
+            CanvasGPUTextureFormat::Bc5RgUnorm => wgpu_types::TextureFormat::Bc5RgUnorm,
+            CanvasGPUTextureFormat::Bc5RgSnorm => wgpu_types::TextureFormat::Bc5RgSnorm,
+            CanvasGPUTextureFormat::Bc6hRgbUfloat => wgpu_types::TextureFormat::Bc6hRgbUfloat,
+            CanvasGPUTextureFormat::Bc6hRgbFloat => wgpu_types::TextureFormat::Bc6hRgbFloat,
+            CanvasGPUTextureFormat::Bc7RgbaUnorm => wgpu_types::TextureFormat::Bc7RgbaUnorm,
+            CanvasGPUTextureFormat::Bc7RgbaUnormSrgb => wgpu_types::TextureFormat::Bc7RgbaUnormSrgb,
+            CanvasGPUTextureFormat::Etc2Rgb8Unorm => wgpu_types::TextureFormat::Etc2Rgb8Unorm,
+            CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb => {
+                wgpu_types::TextureFormat::Etc2Rgb8UnormSrgb
+            }
+            CanvasGPUTextureFormat::Etc2Rgb8A1Unorm => wgpu_types::TextureFormat::Etc2Rgb8A1Unorm,
+            CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb => {
+                wgpu_types::TextureFormat::Etc2Rgb8A1UnormSrgb
+            }
+            CanvasGPUTextureFormat::Etc2Rgba8Unorm => wgpu_types::TextureFormat::Etc2Rgba8Unorm,
+            CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb => {
+                wgpu_types::TextureFormat::Etc2Rgba8UnormSrgb
+            }
+            CanvasGPUTextureFormat::EacR11Unorm => wgpu_types::TextureFormat::EacR11Unorm,
+            CanvasGPUTextureFormat::EacR11Snorm => wgpu_types::TextureFormat::EacR11Snorm,
+            CanvasGPUTextureFormat::EacRg11Unorm => wgpu_types::TextureFormat::EacRg11Unorm,
+            CanvasGPUTextureFormat::EacRg11Snorm => wgpu_types::TextureFormat::EacRg11Snorm,
+            CanvasGPUTextureFormat::Astc { block, channel } => wgpu_types::TextureFormat::Astc {
+                block: block.into(),
+                channel: channel.into(),
+            },
         }
     }
 }
@@ -354,7 +532,6 @@ impl Into<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
 pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
     value: CanvasGPUTextureFormat,
 ) -> *mut c_char {
-    
     let s: String;
     let name = match value {
         CanvasGPUTextureFormat::R8Unorm => "r8unorm",
@@ -514,38 +691,109 @@ pub enum CanvasAstcChannel {
     Hdr,
 }
 
-
-
 impl From<wgpu_types::AstcChannel> for CanvasAstcChannel {
     fn from(value: wgpu_types::AstcChannel) -> Self {
-        unsafe {
-            std::mem::transmute_copy::<wgpu_types::AstcChannel, CanvasAstcChannel>(&value)
+        match value {
+            wgpu_types::AstcChannel::Unorm => Self::Unorm,
+            wgpu_types::AstcChannel::UnormSrgb => Self::UnormSrgb,
+            wgpu_types::AstcChannel::Hdr => Self::Hdr,
         }
     }
 }
 
 impl Into<wgpu_types::AstcChannel> for CanvasAstcChannel {
     fn into(self) -> wgpu_types::AstcChannel {
-        unsafe {
-            std::mem::transmute_copy::<CanvasAstcChannel, wgpu_types::AstcChannel>(&self)
+        match self {
+            CanvasAstcChannel::Unorm => wgpu_types::AstcChannel::Unorm,
+            CanvasAstcChannel::UnormSrgb => wgpu_types::AstcChannel::UnormSrgb,
+            CanvasAstcChannel::Hdr => wgpu_types::AstcChannel::Hdr,
         }
     }
 }
 
-
-
 impl From<wgpu_types::AstcBlock> for CanvasAstcBlock {
     fn from(value: wgpu_types::AstcBlock) -> Self {
-        unsafe {
-            std::mem::transmute_copy::<wgpu_types::AstcBlock, CanvasAstcBlock>(&value)
+        match value {
+            wgpu_types::AstcBlock::B4x4 => Self::B4x4,
+            wgpu_types::AstcBlock::B5x4 => Self::B5x4,
+            wgpu_types::AstcBlock::B5x5 => Self::B5x5,
+            wgpu_types::AstcBlock::B6x5 => Self::B6x5,
+            wgpu_types::AstcBlock::B6x6 => Self::B6x6,
+            wgpu_types::AstcBlock::B8x5 => Self::B8x5,
+            wgpu_types::AstcBlock::B8x6 => Self::B8x6,
+            wgpu_types::AstcBlock::B8x8 => Self::B8x8,
+            wgpu_types::AstcBlock::B10x5 => Self::B10x5,
+            wgpu_types::AstcBlock::B10x6 => Self::B10x6,
+            wgpu_types::AstcBlock::B10x8 => Self::B10x8,
+            wgpu_types::AstcBlock::B10x10 => Self::B10x10,
+            wgpu_types::AstcBlock::B12x10 => Self::B12x10,
+            wgpu_types::AstcBlock::B12x12 => Self::B12x12,
         }
     }
 }
 
 impl Into<wgpu_types::AstcBlock> for CanvasAstcBlock {
     fn into(self) -> wgpu_types::AstcBlock {
-        unsafe {
-            std::mem::transmute_copy::<CanvasAstcBlock, wgpu_types::AstcBlock>(&self)
+        match self {
+            CanvasAstcBlock::B4x4 => wgpu_types::AstcBlock::B4x4,
+            CanvasAstcBlock::B5x4 => wgpu_types::AstcBlock::B5x4,
+            CanvasAstcBlock::B5x5 => wgpu_types::AstcBlock::B5x5,
+            CanvasAstcBlock::B6x5 => wgpu_types::AstcBlock::B6x5,
+            CanvasAstcBlock::B6x6 => wgpu_types::AstcBlock::B6x6,
+            CanvasAstcBlock::B8x5 => wgpu_types::AstcBlock::B8x5,
+            CanvasAstcBlock::B8x6 => wgpu_types::AstcBlock::B8x6,
+            CanvasAstcBlock::B8x8 => wgpu_types::AstcBlock::B8x8,
+            CanvasAstcBlock::B10x5 => wgpu_types::AstcBlock::B10x5,
+            CanvasAstcBlock::B10x6 => wgpu_types::AstcBlock::B10x6,
+            CanvasAstcBlock::B10x8 => wgpu_types::AstcBlock::B10x8,
+            CanvasAstcBlock::B10x10 => wgpu_types::AstcBlock::B10x10,
+            CanvasAstcBlock::B12x10 => wgpu_types::AstcBlock::B12x10,
+            CanvasAstcBlock::B12x12 => wgpu_types::AstcBlock::B12x12,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+pub enum CanvasTextureAspect {
+    /// Depth, Stencil, and Color.
+    #[default]
+    All,
+    /// Stencil.
+    StencilOnly,
+    /// Depth.
+    DepthOnly,
+    /// Plane 0.
+    Plane0,
+    /// Plane 1.
+    Plane1,
+    /// Plane 2.
+    Plane2,
+}
+
+impl From<wgpu_types::TextureAspect> for CanvasTextureAspect {
+    fn from(value: wgpu_types::TextureAspect) -> Self {
+        match value {
+            wgpu_types::TextureAspect::All => CanvasTextureAspect::All,
+            wgpu_types::TextureAspect::StencilOnly => CanvasTextureAspect::StencilOnly,
+            wgpu_types::TextureAspect::DepthOnly => CanvasTextureAspect::DepthOnly,
+            wgpu_types::TextureAspect::Plane0 => CanvasTextureAspect::Plane0,
+            wgpu_types::TextureAspect::Plane1 => CanvasTextureAspect::Plane1,
+            wgpu_types::TextureAspect::Plane2 => CanvasTextureAspect::Plane2,
+        }
+    }
+}
+
+
+impl Into<wgpu_types::TextureAspect> for CanvasTextureAspect {
+    fn into(self) -> wgpu_types::TextureAspect {
+        match self {
+            CanvasTextureAspect::All => wgpu_types::TextureAspect::All,
+            CanvasTextureAspect::StencilOnly => wgpu_types::TextureAspect::StencilOnly,
+            CanvasTextureAspect::DepthOnly => wgpu_types::TextureAspect::DepthOnly,
+            CanvasTextureAspect::Plane0 => wgpu_types::TextureAspect::Plane0,
+            CanvasTextureAspect::Plane1 => wgpu_types::TextureAspect::Plane1,
+            CanvasTextureAspect::Plane2 => wgpu_types::TextureAspect::Plane2,
         }
     }
 }

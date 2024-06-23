@@ -471,6 +471,34 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				requiredLimits: adapter.limits,
 			});
 
+			const shaders = `
+struct VertexOut {
+  @builtin(position) position : vec4f,
+  @location(0) color : vec4f
+}
+
+@vertex
+fn vertex_main(@location(0) position: vec4f,
+               @location(1) color: vec4f) -> VertexOut
+{
+  var output : VertexOut;
+  output.position = position;
+  output.color = color;
+  return output;
+}
+
+@fragment
+fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
+{
+  return fragData.color;
+}
+`;
+
+			const shaderModule = device.createShaderModule({
+				code: shaders,
+			});
+			console.log(shaderModule);
+
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
 			context.configure({
@@ -484,7 +512,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 				usage: global.GPUTextureUsage.TEXTURE_BINDING | global.GPUTextureUsage.COPY_DST | global.GPUTextureUsage.RENDER_ATTACHMENT,
 			});
 
-			console.log(texture);
+			console.log(texture, context.getCurrentTexture());
 
 			/*
 			// device.lost.then((lost) => {

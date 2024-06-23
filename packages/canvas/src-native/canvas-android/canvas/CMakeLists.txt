@@ -154,6 +154,7 @@ add_library(
 
         ${CPP_DIR}/webgl2/WebGL2RenderingContext.cpp
 
+        ${CPP_DIR}/webgpu/GPUAdapterInfoImpl.cpp
         ${CPP_DIR}/webgpu/GPUImpl.cpp
         ${CPP_DIR}/webgpu/GPUAdapterImpl.cpp
         ${CPP_DIR}/webgpu/GPUSupportedLimitsImpl.cpp
@@ -163,7 +164,10 @@ add_library(
 
         ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
         ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
-
+        ${CPP_DIR}/webgpu/GPUComputePassImpl.cpp
+        ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPUShaderModuleImpl.cpp
 
 
         ${CPP_DIR}/CanvasJSIModule.cpp

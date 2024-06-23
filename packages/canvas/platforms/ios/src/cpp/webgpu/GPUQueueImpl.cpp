@@ -41,7 +41,7 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
 
     v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
-    ctorTmpl->SetClassName(ConvertToV8String(isolate, "GPUDevice"));
+    ctorTmpl->SetClassName(ConvertToV8String(isolate, "GPUQueue"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);

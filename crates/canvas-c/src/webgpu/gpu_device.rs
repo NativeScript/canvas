@@ -340,7 +340,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         size: wgpu_types::Extent3d {
             width: descriptor.width,
             height: descriptor.height,
-            depth_or_array_layers: descriptor.width,
+            depth_or_array_layers: descriptor.depthOrArrayLayers,
         },
         mip_level_count: descriptor.mipLevelCount,
         sample_count: descriptor.sampleCount,

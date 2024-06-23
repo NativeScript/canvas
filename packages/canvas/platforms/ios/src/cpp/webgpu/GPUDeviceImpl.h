@@ -12,7 +12,6 @@
 #include "GPUTextureImpl.h"
 
 class GPUDeviceImpl : ObjectWrapperImpl {
-
 public:
     GPUDeviceImpl(CanvasGPUDevice *device);
 
@@ -59,7 +58,12 @@ public:
 
     static void CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 
 private:
     CanvasGPUDevice *device_;

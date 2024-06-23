@@ -2,6 +2,7 @@ import { Observable } from '@nativescript/core';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUTexture } from './GPUTexture';
 import { native_ } from './Constants';
+import { GPUShaderModule } from './GPUShaderModule';
 
 // Doing so because :D
 export class EventTarget {
@@ -146,10 +147,18 @@ export class GPUDevice extends EventTarget {
 
 		const texture = this.native.createTexture(opts);
 
-		console.log('create', texture);
 		if (texture) {
 			return GPUTexture.fromNative(texture);
 		}
+		return undefined;
+	}
+
+	createShaderModule(desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
+		const module = this.native.createShaderModule(desc);
+		if (module) {
+			return GPUShaderModule.fromNative(module);
+		}
+
 		return undefined;
 	}
 }

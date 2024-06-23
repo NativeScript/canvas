@@ -48,3 +48,7 @@ pub mod gpu_canvas_context;
 pub mod enums;
 pub mod gpu_texture;
 pub mod gpu_texture_view;
+pub mod gpu_bind_group;
+pub mod gpu_bind_group_layout;
+pub mod gpu_command_buffer;
+pub mod structs;

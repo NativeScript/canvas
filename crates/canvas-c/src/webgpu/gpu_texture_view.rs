@@ -2,6 +2,6 @@ use super::gpu::CanvasWebGPUInstance;
 
 #[derive(Clone)]
 pub struct CanvasGPUTextureView {
-    instance: CanvasWebGPUInstance,
-    texture: wgpu_core::id::TextureViewId,
+    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) texture_view: wgpu_core::id::TextureViewId,
 }

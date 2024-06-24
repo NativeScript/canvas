@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
 };
@@ -6,7 +7,7 @@ use std::{
 use crate::buffers::StringBuffer;
 
 use super::{
-    enums::{CanvasGPUTextureFormat, CanvasTextureDimension},
+    enums::{CanvasCompareFunction, CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasIndexFormat, CanvasPrimitiveTopology, CanvasStencilFaceState, CanvasTextureDimension, CanvasVertexStepMode},
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
     gpu_command_encoder::CanvasGPUCommandEncoder,
@@ -15,6 +16,7 @@ use super::{
     gpu_supported_limits::CanvasGPUSupportedLimits,
     gpu_texture::CanvasGPUTexture,
     prelude::*,
+    structs::{CanvasColorTargetState, CanvasMultisampleState, CanvasVertexAttribute},
 };
 
 pub struct CanvasGPUDevice {
@@ -283,6 +285,149 @@ pub extern "C" fn canvas_native_webgpu_device_create_buffer(
     let device = unsafe { &*device };
 
     device.create_buffer(label, size, usage, mapped_at_creation, error)
+}
+
+struct CanvasConstants(HashMap<String, f64>);
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgpu_constants_create() -> *mut CanvasConstants {
+    Box::into_raw(Box::new(CanvasConstants(HashMap::new())))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_constants_insert(
+    constants: *mut CanvasConstants,
+    key: *const c_char,
+    value: f64,
+) -> *mut CanvasConstants {
+    if constants.is_null() {
+        return;
+    }
+
+    let constants = &mut *constants;
+    let key = CStr::from_ptr(key);
+    let key = key.to_string_lossy();
+    let key = key.to_string();
+    constants.0.insert(key, value);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(
+    constants: *mut CanvasConstants,
+) -> *mut CanvasConstants {
+    if constants.is_null() {
+        return;
+    }
+
+    let _ = Box::from_raw(constants);
+}
+
+
+#[repr(C)]
+pub struct CanvasDepthStencilState {
+    format: CanvasGPUTextureFormat,
+    depth_write_enabled: bool,
+    depth_compare: CanvasCompareFunction,
+    stencil_front: CanvasStencilFaceState,
+    stencil_back: CanvasStencilFaceState,
+    stencil_read_mask: u32,
+    stencil_write_mask: u32,
+    depth_bias: i32,
+    depth_bias_slope_scale: f32,
+    depth_bias_clamp: f32,
+}
+
+#[repr(C)]
+pub struct CanvasPrimitiveState {
+    topology: CanvasPrimitiveTopology,
+    strip_index_format: *const CanvasIndexFormat,
+    front_face: CanvasFrontFace,
+    cull_mode: CanvasCullMode,
+    unclipped_depth: bool,
+}
+
+#[repr(C)]
+pub struct CanvasVertexBufferLayout {
+    array_stride: u64,
+    step_mode: CanvasVertexStepMode,
+    attributes: *const CanvasVertexAttribute,
+    attributes_size: usize
+}
+
+#[repr(C)]
+pub struct CanvasVertexState {
+    module: *const CanvasGPUShaderModule,
+    entry_point: *const c_char,
+    constants: *const CanvasConstants,
+    constants_size: usize,
+    buffers: *const CanvasVertexBufferLayout,
+    buffers_size: usize
+}
+
+
+#[repr(C)]
+struct CanvasFragmentState {
+    targets: *const CanvasColorTargetState,
+    targets_size: usize,
+    module: u32,
+    entry_point: *const c_char,
+    constants: *const CanvasConstants,
+}
+
+#[repr(C)]
+pub enum CanvasGPUAutoLayoutMode {
+    Auto,
+}
+
+#[repr(C)]
+pub enum CanvasGPUPipelineLayoutOrGPUAutoLayoutMode {
+    Layout(*const CanvasGPUPipelineLayout),
+    Auto(CanvasGPUAutoLayoutMode),
+}
+
+#[repr(C)]
+
+pub struct CanvasCreateRenderPipelineDescriptor {
+    label: *const c_char,
+    layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
+    vertex: *const CanvasVertexState,
+    primitive: *const CanvasPrimitiveState,
+    depth_stencil: *const CanvasDepthStencilState,
+    multisample: *const CanvasMultisampleState,
+    fragment: *const CanvasFragmentState,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
+    device: *const CanvasGPUDevice,
+    descriptor: *const CanvasCreateRenderPipelineDescriptor
+) -> *mut CanvasGPUBuffer {
+    if device.is_null() || descriptor.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let device = unsafe { &*device };
+
+    let device_id = device.device;
+
+    let global = &device.instance.0;
+
+    let descriptor = &*descriptor;
+
+
+
+    // let desc = wgpu_core::pipeline::RenderPipelineDescriptor {
+    //     label: todo!(),
+    //     layout: todo!(),
+    //     vertex: todo!(),
+    //     primitive: todo!(),
+    //     depth_stencil: todo!(),
+    //     multisample: todo!(),
+    //     fragment: todo!(),
+    //     multiview: todo!(),
+    // };
+
+    // global.device_create_render_pipeline(device_id, &desc, None, None)
 }
 
 #[repr(C)]

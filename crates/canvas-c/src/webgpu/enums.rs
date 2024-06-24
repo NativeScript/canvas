@@ -824,3 +824,310 @@ impl Into<wgpu_types::IndexFormat> for CanvasIndexFormat {
         }
     }
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+pub enum CanvasVertexStepMode {
+    #[default]
+    Vertex = 0,
+    Instance = 1,
+}
+
+impl From<wgpu_types::VertexStepMode> for CanvasVertexStepMode {
+    fn from(value: wgpu_types::VertexStepMode) -> Self {
+        match value {
+            wgpu_types::VertexStepMode::Vertex => Self::Vertex,
+            wgpu_types::VertexStepMode::Instance => Self::Instance,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasVertexFormat {
+    Uint8x2 = 0,
+    Uint8x4 = 1,
+    Sint8x2 = 2,
+    Sint8x4 = 3,
+    Unorm8x2 = 4,
+    Unorm8x4 = 5,
+    Snorm8x2 = 6,
+    Snorm8x4 = 7,
+    Uint16x2 = 8,
+    Uint16x4 = 9,
+    Sint16x2 = 10,
+    Sint16x4 = 11,
+    Unorm16x2 = 12,
+    Unorm16x4 = 13,
+    Snorm16x2 = 14,
+    Snorm16x4 = 15,
+    Float16x2 = 16,
+    Float16x4 = 17,
+    Float32 = 18,
+    Float32x2 = 19,
+    Float32x3 = 20,
+    Float32x4 = 21,
+    Uint32 = 22,
+    Uint32x2 = 23,
+    Uint32x3 = 24,
+    Uint32x4 = 25,
+    Sint32 = 26,
+    Sint32x2 = 27,
+    Sint32x3 = 28,
+    Sint32x4 = 29,
+    Float64 = 30,
+    Float64x2 = 31,
+    Float64x3 = 32,
+    Float64x4 = 33,
+    Unorm10_10_10_2 = 34,
+}
+
+impl CanvasVertexFormat {
+    pub const fn size(&self) -> u64 {
+        match self {
+            Self::Uint8x2 | Self::Sint8x2 | Self::Unorm8x2 | Self::Snorm8x2 => 2,
+            Self::Uint8x4
+            | Self::Sint8x4
+            | Self::Unorm8x4
+            | Self::Snorm8x4
+            | Self::Uint16x2
+            | Self::Sint16x2
+            | Self::Unorm16x2
+            | Self::Snorm16x2
+            | Self::Float16x2
+            | Self::Float32
+            | Self::Uint32
+            | Self::Sint32
+            | Self::Unorm10_10_10_2 => 4,
+            Self::Uint16x4
+            | Self::Sint16x4
+            | Self::Unorm16x4
+            | Self::Snorm16x4
+            | Self::Float16x4
+            | Self::Float32x2
+            | Self::Uint32x2
+            | Self::Sint32x2
+            | Self::Float64 => 8,
+            Self::Float32x3 | Self::Uint32x3 | Self::Sint32x3 => 12,
+            Self::Float32x4 | Self::Uint32x4 | Self::Sint32x4 | Self::Float64x2 => 16,
+            Self::Float64x3 => 24,
+            Self::Float64x4 => 32,
+        }
+    }
+}
+
+impl From<wgpu_types::VertexFormat> for CanvasVertexFormat {
+    fn from(value: wgpu_types::VertexFormat) -> Self {
+        match value {
+            wgpu_types::VertexFormat::Uint8x2 => Self::Uint8x2,
+            wgpu_types::VertexFormat::Uint8x4 => Self::Uint8x4,
+            wgpu_types::VertexFormat::Sint8x2 => Self::Sint8x2,
+            wgpu_types::VertexFormat::Sint8x4 => Self::Sint8x4,
+            wgpu_types::VertexFormat::Unorm8x2 => Self::Unorm8x2,
+            wgpu_types::VertexFormat::Unorm8x4 => Self::Unorm8x4,
+            wgpu_types::VertexFormat::Snorm8x2 => Self::Snorm8x2,
+            wgpu_types::VertexFormat::Snorm8x4 => Self::Snorm8x4,
+            wgpu_types::VertexFormat::Uint16x2 => Self::Uint16x2,
+            wgpu_types::VertexFormat::Uint16x4 => Self::Uint16x4,
+            wgpu_types::VertexFormat::Sint16x2 => Self::Sint16x2,
+            wgpu_types::VertexFormat::Sint16x4 => Self::Sint16x4,
+            wgpu_types::VertexFormat::Unorm16x2 => Self::Unorm16x2,
+            wgpu_types::VertexFormat::Unorm16x4 => Self::Unorm16x4,
+            wgpu_types::VertexFormat::Snorm16x2 => Self::Snorm16x2,
+            wgpu_types::VertexFormat::Snorm16x4 => Self::Snorm16x4,
+            wgpu_types::VertexFormat::Float16x2 => Self::Float16x2,
+            wgpu_types::VertexFormat::Float16x4 => Self::Float16x4,
+            wgpu_types::VertexFormat::Float32 => Self::Float32,
+            wgpu_types::VertexFormat::Float32x2 => Self::Float32x2,
+            wgpu_types::VertexFormat::Float32x3 => Self::Float32x3,
+            wgpu_types::VertexFormat::Float32x4 => Self::Float32x4,
+            wgpu_types::VertexFormat::Uint32 => Self::Uint32,
+            wgpu_types::VertexFormat::Uint32x2 => Self::Uint32x2,
+            wgpu_types::VertexFormat::Uint32x3 => Self::Uint32x3,
+            wgpu_types::VertexFormat::Uint32x4 => Self::Uint32x4,
+            wgpu_types::VertexFormat::Sint32 => Self::Sint32,
+            wgpu_types::VertexFormat::Sint32x2 => Self::Sint32x2,
+            wgpu_types::VertexFormat::Sint32x3 => Self::Sint32x3,
+            wgpu_types::VertexFormat::Sint32x4 => Self::Sint32x4,
+            wgpu_types::VertexFormat::Float64 => Self::Float64,
+            wgpu_types::VertexFormat::Float64x2 => Self::Float64x2,
+            wgpu_types::VertexFormat::Float64x3 => Self::Float64x3,
+            wgpu_types::VertexFormat::Float64x4 => Self::Float64x4,
+            wgpu_types::VertexFormat::Unorm10_10_10_2 => Self::Unorm10_10_10_2,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasCompareFunction {
+    Never = 1,
+    Less = 2,
+    Equal = 3,
+    LessEqual = 4,
+    Greater = 5,
+    NotEqual = 6,
+    GreaterEqual = 7,
+    Always = 8,
+}
+
+impl CanvasCompareFunction {
+    pub fn needs_ref_value(self) -> bool {
+        match self {
+            Self::Never | Self::Always => false,
+            _ => true,
+        }
+    }
+}
+
+impl From<wgpu_types::CompareFunction> for CanvasCompareFunction {
+    fn from(value: wgpu_types::CompareFunction) -> Self {
+        match value {
+            wgpu_types::CompareFunction::Never => Self::Never,
+            wgpu_types::CompareFunction::Less => Self::Less,
+            wgpu_types::CompareFunction::Equal => Self::Equal,
+            wgpu_types::CompareFunction::LessEqual => Self::LessEqual,
+            wgpu_types::CompareFunction::Greater => Self::Greater,
+            wgpu_types::CompareFunction::NotEqual => Self::NotEqual,
+            wgpu_types::CompareFunction::GreaterEqual => Self::GreaterEqual,
+            wgpu_types::CompareFunction::Always => Self::Always,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct CanvasStencilFaceState {
+    pub compare: CanvasCompareFunction,
+    pub fail_op: CanvasStencilOperation,
+    pub depth_fail_op: CanvasStencilOperation,
+    pub pass_op: CanvasStencilOperation,
+}
+
+impl CanvasStencilFaceState {
+    /// Ignore the stencil state for the face.
+    pub const IGNORE: Self = CanvasStencilFaceState {
+        compare: CanvasCompareFunction::Always,
+        fail_op: CanvasStencilOperation::Keep,
+        depth_fail_op: CanvasStencilOperation::Keep,
+        pass_op: CanvasStencilOperation::Keep,
+    };
+
+    /// Returns true if the face state uses the reference value for testing or operation.
+    pub fn needs_ref_value(&self) -> bool {
+        self.compare.needs_ref_value()
+            || self.fail_op == CanvasStencilOperation::Replace
+            || self.depth_fail_op == CanvasStencilOperation::Replace
+            || self.pass_op == CanvasStencilOperation::Replace
+    }
+
+    /// Returns true if the face state doesn't mutate the target values.
+    pub fn is_read_only(&self) -> bool {
+        self.pass_op == CanvasStencilOperation::Keep
+            && self.depth_fail_op == CanvasStencilOperation::Keep
+            && self.fail_op == CanvasStencilOperation::Keep
+    }
+}
+
+impl Default for CanvasStencilFaceState {
+    fn default() -> Self {
+        Self::IGNORE
+    }
+}
+
+impl From<wgpu_types::StencilFaceState> for CanvasStencilFaceState {
+    fn from(value: wgpu_types::StencilFaceState) -> Self {
+        Self {
+            compare: value.compare.info(),
+            fail_op: value.fail_op.into(),
+            depth_fail_op: value.depth_fail_op.into(),
+            pass_op: value.pass_op.into(),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+pub enum CanvasStencilOperation {
+    #[default]
+    Keep = 0,
+    Zero = 1,
+    Replace = 2,
+    Invert = 3,
+    IncrementClamp = 4,
+    DecrementClamp = 5,
+    IncrementWrap = 6,
+    DecrementWrap = 7,
+}
+
+impl From<wgpu_types::StencilOperation> for CanvasStencilOperation {
+    fn from(value: wgpu_types::StencilOperation) -> Self {
+        match value {
+            wgpu_types::StencilOperation::Keep => Self::Keep,
+            wgpu_types::StencilOperation::Zero => Self::Zero,
+            wgpu_types::StencilOperation::Replace => Self::Replace,
+            wgpu_types::StencilOperation::Invert => Self::Invert,
+            wgpu_types::StencilOperation::IncrementClamp => Self::IncrementClamp,
+            wgpu_types::StencilOperation::DecrementClamp => Self::DecrementClamp,
+            wgpu_types::StencilOperation::IncrementWrap => Self::IncrementWrap,
+            wgpu_types::StencilOperation::DecrementWrap => Self::DecrementWrap,
+        }
+    }
+}
+
+#[repr(C)]
+pub enum CanvasCullMode {
+    None,
+    Front,
+    Back,
+}
+
+impl From<CanvasCullMode> for Option<wgpu_types::Face> {
+    fn from(value: GpuCullMode) -> Option<wgpu_types::Face> {
+        match value {
+            GpuCullMode::None => None,
+            GpuCullMode::Front => Some(wgpu_types::Face::Front),
+            GpuCullMode::Back => Some(wgpu_types::Face::Back),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+pub enum CanvasPrimitiveTopology {
+    PointList = 0,
+    LineList = 1,
+    LineStrip = 2,
+    #[default]
+    TriangleList = 3,
+    TriangleStrip = 4,
+}
+
+impl From<wgpu_types::PrimitiveTopology> for CanvasPrimitiveTopology {
+    fn from(value: wgpu_types::PrimitiveTopology) -> Self {
+        match value {
+            wgpu_types::PrimitiveTopology::PointList => Self::PointList,
+            wgpu_types::PrimitiveTopology::LineList => Self::LineList,
+            wgpu_types::PrimitiveTopology::LineStrip => Self::LineStrip,
+            wgpu_types::PrimitiveTopology::TriangleList => Self::TriangleList,
+            wgpu_types::PrimitiveTopology::TriangleStrip => Self::TriangleStrip,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub enum CanvasFrontFace {
+    #[default]
+    Ccw = 0,
+    Cw = 1,
+}
+
+impl From<wgpu_types::FrontFace> for CanvasFrontFace {
+    fn from(value: wgpu_types::FrontFace) -> Self {
+        match value {
+            wgpu_types::FrontFace::Ccw => Self::Ccw,
+            wgpu_types::FrontFace::Cw => Self::Cw,
+        }
+    }
+}

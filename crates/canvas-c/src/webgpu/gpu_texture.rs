@@ -4,6 +4,7 @@ use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureDimension},
     gpu::CanvasWebGPUInstance,
     gpu_texture_view::CanvasGPUTextureView,
+    structs::CanvasImageSubresourceRange,
 };
 
 #[derive(Clone)]
@@ -21,24 +22,55 @@ pub struct CanvasGPUTexture {
     pub(crate) usage: u32,
 }
 
-// #[no_mangle]
-// pub extern "C" fn canvas_native_webgpu_texture_create_texture_view(
-//     texture: *mut CanvasGPUTexture,
-// )-> *mut CanvasGPUTextureView {
-//     if texture.is_null() {
-//         return;
-//     }
-//     let texture = unsafe { &*texture };
-//     let texture_id = texture.texture;
-//     let global = &texture.instance.0;
+#[repr(C)]
+pub struct CanvasCreateTextureViewDescriptor {
+    texture: *const CanvasGPUTexture,
+    label: *const c_char,
+    format: CanvasGPUTextureFormat,
+    dimension: CanvasTextureDimension,
+    range: *const CanvasImageSubresourceRange,
+}
 
-//     let desc = wgpu_core::resource::TextureViewDescriptor {
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
+    texture: *mut CanvasGPUTexture,
+    descriptor: *const CanvasCreateTextureViewDescriptor,
+) -> *mut CanvasGPUTextureView {
+    if texture.is_null() || descriptor.is_null() {
+        return;
+    }
+    let texture = unsafe { &*texture };
+    let texture_id = texture.texture;
+    let global = &texture.instance.0;
 
-//     }
+    let descriptor = &*descriptor;
 
-//     global.texture_create_view(texture_id, desc, id_in)
+    let label = if !descriptor.label.is_null() {
+        Some(unsafe { CStr::from_ptr(descriptor.label).to_string_lossy() })
+    } else {
+        None
+    };
 
-// }
+    let desc = wgpu_core::resource::TextureViewDescriptor {
+        label: label,
+        format: descriptor.format.into(),
+        dimension: descriptor.dimension.into(),
+        range: descriptor.range.into(),
+    };
+
+    let (texture_view, error) =
+        gfx_select!(texture_id => global.texture_create_view(texture_id, &desc, None));
+
+    if let Some(error) = error {
+        // todo handle error
+        return std::ptr::null_mut();
+    }
+
+    Box::into_raw(Box::new(CanvasGPUTextureView {
+        instance: texture.instance.clone(),
+        texture_view: texture_view,
+    }))
+}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_depth_or_array_layers(

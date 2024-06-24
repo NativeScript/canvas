@@ -54,3 +54,4 @@ pub mod gpu_command_buffer;
 pub mod structs;
 pub mod gpu_render_bundle;
 pub mod gpu_render_pipeline;
+pub mod gpu_pipeline_layout;

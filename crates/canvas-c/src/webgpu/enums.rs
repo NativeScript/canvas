@@ -784,7 +784,6 @@ impl From<wgpu_types::TextureAspect> for CanvasTextureAspect {
     }
 }
 
-
 impl Into<wgpu_types::TextureAspect> for CanvasTextureAspect {
     fn into(self) -> wgpu_types::TextureAspect {
         match self {
@@ -794,6 +793,34 @@ impl Into<wgpu_types::TextureAspect> for CanvasTextureAspect {
             CanvasTextureAspect::Plane0 => wgpu_types::TextureAspect::Plane0,
             CanvasTextureAspect::Plane1 => wgpu_types::TextureAspect::Plane1,
             CanvasTextureAspect::Plane2 => wgpu_types::TextureAspect::Plane2,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+pub enum CanvasIndexFormat {
+    /// Indices are 16 bit unsigned integers.
+    Uint16 = 0,
+    /// Indices are 32 bit unsigned integers.
+    #[default]
+    Uint32 = 1,
+}
+
+impl From<wgpu_types::IndexFormat> for CanvasIndexFormat {
+    fn from(value: wgpu_types::IndexFormat) -> Self {
+        match value {
+            wgpu_types::IndexFormat::Uint16 => Self::Uint16,
+            wgpu_types::IndexFormat::Uint32 => Self::Uint32,
+        }
+    }
+}
+
+impl Into<wgpu_types::IndexFormat> for CanvasIndexFormat {
+    fn into(self) -> wgpu_types::IndexFormat {
+        match self {
+            CanvasIndexFormat::Uint16 => wgpu_types::IndexFormat::Uint16,
+            CanvasIndexFormat::Uint32 => wgpu_types::IndexFormat::Uint32,
         }
     }
 }

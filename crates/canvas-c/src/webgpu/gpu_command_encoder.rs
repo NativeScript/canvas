@@ -7,6 +7,7 @@ use super::{
     gpu_command_buffer::CanvasGPUCommandBuffer,
     gpu_compute_pass::CanvasGPUComputePass,
     gpu_query_set::CanvasGPUQuerySet,
+    gpu_render_pass::CanvasGPURenderPass,
     gpu_texture::CanvasGPUTexture,
     structs::{CanvasExtent3d, CanvasOrigin3d},
 };
@@ -81,7 +82,6 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
     Box::into_raw(Box::new(pass_encoder))
 }
 
-/*
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     command_encoder: *mut CanvasGPUCommandEncoder,
@@ -89,7 +89,7 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     label: *const c_char,
     beginning_of_pass_write_index: i32,
     end_of_pass_write_index: i32,
-) -> *mut CanvasGPURenderPassEncoder {
+) -> *mut CanvasGPURenderPass {
     if command_encoder.is_null() {
         return std::ptr::null_mut();
     }
@@ -113,8 +113,9 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
             Some(end_of_pass_write_index as u32)
         };
 
-        Some(wgpu::ComputePassTimestampWrites {
-            query_set: &query_set.0,
+        let query_set_id = query_set.query;
+        Some(wgpu_core::command::RenderPassTimestampWrites {
+            query_set: query_set_id,
             beginning_of_pass_write_index: beginning_of_pass_write_index,
             end_of_pass_write_index: end_of_pass_write_index,
         })
@@ -123,22 +124,22 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     };
 
     let command_encoder = unsafe { &mut *command_encoder };
+    let command_encoder_id = command_encoder.encoder;
 
-    // wgpu::Operations { load: todo!(), store: todo!() }
-
-    wgpu::RenderPassColorAttachment { view: todo!(), resolve_target: todo!(), ops: todo!() }
-    let desc = wgpu::RenderPassDescriptor {
-        label: label,
+    let desc = wgpu_core::command::RenderPassDescriptor {
+        label,
         color_attachments: todo!(),
         depth_stencil_attachment: todo!(),
+        timestamp_writes,
         occlusion_query_set: todo!(),
     };
-    let pass = command_encoder.0.begin_render_pass(&desc);
-    let pass_encoder = CanvasGPUComputePassEncoder { pass };
+    let pass = wgpu_core::command::RenderPass::new(command_encoder_id, &desc);
+    let pass_encoder = CanvasGPURenderPass {
+        instance: command_encoder.instance.clone(),
+        pass,
+    };
     Box::into_raw(Box::new(pass_encoder))
 }
-
-*/
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_clear_buffer(

@@ -130,7 +130,7 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         label,
         color_attachments: todo!(),
         depth_stencil_attachment: todo!(),
-        timestamp_writes,
+        timestamp_writes: timestamp_writes.as_ref(),
         occlusion_query_set: todo!(),
     };
     let pass = wgpu_core::command::RenderPass::new(command_encoder_id, &desc);

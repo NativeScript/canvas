@@ -1,4 +1,4 @@
-use std::{ffi::CString, os::raw::c_char};
+use std::{ffi::{CStr, CString}, os::raw::c_char};
 
 use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureDimension},

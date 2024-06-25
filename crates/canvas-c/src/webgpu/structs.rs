@@ -1,4 +1,6 @@
-use super::enums::{CanvasGPUTextureFormat, CanvasVertexFormat};
+use wgpu_core::naga::valid;
+
+use super::enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat};
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -231,8 +233,8 @@ impl From<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
     }
 }
 
-impl Into<wgpu_core::ImageSubresourceRange> for CanvasImageSubresourceRange {
-    fn into(self) -> wgpu_core::ImageSubresourceRange {
+impl Into<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
+    fn into(self) -> wgpu_types::ImageSubresourceRange {
         wgpu_types::ImageSubresourceRange {
             aspect: self.aspect.into(),
             base_mip_level: self.base_mip_level,
@@ -244,7 +246,7 @@ impl Into<wgpu_core::ImageSubresourceRange> for CanvasImageSubresourceRange {
 }
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CanvasColorTargetState {
     pub format: CanvasGPUTextureFormat,
     pub blend: CanvasOptionalBlendState,
@@ -252,6 +254,7 @@ pub struct CanvasColorTargetState {
 }
 
 #[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CanvasOptionalBlendState {
     None,
     Some(CanvasBlendState),
@@ -260,9 +263,27 @@ pub enum CanvasOptionalBlendState {
 impl From<wgpu_types::TextureFormat> for CanvasColorTargetState {
     fn from(format: wgpu_types::TextureFormat) -> Self {
         Self {
-            format,
-            blend: None,
+            format: format.into(),
+            blend: CanvasOptionalBlendState::None,
             write_mask: wgpu_types::ColorWrites::ALL.bits(),
+        }
+    }
+}
+
+impl From<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
+    fn from(value: Option<wgpu_types::BlendState>) -> Self {
+        match value {
+            Some(value) => Some(value.into()),
+            None => Self::None,
+        }
+    }
+}
+
+impl Into<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
+    fn into(self) -> Option<wgpu_types::BlendState> {
+        match self {
+            CanvasOptionalBlendState::None => None,
+            CanvasOptionalBlendState::Some(value) => Some(value.into()),
         }
     }
 }
@@ -271,7 +292,7 @@ impl From<CanvasGPUTextureFormat> for CanvasColorTargetState {
     fn from(format: CanvasGPUTextureFormat) -> Self {
         Self {
             format,
-            blend: None,
+            blend: CanvasOptionalBlendState::None,
             write_mask: wgpu_types::ColorWrites::ALL.bits(),
         }
     }
@@ -298,7 +319,7 @@ impl CanvasBlendState {
         color: CanvasBlendComponent {
             src_factor: CanvasBlendFactor::SrcAlpha,
             dst_factor: CanvasBlendFactor::OneMinusSrcAlpha,
-            operation: CanvasBlendFactor::Add,
+            operation: CanvasBlendOperation::Add,
         },
         alpha: CanvasBlendComponent::OVER,
     };

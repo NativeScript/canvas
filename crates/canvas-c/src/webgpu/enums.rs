@@ -1083,11 +1083,11 @@ pub enum CanvasCullMode {
 }
 
 impl From<CanvasCullMode> for Option<wgpu_types::Face> {
-    fn from(value: GpuCullMode) -> Option<wgpu_types::Face> {
+    fn from(value: CanvasCullMode) -> Option<wgpu_types::Face> {
         match value {
-            GpuCullMode::None => None,
-            GpuCullMode::Front => Some(wgpu_types::Face::Front),
-            GpuCullMode::Back => Some(wgpu_types::Face::Back),
+            CanvasCullMode::None => None,
+            CanvasCullMode::Front => Some(wgpu_types::Face::Front),
+            CanvasCullMode::Back => Some(wgpu_types::Face::Back),
         }
     }
 }

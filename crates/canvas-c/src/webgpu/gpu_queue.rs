@@ -249,7 +249,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let data_layout: wgpu_types::ImageDataLayout = data_layout.into();
 
-    let buf = std::slice::from_raw_parts(buf, buf_size);
+    let data = std::slice::from_raw_parts(buf, buf_size);
 
     let size: wgpu_types::Extent3d = size.into();
 

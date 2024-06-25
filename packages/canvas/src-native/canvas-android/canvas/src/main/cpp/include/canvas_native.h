@@ -717,7 +717,7 @@ typedef struct CanvasVertexState {
 
 typedef struct CanvasPrimitiveState {
   enum CanvasPrimitiveTopology topology;
-  const enum CanvasIndexFormat *strip_index_format;
+  enum CanvasIndexFormat strip_index_format;
   enum CanvasFrontFace front_face;
   enum CanvasCullMode cull_mode;
   bool unclipped_depth;
@@ -1235,7 +1235,7 @@ typedef struct CanvasBlendState {
 /**
  * Blend mode that does standard alpha blending with non-premultiplied alpha.
  */
-#define CanvasBlendState_ALPHA_BLENDING (CanvasBlendState){ .color = (CanvasBlendComponent){ .src_factor = CanvasBlendFactor_SrcAlpha, .dst_factor = CanvasBlendFactor_OneMinusSrcAlpha, .operation = CanvasBlendFactor_Add }, .alpha = CanvasBlendComponent_OVER }
+#define CanvasBlendState_ALPHA_BLENDING (CanvasBlendState){ .color = (CanvasBlendComponent){ .src_factor = CanvasBlendFactor_SrcAlpha, .dst_factor = CanvasBlendFactor_OneMinusSrcAlpha, .operation = CanvasBlendOperation_Add }, .alpha = CanvasBlendComponent_OVER }
 /**
  * Blend mode that does standard alpha blending with premultiplied alpha.
  */
@@ -1264,7 +1264,7 @@ typedef struct CanvasColorTargetState {
 typedef struct CanvasFragmentState {
   const struct CanvasColorTargetState *targets;
   uintptr_t targets_size;
-  uint32_t module;
+  const struct CanvasGPUShaderModule *module;
   const char *entry_point;
   const struct CanvasConstants *constants;
 } CanvasFragmentState;
@@ -4151,11 +4151,11 @@ struct CanvasGPUBuffer *canvas_native_webgpu_device_create_buffer(const struct C
 
 struct CanvasConstants *canvas_native_webgpu_constants_create(void);
 
-struct CanvasConstants *canvas_native_webgpu_constants_insert(struct CanvasConstants *constants,
-                                                              const char *key,
-                                                              double value);
+void canvas_native_webgpu_constants_insert(struct CanvasConstants *constants,
+                                           const char *key,
+                                           double value);
 
-struct CanvasConstants *canvas_native_webgpu_constants_destroy(struct CanvasConstants *constants);
+void canvas_native_webgpu_constants_destroy(struct CanvasConstants *constants);
 
 struct CanvasGPUBuffer *canvas_native_webgpu_device_create_render_pipeline(const struct CanvasGPUDevice *device,
                                                                            const struct CanvasCreateRenderPipelineDescriptor *descriptor);

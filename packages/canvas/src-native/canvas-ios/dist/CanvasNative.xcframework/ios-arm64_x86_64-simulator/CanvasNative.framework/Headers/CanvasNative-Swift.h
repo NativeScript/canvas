@@ -345,6 +345,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
@@ -829,6 +830,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
 + (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;

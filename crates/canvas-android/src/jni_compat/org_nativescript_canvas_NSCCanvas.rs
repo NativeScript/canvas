@@ -1,5 +1,6 @@
 use std::ffi::c_void;
 
+use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
 use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
@@ -16,6 +17,33 @@ pub(crate) struct AndroidGLContext {
     pub(crate) contextAttributes: ContextAttributes,
     pub(crate) gl_context: GLContext,
     android_window: Option<NativeWindow>,
+}
+
+#[no_mangle]
+pub extern "system" fn nativeInitWebGPU(
+    mut env: JNIEnv,
+    _: JClass,
+    instance: jlong,
+    surface: jobject,
+    width: jint,
+    height: jint,
+) -> jlong {
+    unsafe {
+        let interface = env.get_native_interface();
+        if let Some(window) = NativeWindow::from_surface(interface, surface) {
+            let ptr = window.ptr().as_ptr();
+            let instance: *mut CanvasWebGPUInstance = instance as _;
+            let ret = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
+                instance,
+                ptr as *mut c_void,
+                width as u32,
+                height as u32,
+            );
+
+            return ret as jlong;
+        }
+    }
+    0
 }
 
 #[no_mangle]

@@ -121,11 +121,11 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
             auto premultiplyAlpha = ConvertFromV8String(isolate, premultiplyAlphaValue);
 
             if (premultiplyAlpha == "premultiply") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaPremultiply;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaPremultiply;
             }
 
             if (premultiplyAlpha == "none") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaNone;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaAlphaNone;
             }
         }
 

@@ -149,7 +149,13 @@ enum class NativeType {
     GPUCommandEncoder,
     GPUComputePass,
     GPUQuerySet,
-    GPUShaderModule
+    GPUShaderModule,
+    GPUPipelineLayout,
+    GPURenderPipeline,
+    GPUBindGroupLayout,
+    GPUTextureView,
+    GPURenderPassEncoder,
+    GPUCommandBuffer
 };
 
 inline static v8::Local<v8::String>
@@ -238,7 +244,7 @@ inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
             auto value = *static_cast<int32_t *>(info);
             auto ret = value;
             if (ret >= (int) NativeType::CanvasGradient &&
-                ret <= (int) NativeType::GPUShaderModule) {
+                ret <= (int) NativeType::GPUCommandBuffer) {
                 return (NativeType) ret;
             }
         }

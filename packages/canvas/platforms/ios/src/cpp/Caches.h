@@ -213,6 +213,28 @@ public:
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUShaderModuleTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
 
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUPipelineLayoutTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPURenderPipelineTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUBindGroupLayoutTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUQueueTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUTextureViewTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPURenderPassEncoderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+    std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> GPUCommandBufferTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
+            nullptr);
+
+
 private:
     static std::shared_ptr<ConcurrentMap<v8::Isolate *,
             std::shared_ptr<Caches>>>

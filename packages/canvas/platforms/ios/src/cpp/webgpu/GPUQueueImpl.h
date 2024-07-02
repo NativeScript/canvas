@@ -36,6 +36,11 @@ public:
     }
 
 
+    static void WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Submit(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
 private:
     CanvasGPUQueue *queue_;
 };

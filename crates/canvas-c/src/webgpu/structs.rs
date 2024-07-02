@@ -1,6 +1,9 @@
 use wgpu_core::naga::valid;
 
-use super::enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat};
+use super::{
+    enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat},
+    gpu_texture_view::CanvasGPUTextureView,
+};
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -34,6 +37,7 @@ impl Into<wgpu_types::Origin3d> for CanvasOrigin3d {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy)]
 pub struct CanvasOrigin2d {
     ///
     pub x: u32,
@@ -91,7 +95,7 @@ impl From<wgpu_types::Extent3d> for CanvasExtent3d {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CanvasColor {
     pub r: f64,
     pub g: f64,
@@ -151,7 +155,7 @@ impl Into<wgpu_types::Color> for CanvasColor {
 
 impl From<wgpu_types::Color> for CanvasColor {
     fn from(value: wgpu_types::Color) -> Self {
-        Self::Color {
+        Self {
             r: value.r,
             g: value.g,
             b: value.b,
@@ -212,7 +216,7 @@ pub struct CanvasImageCopyExternalImage {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CanvasImageSubresourceRange {
     pub aspect: CanvasTextureAspect,
     pub base_mip_level: u32,
@@ -226,9 +230,9 @@ impl From<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
         Self {
             aspect: value.aspect.into(),
             base_mip_level: value.base_mip_level,
-            mip_level_count: value.mip_level_count.try_into().unwrap_or(-1),
+            mip_level_count: value.mip_level_count.map(|v| v as i32).unwrap_or(-1),
             base_array_layer: value.base_array_layer,
-            array_layer_count: value.array_layer_count.try_into().unwrap_or(-1),
+            array_layer_count: value.array_layer_count.map(|v| v as i32).unwrap_or(-1),
         }
     }
 }
@@ -246,15 +250,35 @@ impl Into<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
 }
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CanvasColorTargetState {
     pub format: CanvasGPUTextureFormat,
     pub blend: CanvasOptionalBlendState,
     pub write_mask: u32,
 }
 
+impl From<wgpu_types::ColorTargetState> for CanvasColorTargetState {
+    fn from(value: wgpu_types::ColorTargetState) -> Self {
+        Self {
+            format: value.format.into(),
+            blend: value.blend.into(),
+            write_mask: value.write_mask.bits(),
+        }
+    }
+}
+
+impl Into<wgpu_types::ColorTargetState> for CanvasColorTargetState {
+    fn into(self) -> wgpu_types::ColorTargetState {
+        wgpu_types::ColorTargetState {
+            format: self.format.into(),
+            blend: self.blend.into(),
+            write_mask: wgpu_types::ColorWrites::from_bits_truncate(self.write_mask),
+        }
+    }
+}
+
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanvasOptionalBlendState {
     None,
     Some(CanvasBlendState),
@@ -270,10 +294,19 @@ impl From<wgpu_types::TextureFormat> for CanvasColorTargetState {
     }
 }
 
+impl From<wgpu_types::BlendState> for CanvasOptionalBlendState {
+    fn from(value: wgpu_types::BlendState) -> Self {
+        Self::Some(CanvasBlendState {
+            color: value.color.into(),
+            alpha: value.alpha.into(),
+        })
+    }
+}
+
 impl From<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
     fn from(value: Option<wgpu_types::BlendState>) -> Self {
         match value {
-            Some(value) => Some(value.into()),
+            Some(value) => Self::Some(value.into()),
             None => Self::None,
         }
     }
@@ -283,7 +316,10 @@ impl Into<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
     fn into(self) -> Option<wgpu_types::BlendState> {
         match self {
             CanvasOptionalBlendState::None => None,
-            CanvasOptionalBlendState::Some(value) => Some(value.into()),
+            CanvasOptionalBlendState::Some(value) => Some(wgpu_types::BlendState {
+                color: value.color.into(),
+                alpha: value.alpha.into(),
+            }),
         }
     }
 }
@@ -392,6 +428,16 @@ impl From<wgpu_types::BlendComponent> for CanvasBlendComponent {
     }
 }
 
+impl Into<wgpu_types::BlendComponent> for CanvasBlendComponent {
+    fn into(self) -> wgpu_types::BlendComponent {
+        wgpu_types::BlendComponent {
+            src_factor: self.src_factor.into(),
+            dst_factor: self.dst_factor.into(),
+            operation: self.operation.into(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasBlendFactor {
@@ -470,11 +516,34 @@ impl From<wgpu_types::BlendFactor> for CanvasBlendFactor {
     }
 }
 
+impl Into<wgpu_types::BlendFactor> for CanvasBlendFactor {
+    fn into(self) -> wgpu_types::BlendFactor {
+        match self {
+            Self::Zero => wgpu_types::BlendFactor::Zero,
+            Self::One => wgpu_types::BlendFactor::One,
+            Self::Src => wgpu_types::BlendFactor::Src,
+            Self::OneMinusSrc => wgpu_types::BlendFactor::OneMinusSrc,
+            Self::SrcAlpha => wgpu_types::BlendFactor::SrcAlpha,
+            Self::OneMinusSrcAlpha => wgpu_types::BlendFactor::OneMinusSrcAlpha,
+            Self::Dst => wgpu_types::BlendFactor::Dst,
+            Self::OneMinusDst => wgpu_types::BlendFactor::OneMinusDst,
+            Self::DstAlpha => wgpu_types::BlendFactor::DstAlpha,
+            Self::OneMinusDstAlpha => wgpu_types::BlendFactor::OneMinusDstAlpha,
+            Self::SrcAlphaSaturated => wgpu_types::BlendFactor::SrcAlphaSaturated,
+            Self::Constant => wgpu_types::BlendFactor::Constant,
+            Self::OneMinusConstant => wgpu_types::BlendFactor::OneMinusConstant,
+            Self::Src1 => wgpu_types::BlendFactor::Src1,
+            Self::OneMinusSrc1 => wgpu_types::BlendFactor::OneMinusSrc1,
+            Self::Src1Alpha => wgpu_types::BlendFactor::Src1Alpha,
+            Self::OneMinusSrc1Alpha => wgpu_types::BlendFactor::OneMinusSrc1Alpha,
+        }
+    }
+}
+
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasBlendOperation {
     /// Src + Dst
-    #[default]
     Add = 0,
     /// Src - Dst
     Subtract = 1,
@@ -498,6 +567,18 @@ impl From<wgpu_types::BlendOperation> for CanvasBlendOperation {
     }
 }
 
+impl Into<wgpu_types::BlendOperation> for CanvasBlendOperation {
+    fn into(self) -> wgpu_types::BlendOperation {
+        match self {
+            CanvasBlendOperation::Add => wgpu_types::BlendOperation::Add,
+            CanvasBlendOperation::Subtract => wgpu_types::BlendOperation::Subtract,
+            CanvasBlendOperation::ReverseSubtract => wgpu_types::BlendOperation::ReverseSubtract,
+            CanvasBlendOperation::Min => wgpu_types::BlendOperation::Min,
+            CanvasBlendOperation::Max => wgpu_types::BlendOperation::Max,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CanvasVertexAttribute {
@@ -512,6 +593,16 @@ impl From<wgpu_types::VertexAttribute> for CanvasVertexAttribute {
             format: value.format.into(),
             offset: value.offset,
             shader_location: value.shader_location,
+        }
+    }
+}
+
+impl Into<wgpu_types::VertexAttribute> for CanvasVertexAttribute {
+    fn into(self) -> wgpu_types::VertexAttribute {
+        wgpu_types::VertexAttribute {
+            format: self.format.into(),
+            offset: self.offset,
+            shader_location: self.shader_location,
         }
     }
 }
@@ -542,4 +633,166 @@ impl From<wgpu_types::MultisampleState> for CanvasMultisampleState {
             alpha_to_coverage_enabled: value.alpha_to_coverage_enabled,
         }
     }
+}
+
+impl Into<wgpu_types::MultisampleState> for CanvasMultisampleState {
+    fn into(self) -> wgpu_types::MultisampleState {
+        wgpu_types::MultisampleState {
+            count: self.count,
+            mask: self.mask,
+            alpha_to_coverage_enabled: self.alpha_to_coverage_enabled,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct CanvasRenderPassColorAttachment {
+    pub view: *const CanvasGPUTextureView,
+    pub resolve_target: *const CanvasGPUTextureView,
+    pub channel: CanvasPassChannelColor,
+}
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct CanvasPassChannelColor {
+    pub load_op: CanvasLoadOp,
+    pub store_op: CanvasStoreOp,
+    pub clear_value: CanvasColor,
+    pub read_only: bool,
+}
+
+impl From<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChannelColor {
+    fn from(value: wgpu_core::command::PassChannel<wgpu_types::Color>) -> Self {
+        Self {
+            load_op: value.load_op.into(),
+            store_op: value.store_op.into(),
+            clear_value: value.clear_value.into(),
+            read_only: value.read_only,
+        }
+    }
+}
+
+impl Into<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChannelColor {
+    fn into(self) -> wgpu_core::command::PassChannel<wgpu_types::Color> {
+        wgpu_core::command::PassChannel {
+            load_op: self.load_op.into(),
+            store_op: self.store_op.into(),
+            clear_value: self.clear_value.into(),
+            read_only: self.read_only,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+
+pub enum CanvasLoadOp {
+    Clear = 0,
+    Load = 1,
+}
+
+impl From<wgpu_core::command::LoadOp> for CanvasLoadOp {
+    fn from(value: wgpu_core::command::LoadOp) -> Self {
+        match value {
+            wgpu_core::command::LoadOp::Clear => Self::Clear,
+            wgpu_core::command::LoadOp::Load => Self::Load,
+        }
+    }
+}
+
+impl Into<wgpu_core::command::LoadOp> for CanvasLoadOp {
+    fn into(self) -> wgpu_core::command::LoadOp {
+        match self {
+            CanvasLoadOp::Clear => wgpu_core::command::LoadOp::Clear,
+            CanvasLoadOp::Load => wgpu_core::command::LoadOp::Load,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasStoreOp {
+    Discard = 0,
+    Store = 1,
+}
+
+impl From<wgpu_core::command::StoreOp> for CanvasStoreOp {
+    fn from(value: wgpu_core::command::StoreOp) -> Self {
+        match value {
+            wgpu_core::command::StoreOp::Discard => Self::Discard,
+            wgpu_core::command::StoreOp::Store => Self::Store,
+        }
+    }
+}
+
+impl Into<wgpu_core::command::StoreOp> for CanvasStoreOp {
+    fn into(self) -> wgpu_core::command::StoreOp {
+        match self {
+            CanvasStoreOp::Discard => wgpu_core::command::StoreOp::Discard,
+            CanvasStoreOp::Store => wgpu_core::command::StoreOp::Store,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CanvasOptionalLoadOp {
+    None,
+    Some(CanvasLoadOp),
+}
+
+impl From<Option<wgpu_core::command::LoadOp>> for CanvasOptionalLoadOp {
+    fn from(value: Option<wgpu_core::command::LoadOp>) -> Self {
+        match value {
+            Some(value) => Self::Some(value.into()),
+            None => Self::None,
+        }
+    }
+}
+
+impl Into<Option<wgpu_core::command::LoadOp>> for CanvasOptionalLoadOp {
+    fn into(self) -> Option<wgpu_core::command::LoadOp> {
+        match self {
+            CanvasOptionalLoadOp::None => None,
+            CanvasOptionalLoadOp::Some(value) => Some(value.into()),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CanvasOptionalStoreOp {
+    None,
+    Some(CanvasStoreOp),
+}
+
+impl From<Option<wgpu_core::command::StoreOp>> for CanvasOptionalStoreOp {
+    fn from(value: Option<wgpu_core::command::StoreOp>) -> Self {
+        match value {
+            Some(value) => Self::Some(value.into()),
+            None => Self::None,
+        }
+    }
+}
+
+impl Into<Option<wgpu_core::command::StoreOp>> for CanvasOptionalStoreOp {
+    fn into(self) -> Option<wgpu_core::command::StoreOp> {
+        match self {
+            CanvasOptionalStoreOp::None => None,
+            CanvasOptionalStoreOp::Some(value) => Some(value.into()),
+        }
+    }
+}
+
+pub struct CanvasRenderPassDepthStencilAttachment {
+    pub(crate) view: *const CanvasGPUTextureView,
+    pub(crate) depth_clear_value: f32,
+    pub(crate) depth_load_op: CanvasLoadOp,
+    pub(crate) depth_store_op: CanvasStoreOp,
+    pub(crate) depth_read_only: bool,
+    pub(crate) stencil_clear_value: u32,
+    pub(crate) stencil_load_op: CanvasLoadOp,
+    pub(crate) stencil_store_op: CanvasStoreOp,
+    pub(crate) stencil_read_only: bool,
 }

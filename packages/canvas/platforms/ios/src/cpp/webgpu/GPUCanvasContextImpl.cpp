@@ -75,72 +75,104 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
     if (ptr == nullptr) {
         return;
     }
-
+    
     if (optionsValue->IsNullOrUndefined() || !optionsValue->IsObject()) {
         return;
     }
-
+    
     auto options = optionsValue.As<v8::Object>();
-
+    
     v8::Local<v8::Value> deviceValue;
-
+    
     options->Get(context, ConvertToV8String(isolate, "device")).ToLocal(
-            &deviceValue);
-
-
+                                                                        &deviceValue);
+    
+    
     if (deviceValue->IsNullOrUndefined() || !deviceValue->IsObject()) {
         return;
     }
+    
     auto device = GPUDeviceImpl::GetPointer(deviceValue.As<v8::Object>());
-
+    
     if (device == nullptr) { return; }
-
+    
     CanvasGPUSurfaceConfiguration config{};
-    config.alphaMode = CanvasGPUSurfaceAlphaMode::Opaque;
-    config.presentMode = CanvasGPUPresentMode::Fifo;
+    config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeOpaque;
+    config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifo;
     config.view_formats = nullptr;
     config.view_formats_size = 0;
-
-
+    config.usage = 0x10;
+    
+    
     /* ignore for now
-
-    v8::Local<v8::Value> formatValue;
-
-
-    options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
-            &deviceValue);
-
-    */
-
+     
+     v8::Local<v8::Value> formatValue;
+     
+     
+     options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
+     &deviceValue);
+     
+     */
+    
     v8::Local<v8::Value> usageValue;
-
+    
     options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
-            &usageValue);
-
+                                                                       &usageValue);
+    
     if (!usageValue.IsEmpty() && usageValue->IsInt32()) {
         config.usage = usageValue->Int32Value(context).ToChecked();
     }
-
-
+    
+    
     v8::Local<v8::Value> presentModeValue;
-
+    
     options->Get(context, ConvertToV8String(isolate, "presentMode")).ToLocal(
-            &presentModeValue);
-
-    if (!presentModeValue.IsEmpty() && presentModeValue->IsInt32()) {
-        config.presentMode = (CanvasGPUPresentMode) presentModeValue->Int32Value(
-                context).ToChecked();
+                                                                             &presentModeValue);
+    
+    if (!presentModeValue.IsEmpty()) {
+        if(presentModeValue->IsString()){
+            auto presentMode = ConvertFromV8String(isolate, presentModeValue);
+            if(strcmp(presentMode.c_str(), "autoVsync") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeAutoVsync;
+            }else if(strcmp(presentMode.c_str(), "autoNoVsync") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeAutoNoVsync;
+            }else if(strcmp(presentMode.c_str(), "fifo") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifo;
+            }else if(strcmp(presentMode.c_str(), "fifoRelaxed") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifoRelaxed;
+            }else if(strcmp(presentMode.c_str(), "immediate") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeImmediate;
+            }else if(strcmp(presentMode.c_str(), "mailbox") == 0){
+                config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeMailbox;
+            }
+            
+        }else if (presentModeValue->IsInt32()){
+            config.presentMode = (CanvasGPUPresentMode) presentModeValue->Int32Value(
+                                                                                     context).ToChecked();
+        }
     }
-
-
+    
+    
+    
     v8::Local<v8::Value> alphaModeValue;
-
     options->Get(context, ConvertToV8String(isolate, "alphaMode")).ToLocal(
-            &alphaModeValue);
-
-    if (!alphaModeValue.IsEmpty() && alphaModeValue->IsInt32()) {
-        config.alphaMode = (CanvasGPUSurfaceAlphaMode) alphaModeValue->Int32Value(
-                context).ToChecked();
+                                                                           &alphaModeValue);
+    
+    if (!alphaModeValue.IsEmpty()) {
+        if(alphaModeValue->IsString()){
+            auto alphaMode = ConvertFromV8String(isolate, alphaModeValue);
+            if(strcmp(alphaMode.c_str(), "premultiplied") == 0){
+                config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModePreMultiplied;
+            }else if(strcmp(alphaMode.c_str(), "opaque") == 0){
+                config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeOpaque;
+            }else if(strcmp(alphaMode.c_str(), "postmultiplied") == 0){
+                config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModePostMultiplied;
+            }
+        }else if(alphaModeValue->IsInt32()){
+            config.alphaMode = (CanvasGPUSurfaceAlphaMode) alphaModeValue->Int32Value(
+                    context).ToChecked();
+        }
+        
     }
 
     canvas_native_webgpu_context_configure(ptr->GetContext(), device->GetGPUDevice(), &config);

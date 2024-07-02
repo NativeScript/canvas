@@ -26,8 +26,8 @@ impl Into<wgpu_types::PowerPreference> for CanvasGPUPowerPreference {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasGPURequestAdapterOptions {
-    power_preference: CanvasGPUPowerPreference,
-    force_fallback_adapter: bool,
+    pub power_preference: CanvasGPUPowerPreference,
+    pub force_fallback_adapter: bool,
 }
 
 impl Default for CanvasGPURequestAdapterOptions {
@@ -82,6 +82,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
     callback_data: *mut c_void,
 ) {
     use super::prelude::build_features;
+    
 
     let instance = (&*instance).clone();
     let options = if options.is_null() {
@@ -108,8 +109,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         #[cfg(target_os = "windows")]
         let backends = wgpu_types::Backends::DX12;
 
-        println!("spawn");
-
         let instance = instance;
 
         let global = &instance.0;
@@ -119,19 +118,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             wgpu_core::instance::AdapterInputs::Mask(backends, |_| None),
         );
 
-        println!("adapter {:?}", &adapter);
-
         let adapter = adapter.map(|adapter_id| {
             let features = gfx_select!(adapter_id => global.adapter_features(adapter_id))
                 .map(build_features)
                 .unwrap_or_default();
 
-                println!("features {:?}", &features);
-
             let limits =
                 gfx_select!(adapter_id => global.adapter_limits(adapter_id)).unwrap_or_default();
-
-                println!("limits {:?}", &limits);
 
             let ret = CanvasGPUAdapter {
                 instance: instance.clone(),

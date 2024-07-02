@@ -4,6 +4,8 @@
 
 #include "GPUQueueImpl.h"
 #include "Caches.h"
+#include "GPUBufferImpl.h"
+#include "GPUCommandBufferImpl.h"
 
 GPUQueueImpl::GPUQueueImpl(CanvasGPUQueue *queue) : queue_(queue) {}
 
@@ -34,7 +36,7 @@ GPUQueueImpl *GPUQueueImpl::GetPointer(const v8::Local<v8::Object> &object) {
 
 v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
-    auto ctor = cache->GPUDeviceTmpl.get();
+    auto ctor = cache->GPUQueueTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
@@ -47,8 +49,99 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->SetInternalFieldCount(2);
 
 
-    cache->GPUDeviceTmpl =
+    tmpl->Set(
+            ConvertToV8String(isolate, "writeBuffer"),
+            v8::FunctionTemplate::New(isolate, &WriteBuffer));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "submit"),
+            v8::FunctionTemplate::New(isolate, &Submit));
+
+    cache->GPUQueueTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto bufferValue = args[0];
+
+    if (bufferValue->IsObject()) {
+        auto buffer = GPUBufferImpl::GetPointer(bufferValue.As<v8::Object>());
+
+
+        auto bufferOffset = (uint64_t) args[1].As<v8::Number>()->Value();
+
+        auto dataValue = args[2].As<v8::TypedArray>();
+
+        auto offset = dataValue->ByteOffset();
+
+        auto store = dataValue->Buffer()->GetBackingStore();
+
+        auto data = static_cast<uint8_t *>(store->Data()) + offset;
+
+        auto data_size = store->ByteLength() - offset;
+
+        auto dataOffset = (uint64_t) args[3].As<v8::Number>()->Value();
+
+        int64_t size = -1;
+        auto sizeValue = args[4];
+
+        if (sizeValue->IsNumber()) {
+            size = (int64_t) sizeValue->ToNumber(context).ToLocalChecked()->Value();
+        }
+
+
+        if (buffer != nullptr) {
+            canvas_native_webgpu_queue_write_buffer(ptr->GetGPUQueue(), buffer->GetGPUBuffer(),
+                                                    bufferOffset, data, data_size, dataOffset,
+                                                    size);
+        }
+    }
+
+
+}
+
+
+void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    std::vector<CanvasGPUCommandBuffer *> commandBuffers;
+    auto commandBuffersVal = args[0];
+
+    if (commandBuffersVal->IsArray()) {
+        auto commandBuffersArray = commandBuffersVal.As<v8::Array>();
+        auto len = commandBuffersArray->Length();
+
+        for (int i = 0; i < len; i++) {
+            v8::Local<v8::Value> item;
+            commandBuffersArray->Get(context, i).ToLocal(&item);
+            if (!item.IsEmpty() && item->IsObject()) {
+                auto buffer = GPUCommandBufferImpl::GetPointer(item.As<v8::Object>());
+                if (buffer != nullptr) {
+                    commandBuffers.push_back(buffer->GetGPUCommandBuffer());
+                }
+            }
+        }
+
+        canvas_native_webgpu_queue_submit(ptr->GetGPUQueue(), commandBuffers.data(),
+                                          commandBuffers.size());
+
+    }
+
+
 }
 

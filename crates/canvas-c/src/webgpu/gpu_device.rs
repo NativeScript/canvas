@@ -1,5 +1,5 @@
 use std::{
-    borrow::Cow,
+    borrow::{Borrow, Cow},
     collections::HashMap,
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
@@ -10,8 +10,9 @@ use crate::buffers::StringBuffer;
 use super::{
     enums::{
         CanvasCompareFunction, CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat,
-        CanvasIndexFormat, CanvasPrimitiveTopology, CanvasStencilFaceState, CanvasTextureDimension,
-        CanvasVertexStepMode,
+        CanvasIndexFormat, CanvasOptionalFrontFace, CanvasOptionalIndexFormat,
+        CanvasOptionalPrimitiveTopology, CanvasPrimitiveTopology, CanvasStencilFaceState,
+        CanvasTextureDimension, CanvasVertexStepMode,
     },
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -25,6 +26,8 @@ use super::{
     prelude::*,
     structs::{CanvasColorTargetState, CanvasMultisampleState, CanvasVertexAttribute},
 };
+
+const MAX_BIND_GROUPS: usize = 8;
 
 pub struct CanvasGPUDevice {
     pub(crate) instance: CanvasWebGPUInstance,
@@ -218,13 +221,16 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     //     Arc::new(parking_lot::RwLock::new(device.device.create_command_encoder(&desc)))
     // );
 
+    
     let device_id = device.device;
     let global = &device.instance.0;
+    
     let (encoder, error) =
         gfx_select!(device_id => global.device_create_command_encoder(device_id, &desc, None));
 
     // todo handle error
     if let Some(error) = error {
+        println!("canvas_native_webgpu_device_create_command_encoder: error {:?}", error.to_string());
         std::ptr::null_mut()
     } else {
         let encoder = CanvasGPUCommandEncoder {
@@ -294,7 +300,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_buffer(
     device.create_buffer(label, size, usage, mapped_at_creation, error)
 }
 
-struct CanvasConstants(HashMap<String, f64>);
+pub struct CanvasConstants(HashMap<String, f64>);
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_constants_create() -> *mut CanvasConstants {
@@ -319,9 +325,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_insert(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(
-    constants: *mut CanvasConstants,
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(constants: *mut CanvasConstants) {
     if constants.is_null() {
         return;
     }
@@ -330,6 +334,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(
 }
 
 #[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CanvasDepthStencilState {
     format: CanvasGPUTextureFormat,
     depth_write_enabled: bool,
@@ -343,40 +348,104 @@ pub struct CanvasDepthStencilState {
     depth_bias_clamp: f32,
 }
 
+impl From<wgpu_types::DepthStencilState> for CanvasDepthStencilState {
+    fn from(value: wgpu_types::DepthStencilState) -> Self {
+        Self {
+            format: value.format.into(),
+            depth_write_enabled: value.depth_write_enabled,
+            depth_compare: value.depth_compare.into(),
+            stencil_front: value.stencil.front.into(),
+            stencil_back: value.stencil.back.into(),
+            stencil_read_mask: value.stencil.read_mask,
+            stencil_write_mask: value.stencil.write_mask,
+            depth_bias: value.bias.constant,
+            depth_bias_slope_scale: value.bias.slope_scale,
+            depth_bias_clamp: value.bias.clamp,
+        }
+    }
+}
+
+impl Into<wgpu_types::DepthStencilState> for CanvasDepthStencilState {
+    fn into(self) -> wgpu_types::DepthStencilState {
+        wgpu_types::DepthStencilState {
+            format: self.format.into(),
+            depth_write_enabled: self.depth_write_enabled,
+            depth_compare: self.depth_compare.into(),
+            stencil: wgpu_types::StencilState {
+                front: self.stencil_front.into(),
+                back: self.stencil_back.into(),
+                read_mask: self.stencil_read_mask,
+                write_mask: self.stencil_write_mask,
+            },
+            bias: wgpu_types::DepthBiasState {
+                constant: self.depth_bias,
+                slope_scale: self.depth_bias_slope_scale,
+                clamp: self.depth_bias_clamp,
+            },
+        }
+    }
+}
+
 #[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct CanvasPrimitiveState {
-    topology: CanvasPrimitiveTopology,
-    strip_index_format: CanvasIndexFormat,
-    front_face: CanvasFrontFace,
-    cull_mode: CanvasCullMode,
-    unclipped_depth: bool,
+    pub topology: CanvasPrimitiveTopology,
+    pub strip_index_format: CanvasOptionalIndexFormat,
+    pub front_face: CanvasFrontFace,
+    pub cull_mode: CanvasCullMode,
+    pub unclipped_depth: bool,
+}
+
+impl From<wgpu_types::PrimitiveState> for CanvasPrimitiveState {
+    fn from(value: wgpu_types::PrimitiveState) -> Self {
+        Self {
+            topology: value.topology.into(),
+            strip_index_format: value.strip_index_format.into(),
+            front_face: value.front_face.into(),
+            cull_mode: value.cull_mode.into(),
+            unclipped_depth: value.unclipped_depth,
+        }
+    }
+}
+
+impl Into<wgpu_types::PrimitiveState> for CanvasPrimitiveState {
+    fn into(self) -> wgpu_types::PrimitiveState {
+        wgpu_types::PrimitiveState {
+            topology: self.topology.into(),
+            strip_index_format: self.strip_index_format.into(),
+            front_face: self.front_face.into(),
+            cull_mode: self.cull_mode.into(),
+            unclipped_depth: self.unclipped_depth,
+            polygon_mode: Default::default(), // native
+            conservative: false,              // native
+        }
+    }
 }
 
 #[repr(C)]
 pub struct CanvasVertexBufferLayout {
-    array_stride: u64,
-    step_mode: CanvasVertexStepMode,
-    attributes: *const CanvasVertexAttribute,
-    attributes_size: usize,
+    pub array_stride: u64,
+    pub step_mode: CanvasVertexStepMode,
+    pub attributes: *const CanvasVertexAttribute,
+    pub attributes_size: usize,
 }
 
 #[repr(C)]
 pub struct CanvasVertexState {
-    module: *const CanvasGPUShaderModule,
-    entry_point: *const c_char,
-    constants: *const CanvasConstants,
-    constants_size: usize,
-    buffers: *const CanvasVertexBufferLayout,
-    buffers_size: usize,
+    pub module: *const CanvasGPUShaderModule,
+    pub entry_point: *const c_char,
+    pub constants: *const CanvasConstants,
+    pub buffers: *const CanvasVertexBufferLayout,
+    pub buffers_size: usize,
 }
 
 #[repr(C)]
-struct CanvasFragmentState {
-    targets: *const CanvasColorTargetState,
-    targets_size: usize,
-    module: *const CanvasGPUShaderModule,
-    entry_point: *const c_char,
-    constants: *const CanvasConstants,
+pub struct CanvasFragmentState {
+    pub targets: *const CanvasColorTargetState,
+    pub targets_size: usize,
+    pub module: *const CanvasGPUShaderModule,
+    pub entry_point: *const c_char,
+    pub  constants: *const CanvasConstants,
 }
 
 #[repr(C)]
@@ -393,20 +462,20 @@ pub enum CanvasGPUPipelineLayoutOrGPUAutoLayoutMode {
 #[repr(C)]
 
 pub struct CanvasCreateRenderPipelineDescriptor {
-    label: *const c_char,
-    layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
-    vertex: *const CanvasVertexState,
-    primitive: *const CanvasPrimitiveState,
-    depth_stencil: *const CanvasDepthStencilState,
-    multisample: *const CanvasMultisampleState,
-    fragment: *const CanvasFragmentState,
+    pub  label: *const c_char,
+    pub  layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
+    pub vertex: *const CanvasVertexState,
+    pub primitive: *const CanvasPrimitiveState,
+    pub depth_stencil: *const CanvasDepthStencilState,
+    pub multisample: *const CanvasMultisampleState,
+    pub  fragment: *const CanvasFragmentState,
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
     device: *const CanvasGPUDevice,
     descriptor: *const CanvasCreateRenderPipelineDescriptor,
-) -> *mut CanvasGPUBuffer {
+) -> *mut CanvasGPURenderPipeline {
     if device.is_null() || descriptor.is_null() {
         return std::ptr::null_mut();
     }
@@ -457,13 +526,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         let targets = if !frag.targets.is_null() {
             std::slice::from_raw_parts(frag.targets, frag.targets_size)
                 .iter()
-                .map(|target| {
-                    Some(wgpu_types::ColorTargetState {
-                        format: target.format.into(),
-                        blend: target.blend.into(),
-                        write_mask: wgpu_types::ColorWrites::from_bits_retain(target.write_mask,)
-                    })
-                })
+                .map(|target| Some((*target).into()))
                 .collect::<Vec<Option<wgpu_types::ColorTargetState>>>()
         } else {
             vec![]
@@ -483,7 +546,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
             })
         } else {
             let constants = &*frag.constants;
-            let constants = Cow::from(&constants.0);
+            let constants = Cow::Borrowed(&constants.0);
             Some(wgpu_core::pipeline::FragmentState {
                 stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
                     module: module_id,
@@ -499,20 +562,27 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         None
     };
 
-    let primitive = &*descriptor.primitive;
-    let primitive: wgpu_types::PrimitiveState = primitive.into();
+    let primitive: wgpu_types::PrimitiveState = if !descriptor.primitive.is_null() {
+        let primitive = *descriptor.primitive;
+        primitive.into()
+    } else {
+        wgpu_types::PrimitiveState::default()
+    };
 
     let depth_stencil = if !descriptor.depth_stencil.is_null() {
-        let depth_stencil = &*descriptor.depth_stencil;
+        let depth_stencil = *descriptor.depth_stencil;
         let depth_stencil: wgpu_types::DepthStencilState = depth_stencil.into();
         Some(depth_stencil)
     } else {
         None
     };
 
-    let multisample = &*descriptor.multisample;
-
-    let multisample: wgpu_types::MultisampleState = multisample.into();
+    let multisample: wgpu_types::MultisampleState = if !descriptor.multisample.is_null() {
+        let multisample = *descriptor.multisample;
+        multisample.into()
+    } else {
+        wgpu_types::MultisampleState::default()
+    };
 
     let vertex_buffers = if !vertex.buffers.is_null() {
         let buffers = std::slice::from_raw_parts(vertex.buffers, vertex.buffers_size);
@@ -522,14 +592,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
                 let attributes = if !layout.attributes.is_null() {
                     std::slice::from_raw_parts(layout.attributes, layout.attributes_size)
                         .iter()
-                        .map(|attr| attr.into())
+                        .map(|attr| (*attr).into())
                         .collect::<Vec<wgpu_types::VertexAttribute>>()
                 } else {
                     vec![]
                 };
                 wgpu_core::pipeline::VertexBufferLayout {
                     array_stride: layout.array_stride,
-                    attributes: Cow::Owned((attributes)),
+                    attributes: Cow::Owned(attributes),
                     step_mode: layout.step_mode.into(),
                 }
             })
@@ -548,14 +618,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         let constants = &*vertex.constants;
         Cow::Borrowed(&constants.0)
     } else {
-        HashMap::default()
+        Cow::Owned(HashMap::default())
     };
 
     let vertex = wgpu_core::pipeline::VertexState {
         stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
             module: vertex_shader_module_id,
             entry_point: entry_point,
-            constants: Cow::Owned(constants),
+            constants: constants,
             // Required to be true for WebGPU
             zero_initialize_workgroup_memory: true,
         },
@@ -573,7 +643,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         multiview: None,
     };
 
-    let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc, None, None));
+    let implicit_pipelines = match descriptor.layout {
+        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(_) => None,
+        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => {
+            Some(wgpu_core::device::ImplicitPipelineIds {
+                root_id: None,
+                group_ids: &[None; MAX_BIND_GROUPS],
+            })
+        }
+    };
+
+    let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, implicit_pipelines));
 
     if let Some(error) = error {
         // todo handle error

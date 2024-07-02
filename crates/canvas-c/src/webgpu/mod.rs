@@ -14,17 +14,7 @@ mod macros {
         };
 
         ($id:expr => {$($c:tt)*}, $method:ident $params:tt) => {
-          match $id.backend() {
-            #[cfg(target_os = "android")]
-            wgpu_types::Backend::Vulkan => $($c)*.$method::<wgpu_core::api::Vulkan> $params,
-            #[cfg(any(target_os = "ios", target_os = "macos"))]
-            wgpu_types::Backend::Metal => $($c)*.$method::<wgpu_core::api::Metal> $params,
-            #[cfg(windows)]
-            wgpu_types::Backend::Dx12 => $($c)*.$method::<wgpu_core::api::Dx12> $params,
-            // #[cfg(not(target_os = "ios", target_os = "macos"))]
-            // wgpu_types::Backend::Gl => $($c)*.$method::<wgpu_core::api::Gles> $params,
-            other => panic!("Unexpected backend {:?}", other),
-          }
+          $($c)*.$method::<wgpu_core::api::Metal> $params
         };
       }
 }

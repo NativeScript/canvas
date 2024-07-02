@@ -9,7 +9,10 @@ use super::{
     gpu_query_set::CanvasGPUQuerySet,
     gpu_render_pass::CanvasGPURenderPass,
     gpu_texture::CanvasGPUTexture,
-    structs::{CanvasExtent3d, CanvasOrigin3d},
+    structs::{
+        CanvasExtent3d, CanvasOrigin3d, CanvasRenderPassColorAttachment,
+        CanvasRenderPassDepthStencilAttachment,
+    },
 };
 
 pub struct CanvasGPUCommandEncoder {
@@ -83,10 +86,14 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
+pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     command_encoder: *mut CanvasGPUCommandEncoder,
-    query_set: *const CanvasGPUQuerySet,
     label: *const c_char,
+    color_attachments: *const CanvasRenderPassColorAttachment,
+    color_attachments_size: usize,
+    depth_stencil_attachment: *const CanvasRenderPassDepthStencilAttachment,
+    occlusion_query_set: *const CanvasGPUQuerySet,
+    query_set: *const CanvasGPUQuerySet,
     beginning_of_pass_write_index: i32,
     end_of_pass_write_index: i32,
 ) -> *mut CanvasGPURenderPass {
@@ -98,6 +105,37 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     } else {
         None
     };
+
+    let color_attachments = if !color_attachments.is_null() && color_attachments_size > 0 {
+        let color_attachments =
+            std::slice::from_raw_parts(color_attachments, color_attachments_size);
+        color_attachments
+            .iter()
+            .map(|value| {
+                let resolve_target = if !value.resolve_target.is_null() {
+                    let resolve_target = unsafe { &*value.resolve_target };
+                    Some(resolve_target.texture_view)
+                } else {
+                    None
+                };
+
+                let view = unsafe { &*value.view };
+                Some(wgpu_core::command::RenderPassColorAttachment {
+                    view: view.texture_view,
+                    resolve_target: resolve_target,
+                    channel: wgpu_core::command::PassChannel {
+                        load_op: value.channel.load_op.into(),
+                        store_op: value.channel.store_op.into(),
+                        clear_value: value.channel.clear_value.into(),
+                        read_only: value.channel.read_only,
+                    },
+                })
+            })
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    };
+
 
     let timestamp_writes = if !query_set.is_null() {
         let query_set = unsafe { &*query_set };
@@ -126,14 +164,46 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     let command_encoder = unsafe { &mut *command_encoder };
     let command_encoder_id = command_encoder.encoder;
 
+    let depth_stencil_attachment = if !depth_stencil_attachment.is_null() {
+        let depth_stencil_attachment = &*depth_stencil_attachment;
+        let view = &*depth_stencil_attachment.view;
+        let depth = wgpu_core::command::PassChannel {
+            load_op: depth_stencil_attachment.depth_load_op.into(),
+            store_op: depth_stencil_attachment.depth_store_op.into(),
+            clear_value: depth_stencil_attachment.depth_clear_value,
+            read_only: depth_stencil_attachment.depth_read_only,
+        };
+        let stencil = wgpu_core::command::PassChannel {
+            load_op: depth_stencil_attachment.stencil_load_op.into(),
+            store_op: depth_stencil_attachment.stencil_store_op.into(),
+            clear_value: depth_stencil_attachment.stencil_clear_value,
+            read_only: depth_stencil_attachment.stencil_read_only,
+        };
+        Some(wgpu_core::command::RenderPassDepthStencilAttachment {
+            view: view.texture_view,
+            depth: depth,
+            stencil: stencil,
+        })
+    } else {
+        None
+    };
+
+    let occlusion_query_set = if !occlusion_query_set.is_null() {
+        let occlusion_query_set = &*occlusion_query_set;
+        Some(occlusion_query_set.query)
+    } else {
+        None
+    };
+
     let desc = wgpu_core::command::RenderPassDescriptor {
         label,
-        color_attachments: todo!(),
-        depth_stencil_attachment: todo!(),
+        color_attachments: std::borrow::Cow::Owned(color_attachments),
+        depth_stencil_attachment: depth_stencil_attachment.as_ref(),
         timestamp_writes: timestamp_writes.as_ref(),
-        occlusion_query_set: todo!(),
+        occlusion_query_set: occlusion_query_set,
     };
     let pass = wgpu_core::command::RenderPass::new(command_encoder_id, &desc);
+    
     let pass_encoder = CanvasGPURenderPass {
         instance: command_encoder.instance.clone(),
         pass,
@@ -391,7 +461,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     let (id, err) =
         gfx_select!(command_encoder_id => global.command_encoder_finish(command_encoder_id, &desc));
 
-    if let Some(_) = err {
+    if let Some(error) = err {
+        println!("canvas_native_webgpu_command_encoder_finish: error {:?}", error.to_string());
         // todo handle error
         return std::ptr::null_mut();
     }

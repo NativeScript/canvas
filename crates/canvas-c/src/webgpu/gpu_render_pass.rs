@@ -318,11 +318,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_blend_constant(
     let render_pass = &mut *render_pass;
     let render_pass = &mut render_pass.pass;
 
-    let color = *&color;
+    let color: wgpu_types::Color = (*color).into();
 
     wgpu_core::command::render_commands::wgpu_render_pass_set_blend_constant(
         render_pass,
-        color.into(),
+        &color,
     );
 }
 
@@ -345,15 +345,36 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_index_buffer(
     let buffer_id = buffer.buffer;
 
     let offset: u64 = offset.try_into().unwrap_or_default();
-    let size: Option<NonZeroU64> = size.try_into().ok();
+  
+    let size: Option<u64> = size.try_into().ok();
 
-    wgpu_core::command::render_commands::wgpu_render_pass_set_index_buffer(
-        render_pass,
-        buffer_id,
-        index_format.into(),
-        offset,
-        size,
-    );
+    let mut sizeValue: Option<std::num::NonZero<u64>> = None;
+
+    if let Some(value) = size {
+        sizeValue = std::num::NonZero::new(value);
+    }
+
+    if size.is_some() {
+        if let Some(size) = sizeValue {
+            wgpu_core::command::render_commands::wgpu_render_pass_set_index_buffer(
+                render_pass,
+                buffer_id,
+                index_format.into(),
+                offset,
+                Some(size),
+            );
+        } else {
+            // todo error ??
+        }
+    } else {
+        wgpu_core::command::render_commands::wgpu_render_pass_set_index_buffer(
+            render_pass,
+            buffer_id,
+            index_format.into(),
+            offset,
+            None,
+        );
+    }
 }
 
 #[no_mangle]
@@ -434,13 +455,38 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_vertex_buffer(
     let buffer = &*buffer;
     let buffer_id = buffer.buffer;
 
-    wgpu_core::command::render_commands::wgpu_render_pass_set_vertex_buffer(
-        render_pass,
-        slot,
-        buffer_id,
-        offset.try_into().unwrap_or_default(),
-        size.try_into().ok(),
-    );
+    let size: Option<u64> = size.try_into().ok();
+
+    let mut sizeValue: Option<std::num::NonZero<u64>> = None;
+
+    if let Some(value) = size {
+        sizeValue = std::num::NonZero::new(value);
+    }else {
+        sizeValue = std::num::NonZero::new(buffer.size);
+        println!("SIZE {}", buffer.size);
+    }
+
+    if size.is_some() {
+        if let Some(size) = sizeValue {
+            wgpu_core::command::render_commands::wgpu_render_pass_set_vertex_buffer(
+                render_pass,
+                slot,
+                buffer_id,
+                offset.try_into().unwrap_or_default(),
+                Some(size),
+            );
+        } else {
+            // todo error ??
+        }
+    } else {
+        wgpu_core::command::render_commands::wgpu_render_pass_set_vertex_buffer(
+            render_pass,
+            slot,
+            buffer_id,
+            offset.try_into().unwrap_or_default(),
+            None,
+        );
+    }
 }
 
 #[no_mangle]

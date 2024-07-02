@@ -13,6 +13,13 @@ long long canvas_native_init_ios_webgpu(int64_t instance,
                                         uint32_t width,
                                         uint32_t height);
 
+#if defined(TARGET_OS_IOS)
+long long canvas_native_init_ios_webgpu_uiview(int64_t instance,
+                                               int64_t view,
+                                               uint32_t width,
+                                               uint32_t height);
+#endif
+
 long long canvas_native_init_ios_gl(int64_t view,
                                     bool alpha,
                                     bool antialias,

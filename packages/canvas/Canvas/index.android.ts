@@ -40,7 +40,7 @@ export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
-	private _webgpuContext: GPUCanvasContext;
+	private _gpuContext: GPUCanvasContext;
 	private _canvas;
 	private _didPause: boolean = false;
 
@@ -338,10 +338,15 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 
-				if (!this._webgpuContext) {
+				if (!this._gpuContext) {
+					this._layoutNative();
+					const ptr = navigator.gpu.native.__getPointer();
+					this._canvas.initWebGPUContext(long(ptr));
+
+					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
 				}
 
-				return this._webgpuContext;
+				return this._gpuContext;
 			}
 		}
 		return null;

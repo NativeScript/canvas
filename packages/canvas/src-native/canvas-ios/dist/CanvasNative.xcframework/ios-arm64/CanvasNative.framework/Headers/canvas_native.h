@@ -15,59 +15,59 @@ typedef enum CanvasAstcBlock {
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px).
    */
-  B4x4,
+  CanvasAstcBlockB4x4,
   /**
    * 5x4 block compressed texture. 16 bytes per block (6.4 bit/px).
    */
-  B5x4,
+  CanvasAstcBlockB5x4,
   /**
    * 5x5 block compressed texture. 16 bytes per block (5.12 bit/px).
    */
-  B5x5,
+  CanvasAstcBlockB5x5,
   /**
    * 6x5 block compressed texture. 16 bytes per block (4.27 bit/px).
    */
-  B6x5,
+  CanvasAstcBlockB6x5,
   /**
    * 6x6 block compressed texture. 16 bytes per block (3.56 bit/px).
    */
-  B6x6,
+  CanvasAstcBlockB6x6,
   /**
    * 8x5 block compressed texture. 16 bytes per block (3.2 bit/px).
    */
-  B8x5,
+  CanvasAstcBlockB8x5,
   /**
    * 8x6 block compressed texture. 16 bytes per block (2.67 bit/px).
    */
-  B8x6,
+  CanvasAstcBlockB8x6,
   /**
    * 8x8 block compressed texture. 16 bytes per block (2 bit/px).
    */
-  B8x8,
+  CanvasAstcBlockB8x8,
   /**
    * 10x5 block compressed texture. 16 bytes per block (2.56 bit/px).
    */
-  B10x5,
+  CanvasAstcBlockB10x5,
   /**
    * 10x6 block compressed texture. 16 bytes per block (2.13 bit/px).
    */
-  B10x6,
+  CanvasAstcBlockB10x6,
   /**
    * 10x8 block compressed texture. 16 bytes per block (1.6 bit/px).
    */
-  B10x8,
+  CanvasAstcBlockB10x8,
   /**
    * 10x10 block compressed texture. 16 bytes per block (1.28 bit/px).
    */
-  B10x10,
+  CanvasAstcBlockB10x10,
   /**
    * 12x10 block compressed texture. 16 bytes per block (1.07 bit/px).
    */
-  B12x10,
+  CanvasAstcBlockB12x10,
   /**
    * 12x12 block compressed texture. 16 bytes per block (0.89 bit/px).
    */
-  B12x12,
+  CanvasAstcBlockB12x12,
 } CanvasAstcBlock;
 
 /**
@@ -79,86 +79,299 @@ typedef enum CanvasAstcChannel {
    *
    * [`Features::TEXTURE_COMPRESSION_ASTC`] must be enabled to use this channel.
    */
-  Unorm,
+  CanvasAstcChannelUnorm,
   /**
    * 8 bit integer RGBA, Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ASTC`] must be enabled to use this channel.
    */
-  UnormSrgb,
+  CanvasAstcChannelUnormSrgb,
   /**
    * floating-point RGBA, linear-color float can be outside of the [0, 1] range.
    *
    * [`Features::TEXTURE_COMPRESSION_ASTC_HDR`] must be enabled to use this channel.
    */
-  Hdr,
+  CanvasAstcChannelHdr,
 } CanvasAstcChannel;
 
+typedef enum CanvasBlendFactor {
+  /**
+   * 0.0
+   */
+  CanvasBlendFactorZero = 0,
+  /**
+   * 1.0
+   */
+  CanvasBlendFactorOne = 1,
+  /**
+   * S.component
+   */
+  CanvasBlendFactorSrc = 2,
+  /**
+   * 1.0 - S.component
+   */
+  CanvasBlendFactorOneMinusSrc = 3,
+  /**
+   * S.alpha
+   */
+  CanvasBlendFactorSrcAlpha = 4,
+  /**
+   * 1.0 - S.alpha
+   */
+  CanvasBlendFactorOneMinusSrcAlpha = 5,
+  /**
+   * D.component
+   */
+  CanvasBlendFactorDst = 6,
+  /**
+   * 1.0 - D.component
+   */
+  CanvasBlendFactorOneMinusDst = 7,
+  /**
+   * D.alpha
+   */
+  CanvasBlendFactorDstAlpha = 8,
+  /**
+   * 1.0 - D.alpha
+   */
+  CanvasBlendFactorOneMinusDstAlpha = 9,
+  /**
+   * min(S.alpha, 1.0 - D.alpha)
+   */
+  CanvasBlendFactorSrcAlphaSaturated = 10,
+  /**
+   * Constant
+   */
+  CanvasBlendFactorConstant = 11,
+  /**
+   * 1.0 - Constant
+   */
+  CanvasBlendFactorOneMinusConstant = 12,
+  /**
+   * S1.component
+   */
+  CanvasBlendFactorSrc1 = 13,
+  /**
+   * 1.0 - S1.component
+   */
+  CanvasBlendFactorOneMinusSrc1 = 14,
+  /**
+   * S1.alpha
+   */
+  CanvasBlendFactorSrc1Alpha = 15,
+  /**
+   * 1.0 - S1.alpha
+   */
+  CanvasBlendFactorOneMinusSrc1Alpha = 16,
+} CanvasBlendFactor;
+
+typedef enum CanvasBlendOperation {
+  /**
+   * Src + Dst
+   */
+  CanvasBlendOperationAdd = 0,
+  /**
+   * Src - Dst
+   */
+  CanvasBlendOperationSubtract = 1,
+  /**
+   * Dst - Src
+   */
+  CanvasBlendOperationReverseSubtract = 2,
+  /**
+   * min(Src, Dst)
+   */
+  CanvasBlendOperationMin = 3,
+  /**
+   * max(Src, Dst)
+   */
+  CanvasBlendOperationMax = 4,
+} CanvasBlendOperation;
+
+typedef enum CanvasCompareFunction {
+  CanvasCompareFunctionNever = 1,
+  CanvasCompareFunctionLess = 2,
+  CanvasCompareFunctionEqual = 3,
+  CanvasCompareFunctionLessEqual = 4,
+  CanvasCompareFunctionGreater = 5,
+  CanvasCompareFunctionNotEqual = 6,
+  CanvasCompareFunctionGreaterEqual = 7,
+  CanvasCompareFunctionAlways = 8,
+} CanvasCompareFunction;
+
+typedef enum CanvasCullMode {
+  CanvasCullModeNone,
+  CanvasCullModeFront,
+  CanvasCullModeBack,
+} CanvasCullMode;
+
+typedef enum CanvasFrontFace {
+  CanvasFrontFaceCcw = 0,
+  CanvasFrontFaceCw = 1,
+} CanvasFrontFace;
+
+typedef enum CanvasGPUAutoLayoutMode {
+  CanvasGPUAutoLayoutModeAuto,
+} CanvasGPUAutoLayoutMode;
+
 typedef enum CanvasGPUPowerPreference {
-  None,
-  LowPower,
-  HighPerformance,
+  CanvasGPUPowerPreferenceNone,
+  CanvasGPUPowerPreferenceLowPower,
+  CanvasGPUPowerPreferenceHighPerformance,
 } CanvasGPUPowerPreference;
 
 typedef enum CanvasGPUPresentMode {
-  AutoVsync = 0,
-  AutoNoVsync = 1,
-  Fifo = 2,
-  FifoRelaxed = 3,
-  Immediate = 4,
-  Mailbox = 5,
+  CanvasGPUPresentModeAutoVsync = 0,
+  CanvasGPUPresentModeAutoNoVsync = 1,
+  CanvasGPUPresentModeFifo = 2,
+  CanvasGPUPresentModeFifoRelaxed = 3,
+  CanvasGPUPresentModeImmediate = 4,
+  CanvasGPUPresentModeMailbox = 5,
 } CanvasGPUPresentMode;
 
 typedef enum CanvasGPUSurfaceAlphaMode {
-  Auto = 0,
-  Opaque = 1,
-  PreMultiplied = 2,
-  PostMultiplied = 3,
-  Inherit = 4,
+  CanvasGPUSurfaceAlphaModeAuto = 0,
+  CanvasGPUSurfaceAlphaModeOpaque = 1,
+  CanvasGPUSurfaceAlphaModePreMultiplied = 2,
+  CanvasGPUSurfaceAlphaModePostMultiplied = 3,
+  CanvasGPUSurfaceAlphaModeInherit = 4,
 } CanvasGPUSurfaceAlphaMode;
+
+typedef enum CanvasIndexFormat {
+  /**
+   * Indices are 16 bit unsigned integers.
+   */
+  CanvasIndexFormatUint16 = 0,
+  /**
+   * Indices are 32 bit unsigned integers.
+   */
+  CanvasIndexFormatUint32 = 1,
+} CanvasIndexFormat;
+
+typedef enum CanvasLoadOp {
+  CanvasLoadOpClear = 0,
+  CanvasLoadOpLoad = 1,
+} CanvasLoadOp;
+
+typedef enum CanvasOptionalTextureViewDimension {
+  CanvasOptionalTextureViewDimensionNone,
+  CanvasOptionalTextureViewDimensionD1,
+  CanvasOptionalTextureViewDimensionD2,
+  CanvasOptionalTextureViewDimensionD2Array,
+  CanvasOptionalTextureViewDimensionCube,
+  CanvasOptionalTextureViewDimensionCubeArray,
+  CanvasOptionalTextureViewDimensionD3,
+} CanvasOptionalTextureViewDimension;
+
+typedef enum CanvasPrimitiveTopology {
+  CanvasPrimitiveTopologyPointList = 0,
+  CanvasPrimitiveTopologyLineList = 1,
+  CanvasPrimitiveTopologyLineStrip = 2,
+  CanvasPrimitiveTopologyTriangleList = 3,
+  CanvasPrimitiveTopologyTriangleStrip = 4,
+} CanvasPrimitiveTopology;
+
+typedef enum CanvasStencilOperation {
+  CanvasStencilOperationKeep = 0,
+  CanvasStencilOperationZero = 1,
+  CanvasStencilOperationReplace = 2,
+  CanvasStencilOperationInvert = 3,
+  CanvasStencilOperationIncrementClamp = 4,
+  CanvasStencilOperationDecrementClamp = 5,
+  CanvasStencilOperationIncrementWrap = 6,
+  CanvasStencilOperationDecrementWrap = 7,
+} CanvasStencilOperation;
+
+typedef enum CanvasStoreOp {
+  CanvasStoreOpDiscard = 0,
+  CanvasStoreOpStore = 1,
+} CanvasStoreOp;
 
 typedef enum CanvasTextureAspect {
   /**
    * Depth, Stencil, and Color.
    */
-  All,
+  CanvasTextureAspectAll,
   /**
    * Stencil.
    */
-  StencilOnly,
+  CanvasTextureAspectStencilOnly,
   /**
    * Depth.
    */
-  DepthOnly,
+  CanvasTextureAspectDepthOnly,
   /**
    * Plane 0.
    */
-  Plane0,
+  CanvasTextureAspectPlane0,
   /**
    * Plane 1.
    */
-  Plane1,
+  CanvasTextureAspectPlane1,
   /**
    * Plane 2.
    */
-  Plane2,
+  CanvasTextureAspectPlane2,
 } CanvasTextureAspect;
 
 typedef enum CanvasTextureDimension {
-  D1,
-  D2,
-  D3,
+  CanvasTextureDimensionD1,
+  CanvasTextureDimensionD2,
+  CanvasTextureDimensionD3,
 } CanvasTextureDimension;
 
+typedef enum CanvasVertexFormat {
+  CanvasVertexFormatUint8x2 = 0,
+  CanvasVertexFormatUint8x4 = 1,
+  CanvasVertexFormatSint8x2 = 2,
+  CanvasVertexFormatSint8x4 = 3,
+  CanvasVertexFormatUnorm8x2 = 4,
+  CanvasVertexFormatUnorm8x4 = 5,
+  CanvasVertexFormatSnorm8x2 = 6,
+  CanvasVertexFormatSnorm8x4 = 7,
+  CanvasVertexFormatUint16x2 = 8,
+  CanvasVertexFormatUint16x4 = 9,
+  CanvasVertexFormatSint16x2 = 10,
+  CanvasVertexFormatSint16x4 = 11,
+  CanvasVertexFormatUnorm16x2 = 12,
+  CanvasVertexFormatUnorm16x4 = 13,
+  CanvasVertexFormatSnorm16x2 = 14,
+  CanvasVertexFormatSnorm16x4 = 15,
+  CanvasVertexFormatFloat16x2 = 16,
+  CanvasVertexFormatFloat16x4 = 17,
+  CanvasVertexFormatFloat32 = 18,
+  CanvasVertexFormatFloat32x2 = 19,
+  CanvasVertexFormatFloat32x3 = 20,
+  CanvasVertexFormatFloat32x4 = 21,
+  CanvasVertexFormatUint32 = 22,
+  CanvasVertexFormatUint32x2 = 23,
+  CanvasVertexFormatUint32x3 = 24,
+  CanvasVertexFormatUint32x4 = 25,
+  CanvasVertexFormatSint32 = 26,
+  CanvasVertexFormatSint32x2 = 27,
+  CanvasVertexFormatSint32x3 = 28,
+  CanvasVertexFormatSint32x4 = 29,
+  CanvasVertexFormatFloat64 = 30,
+  CanvasVertexFormatFloat64x2 = 31,
+  CanvasVertexFormatFloat64x3 = 32,
+  CanvasVertexFormatFloat64x4 = 33,
+  CanvasVertexFormatUnorm10_10_10_2 = 34,
+} CanvasVertexFormat;
+
+typedef enum CanvasVertexStepMode {
+  CanvasVertexStepModeVertex = 0,
+  CanvasVertexStepModeInstance = 1,
+} CanvasVertexStepMode;
+
 typedef enum GLConstants {
-  UNPACK_FLIP_Y_WEBGL = 37440,
-  UNPACK_PREMULTIPLY_ALPHA_WEBGL = 37441,
-  UNPACK_COLORSPACE_CONVERSION_WEBGL = 37443,
+  GLConstantsUnPackFlipYWebGL = 37440,
+  GLConstantsUnpackPremultiplyAlphaWebGL = 37441,
+  GLConstantsUnpackColorSpaceConversionWebGL = 37443,
 } GLConstants;
 
 typedef enum GPUMapMode {
-  Read,
-  Write,
+  GPUMapModeRead,
+  GPUMapModeWrite,
 } GPUMapMode;
 
 typedef enum ImageBitmapColorSpaceConversion {
@@ -169,7 +382,7 @@ typedef enum ImageBitmapColorSpaceConversion {
 typedef enum ImageBitmapPremultiplyAlpha {
   ImageBitmapPremultiplyAlphaDefault,
   ImageBitmapPremultiplyAlphaPremultiply,
-  ImageBitmapPremultiplyAlphaNone,
+  ImageBitmapPremultiplyAlphaAlphaNone,
 } ImageBitmapPremultiplyAlpha;
 
 typedef enum ImageBitmapResizeQuality {
@@ -193,41 +406,41 @@ typedef enum PaintStyleType {
 } PaintStyleType;
 
 typedef enum TextBaseLine {
-  TOP = 0,
-  HANGING = 1,
-  MIDDLE = 2,
-  ALPHABETIC = 3,
-  IDEOGRAPHIC = 4,
-  BOTTOM = 5,
+  TextBaseLineTOP = 0,
+  TextBaseLineHANGING = 1,
+  TextBaseLineMIDDLE = 2,
+  TextBaseLineALPHABETIC = 3,
+  TextBaseLineIDEOGRAPHIC = 4,
+  TextBaseLineBOTTOM = 5,
 } TextBaseLine;
 
 typedef enum WebGLExtensionType {
-  WebGLExtensionTypeEXT_blend_minmax,
-  WebGLExtensionTypeEXT_color_buffer_half_float,
-  WebGLExtensionTypeEXT_disjoint_timer_query,
-  WebGLExtensionTypeEXT_sRGB,
-  WebGLExtensionTypeEXT_shader_texture_lod,
-  WebGLExtensionTypeEXT_texture_filter_anisotropic,
-  WebGLExtensionTypeOES_element_index_uint,
-  WebGLExtensionTypeOES_standard_derivatives,
-  WebGLExtensionTypeOES_texture_float,
-  WebGLExtensionTypeOES_texture_float_linear,
-  WebGLExtensionTypeOES_texture_half_float,
-  WebGLExtensionTypeOES_texture_half_float_linear,
-  WebGLExtensionTypeOES_vertex_array_object,
-  WebGLExtensionTypeWEBGL_color_buffer_float,
-  WebGLExtensionTypeWEBGL_compressed_texture_atc,
-  WebGLExtensionTypeWEBGL_compressed_texture_etc1,
-  WebGLExtensionTypeWEBGL_compressed_texture_s3tc,
-  WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
-  WebGLExtensionTypeWEBGL_compressed_texture_etc,
-  WebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
-  WebGLExtensionTypeWEBGL_lose_context,
-  WebGLExtensionTypeANGLE_instanced_arrays,
-  WebGLExtensionTypeWEBGL_depth_texture,
-  WebGLExtensionTypeWEBGL_draw_buffers,
-  WebGLExtensionTypeOES_fbo_render_mipmap,
-  WebGLExtensionTypeNone,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_blend_minmax,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_color_buffer_half_float,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_disjoint_timer_query,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_sRGB,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_shader_texture_lod,
+  WebGLExtensionTypeWebGLExtensionTypeEXT_texture_filter_anisotropic,
+  WebGLExtensionTypeWebGLExtensionTypeOES_element_index_uint,
+  WebGLExtensionTypeWebGLExtensionTypeOES_standard_derivatives,
+  WebGLExtensionTypeWebGLExtensionTypeOES_texture_float,
+  WebGLExtensionTypeWebGLExtensionTypeOES_texture_float_linear,
+  WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float,
+  WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float_linear,
+  WebGLExtensionTypeWebGLExtensionTypeOES_vertex_array_object,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_color_buffer_float,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_atc,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc1,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_pvrtc,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_lose_context,
+  WebGLExtensionTypeWebGLExtensionTypeANGLE_instanced_arrays,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_depth_texture,
+  WebGLExtensionTypeWebGLExtensionTypeWEBGL_draw_buffers,
+  WebGLExtensionTypeWebGLExtensionTypeOES_fbo_render_mipmap,
+  WebGLExtensionTypeWebGLExtensionTypeNone,
 } WebGLExtensionType;
 
 typedef enum WebGLResultType {
@@ -247,9 +460,15 @@ typedef struct ANGLE_instanced_arrays ANGLE_instanced_arrays;
 
 typedef struct CCow CCow;
 
+typedef struct CanvasConstants CanvasConstants;
+
 typedef struct CanvasGPUAdapter CanvasGPUAdapter;
 
 typedef struct CanvasGPUAdapterInfo CanvasGPUAdapterInfo;
+
+typedef struct CanvasGPUBindGroup CanvasGPUBindGroup;
+
+typedef struct CanvasGPUBindGroupLayout CanvasGPUBindGroupLayout;
 
 typedef struct CanvasGPUBuffer CanvasGPUBuffer;
 
@@ -263,13 +482,27 @@ typedef struct CanvasGPUComputePass CanvasGPUComputePass;
 
 typedef struct CanvasGPUDevice CanvasGPUDevice;
 
+typedef struct CanvasGPUPipelineLayout CanvasGPUPipelineLayout;
+
 typedef struct CanvasGPUQuerySet CanvasGPUQuerySet;
 
 typedef struct CanvasGPUQueue CanvasGPUQueue;
 
+typedef struct CanvasGPURenderBundle CanvasGPURenderBundle;
+
+typedef struct CanvasGPURenderPass CanvasGPURenderPass;
+
+typedef struct CanvasGPURenderPipeline CanvasGPURenderPipeline;
+
 typedef struct CanvasGPUShaderModule CanvasGPUShaderModule;
 
 typedef struct CanvasGPUTexture CanvasGPUTexture;
+
+typedef struct CanvasGPUTextureView CanvasGPUTextureView;
+
+typedef struct CanvasImageDataLayout CanvasImageDataLayout;
+
+typedef struct CanvasRenderPassDepthStencilAttachment CanvasRenderPassDepthStencilAttachment;
 
 typedef struct CanvasRenderingContext2D CanvasRenderingContext2D;
 
@@ -423,6 +656,32 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_non_sampler_bindings;
 } CanvasGPUSupportedLimits;
 
+typedef struct CanvasColor {
+  double r;
+  double g;
+  double b;
+  double a;
+} CanvasColor;
+#define CanvasColor_TRANSPARENT (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 }
+#define CanvasColor_BLACK (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_WHITE (CanvasColor){ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }
+#define CanvasColor_RED (CanvasColor){ .r = 1.0, .g = 0.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_GREEN (CanvasColor){ .r = 0.0, .g = 1.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_BLUE (CanvasColor){ .r = 0.0, .g = 0.0, .b = 1.0, .a = 1.0 }
+
+typedef struct CanvasPassChannelColor {
+  enum CanvasLoadOp load_op;
+  enum CanvasStoreOp store_op;
+  struct CanvasColor clear_value;
+  bool read_only;
+} CanvasPassChannelColor;
+
+typedef struct CanvasRenderPassColorAttachment {
+  const struct CanvasGPUTextureView *view;
+  const struct CanvasGPUTextureView *resolve_target;
+  struct CanvasPassChannelColor channel;
+} CanvasRenderPassColorAttachment;
+
 typedef struct CanvasImageCopyBuffer {
   const struct CanvasGPUBuffer *buffer;
   uint64_t offset;
@@ -467,217 +726,277 @@ typedef struct CanvasExtent3d {
   uint32_t depth_or_array_layers;
 } CanvasExtent3d;
 
+typedef enum CanvasGPUPipelineLayoutOrGPUAutoLayoutMode_Tag {
+  CanvasGPUPipelineLayoutOrGPUAutoLayoutModeLayout,
+  CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto,
+} CanvasGPUPipelineLayoutOrGPUAutoLayoutMode_Tag;
+
+typedef struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode {
+  CanvasGPUPipelineLayoutOrGPUAutoLayoutMode_Tag tag;
+  union {
+    struct {
+      const struct CanvasGPUPipelineLayout *layout;
+    };
+    struct {
+      enum CanvasGPUAutoLayoutMode auto_;
+    };
+  };
+} CanvasGPUPipelineLayoutOrGPUAutoLayoutMode;
+
+typedef struct CanvasVertexAttribute {
+  enum CanvasVertexFormat format;
+  uint64_t offset;
+  uint32_t shader_location;
+} CanvasVertexAttribute;
+
+typedef struct CanvasVertexBufferLayout {
+  uint64_t array_stride;
+  enum CanvasVertexStepMode step_mode;
+  const struct CanvasVertexAttribute *attributes;
+  uintptr_t attributes_size;
+} CanvasVertexBufferLayout;
+
+typedef struct CanvasVertexState {
+  const struct CanvasGPUShaderModule *module;
+  const char *entry_point;
+  const struct CanvasConstants *constants;
+  const struct CanvasVertexBufferLayout *buffers;
+  uintptr_t buffers_size;
+} CanvasVertexState;
+
+typedef enum CanvasOptionalIndexFormat_Tag {
+  CanvasOptionalIndexFormatNone,
+  CanvasOptionalIndexFormatSome,
+} CanvasOptionalIndexFormat_Tag;
+
+typedef struct CanvasOptionalIndexFormat {
+  CanvasOptionalIndexFormat_Tag tag;
+  union {
+    struct {
+      enum CanvasIndexFormat some;
+    };
+  };
+} CanvasOptionalIndexFormat;
+
+typedef struct CanvasPrimitiveState {
+  enum CanvasPrimitiveTopology topology;
+  struct CanvasOptionalIndexFormat strip_index_format;
+  enum CanvasFrontFace front_face;
+  enum CanvasCullMode cull_mode;
+  bool unclipped_depth;
+} CanvasPrimitiveState;
+
 typedef enum CanvasGPUTextureFormat_Tag {
   /**
    * Red channel only. 8 bit integer per channel. [0, 255] converted to/from float [0, 1] in shader.
    */
-  R8Unorm,
+  CanvasGPUTextureFormatR8Unorm,
   /**
    * Red channel only. 8 bit integer per channel. [-127, 127] converted to/from float [-1, 1] in shader.
    */
-  R8Snorm,
+  CanvasGPUTextureFormatR8Snorm,
   /**
    * Red channel only. 8 bit integer per channel. Unsigned in shader.
    */
-  R8Uint,
+  CanvasGPUTextureFormatR8Uint,
   /**
    * Red channel only. 8 bit integer per channel. Signed in shader.
    */
-  R8Sint,
+  CanvasGPUTextureFormatR8Sint,
   /**
    * Red channel only. 16 bit integer per channel. Unsigned in shader.
    */
-  R16Uint,
+  CanvasGPUTextureFormatR16Uint,
   /**
    * Red channel only. 16 bit integer per channel. Signed in shader.
    */
-  R16Sint,
+  CanvasGPUTextureFormatR16Sint,
   /**
    * Red channel only. 16 bit integer per channel. [0, 65535] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  R16Unorm,
+  CanvasGPUTextureFormatR16Unorm,
   /**
    * Red channel only. 16 bit integer per channel. [0, 65535] converted to/from float [-1, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  R16Snorm,
+  CanvasGPUTextureFormatR16Snorm,
   /**
    * Red channel only. 16 bit float per channel. Float in shader.
    */
-  R16Float,
+  CanvasGPUTextureFormatR16Float,
   /**
    * Red and green channels. 8 bit integer per channel. [0, 255] converted to/from float [0, 1] in shader.
    */
-  Rg8Unorm,
+  CanvasGPUTextureFormatRg8Unorm,
   /**
    * Red and green channels. 8 bit integer per channel. [-127, 127] converted to/from float [-1, 1] in shader.
    */
-  Rg8Snorm,
+  CanvasGPUTextureFormatRg8Snorm,
   /**
    * Red and green channels. 8 bit integer per channel. Unsigned in shader.
    */
-  Rg8Uint,
+  CanvasGPUTextureFormatRg8Uint,
   /**
    * Red and green channels. 8 bit integer per channel. Signed in shader.
    */
-  Rg8Sint,
+  CanvasGPUTextureFormatRg8Sint,
   /**
    * Red channel only. 32 bit integer per channel. Unsigned in shader.
    */
-  R32Uint,
+  CanvasGPUTextureFormatR32Uint,
   /**
    * Red channel only. 32 bit integer per channel. Signed in shader.
    */
-  R32Sint,
+  CanvasGPUTextureFormatR32Sint,
   /**
    * Red channel only. 32 bit float per channel. Float in shader.
    */
-  R32Float,
+  CanvasGPUTextureFormatR32Float,
   /**
    * Red and green channels. 16 bit integer per channel. Unsigned in shader.
    */
-  Rg16Uint,
+  CanvasGPUTextureFormatRg16Uint,
   /**
    * Red and green channels. 16 bit integer per channel. Signed in shader.
    */
-  Rg16Sint,
+  CanvasGPUTextureFormatRg16Sint,
   /**
    * Red and green channels. 16 bit integer per channel. [0, 65535] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  Rg16Unorm,
+  CanvasGPUTextureFormatRg16Unorm,
   /**
    * Red and green channels. 16 bit integer per channel. [0, 65535] converted to/from float [-1, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  Rg16Snorm,
+  CanvasGPUTextureFormatRg16Snorm,
   /**
    * Red and green channels. 16 bit float per channel. Float in shader.
    */
-  Rg16Float,
+  CanvasGPUTextureFormatRg16Float,
   /**
    * Red, green, blue, and alpha channels. 8 bit integer per channel. [0, 255] converted to/from float [0, 1] in shader.
    */
-  Rgba8Unorm,
+  CanvasGPUTextureFormatRgba8Unorm,
   /**
    * Red, green, blue, and alpha channels. 8 bit integer per channel. Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
    */
-  Rgba8UnormSrgb,
+  CanvasGPUTextureFormatRgba8UnormSrgb,
   /**
    * Red, green, blue, and alpha channels. 8 bit integer per channel. [-127, 127] converted to/from float [-1, 1] in shader.
    */
-  Rgba8Snorm,
+  CanvasGPUTextureFormatRgba8Snorm,
   /**
    * Red, green, blue, and alpha channels. 8 bit integer per channel. Unsigned in shader.
    */
-  Rgba8Uint,
+  CanvasGPUTextureFormatRgba8Uint,
   /**
    * Red, green, blue, and alpha channels. 8 bit integer per channel. Signed in shader.
    */
-  Rgba8Sint,
+  CanvasGPUTextureFormatRgba8Sint,
   /**
    * Blue, green, red, and alpha channels. 8 bit integer per channel. [0, 255] converted to/from float [0, 1] in shader.
    */
-  Bgra8Unorm,
+  CanvasGPUTextureFormatBgra8Unorm,
   /**
    * Blue, green, red, and alpha channels. 8 bit integer per channel. Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
    */
-  Bgra8UnormSrgb,
+  CanvasGPUTextureFormatBgra8UnormSrgb,
   /**
    * Packed unsigned float with 9 bits mantisa for each RGB component, then a common 5 bits exponent
    */
-  Rgb9e5Ufloat,
+  CanvasGPUTextureFormatRgb9e5Ufloat,
   /**
    * Red, green, blue, and alpha channels. 10 bit integer for RGB channels, 2 bit integer for alpha channel. Unsigned in shader.
    */
-  Rgb10a2Uint,
+  CanvasGPUTextureFormatRgb10a2Uint,
   /**
    * Red, green, blue, and alpha channels. 10 bit integer for RGB channels, 2 bit integer for alpha channel. [0, 1023] ([0, 3] for alpha) converted to/from float [0, 1] in shader.
    */
-  Rgb10a2Unorm,
+  CanvasGPUTextureFormatRgb10a2Unorm,
   /**
    * Red, green, and blue channels. 11 bit float with no sign bit for RG channels. 10 bit float with no sign bit for blue channel. Float in shader.
    */
-  Rg11b10Float,
+  CanvasGPUTextureFormatRg11b10Float,
   /**
    * Red and green channels. 32 bit integer per channel. Unsigned in shader.
    */
-  Rg32Uint,
+  CanvasGPUTextureFormatRg32Uint,
   /**
    * Red and green channels. 32 bit integer per channel. Signed in shader.
    */
-  Rg32Sint,
+  CanvasGPUTextureFormatRg32Sint,
   /**
    * Red and green channels. 32 bit float per channel. Float in shader.
    */
-  Rg32Float,
+  CanvasGPUTextureFormatRg32Float,
   /**
    * Red, green, blue, and alpha channels. 16 bit integer per channel. Unsigned in shader.
    */
-  Rgba16Uint,
+  CanvasGPUTextureFormatRgba16Uint,
   /**
    * Red, green, blue, and alpha channels. 16 bit integer per channel. Signed in shader.
    */
-  Rgba16Sint,
+  CanvasGPUTextureFormatRgba16Sint,
   /**
    * Red, green, blue, and alpha channels. 16 bit integer per channel. [0, 65535] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  Rgba16Unorm,
+  CanvasGPUTextureFormatRgba16Unorm,
   /**
    * Red, green, blue, and alpha. 16 bit integer per channel. [0, 65535] converted to/from float [-1, 1] in shader.
    *
    * [`Features::TEXTURE_FORMAT_16BIT_NORM`] must be enabled to use this texture format.
    */
-  Rgba16Snorm,
+  CanvasGPUTextureFormatRgba16Snorm,
   /**
    * Red, green, blue, and alpha channels. 16 bit float per channel. Float in shader.
    */
-  Rgba16Float,
+  CanvasGPUTextureFormatRgba16Float,
   /**
    * Red, green, blue, and alpha channels. 32 bit integer per channel. Unsigned in shader.
    */
-  Rgba32Uint,
+  CanvasGPUTextureFormatRgba32Uint,
   /**
    * Red, green, blue, and alpha channels. 32 bit integer per channel. Signed in shader.
    */
-  Rgba32Sint,
+  CanvasGPUTextureFormatRgba32Sint,
   /**
    * Red, green, blue, and alpha channels. 32 bit float per channel. Float in shader.
    */
-  Rgba32Float,
+  CanvasGPUTextureFormatRgba32Float,
   /**
    * Stencil format with 8 bit integer stencil.
    */
-  Stencil8,
+  CanvasGPUTextureFormatStencil8,
   /**
    * Special depth format with 16 bit integer depth.
    */
-  Depth16Unorm,
+  CanvasGPUTextureFormatDepth16Unorm,
   /**
    * Special depth format with at least 24 bit integer depth.
    */
-  Depth24Plus,
+  CanvasGPUTextureFormatDepth24Plus,
   /**
    * Special depth/stencil format with at least 24 bit integer depth and 8 bits integer stencil.
    */
-  Depth24PlusStencil8,
+  CanvasGPUTextureFormatDepth24PlusStencil8,
   /**
    * Special depth format with 32 bit floating point depth.
    */
-  Depth32Float,
+  CanvasGPUTextureFormatDepth32Float,
   /**
    * Special depth/stencil format with 32 bit floating point depth and 8 bits integer stencil.
    *
    * [`Features::DEPTH32FLOAT_STENCIL8`] must be enabled to use this texture format.
    */
-  Depth32FloatStencil8,
+  CanvasGPUTextureFormatDepth32FloatStencil8,
   /**
    * YUV 4:2:0 chroma subsampled format.
    *
@@ -693,7 +1012,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_FORMAT_NV12`] must be enabled to use this texture format.
    */
-  NV12,
+  CanvasGPUTextureFormatNV12,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
    * [0, 63] ([0, 1] for alpha) converted to/from float [0, 1] in shader.
@@ -702,7 +1021,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc1RgbaUnorm,
+  CanvasGPUTextureFormatBc1RgbaUnorm,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
    * Srgb-color [0, 63] ([0, 1] for alpha) converted to/from linear-color float [0, 1] in shader.
@@ -711,7 +1030,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc1RgbaUnormSrgb,
+  CanvasGPUTextureFormatBc1RgbaUnormSrgb,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 4 color pallet. 5 bit R + 6 bit G + 5 bit B + 4 bit alpha.
    * [0, 63] ([0, 15] for alpha) converted to/from float [0, 1] in shader.
@@ -720,7 +1039,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc2RgbaUnorm,
+  CanvasGPUTextureFormatBc2RgbaUnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 4 color pallet. 5 bit R + 6 bit G + 5 bit B + 4 bit alpha.
    * Srgb-color [0, 63] ([0, 255] for alpha) converted to/from linear-color float [0, 1] in shader.
@@ -729,7 +1048,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc2RgbaUnormSrgb,
+  CanvasGPUTextureFormatBc2RgbaUnormSrgb,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 4 color pallet + 8 alpha pallet. 5 bit R + 6 bit G + 5 bit B + 8 bit alpha.
    * [0, 63] ([0, 255] for alpha) converted to/from float [0, 1] in shader.
@@ -738,7 +1057,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc3RgbaUnorm,
+  CanvasGPUTextureFormatBc3RgbaUnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 4 color pallet + 8 alpha pallet. 5 bit R + 6 bit G + 5 bit B + 8 bit alpha.
    * Srgb-color [0, 63] ([0, 255] for alpha) converted to/from linear-color float [0, 1] in shader.
@@ -747,7 +1066,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc3RgbaUnormSrgb,
+  CanvasGPUTextureFormatBc3RgbaUnormSrgb,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 8 color pallet. 8 bit R.
    * [0, 255] converted to/from float [0, 1] in shader.
@@ -756,7 +1075,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc4RUnorm,
+  CanvasGPUTextureFormatBc4RUnorm,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 8 color pallet. 8 bit R.
    * [-127, 127] converted to/from float [-1, 1] in shader.
@@ -765,7 +1084,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc4RSnorm,
+  CanvasGPUTextureFormatBc4RSnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 8 color red pallet + 8 color green pallet. 8 bit RG.
    * [0, 255] converted to/from float [0, 1] in shader.
@@ -774,7 +1093,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc5RgUnorm,
+  CanvasGPUTextureFormatBc5RgUnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). 8 color red pallet + 8 color green pallet. 8 bit RG.
    * [-127, 127] converted to/from float [-1, 1] in shader.
@@ -783,7 +1102,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc5RgSnorm,
+  CanvasGPUTextureFormatBc5RgSnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Variable sized pallet. 16 bit unsigned float RGB. Float in shader.
    *
@@ -791,7 +1110,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc6hRgbUfloat,
+  CanvasGPUTextureFormatBc6hRgbUfloat,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Variable sized pallet. 16 bit signed float RGB. Float in shader.
    *
@@ -799,7 +1118,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc6hRgbFloat,
+  CanvasGPUTextureFormatBc6hRgbFloat,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Variable sized pallet. 8 bit integer RGBA.
    * [0, 255] converted to/from float [0, 1] in shader.
@@ -808,7 +1127,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc7RgbaUnorm,
+  CanvasGPUTextureFormatBc7RgbaUnorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Variable sized pallet. 8 bit integer RGBA.
    * Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
@@ -817,77 +1136,77 @@ typedef enum CanvasGPUTextureFormat_Tag {
    *
    * [`Features::TEXTURE_COMPRESSION_BC`] must be enabled to use this texture format.
    */
-  Bc7RgbaUnormSrgb,
+  CanvasGPUTextureFormatBc7RgbaUnormSrgb,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 8 bit integer RGB.
    * [0, 255] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgb8Unorm,
+  CanvasGPUTextureFormatEtc2Rgb8Unorm,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 8 bit integer RGB.
    * Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgb8UnormSrgb,
+  CanvasGPUTextureFormatEtc2Rgb8UnormSrgb,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 8 bit integer RGB + 1 bit alpha.
    * [0, 255] ([0, 1] for alpha) converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgb8A1Unorm,
+  CanvasGPUTextureFormatEtc2Rgb8A1Unorm,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 8 bit integer RGB + 1 bit alpha.
    * Srgb-color [0, 255] ([0, 1] for alpha) converted to/from linear-color float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgb8A1UnormSrgb,
+  CanvasGPUTextureFormatEtc2Rgb8A1UnormSrgb,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Complex pallet. 8 bit integer RGB + 8 bit alpha.
    * [0, 255] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgba8Unorm,
+  CanvasGPUTextureFormatEtc2Rgba8Unorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Complex pallet. 8 bit integer RGB + 8 bit alpha.
    * Srgb-color [0, 255] converted to/from linear-color float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  Etc2Rgba8UnormSrgb,
+  CanvasGPUTextureFormatEtc2Rgba8UnormSrgb,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 11 bit integer R.
    * [0, 255] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  EacR11Unorm,
+  CanvasGPUTextureFormatEacR11Unorm,
   /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). Complex pallet. 11 bit integer R.
    * [-127, 127] converted to/from float [-1, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  EacR11Snorm,
+  CanvasGPUTextureFormatEacR11Snorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Complex pallet. 11 bit integer R + 11 bit integer G.
    * [0, 255] converted to/from float [0, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  EacRg11Unorm,
+  CanvasGPUTextureFormatEacRg11Unorm,
   /**
    * 4x4 block compressed texture. 16 bytes per block (8 bit/px). Complex pallet. 11 bit integer R + 11 bit integer G.
    * [-127, 127] converted to/from float [-1, 1] in shader.
    *
    * [`Features::TEXTURE_COMPRESSION_ETC2`] must be enabled to use this texture format.
    */
-  EacRg11Snorm,
+  CanvasGPUTextureFormatEacRg11Snorm,
   /**
    * block compressed texture. 16 bytes per block.
    *
@@ -897,10 +1216,10 @@ typedef enum CanvasGPUTextureFormat_Tag {
    * [`TEXTURE_COMPRESSION_ASTC`]: Features::TEXTURE_COMPRESSION_ASTC
    * [`TEXTURE_COMPRESSION_ASTC_HDR`]: Features::TEXTURE_COMPRESSION_ASTC_HDR
    */
-  Astc,
+  CanvasGPUTextureFormatAstc,
 } CanvasGPUTextureFormat_Tag;
 
-typedef struct Astc_Body {
+typedef struct CanvasGPUTextureFormatAstc_Body {
   /**
    * compressed block dimensions
    */
@@ -909,14 +1228,119 @@ typedef struct Astc_Body {
    * ASTC RGBA channel
    */
   enum CanvasAstcChannel channel;
-} Astc_Body;
+} CanvasGPUTextureFormatAstc_Body;
 
 typedef struct CanvasGPUTextureFormat {
   CanvasGPUTextureFormat_Tag tag;
   union {
-    Astc_Body astc;
+    CanvasGPUTextureFormatAstc_Body astc;
   };
 } CanvasGPUTextureFormat;
+
+typedef struct CanvasStencilFaceState {
+  enum CanvasCompareFunction compare;
+  enum CanvasStencilOperation fail_op;
+  enum CanvasStencilOperation depth_fail_op;
+  enum CanvasStencilOperation pass_op;
+} CanvasStencilFaceState;
+/**
+ * Ignore the stencil state for the face.
+ */
+#define CanvasStencilFaceState_IGNORE (CanvasStencilFaceState){ .compare = CanvasCompareFunction_Always, .fail_op = CanvasStencilOperation_Keep, .depth_fail_op = CanvasStencilOperation_Keep, .pass_op = CanvasStencilOperation_Keep }
+
+typedef struct CanvasDepthStencilState {
+  struct CanvasGPUTextureFormat format;
+  bool depth_write_enabled;
+  enum CanvasCompareFunction depth_compare;
+  struct CanvasStencilFaceState stencil_front;
+  struct CanvasStencilFaceState stencil_back;
+  uint32_t stencil_read_mask;
+  uint32_t stencil_write_mask;
+  int32_t depth_bias;
+  float depth_bias_slope_scale;
+  float depth_bias_clamp;
+} CanvasDepthStencilState;
+
+typedef struct CanvasMultisampleState {
+  uint32_t count;
+  uint64_t mask;
+  bool alpha_to_coverage_enabled;
+} CanvasMultisampleState;
+
+typedef struct CanvasBlendComponent {
+  enum CanvasBlendFactor src_factor;
+  enum CanvasBlendFactor dst_factor;
+  enum CanvasBlendOperation operation;
+} CanvasBlendComponent;
+/**
+ * Default blending state that replaces destination with the source.
+ */
+#define CanvasBlendComponent_REPLACE (CanvasBlendComponent){ .src_factor = CanvasBlendFactor_One, .dst_factor = CanvasBlendFactor_Zero, .operation = CanvasBlendOperation_Add }
+/**
+ * Blend state of (1 * src) + ((1 - src_alpha) * dst)
+ */
+#define CanvasBlendComponent_OVER (CanvasBlendComponent){ .src_factor = CanvasBlendFactor_One, .dst_factor = CanvasBlendFactor_OneMinusSrcAlpha, .operation = CanvasBlendOperation_Add }
+
+typedef struct CanvasBlendState {
+  /**
+   * Color equation.
+   */
+  struct CanvasBlendComponent color;
+  /**
+   * Alpha equation.
+   */
+  struct CanvasBlendComponent alpha;
+} CanvasBlendState;
+/**
+ * Blend mode that does no color blending, just overwrites the output with the contents of the shader.
+ */
+#define CanvasBlendState_REPLACE (CanvasBlendState){ .color = CanvasBlendComponent_REPLACE, .alpha = CanvasBlendComponent_REPLACE }
+/**
+ * Blend mode that does standard alpha blending with non-premultiplied alpha.
+ */
+#define CanvasBlendState_ALPHA_BLENDING (CanvasBlendState){ .color = (CanvasBlendComponent){ .src_factor = CanvasBlendFactor_SrcAlpha, .dst_factor = CanvasBlendFactor_OneMinusSrcAlpha, .operation = CanvasBlendOperation_Add }, .alpha = CanvasBlendComponent_OVER }
+/**
+ * Blend mode that does standard alpha blending with premultiplied alpha.
+ */
+#define CanvasBlendState_PREMULTIPLIED_ALPHA_BLENDING (CanvasBlendState){ .color = CanvasBlendComponent_OVER, .alpha = CanvasBlendComponent_OVER }
+
+typedef enum CanvasOptionalBlendState_Tag {
+  CanvasOptionalBlendStateNone,
+  CanvasOptionalBlendStateSome,
+} CanvasOptionalBlendState_Tag;
+
+typedef struct CanvasOptionalBlendState {
+  CanvasOptionalBlendState_Tag tag;
+  union {
+    struct {
+      struct CanvasBlendState some;
+    };
+  };
+} CanvasOptionalBlendState;
+
+typedef struct CanvasColorTargetState {
+  struct CanvasGPUTextureFormat format;
+  struct CanvasOptionalBlendState blend;
+  uint32_t write_mask;
+} CanvasColorTargetState;
+
+typedef struct CanvasFragmentState {
+  const struct CanvasColorTargetState *targets;
+  uintptr_t targets_size;
+  const struct CanvasGPUShaderModule *module;
+  const char *entry_point;
+  const struct CanvasConstants *constants;
+} CanvasFragmentState;
+
+typedef struct CanvasCreateRenderPipelineDescriptor {
+  const char *label;
+  struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout;
+  const struct CanvasVertexState *vertex;
+  const struct CanvasPrimitiveState *primitive;
+  const struct CanvasDepthStencilState *depth_stencil;
+  const struct CanvasMultisampleState *multisample;
+  const struct CanvasFragmentState *fragment;
+} CanvasCreateRenderPipelineDescriptor;
 
 typedef struct CanvasCreateTextureDescriptor {
   const char *label;
@@ -932,6 +1356,43 @@ typedef struct CanvasCreateTextureDescriptor {
   uintptr_t view_formats_size;
 } CanvasCreateTextureDescriptor;
 
+typedef struct CanvasOrigin2d {
+  /**
+   *
+   */
+  uint32_t x;
+  /**
+   *
+   */
+  uint32_t y;
+} CanvasOrigin2d;
+
+typedef struct CanvasImageCopyExternalImage {
+  /**
+   * The texture to be copied from. The copy source data is captured at the moment
+   * the copy is issued.
+   */
+  const uint8_t *source;
+  uintptr_t source_size;
+  /**
+   * The base texel used for copying from the external image. Together
+   * with the `copy_size` argument to copy functions, defines the
+   * sub-region of the image to copy.
+   *
+   * Relative to the top left of the image.
+   *
+   * Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+   */
+  struct CanvasOrigin2d origin;
+  /**
+   * If the Y coordinate of the image should be flipped. Even if this is
+   * true, `origin` is still relative to the top left.
+   */
+  bool flip_y;
+  uint32_t width;
+  uint32_t height;
+} CanvasImageCopyExternalImage;
+
 typedef struct CanvasGPUSurfaceConfiguration {
   enum CanvasGPUSurfaceAlphaMode alphaMode;
   uint32_t usage;
@@ -939,6 +1400,50 @@ typedef struct CanvasGPUSurfaceConfiguration {
   const struct CanvasGPUTextureFormat *view_formats;
   uintptr_t view_formats_size;
 } CanvasGPUSurfaceConfiguration;
+
+typedef enum CanvasOptionalGPUTextureFormat_Tag {
+  CanvasOptionalGPUTextureFormatNone,
+  CanvasOptionalGPUTextureFormatSome,
+} CanvasOptionalGPUTextureFormat_Tag;
+
+typedef struct CanvasOptionalGPUTextureFormat {
+  CanvasOptionalGPUTextureFormat_Tag tag;
+  union {
+    struct {
+      struct CanvasGPUTextureFormat some;
+    };
+  };
+} CanvasOptionalGPUTextureFormat;
+
+typedef enum CanvasOptionsGPUTextureFormat_Tag {
+  CanvasOptionsGPUTextureFormatNone,
+  CanvasOptionsGPUTextureFormatSome,
+} CanvasOptionsGPUTextureFormat_Tag;
+
+typedef struct CanvasOptionsGPUTextureFormat {
+  CanvasOptionsGPUTextureFormat_Tag tag;
+  union {
+    struct {
+      struct CanvasGPUTextureFormat some;
+    };
+  };
+} CanvasOptionsGPUTextureFormat;
+
+typedef struct CanvasImageSubresourceRange {
+  enum CanvasTextureAspect aspect;
+  uint32_t base_mip_level;
+  int32_t mip_level_count;
+  uint32_t base_array_layer;
+  int32_t array_layer_count;
+} CanvasImageSubresourceRange;
+
+typedef struct CanvasCreateTextureViewDescriptor {
+  const struct CanvasGPUTexture *texture;
+  const char *label;
+  struct CanvasOptionsGPUTextureFormat format;
+  enum CanvasOptionalTextureViewDimension dimension;
+  const struct CanvasImageSubresourceRange *range;
+} CanvasCreateTextureViewDescriptor;
 
 void canvas_native_image_filter_destroy(struct ImageFilter *value);
 
@@ -3642,6 +4147,16 @@ struct CanvasGPUComputePass *canvas_native_webgpu_command_encoder_begin_compute_
                                                                                      int32_t beginning_of_pass_write_index,
                                                                                      int32_t end_of_pass_write_index);
 
+struct CanvasGPURenderPass *canvas_native_webgpu_command_encoder_begin_render_pass(struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                   const char *label,
+                                                                                   const struct CanvasRenderPassColorAttachment *color_attachments,
+                                                                                   uintptr_t color_attachments_size,
+                                                                                   const struct CanvasRenderPassDepthStencilAttachment *depth_stencil_attachment,
+                                                                                   const struct CanvasGPUQuerySet *occlusion_query_set,
+                                                                                   const struct CanvasGPUQuerySet *query_set,
+                                                                                   int32_t beginning_of_pass_write_index,
+                                                                                   int32_t end_of_pass_write_index);
+
 void canvas_native_webgpu_command_encoder_clear_buffer(struct CanvasGPUCommandEncoder *command_encoder,
                                                        const struct CanvasGPUBuffer *buffer,
                                                        int64_t offset,
@@ -3716,18 +4231,163 @@ struct CanvasGPUBuffer *canvas_native_webgpu_device_create_buffer(const struct C
                                                                   bool mapped_at_creation,
                                                                   char *error);
 
+struct CanvasConstants *canvas_native_webgpu_constants_create(void);
+
+void canvas_native_webgpu_constants_insert(struct CanvasConstants *constants,
+                                           const char *key,
+                                           double value);
+
+void canvas_native_webgpu_constants_destroy(struct CanvasConstants *constants);
+
+struct CanvasGPURenderPipeline *canvas_native_webgpu_device_create_render_pipeline(const struct CanvasGPUDevice *device,
+                                                                                   const struct CanvasCreateRenderPipelineDescriptor *descriptor);
+
 struct CanvasGPUTexture *canvas_native_webgpu_device_create_texture(const struct CanvasGPUDevice *device,
                                                                     const struct CanvasCreateTextureDescriptor *descriptor,
                                                                     char *error);
+
+void canvas_native_webgpu_queue_copy_external_image_to_texture(struct CanvasGPUQueue *queue,
+                                                               const struct CanvasImageCopyExternalImage *source,
+                                                               const struct CanvasImageCopyTexture *destination,
+                                                               const struct CanvasExtent3d *size);
+
+void canvas_native_webgpu_queue_on_submitted_work_done(struct CanvasGPUQueue *queue,
+                                                       void (*callback)(char*, void*),
+                                                       void *callback_data);
+
+void canvas_native_webgpu_queue_submit(struct CanvasGPUQueue *queue,
+                                       const struct CanvasGPUCommandBuffer *const *command_buffers,
+                                       uintptr_t command_buffers_size);
+
+void canvas_native_webgpu_queue_write_buffer(struct CanvasGPUQueue *queue,
+                                             struct CanvasGPUBuffer *buffer,
+                                             uint64_t buffer_offset,
+                                             const uint8_t *data,
+                                             uintptr_t data_size,
+                                             uintptr_t data_offset,
+                                             intptr_t size);
+
+void canvas_native_webgpu_queue_write_texture(struct CanvasGPUQueue *queue,
+                                              const struct CanvasImageCopyTexture *destination,
+                                              const struct CanvasImageDataLayout *data_layout,
+                                              const struct CanvasExtent3d *size,
+                                              const uint8_t *buf,
+                                              uintptr_t buf_size);
 
 struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
 
 void canvas_native_webgpu_limits_destroy(struct CanvasGPUSupportedLimits *limits);
 
+void canvas_native_webgpu_render_pass_begin_occlusion_query(struct CanvasGPURenderPass *render_pass,
+                                                            uint32_t query_index);
+
+void canvas_native_webgpu_render_pass_encoder_draw(struct CanvasGPURenderPass *render_pass,
+                                                   uint32_t vertex_count,
+                                                   uint32_t instance_count,
+                                                   uint32_t first_vertex,
+                                                   uint32_t first_instance);
+
+void canvas_native_webgpu_render_pass_draw_indexed(struct CanvasGPURenderPass *render_pass,
+                                                   uint32_t index_count,
+                                                   uint32_t instance_count,
+                                                   uint32_t first_index,
+                                                   int32_t base_vertex,
+                                                   uint32_t first_instance);
+
+void canvas_native_webgpu_render_pass_draw_indexed_indirect(struct CanvasGPURenderPass *render_pass,
+                                                            struct CanvasGPUBuffer *indirect_buffer,
+                                                            uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_pass_draw_indirect(struct CanvasGPURenderPass *render_pass,
+                                                    struct CanvasGPUBuffer *indirect_buffer,
+                                                    uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_pass_end(struct CanvasGPURenderPass *render_pass);
+
+void canvas_native_webgpu_render_pass_end_occlusion_query(struct CanvasGPURenderPass *render_pass);
+
+void canvas_native_webgpu_render_pass_execute_bundles(struct CanvasGPURenderPass *render_pass,
+                                                      const struct CanvasGPURenderBundle *bundles,
+                                                      uintptr_t bundles_size);
+
+void canvas_native_webgpu_render_pass_insert_debug_marker(struct CanvasGPURenderPass *render_pass,
+                                                          const char *label);
+
+void canvas_native_webgpu_render_pass_pop_debug_group(struct CanvasGPURenderPass *render_pass);
+
+void canvas_native_webgpu_render_pass_push_debug_group(struct CanvasGPURenderPass *render_pass,
+                                                       const char *label);
+
+void canvas_native_webgpu_render_pass_set_bind_group(struct CanvasGPURenderPass *render_pass,
+                                                     uint32_t index,
+                                                     const struct CanvasGPUBindGroup *bind_group,
+                                                     const uint32_t *dynamic_offsets,
+                                                     uintptr_t dynamic_offsets_size,
+                                                     uintptr_t dynamic_offsets_start,
+                                                     uintptr_t dynamic_offsets_length);
+
+void canvas_native_webgpu_render_pass_set_blend_constant(struct CanvasGPURenderPass *render_pass,
+                                                         const struct CanvasColor *color);
+
+void canvas_native_webgpu_render_pass_set_index_buffer(struct CanvasGPURenderPass *render_pass,
+                                                       const struct CanvasGPUBuffer *buffer,
+                                                       enum CanvasIndexFormat index_format,
+                                                       int64_t offset,
+                                                       int64_t size);
+
+void canvas_native_webgpu_render_pass_set_pipeline(struct CanvasGPURenderPass *render_pass,
+                                                   const struct CanvasGPURenderPipeline *pipeline);
+
+void canvas_native_webgpu_render_pass_set_scissor_rect(struct CanvasGPURenderPass *render_pass,
+                                                       uint32_t x,
+                                                       uint32_t y,
+                                                       uint32_t width,
+                                                       uint32_t height);
+
+void canvas_native_webgpu_render_pass_set_stencil_reference(struct CanvasGPURenderPass *render_pass,
+                                                            uint32_t reference);
+
+void canvas_native_webgpu_render_pass_set_vertex_buffer(struct CanvasGPURenderPass *render_pass,
+                                                        uint32_t slot,
+                                                        struct CanvasGPUBuffer *buffer,
+                                                        int64_t offset,
+                                                        int64_t size);
+
+void canvas_native_webgpu_render_pass_set_viewport(struct CanvasGPURenderPass *render_pass,
+                                                   float x,
+                                                   float y,
+                                                   float width,
+                                                   float height,
+                                                   float depth_min,
+                                                   float depth_max);
+
+#if defined(TARGET_OS_ANDROID)
+struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct CanvasWebGPUInstance *instance,
+                                                                   void *window,
+                                                                   uint32_t width,
+                                                                   uint32_t height);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct CanvasWebGPUInstance *instance,
                                                                    void *view,
                                                                    uint32_t width,
                                                                    uint32_t height);
+#endif
+
+#if defined(TARGET_OS_IOS)
+struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(struct CanvasWebGPUInstance *instance,
+                                                                          void *view,
+                                                                          uint32_t width,
+                                                                          uint32_t height);
+#endif
+
+#if defined(TARGET_OS_MACOS)
+struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_nsview(struct CanvasWebGPUInstance *instance,
+                                                                          void *view,
+                                                                          uint32_t width,
+                                                                          uint32_t height);
+#endif
 
 void canvas_native_webgpu_context_configure(struct CanvasGPUCanvasContext *context,
                                             struct CanvasGPUDevice *device,
@@ -3740,6 +4400,11 @@ void canvas_native_webgpu_context_unconfigure(struct CanvasGPUCanvasContext *con
 struct CanvasGPUTexture *canvas_native_webgpu_context_get_current_texture(struct CanvasGPUCanvasContext *context);
 
 char *canvas_native_webgpu_enum_gpu_texture_to_string(struct CanvasGPUTextureFormat value);
+
+struct CanvasOptionalGPUTextureFormat canvas_native_webgpu_string_to_gpu_texture_enum(const char *format);
+
+struct CanvasGPUTextureView *canvas_native_webgpu_texture_create_texture_view(struct CanvasGPUTexture *texture,
+                                                                              const struct CanvasCreateTextureViewDescriptor *descriptor);
 
 uint32_t canvas_native_webgpu_texture_get_depth_or_array_layers(struct CanvasGPUTexture *texture);
 
@@ -3760,6 +4425,9 @@ uint32_t canvas_native_webgpu_texture_get_mip_level_count(struct CanvasGPUTextur
 uint32_t canvas_native_webgpu_texture_get_sample_count(struct CanvasGPUTexture *texture);
 
 char *canvas_native_webgpu_texture_destroy(struct CanvasGPUTexture *texture);
+
+struct CanvasGPUBindGroupLayout *canvas_native_webgpu_render_pipeline_get_bind_group_layout(const struct CanvasGPURenderPipeline *pipeline,
+                                                                                            uint32_t index);
 
 const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
 

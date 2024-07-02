@@ -25,7 +25,7 @@ export class GPUCanvasContext {
 		const ctxPtr = BigInt(nativeContext);
 		this[native_] = global.CanvasModule.createWebGPUContextWithPointer(ctxPtr);
 		this[contextPtr_] = context;
-		this._type = '2d';
+		this._type = 'webgpu';
 	}
 
 	get context() {

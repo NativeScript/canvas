@@ -15,9 +15,12 @@ crates = ["wgpu_types"]
 [export]
 include = ["GLConstants", "InvalidateState","CanvasGPUTextureFormat"]
 exclude = ["AChoreographer", "AChoreographer_frameCallback", "AChoreographer_frameCallback64", "AChoreographer_getInstance", "AChoreographer_postFrameCallback", "AChoreographer_postFrameCallbackDelayed", "AChoreographer_postFrameCallback64", "AChoreographer_postFrameCallbackDelayed64"]
-
+mangle.remove_underscores = true
 
 [defines]
 "target_os = ios" = "TARGET_OS_IOS"
 "target_os = macos" = "TARGET_OS_MACOS"
 "target_os = android" = "TARGET_OS_ANDROID"
+
+[enum]
+prefix_with_name = true

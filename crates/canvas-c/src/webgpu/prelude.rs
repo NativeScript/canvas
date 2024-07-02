@@ -149,7 +149,7 @@ pub fn parse_required_features(
 ) -> wgpu_types::Features {
     let mut features = wgpu_types::Features::empty();
 
-    if required_features.is_null() && required_features_length > 0 {
+    if !required_features.is_null() && required_features_length > 0 {
         let feats =
             unsafe { std::slice::from_raw_parts(required_features, required_features_length) };
         for feat in feats {

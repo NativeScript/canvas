@@ -3,8 +3,8 @@
 //
 
 #include "GPUTextureImpl.h"
-
 #include "Caches.h"
+#include "GPUTextureViewImpl.h"
 
 GPUTextureImpl::GPUTextureImpl(CanvasGPUTexture *texture) : texture_(texture) {}
 
@@ -93,7 +93,12 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "mipLevelCount"),
             GetMipLevelCount
     );
+    
+    tmpl->Set(
+            ConvertToV8String(isolate, "createView"),
+            v8::FunctionTemplate::New(isolate, &CreateView));
 
+    
     cache->GPUTextureTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -107,13 +112,13 @@ GPUTextureImpl::GetDimension(v8::Local<v8::Name> name,
         auto width = canvas_native_webgpu_texture_get_dimension(ptr->GetTexture());
         auto isolate = info.GetIsolate();
         switch (width) {
-            case D1:
+            case CanvasTextureDimension::CanvasTextureDimensionD1:
                 info.GetReturnValue().Set(ConvertToV8String(isolate, "d1"));
                 break;
-            case D2:
+            case CanvasTextureDimension::CanvasTextureDimensionD2:
                 info.GetReturnValue().Set(ConvertToV8String(isolate, "d2"));
                 break;
-            case D3:
+            case CanvasTextureDimension::CanvasTextureDimensionD3:
                 info.GetReturnValue().Set(ConvertToV8String(isolate, "d3"));
                 break;
         }
@@ -219,4 +224,30 @@ void GPUTextureImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
     canvas_native_webgpu_texture_destroy(ptr->GetTexture());
+}
+
+
+void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUTextureImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        args.GetReturnValue().SetUndefined();
+        return;
+    }
+    auto isolate = args.GetIsolate();
+    
+    auto desc = args[0];
+    CanvasCreateTextureViewDescriptor *descriptor = nullptr;
+    if(desc->IsObject()){
+        
+    }
+    auto view = canvas_native_webgpu_texture_create_texture_view(ptr->GetTexture(), descriptor);
+    
+    if(view != nullptr){
+        auto ret = GPUTextureViewImpl::NewInstance(isolate, new GPUTextureViewImpl(view));
+        args.GetReturnValue().Set(ret);
+        return;
+    }
+    
+    args.GetReturnValue().SetUndefined();
+    
 }

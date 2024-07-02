@@ -168,6 +168,12 @@ add_library(
         ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
         ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUShaderModuleImpl.cpp
+        ${CPP_DIR}/webgpu/GPUPipelineLayoutImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderPipelineImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBindGroupLayoutImpl.cpp
+        ${CPP_DIR}/webgpu/GPUTextureViewImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderPassEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCommandBufferImpl.cpp
 
 
         ${CPP_DIR}/CanvasJSIModule.cpp

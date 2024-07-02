@@ -27,7 +27,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
     nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal,
     nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal,
     nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface,
-    nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap,
+    nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap, nativeInitWebGPU
 };
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
     nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset,
@@ -102,6 +102,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeContext2DPathTest",
                 "nativeContext2DRender",
                 "nativeWebGLC2DRender",
+                "nativeInitWebGPU"
             ];
 
             let canvas_signatures = if ret >= ANDROID_O {
@@ -126,6 +127,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)V",
                     "(JJII)V",
+                    "(JLandroid/view/Surface;II)J",
                 ]
             } else {
                 [
@@ -149,6 +151,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)V",
                     "!(JJII)V",
+                    "!(JLandroid/view/Surface;II)J",
                 ]
             };
 
@@ -174,6 +177,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeContext2DPathTest as *mut c_void,
                     nativeContext2DRender as *mut c_void,
                     nativeWebGLC2DRender as *mut c_void,
+                    nativeInitWebGPU as *mut c_void,
                 ]
             } else {
                 [
@@ -197,6 +201,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeContext2DPathTestNormal as *mut c_void,
                     nativeContext2DRender as *mut c_void,
                     nativeWebGLC2DRender as *mut c_void,
+                    nativeInitWebGPU as *mut c_void,
                 ]
             };
 

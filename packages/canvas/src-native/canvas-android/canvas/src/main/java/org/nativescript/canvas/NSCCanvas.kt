@@ -156,6 +156,25 @@ class NSCCanvas : FrameLayout {
 		textureView.surfaceTexture?.release()
 	}
 
+	fun initWebGPUContext(instance: Long) {
+		val surface = if (surfaceType == SurfaceType.Surface) {
+//			if (alpha) {
+//				surfaceView.setZOrderOnTop(true)
+//			} else {
+//				surfaceView.setZOrderOnTop(false)
+//			}
+			surfaceView.holder.surface
+		} else {
+//			textureView.isOpaque = !alpha
+			textureView.surface
+		}
+
+		surface?.let {
+			nativeContext = nativeInitWebGPU(instance, it, width, height)
+		}
+
+	}
+
 	@JvmOverloads
 	fun initContext(
 		type: String,
@@ -748,6 +767,15 @@ class NSCCanvas : FrameLayout {
 		internal fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
 			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
 		}
+
+		@JvmStatic
+		@FastNative
+		external fun nativeInitWebGPU(
+			instance: Long,
+			surface: Surface,
+			width: Int,
+			height: Int
+		): Long
 
 		@JvmStatic
 		@FastNative

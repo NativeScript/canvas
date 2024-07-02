@@ -36,8 +36,11 @@ public:
 
     static void BeginComputePass(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void BeginRenderPass(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void ClearBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void Finish(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     CanvasGPUCommandEncoder *encoder_;

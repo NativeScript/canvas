@@ -3,6 +3,11 @@ import { GPUBuffer } from './GPUBuffer';
 import { GPUTexture } from './GPUTexture';
 import { native_ } from './Constants';
 import { GPUShaderModule } from './GPUShaderModule';
+import { GPUQueue } from './GPUQueue';
+import { GPUPipelineLayout } from './GPUPipelineLayout';
+import { parseVertexFormat } from './Utils';
+import { GPURenderPipeline } from './GPURenderPipeline';
+import { GPUCommandEncoder } from './GPUCommandEncoder';
 
 // Doing so because :D
 export class EventTarget {
@@ -160,5 +165,86 @@ export class GPUDevice extends EventTarget {
 		}
 
 		return undefined;
+	}
+
+	createRenderPipeline(desc) {
+		const depthStencil = desc['depthStencil'];
+		if (depthStencil) {
+		}
+		const fragment = desc['fragment'];
+		if (fragment) {
+			fragment.module = fragment?.module?.[native_];
+			console.log(fragment.targets);
+		}
+		const layout = desc['layout'];
+
+		if (layout instanceof GPUPipelineLayout) {
+			desc.layout = layout[native_];
+		}
+
+		const multisample = desc['multisample'];
+		const primitive = desc['primitive'];
+
+		if (primitive) {
+			switch (primitive.topology) {
+				case 'point-list':
+					primitive.topology = 0;
+					break;
+				case 'line-list':
+					primitive.topology = 1;
+					break;
+				case 'line-strip':
+					primitive.topology = 2;
+					break;
+				case 'triangle-list':
+					primitive.topology = 3;
+					break;
+				case 'triangle-strip':
+					primitive.topology = 4;
+					break;
+				default:
+					break;
+			}
+		}
+
+		const vertex = desc['vertex'];
+		desc.vertex.module = vertex?.module?.[native_];
+
+		const buffers = vertex['buffers'];
+		if (Array.isArray(buffers)) {
+			vertex['buffers'] = buffers.map((buffer) => {
+				buffer.attributes = buffer.attributes.map((attr) => {
+					attr['format'] = parseVertexFormat(attr['format']);
+					return attr;
+				});
+
+				console.log('is', Array.isArray(buffer.attributes));
+				switch (buffer.stepmode) {
+					case 'vertex':
+						buffer.stepmode = 0;
+						break;
+					case 'instance':
+						buffer.stepmode = 1;
+						break;
+				}
+
+				return buffer;
+			});
+		}
+
+		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(desc));
+	}
+
+	createCommandEncoder(desc) {
+		const encoder = this.native.createCommandEncoder(desc);
+		return GPUCommandEncoder.fromNative(encoder);
+	}
+
+	private _queue;
+	get queue() {
+		if (!this._queue) {
+			this._queue = GPUQueue.fromNative(this[native_].queue);
+		}
+		return this._queue;
 	}
 }

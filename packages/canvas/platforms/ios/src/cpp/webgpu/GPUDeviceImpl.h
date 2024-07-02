@@ -60,6 +60,8 @@ public:
 
     static void CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args);

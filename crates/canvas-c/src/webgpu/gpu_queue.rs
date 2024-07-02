@@ -54,7 +54,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
     }
 
     let queue = &mut *queue;
-    let queue_id = &mut queue.queue;
+    let queue_id = queue.queue;
 
     let global = &queue.instance.0;
 
@@ -74,6 +74,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
     let destination_texture = &*destination.texture;
 
     let destination_texture_id = destination_texture.texture;
+
+    let size = *size;
 
     let size: wgpu_types::Extent3d = size.into();
 
@@ -98,12 +100,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
     {
         let data = get_offset_image(
             data,
-            source.width.into(),
-            source.height.into(),
-            source.origin.x.into(),
-            source.origin.y.into(),
-            size.width.into(),
-            size.height.into(),
+            source.width as usize,
+            source.height as usize,
+            source.origin.x as usize,
+            source.origin.y as usize,
+            size.width as usize,
+            size.height as usize,
         );
         gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size))
     } else {
@@ -126,19 +128,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
     }
 
     let queue = &mut *queue;
-    let queue_id = &mut queue.queue;
+    let queue_id = queue.queue;
 
     let global = &queue.instance.0;
 
     let func = callback as i64;
     let data = callback_data as i64;
-    let func = wgpu_core::device::queue::SubmittedWorkDoneClosure::from_rust(Box::new(|| {
-        let callback: fn(*mut c_char, *mut c_void) = std::mem::transmute(func);
+    let done = wgpu_core::device::queue::SubmittedWorkDoneClosure::from_rust(Box::new(move || {
+        let callback: fn(*mut c_char, *mut c_void) = std::mem::transmute(func as *mut c_void);
         let callback_data = data as *mut c_void;
         callback(std::ptr::null_mut(), callback_data);
     }));
 
-    if let Err(error) = gfx_select!(queue_id => global.queue_on_submitted_work_done(queue_id, func))
+    if let Err(error) = gfx_select!(queue_id => global.queue_on_submitted_work_done(queue_id, done))
     {
         let error = error.to_string();
         let error = CString::new(error).unwrap().into_raw();
@@ -149,7 +151,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
     queue: *mut CanvasGPUQueue,
-    command_buffers: *mut CanvasGPUCommandBuffer,
+    command_buffers: *const *const CanvasGPUCommandBuffer,
     command_buffers_size: usize,
 ) {
     if queue.is_null() || command_buffers.is_null() || command_buffers_size == 0 {
@@ -157,20 +159,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
     }
 
     let queue = &mut *queue;
-    let queue_id = &mut queue.queue;
+    let queue_id = queue.queue;
 
     let global = &queue.instance.0;
 
-    let command_buffer_ids = std::slice::from_raw_parts_mut(command_buffers, command_buffers_size)
+    let command_buffer_ids = std::slice::from_raw_parts(command_buffers, command_buffers_size)
         .iter()
-        .map(|buffer| buffer.command_buffer)
+        .map(|buffer| {
+            let buffer = &**buffer;
+            buffer.command_buffer
+        })
         .collect::<Vec<wgpu_core::id::CommandBufferId>>();
 
     match gfx_select!(queue_id => global.queue_submit(queue_id, command_buffer_ids.as_slice())) {
-        Ok(_) => {
+        Ok(sub) => {
             // noop ??
+            println!("canvas_native_webgpu_queue_submit : sub index {:?}", sub);
         }
-        Err(_) => {
+        Err(err) => {
+            println!("canvas_native_webgpu_queue_submit : error {:?}", err.to_string());
             // todo
         }
     }
@@ -191,7 +198,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
     }
 
     let queue = &mut *queue;
-    let queue_id = &mut queue.queue;
+    let queue_id = queue.queue;
 
     let global = &queue.instance.0;
 
@@ -227,7 +234,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     }
 
     let queue = &mut *queue;
-    let queue_id = &mut queue.queue;
+    let queue_id = queue.queue;
 
     let global = &queue.instance.0;
 
@@ -245,11 +252,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
         aspect: destination.aspect.into(),
     };
 
-    let data_layout = &*data_layout;
+    let data_layout = *data_layout;
 
     let data_layout: wgpu_types::ImageDataLayout = data_layout.into();
 
     let data = std::slice::from_raw_parts(buf, buf_size);
+
+    let size = *size;
 
     let size: wgpu_types::Extent3d = size.into();
 

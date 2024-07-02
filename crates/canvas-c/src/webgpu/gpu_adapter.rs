@@ -103,6 +103,7 @@ pub extern "C" fn canvas_native_webgpu_request_device(
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
+    let adapter_id = adapter.adapter;
     let instance = adapter.instance.clone();
     std::thread::spawn(move || {
         let descriptor = wgpu_types::DeviceDescriptor {
@@ -110,9 +111,12 @@ pub extern "C" fn canvas_native_webgpu_request_device(
             required_features: features,
             required_limits: limits,
         };
+        
 
-        let adapter_id = adapter.adapter;
-        let global = &adapter.instance.0;
+        let instance_copy = instance.clone();
+
+    
+        let global = &instance.0;
 
         let (device, queue, error) = gfx_select!(adapter_id => global.adapter_request_device(
             adapter_id,
@@ -135,13 +139,13 @@ pub extern "C" fn canvas_native_webgpu_request_device(
             callback(ret, std::ptr::null_mut(), callback_data);
         } else {
             let queue = CanvasGPUQueue {
-                instance: instance.clone(),
+                instance: instance_copy.clone(),
                 queue,
             };
             let ret = Box::into_raw(Box::new(CanvasGPUDevice {
                 device,
                 queue,
-                instance,
+                instance: instance_copy,
             }));
             callback(std::ptr::null_mut(), ret, callback_data);
         }

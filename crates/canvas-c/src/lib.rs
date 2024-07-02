@@ -116,67 +116,67 @@ pub struct Raf(raf::Raf);
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum GLConstants {
-    UNPACK_FLIP_Y_WEBGL = 0x9240,
-    UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241,
-    UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243,
+    UnPackFlipYWebGL = 0x9240,
+    UnpackPremultiplyAlphaWebGL = 0x9241,
+    UnpackColorSpaceConversionWebGL = 0x9243,
 }
 
 #[repr(C)]
 pub enum InvalidateState {
-    InvalidateStateNone,
-    InvalidateStatePending,
-    InvalidateStateInvalidating,
+    None,
+    Pending,
+    Invalidating,
 }
 
 #[repr(C)]
 pub enum PaintStyleType {
-    PaintStyleTypeNone,
-    PaintStyleTypeColor,
-    PaintStyleTypeGradient,
-    PaintStyleTypePattern,
+    None,
+    Color,
+    Gradient,
+    Pattern,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapPremultiplyAlpha {
-    ImageBitmapPremultiplyAlphaDefault,
-    ImageBitmapPremultiplyAlphaPremultiply,
-    ImageBitmapPremultiplyAlphaNone,
+    Default,
+    Premultiply,
+    AlphaNone,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapColorSpaceConversion {
-    ImageBitmapColorSpaceConversionDefault,
-    ImageBitmapColorSpaceConversionNone,
+    Default,
+    None,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum ImageBitmapResizeQuality {
-    ImageBitmapResizeQualityLow,
-    ImageBitmapResizeQualityMedium,
-    ImageBitmapResizeQualityHigh,
-    ImageBitmapResizeQualityPixelated,
+    Low,
+    Medium,
+    High,
+    Pixelated,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
 #[repr(C)]
 pub enum WebGLResultType {
-    WebGLResultTypeBoolean,
-    WebGLResultTypeI32Array,
-    WebGLResultTypeU32Array,
-    WebGLResultTypeF32Array,
-    WebGLResultTypeBooleanArray,
-    WebGLResultTypeU32,
-    WebGLResultTypeI32,
-    WebGLResultTypeF32,
-    WebGLResultTypeString,
-    WebGLResultTypeNone,
+    Boolean,
+    I32Array,
+    U32Array,
+    F32Array,
+    BooleanArray,
+    U32,
+    I32,
+    F32,
+    String,
+    None,
 }
 
 #[derive(Clone)]
@@ -439,17 +439,17 @@ impl PaintStyle {
         if let Some(style) = self.0.as_ref() {
             return match style {
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-                    PaintStyleType::PaintStyleTypeColor
+                    PaintStyleType::Color
                 }
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-                    PaintStyleType::PaintStyleTypeGradient
+                    PaintStyleType::Gradient
                 }
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-                    PaintStyleType::PaintStyleTypePattern
+                    PaintStyleType::Pattern
                 }
             };
         }
-        return PaintStyleType::PaintStyleTypeNone;
+        return PaintStyleType::None;
     }
 }
 
@@ -528,9 +528,9 @@ pub extern "C" fn canvas_native_raf_get_started(raf: *const Raf) -> bool {
 
 impl Into<i32> for ImageBitmapPremultiplyAlpha {
     fn into(self) -> i32 {
-        if self == ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaPremultiply {
+        if self == ImageBitmapPremultiplyAlpha::Premultiply {
             return 1;
-        } else if self == ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaNone {
+        } else if self == ImageBitmapPremultiplyAlpha::AlphaNone {
             return 2;
         }
         return 0;
@@ -539,7 +539,7 @@ impl Into<i32> for ImageBitmapPremultiplyAlpha {
 
 impl Into<i32> for ImageBitmapColorSpaceConversion {
     fn into(self) -> i32 {
-        if self == ImageBitmapColorSpaceConversion::ImageBitmapColorSpaceConversionNone {
+        if self == ImageBitmapColorSpaceConversion::None {
             return 1;
         }
         0
@@ -548,11 +548,11 @@ impl Into<i32> for ImageBitmapColorSpaceConversion {
 
 impl Into<i32> for ImageBitmapResizeQuality {
     fn into(self) -> i32 {
-        if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityMedium {
+        if self == ImageBitmapResizeQuality::Medium {
             return 1;
-        } else if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityHigh {
+        } else if self == ImageBitmapResizeQuality::High {
             return 2;
-        } else if self == ImageBitmapResizeQuality::ImageBitmapResizeQualityPixelated {
+        } else if self == ImageBitmapResizeQuality::Pixelated {
             return 3;
         }
         0
@@ -1482,13 +1482,13 @@ pub extern "C" fn canvas_native_context_get_current_fill_style_type(
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-            PaintStyleType::PaintStyleTypeColor
+            PaintStyleType::Color
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-            PaintStyleType::PaintStyleTypeGradient
+            PaintStyleType::Gradient
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-            PaintStyleType::PaintStyleTypePattern
+            PaintStyleType::Pattern
         }
     };
 }
@@ -1502,13 +1502,13 @@ pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     let lock = context.get_context();
     return match lock.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
-            PaintStyleType::PaintStyleTypeColor
+            PaintStyleType::Color
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
-            PaintStyleType::PaintStyleTypeGradient
+            PaintStyleType::Gradient
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
-            PaintStyleType::PaintStyleTypePattern
+            PaintStyleType::Pattern
         }
     };
 }
@@ -6101,18 +6101,16 @@ pub extern "C" fn canvas_native_webgl_result_get_type(
     assert!(!result.is_null());
     let result = unsafe { &*result };
     match result.0 {
-        canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::WebGLResultTypeBoolean,
-        canvas_webgl::prelude::WebGLResult::I32Array(_) => WebGLResultType::WebGLResultTypeI32Array,
-        canvas_webgl::prelude::WebGLResult::U32Array(_) => WebGLResultType::WebGLResultTypeU32Array,
-        canvas_webgl::prelude::WebGLResult::F32Array(_) => WebGLResultType::WebGLResultTypeF32Array,
-        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => {
-            WebGLResultType::WebGLResultTypeBooleanArray
-        }
-        canvas_webgl::prelude::WebGLResult::U32(_) => WebGLResultType::WebGLResultTypeU32,
-        canvas_webgl::prelude::WebGLResult::I32(_) => WebGLResultType::WebGLResultTypeI32,
-        canvas_webgl::prelude::WebGLResult::F32(_) => WebGLResultType::WebGLResultTypeF32,
-        canvas_webgl::prelude::WebGLResult::String(_) => WebGLResultType::WebGLResultTypeString,
-        canvas_webgl::prelude::WebGLResult::None => WebGLResultType::WebGLResultTypeNone,
+        canvas_webgl::prelude::WebGLResult::Boolean(_) => WebGLResultType::Boolean,
+        canvas_webgl::prelude::WebGLResult::I32Array(_) => WebGLResultType::I32Array,
+        canvas_webgl::prelude::WebGLResult::U32Array(_) => WebGLResultType::U32Array,
+        canvas_webgl::prelude::WebGLResult::F32Array(_) => WebGLResultType::F32Array,
+        canvas_webgl::prelude::WebGLResult::BooleanArray(_) => WebGLResultType::BooleanArray,
+        canvas_webgl::prelude::WebGLResult::U32(_) => WebGLResultType::U32,
+        canvas_webgl::prelude::WebGLResult::I32(_) => WebGLResultType::I32,
+        canvas_webgl::prelude::WebGLResult::F32(_) => WebGLResultType::F32,
+        canvas_webgl::prelude::WebGLResult::String(_) => WebGLResultType::String,
+        canvas_webgl::prelude::WebGLResult::None => WebGLResultType::None,
     }
 }
 

@@ -16,6 +16,49 @@ pub struct CanvasGPUCanvasContext {
     pub(crate) usage: u32,
 }
 
+#[cfg(any(target_os = "android"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_create(
+    instance: *mut CanvasWebGPUInstance,
+    window: *mut c_void,
+    width: u32,
+    height: u32,
+) -> *mut CanvasGPUCanvasContext {
+    if instance.is_null() {
+        return std::ptr::null_mut();
+    }
+    let instance = unsafe { &*instance };
+    let global = &instance.0;
+
+    let display_handle = raw_window_handle::RawDisplayHandle::Android(
+        raw_window_handle::AndroidDisplayHandle::new(),
+    );
+
+    let mut handle =
+        raw_window_handle::AndroidNdkWindowHandle::new(std::ptr::NonNull::new_unchecked(window));
+    let window_handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            let ctx = CanvasGPUCanvasContext {
+                instance: instance.clone(),
+                surface: surface_id,
+                width,
+                height,
+                format: wgpu_types::TextureFormat::Rgba8Unorm,
+                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
+            };
+
+            Box::into_raw(Box::new(ctx))
+        }
+        Err(err) => {
+            // todo handle error
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_create(
     instance: *mut CanvasWebGPUInstance,
@@ -42,7 +85,88 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
 
             Box::into_raw(Box::new(ctx))
         }
-        Err(_) => {
+        Err(err) => {
+            // todo handle error
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[cfg(any(target_os = "ios"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
+    instance: *mut CanvasWebGPUInstance,
+    view: *mut c_void,
+    width: u32,
+    height: u32,
+) -> *mut CanvasGPUCanvasContext {
+    if instance.is_null() {
+        return std::ptr::null_mut();
+    }
+    let instance = unsafe { &*instance };
+    let global = &instance.0;
+
+    let display_handle =
+        raw_window_handle::RawDisplayHandle::UiKit(raw_window_handle::UiKitDisplayHandle::new());
+
+    let mut handle =
+        raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
+    let window_handle = raw_window_handle::RawWindowHandle::UiKit(handle);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            let ctx = CanvasGPUCanvasContext {
+                instance: instance.clone(),
+                surface: surface_id,
+                width,
+                height,
+                format: wgpu_types::TextureFormat::Bgra8Unorm,
+                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
+            };
+
+            Box::into_raw(Box::new(ctx))
+        }
+        Err(err) => {
+            // todo handle error
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[cfg(any(target_os = "macos"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
+    instance: *mut CanvasWebGPUInstance,
+    view: *mut c_void,
+    width: u32,
+    height: u32,
+) -> *mut CanvasGPUCanvasContext {
+    if instance.is_null() {
+        return std::ptr::null_mut();
+    }
+    let instance = unsafe { &*instance };
+    let global = &instance.0;
+
+    let display_handle =
+        raw_window_handle::RawDisplayHandle::AppKit(raw_window_handle::AppKitDisplayHandle::new());
+
+    let handle = raw_window_handle::AppKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
+    let window_handle = raw_window_handle::RawWindowHandle::AppKit(handle);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            let ctx = CanvasGPUCanvasContext {
+                instance: instance.clone(),
+                surface: surface_id,
+                width,
+                height,
+                format: wgpu_types::TextureFormat::Bgra8Unorm,
+                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
+            };
+
+            Box::into_raw(Box::new(ctx))
+        }
+        Err(err) => {
             // todo handle error
             std::ptr::null_mut()
         }
@@ -127,11 +251,11 @@ impl From<wgpu_types::PresentMode> for CanvasGPUPresentMode {
 #[repr(C)]
 #[derive(Debug)]
 pub struct CanvasGPUSurfaceConfiguration {
-    alphaMode: CanvasGPUSurfaceAlphaMode,
-    usage: u32,
-    presentMode: CanvasGPUPresentMode,
-    view_formats: *const CanvasGPUTextureFormat,
-    view_formats_size: usize,
+    pub alphaMode: CanvasGPUSurfaceAlphaMode,
+    pub usage: u32,
+    pub presentMode: CanvasGPUPresentMode,
+    pub view_formats: *const CanvasGPUTextureFormat,
+    pub view_formats_size: usize,
 }
 
 #[no_mangle]
@@ -176,7 +300,7 @@ pub extern "C" fn canvas_native_webgpu_context_configure(
 
     // todo handle error
     if let Some(err) =
-        gfx_select!(device_id => global.surface_configure(surface_id, device_id, &config))
+        gfx_select!(surface_id => global.surface_configure(surface_id, device_id, &config))
     {}
 }
 
@@ -205,33 +329,34 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
         return std::ptr::null_mut();
     }
 
-
     let context = unsafe { &*context };
-    let surface_id = context.surface;
     let global = &context.instance.0;
 
-    match gfx_select!(surface_id => global.surface_get_current_texture(surface_id, None)) {
-        Ok(texture) => {
-            match texture.status {
-                wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
-                    Box::into_raw(Box::new(CanvasGPUTexture {
-                        instance: context.instance.clone(),
-                        texture: texture.texture_id.unwrap(),
-                        owned: false,
-                        depth_or_array_layers: 1,
-                        dimension: super::enums::CanvasTextureDimension::D2,
-                        format: context.format.into(),
-                        mipLevelCount: 1,
-                        sampleCount: 1,
-                        width: context.width,
-                        height: context.height,
-                        usage: context.usage,
-                    }))
-                }
-                _ => std::ptr::null_mut(),
+    let surface_id = context.surface;
+
+    let result = gfx_select!(surface_id => global.surface_get_current_texture(surface_id, None));
+
+    match result {
+        Ok(texture) => match texture.status {
+            wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
+                Box::into_raw(Box::new(CanvasGPUTexture {
+                    instance: context.instance.clone(),
+                    texture: texture.texture_id.unwrap(),
+                    owned: false,
+                    depth_or_array_layers: 1,
+                    dimension: super::enums::CanvasTextureDimension::D2,
+                    format: context.format.into(),
+                    mipLevelCount: 1,
+                    sampleCount: 1,
+                    width: context.width,
+                    height: context.height,
+                    usage: context.usage,
+                }))
             }
+            _ => std::ptr::null_mut(),
         },
         Err(error) => {
+            println!("error: {:?}", error.to_string());
             // todo handle error
             std::ptr::null_mut()
         }

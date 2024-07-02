@@ -35,6 +35,7 @@ pub(crate) struct iOSWebGPUContext {
     ios_view: iOSView,
 }
 
+
 #[no_mangle]
 pub extern "C" fn canvas_native_init_ios_webgpu(
     instance: i64,
@@ -52,6 +53,35 @@ pub extern "C" fn canvas_native_init_ios_webgpu(
         let instance = unsafe { instance as *mut CanvasWebGPUInstance };
         return unsafe {
             webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
+                instance,
+                view as *mut c_void,
+                width,
+                height,
+            ) as i64
+        };
+    }
+
+    0
+}
+
+#[cfg(any(target_os = "ios"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_init_ios_webgpu_uiview(
+    instance: i64,
+    view: i64,
+    width: u32,
+    height: u32,
+) -> c_longlong {
+    env_logger::init();
+
+    if instance == 0 {
+        return 0;
+    }
+
+    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+        let instance = unsafe { instance as *mut CanvasWebGPUInstance };
+        return unsafe {
+            webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_uiview(
                 instance,
                 view as *mut c_void,
                 width,

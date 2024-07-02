@@ -62,8 +62,9 @@ public:
     static void GetUsage(v8::Local<v8::Name> name,
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
-
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
+    
+    static void CreateView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     CanvasGPUTexture *texture_;

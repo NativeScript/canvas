@@ -1,7 +1,13 @@
-use std::{ffi::{CStr, CString}, os::raw::c_char};
+use std::{
+    ffi::{CStr, CString},
+    os::raw::c_char,
+};
 
 use super::{
-    enums::{CanvasGPUTextureFormat, CanvasTextureDimension},
+    enums::{
+        CanvasGPUTextureFormat, CanvasOptionalTextureDimension, CanvasOptionalTextureViewDimension,
+        CanvasOptionsGPUTextureFormat, CanvasTextureDimension,
+    },
     gpu::CanvasWebGPUInstance,
     gpu_texture_view::CanvasGPUTextureView,
     structs::CanvasImageSubresourceRange,
@@ -26,8 +32,8 @@ pub struct CanvasGPUTexture {
 pub struct CanvasCreateTextureViewDescriptor {
     texture: *const CanvasGPUTexture,
     label: *const c_char,
-    format: CanvasGPUTextureFormat,
-    dimension: CanvasTextureDimension,
+    format: CanvasOptionsGPUTextureFormat,
+    dimension: CanvasOptionalTextureViewDimension,
     range: *const CanvasImageSubresourceRange,
 }
 
@@ -36,26 +42,32 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     texture: *mut CanvasGPUTexture,
     descriptor: *const CanvasCreateTextureViewDescriptor,
 ) -> *mut CanvasGPUTextureView {
-    if texture.is_null() || descriptor.is_null() {
-        return;
+    if texture.is_null() {
+        return std::ptr::null_mut();
     }
     let texture = unsafe { &*texture };
     let texture_id = texture.texture;
     let global = &texture.instance.0;
 
-    let descriptor = &*descriptor;
-
-    let label = if !descriptor.label.is_null() {
-        Some(unsafe { CStr::from_ptr(descriptor.label).to_string_lossy() })
+   let desc = if descriptor.is_null() {
+        wgpu_core::resource::TextureViewDescriptor::default()
     } else {
-        None
-    };
+        let descriptor = &*descriptor;
 
-    let desc = wgpu_core::resource::TextureViewDescriptor {
-        label: label,
-        format: descriptor.format.into(),
-        dimension: descriptor.dimension.into(),
-        range: descriptor.range.into(),
+        let label = if !descriptor.label.is_null() {
+            Some(unsafe { CStr::from_ptr(descriptor.label).to_string_lossy() })
+        } else {
+            None
+        };
+
+        let range = *descriptor.range;
+
+        wgpu_core::resource::TextureViewDescriptor {
+            label: label,
+            format: descriptor.format.into(),
+            dimension: descriptor.dimension.into(),
+            range: range.into(),
+        }
     };
 
     let (texture_view, error) =

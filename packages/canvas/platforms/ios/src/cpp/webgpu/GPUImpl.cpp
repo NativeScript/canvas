@@ -91,7 +91,7 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     CanvasGPURequestAdapterOptions opts{};
     opts.force_fallback_adapter = false;
-    opts.power_preference = CanvasGPUPowerPreference::None;
+    opts.power_preference = CanvasGPUPowerPreference::CanvasGPUPowerPreferenceNone;
     auto optionsValue = args[0];
 
     if (optionsValue->IsObject()) {
@@ -101,10 +101,10 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
         if (ppValue->IsNumber()) {
             switch (ppValue->Int32Value(context).ToChecked()) {
                 case 1:
-                    opts.power_preference = CanvasGPUPowerPreference::LowPower;
+                    opts.power_preference = CanvasGPUPowerPreference::CanvasGPUPowerPreferenceLowPower;
                     break;
                 case 2:
-                    opts.power_preference = CanvasGPUPowerPreference::HighPerformance;
+                    opts.power_preference = CanvasGPUPowerPreference::CanvasGPUPowerPreferenceHighPerformance;
                     break;
                 default:
                     break;

@@ -202,7 +202,6 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
         return;
     }
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
     int64_t offset = -1;
     int64_t size = -1;
 
@@ -219,7 +218,10 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto buf = args[2].As<v8::ArrayBuffer>();
     auto store = buf->GetBackingStore();
-    canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size,
+    auto error = canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size,
                                                  (uint8_t *) store->Data(), store->ByteLength());
 
+    if (error != nullptr){
+        // todo error
+    }
 }

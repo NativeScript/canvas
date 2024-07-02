@@ -70,12 +70,10 @@ public class NSCCanvas: UIView {
     
     public func getMtlViewPtr() -> UnsafeMutableRawPointer {
         if(mtlPtr == nil){
-            mtlPtr = Unmanaged.passRetained(mtlView.layer).toOpaque()
+            mtlPtr = Unmanaged.passRetained(mtlView).toOpaque()
         }
         return mtlPtr!
     }
-    
-    
     
     public var autoScale: Bool = true {
         didSet {
@@ -156,7 +154,8 @@ public class NSCCanvas: UIView {
             return
         }
         let viewPtr = Int64(Int(bitPattern: getMtlViewPtr()))
-        nativeContext = CanvasHelpers.initWebGPUWithView(instance, viewPtr, UInt32(width) as UInt32, UInt32(height) as UInt32)
+        var density = Float(UIScreen.main.nativeScale)
+        nativeContext = CanvasHelpers.initWebGPUWithView(instance, viewPtr, UInt32(width * density) as UInt32, UInt32(height * density) as UInt32)
         mtlView.isHidden = false
     }
     
@@ -393,12 +392,24 @@ public class NSCCanvas: UIView {
     
     required init?(coder: NSCoder) {
         mtlView = MTKView(coder: coder)
+        if #available(iOS 13.0, *) {
+            if((mtlView.layer as? CAMetalLayer) != nil){
+                let layer = mtlView.layer as! CAMetalLayer
+                // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
+                layer.presentsWithTransaction = false
+                layer.framebufferOnly = true
+            }
+        }
+     
+        
         glkView = CanvasGLKView(coder: coder)!
         glkView.translatesAutoresizingMaskIntoConstraints = false
         mtlView.translatesAutoresizingMaskIntoConstraints = false
         
         if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
             glkView.contentScaleFactor = UIScreen.main.nativeScale
+            // nativeScale is real physical pixel scale
+            // https://tomisacat.xyz/tech/2017/06/17/scale-nativescale-contentsscale.html
             mtlView.contentScaleFactor = UIScreen.main.nativeScale
         }
         
@@ -438,10 +449,25 @@ public class NSCCanvas: UIView {
     public override init(frame: CGRect) {
         glkView = CanvasGLKView(frame: frame)
         mtlView = MTKView(frame: frame)
+        
+        if #available(iOS 13.0, *) {
+            if((mtlView.layer as? CAMetalLayer) != nil){
+                let layer = mtlView.layer as! CAMetalLayer
+                // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
+                layer.presentsWithTransaction = false
+                layer.framebufferOnly = true
+            }
+        }
+        
+        
+        
         glkView.translatesAutoresizingMaskIntoConstraints = false
         mtlView.translatesAutoresizingMaskIntoConstraints = false
         if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
             glkView.contentScaleFactor = UIScreen.main.nativeScale
+            
+            // nativeScale is real physical pixel scale
+            // https://tomisacat.xyz/tech/2017/06/17/scale-nativescale-contentsscale.html
             mtlView.contentScaleFactor = UIScreen.main.nativeScale
         }
         super.init(frame: frame)

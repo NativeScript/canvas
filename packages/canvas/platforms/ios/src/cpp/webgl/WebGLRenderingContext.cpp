@@ -700,7 +700,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             }
             return scope.Escape(v8::Integer::New(isolate, value));
         }
-        case (uint32_t) GLConstants::UNPACK_COLORSPACE_CONVERSION_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnpackColorSpaceConversionWebGL:
             return scope.Escape(v8::Integer::New(isolate,
                                                  canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
                                                          this->GetState())));
@@ -729,10 +729,10 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
 
             return scope.Escape(v8::Float32Array::New(arraybuffer, 0, size));
         }
-        case (uint32_t) GLConstants::UNPACK_FLIP_Y_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnPackFlipYWebGL:
             return scope.Escape(v8::Boolean::New(isolate, canvas_native_webgl_state_get_flip_y(
                     this->GetState())));
-        case (uint32_t) GLConstants::UNPACK_PREMULTIPLY_ALPHA_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnpackPremultiplyAlphaWebGL:
             return scope.Escape(v8::Boolean::New(isolate,
                                                  canvas_native_webgl_state_get_premultiplied_alpha(
                                                          this->GetState())));
@@ -2559,27 +2559,27 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
     auto type = canvas_native_webgl_context_extension_get_type(
             ext);
     switch (type) {
-        case WebGLExtensionType::WebGLExtensionTypeOES_fbo_render_mipmap: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_fbo_render_mipmap: {
             auto ret = OES_fbo_render_mipmapImpl::NewInstance(isolate,
                                                               new OES_fbo_render_mipmapImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_blend_minmax: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_blend_minmax: {
             auto ret = EXT_blend_minmaxImpl::NewInstance(isolate, new EXT_blend_minmaxImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_color_buffer_half_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_color_buffer_half_float: {
             auto ret = EXT_color_buffer_half_floatImpl::NewInstance(isolate,
                                                                     new EXT_color_buffer_half_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_disjoint_timer_query: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_disjoint_timer_query: {
             auto ret = canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(ext);
             auto query = EXT_disjoint_timer_queryImpl::NewInstance(isolate,
                                                                    new EXT_disjoint_timer_queryImpl(
@@ -2588,68 +2588,68 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             args.GetReturnValue().Set(query);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_sRGB: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_sRGB: {
             auto ret = EXT_sRGBImpl::NewInstance(isolate, new EXT_sRGBImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_shader_texture_lod: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_shader_texture_lod: {
             auto ret = EXT_shader_texture_lodImpl::NewInstance(isolate,
                                                                new EXT_shader_texture_lodImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_texture_filter_anisotropic: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_texture_filter_anisotropic: {
             auto ret = EXT_texture_filter_anisotropicImpl::NewInstance(isolate,
                                                                        new EXT_texture_filter_anisotropicImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_element_index_uint: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_element_index_uint: {
             auto ret = OES_element_index_uintImpl::NewInstance(isolate,
                                                                new OES_element_index_uintImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_standard_derivatives: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_standard_derivatives: {
             auto ret = OES_standard_derivativesImpl::NewInstance(
                     isolate, new OES_standard_derivativesImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_float: {
             auto ret = OES_texture_floatImpl::NewInstance(isolate, new OES_texture_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_float_linear: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_float_linear: {
             auto ret = OES_texture_float_linearImpl::NewInstance(isolate,
                                                                  new OES_texture_float_linearImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float: {
             auto ret = OES_texture_half_floatImpl::NewInstance(isolate,
                                                                new OES_texture_half_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float_linear: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float_linear: {
             auto ret = OES_texture_half_float_linearImpl::NewInstance(isolate,
                                                                       new OES_texture_half_float_linearImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_vertex_array_object: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_vertex_array_object: {
             auto ret = canvas_native_webgl_context_extension_to_oes_vertex_array_object(ext);
             auto array = OES_vertex_array_objectImpl::NewInstance(isolate,
                                                                   new OES_vertex_array_objectImpl(
@@ -2657,7 +2657,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             args.GetReturnValue().Set(array);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_color_buffer_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_color_buffer_float: {
             auto ret = WEBGL_color_buffer_floatImpl::NewInstance(isolate,
                                                                  new WEBGL_color_buffer_floatImpl());
             if (ptr->GetVersion() ==
@@ -2669,49 +2669,49 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_atc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_atc: {
             auto ret = WEBGL_compressed_texture_atcImpl::NewInstance(isolate,
                                                                      new WEBGL_compressed_texture_atcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc1: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc1: {
             auto ret = WEBGL_compressed_texture_etc1Impl::NewInstance(isolate,
                                                                       new WEBGL_compressed_texture_etc1Impl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc: {
             auto ret = WEBGL_compressed_texture_s3tcImpl::NewInstance(isolate,
                                                                       new WEBGL_compressed_texture_s3tcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb: {
             auto ret = WEBGL_compressed_texture_s3tc_srgbImpl::NewInstance(isolate,
                                                                            new WEBGL_compressed_texture_s3tc_srgbImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc: {
             auto ret = WEBGL_compressed_texture_etcImpl::NewInstance(isolate,
                                                                      new WEBGL_compressed_texture_etcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_pvrtc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_pvrtc: {
             auto ret = WEBGL_compressed_texture_pvrtcImpl::NewInstance(isolate,
                                                                        new WEBGL_compressed_texture_pvrtcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_lose_context: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_lose_context: {
             auto ret = canvas_native_webgl_context_extension_to_lose_context(ext);
             auto ctx = WEBGL_lose_contextImpl::NewInstance(isolate,
                                                            new WEBGL_lose_contextImpl(ret));
@@ -2719,7 +2719,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             args.GetReturnValue().Set(ctx);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeANGLE_instanced_arrays: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeANGLE_instanced_arrays: {
             auto ret = canvas_native_webgl_context_extension_to_angle_instanced_arrays(ext);
             auto instance = ANGLE_instanced_arraysImpl::NewInstance(isolate,
                                                                     new ANGLE_instanced_arraysImpl(
@@ -2728,13 +2728,13 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
             args.GetReturnValue().Set(instance);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_depth_texture: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_depth_texture: {
             auto ret = WEBGL_depth_textureImpl::NewInstance(isolate, new WEBGL_depth_textureImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_draw_buffers: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_draw_buffers: {
             auto ret = canvas_native_webgl_context_extension_to_draw_buffers(ext);
 
             auto buffers = WEBGL_draw_buffersImpl::NewInstance(isolate,
@@ -2745,7 +2745,7 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
 
 
         }
-        case WebGLExtensionType::WebGLExtensionTypeNone:
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeNone:
             args.GetReturnValue().SetUndefined();
             canvas_native_webgl_extension_destroy(ext);
             return;

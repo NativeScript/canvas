@@ -78,7 +78,7 @@ pub fn draw_image_space_test(
     crate::canvas_native_webgl_active_texture(gl_bindings::TEXTURE0, state);
     crate::canvas_native_webgl_bind_texture(gl_bindings::TEXTURE_2D, texture, state);
     crate::canvas_native_webgl_pixel_storei(
-        crate::GLConstants::UNPACK_FLIP_Y_WEBGL as u32,
+        crate::GLConstants::UnPackFlipYWebGL as u32,
         0,
         state,
     );

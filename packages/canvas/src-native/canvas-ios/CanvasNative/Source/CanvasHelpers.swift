@@ -72,8 +72,12 @@ public class CanvasHelpers: NSObject {
     }
     
     
-    public static func initWebGPUWithView(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
+    public static func initWebGPUWithViewLayer(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
         return canvas_native_init_ios_webgpu(instance, view, width, height)
+    }
+    
+    public static func initWebGPUWithView(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
+        return canvas_native_init_ios_webgpu_uiview(instance, view, width, height)
     }
     
     public static func initGLWithView(_ view: Int64, _ alpha: Bool,

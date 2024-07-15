@@ -4,10 +4,11 @@
 
 #include "GPUCanvasContextImpl.h"
 #include "Caches.h"
+#include "GPUAdapterImpl.h"
 
-GPUCanvasContextImpl::GPUCanvasContextImpl(CanvasGPUCanvasContext *context) : context_(context) {}
+GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(context) {}
 
-CanvasGPUCanvasContext *GPUCanvasContextImpl::GetContext() {
+const CanvasGPUCanvasContext *GPUCanvasContextImpl::GetContext() {
     return this->context_;
 }
 
@@ -23,7 +24,6 @@ void GPUCanvasContextImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
 
     canvasModule->Set(context, ConvertToV8String(isolate, "GPUCanvasContext"), func);
 }
-
 
 GPUCanvasContextImpl *GPUCanvasContextImpl::GetPointer(const v8::Local<v8::Object> &object) {
     auto ptr = object->GetAlignedPointerFromInternalField(0);
@@ -60,12 +60,19 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
             ConvertToV8String(isolate, "getCurrentTexture"),
             v8::FunctionTemplate::New(isolate, &GetCurrentTexture));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "presentSurface"),
+            v8::FunctionTemplate::New(isolate, &PresentSurface));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "capabilities"),
+            v8::FunctionTemplate::New(isolate, &GetCapabilities));
+
 
     cache->GPUCanvasContextTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
-
 
 void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &args) {
     GPUCanvasContextImpl *ptr = GetPointer(args.This());
@@ -75,104 +82,107 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
     if (ptr == nullptr) {
         return;
     }
-    
+
     if (optionsValue->IsNullOrUndefined() || !optionsValue->IsObject()) {
         return;
     }
-    
+
     auto options = optionsValue.As<v8::Object>();
-    
+
     v8::Local<v8::Value> deviceValue;
-    
+
     options->Get(context, ConvertToV8String(isolate, "device")).ToLocal(
-                                                                        &deviceValue);
-    
-    
+            &deviceValue);
+
+
     if (deviceValue->IsNullOrUndefined() || !deviceValue->IsObject()) {
         return;
     }
-    
+
     auto device = GPUDeviceImpl::GetPointer(deviceValue.As<v8::Object>());
-    
+
     if (device == nullptr) { return; }
-    
+
     CanvasGPUSurfaceConfiguration config{};
     config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeOpaque;
     config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifo;
     config.view_formats = nullptr;
     config.view_formats_size = 0;
     config.usage = 0x10;
-    
-    
+
+
     /* ignore for now
-     
+
      v8::Local<v8::Value> formatValue;
-     
-     
+
+
      options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
      &deviceValue);
-     
+
      */
-    
+
     v8::Local<v8::Value> usageValue;
-    
+
     options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
-                                                                       &usageValue);
-    
+            &usageValue);
+
     if (!usageValue.IsEmpty() && usageValue->IsInt32()) {
         config.usage = usageValue->Int32Value(context).ToChecked();
     }
-    
-    
+
+
     v8::Local<v8::Value> presentModeValue;
-    
+
     options->Get(context, ConvertToV8String(isolate, "presentMode")).ToLocal(
-                                                                             &presentModeValue);
-    
+            &presentModeValue);
+
     if (!presentModeValue.IsEmpty()) {
-        if(presentModeValue->IsString()){
+        if (presentModeValue->IsString()) {
             auto presentMode = ConvertFromV8String(isolate, presentModeValue);
-            if(strcmp(presentMode.c_str(), "autoVsync") == 0){
+            if (strcmp(presentMode.c_str(), "autoVsync") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeAutoVsync;
-            }else if(strcmp(presentMode.c_str(), "autoNoVsync") == 0){
+            } else if (strcmp(presentMode.c_str(), "autoNoVsync") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeAutoNoVsync;
-            }else if(strcmp(presentMode.c_str(), "fifo") == 0){
+            } else if (strcmp(presentMode.c_str(), "fifo") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifo;
-            }else if(strcmp(presentMode.c_str(), "fifoRelaxed") == 0){
+            } else if (strcmp(presentMode.c_str(), "fifoRelaxed") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeFifoRelaxed;
-            }else if(strcmp(presentMode.c_str(), "immediate") == 0){
+            } else if (strcmp(presentMode.c_str(), "immediate") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeImmediate;
-            }else if(strcmp(presentMode.c_str(), "mailbox") == 0){
+            } else if (strcmp(presentMode.c_str(), "mailbox") == 0) {
                 config.presentMode = CanvasGPUPresentMode::CanvasGPUPresentModeMailbox;
             }
-            
-        }else if (presentModeValue->IsInt32()){
+
+        } else if (presentModeValue->IsInt32()) {
             config.presentMode = (CanvasGPUPresentMode) presentModeValue->Int32Value(
-                                                                                     context).ToChecked();
+                    context).ToChecked();
         }
     }
-    
-    
-    
+
+
     v8::Local<v8::Value> alphaModeValue;
     options->Get(context, ConvertToV8String(isolate, "alphaMode")).ToLocal(
-                                                                           &alphaModeValue);
-    
+            &alphaModeValue);
+
     if (!alphaModeValue.IsEmpty()) {
-        if(alphaModeValue->IsString()){
+        if (alphaModeValue->IsString()) {
             auto alphaMode = ConvertFromV8String(isolate, alphaModeValue);
-            if(strcmp(alphaMode.c_str(), "premultiplied") == 0){
+            if (strcmp(alphaMode.c_str(), "premultiplied") == 0) {
                 config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModePreMultiplied;
-            }else if(strcmp(alphaMode.c_str(), "opaque") == 0){
+            } else if (strcmp(alphaMode.c_str(), "opaque") == 0) {
                 config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeOpaque;
-            }else if(strcmp(alphaMode.c_str(), "postmultiplied") == 0){
+            } else if (strcmp(alphaMode.c_str(), "postmultiplied") == 0) {
                 config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModePostMultiplied;
+            } else if (strcmp(alphaMode.c_str(), "inherit") == 0) {
+                config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeInherit;
+            } else if (strcmp(alphaMode.c_str(), "auto") == 0) {
+                config.alphaMode = CanvasGPUSurfaceAlphaMode::CanvasGPUSurfaceAlphaModeAuto;
             }
-        }else if(alphaModeValue->IsInt32()){
+        } else if (alphaModeValue->IsInt32()) {
             config.alphaMode = (CanvasGPUSurfaceAlphaMode) alphaModeValue->Int32Value(
                     context).ToChecked();
         }
-        
+
     }
 
     canvas_native_webgpu_context_configure(ptr->GetContext(), device->GetGPUDevice(), &config);
@@ -196,7 +206,7 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
         args.GetReturnValue().SetUndefined();
         return;
     }
-    
+
     auto ctx = ptr->GetContext();
 
     auto texture = canvas_native_webgpu_context_get_current_texture(ctx);
@@ -208,5 +218,37 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
         return;
     }
 
+    args.GetReturnValue().SetUndefined();
+}
+
+void GPUCanvasContextImpl::PresentSurface(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUCanvasContextImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto ctx = ptr->GetContext();
+
+    canvas_native_webgpu_context_present_surface(ctx);
+}
+
+void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUCanvasContextImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto adapterVal = args[0];
+
+    if (!adapterVal.IsEmpty() && adapterVal->IsObject()) {
+        auto adapter = GPUAdapterImpl::GetPointer(adapterVal.As<v8::Object>());
+        auto ctx = ptr->GetContext();
+
+        if (adapter != nullptr) {
+            canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter());
+        }
+
+
+    }
     args.GetReturnValue().SetUndefined();
 }

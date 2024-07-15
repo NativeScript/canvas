@@ -9,14 +9,14 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class GPUQueueImpl: ObjectWrapperImpl  {
+class GPUQueueImpl : ObjectWrapperImpl {
 public:
-    GPUQueueImpl(CanvasGPUQueue *queue);
+    GPUQueueImpl(const CanvasGPUQueue *queue);
 
     ~GPUQueueImpl() {
     }
 
-    CanvasGPUQueue *GetGPUQueue();
+    const CanvasGPUQueue *GetGPUQueue();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -42,7 +42,7 @@ public:
 
 
 private:
-    CanvasGPUQueue *queue_;
+    const CanvasGPUQueue *queue_;
 };
 
 

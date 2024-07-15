@@ -39,7 +39,6 @@ export class GPUTexture {
 
 	createView(desc?) {
 		const view = this[native_].createView(desc);
-		console.log('createView', desc, view);
 		return GPUTextureView.fromNative(view);
 	}
 }

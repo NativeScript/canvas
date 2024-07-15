@@ -11,12 +11,12 @@
 
 class GPURenderPipelineImpl : ObjectWrapperImpl {
 public:
-    GPURenderPipelineImpl(CanvasGPURenderPipeline *pipeline);
+    GPURenderPipelineImpl(const CanvasGPURenderPipeline *pipeline);
 
     ~GPURenderPipelineImpl() {
     }
 
-    CanvasGPURenderPipeline *GetGPUPipeline();
+    const CanvasGPURenderPipeline *GetGPUPipeline();
 
     static void Init(v8::Local <v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -41,7 +41,7 @@ public:
 
 
 private:
-    CanvasGPURenderPipeline *pipeline_;
+    const CanvasGPURenderPipeline *pipeline_;
 };
 
 

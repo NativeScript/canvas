@@ -12,16 +12,16 @@
 
 class GPUImpl : ObjectWrapperImpl {
 public:
-    GPUImpl(CanvasWebGPUInstance *instance);
+    GPUImpl(const CanvasWebGPUInstance *instance);
 
     ~GPUImpl() {
         if (this->instance_ != nullptr) {
-            canvas_native_webgpu_instance_destroy(this->instance_);
+            canvas_native_webgpu_instance_release(this->instance_);
             this->instance_ = nullptr;
         }
     }
 
-    CanvasWebGPUInstance *GetGPUInstance();
+    const CanvasWebGPUInstance *GetGPUInstance();
 
     static void Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isolate);
 
@@ -48,7 +48,7 @@ public:
     static void RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    CanvasWebGPUInstance *instance_;
+    const CanvasWebGPUInstance *instance_;
 };
 
 

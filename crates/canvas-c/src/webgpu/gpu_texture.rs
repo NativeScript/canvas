@@ -1,11 +1,12 @@
-use std::{
-    ffi::{CStr, CString},
-    os::raw::c_char,
-};
+use std::os::raw::c_char;
+use std::sync::Arc;
+
+use crate::webgpu::error::handle_error;
+use crate::webgpu::prelude::ptr_into_label;
 
 use super::{
     enums::{
-        CanvasGPUTextureFormat, CanvasOptionalTextureDimension, CanvasOptionalTextureViewDimension,
+        CanvasGPUTextureFormat, CanvasOptionalTextureViewDimension,
         CanvasOptionsGPUTextureFormat, CanvasTextureDimension,
     },
     gpu::CanvasWebGPUInstance,
@@ -15,7 +16,7 @@ use super::{
 
 #[derive(Clone)]
 pub struct CanvasGPUTexture {
-    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) texture: wgpu_core::id::TextureId,
     pub(crate) owned: bool,
     pub(crate) depth_or_array_layers: u32,
@@ -26,6 +27,7 @@ pub struct CanvasGPUTexture {
     pub(crate) width: u32,
     pub(crate) height: u32,
     pub(crate) usage: u32,
+    pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
 #[repr(C)]
@@ -38,32 +40,41 @@ pub struct CanvasCreateTextureViewDescriptor {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_reference(texture: *const CanvasGPUTexture) {
+    if texture.is_null() { return; }
+    Arc::increment_strong_count(texture);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_release(texture: *const CanvasGPUTexture) {
+    if texture.is_null() { return; }
+    Arc::decrement_strong_count(texture);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
     descriptor: *const CanvasCreateTextureViewDescriptor,
-) -> *mut CanvasGPUTextureView {
+) -> *const CanvasGPUTextureView {
     if texture.is_null() {
         return std::ptr::null_mut();
     }
     let texture = unsafe { &*texture };
     let texture_id = texture.texture;
-    let global = &texture.instance.0;
+    let global = texture.instance.global();
 
-   let desc = if descriptor.is_null() {
+    let desc = if descriptor.is_null() {
         wgpu_core::resource::TextureViewDescriptor::default()
     } else {
         let descriptor = &*descriptor;
 
-        let label = if !descriptor.label.is_null() {
-            Some(unsafe { CStr::from_ptr(descriptor.label).to_string_lossy() })
-        } else {
-            None
-        };
+        let label = ptr_into_label(descriptor.label);
 
         let range = *descriptor.range;
 
         wgpu_core::resource::TextureViewDescriptor {
-            label: label,
+            label,
             format: descriptor.format.into(),
             dimension: descriptor.dimension.into(),
             range: range.into(),
@@ -73,20 +84,28 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     let (texture_view, error) =
         gfx_select!(texture_id => global.texture_create_view(texture_id, &desc, None));
 
-    if let Some(error) = error {
-        // todo handle error
-        return std::ptr::null_mut();
+    let error_sink = texture.error_sink.as_ref();
+
+    if let Some(cause) = error {
+        handle_error(
+            global,
+            error_sink,
+            cause,
+            "",
+            None,
+            "canvas_native_webgpu_texture_create_texture_view",
+        );
     }
 
-    Box::into_raw(Box::new(CanvasGPUTextureView {
+    Arc::into_raw(Arc::new(CanvasGPUTextureView {
         instance: texture.instance.clone(),
-        texture_view: texture_view,
+        texture_view,
     }))
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_depth_or_array_layers(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
 ) -> u32 {
     if texture.is_null() {
         return 0;
@@ -96,7 +115,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_depth_or_array_layers(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_texture_get_width(texture: *mut CanvasGPUTexture) -> u32 {
+pub extern "C" fn canvas_native_webgpu_texture_get_width(texture: *const CanvasGPUTexture) -> u32 {
     if texture.is_null() {
         return 0;
     }
@@ -105,7 +124,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_width(texture: *mut CanvasGPU
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_texture_get_height(texture: *mut CanvasGPUTexture) -> u32 {
+pub extern "C" fn canvas_native_webgpu_texture_get_height(texture: *const CanvasGPUTexture) -> u32 {
     if texture.is_null() {
         return 0;
     }
@@ -115,7 +134,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_height(texture: *mut CanvasGP
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_dimension(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
 ) -> CanvasTextureDimension {
     if texture.is_null() {
         return CanvasTextureDimension::D2;
@@ -126,7 +145,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_dimension(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_format(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
 ) -> CanvasGPUTextureFormat {
     if texture.is_null() {
         #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -140,7 +159,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_format(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_texture_get_usage(texture: *mut CanvasGPUTexture) -> u32 {
+pub extern "C" fn canvas_native_webgpu_texture_get_usage(texture: *const CanvasGPUTexture) -> u32 {
     if texture.is_null() {
         return 0;
     }
@@ -150,7 +169,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_usage(texture: *mut CanvasGPU
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_label(
-    texture: *mut CanvasGPUTexture,
+    _texture: *const CanvasGPUTexture,
 ) -> *mut c_char {
     // todo
     std::ptr::null_mut()
@@ -158,7 +177,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_label(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_mip_level_count(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
 ) -> u32 {
     if texture.is_null() {
         return 0;
@@ -169,7 +188,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_mip_level_count(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_get_sample_count(
-    texture: *mut CanvasGPUTexture,
+    texture: *const CanvasGPUTexture,
 ) -> u32 {
     if texture.is_null() {
         return 0;
@@ -180,20 +199,14 @@ pub extern "C" fn canvas_native_webgpu_texture_get_sample_count(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_texture_destroy(
-    texture: *mut CanvasGPUTexture,
-) -> *mut c_char {
+    texture: *const CanvasGPUTexture,
+) {
     if texture.is_null() {
-        return std::ptr::null_mut();
+        return;
     }
     let texture = unsafe { &*texture };
     let texture_id = texture.texture;
-    let global = &texture.instance.0;
+    let global = texture.instance.global();
 
-    match gfx_select!(texture_id => global.texture_destroy(texture_id)) {
-        Ok(_) => std::ptr::null_mut(),
-        Err(err) => {
-            let err = err.to_string();
-            CString::new(err).unwrap().into_raw()
-        }
-    }
+    let _ = gfx_select!(texture_id => global.texture_destroy(texture_id));
 }

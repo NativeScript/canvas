@@ -6,9 +6,9 @@
 #include "Caches.h"
 #include "GPUTextureViewImpl.h"
 
-GPUTextureImpl::GPUTextureImpl(CanvasGPUTexture *texture) : texture_(texture) {}
+GPUTextureImpl::GPUTextureImpl(const CanvasGPUTexture *texture) : texture_(texture) {}
 
-CanvasGPUTexture *GPUTextureImpl::GetTexture() {
+const CanvasGPUTexture *GPUTextureImpl::GetTexture() {
     return this->texture_;
 }
 
@@ -64,6 +64,10 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
             GetHeight
     );
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "format"),
+            GetFormat
+    );
 
     tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "usage"),
@@ -93,12 +97,12 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "mipLevelCount"),
             GetMipLevelCount
     );
-    
+
     tmpl->Set(
             ConvertToV8String(isolate, "createView"),
             v8::FunctionTemplate::New(isolate, &CreateView));
 
-    
+
     cache->GPUTextureTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -234,20 +238,20 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
     auto isolate = args.GetIsolate();
-    
+
     auto desc = args[0];
     CanvasCreateTextureViewDescriptor *descriptor = nullptr;
     if(desc->IsObject()){
-        
+
     }
     auto view = canvas_native_webgpu_texture_create_texture_view(ptr->GetTexture(), descriptor);
-    
+
     if(view != nullptr){
         auto ret = GPUTextureViewImpl::NewInstance(isolate, new GPUTextureViewImpl(view));
         args.GetReturnValue().Set(ret);
         return;
     }
-    
+
     args.GetReturnValue().SetUndefined();
-    
+
 }

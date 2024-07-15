@@ -490,6 +490,24 @@ fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
 }
 `;
 
+		const triangle_vert = `@vertex
+fn main(
+  @builtin(vertex_index) VertexIndex : u32
+) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 3>(
+    vec2(0.0, 0.5),
+    vec2(-0.5, -0.5),
+    vec2(0.5, -0.5)
+  );
+
+  return vec4f(pos[VertexIndex], 0.0, 1.0);
+}`;
+
+		const red_frag = `@fragment
+fn main() -> @location(0) vec4f {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}`;
+
 		if (navigator.gpu) {
 			const adapter = await navigator.gpu.requestAdapter();
 			const device = await adapter.requestDevice();
@@ -497,100 +515,65 @@ fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
 			const shaderModule = device.createShaderModule({
 				code: shaders,
 			});
-
-
+			
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
+			console.log((<any>context).capabilities(adapter));
+
+			const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 			context.configure({
 				device,
-				format: navigator.gpu.getPreferredCanvasFormat(),
-				alphaMode: global.isIOS? 'postMultiplied' : 'premultiplied' as any,
+				format: presentationFormat,
+				alphaMode: global.isIOS ? 'postmultiplied' : ('inherit' as any),
 			});
 
-			const vertexBuffer = device.createBuffer({
-				size: vertices.byteLength, // make it big enough to store vertices in
-				usage: global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.COPY_DST,
-				mappedAtCreation: false,
-			});
-
-			device.queue.writeBuffer(vertexBuffer, 0, vertices, 0, vertices.length);
-
-			const vertexBuffers = [
-				{
-					attributes: [
-						{
-							shaderLocation: 0, // position
-							offset: 0,
-							format: 'float32x4',
-						},
-						{
-							shaderLocation: 1, // color
-							offset: 16,
-							format: 'float32x4',
-						},
-					],
-					arrayStride: 32,
-					stepMode: 'vertex',
-				},
-			];
-
-			const pipelineDescriptor = {
+			const pipeline = device.createRenderPipeline({
+				layout: 'auto',
 				vertex: {
-					module: shaderModule,
-					entryPoint: 'vertex_main',
-					buffers: vertexBuffers,
+					module: device.createShaderModule({
+						code: triangle_vert,
+					}),
+					entryPoint: 'main',
 				},
 				fragment: {
-					module: shaderModule,
-					entryPoint: 'fragment_main',
+					module: device.createShaderModule({
+						code: red_frag,
+					}),
 					targets: [
 						{
-							format: navigator.gpu.getPreferredCanvasFormat(),
+							format: presentationFormat,
 						},
 					],
+					entryPoint: 'main',
 				},
 				primitive: {
 					topology: 'triangle-list',
 				},
-				layout: 'auto',
-			};
+			});
 
-			// 6: Create the actual render pipeline
 
-			const renderPipeline = device.createRenderPipeline(pipelineDescriptor as any);
+			const texture = context.getCurrentTexture();
 
-			// 7: Create GPUCommandEncoder to issue commands to the GPU
-			// Note: render pass descriptor, command encoder, etc. are destroyed after use, fresh one needed for each frame.
 			const commandEncoder = device.createCommandEncoder();
+			const textureView = texture.createView();
 
-			// 8: Create GPURenderPassDescriptor to tell WebGPU which texture to draw into, then initiate render pass
-
-			const renderPassDescriptor = {
+			const passEncoder = commandEncoder.beginRenderPass({
 				colorAttachments: [
 					{
-						clearValue: clearColor,
+						view: textureView,
+						clearValue: [0, 0, 0, 1],
 						loadOp: 'clear',
 						storeOp: 'store',
-						view: context.getCurrentTexture().createView(),
 					},
 				],
-			};
-
-
-			const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor as any);
-
-			// 9: Draw the triangle
-
-			passEncoder.setPipeline(renderPipeline);
-			passEncoder.setVertexBuffer(0, vertexBuffer);
+			});
+			passEncoder.setPipeline(pipeline);
 			passEncoder.draw(3);
-
-			// End the render pass
 			passEncoder.end();
 
-			// 10: End frame by passing array of command buffers to command queue for execution
 			device.queue.submit([commandEncoder.finish()]);
+			(<any>context).presentSurface();
 		}
 	}
 

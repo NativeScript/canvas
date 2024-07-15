@@ -10,12 +10,12 @@
 
 class GPUBufferImpl : ObjectWrapperImpl {
 public:
-    GPUBufferImpl(CanvasGPUBuffer *buffer);
+    GPUBufferImpl(const CanvasGPUBuffer *buffer);
 
     ~GPUBufferImpl() {
     }
 
-    CanvasGPUBuffer *GetGPUBuffer();
+    const CanvasGPUBuffer *GetGPUBuffer();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -51,7 +51,7 @@ public:
 
 
 private:
-    CanvasGPUBuffer *buffer_;
+    const CanvasGPUBuffer *buffer_;
 };
 
 

@@ -7,9 +7,9 @@
 #include "GPUBufferImpl.h"
 #include "GPUCommandBufferImpl.h"
 
-GPUQueueImpl::GPUQueueImpl(CanvasGPUQueue *queue) : queue_(queue) {}
+GPUQueueImpl::GPUQueueImpl(const CanvasGPUQueue *queue) : queue_(queue) {}
 
-CanvasGPUQueue *GPUQueueImpl::GetGPUQueue() {
+const CanvasGPUQueue *GPUQueueImpl::GetGPUQueue() {
     return this->queue_;
 }
 
@@ -87,7 +87,7 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
         auto data = static_cast<uint8_t *>(store->Data()) + offset;
 
-        auto data_size = store->ByteLength() - offset;
+        auto data_size = store->ByteLength();
 
         auto dataOffset = (uint64_t) args[3].As<v8::Number>()->Value();
 
@@ -119,7 +119,7 @@ void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    std::vector<CanvasGPUCommandBuffer *> commandBuffers;
+    std::vector<const CanvasGPUCommandBuffer *> commandBuffers;
     auto commandBuffersVal = args[0];
 
     if (commandBuffersVal->IsArray()) {

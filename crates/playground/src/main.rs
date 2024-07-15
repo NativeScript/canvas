@@ -921,16 +921,16 @@ fn main() {
                 let render_pass = unsafe { canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(command_encoder, std::ptr::null(), color_attachments.as_ptr(), color_attachments.len(), std::ptr::null(), std::ptr::null(), std::ptr::null(), -1, -1)};
 
 
-                unsafe { canvas_c::webgpu::gpu_render_pass::canvas_native_webgpu_render_pass_set_pipeline(render_pass, pipeline) }
+                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_set_pipeline(render_pass, pipeline) }
 
             
-                unsafe { canvas_c::webgpu::gpu_render_pass::canvas_native_webgpu_render_pass_set_vertex_buffer(render_pass, 0, buffer, 0, -1) }
+                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_set_vertex_buffer(render_pass, 0, buffer, 0, -1) }
 
 
-                unsafe { canvas_c::webgpu::gpu_render_pass::canvas_native_webgpu_render_pass_encoder_draw(render_pass, 3, 1, 0,0) }
+                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(render_pass, 3, 1, 0, 0) }
 
 
-                unsafe { canvas_c::webgpu::gpu_render_pass::canvas_native_webgpu_render_pass_end(render_pass) }
+                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_end(render_pass) }
 
 
                 let exe = unsafe {canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(command_encoder, std::ptr::null()) };

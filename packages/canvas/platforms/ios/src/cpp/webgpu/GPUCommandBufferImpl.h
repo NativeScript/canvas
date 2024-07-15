@@ -11,12 +11,12 @@
 
 class GPUCommandBufferImpl : ObjectWrapperImpl {
 public:
-    GPUCommandBufferImpl(CanvasGPUCommandBuffer *commandBuffer);
+    GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer);
 
     ~GPUCommandBufferImpl() {
     }
 
-    CanvasGPUCommandBuffer *GetGPUCommandBuffer();
+    const CanvasGPUCommandBuffer *GetGPUCommandBuffer();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -37,7 +37,7 @@ public:
     }
 
 private:
-    CanvasGPUCommandBuffer *commandBuffer_;
+    const CanvasGPUCommandBuffer *commandBuffer_;
 };
 
 

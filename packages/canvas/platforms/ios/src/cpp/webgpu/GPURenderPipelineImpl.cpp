@@ -6,10 +6,10 @@
 #include "Caches.h"
 #include "GPUBindGroupLayoutImpl.h"
 
-GPURenderPipelineImpl::GPURenderPipelineImpl(CanvasGPURenderPipeline *pipeline) : pipeline_(
+GPURenderPipelineImpl::GPURenderPipelineImpl(const CanvasGPURenderPipeline *pipeline) : pipeline_(
         pipeline) {}
 
-CanvasGPURenderPipeline *GPURenderPipelineImpl::GetGPUPipeline() {
+const CanvasGPURenderPipeline *GPURenderPipelineImpl::GetGPUPipeline() {
     return this->pipeline_;
 }
 

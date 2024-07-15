@@ -3,8 +3,9 @@ use std::{
     ffi::CString,
     os::raw::{c_char, c_void},
 };
+use std::sync::Arc;
 
-use crate::buffers::U8Buffer;
+use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error_fatal};
 
 use super::gpu::CanvasWebGPUInstance;
 
@@ -34,11 +35,12 @@ impl From<wgpu_core::device::HostMap> for GPUMapMode {
 }
 
 pub struct CanvasGPUBuffer {
-    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) label: Cow<'static, str>,
     pub(crate) buffer: wgpu_core::id::BufferId,
     pub(crate) size: u64,
     pub(crate) usage: u32,
+    pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
 impl CanvasGPUBuffer {
@@ -52,13 +54,13 @@ impl CanvasGPUBuffer {
 
     pub fn destroy(&self) {
         let buffer_id = self.buffer;
-        let global = &self.instance.0;
-        gfx_select!(buffer_id => global.buffer_destroy(buffer_id));
+        let global = self.instance.global();
+        let _ = gfx_select!(buffer_id => global.buffer_destroy(buffer_id));
     }
 
     pub fn unmap(&self) {
         let buffer_id = self.buffer;
-        let global = &self.instance.0;
+        let global = self.instance.global();
         gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
     }
 }
@@ -88,16 +90,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     size: i64,
     dst: *mut u8,
     dst_size: usize,
-) -> *mut c_char {
+) {
     if buffer.is_null() {
-        return std::ptr::null_mut();
+        return;
     }
     let buffer = unsafe { &*buffer };
     let offset: u64 = offset.try_into().ok().unwrap_or_default();
     let size: Option<u64> = size.try_into().ok();
 
     let buffer_id = buffer.buffer;
-    let global = &buffer.instance.0;
+    let global = buffer.instance.global();
 
     let range = gfx_select!( buffer_id => global.buffer_get_mapped_range(buffer_id, offset, size));
 
@@ -106,11 +108,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
             let src = std::slice::from_raw_parts(buf, len as usize);
             let dst = std::slice::from_raw_parts_mut(dst, dst_size);
             dst.copy_from_slice(src);
-            std::ptr::null_mut()
         }
         Err(err) => {
-            let err = err.to_string();
-            CString::new(err).unwrap().into_raw()
+            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range")
         }
     }
 }
@@ -157,21 +157,49 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
         callback: Some(wgpu_core::resource::BufferMapCallback::from_rust(Box::new(
             move |result| {
                 let callback = unsafe {
-                    std::mem::transmute::<*const i64, fn(*mut c_char, *mut c_void)>(callback as _)
+                    std::mem::transmute::<*const i64, fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>(callback as _)
                 };
                 let callback_data = callback_data as *mut c_void;
                 if let Err(error) = result {
-                    let error = error.to_string();
-                    let error = CString::new(error).unwrap().into_raw();
-                    callback(error, callback_data);
+                    let error: CanvasGPUError = error.into();
+                    let (typ, msg) = match error {
+                        CanvasGPUError::None => (
+                            CanvasGPUErrorType::None,
+                            None
+                        ),
+                        CanvasGPUError::Lost => {
+                            (
+                                CanvasGPUErrorType::Lost,
+                                None
+                            )
+                        }
+                        CanvasGPUError::OutOfMemory => (
+                            CanvasGPUErrorType::OutOfMemory,
+                            None
+                        ),
+                        CanvasGPUError::Validation(value) => (
+                            CanvasGPUErrorType::Validation,
+                            Some(CString::new(value).unwrap())
+                        ),
+                        CanvasGPUError::Internal => (
+                            CanvasGPUErrorType::Internal,
+                            None
+                        ),
+                    };
+
+                    let msg = msg
+                        .map(|value| value.into_raw())
+                        .unwrap_or(std::ptr::null_mut());
+
+                    callback(typ, msg, callback_data);
                 } else {
-                    callback(std::ptr::null_mut(), callback_data);
+                    callback(CanvasGPUErrorType::None, std::ptr::null_mut(), callback_data);
                 }
             },
         ))),
     };
 
-    let global = &buffer.instance.0;
+    let global = buffer.instance.global();
     let buffer_id = buffer.buffer;
 
     gfx_select!(buffer_id => global.buffer_map_async(buffer_id, offset, size, op));

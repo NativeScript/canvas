@@ -11,16 +11,13 @@
 
 class GPUAdapterInfoImpl : ObjectWrapperImpl {
 public:
-    GPUAdapterInfoImpl(CanvasGPUAdapterInfo *info);
+    GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info);
 
     ~GPUAdapterInfoImpl() {
-        if (this->info_ != nullptr) {
-            canvas_native_webgpu_adapter_info_destroy(this->info_);
-            this->info_ = nullptr;
-        }
+        canvas_native_webgpu_adapter_info_release(this->GetInfo());
     }
 
-    CanvasGPUAdapterInfo *GetInfo();
+    const CanvasGPUAdapterInfo *GetInfo();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -54,7 +51,7 @@ public:
 
 
 private:
-    CanvasGPUAdapterInfo *info_;
+    const CanvasGPUAdapterInfo *info_;
 };
 
 

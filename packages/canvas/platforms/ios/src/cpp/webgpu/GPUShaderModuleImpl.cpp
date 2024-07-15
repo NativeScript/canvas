@@ -5,10 +5,10 @@
 #include "GPUShaderModuleImpl.h"
 #include "Caches.h"
 
-GPUShaderModuleImpl::GPUShaderModuleImpl(CanvasGPUShaderModule *shaderModule) : shaderModule_(
+GPUShaderModuleImpl::GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule) : shaderModule_(
         shaderModule) {}
 
-CanvasGPUShaderModule *GPUShaderModuleImpl::GetShaderModule() {
+const CanvasGPUShaderModule *GPUShaderModuleImpl::GetShaderModule() {
     return this->shaderModule_;
 }
 

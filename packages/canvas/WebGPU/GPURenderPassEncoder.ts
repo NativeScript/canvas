@@ -19,7 +19,7 @@ export class GPURenderPassEncoder {
 	}
 
 	setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number) {
-		this[native_].setVertexBuffer(slot, buffer[native_], offset, size);
+		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? -1, size ?? -1);
 	}
 
 	draw(vertexCount: number, instanceCount: number = 1, firstVertex: number = 0, firstInstance: number = 0) {

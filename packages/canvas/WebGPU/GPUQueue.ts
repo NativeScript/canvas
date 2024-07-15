@@ -23,6 +23,12 @@ export class GPUQueue {
 	}
 
 	submit(commands: GPUCommandBuffer[]) {
-		console.log('submit', commands);
+		if (Array.isArray(commands)) {
+			this[native_].submit(
+				commands.map((command) => {
+					return command[native_];
+				})
+			);
+		}
 	}
 }

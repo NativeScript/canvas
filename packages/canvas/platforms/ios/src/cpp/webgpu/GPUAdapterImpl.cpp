@@ -21,7 +21,7 @@ void GPUAdapterImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUAdapter"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUAdapter"), func).FromJust();
 }
 
 GPUAdapterImpl *GPUAdapterImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -245,7 +245,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
                                         label.empty() ? nullptr : label.c_str(),
                                         required_features_data, required_features_data_length,
                                         limits,
-                                        [](char *error, CanvasGPUDevice *device, void *data) {
+                                        [](char *error, const CanvasGPUDevice *device, void *data) {
                                             if (data != nullptr) {
                                                 auto func = static_cast<AsyncCallback *>(data);
                                                 if (func->isolate != nullptr) {

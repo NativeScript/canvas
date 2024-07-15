@@ -1,6 +1,13 @@
 use std::{ffi::CString, os::raw::c_char};
+use std::sync::Arc;
 
-pub struct CanvasGPUAdapterInfo(pub(crate) wgpu_types::AdapterInfo);
+pub struct CanvasGPUAdapterInfo(wgpu_types::AdapterInfo);
+
+impl CanvasGPUAdapterInfo {
+    pub fn new(types: wgpu_types::AdapterInfo) -> Self {
+        Self(types)
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(
@@ -15,7 +22,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_info_architecture(
-    info: *const CanvasGPUAdapterInfo,
+    _info: *const CanvasGPUAdapterInfo,
 ) -> *mut c_char {
     // if info.is_null() {return std::ptr::null()}
     // let info = unsafe {&*info};
@@ -47,12 +54,24 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_description(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_adapter_info_destroy(
-    info: *mut CanvasGPUAdapterInfo,
+pub unsafe extern "C" fn canvas_native_webgpu_adapter_info_reference(
+    info: *const CanvasGPUAdapterInfo,
 ) {
     if info.is_null() {
         return;
     }
-   
-    let _ = Box::from_raw(info);
+
+    Arc::increment_strong_count(info);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_adapter_info_release(
+    info: *const CanvasGPUAdapterInfo,
+) {
+    if info.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(info);
 }

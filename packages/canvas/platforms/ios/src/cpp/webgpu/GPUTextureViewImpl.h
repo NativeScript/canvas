@@ -11,12 +11,13 @@
 
 class GPUTextureViewImpl : ObjectWrapperImpl {
 public:
-    GPUTextureViewImpl(CanvasGPUTextureView *view);
+    GPUTextureViewImpl(const CanvasGPUTextureView *view);
 
     ~GPUTextureViewImpl() {
+        canvas_native_webgpu_texture_view_release(this->GetTextureView());
     }
 
-    CanvasGPUTextureView *GetTextureView();
+    const CanvasGPUTextureView *GetTextureView();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -37,7 +38,7 @@ public:
 
 
 private:
-    CanvasGPUTextureView *view_;
+    const CanvasGPUTextureView *view_;
 };
 
 

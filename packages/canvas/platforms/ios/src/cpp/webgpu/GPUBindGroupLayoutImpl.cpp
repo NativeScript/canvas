@@ -5,10 +5,10 @@
 #include "GPUBindGroupLayoutImpl.h"
 #include "Caches.h"
 
-GPUBindGroupLayoutImpl::GPUBindGroupLayoutImpl(CanvasGPUBindGroupLayout *groupLayout)
+GPUBindGroupLayoutImpl::GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *groupLayout)
         : groupLayout_(groupLayout) {}
 
-CanvasGPUBindGroupLayout *GPUBindGroupLayoutImpl::GetBindGroupLayout() {
+const CanvasGPUBindGroupLayout *GPUBindGroupLayoutImpl::GetBindGroupLayout() {
     return this->groupLayout_;
 }
 

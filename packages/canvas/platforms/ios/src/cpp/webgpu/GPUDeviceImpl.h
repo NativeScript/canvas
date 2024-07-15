@@ -13,16 +13,13 @@
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 public:
-    GPUDeviceImpl(CanvasGPUDevice *device);
+    GPUDeviceImpl(const CanvasGPUDevice *device);
 
     ~GPUDeviceImpl() {
-        if(this->device_ != nullptr){
-            canvas_native_webgpu_device_destroy_destory(this->device_);
-            this->device_ = nullptr;
-        }
+        canvas_native_webgpu_device_release(this->device_);
     }
 
-    CanvasGPUDevice *GetGPUDevice();
+    const CanvasGPUDevice *GetGPUDevice();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -43,13 +40,13 @@ public:
 
 
     static void GetFeatures(v8::Local<v8::Name> name,
-                               const v8::PropertyCallbackInfo<v8::Value> &info);
+                            const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetLimits(v8::Local<v8::Name> name,
-                            const v8::PropertyCallbackInfo<v8::Value> &info);
+                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetQueue(v8::Local<v8::Name> name,
-                            const v8::PropertyCallbackInfo<v8::Value> &info);
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetLost(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
@@ -68,7 +65,7 @@ public:
 
 
 private:
-    CanvasGPUDevice *device_;
+    const CanvasGPUDevice *device_;
 };
 
 

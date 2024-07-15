@@ -1,4 +1,15 @@
 use std::{ffi::CStr, os::raw::c_char};
+use std::borrow::Cow;
+
+#[inline]
+pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Label<'a> {
+    unsafe { ptr.as_ref() }.and_then(|ptr| {
+        unsafe { CStr::from_ptr(ptr) }
+            .to_str()
+            .ok()
+            .map(Cow::Borrowed)
+    })
+}
 
 pub fn build_features(features: wgpu_types::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];
@@ -236,16 +247,16 @@ pub fn parse_required_features(
 
                 "sampled-texture-and-storage-buffer-array-non-uniform-indexing" => {
                     features.set(
-                            wgpu_types::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
-                            true,
-                        );
+                        wgpu_types::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
+                        true,
+                    );
                 }
 
                 "uniform-buffer-and-storage-texture-array-non-uniform-indexing" => {
                     features.set(
-                            wgpu_types::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
-                            true,
-                        );
+                        wgpu_types::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
+                        true,
+                    );
                 }
 
                 "partially-bound-binding-array" => {

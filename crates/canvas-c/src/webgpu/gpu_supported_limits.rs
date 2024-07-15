@@ -134,10 +134,13 @@ pub extern "C" fn canvas_native_webgpu_create_limits() -> *mut CanvasGPUSupporte
     Box::into_raw(Box::new(wgpu_types::Limits::default().into()))
 }
 
+
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_limits_destroy(limits: *mut CanvasGPUSupportedLimits) {
+pub unsafe extern "C" fn canvas_native_webgpu_limits_release(limits: *mut CanvasGPUSupportedLimits) {
     if limits.is_null() {
         return;
     }
-    let _ = unsafe { Box::from_raw(limits) };
+
+    // Arc::decrement_strong_count(limits);
+    let _ = Box::from_raw(limits);
 }

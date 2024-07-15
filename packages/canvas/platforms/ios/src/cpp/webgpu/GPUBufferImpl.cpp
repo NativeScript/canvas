@@ -5,9 +5,9 @@
 #include "GPUBufferImpl.h"
 #include "Caches.h"
 
-GPUBufferImpl::GPUBufferImpl(CanvasGPUBuffer *buffer) : buffer_(buffer) {}
+GPUBufferImpl::GPUBufferImpl(const CanvasGPUBuffer *buffer) : buffer_(buffer) {}
 
-CanvasGPUBuffer *GPUBufferImpl::GetGPUBuffer() {
+const CanvasGPUBuffer *GPUBufferImpl::GetGPUBuffer() {
     return this->buffer_;
 }
 
@@ -74,7 +74,6 @@ v8::Local<v8::FunctionTemplate> GPUBufferImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "getMappedRange"),
             v8::FunctionTemplate::New(isolate, &GetMappedRange));
-
 
 
     cache->GPUBufferTmpl =
@@ -201,7 +200,6 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (ptr == nullptr) {
         return;
     }
-    auto isolate = args.GetIsolate();
     int64_t offset = -1;
     int64_t size = -1;
 
@@ -218,10 +216,6 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto buf = args[2].As<v8::ArrayBuffer>();
     auto store = buf->GetBackingStore();
-    auto error = canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size,
+    canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size,
                                                  (uint8_t *) store->Data(), store->ByteLength());
-
-    if (error != nullptr){
-        // todo error
-    }
 }

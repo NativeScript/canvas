@@ -11,12 +11,12 @@
 
 class GPUTextureImpl : ObjectWrapperImpl {
 public:
-    GPUTextureImpl(CanvasGPUTexture *texture);
+    GPUTextureImpl(const CanvasGPUTexture *texture);
 
     ~GPUTextureImpl() {
     }
 
-    CanvasGPUTexture *GetTexture();
+    const CanvasGPUTexture *GetTexture();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -63,11 +63,11 @@ public:
                                const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
-    
+
     static void CreateView(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    CanvasGPUTexture *texture_;
+    const CanvasGPUTexture *texture_;
 };
 
 

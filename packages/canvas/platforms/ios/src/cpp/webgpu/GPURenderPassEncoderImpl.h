@@ -11,12 +11,13 @@
 
 class GPURenderPassEncoderImpl : ObjectWrapperImpl {
 public:
-    GPURenderPassEncoderImpl(CanvasGPURenderPass *pass);
+    GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
 
     ~GPURenderPassEncoderImpl() {
+        canvas_native_webgpu_render_pass_release(this->GetPass());
     }
 
-    CanvasGPURenderPass *GetPass();
+    const CanvasGPURenderPassEncoder *GetPass();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -47,7 +48,7 @@ public:
 
 
 private:
-    CanvasGPURenderPass *pass_;
+    const CanvasGPURenderPassEncoder *pass_;
 };
 
 

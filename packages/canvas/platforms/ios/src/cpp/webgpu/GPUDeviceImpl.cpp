@@ -11,9 +11,9 @@
 #include "GPUPipelineLayoutImpl.h"
 #include "GPURenderPipelineImpl.h"
 
-GPUDeviceImpl::GPUDeviceImpl(CanvasGPUDevice *device) : device_(device) {}
+GPUDeviceImpl::GPUDeviceImpl(const CanvasGPUDevice *device) : device_(device) {}
 
-CanvasGPUDevice *GPUDeviceImpl::GetGPUDevice() {
+const CanvasGPUDevice *GPUDeviceImpl::GetGPUDevice() {
     return this->device_;
 }
 
@@ -101,7 +101,6 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
-
 
 void
 GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
@@ -258,9 +257,6 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     uint64_t size = 0;
     uint32_t usage = 0;
 
-    char *error = nullptr;
-
-
     auto optionsVal = args[0];
 
     if (optionsVal->IsObject()) {
@@ -298,7 +294,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     }
 
     auto buffer = canvas_native_webgpu_device_create_buffer(ptr->GetGPUDevice(), label, size, usage,
-                                                            mappedAtCreation, error);
+                                                            mappedAtCreation);
 
     if (buffer != nullptr) {
         auto bufImpl = new GPUBufferImpl(buffer);
@@ -306,10 +302,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         args.GetReturnValue().Set(ret);
 
     } else {
-        if (error != nullptr) {
-            isolate->ThrowError(ConvertToV8String(isolate, error));
-        }
-
+        // todo return invalid buffer
         args.GetReturnValue().SetUndefined();
     }
 }
@@ -461,8 +454,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
     }
 
-    auto texture = canvas_native_webgpu_device_create_texture(ptr->GetGPUDevice(), &descriptor,
-                                                              error);
+    auto texture = canvas_native_webgpu_device_create_texture(ptr->GetGPUDevice(), &descriptor);
 
     if (texture != nullptr) {
         auto textureImpl = new GPUTextureImpl(texture);
@@ -491,9 +483,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     char *error = nullptr;
 
-
     auto optionsVal = args[0];
-
 
     if (!optionsVal->IsObject()) {
         // should error at this point
@@ -545,7 +535,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     std::vector<CanvasColorTargetState> targets;
 
     if (!fragmentValue.IsEmpty() && fragmentValue->IsObject()) {
-        auto fragmentValueObj = fragmentValue.As<v8::Object>();
+          auto fragmentValueObj = fragmentValue.As<v8::Object>();
         fragment = new CanvasFragmentState{};
 
         v8::Local<v8::Value> targetsVal;
@@ -670,12 +660,12 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         if (!constantsVal.IsEmpty() && constantsVal->IsMap()) {
             auto constants = constantsVal.As<v8::Map>();
             auto keyValues = constants->AsArray();
-            auto len = keyValues->Length();
+            auto length = keyValues->Length();
             CanvasConstants *store = nullptr;
 
-            if (len > 0) {
+            if (length > 0) {
                 store = canvas_native_webgpu_constants_create();
-                for (int i = 0; i < len; i += 2) {
+                for (int i = 0; i < length; i += 2) {
                     auto k = i;
                     auto v = k + 1;
 
@@ -744,7 +734,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     if (layoutVal->IsString()) {
         layout = CanvasGPUPipelineLayoutOrGPUAutoLayoutMode{
-                CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
+            CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
         };
     } else {
         auto pipeline = GPUPipelineLayoutImpl::GetPointer(layoutVal.As<v8::Object>());

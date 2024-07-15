@@ -11,12 +11,12 @@
 
 class GPUShaderModuleImpl : ObjectWrapperImpl {
 public:
-    GPUShaderModuleImpl(CanvasGPUShaderModule *shaderModule);
+    GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule);
 
     ~GPUShaderModuleImpl() {
     }
 
-    CanvasGPUShaderModule *GetShaderModule();
+    const CanvasGPUShaderModule *GetShaderModule();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -37,7 +37,7 @@ public:
     }
 
 private:
-    CanvasGPUShaderModule *shaderModule_;
+    const CanvasGPUShaderModule *shaderModule_;
 };
 
 

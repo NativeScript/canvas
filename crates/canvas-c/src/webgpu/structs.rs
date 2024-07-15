@@ -1,5 +1,3 @@
-use wgpu_core::naga::valid;
-
 use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat},
     gpu_texture_view::CanvasGPUTextureView,

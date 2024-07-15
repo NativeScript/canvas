@@ -9,14 +9,15 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class GPUBindGroupLayoutImpl : ObjectWrapperImpl{
+class GPUBindGroupLayoutImpl : ObjectWrapperImpl {
 public:
-    GPUBindGroupLayoutImpl(CanvasGPUBindGroupLayout *groupLayout);
+    GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *groupLayout);
 
     ~GPUBindGroupLayoutImpl() {
+        canvas_native_webgpu_bind_group_layout_release(this->GetBindGroupLayout());
     }
 
-    CanvasGPUBindGroupLayout *GetBindGroupLayout();
+    const CanvasGPUBindGroupLayout *GetBindGroupLayout();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -37,7 +38,7 @@ public:
     }
 
 private:
-    CanvasGPUBindGroupLayout *groupLayout_;
+    const CanvasGPUBindGroupLayout *groupLayout_;
 };
 
 

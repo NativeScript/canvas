@@ -3,6 +3,14 @@ use std::{
     os::raw::c_char,
 };
 
+use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
+use wgpu_types::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
+use wgpu_types::BindingType::Sampler;
+
+use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
+use crate::webgpu::gpu_sampler::CanvasGPUSampler;
+use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasTextureDimension {
@@ -981,17 +989,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_string_to_gpu_texture_enum(
                     return CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Astc {
                         block,
                         channel,
-                    })
+                    });
                 }
 
                 CanvasOptionalGPUTextureFormat::None
             } else {
-             CanvasOptionalGPUTextureFormat::None
+                CanvasOptionalGPUTextureFormat::None
             }
         }
     };
 
-    return format
+    return format;
 }
 
 /// ASTC block dimensions
@@ -1711,6 +1719,464 @@ impl Into<Option<wgpu_types::FrontFace>> for CanvasOptionalFrontFace {
                 CanvasFrontFace::Ccw => Some(wgpu_types::FrontFace::Ccw),
                 CanvasFrontFace::Cw => Some(wgpu_types::FrontFace::Cw),
             },
+        }
+    }
+}
+
+
+#[repr(C)]
+pub struct CanvasBufferBinding {
+    pub buffer: *const CanvasGPUBuffer,
+    pub offset: i64,
+    pub size: i64,
+}
+
+impl Into<BufferBinding> for CanvasBufferBinding {
+    fn into(self) -> BufferBinding {
+        use std::num::NonZeroU64;
+        let buffer = unsafe { &*self.buffer };
+        let buffer_id = buffer.buffer;
+        BufferBinding {
+            buffer_id,
+            offset: self.offset.try_into().unwrap_or_default(),
+            size: self.size.try_into()
+                .map(|value: u64| NonZeroU64::new(value))
+                .ok()
+                .flatten(),
+        }
+    }
+}
+
+#[repr(C)]
+pub enum CanvasBindGroupEntryResource {
+    Buffer(CanvasBufferBinding),
+    Sampler(*const CanvasGPUSampler),
+    TextureView(*const CanvasGPUTextureView),
+}
+
+#[repr(C)]
+pub struct CanvasBindGroupEntry {
+    pub binding: u32,
+    pub resource: CanvasBindGroupEntryResource,
+}
+
+impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
+    fn into(self) -> BindGroupEntry<'static> {
+        match self.resource {
+            CanvasBindGroupEntryResource::Buffer(buffer) => BindGroupEntry { binding: self.binding, resource: wgpu_core::binding_model::BindingResource::Buffer(buffer.into()) },
+            CanvasBindGroupEntryResource::Sampler(sampler) => {
+                let sampler = unsafe { &*sampler };
+                let sampler_id = sampler.sampler;
+                BindGroupEntry {
+                    binding: self.binding,
+                    resource: wgpu_core::binding_model::BindingResource::Sampler(sampler_id),
+                }
+            }
+            CanvasBindGroupEntryResource::TextureView(view) => {
+                let view = unsafe { &*view };
+                let view_id = view.texture_view;
+                BindGroupEntry {
+                    binding: self.binding,
+                    resource: wgpu_core::binding_model::BindingResource::TextureView(view_id),
+                }
+            }
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum CanvasStorageTextureAccess {
+    /// The texture can only be written in the shader and it:
+    /// - may or may not be annotated with `write` (WGSL).
+    /// - must be annotated with `writeonly` (GLSL).
+    ///
+    /// Example WGSL syntax:
+    /// ```rust,ignore
+    /// @group(0) @binding(0)
+    /// var my_storage_image: texture_storage_2d<f32, write>;
+    /// ```
+    ///
+    /// Example GLSL syntax:
+    /// ```cpp,ignore
+    /// layout(set=0, binding=0, r32f) writeonly uniform image2D myStorageImage;
+    /// ```
+    WriteOnly,
+    /// The texture can only be read in the shader and it must be annotated with `read` (WGSL) or
+    /// `readonly` (GLSL).
+    ///
+    /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] must be enabled to use this access
+    /// mode. This is a native-only extension.
+    ///
+    /// Example WGSL syntax:
+    /// ```rust,ignore
+    /// @group(0) @binding(0)
+    /// var my_storage_image: texture_storage_2d<f32, read>;
+    /// ```
+    ///
+    /// Example GLSL syntax:
+    /// ```cpp,ignore
+    /// layout(set=0, binding=0, r32f) readonly uniform image2D myStorageImage;
+    /// ```
+    ReadOnly,
+    /// The texture can be both read and written in the shader and must be annotated with
+    /// `read_write` in WGSL.
+    ///
+    /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] must be enabled to use this access
+    /// mode.  This is a nonstandard, native-only extension.
+    ///
+    /// Example WGSL syntax:
+    /// ```rust,ignore
+    /// @group(0) @binding(0)
+    /// var my_storage_image: texture_storage_2d<f32, read_write>;
+    /// ```
+    ///
+    /// Example GLSL syntax:
+    /// ```cpp,ignore
+    /// layout(set=0, binding=0, r32f) uniform image2D myStorageImage;
+    /// ```
+    ReadWrite,
+}
+
+impl From<StorageTextureAccess> for CanvasStorageTextureAccess {
+    fn from(value: StorageTextureAccess) -> Self {
+        match value {
+            StorageTextureAccess::WriteOnly => Self::WriteOnly,
+            StorageTextureAccess::ReadOnly => Self::ReadOnly,
+            StorageTextureAccess::ReadWrite => Self::ReadWrite,
+        }
+    }
+}
+
+impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
+    fn into(self) -> StorageTextureAccess {
+        match self {
+            CanvasStorageTextureAccess::WriteOnly => StorageTextureAccess::WriteOnly,
+            CanvasStorageTextureAccess::ReadOnly => StorageTextureAccess::ReadOnly,
+            CanvasStorageTextureAccess::ReadWrite => StorageTextureAccess::ReadWrite
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasTextureBindingLayout {
+    sample_type: CanvasTextureSampleType,
+    view_dimension: CanvasTextureViewDimension,
+    multisampled: bool,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasTextureSampleType {
+    Float,
+    UnfilterableFloat,
+    Depth,
+    Sint,
+    Uint,
+}
+
+impl From<TextureSampleType> for CanvasTextureSampleType {
+    fn from(sample_type: TextureSampleType) -> Self {
+        match sample_type {
+            TextureSampleType::Float { filterable } => {
+                if filterable {
+                    Self::Float
+                } else {
+                    Self::UnfilterableFloat
+                }
+            }
+            TextureSampleType::Depth => Self::Depth,
+            TextureSampleType::Sint => Self::Sint,
+            TextureSampleType::Uint => Self::Uint
+        }
+    }
+}
+
+impl Into<TextureSampleType> for CanvasTextureSampleType {
+    fn into(self) -> TextureSampleType {
+        match self {
+            CanvasTextureSampleType::Float => TextureSampleType::Float { filterable: true },
+            CanvasTextureSampleType::UnfilterableFloat => TextureSampleType::Float { filterable: false },
+            CanvasTextureSampleType::Depth => TextureSampleType::Depth,
+            CanvasTextureSampleType::Sint => TextureSampleType::Sint,
+            CanvasTextureSampleType::Uint => TextureSampleType::Uint
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasStorageTextureBindingLayout {
+    access: CanvasStorageTextureAccess,
+    format: CanvasGPUTextureFormat,
+    view_dimension: CanvasTextureViewDimension,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum CanvasSamplerBindingType {
+    /// The sampling result is produced based on more than a single color sample from a texture,
+    /// e.g. when bilinear interpolation is enabled.
+    Filtering,
+    /// The sampling result is produced based on a single color sample from a texture.
+    NonFiltering,
+    /// Use as a comparison sampler instead of a normal sampler.
+    /// For more info take a look at the analogous functionality in OpenGL: <https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode>.
+    Comparison,
+}
+
+impl From<SamplerBindingType> for CanvasSamplerBindingType {
+    fn from(value: SamplerBindingType) -> Self {
+        match value {
+            SamplerBindingType::Filtering => Self::Filtering,
+            SamplerBindingType::NonFiltering => Self::NonFiltering,
+            SamplerBindingType::Comparison => Self::Comparison,
+        }
+    }
+}
+
+impl Into<SamplerBindingType> for CanvasSamplerBindingType {
+    fn into(self) -> SamplerBindingType {
+        match self {
+            CanvasSamplerBindingType::Filtering => SamplerBindingType::Filtering,
+            CanvasSamplerBindingType::NonFiltering => SamplerBindingType::NonFiltering,
+            CanvasSamplerBindingType::Comparison => SamplerBindingType::Comparison,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasSamplerBindingLayout {
+    type_: CanvasSamplerBindingType,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasBufferBindingLayout {
+    type_: CanvasBufferBindingType,
+    has_dynamic_offset: bool,
+    min_binding_size: i64,
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasBufferBindingType {
+    Uniform,
+    Storage,
+    ReadOnlyStorage,
+}
+
+impl From<BufferBindingType> for CanvasBufferBindingType {
+    fn from(value: BufferBindingType) -> Self {
+        match value {
+            BufferBindingType::Uniform => Self::Uniform,
+            BufferBindingType::Storage { read_only } => {
+                if read_only {
+                    Self::ReadOnlyStorage
+                } else {
+                    Self::Storage
+                }
+            }
+        }
+    }
+}
+
+impl Into<BufferBindingType> for CanvasBufferBindingType {
+    fn into(self) -> BufferBindingType {
+        match self {
+            CanvasBufferBindingType::Uniform => BufferBindingType::Uniform,
+            CanvasBufferBindingType::Storage => BufferBindingType::Storage { read_only: false },
+            CanvasBufferBindingType::ReadOnlyStorage => BufferBindingType::Storage { read_only: true }
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasBindingType {
+    Buffer(CanvasBufferBindingLayout),
+    Sampler(CanvasSamplerBindingLayout),
+    Texture(CanvasTextureBindingLayout),
+    StorageTexture(CanvasStorageTextureBindingLayout),
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct CanvasBindGroupLayoutEntry {
+    binding: u32,
+    visibility: u32,
+    binding_type: CanvasBindingType,
+}
+
+impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
+    fn into(self) -> BindGroupLayoutEntry {
+        use std::num::NonZeroU64;
+        BindGroupLayoutEntry {
+            binding: self.binding,
+            visibility: wgpu_types::ShaderStages::from_bits(self.visibility).unwrap(),
+            ty: match self.binding_type {
+                CanvasBindingType::Buffer(buffer) => {
+                    wgpu_types::BindingType::Buffer {
+                        ty: buffer.type_.into(),
+                        has_dynamic_offset: buffer.has_dynamic_offset,
+                        min_binding_size: buffer.min_binding_size.try_into()
+                            .map(|value: u64| NonZeroU64::new(value))
+                            .ok()
+                            .flatten()
+                            
+                            
+                        ,
+                    }
+                }
+                CanvasBindingType::Sampler(sampler) => {
+                    wgpu_types::BindingType::Sampler(sampler.type_.into())
+                }
+                CanvasBindingType::Texture(texture) => {
+                    wgpu_types::BindingType::Texture {
+                        sample_type: texture.sample_type.into(),
+                        view_dimension: texture.view_dimension.into(),
+                        multisampled: texture.multisampled,
+                    }
+                }
+                CanvasBindingType::StorageTexture(storage_texture) => {
+                    wgpu_types::BindingType::StorageTexture {
+                        access: storage_texture.access.into(),
+                        format: storage_texture.format.into(),
+                        view_dimension: storage_texture.view_dimension.into(),
+                    }
+                }
+            },
+            count: None, // native-only
+        }
+    }
+}
+
+
+#[repr(C)]
+pub enum CanvasQueryType {
+    Occlusion,
+    Timestamp,
+}
+
+impl Into<wgpu_types::QueryType> for CanvasQueryType {
+    fn into(self) -> QueryType {
+        match self {
+            CanvasQueryType::Occlusion => QueryType::Occlusion,
+            CanvasQueryType::Timestamp => QueryType::Timestamp
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasAddressMode {
+    /// Clamp the value to the edge of the texture
+    ///
+    /// -0.25 -> 0.0
+    /// 1.25  -> 1.0
+    ClampToEdge = 0,
+    /// Repeat the texture in a tiling fashion
+    ///
+    /// -0.25 -> 0.75
+    /// 1.25 -> 0.25
+    Repeat = 1,
+    /// Repeat the texture, mirroring it every repeat
+    ///
+    /// -0.25 -> 0.25
+    /// 1.25 -> 0.75
+    MirrorRepeat = 2,
+    /// Clamp the value to the border of the texture
+    /// Requires feature [`Features::ADDRESS_MODE_CLAMP_TO_BORDER`]
+    ///
+    /// -0.25 -> border
+    /// 1.25 -> border
+    ClampToBorder = 3,
+}
+
+
+impl Into<wgpu_types::AddressMode> for CanvasAddressMode {
+    fn into(self) -> AddressMode {
+        match self {
+            CanvasAddressMode::ClampToEdge => AddressMode::ClampToEdge,
+            CanvasAddressMode::Repeat => AddressMode::Repeat,
+            CanvasAddressMode::MirrorRepeat => AddressMode::MirrorRepeat,
+            CanvasAddressMode::ClampToBorder => AddressMode::ClampToBorder
+        }
+    }
+}
+
+impl From<wgpu_types::AddressMode> for CanvasAddressMode {
+    fn from(value: AddressMode) -> Self {
+        match value {
+            AddressMode::ClampToEdge => Self::ClampToEdge,
+            AddressMode::Repeat => Self::Repeat,
+            AddressMode::MirrorRepeat => Self::MirrorRepeat,
+            AddressMode::ClampToBorder => Self::ClampToBorder
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasFilterMode {
+    Nearest = 0,
+    /// Linear Interpolation
+    ///
+    /// This makes textures smooth but blurry when used as a mag filter.
+    Linear = 1,
+}
+
+
+impl Into<wgpu_types::FilterMode> for CanvasFilterMode {
+    fn into(self) -> FilterMode {
+        match self {
+            CanvasFilterMode::Nearest => FilterMode::Nearest,
+            CanvasFilterMode::Linear => FilterMode::Linear
+        }
+    }
+}
+
+impl From<wgpu_types::FilterMode> for CanvasFilterMode {
+    fn from(value: FilterMode) -> Self {
+        match value {
+            FilterMode::Nearest => Self::Nearest,
+            FilterMode::Linear => Self::Linear
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub enum CanvasOptionalCompareFunction {
+    None,
+    Some(CanvasCompareFunction),
+}
+
+impl Into<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction {
+    fn into(self) -> Option<CompareFunction> {
+        match self {
+            CanvasOptionalCompareFunction::None => None,
+            CanvasOptionalCompareFunction::Some(value) => {
+                Some(value.into())
+            }
+        }
+    }
+}
+
+impl From<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction {
+    fn from(value: Option<CompareFunction>) -> Self {
+        match value {
+            None => Self::None,
+            Some(value) => Self::Some(value.into())
         }
     }
 }

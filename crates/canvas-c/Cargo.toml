@@ -19,6 +19,7 @@ log = { version = "0.4.20"}
 wgpu-types = "0.20.0"
 futures = "0.3"
 raw-window-handle = "0.6.2"
+wgpu-core = {version = "0.21.0", features = ["wgsl","vulkan","metal","raw-window-handle"]}
 
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = {version = "0.2.0"}

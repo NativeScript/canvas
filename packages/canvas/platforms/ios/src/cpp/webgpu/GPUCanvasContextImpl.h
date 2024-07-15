@@ -12,11 +12,11 @@
 
 class GPUCanvasContextImpl : ObjectWrapperImpl {
 public:
-    GPUCanvasContextImpl(CanvasGPUCanvasContext *context);
+    GPUCanvasContextImpl(const CanvasGPUCanvasContext *context);
 
     ~GPUCanvasContextImpl() {}
 
-    CanvasGPUCanvasContext *GetContext();
+    const CanvasGPUCanvasContext *GetContext();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -41,8 +41,12 @@ public:
 
     static void GetCurrentTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void PresentSurface(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetCapabilities(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 private:
-    CanvasGPUCanvasContext *context_;
+    const CanvasGPUCanvasContext *context_;
 };
 
 

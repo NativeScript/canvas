@@ -5,9 +5,9 @@
 #include "GPUAdapterInfoImpl.h"
 #include "Caches.h"
 
-GPUAdapterInfoImpl::GPUAdapterInfoImpl(CanvasGPUAdapterInfo *info) : info_(info) {}
+GPUAdapterInfoImpl::GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info) : info_(info) {}
 
-CanvasGPUAdapterInfo *GPUAdapterInfoImpl::GetInfo() {
+const CanvasGPUAdapterInfo *GPUAdapterInfoImpl::GetInfo() {
     return this->info_;
 }
 

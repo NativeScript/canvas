@@ -1,10 +1,12 @@
 use std::{
     ffi::{CStr, CString},
-    os::raw::{c_char, c_void},
-    sync::Arc,
+    os::raw::{c_char, c_void}
+    ,
 };
+use std::sync::Arc;
 
 use crate::buffers::StringBuffer;
+use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
 
 use super::{
     gpu::CanvasWebGPUInstance, gpu_adapter_info::CanvasGPUAdapterInfo, gpu_device::CanvasGPUDevice,
@@ -12,7 +14,7 @@ use super::{
 };
 
 pub struct CanvasGPUAdapter {
-    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) adapter: wgpu_core::id::AdapterId,
     pub(crate) is_fallback_adapter: bool,
     pub(crate) features: Vec<&'static str>,
@@ -56,29 +58,29 @@ pub extern "C" fn canvas_native_webgpu_adapter_get_limits(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_request_adapter_info(
     adapter: *mut CanvasGPUAdapter,
-) -> *mut CanvasGPUAdapterInfo {
+) -> *const CanvasGPUAdapterInfo {
     if adapter.is_null() {
         return std::ptr::null_mut();
     }
     let adapter = unsafe { &mut *adapter };
 
     let adapter_id = adapter.adapter;
-    let global = &adapter.instance.0;
+    let global = adapter.instance.global();
 
-    gfx_select!(adapter_id => global.adapter_get_info(adapter.adapter))
-        .map(|info| Box::into_raw(Box::new(CanvasGPUAdapterInfo(info))))
+    gfx_select!(adapter_id => global.adapter_get_info(adapter_id))
+        .map(|info| Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info))))
         .ok()
-        .unwrap_or_else(|| std::ptr::null_mut())
+        .unwrap_or_else(|| std::ptr::null())
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_request_device(
-    adapter: *mut CanvasGPUAdapter,
+    adapter: *const CanvasGPUAdapter,
     label: *const c_char,
     required_features: *const *const c_char,
     required_features_length: usize,
     required_limits: *const CanvasGPUSupportedLimits,
-    callback: extern "C" fn(*mut c_char, *mut CanvasGPUDevice, *mut c_void),
+    callback: extern "C" fn(*mut c_char, *const CanvasGPUDevice, *mut c_void),
     callback_data: *mut c_void,
 ) {
     if adapter.is_null() {
@@ -86,7 +88,7 @@ pub extern "C" fn canvas_native_webgpu_request_device(
         return;
     }
 
-    let adapter = unsafe { &mut *adapter };
+    let adapter = unsafe { &*adapter };
     let features = parse_required_features(required_features, required_features_length);
 
     let mut limits = if required_limits.is_null() {
@@ -107,16 +109,15 @@ pub extern "C" fn canvas_native_webgpu_request_device(
     let instance = adapter.instance.clone();
     std::thread::spawn(move || {
         let descriptor = wgpu_types::DeviceDescriptor {
-            label: label,
+            label,
             required_features: features,
             required_limits: limits,
         };
-        
 
-        let instance_copy = instance.clone();
 
-    
-        let global = &instance.0;
+        let instance_copy = Arc::clone(&instance);
+
+        let global = instance.global();
 
         let (device, queue, error) = gfx_select!(adapter_id => global.adapter_request_device(
             adapter_id,
@@ -127,7 +128,7 @@ pub extern "C" fn canvas_native_webgpu_request_device(
         ));
 
         let callback = unsafe {
-            std::mem::transmute::<*const i64, fn(*mut c_char, *mut CanvasGPUDevice, *mut c_void)>(
+            std::mem::transmute::<*const i64, fn(*mut c_char, *const CanvasGPUDevice, *mut c_void)>(
                 callback as _,
             )
         };
@@ -138,14 +139,25 @@ pub extern "C" fn canvas_native_webgpu_request_device(
             let ret = CString::new(error).unwrap().into_raw();
             callback(ret, std::ptr::null_mut(), callback_data);
         } else {
-            let queue = CanvasGPUQueue {
-                instance: instance_copy.clone(),
-                queue,
-            };
-            let ret = Box::into_raw(Box::new(CanvasGPUDevice {
+            let error_sink = Arc::new(parking_lot::Mutex::new(
+                ErrorSinkRaw::new(DEFAULT_DEVICE_LOST_HANDLER)
+            ));
+
+            let queue = Arc::new(
+                CanvasGPUQueue {
+                    instance: instance_copy.clone(),
+                    queue,
+                    error_sink: error_sink.clone(),
+                }
+            );
+
+
+            let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
                 device,
                 queue,
+                user_data: std::ptr::null_mut(),
                 instance: instance_copy,
+                error_sink,
             }));
             callback(std::ptr::null_mut(), ret, callback_data);
         }

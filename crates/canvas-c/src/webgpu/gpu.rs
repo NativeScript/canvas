@@ -1,7 +1,8 @@
-use crate::webgpu::gpu_supported_limits::CanvasGPUSupportedLimits;
+use std::{os::raw::c_void, sync::Arc};
+
+use wgpu_core::global::Global;
 
 use super::gpu_adapter::CanvasGPUAdapter;
-use std::{os::raw::c_void, sync::Arc};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,13 +40,27 @@ impl Default for CanvasGPURequestAdapterOptions {
     }
 }
 
+
 #[derive(Clone)]
-pub struct CanvasWebGPUInstance(pub(crate) Arc<wgpu_core::global::Global>);
+struct CanvasWebGPUInstanceInner {
+    pub(crate) global: Arc<Global>,
+}
+
+#[derive(Clone)]
+pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
+
+impl CanvasWebGPUInstance {
+    pub(crate) fn global(&self) -> &Arc<Global> {
+        &self.0.global
+    }
+}
 
 unsafe impl Send for CanvasWebGPUInstance {}
+pub type WebGPUInstance = Arc<CanvasWebGPUInstance>;
+
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_instance_create() -> *mut CanvasWebGPUInstance {
+pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUInstance {
     #[cfg(not(target_os = "android"))]
     let backends = wgpu_types::Backends::METAL;
 
@@ -63,16 +78,21 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *mut CanvasWebGPUIns
         },
     );
 
-    Box::into_raw(Box::new(CanvasWebGPUInstance(Arc::new(instance))))
+    let inner = CanvasWebGPUInstanceInner {
+        global: Arc::new(instance),
+    };
+
+    Arc::into_raw(Arc::new(CanvasWebGPUInstance(inner)))
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_instance_destroy(instance: *mut CanvasWebGPUInstance) {
+pub extern "C" fn canvas_native_webgpu_instance_release(instance: *const CanvasWebGPUInstance) {
     if instance.is_null() {
         return;
     }
-    let _ = unsafe { Box::from_raw(instance) };
+    let _ = unsafe { Arc::decrement_strong_count(instance) };
 }
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
@@ -82,9 +102,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
     callback_data: *mut c_void,
 ) {
     use super::prelude::build_features;
-    
-
-    let instance = (&*instance).clone();
+    Arc::increment_strong_count(instance);
     let options = if options.is_null() {
         CanvasGPURequestAdapterOptions::default()
     } else {
@@ -99,6 +117,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
+    let instance = Arc::from_raw(instance);
+    let global = Arc::clone(instance.global());
     std::thread::spawn(move || {
         #[cfg(not(target_os = "android"))]
         let backends = wgpu_types::Backends::METAL;
@@ -108,10 +128,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         #[cfg(target_os = "windows")]
         let backends = wgpu_types::Backends::DX12;
-
-        let instance = instance;
-
-        let global = &instance.0;
+        
 
         let adapter = global.request_adapter(
             &opts,
@@ -127,11 +144,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
                 gfx_select!(adapter_id => global.adapter_limits(adapter_id)).unwrap_or_default();
 
             let ret = CanvasGPUAdapter {
-                instance: instance.clone(),
+                instance,
                 adapter: adapter_id,
                 is_fallback_adapter: options.force_fallback_adapter,
-                features: features,
-                limits: limits,
+                features,
+                limits,
             };
 
             Box::into_raw(Box::new(ret))

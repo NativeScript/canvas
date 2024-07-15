@@ -4,17 +4,17 @@
 
 #include "GPUCommandEncoderImpl.h"
 #include "Caches.h"
-#include "GPUComputePassImpl.h"
+#include "GPUComputePassEncoderImpl.h"
 #include "GPUQuerySetImpl.h"
 #include "GPUBufferImpl.h"
 #include "GPUTextureViewImpl.h"
 #include "GPURenderPassEncoderImpl.h"
 #include "GPUCommandBufferImpl.h"
 
-GPUCommandEncoderImpl::GPUCommandEncoderImpl(CanvasGPUCommandEncoder *encoder) : encoder_(
+GPUCommandEncoderImpl::GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder) : encoder_(
         encoder) {}
 
-CanvasGPUCommandEncoder *GPUCommandEncoderImpl::GetEncoder() {
+const CanvasGPUCommandEncoder *GPUCommandEncoderImpl::GetEncoder() {
     return this->encoder_;
 }
 
@@ -87,7 +87,7 @@ void GPUCommandEncoderImpl::BeginComputePass(const v8::FunctionCallbackInfo<v8::
 
     auto descVal = args[0];
 
-    CanvasGPUComputePass *pass;
+    const CanvasGPUComputePassEncoder *pass;
 
     if (!descVal->IsNullOrUndefined() && descVal->IsObject()) {
         auto desc = descVal.As<v8::Object>();
@@ -168,8 +168,8 @@ void GPUCommandEncoderImpl::BeginComputePass(const v8::FunctionCallbackInfo<v8::
 
 
     if (pass != nullptr) {
-        auto value = new GPUComputePassImpl(pass);
-        auto ret = GPUComputePassImpl::NewInstance(isolate, value);
+        auto value = new GPUComputePassEncoderImpl(pass);
+        auto ret = GPUComputePassEncoderImpl::NewInstance(isolate, value);
         args.GetReturnValue().Set(ret);
     } else {
         args.GetReturnValue().SetUndefined();
@@ -188,7 +188,9 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
 
     auto descVal = args[0];
 
-    CanvasGPURenderPass *pass = nullptr;
+    const CanvasGPURenderPassEncoder *pass = nullptr;
+
+    std::vector<CanvasRenderPassColorAttachment> colorAttachments_;
 
     if (!descVal->IsNullOrUndefined() && descVal->IsObject()) {
         auto desc = descVal.As<v8::Object>();
@@ -203,7 +205,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             label = *v8::String::Utf8Value(isolate, labelVal);
         }
 
-        std::vector<CanvasRenderPassColorAttachment> colorAttachments_;
+
         v8::Local<v8::Value> colorAttachmentsVal;
         desc->Get(context, ConvertToV8String(isolate, "colorAttachments")).ToLocal(&colorAttachmentsVal);
 
@@ -256,7 +258,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             auto view = GPUTextureViewImpl::GetPointer(viewVal.As<v8::Object>());
 
 
-            CanvasGPUTextureView *resolve_target = nullptr;
+            const CanvasGPUTextureView *resolve_target = nullptr;
 
             v8::Local<v8::Value> resolve_target_val;
 
@@ -268,16 +270,46 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                 resolve_target = res->GetTextureView();
             }
 
+            // default
+            CanvasLoadOp load = CanvasLoadOp::CanvasLoadOpClear;
+            CanvasStoreOp store = CanvasStoreOp::CanvasStoreOpStore;
             auto loadVal = colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                                           "loadOp")).ToLocalChecked()->Uint32Value(
-                    context).ToChecked();
+                                                                           "loadOp")).ToLocalChecked();
+
+            if(loadVal->IsUint32()){
+                load = (CanvasLoadOp)loadVal->Uint32Value(
+context).ToChecked();
+            }else if(loadVal->IsString()){
+                auto val = ConvertFromV8String(isolate, loadVal);
+                if(strcmp(val.c_str(), "clear") == 0){
+                    load = CanvasLoadOp::CanvasLoadOpClear;
+                }else if(strcmp(val.c_str(), "load") == 0){
+                    load = CanvasLoadOp::CanvasLoadOpLoad;
+                }
+            }
+
+
+
             auto storeVal = colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                                            "storeOp")).ToLocalChecked()->Uint32Value(
-                    context).ToChecked();
+                                                                            "storeOp")).ToLocalChecked();
+
+            if(!storeVal.IsEmpty() && storeVal->IsUint32()){
+                store = (CanvasStoreOp)storeVal->Uint32Value(
+context).ToChecked();
+            }else if(storeVal->IsString()){
+                auto val = ConvertFromV8String(isolate, storeVal);
+                if(strcmp(val.c_str(), "discard") == 0){
+                    store = CanvasStoreOp::CanvasStoreOpDiscard;
+                }else if(strcmp(val.c_str(), "store") == 0){
+                    store = CanvasStoreOp::CanvasStoreOpStore;
+                }
+            }
 
             CanvasPassChannelColor channel{
-                    (CanvasLoadOp) loadVal,
-                    (CanvasStoreOp) storeVal
+                    load,
+                    store,
+                clearValue,
+                false
             };
 
             auto attachment = CanvasRenderPassColorAttachment{
@@ -397,10 +429,8 @@ void GPUCommandEncoderImpl::ClearBuffer(const v8::FunctionCallbackInfo<v8::Value
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto bufferVal = args[0];
-    CanvasGPUBuffer *buffer = nullptr;
+    const CanvasGPUBuffer *buffer = nullptr;
 
     if (bufferVal->IsObject()) {
         auto bufferPtr = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
@@ -445,16 +475,18 @@ void GPUCommandEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto descVal = args[0];
     std::string label;
+    bool didSet = false;
     if (descVal->IsObject()) {
         auto desc = descVal.As<v8::Object>();
         v8::Local<v8::Value> labelVal;
         desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
         if (!labelVal.IsEmpty() && labelVal->IsString()) {
             label = ConvertFromV8String(isolate, labelVal);
+            didSet = true;
         }
     }
 
-    auto value = canvas_native_webgpu_command_encoder_finish(ptr->GetEncoder(), nullptr);
+    auto value = canvas_native_webgpu_command_encoder_finish(ptr->GetEncoder(), didSet ? label.c_str(): nullptr);
 
     if (value != nullptr) {
         auto ret = GPUCommandBufferImpl::NewInstance(isolate, new GPUCommandBufferImpl(value));

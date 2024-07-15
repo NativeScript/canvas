@@ -13,11 +13,7 @@ public:
     GPUSupportedLimitsImpl(CanvasGPUSupportedLimits *limits);
 
     ~GPUSupportedLimitsImpl() {
-        if(this->limits_ == nullptr){
-            return;
-        }
-        canvas_native_webgpu_limits_destroy(this->limits_);
-        this->limits_ = nullptr;
+        canvas_native_webgpu_limits_release(this->limits_);
     }
 
     CanvasGPUSupportedLimits *GetLimits();

@@ -7,9 +7,9 @@
 #include "GPURenderPipelineImpl.h"
 #include "GPUBufferImpl.h"
 
-GPURenderPassEncoderImpl::GPURenderPassEncoderImpl(CanvasGPURenderPass *pass) : pass_(pass) {}
+GPURenderPassEncoderImpl::GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass) : pass_(pass) {}
 
-CanvasGPURenderPass *GPURenderPassEncoderImpl::GetPass() {
+const CanvasGPURenderPassEncoder *GPURenderPassEncoderImpl::GetPass() {
     return this->pass_;
 }
 

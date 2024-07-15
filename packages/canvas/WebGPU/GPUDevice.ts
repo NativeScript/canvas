@@ -168,18 +168,41 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createRenderPipeline(desc) {
+		const vertex = desc['vertex'];
+		vertex.module = vertex.module[native_];
+
+		const buffers = vertex['buffers'];
+		if (Array.isArray(buffers)) {
+			vertex['buffers'] = buffers.map((buffer) => {
+				buffer.attributes = buffer.attributes.map((attr) => {
+					attr['format'] = parseVertexFormat(attr['format']);
+					return attr;
+				});
+				switch (buffer.stepMode) {
+					case 'vertex':
+						buffer.stepMode = 0;
+						break;
+					case 'instance':
+						buffer.stepMode = 1;
+						break;
+				}
+
+				return buffer;
+			});
+		}
+
 		const depthStencil = desc['depthStencil'];
 		if (depthStencil) {
 		}
 		const fragment = desc['fragment'];
 		if (fragment) {
-			fragment.module = fragment?.module?.[native_];
-			console.log(fragment.targets);
+			fragment.module = fragment.module[native_];
 		}
+
 		const layout = desc['layout'];
 
 		if (layout instanceof GPUPipelineLayout) {
-			desc.layout = layout[native_];
+			desc.layout = desc.layout[native_];
 		}
 
 		const multisample = desc['multisample'];
@@ -205,31 +228,6 @@ export class GPUDevice extends EventTarget {
 				default:
 					break;
 			}
-		}
-
-		const vertex = desc['vertex'];
-		desc.vertex.module = vertex?.module?.[native_];
-
-		const buffers = vertex['buffers'];
-		if (Array.isArray(buffers)) {
-			vertex['buffers'] = buffers.map((buffer) => {
-				buffer.attributes = buffer.attributes.map((attr) => {
-					attr['format'] = parseVertexFormat(attr['format']);
-					return attr;
-				});
-
-				console.log('is', Array.isArray(buffer.attributes));
-				switch (buffer.stepmode) {
-					case 'vertex':
-						buffer.stepmode = 0;
-						break;
-					case 'instance':
-						buffer.stepmode = 1;
-						break;
-				}
-
-				return buffer;
-			});
 		}
 
 		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(desc));

@@ -2,7 +2,7 @@ import { Helpers } from '../helpers';
 import { contextPtr_, native_ } from './Constants';
 import { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
-
+import { GPUAdapter } from './GPUAdapter';
 export class GPUCanvasContext {
 	_type;
 	static {
@@ -63,5 +63,13 @@ export class GPUCanvasContext {
 		}
 
 		return null;
+	}
+
+	presentSurface() {
+		this[native_].presentSurface();
+	}
+
+	capabilities(adapter: GPUAdapter) {
+		return this[native_].capabilities(adapter[native_]);
 	}
 }

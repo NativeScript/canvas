@@ -10,12 +10,13 @@
 
 class GPUCommandEncoderImpl : ObjectWrapperImpl {
 public:
-    GPUCommandEncoderImpl(CanvasGPUCommandEncoder *encoder);
+    GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);
 
     ~GPUCommandEncoderImpl() {
+        canvas_native_webgpu_command_encoder_release(this->GetEncoder());
     }
 
-    CanvasGPUCommandEncoder *GetEncoder();
+    const CanvasGPUCommandEncoder *GetEncoder();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -43,7 +44,7 @@ public:
     static void Finish(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    CanvasGPUCommandEncoder *encoder_;
+    const CanvasGPUCommandEncoder *encoder_;
 };
 
 

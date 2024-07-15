@@ -1,11 +1,11 @@
+use std::sync::Arc;
+
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUShaderModule {
-    pub(crate) instance: CanvasWebGPUInstance,
+    pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) module: wgpu_core::id::ShaderModuleId,
 }
-
-
 
 
 // #[no_mangle]

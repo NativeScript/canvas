@@ -5,9 +5,9 @@
 #include "GPUTextureViewImpl.h"
 #include "Caches.h"
 
-GPUTextureViewImpl::GPUTextureViewImpl(CanvasGPUTextureView *view) : view_(view) {}
+GPUTextureViewImpl::GPUTextureViewImpl(const CanvasGPUTextureView *view) : view_(view) {}
 
-CanvasGPUTextureView *GPUTextureViewImpl::GetTextureView() {
+const CanvasGPUTextureView *GPUTextureViewImpl::GetTextureView() {
     return this->view_;
 }
 

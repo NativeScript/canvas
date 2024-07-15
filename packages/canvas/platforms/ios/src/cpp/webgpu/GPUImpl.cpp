@@ -5,9 +5,9 @@
 #include "GPUImpl.h"
 #include "Caches.h"
 
-GPUImpl::GPUImpl(CanvasWebGPUInstance *instance) : instance_(instance) {}
+GPUImpl::GPUImpl(const CanvasWebGPUInstance *instance) : instance_(instance) {}
 
-CanvasWebGPUInstance *GPUImpl::GetGPUInstance() {
+const CanvasWebGPUInstance *GPUImpl::GetGPUInstance() {
     return this->instance_;
 }
 

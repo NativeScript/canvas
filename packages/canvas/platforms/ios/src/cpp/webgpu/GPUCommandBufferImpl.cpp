@@ -5,10 +5,10 @@
 #include "GPUCommandBufferImpl.h"
 #include "Caches.h"
 
-GPUCommandBufferImpl::GPUCommandBufferImpl(CanvasGPUCommandBuffer *commandBuffer) : commandBuffer_(
+GPUCommandBufferImpl::GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer) : commandBuffer_(
         commandBuffer) {}
 
-CanvasGPUCommandBuffer *GPUCommandBufferImpl::GetGPUCommandBuffer() {
+const CanvasGPUCommandBuffer *GPUCommandBufferImpl::GetGPUCommandBuffer() {
     return this->commandBuffer_;
 }
 

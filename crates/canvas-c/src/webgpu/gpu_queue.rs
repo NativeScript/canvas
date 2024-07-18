@@ -20,6 +20,40 @@ pub struct CanvasGPUQueue {
 
 unsafe impl Send for CanvasGPUQueue {}
 
+impl Drop for CanvasGPUQueue {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(self.id => global.queue_drop(self.queue));
+        }
+    }
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(
+    queue: *const CanvasGPUQueue
+) {
+    if queue.is_null() {
+        return;
+    }
+
+    Arc::increment_strong_count(queue);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_release(
+    queue: *const CanvasGPUQueue
+) {
+    if queue.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(queue);
+}
+
+
 fn get_offset_image(
     buffer: &[u8],
     img_width: usize,
@@ -169,6 +203,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         .iter()
         .map(|buffer| {
             let buffer = &**buffer;
+
+            buffer.open.store(false, std::sync::atomic::Ordering::SeqCst);
+
             buffer.command_buffer
         })
         .collect::<Vec<wgpu_core::id::CommandBufferId>>();

@@ -8,8 +8,6 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
-#include "GPUBufferImpl.h"
-#include "GPUTextureImpl.h"
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 public:
@@ -51,17 +49,42 @@ public:
     static void GetLost(v8::Local<v8::Name> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreatePipelineLayout(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateQuerySet(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateSampler(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PopErrorScope(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PushErrorScope(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
+    static void SetUncapturedError(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
 private:

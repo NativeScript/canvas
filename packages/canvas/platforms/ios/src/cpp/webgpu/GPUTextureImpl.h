@@ -11,9 +11,10 @@
 
 class GPUTextureImpl : ObjectWrapperImpl {
 public:
-    GPUTextureImpl(const CanvasGPUTexture *texture);
+    explicit GPUTextureImpl(const CanvasGPUTexture *texture);
 
     ~GPUTextureImpl() {
+        canvas_native_webgpu_texture_release(this->GetTexture());
     }
 
     const CanvasGPUTexture *GetTexture();

@@ -11,9 +11,10 @@
 
 class GPUCommandBufferImpl : ObjectWrapperImpl {
 public:
-    GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer);
+    explicit GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer);
 
     ~GPUCommandBufferImpl() {
+        canvas_native_webgpu_command_buffer_release(this->commandBuffer_);
     }
 
     const CanvasGPUCommandBuffer *GetGPUCommandBuffer();

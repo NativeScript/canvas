@@ -1,7 +1,7 @@
 use std::os::raw::c_char;
 use std::sync::Arc;
 
-use crate::webgpu::error::handle_error;
+use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::ptr_into_label;
 
 use super::{
@@ -18,6 +18,7 @@ use super::{
 pub struct CanvasGPUTexture {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) texture: wgpu_core::id::TextureId,
+    pub(crate) surface_id: Option<wgpu_core::id::SurfaceId>,
     pub(crate) owned: bool,
     pub(crate) depth_or_array_layers: u32,
     pub(crate) dimension: CanvasTextureDimension,
@@ -28,6 +29,30 @@ pub struct CanvasGPUTexture {
     pub(crate) height: u32,
     pub(crate) usage: u32,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
+    pub(crate) has_surface_presented: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl Drop for CanvasGPUTexture {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            return;
+        }
+        match self.surface_id {
+            Some(surface_id) => {
+                if !self.has_surface_presented.load(std::sync::atomic::Ordering::SeqCst) {
+                    let global = self.instance.global();
+                    match gfx_select!(self.id => global.surface_texture_discard(surface_id)) {
+                        Ok(_) => (),
+                        Err(cause) => handle_error_fatal(global, cause, "canvas_native_webgpu_texture_release"),
+                    }
+                }
+            }
+            None => {
+                let context = self.instance.global();
+                gfx_select!(self.id => context.texture_drop(self.texture, false));
+            }
+        }
+    }
 }
 
 #[repr(C)]

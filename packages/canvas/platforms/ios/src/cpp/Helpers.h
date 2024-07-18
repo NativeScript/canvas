@@ -21,13 +21,13 @@
 struct AsyncCallback {
     v8::Isolate *isolate;
     v8::Global<v8::Function> callback;
-    void* data;
+    void *data;
 };
 
 struct PromiseCallback {
     v8::Isolate *isolate;
     v8::Global<v8::Promise::Resolver> callback;
-    void* data;
+    void *data;
 };
 
 static const char *LOG_TAG = "JS";
@@ -137,6 +137,7 @@ enum class NativeType {
     WebGLSampler,
     WebGLTransformFeedback,
     WebGLSync,
+
     GPUAdapter,
     GPUSupportedLimits,
     GPUDevice,
@@ -155,7 +156,12 @@ enum class NativeType {
     GPUBindGroupLayout,
     GPUTextureView,
     GPURenderPassEncoder,
-    GPUCommandBuffer
+    GPUCommandBuffer,
+    GPUBindGroup,
+    GPUComputePipeline,
+    GPUSampler,
+    GPURenderBundleEncoder,
+    GPURenderBundle
 };
 
 inline static v8::Local<v8::String>
@@ -220,7 +226,7 @@ GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
     v8::Maybe<bool> hasPrivate = obj->HasPrivate(context, privateKey);
 
     if (!hasPrivate.FromMaybe(false)) {
-        return v8::Local<v8::Value>();
+        return {};
     }
 
     v8::Local<v8::Value> result;
@@ -236,7 +242,7 @@ static void SetNativeType(const v8::Local<v8::Object> &obj, NativeType type) {
 }
 
 inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
-    if (!obj->IsNullOrUndefined() && obj->IsObject() &&
+    if (!obj.IsEmpty() && !obj->IsNullOrUndefined() && obj->IsObject() &&
         obj.As<v8::Object>()->InternalFieldCount() > 1) {
         auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(1);
 
@@ -244,7 +250,7 @@ inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
             auto value = *static_cast<int32_t *>(info);
             auto ret = value;
             if (ret >= (int) NativeType::CanvasGradient &&
-                ret <= (int) NativeType::GPUCommandBuffer) {
+                ret <= (int) NativeType::GPURenderBundle) {
                 return (NativeType) ret;
             }
         }

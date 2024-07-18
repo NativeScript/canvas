@@ -10,12 +10,13 @@
 
 class GPUQuerySetImpl : ObjectWrapperImpl {
 public:
-    GPUQuerySetImpl(CanvasGPUQuerySet *querySet);
+    GPUQuerySetImpl(const CanvasGPUQuerySet *querySet);
 
     ~GPUQuerySetImpl() {
+        canvas_native_webgpu_query_set_release(this->GetQuerySet());
     }
 
-    CanvasGPUQuerySet *GetQuerySet();
+    const CanvasGPUQuerySet *GetQuerySet();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -34,9 +35,20 @@ public:
         return scope.Escape(object);
     }
 
+    static void GetType(v8::Local<v8::Name> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetCount(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void Destroy(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 
 private:
-    CanvasGPUQuerySet *querySet_;
+    const CanvasGPUQuerySet *querySet_;
 };
 
 

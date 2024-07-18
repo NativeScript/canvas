@@ -457,68 +457,16 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async webgpuTriangle() {
-		// Clear color for GPURenderPassDescriptor
-		const clearColor = { r: 0.0, g: 0.5, b: 1.0, a: 1.0 };
-
-		// Vertex data for triangle
-		// Each vertex has 8 values representing position and color: X Y Z W R G B A
-
-		const vertices = new Float32Array([0.0, 0.6, 0, 1, 1, 0, 0, 1, -0.5, -0.6, 0, 1, 0, 1, 0, 1, 0.5, -0.6, 0, 1, 0, 0, 1, 1]);
-
-		// Vertex and fragment shaders
-
-		const shaders = `
-struct VertexOut {
-  @builtin(position) position : vec4f,
-  @location(0) color : vec4f
-}
-
-@vertex
-fn vertex_main(@location(0) position: vec4f,
-               @location(1) color: vec4f) -> VertexOut
-{
-  var output : VertexOut;
-  output.position = position;
-  output.color = color;
-  return output;
-}
-
-@fragment
-fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
-{
-  return fragData.color;
-}
-`;
-
-		const triangle_vert = `@vertex
-fn main(
-  @builtin(vertex_index) VertexIndex : u32
-) -> @builtin(position) vec4f {
-  var pos = array<vec2f, 3>(
-    vec2(0.0, 0.5),
-    vec2(-0.5, -0.5),
-    vec2(0.5, -0.5)
-  );
-
-  return vec4f(pos[VertexIndex], 0.0, 1.0);
-}`;
-
-		const red_frag = `@fragment
-fn main() -> @location(0) vec4f {
-  return vec4(1.0, 0.0, 0.0, 1.0);
-}`;
-
 		if (navigator.gpu) {
 			const adapter = await navigator.gpu.requestAdapter();
 			const device = await adapter.requestDevice();
 
-			const shaderModule = device.createShaderModule({
-				code: shaders,
-			});
-			
-			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+			// device.addEventListener("uncapturederror", (event: any) => {
+			// 	// Re-surface the error
+			// 	console.error("A WebGPU error was not captured:", event.error.message);
+			//   });
 
-			console.log((<any>context).capabilities(adapter));
+			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
 			const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
@@ -528,149 +476,94 @@ fn main() -> @location(0) vec4f {
 				alphaMode: global.isIOS ? 'postmultiplied' : ('inherit' as any),
 			});
 
+			const code = `
+    struct Uniforms {
+      time: f32
+    }
+    @group(0) @binding(0) var<uniform> u: Uniforms;
+
+    struct Vertex {
+      @location(0) pos: vec4f
+    };
+    struct VertexOut {
+      @builtin(position) pos: vec4f,
+      @location(0) color: vec4f
+    }
+
+    @vertex fn vertexMain(v: Vertex) -> VertexOut {
+      let x = sin(u.time);
+      let y = cos(u.time);
+      let pos = vec4f(mat2x2f(y, -x, x, y) * v.pos.xy, 0, 1);
+      let color = vec4f(v.pos.zw, 0.5 + x * 0.5, 1);
+      return VertexOut(pos, color);
+    }
+    @fragment fn fragmentMain(v: VertexOut) -> @location(0) vec4f {
+      return v.color;
+    }
+  `;
+
+			const module = device.createShaderModule({ code });
 			const pipeline = device.createRenderPipeline({
 				layout: 'auto',
 				vertex: {
-					module: device.createShaderModule({
-						code: triangle_vert,
-					}),
-					entryPoint: 'main',
-				},
-				fragment: {
-					module: device.createShaderModule({
-						code: red_frag,
-					}),
-					targets: [
+					module,
+					entryPoint: 'vertexMain',
+					buffers: [
 						{
-							format: presentationFormat,
+							// layout for our vertex data (positions and colors)
+							arrayStride: 4 * 4,
+							attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x4' }],
 						},
 					],
-					entryPoint: 'main',
 				},
-				primitive: {
-					topology: 'triangle-list',
+				fragment: {
+					module,
+					entryPoint: 'fragmentMain',
+					targets: [{ format: presentationFormat }],
 				},
+				primitive: { topology: 'triangle-strip' },
 			});
 
-
-			const texture = context.getCurrentTexture();
-
-			const commandEncoder = device.createCommandEncoder();
-			const textureView = texture.createView();
-
-			const passEncoder = commandEncoder.beginRenderPass({
-				colorAttachments: [
-					{
-						view: textureView,
-						clearValue: [0, 0, 0, 1],
-						loadOp: 'clear',
-						storeOp: 'store',
-					},
-				],
-			});
-			passEncoder.setPipeline(pipeline);
-			passEncoder.draw(3);
-			passEncoder.end();
-
-			device.queue.submit([commandEncoder.finish()]);
-			(<any>context).presentSurface();
-		}
-	}
-
-	async webgpuTest() {
-		if (navigator.gpu) {
-			const adapter = await navigator.gpu.requestAdapter();
-			// console.log(adapter);
-			// console.log(adapter.features);
-			// console.log(adapter.limits);
-			// const info = await adapter.requestAdapterInfo();
-			//console.log(info);
-			const requiredFeatures = Array.from(adapter.features.values()) as any;
-			const device = await adapter.requestDevice({
-				label: '',
-				requiredFeatures,
-				requiredLimits: adapter.limits,
+			const uniformValues = new Float32Array(1); // a uniform buffer for passing current time
+			const uniformBuffer = device.createBuffer({ size: uniformValues.byteLength, usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST, mappedAtCreation: false });
+			const bindGroup = device.createBindGroup({
+				layout: pipeline.getBindGroupLayout(0),
+				entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
 			});
 
-			const shaders = `
-struct VertexOut {
-  @builtin(position) position : vec4f,
-  @location(0) color : vec4f
-}
+			const vertexData = Float32Array.of(-0.7, 0.7, 0, 1, -0.7, -0.7, 0, 0, 0.7, 0.7, 1, 1, 0.7, -0.7, 1, 0);
+			const vertexBuffer = device.createBuffer({ size: vertexData.byteLength, usage: global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.COPY_DST, mappedAtCreation: false });
+			device.queue.writeBuffer(vertexBuffer, 0, vertexData);
 
-@vertex
-fn vertex_main(@location(0) position: vec4f,
-               @location(1) color: vec4f) -> VertexOut
-{
-  var output : VertexOut;
-  output.position = position;
-  output.color = color;
-  return output;
-}
+			let start = performance.now();
 
-@fragment
-fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
-{
-  return fragData.color;
-}
-`;
+			(function render(time) {
+				const frame = context.getCurrentTexture();
+				// if(!frame){
+				// 	requestAnimationFrame(render);
+				// 	return;
+				// }
+				uniformValues[0] = (time - start) / 1000;
+				device.queue.writeBuffer(uniformBuffer, 0, uniformValues);
 
-			const shaderModule = device.createShaderModule({
-				code: shaders,
-			});
-			console.log(shaderModule);
+				const encoder = device.createCommandEncoder();
+				const output = {
+					clearValue: [1, 0, 0, 1] as any,
+					loadOp: 'clear',
+					storeOp: 'store',
+					view: frame.createView(),
+				};
+				const pass = encoder.beginRenderPass({ colorAttachments: [output as never] });
+				pass.setPipeline(pipeline);
+				pass.setVertexBuffer(0, vertexBuffer);
+				pass.setBindGroup(0, bindGroup);
+				pass.draw(4);
+				pass.end();
+				device.queue.submit([encoder.finish()]);
+				(<any>context).presentSurface(frame);
 
-			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
-
-			context.configure({
-				device,
-				format: navigator.gpu.getPreferredCanvasFormat(),
-			});
-
-			const texture = device.createTexture({
-				size: [100, 100, 1],
-				format: 'rgba8unorm',
-				usage: global.GPUTextureUsage.TEXTURE_BINDING | global.GPUTextureUsage.COPY_DST | global.GPUTextureUsage.RENDER_ATTACHMENT,
-			});
-
-			console.log(texture, context.getCurrentTexture());
-
-			/*
-			// device.lost.then((lost) => {
-			// 	console.log('lost', lost.reason, lost.message);
-			// });
-
-			// device.destroy();
-
-			// navigator.gpu.getPreferredCanvasFormat();
-
-			const output = device.createBuffer({
-				label:'output',
-				size: 100,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-			} as any);
-
-			
-
-			const stagingBuffer = device.createBuffer({
-				label:'stagingBuffer',
-				size: 200,
-				usage: GPUBufferUsage.MAP_READ,
-			} as any);
-
-			console.log(output, stagingBuffer);
-
-
-			stagingBuffer.mapAsync(GPUMapMode.READ)
-			.then(()=>{
-				console.log('map');
-				console.log(stagingBuffer.getMappedRange());
-			})
-			.catch(e =>{
-				console.log('e', e)
-			})
-
-			*/
+				requestAnimationFrame(render);
+			})(start);
 		}
 	}
 

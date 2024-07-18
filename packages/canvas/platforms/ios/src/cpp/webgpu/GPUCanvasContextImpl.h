@@ -12,9 +12,11 @@
 
 class GPUCanvasContextImpl : ObjectWrapperImpl {
 public:
-    GPUCanvasContextImpl(const CanvasGPUCanvasContext *context);
+    explicit GPUCanvasContextImpl(const CanvasGPUCanvasContext *context);
 
-    ~GPUCanvasContextImpl() {}
+    ~GPUCanvasContextImpl() {
+        canvas_native_webgpu_context_release(this->context_);
+    }
 
     const CanvasGPUCanvasContext *GetContext();
 

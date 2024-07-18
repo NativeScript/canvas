@@ -1152,9 +1152,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (value === 'auto') {
 			const size = measuredSize;
 			if (isPhysical) {
-				return size;
+				return Math.floor(size);
 			}
-			return size / Screen.mainScreen.scale;
+			return Math.floor(size / Screen.mainScreen.scale);
 		}
 
 		if (typeof value === 'string') {
@@ -1164,21 +1164,21 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		switch (typeof value) {
 			case 'number': {
 				if (isPhysical) {
-					return (value || 0) * Screen.mainScreen.scale;
+					return Math.floor((value || 0) * Screen.mainScreen.scale);
 				}
 				return value || 0;
 			}
 			case 'object': {
 				if (value.unit === 'dip' || value.unit === 'px') {
 					if (isPhysical) {
-						return (value.value || 0) * Screen.mainScreen.scale;
+						return Math.floor((value.value || 0) * Screen.mainScreen.scale);
 					}
 					return value.value || 0;
 				} else if (value.unit === '%') {
 					if (isPhysical) {
-						return measuredSize * value.value ?? 0;
+						return Math.floor(measuredSize * value.value ?? 0);
 					}
-					return (measuredSize * value.value ?? 0) / Screen.mainScreen.scale;
+					return Math.floor((measuredSize * value.value ?? 0) / Screen.mainScreen.scale);
 				}
 
 				return 0;

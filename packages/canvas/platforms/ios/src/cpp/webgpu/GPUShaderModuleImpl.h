@@ -14,6 +14,7 @@ public:
     GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule);
 
     ~GPUShaderModuleImpl() {
+        canvas_native_webgpu_shader_module_release(this->GetShaderModule());
     }
 
     const CanvasGPUShaderModule *GetShaderModule();

@@ -48,7 +48,7 @@ export class GPUCanvasContext {
 			...options,
 		};
 
-		opts.device = options?.device?.native;
+		opts.device = options?.device?.[native_];
 		this[native_].configure(opts);
 	}
 
@@ -65,8 +65,8 @@ export class GPUCanvasContext {
 		return null;
 	}
 
-	presentSurface() {
-		this[native_].presentSurface();
+	presentSurface(texture) {
+		this[native_].presentSurface(texture?.[native_]);
 	}
 
 	capabilities(adapter: GPUAdapter) {

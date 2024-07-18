@@ -8,6 +8,36 @@ pub struct CanvasGPUShaderModule {
 }
 
 
+impl Drop for CanvasGPUShaderModule {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(id => global.shader_module_drop(self.module));
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_shader_module_reference(
+    shader_module: *const CanvasGPUShaderModule
+) {
+    if shader_module.is_null() {
+        return;
+    }
+    Arc::increment_strong_count(shader_module);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_shader_module_release(
+    shader_module: *const CanvasGPUShaderModule
+) {
+    if shader_module.is_null() {
+        return;
+    }
+    Arc::decrement_strong_count(shader_module);
+}
+
+
 // #[no_mangle]
 // pub extern "C" fn canvas_native_webgpu_device_create_shader_module_get_compilation_info(
 //     shader_module: *const CanvasGPUShaderModule,

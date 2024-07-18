@@ -6,6 +6,7 @@
 #include "Caches.h"
 #include "GPUBufferImpl.h"
 #include "GPUCommandBufferImpl.h"
+#include "JSICallback.h"
 
 GPUQueueImpl::GPUQueueImpl(const CanvasGPUQueue *queue) : queue_(queue) {}
 
@@ -56,6 +57,12 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "submit"),
             v8::FunctionTemplate::New(isolate, &Submit));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "onSubmittedWorkDone"),
+            v8::FunctionTemplate::New(isolate, &SubmitWorkDone));
+
+
 
     cache->GPUQueueTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -141,6 +148,46 @@ void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                           commandBuffers.size());
 
     }
+
+
+}
+
+void GPUQueueImpl::SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    auto cb = args[0];
+    auto callback = new JSICallback(isolate, cb.As<v8::Function>());
+
+    canvas_native_webgpu_queue_on_submitted_work_done(ptr->GetGPUQueue(),
+                                                      [](char *error, void *data) {
+                                                          auto cb = static_cast<JSICallback *>(data);
+
+                                                          v8::Isolate *isolate = cb->isolate_;
+                                                          v8::Locker locker(isolate);
+                                                          v8::Isolate::Scope isolate_scope(
+                                                                  isolate);
+                                                          v8::HandleScope handle_scope(
+                                                                  isolate);
+                                                          v8::Local<v8::Function> callback = cb->callback_->Get(
+                                                                  isolate);
+                                                          v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                                          v8::Context::Scope context_scope(
+                                                                  context);
+
+
+                                                          callback->Call(context,
+                                                                         context->Global(),
+                                                                         0, nullptr);
+
+
+                                                          delete static_cast<JSICallback *>(data);
+                                                      },
+                                                      callback);
 
 
 }

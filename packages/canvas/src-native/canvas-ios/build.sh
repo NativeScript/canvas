@@ -31,7 +31,7 @@ xcodebuild \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     SKIP_INSTALL=NO \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES 
+    BUILD_LIBRARY_FOR_DISTRIBUTION=YES
 
 echo "Creating XCFramework"
 xcodebuild \

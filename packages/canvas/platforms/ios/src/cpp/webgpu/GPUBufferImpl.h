@@ -10,9 +10,10 @@
 
 class GPUBufferImpl : ObjectWrapperImpl {
 public:
-    GPUBufferImpl(const CanvasGPUBuffer *buffer);
+    explicit GPUBufferImpl(const CanvasGPUBuffer *buffer);
 
     ~GPUBufferImpl() {
+        canvas_native_webgpu_buffer_release(this->GetGPUBuffer());
     }
 
     const CanvasGPUBuffer *GetGPUBuffer();

@@ -10,6 +10,23 @@ pub struct CanvasGPUComputePipeline {
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(pipeline: *const CanvasGPUComputePipeline) {
+    if pipeline.is_null() {
+        return;
+    }
+    Arc::increment_strong_count(pipeline);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_release(pipeline: *const CanvasGPUComputePipeline) {
+    if pipeline.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(pipeline);
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_get_bind_group_layout(

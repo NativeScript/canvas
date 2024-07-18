@@ -29,7 +29,7 @@ unsafe impl Send for CanvasGPUComputePassEncoder {}
 unsafe impl Sync for CanvasGPUComputePassEncoder {}
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_reference(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_reference(
     compute_pass: *const CanvasGPUComputePassEncoder
 ) {
     if compute_pass.is_null() {
@@ -39,7 +39,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_reference(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_release(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_release(
     compute_pass: *const CanvasGPUComputePassEncoder
 ) {
     if compute_pass.is_null() {
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_release(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_dispatch_workgroups(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(
     compute_pass: *const CanvasGPUComputePassEncoder,
     workgroup_count_x: u32,
     workgroup_count_y: u32,
@@ -67,7 +67,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_dispatch_workgroups(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_dispatch_workgroups_indirect(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect(
     compute_pass: *const CanvasGPUComputePassEncoder,
     indirect_buffer: *const CanvasGPUBuffer,
     indirect_offset: usize,
@@ -87,7 +87,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_dispatch_workgroups_i
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_end(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
     compute_pass: *const CanvasGPUComputePassEncoder,
 ) {
     if compute_pass.is_null() {
@@ -119,7 +119,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_end(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_insert_debug_marker(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_marker(
     compute_pass: *const CanvasGPUComputePassEncoder,
     label: *const c_char,
 ) {
@@ -141,7 +141,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_insert_debug_marker(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_pop_debug_group(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_pop_debug_group(
     compute_pass: *const CanvasGPUComputePassEncoder,
 ) {
     if compute_pass.is_null() {
@@ -155,7 +155,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_pop_debug_group(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_push_debug_group(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_group(
     compute_pass: *const CanvasGPUComputePassEncoder,
     label: *const c_char,
 ) {
@@ -178,7 +178,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_push_debug_group(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_set_bind_group(
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_group(
     compute_pass: *const CanvasGPUComputePassEncoder,
     index: u32,
     bind_group: *const CanvasGPUBindGroup,
@@ -227,8 +227,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_set_bind_group(
 
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_set_pipeline(
-    compute_pass: *mut CanvasGPUComputePassEncoder,
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_pipeline(
+    compute_pass: *const CanvasGPUComputePassEncoder,
     pipeline: *const CanvasGPUComputePipeline,
 ) {
     if compute_pass.is_null() || pipeline.is_null() {

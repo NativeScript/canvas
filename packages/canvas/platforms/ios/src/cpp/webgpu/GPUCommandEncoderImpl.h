@@ -10,10 +10,10 @@
 
 class GPUCommandEncoderImpl : ObjectWrapperImpl {
 public:
-    GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);
+    explicit GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);
 
     ~GPUCommandEncoderImpl() {
-        canvas_native_webgpu_command_encoder_release(this->GetEncoder());
+        canvas_native_webgpu_command_encoder_release(this->encoder_);
     }
 
     const CanvasGPUCommandEncoder *GetEncoder();
@@ -41,7 +41,25 @@ public:
 
     static void ClearBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void CopyBufferToBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CopyBufferToTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CopyTextureToBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CopyTextureToTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void Finish(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void InsertDebugMarker(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PopDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PushDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void ResolveQuerySet(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void WriteTimestamp(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     const CanvasGPUCommandEncoder *encoder_;

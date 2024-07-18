@@ -24,7 +24,6 @@ export class GPU {
 	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean } = { powerPreference: undefined, isFallbackAdapter: false }) {
 		return new Promise<GPUAdapter>((resolve, reject) => {
 			this.native.requestAdapter(options, (error, adapter) => {
-				console.log(error, adapter);
 				if (error) {
 					reject(error);
 				} else {

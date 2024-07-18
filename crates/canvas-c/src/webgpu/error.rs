@@ -30,12 +30,15 @@ pub(crate) fn handle_error(
     label: wgpu_core::Label,
     string: &'static str,
 ) {
+    let cause_error = cause.to_string();
     let error = wgpu_core::error::ContextError {
         string,
         cause: Box::new(cause),
         label: label.unwrap_or_default().to_string(),
         label_key,
     };
+
+
     let mut sink = sink_mutex.lock();
     let mut source_opt: Option<&(dyn Error + 'static)> = Some(&error);
     while let Some(source) = source_opt {
@@ -52,7 +55,7 @@ pub(crate) fn handle_error(
     }
 
     // Otherwise, it is a validation error
-    sink.handle_error(CanvasGPUError::Validation(error.to_string()));
+    sink.handle_error(CanvasGPUError::Validation(cause_error));
 }
 
 pub(crate) fn handle_error_fatal(
@@ -64,6 +67,11 @@ pub(crate) fn handle_error_fatal(
     //     "Error in {operation}: {f}",
     //     f = format_error(context, &cause)
     // );
+    let error = cause.to_string();
+
+    // log::error!("Error in {operation}: {f}",
+    //     f = error);
+
     log::error!("Error in {operation}: {f}",
         f = format_error(global, &cause))
 }

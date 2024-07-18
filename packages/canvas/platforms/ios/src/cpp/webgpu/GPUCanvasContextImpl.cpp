@@ -6,7 +6,8 @@
 #include "Caches.h"
 #include "GPUAdapterImpl.h"
 
-GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(context) {}
+GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(
+        context) {}
 
 const CanvasGPUCanvasContext *GPUCanvasContextImpl::GetContext() {
     return this->context_;
@@ -126,8 +127,8 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
     options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
             &usageValue);
 
-    if (!usageValue.IsEmpty() && usageValue->IsInt32()) {
-        config.usage = usageValue->Int32Value(context).ToChecked();
+    if (!usageValue.IsEmpty() && usageValue->IsUint32()) {
+        config.usage = usageValue->Uint32Value(context).ToChecked();
     }
 
 
@@ -226,10 +227,16 @@ void GPUCanvasContextImpl::PresentSurface(const v8::FunctionCallbackInfo<v8::Val
     if (ptr == nullptr) {
         return;
     }
+    auto textureVal = args[0];
+    if (!textureVal.IsEmpty() && textureVal->IsObject()) {
+        auto texture = GPUTextureImpl::GetPointer(textureVal.As<v8::Object>());
+        if (texture != nullptr) {
+            auto ctx = ptr->GetContext();
 
-    auto ctx = ptr->GetContext();
+            canvas_native_webgpu_context_present_surface(ctx, texture->GetTexture());
+        }
+    }
 
-    canvas_native_webgpu_context_present_surface(ctx);
 }
 
 void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Value> &args) {

@@ -21,6 +21,40 @@ pub struct CanvasGPUAdapter {
     pub(crate) limits: wgpu_types::Limits,
 }
 
+impl Drop for CanvasGPUAdapter {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(self.id => global.adapter_drop(self.adapter));
+        }
+    }
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_adapter_reference(
+    adapter: *const CanvasGPUAdapter
+) {
+    if adapter.is_null() {
+        return;
+    }
+
+    Arc::increment_strong_count(adapter);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_adapter_release(
+    adapter: *const CanvasGPUAdapter
+) {
+    if adapter.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(adapter);
+}
+
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_get_features(
     adapter: *const CanvasGPUAdapter,
@@ -56,13 +90,13 @@ pub extern "C" fn canvas_native_webgpu_adapter_get_limits(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_request_adapter_info(
-    adapter: *mut CanvasGPUAdapter,
+pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
+    adapter: *const CanvasGPUAdapter,
 ) -> *const CanvasGPUAdapterInfo {
     if adapter.is_null() {
         return std::ptr::null_mut();
     }
-    let adapter = unsafe { &mut *adapter };
+    let adapter = unsafe { &*adapter };
 
     let adapter_id = adapter.adapter;
     let global = adapter.instance.global();
@@ -74,7 +108,7 @@ pub extern "C" fn canvas_native_webgpu_request_adapter_info(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_request_device(
+pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     adapter: *const CanvasGPUAdapter,
     label: *const c_char,
     required_features: *const *const c_char,

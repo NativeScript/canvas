@@ -5,10 +5,10 @@
 #include "GPUPipelineLayoutImpl.h"
 #include "Caches.h"
 
-GPUPipelineLayoutImpl::GPUPipelineLayoutImpl(CanvasGPUPipelineLayout *pipeline) : pipeline_(
+GPUPipelineLayoutImpl::GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline) : pipeline_(
         pipeline) {}
 
-CanvasGPUPipelineLayout *GPUPipelineLayoutImpl::GetPipeline() {
+const CanvasGPUPipelineLayout *GPUPipelineLayoutImpl::GetPipeline() {
     return this->pipeline_;
 }
 

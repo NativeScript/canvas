@@ -74,7 +74,6 @@ void GPUImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     object->BindFinalizer(isolate, ret);
 
     args.GetReturnValue().Set(ret);
-    return;
 }
 
 

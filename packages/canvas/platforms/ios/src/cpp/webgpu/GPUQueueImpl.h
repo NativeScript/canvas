@@ -14,6 +14,7 @@ public:
     GPUQueueImpl(const CanvasGPUQueue *queue);
 
     ~GPUQueueImpl() {
+        canvas_native_webgpu_queue_release(this->GetGPUQueue());
     }
 
     const CanvasGPUQueue *GetGPUQueue();
@@ -39,6 +40,8 @@ public:
     static void WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Submit(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
 private:

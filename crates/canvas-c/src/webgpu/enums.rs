@@ -5,7 +5,6 @@ use std::{
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
 use wgpu_types::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
-use wgpu_types::BindingType::Sampler;
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
@@ -600,12 +599,10 @@ impl Into<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Rg16Unorm => wgpu_types::TextureFormat::Rg16Unorm,
             CanvasGPUTextureFormat::Rg16Snorm => wgpu_types::TextureFormat::Rg16Snorm,
             CanvasGPUTextureFormat::Rg16Float => wgpu_types::TextureFormat::Rg16Float,
-            CanvasGPUTextureFormat::Rgba8Unorm => wgpu_types::TextureFormat::Rgba8Unorm,
             CanvasGPUTextureFormat::Rgba8UnormSrgb => wgpu_types::TextureFormat::Rgba8UnormSrgb,
             CanvasGPUTextureFormat::Rgba8Snorm => wgpu_types::TextureFormat::Rgba8Snorm,
             CanvasGPUTextureFormat::Rgba8Uint => wgpu_types::TextureFormat::Rgba8Uint,
             CanvasGPUTextureFormat::Rgba8Sint => wgpu_types::TextureFormat::Rgba8Sint,
-            CanvasGPUTextureFormat::Bgra8Unorm => wgpu_types::TextureFormat::Bgra8Unorm,
             CanvasGPUTextureFormat::Bgra8UnormSrgb => wgpu_types::TextureFormat::Bgra8UnormSrgb,
             CanvasGPUTextureFormat::Rgb9e5Ufloat => wgpu_types::TextureFormat::Rgb9e5Ufloat,
             CanvasGPUTextureFormat::Rgb10a2Uint => wgpu_types::TextureFormat::Rgb10a2Uint,
@@ -820,7 +817,7 @@ pub enum CanvasOptionalGPUTextureFormat {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_string_to_gpu_texture_enum(
+pub unsafe extern "C" fn canvas_native_webgpu_enum_string_to_gpu_texture(
     format: *const c_char,
 ) -> CanvasOptionalGPUTextureFormat {
     let format = CStr::from_ptr(format);
@@ -2029,8 +2026,8 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
                             .map(|value: u64| NonZeroU64::new(value))
                             .ok()
                             .flatten()
-                            
-                            
+
+
                         ,
                     }
                 }
@@ -2059,6 +2056,7 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
 
 
 #[repr(C)]
+#[derive(Copy, Clone, PartialOrd, PartialEq)]
 pub enum CanvasQueryType {
     Occlusion,
     Timestamp,

@@ -23,7 +23,18 @@ pub struct CanvasGPUCommandEncoder {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) encoder: wgpu_core::id::CommandEncoderId,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
+    pub(crate) open: std::sync::atomic::AtomicBool,
 }
+
+impl Drop for CanvasGPUCommandEncoder {
+    fn drop(&mut self) {
+        if self.open.load(std::sync::atomic::Ordering::SeqCst) && !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(self.id => global.command_encoder_drop(self.encoder));
+        }
+    }
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
@@ -494,6 +505,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
 
+    command_encoder.open.store(false, std::sync::atomic::Ordering::SeqCst);
+
     let label = ptr_into_label(label);
 
     let desc = wgpu_types::CommandBufferDescriptor { label };
@@ -516,7 +529,36 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
         instance: command_encoder.instance.clone(),
         command_buffer: id,
+        open: std::sync::atomic::AtomicBool::new(true),
     }))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_insert_debug_marker(
+    command_encoder: *const CanvasGPUCommandEncoder,
+    label: *const c_char,
+) {
+    if command_encoder.is_null() || label.is_null() {
+        return;
+    }
+
+    let command_encoder = &*command_encoder;
+    let command_encoder_id = command_encoder.encoder;
+    let global = command_encoder.instance.global();
+
+    let label = CStr::from_ptr(label).to_string_lossy();
+    let error_sink = command_encoder.error_sink.as_ref();
+    if let Err(cause) = gfx_select!(command_encoder_id =>  global.command_encoder_insert_debug_marker(command_encoder_id, label.as_ref()))
+    {
+        handle_error(
+            global,
+            error_sink,
+            cause,
+            "",
+            None,
+            "canvas_native_webgpu_command_encoder_insert_debug_marker",
+        );
+    }
 }
 
 #[no_mangle]
@@ -578,7 +620,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_resolve_query_set(
     query_set: *const CanvasGPUQuerySet,
     first_query: u32,
     query_count: u32,
-    dst: *mut CanvasGPUBuffer,
+    dst: *const CanvasGPUBuffer,
     dst_offset: u64,
 ) {
     if command_encoder.is_null() || query_set.is_null() || dst.is_null() {

@@ -13,7 +13,7 @@ use wgpu_core::command::{CreateRenderBundleError, RenderBundleEncoder};
 use wgpu_core::resource::CreateBufferError;
 
 use crate::buffers::StringBuffer;
-use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasQueryType};
+use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasQueryType};
 use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error, handle_error_fatal};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
@@ -44,8 +44,10 @@ use super::{
 
 const MAX_BIND_GROUPS: usize = 8;
 
+
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
-pub enum ErrorFilter {
+pub enum CanvasGPUErrorFilter {
     /// Catch only out-of-memory errors.
     OutOfMemory,
     /// Catch only validation errors.
@@ -59,7 +61,7 @@ pub(crate) type ErrorSink = Arc<parking_lot::Mutex<ErrorSinkRaw>>;
 
 struct ErrorScope {
     error: Option<CanvasGPUError>,
-    filter: ErrorFilter,
+    filter: CanvasGPUErrorFilter,
 }
 
 pub struct DeviceCallback<T> {
@@ -68,9 +70,9 @@ pub struct DeviceCallback<T> {
 }
 unsafe impl<T> Send for DeviceCallback<T> {}
 
-pub(crate) type GPUErrorCallback = Option<unsafe extern "C" fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>;
-pub(crate) type GPUDeviceLostCallback = Option<unsafe extern "C" fn(i32, *mut c_char, *mut c_void)>;
-pub(crate) type UncapturedErrorCallback = DeviceCallback<GPUErrorCallback>;
+pub type GPUErrorCallback = Option<unsafe extern "C" fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>;
+pub type GPUDeviceLostCallback = Option<unsafe extern "C" fn(i32, *mut c_char, *mut c_void)>;
+pub type UncapturedErrorCallback = DeviceCallback<GPUErrorCallback>;
 pub(crate) type DeviceLostCallback = DeviceCallback<GPUDeviceLostCallback>;
 
 unsafe extern "C" fn default_uncaptured_error_handler(
@@ -148,19 +150,19 @@ impl ErrorSinkRaw {
             }
             CanvasGPUError::OutOfMemory { .. } => (
                 super::error::CanvasGPUErrorType::OutOfMemory,
-                ErrorFilter::OutOfMemory,
+                CanvasGPUErrorFilter::OutOfMemory,
             ),
             super::error::CanvasGPUError::Validation { .. } => (
                 super::error::CanvasGPUErrorType::Validation,
-                ErrorFilter::Validation,
+                CanvasGPUErrorFilter::Validation,
             ),
             super::error::CanvasGPUError::Internal { .. } => (
                 super::error::CanvasGPUErrorType::Internal,
-                ErrorFilter::Internal,
+                CanvasGPUErrorFilter::Internal,
             ),
             super::error::CanvasGPUError::None { .. } => (
                 super::error::CanvasGPUErrorType::None,
-                ErrorFilter::Internal,
+                CanvasGPUErrorFilter::Internal,
             )
         };
 
@@ -422,11 +424,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_set_lost_callback(
         return;
     }
 
-    Arc::increment_strong_count(device);
-    let mut device = Arc::from_raw(device);
-    if let Some(device) = Arc::get_mut(&mut device) {
-        device.user_data = userdata;
-    }
+    let device = &*device;
 
     let mut error_sink = device.error_sink.lock();
     error_sink.device_lost_handler = DeviceLostCallback {
@@ -456,6 +454,71 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_set_lost_callback(
     //     device_id,
     //     wgpu_core::device::DeviceLostClosure::from_rust(callback),
     // ));
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
+    device: *const CanvasGPUDevice,
+    callback: Option<unsafe extern "C" fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>,
+    userdata: *mut ::std::os::raw::c_void,
+) {
+    let device = &*device;
+    let callback = callback;
+    let mut error_sink = device.error_sink.lock();
+    let scope = error_sink.scopes.pop().unwrap();
+
+    match scope.error {
+        Some(error) => {
+            let typ = match error {
+                CanvasGPUError::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
+                CanvasGPUError::Validation { .. } => CanvasGPUErrorType::Validation,
+                // We handle device lost error early in ErrorSinkRaw::handle_error
+                // so we should never get device lost error here.
+                CanvasGPUError::Lost { .. } => unreachable!(),
+                CanvasGPUError::None => CanvasGPUErrorType::None,
+                CanvasGPUError::Internal => CanvasGPUErrorType::Internal
+            };
+
+            let msg = CString::new(error.to_string()).unwrap();
+            unsafe {
+                if let Some(callback) = callback {
+                    callback(typ, msg.into_raw(), userdata);
+                }
+            };
+        }
+        None => {
+            unsafe {
+                if let Some(callback) = callback {
+                    callback(CanvasGPUErrorType::None, std::ptr::null_mut(), userdata);
+                }
+            };
+        }
+    };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_push_error_scope(
+    device: *const CanvasGPUDevice,
+    filter: CanvasGPUErrorFilter,
+) {
+    let device = &*device;
+    let mut error_sink = device.error_sink.lock();
+    error_sink.scopes.push(ErrorScope {
+        error: None,
+        filter,
+    });
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_set_uncaptured_error_callback(
+    device: *const CanvasGPUDevice,
+    callback: Option<unsafe extern "C" fn(CanvasGPUErrorType, *mut c_char, *mut c_void)>,
+    userdata: *mut std::os::raw::c_void,
+) {
+    let device = &*device;
+    let mut error_sink = device.error_sink.lock();
+    error_sink.uncaptured_handler = UncapturedErrorCallback { callback, userdata };
 }
 
 #[no_mangle]
@@ -538,11 +601,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     if device.is_null() {
         return std::ptr::null_mut();
     }
-    let label = if !label.is_null() {
-        Some(unsafe { CStr::from_ptr(label).to_string_lossy() })
-    } else {
-        None
-    };
+    let label = ptr_into_label(label);
 
     let device = unsafe { &*device };
     let desc = wgpu_types::CommandEncoderDescriptor { label };
@@ -568,7 +627,9 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
         instance: device.instance.clone(),
         encoder,
         error_sink: device.error_sink.clone(),
+        open: std::sync::atomic::AtomicBool::new(true),
     };
+
     Arc::into_raw(Arc::new(encoder))
 }
 
@@ -834,7 +895,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
 pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
     device: *const CanvasGPUDevice,
     label: *const c_char,
-    group_layouts: *const CanvasGPUBindGroupLayout,
+    group_layouts: *const *const CanvasGPUBindGroupLayout,
     size: usize,
 ) -> *const CanvasGPUPipelineLayout {
     if device.is_null() || group_layouts.is_null() || size == 0 {
@@ -852,7 +913,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
 
     let group_layouts = group_layouts.iter()
         .map(|group| {
-            let group = &*group;
+            let group = &**group;
             group.group_layout
         })
         .collect::<Vec<_>>();
@@ -905,7 +966,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
 
 
     let desc = wgpu_types::QuerySetDescriptor {
-        label,
+        label: label.clone(),
         ty: type_.into(),
         count,
     };
@@ -929,6 +990,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
             CanvasGPUQuerySet {
                 instance: device.instance.clone(),
                 query,
+                count,
+                type_,
+                label
             }
         )
     )
@@ -940,7 +1004,7 @@ pub struct CanvasCreateRenderBundleEncoderDescriptor {
     label: *const c_char,
     color_formats: *const CanvasGPUTextureFormat,
     color_formats_size: usize,
-    depth_stencil_format: *const CanvasGPUTextureFormat,
+    depth_stencil_format: CanvasOptionalGPUTextureFormat,
     sample_count: u32,
     depth_read_only: bool,
     stencil_read_only: bool,
@@ -966,18 +1030,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
 
     let device_id = device.device;
 
-
-    let depth_stencil = if !descriptor.depth_stencil_format.is_null() {
-        let format = *descriptor.depth_stencil_format;
-        Some(
-            wgpu_types::RenderBundleDepthStencil {
-                format: format.into(),
-                depth_read_only: descriptor.depth_read_only,
-                stencil_read_only: descriptor.stencil_read_only,
-            }
-        )
-    } else {
-        None
+    let depth_stencil = match descriptor.depth_stencil_format {
+        CanvasOptionalGPUTextureFormat::None => None,
+        CanvasOptionalGPUTextureFormat::Some(format) => {
+            Some(
+                wgpu_types::RenderBundleDepthStencil {
+                    format: format.into(),
+                    depth_read_only: descriptor.depth_read_only,
+                    stencil_read_only: descriptor.stencil_read_only,
+                }
+            )
+        }
     };
 
     let color_formats = if !descriptor.color_formats.is_null() && descriptor.color_formats_size > 0 {
@@ -1001,7 +1064,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
     };
 
 
-    let bundle = wgpu_core::command::RenderBundleEncoder::new(&desc, device_id, None);
+    let bundle = RenderBundleEncoder::new(&desc, device_id, None);
 
     match bundle {
         Ok(bundle) => {
@@ -1009,7 +1072,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
                 Arc::new(
                     CanvasGPURenderBundleEncoder {
                         instance: device.instance.clone(),
-                        encoder: bundle,
+                        encoder: Box::into_raw(
+                            Box::new(Some(bundle))
+                        ),
                     }
                 )
             )
@@ -1020,7 +1085,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
                 Arc::new(
                     CanvasGPURenderBundleEncoder {
                         instance: device.instance.clone(),
-                        encoder: RenderBundleEncoder::dummy(device_id),
+                        encoder: Box::into_raw(
+                            Box::new(Some(RenderBundleEncoder::dummy(device_id)))
+                        ),
                     }
                 )
             )
@@ -1041,7 +1108,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let label = ptr_into_label(label);
 
     let src = unsafe { CStr::from_ptr(source) };
-    let src = src.to_string_lossy();
+    let src = Cow::Borrowed(src.to_str().unwrap());
     let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(src);
 
     let device = unsafe { &*device };
@@ -1791,6 +1858,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
     Arc::into_raw(Arc::new(CanvasGPUTexture {
         instance: device.instance.clone(),
         texture: texture_id,
+        surface_id: None,
         owned: true,
         depth_or_array_layers: descriptor.depthOrArrayLayers,
         dimension: descriptor.dimension,
@@ -1801,6 +1869,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         height: descriptor.height,
         usage: descriptor.usage,
         error_sink: device.error_sink.clone(),
+        has_surface_presented: Arc::default(),
     }))
 }
 
@@ -1826,35 +1895,58 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
     device: *const CanvasGPUDevice,
     descriptor: *const CanvasCreateSamplerDescriptor,
 ) -> *const CanvasGPUSampler {
-    if device.is_null() || descriptor.is_null() {
+    if device.is_null() {
         return std::ptr::null_mut();
     }
 
     let device = unsafe { &*device };
-    let descriptor = unsafe { &*descriptor };
     let device_id = device.device;
 
     let global = device.instance.global();
 
-    let label = ptr_into_label(descriptor.label);
+    let mut label: wgpu_core::Label = None;
 
+    let desc = if !descriptor.is_null() {
+        let descriptor = unsafe { &*descriptor };
 
-    let desc = wgpu_core::resource::SamplerDescriptor {
-        label: label.clone(),
-        address_modes: [
-            descriptor.address_mode_u.into(),
-            descriptor.address_mode_v.into(),
-            descriptor.address_mode_w.into(),
-        ],
-        mag_filter: descriptor.mag_filter.into(),
-        min_filter: descriptor.min_filter.into(),
-        mipmap_filter: descriptor.mipmap_filter.into(),
-        lod_min_clamp: descriptor.lod_min_clamp,
-        lod_max_clamp: descriptor.lod_max_clamp,
-        compare: descriptor.compare.into(),
-        anisotropy_clamp: descriptor.max_anisotropy,
-        border_color: None, // native-only
+        label = ptr_into_label(descriptor.label);
+
+        wgpu_core::resource::SamplerDescriptor {
+            label: label.clone(),
+            address_modes: [
+                descriptor.address_mode_u.into(),
+                descriptor.address_mode_v.into(),
+                descriptor.address_mode_w.into(),
+            ],
+            mag_filter: descriptor.mag_filter.into(),
+            min_filter: descriptor.min_filter.into(),
+            mipmap_filter: descriptor.mipmap_filter.into(),
+            lod_min_clamp: descriptor.lod_min_clamp,
+            lod_max_clamp: descriptor.lod_max_clamp,
+            compare: descriptor.compare.into(),
+            anisotropy_clamp: descriptor.max_anisotropy,
+            border_color: None, // native-only
+        }
+    } else {
+        wgpu_core::resource::SamplerDescriptor {
+            label: None,
+            address_modes: [
+                wgpu_types::AddressMode::ClampToEdge,
+                wgpu_types::AddressMode::ClampToEdge,
+                wgpu_types::AddressMode::ClampToEdge,
+            ],
+            mag_filter: wgpu_types::FilterMode::Nearest,
+            min_filter: wgpu_types::FilterMode::Nearest,
+            mipmap_filter: wgpu_types::FilterMode::Nearest,
+            lod_min_clamp: 0f32,
+            lod_max_clamp: 32f32,
+            compare: None,
+            anisotropy_clamp: 1,
+            border_color: None,
+        }
     };
+
+
     let (sampler_id, error) = gfx_select!(device_id => global.device_create_sampler(device_id, &desc,None));
 
     let error_sink = device.error_sink.as_ref();

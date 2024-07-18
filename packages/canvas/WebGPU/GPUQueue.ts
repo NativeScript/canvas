@@ -31,4 +31,12 @@ export class GPUQueue {
 			);
 		}
 	}
+
+	onSubmittedWorkDone() {
+		return new Promise<void>((resolve, reject) => {
+			this[native_].onSubmittedWorkDone(() => {
+				resolve();
+			});
+		});
+	}
 }

@@ -11,7 +11,7 @@
 
 class GPUAdapterInfoImpl : ObjectWrapperImpl {
 public:
-    GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info);
+    explicit GPUAdapterInfoImpl(const CanvasGPUAdapterInfo *info);
 
     ~GPUAdapterInfoImpl() {
         canvas_native_webgpu_adapter_info_release(this->GetInfo());

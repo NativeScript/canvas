@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use crate::webgpu::error::handle_error;
-use crate::webgpu::gpu_compute_pass_encoder::CanvasGPUComputePassEncoder;
+
 use super::{
     enums::CanvasIndexFormat, gpu::CanvasWebGPUInstance, gpu_bind_group::CanvasGPUBindGroup,
     gpu_buffer::CanvasGPUBuffer
@@ -31,7 +31,7 @@ unsafe impl Send for CanvasGPURenderPassEncoder {}
 unsafe impl Sync for CanvasGPURenderPassEncoder {}
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_begin_occlusion_query(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(
     render_pass: *const CanvasGPURenderPassEncoder,
     query_index: u32,
 ) {
@@ -62,7 +62,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw(
 
     let render_pass = &*render_pass;
 
-    let pass = &mut* render_pass.pass;
+    let pass = &mut *render_pass.pass;
 
     wgpu_core::command::render_commands::wgpu_render_pass_draw(
         pass,
@@ -74,7 +74,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed(
     render_pass: *const CanvasGPURenderPassEncoder,
     index_count: u32,
     instance_count: u32,
@@ -88,7 +88,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed(
 
     let render_pass = &*render_pass;
 
-    let pass = &mut* render_pass.pass;
+    let pass = &mut *render_pass.pass;
 
     wgpu_core::command::render_commands::wgpu_render_pass_draw_indexed(
         pass,
@@ -101,7 +101,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed_indirect(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(
     render_pass: *const CanvasGPURenderPassEncoder,
     indirect_buffer: *const CanvasGPUBuffer,
     indirect_offset: u64,
@@ -116,7 +116,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed_indirect(
 
     let buffer_id = indirect_buffer.buffer;
 
-    let pass = &mut* render_pass.pass;
+    let pass = &mut *render_pass.pass;
 
     wgpu_core::command::render_commands::wgpu_render_pass_draw_indexed_indirect(
         pass,
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indexed_indirect(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indirect(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indirect(
     render_pass: *const CanvasGPURenderPassEncoder,
     indirect_buffer: *const CanvasGPUBuffer,
     indirect_offset: u64,
@@ -140,7 +140,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indirect(
     let indirect_buffer = &*indirect_buffer;
 
     let buffer_id = indirect_buffer.buffer;
-    let pass = &mut* render_pass.pass;
+    let pass = &mut *render_pass.pass;
 
     wgpu_core::command::render_commands::wgpu_render_pass_draw_indirect(
         pass,
@@ -150,7 +150,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_draw_indirect(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_end(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
     render_pass: *const CanvasGPURenderPassEncoder,
 ) {
     if render_pass.is_null() {
@@ -161,7 +161,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_end(
 
     let global = render_pass.instance.global();
 
-    let pass = &mut* render_pass.pass;
+    let pass = &mut *render_pass.pass;
 
     let command_encoder = pass.parent_id();
 
@@ -173,13 +173,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_end(
             cause,
             "encoder",
             render_pass.label.clone(),
-            "canvas_native_webgpu_render_pass_end",
+            "canvas_native_webgpu_render_pass_encoder_end",
         );
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_end_occlusion_query(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end_occlusion_query(
     render_pass: *const CanvasGPURenderPassEncoder,
 ) {
     if render_pass.is_null() {
@@ -193,9 +193,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_end_occlusion_query(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_execute_bundles(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_execute_bundles(
     render_pass: *const CanvasGPURenderPassEncoder,
-    bundles: *const CanvasGPURenderBundle,
+    bundles: *const *const CanvasGPURenderBundle,
     bundles_size: usize,
 ) {
     if render_pass.is_null() || bundles.is_null() || bundles_size == 0 {
@@ -207,7 +207,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_execute_bundles(
 
     let bundles = std::slice::from_raw_parts(bundles, bundles_size)
         .iter()
-        .map(|value| value.bundle)
+        .map(|value| (&**value).bundle)
         .collect::<Vec<wgpu_core::id::RenderBundleId>>();
 
     wgpu_core::command::render_commands::wgpu_render_pass_execute_bundles(
@@ -217,7 +217,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_execute_bundles(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_insert_debug_marker(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_insert_debug_marker(
     render_pass: *const CanvasGPURenderPassEncoder,
     label: *const c_char,
 ) {
@@ -239,7 +239,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_insert_debug_marker(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_pop_debug_group(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_pop_debug_group(
     render_pass: *const CanvasGPURenderPassEncoder,
 ) {
     if render_pass.is_null() {
@@ -253,7 +253,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_pop_debug_group(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_push_debug_group(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_push_debug_group(
     render_pass: *const CanvasGPURenderPassEncoder,
     label: *const c_char,
 ) {
@@ -275,7 +275,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_push_debug_group(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_bind_group(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group(
     render_pass: *const CanvasGPURenderPassEncoder,
     index: u32,
     bind_group: *const CanvasGPUBindGroup,
@@ -323,7 +323,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_bind_group(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_blend_constant(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_blend_constant(
     render_pass: *const CanvasGPURenderPassEncoder,
     color: *const CanvasColor,
 ) {
@@ -343,7 +343,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_blend_constant(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_index_buffer(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buffer(
     render_pass: *const CanvasGPURenderPassEncoder,
     buffer: *const CanvasGPUBuffer,
     index_format: CanvasIndexFormat,
@@ -394,7 +394,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_index_buffer(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_pipeline(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_pipeline(
     render_pass: *const CanvasGPURenderPassEncoder,
     pipeline: *const CanvasGPURenderPipeline,
 ) {
@@ -412,7 +412,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_pipeline(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_scissor_rect(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_scissor_rect(
     render_pass: *const CanvasGPURenderPassEncoder,
     x: u32,
     y: u32,
@@ -436,7 +436,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_scissor_rect(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_stencil_reference(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_stencil_reference(
     render_pass: *const CanvasGPURenderPassEncoder,
     reference: u32,
 ) {
@@ -454,7 +454,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_stencil_reference(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_vertex_buffer(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(
     render_pass: *const CanvasGPURenderPassEncoder,
     slot: u32,
     buffer: *const CanvasGPUBuffer,
@@ -505,7 +505,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_vertex_buffer(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_viewport(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_viewport(
     render_pass: *const CanvasGPURenderPassEncoder,
     x: f32,
     y: f32,
@@ -533,9 +533,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_set_viewport(
 }
 
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_reference(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_reference(
     render_pass: *const CanvasGPURenderPassEncoder
 ) {
     if render_pass.is_null() {
@@ -545,7 +544,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_reference(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pass_release(
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_release(
     render_pass: *const CanvasGPURenderPassEncoder
 ) {
     if render_pass.is_null() {

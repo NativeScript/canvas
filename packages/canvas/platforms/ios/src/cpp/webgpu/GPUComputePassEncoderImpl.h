@@ -10,10 +10,10 @@
 
 class GPUComputePassEncoderImpl : ObjectWrapperImpl {
 public:
-    GPUComputePassEncoderImpl(const CanvasGPUComputePassEncoder *computePass);
+    explicit GPUComputePassEncoderImpl(const CanvasGPUComputePassEncoder *computePass);
 
     ~GPUComputePassEncoderImpl() {
-        canvas_native_webgpu_compute_pass_release(this->GetComputePass());
+        canvas_native_webgpu_compute_pass_encoder_release(this->computePass_);
     }
 
     const CanvasGPUComputePassEncoder *GetComputePass();
@@ -35,6 +35,23 @@ public:
         pass->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
+
+    static void DispatchWorkgroups(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void DispatchWorkgroupsIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void End(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void InsertDebugMarker(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PopDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PushDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetBindGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetPipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 
 
 private:

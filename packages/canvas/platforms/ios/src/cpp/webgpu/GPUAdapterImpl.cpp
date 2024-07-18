@@ -5,9 +5,9 @@
 #include "GPUAdapterImpl.h"
 #include "Caches.h"
 
-GPUAdapterImpl::GPUAdapterImpl(CanvasGPUAdapter *adapter) : adapter_(adapter) {}
+GPUAdapterImpl::GPUAdapterImpl(const CanvasGPUAdapter *adapter) : adapter_(adapter) {}
 
-CanvasGPUAdapter *GPUAdapterImpl::GetGPUAdapter() {
+const CanvasGPUAdapter *GPUAdapterImpl::GetGPUAdapter() {
     return this->adapter_;
 }
 
@@ -145,7 +145,7 @@ void GPUAdapterImpl::RequestAdapterInfo(const v8::FunctionCallbackInfo<v8::Value
 
     auto isolate = args.GetIsolate();
 
-    auto info = canvas_native_webgpu_request_adapter_info(ptr->GetGPUAdapter());
+    auto info = canvas_native_webgpu_adapter_request_adapter_info(ptr->GetGPUAdapter());
 
     if (info != nullptr) {
         auto value = new GPUAdapterInfoImpl(info);
@@ -196,7 +196,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
         if (!requiredFeaturesValue.IsEmpty() && requiredFeaturesValue->IsSet()) {
             v8::Local<v8::Set> requiredFeaturesSet = requiredFeaturesValue.As<v8::Set>();
             v8::Local<v8::Array> requiredFeatures = requiredFeaturesSet->AsArray();
-            int len = requiredFeatures->Length();
+            auto len = requiredFeatures->Length();
 
             for (int i = 0; i < len; i++) {
                 auto item = requiredFeatures->Get(context, i);
@@ -241,7 +241,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
             static_cast<void *>(required_features_data)
     };
 
-    canvas_native_webgpu_request_device(ptr->GetGPUAdapter(),
+    canvas_native_webgpu_adapter_request_device(ptr->GetGPUAdapter(),
                                         label.empty() ? nullptr : label.c_str(),
                                         required_features_data, required_features_data_length,
                                         limits,

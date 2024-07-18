@@ -12,13 +12,13 @@
 
 class GPUPipelineLayoutImpl : ObjectWrapperImpl {
 public:
-    GPUPipelineLayoutImpl(CanvasGPUPipelineLayout *pipeline);
+    GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
 
     ~GPUPipelineLayoutImpl() {
-
+        canvas_native_webgpu_pipeline_layout_release(this->GetPipeline());
     }
 
-    CanvasGPUPipelineLayout *GetPipeline();
+    const CanvasGPUPipelineLayout *GetPipeline();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -39,7 +39,7 @@ public:
 
 
 private:
-    CanvasGPUPipelineLayout *pipeline_;
+    const CanvasGPUPipelineLayout *pipeline_;
 };
 
 

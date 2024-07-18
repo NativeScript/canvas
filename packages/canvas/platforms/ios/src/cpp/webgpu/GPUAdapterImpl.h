@@ -14,12 +14,13 @@
 
 class GPUAdapterImpl : ObjectWrapperImpl {
 public:
-    GPUAdapterImpl(CanvasGPUAdapter *adapter);
+    explicit GPUAdapterImpl(const CanvasGPUAdapter *adapter);
 
     ~GPUAdapterImpl() {
+        canvas_native_webgpu_adapter_release(this->GetGPUAdapter());
     }
 
-    CanvasGPUAdapter *GetGPUAdapter();
+    const CanvasGPUAdapter *GetGPUAdapter();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -39,14 +40,14 @@ public:
     }
 
     static void GetFeatures(v8::Local<v8::Name> name,
-                         const v8::PropertyCallbackInfo<v8::Value> &info);
+                            const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
     static void GetIsFallbackAdapter(v8::Local<v8::Name> name,
-                            const v8::PropertyCallbackInfo<v8::Value> &info);
+                                     const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetLimits(v8::Local<v8::Name> name,
-                            const v8::PropertyCallbackInfo<v8::Value> &info);
+                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
     static void RequestAdapterInfo(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -55,7 +56,7 @@ public:
 
 
 private:
-    CanvasGPUAdapter *adapter_;
+    const CanvasGPUAdapter *adapter_;
 };
 
 

@@ -1,29 +1,58 @@
 use std::os::raw::c_void;
 use std::sync::Arc;
 
+use parking_lot::lock_api::Mutex;
 use raw_window_handle::{
-    AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+    AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
 };
 
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
-use crate::webgpu::gpu_device::{ErrorSink, ErrorSinkRaw, DEFAULT_DEVICE_LOST_HANDLER};
+use crate::webgpu::gpu_device::ErrorSink;
 
 use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
     gpu_texture::CanvasGPUTexture,
 };
 
+#[derive(Copy, Clone)]
+struct TextureData {
+    usage: wgpu_types::TextureUsages,
+    dimension: wgpu_types::TextureDimension,
+    size: wgpu_types::Extent3d,
+    format: wgpu_types::TextureFormat,
+    mip_level_count: u32,
+    sample_count: u32,
+}
+
+struct SurfaceData {
+    device_id: wgpu_core::id::DeviceId,
+    error_sink: ErrorSink,
+    texture_data: TextureData,
+}
+
+#[derive(Copy, Clone, Debug)]
+struct ViewData {
+    width: u32,
+    height: u32,
+}
+
+
 pub struct CanvasGPUCanvasContext {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) surface: wgpu_core::id::SurfaceId,
-    pub(crate) width: u32,
-    pub(crate) height: u32,
-    pub(crate) format: wgpu_types::TextureFormat,
-    pub(crate) usage: u32,
-    pub(crate) device: Option<wgpu_core::id::DeviceId>,
     pub(crate) has_surface_presented: Arc<std::sync::atomic::AtomicBool>,
-    pub(crate) error_sink: ErrorSink,
+    pub(crate) data: parking_lot::Mutex<Option<SurfaceData>>,
+    pub(crate) view_data: parking_lot::Mutex<ViewData>,
+}
+
+impl Drop for CanvasGPUCanvasContext {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            global.surface_drop(self.surface);
+        }
+    }
 }
 
 #[cfg(any(target_os = "android"))]
@@ -53,15 +82,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: surface_id,
-                width,
-                height,
-                format: wgpu_types::TextureFormat::Rgba8Unorm,
-                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
-                device: None,
                 has_surface_presented: Arc::default(),
-                error_sink: Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
-                    DEFAULT_DEVICE_LOST_HANDLER,
-                ))),
+                data: Default::default(),
+                view_data: Mutex::new(ViewData { width, height }),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -93,15 +116,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: surface_id,
-                width,
-                height,
-                format: wgpu_types::TextureFormat::Bgra8Unorm,
-                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
-                device: None,
+                data: Mutex::default(),
                 has_surface_presented: Arc::default(),
-                error_sink: Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
-                    DEFAULT_DEVICE_LOST_HANDLER,
-                ))),
+                view_data: Mutex::new(
+                    ViewData { width, height }
+                ),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -138,15 +157,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: surface_id,
-                width,
-                height,
-                format: wgpu_types::TextureFormat::Bgra8Unorm,
-                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
-                device: None,
                 has_surface_presented: Arc::default(),
-                error_sink: Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
-                    DEFAULT_DEVICE_LOST_HANDLER,
-                ))),
+                data: Mutex::default(),
+                view_data: Mutex::new(ViewData { width, height }),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -183,15 +196,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: surface_id,
-                width,
-                height,
-                format: wgpu_types::TextureFormat::Bgra8Unorm,
-                usage: wgpu_types::TextureUsages::RENDER_ATTACHMENT.bits(),
-                device: None,
                 has_surface_presented: Arc::default(),
-                error_sink: Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
-                    DEFAULT_DEVICE_LOST_HANDLER,
-                ))),
+                data: Mutex::default(),
+                view_data: Mutex::new(ViewData { width, height }),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -318,32 +325,56 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         vec![]
     };
 
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    let format = wgpu_types::TextureFormat::Bgra8Unorm;
+
+
+    #[cfg(any(target_os = "android"))]
+    let format = wgpu_types::TextureFormat::Rgba8Unorm;
+
+    let usage = wgpu_types::TextureUsages::from_bits_truncate(config.usage);
+
+    let view_data = context.view_data.lock();
+
     let config = wgpu_types::SurfaceConfiguration::<Vec<wgpu_types::TextureFormat>> {
         desired_maximum_frame_latency: 2,
-        usage: wgpu_types::TextureUsages::from_bits_truncate(config.usage),
-        format: context.format,
-        width: context.height,
-        height: context.width,
+        usage,
+        format,
+        width: view_data.height,
+        height: view_data.width,
         present_mode: config.presentMode.into(),
         alpha_mode: config.alphaMode.into(),
         view_formats,
     };
 
+
     if let Some(cause) =
         gfx_select!(surface_id => global.surface_configure(surface_id, device_id, &config))
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_context_configure");
-
-        if let Some(context) = Arc::get_mut(&mut context) {
-            context.device = None;
-        }
+        let mut lock = context.data.lock();
+        *lock = None;
     } else {
-        if let Some(context) = Arc::get_mut(&mut context) {
-            context.device = Some(device_id);
-            context
-                .has_surface_presented
-                .store(false, std::sync::atomic::Ordering::SeqCst);
-        }
+        let mut lock = context.data.lock();
+        *lock = Some(SurfaceData {
+            device_id,
+            error_sink: device.error_sink.clone(),
+            texture_data: TextureData {
+                usage,
+                dimension: wgpu_types::TextureDimension::D2,
+                size: wgpu_types::Extent3d {
+                    width: view_data.width,
+                    height: view_data.height,
+                    depth_or_array_layers: 1,
+                },
+                format,
+                mip_level_count: 1,
+                sample_count: 1,
+            },
+        });
+        context
+            .has_surface_presented
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 }
 
@@ -375,14 +406,14 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
     let context = unsafe { &*context };
     let global = context.instance.global();
 
-    if context.device.is_none() {
-        handle_error_fatal(
-            global,
-            wgpu_core::present::SurfaceError::NotConfigured,
-            "canvas_native_webgpu_context_get_current_texture",
-        );
-        return std::ptr::null();
-    }
+    let data_guard = context.data.lock();
+
+    let surface_data = match data_guard.as_ref() {
+        Some(surface_data) => surface_data,
+        None => {
+            return std::ptr::null();
+        }
+    };
 
     let surface_id = context.surface;
 
@@ -391,19 +422,25 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
     match result {
         Ok(texture) => match texture.status {
             wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
+                context
+                    .has_surface_presented
+                    .store(false, std::sync::atomic::Ordering::SeqCst);
+
                 Arc::into_raw(Arc::new(CanvasGPUTexture {
                     instance: context.instance.clone(),
                     texture: texture.texture_id.unwrap(),
+                    surface_id: Some(surface_id),
                     owned: false,
                     depth_or_array_layers: 1,
                     dimension: super::enums::CanvasTextureDimension::D2,
-                    format: context.format.into(),
+                    format: surface_data.texture_data.format.into(),
                     mipLevelCount: 1,
                     sampleCount: 1,
-                    width: context.width,
-                    height: context.height,
-                    usage: context.usage,
-                    error_sink: context.error_sink.clone(),
+                    width: surface_data.texture_data.size.width,
+                    height: surface_data.texture_data.size.height,
+                    usage: surface_data.texture_data.usage.bits(),
+                    error_sink: surface_data.error_sink.clone(),
+                    has_surface_presented: context.has_surface_presented.clone(),
                 }))
             }
             _ => std::ptr::null_mut(),
@@ -420,10 +457,11 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_context_present_surface(
+pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     context: *const CanvasGPUCanvasContext,
+    texture: *const CanvasGPUTexture,
 ) {
-    if context.is_null() {
+    if context.is_null() || texture.is_null() {
         return;
     }
 
@@ -431,19 +469,21 @@ pub extern "C" fn canvas_native_webgpu_context_present_surface(
     let global = context.instance.global();
 
     let surface_id = context.surface;
+    let texture = unsafe { &*texture };
 
-    if let Some(_) = context.device {
-        if let Err(cause) = gfx_select!(device => global.surface_present(surface_id)) {
-            handle_error_fatal(
-                global,
-                cause,
-                "canvas_native_webgpu_context_present_surface",
-            )
-        } else {
-            context
-                .has_surface_presented
-                .store(false, std::sync::atomic::Ordering::SeqCst);
-        }
+    if let Err(cause) = gfx_select!(device => global.surface_present(surface_id)) {
+
+        handle_error_fatal(
+            global,
+            cause,
+            "canvas_native_webgpu_context_present_surface",
+        )
+    } else {
+        context
+            .has_surface_presented
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+
+        unsafe { Arc::decrement_strong_count(texture) };
     }
 }
 
@@ -466,6 +506,34 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     if let Ok(capabilities) =
         gfx_select!(surface_id => global.surface_get_capabilities(surface_id, adapter_id))
     {
+        #[cfg(target_os = "android")]
         log::debug!(target: "JS", "canvas_native_webgpu_context_get_capabilities : {:?}", capabilities);
+
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        println!("canvas_native_webgpu_context_get_capabilities : {:?}", capabilities);
     }
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_reference(
+    context: *const CanvasGPUCanvasContext
+) {
+    if context.is_null() {
+        return;
+    }
+
+    Arc::increment_strong_count(context);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_release(
+    context: *const CanvasGPUCanvasContext
+) {
+    if context.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(context);
 }

@@ -11,9 +11,10 @@
 
 class GPURenderPipelineImpl : ObjectWrapperImpl {
 public:
-    GPURenderPipelineImpl(const CanvasGPURenderPipeline *pipeline);
+    explicit GPURenderPipelineImpl(const CanvasGPURenderPipeline *pipeline);
 
     ~GPURenderPipelineImpl() {
+        canvas_native_webgpu_render_pipeline_release(this->pipeline_);
     }
 
     const CanvasGPURenderPipeline *GetGPUPipeline();

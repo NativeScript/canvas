@@ -164,7 +164,7 @@ add_library(
 
         ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
         ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
-        ${CPP_DIR}/webgpu/GPUComputePassImpl.cpp
+        ${CPP_DIR}/webgpu/GPUComputePassEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
         ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUShaderModuleImpl.cpp
@@ -174,6 +174,12 @@ add_library(
         ${CPP_DIR}/webgpu/GPUTextureViewImpl.cpp
         ${CPP_DIR}/webgpu/GPURenderPassEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPUCommandBufferImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBindGroupImpl.cpp
+        ${CPP_DIR}/webgpu/GPUComputePipelineImpl.cpp
+        ${CPP_DIR}/webgpu/GPUSamplerImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderBundleEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderBundleImpl.cpp
+
 
 
         ${CPP_DIR}/CanvasJSIModule.cpp

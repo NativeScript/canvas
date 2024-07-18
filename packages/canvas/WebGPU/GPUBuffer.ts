@@ -30,12 +30,12 @@ export class GPUBuffer {
 	getMappedRange(offset?: number, size?: number): ArrayBuffer {
 		let rangeSize;
 		if (size === undefined) {
-			rangeSize = Math.max(0, this[this.size] - offset);
+			rangeSize = Math.max(0, this.size - (offset ?? 0));
 		} else {
 			rangeSize = size;
 		}
-		const ab = new ArrayBuffer(rangeSize);
-		return this[native_].getMappedRange(offset, size);
+
+		return this[native_].getMappedRange(offset, rangeSize);
 	}
 
 	mapAsync(mode: number, offset?: number, size?: number): Promise<void> {

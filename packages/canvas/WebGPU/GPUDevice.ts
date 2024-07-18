@@ -1,4 +1,4 @@
-import { Observable } from '@nativescript/core';
+import { fromObject, Observable } from '@nativescript/core';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUTexture } from './GPUTexture';
 import { native_ } from './Constants';
@@ -8,6 +8,17 @@ import { GPUPipelineLayout } from './GPUPipelineLayout';
 import { parseVertexFormat } from './Utils';
 import { GPURenderPipeline } from './GPURenderPipeline';
 import { GPUCommandEncoder } from './GPUCommandEncoder';
+import { GPUInternalError, GPUOutOfMemoryError, GPUValidationError } from './Errors';
+import { GPUBindGroup } from './GPUBindGroup';
+import { GPUBindGroupLayout } from './GPUBindGroupLayout';
+import { GPUTextureView } from './GPUTextureView';
+import { GPUSampler } from './GPUSampler';
+import { GPUExternalTexture } from './GPUExternalTexture';
+import { GPUAddressMode, GPUCompareFunction, GPUErrorFilter, GPUFilterMode, GPUMipmapFilterMode, GPUQueryType, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension } from './Types';
+import { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPUVertexState } from './Interfaces';
+import { GPUComputePipeline } from './GPUComputePipeline';
+import { GPUQuerySet } from './GPUQuerySet';
+import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
 
 // Doing so because :D
 export class EventTarget {
@@ -78,16 +89,63 @@ interface GPUExtent3DDict {
 	height?: number /* default=1 */;
 	depthOrArrayLayers?: number /* default=1 */;
 }
-type GPUExtent3D = [number, number, number] | GPUExtent3DDict;
+type GPUExtent3D = [number, number, number] | [number, number] | GPUExtent3DDict;
 
 export class GPUDevice extends EventTarget {
 	[native_];
 	label = '';
 	_lostPromise: Promise<GPUDeviceLostInfo>;
+	_observerable: Observable;
+	constructor() {
+		super();
+		this._observerable = fromObject({});
+		this._emitter = new WeakRef(this._observerable);
+	}
+
+	private _uncapturederror(type: number, message: string) {
+		const emitter = this._emitter?.deref();
+		if (emitter) {
+			const has = emitter.hasListeners('uncapturederror');
+			if (has) {
+				//	emitter.notify();
+				switch (type) {
+					case 1:
+						// lost
+						// noop
+						break;
+					case 2:
+						// oom
+						emitter.notify({
+							eventName: 'uncapturederror',
+							object: fromObject({}),
+							error: new GPUOutOfMemoryError(),
+						});
+						break;
+					case 3:
+						// validation
+						emitter.notify({
+							eventName: 'uncapturederror',
+							object: fromObject({}),
+							error: new GPUValidationError(message),
+						});
+						break;
+					case 4:
+						// internal
+						emitter.notify({
+							eventName: 'uncapturederror',
+							object: fromObject({}),
+							error: new GPUInternalError(),
+						});
+						break;
+				}
+			}
+		}
+	}
 
 	static fromNative(device) {
 		if (device) {
 			const ret = new GPUDevice();
+			device.setuncapturederror(ret._uncapturederror.bind(this));
 			ret[native_] = device;
 			return ret;
 		}
@@ -98,9 +156,8 @@ export class GPUDevice extends EventTarget {
 			this._lostPromise = new Promise((resolve, reject) => {
 				this[native_].lost
 					.then((info) => {
-						console.log('lost', info);
 						const ret = new GPUDeviceLostInfo();
-						ret._native = info;
+						ret[native_] = info;
 						resolve(ret);
 					})
 					.reject((error) => {
@@ -127,11 +184,282 @@ export class GPUDevice extends EventTarget {
 		this.native.destroy();
 	}
 
+	createBindGroup(descriptor: {
+		label?: string;
+		layout: GPUBindGroupLayout;
+		entries: {
+			binding: number;
+			resource:
+				| GPUTextureView
+				| GPUSampler
+				| GPUExternalTexture
+				| {
+						buffer: GPUBuffer;
+						offset?: number;
+						size?: number;
+				  };
+		}[];
+	}) {
+		descriptor.layout = descriptor?.layout?.[native_];
+		if (Array.isArray(descriptor.entries)) {
+			for (const entry of descriptor.entries) {
+				if (entry.resource instanceof GPUTextureView) {
+					entry.resource = entry.resource[native_];
+				} else if (entry.resource instanceof GPUSampler) {
+					entry.resource = entry.resource[native_];
+				} else if (entry.resource instanceof GPUExternalTexture) {
+					entry.resource = entry.resource[native_];
+				} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
+					entry.resource.buffer = entry.resource.buffer[native_];
+				}
+			}
+		}
+		console.log(descriptor);
+		
+		const group = this.native.createBindGroup(descriptor);
+
+		console.log(group);
+		if (group) {
+			return GPUBindGroup.fromNative(group);
+		}
+		return undefined;
+	}
+
+	createBindGroupLayout(descriptor: {
+		label?: string;
+		entries: {
+			binding: number;
+			visibility: number;
+			buffer?: {
+				hasDynamicOffset?: boolean;
+				minBindingSize?: number;
+				type?: 'uniform' | 'storage' | 'read-only-storage';
+			};
+			externalTexture?: GPUExternalTextureBindingLayout;
+			sampler?: {
+				type?: 'filtering' | 'non-filtering' | 'comparison';
+			};
+			storageTexture?: {
+				access?: 'write-only' | 'read-only' | 'read-write';
+				format: GPUTextureFormat;
+				viewDimension?: GPUTextureViewDimension;
+			};
+			texture?: {
+				multisampled?: boolean;
+				sampleType?: GPUTextureSampleType;
+				viewDimension?: GPUTextureViewDimension;
+			};
+		}[];
+	}) {
+		const groupLayout = this.native.createBindGroupLayout(descriptor);
+		if (groupLayout) {
+			return GPUBindGroupLayout.fromNative(groupLayout);
+		}
+		return undefined;
+	}
+
 	createBuffer(descriptor: { label?: string; mappedAtCreation?: boolean; size: number; usage: number }) {
 		const buffer = this.native.createBuffer(descriptor);
 		if (buffer) {
 			return GPUBuffer.fromNative(buffer, descriptor.mappedAtCreation);
 		}
+		return undefined;
+	}
+
+	createCommandEncoder(descriptor?: { label?: string }) {
+		const encoder = this.native.createCommandEncoder(descriptor);
+		return GPUCommandEncoder.fromNative(encoder);
+	}
+
+	createComputePipeline(descriptor: { compute: GPUProgrammableStage; label?: string; layout: GPUPipelineLayout | 'auto' }) {
+		if (descriptor.layout instanceof GPUPipelineLayout) {
+			descriptor.layout = descriptor.layout[native_];
+		}
+
+		descriptor.compute.module = descriptor.compute.module[native_];
+
+		return GPUComputePipeline.fromNative(this.native.createComputePipeline(descriptor));
+	}
+
+	createComputePipelineAsync(descriptor: { compute: GPUProgrammableStage; label?: string; layout: GPUPipelineLayout | 'auto' }) {
+		return new Promise((resolve, reject) => {
+			if (descriptor.layout instanceof GPUPipelineLayout) {
+				descriptor.layout = descriptor.layout[native_];
+			}
+
+			descriptor.compute.module = descriptor.compute.module[native_];
+
+			this.native.createComputePipelineAsync(descriptor, (error, pipeline) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(GPUComputePipeline.fromNative(pipeline));
+				}
+			});
+		});
+	}
+
+	createPipelineLayout(descriptor: { bindGroupLayouts: GPUBindGroupLayout[]; label?: string }) {
+		const desc = {
+			label: descriptor.label,
+			bindGroupLayouts: descriptor.bindGroupLayouts.map((layout) => {
+				return layout[native_];
+			}),
+		};
+
+		return GPUPipelineLayout.fromNative(this.native.createPipelineLayout(desc));
+	}
+
+	createQuerySet(descriptor: { count: number; label?: string; type: GPUQueryType }) {
+		return GPUQuerySet.fromNative(this.native.createPipelineLayout(descriptor));
+	}
+
+	createRenderBundleEncoder(descriptor: { colorFormats: (null | GPUTextureFormat)[]; depthReadOnly?: boolean; depthStencilFormat?: GPUTextureFormat; label?: string; sampleCount?: number; stencilReadOnly?: boolean }) {
+		return GPURenderBundleEncoder.fromNative(this.native.createRenderBundleEncoder(descriptor));
+	}
+
+	createRenderPipeline(descriptor: { depthStencil?: GPUDepthStencilState; fragment?: GPUFragmentState; label?: string; layout: GPUPipelineLayout | 'auto'; multisample?: GPUMultisampleState; primitive?: GPUPrimitiveState; vertex: GPUVertexState }) {
+		const vertex = descriptor.vertex;
+		vertex.module = vertex.module[native_];
+
+		const buffers = vertex?.buffers;
+		if (Array.isArray(buffers)) {
+			vertex.buffers = buffers.map((buffer) => {
+				buffer.attributes = buffer.attributes.map((attr) => {
+					attr['format'] = parseVertexFormat(attr['format']) as never;
+					return attr;
+				});
+				switch (buffer.stepMode) {
+					case 'vertex':
+						buffer.stepMode = 0 as never;
+						break;
+					case 'instance':
+						buffer.stepMode = 1 as never;
+						break;
+				}
+
+				return buffer;
+			});
+		}
+
+		const fragment = descriptor.fragment;
+		if (fragment) {
+			fragment.module = fragment.module[native_];
+		}
+
+		const layout = descriptor.layout;
+
+		if (layout instanceof GPUPipelineLayout) {
+			descriptor.layout = descriptor.layout[native_];
+		}
+
+		const primitive = descriptor.primitive;
+
+		if (primitive) {
+			switch (primitive.topology) {
+				case 'point-list':
+					primitive.topology = 0 as never;
+					break;
+				case 'line-list':
+					primitive.topology = 1 as never;
+					break;
+				case 'line-strip':
+					primitive.topology = 2 as never;
+					break;
+				case 'triangle-list':
+					primitive.topology = 3 as never;
+					break;
+				case 'triangle-strip':
+					primitive.topology = 4 as never;
+					break;
+				default:
+					break;
+			}
+		}
+
+		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(descriptor));
+	}
+
+	createRenderPipelineAsync(descriptor: { depthStencil?: GPUDepthStencilState; fragment?: GPUFragmentState; label?: string; layout: GPUPipelineLayout | 'auto'; multisample?: GPUMultisampleState; primitive?: GPUPrimitiveState; vertex: GPUVertexState }) {
+		return new Promise((resolve, reject) => {
+			const vertex = descriptor.vertex;
+			vertex.module = vertex.module[native_];
+
+			const buffers = vertex?.buffers;
+			if (Array.isArray(buffers)) {
+				vertex.buffers = buffers.map((buffer) => {
+					buffer.attributes = buffer.attributes.map((attr) => {
+						attr['format'] = parseVertexFormat(attr['format']) as never;
+						return attr;
+					});
+					switch (buffer.stepMode) {
+						case 'vertex':
+							buffer.stepMode = 0 as never;
+							break;
+						case 'instance':
+							buffer.stepMode = 1 as never;
+							break;
+					}
+
+					return buffer;
+				});
+			}
+
+			const fragment = descriptor.fragment;
+			if (fragment) {
+				fragment.module = fragment.module[native_];
+			}
+
+			const layout = descriptor.layout;
+
+			if (layout instanceof GPUPipelineLayout) {
+				descriptor.layout = descriptor.layout[native_];
+			}
+
+			const primitive = descriptor.primitive;
+
+			if (primitive) {
+				switch (primitive.topology) {
+					case 'point-list':
+						primitive.topology = 0 as never;
+						break;
+					case 'line-list':
+						primitive.topology = 1 as never;
+						break;
+					case 'line-strip':
+						primitive.topology = 2 as never;
+						break;
+					case 'triangle-list':
+						primitive.topology = 3 as never;
+						break;
+					case 'triangle-strip':
+						primitive.topology = 4 as never;
+						break;
+					default:
+						break;
+				}
+			}
+
+			this[native_].createRenderPipeline(descriptor, (error, pipeline) => {
+				if (error) {
+					reject(error);
+				} else {
+					resolve(GPURenderPipeline.fromNative(pipeline));
+				}
+			});
+		});
+	}
+
+	createSampler(descriptor?: { addressModeU?: GPUAddressMode; addressModeV?: GPUAddressMode; addressModeW?: GPUAddressMode; compare?: GPUCompareFunction; label?: string; lodMaxClamp?: number; lodMinClamp?: number; magFilter?: GPUFilterMode; maxAnisotropy?: number; minFilter?: GPUFilterMode; mipmapFilter?: GPUMipmapFilterMode }) {
+		return GPUSampler.fromNative(this.native.createSampler(descriptor));
+	}
+
+	createShaderModule(desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
+		const module = this.native.createShaderModule(desc);
+		if (module) {
+			return GPUShaderModule.fromNative(module);
+		}
+
 		return undefined;
 	}
 
@@ -158,84 +486,34 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createShaderModule(desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
-		const module = this.native.createShaderModule(desc);
-		if (module) {
-			return GPUShaderModule.fromNative(module);
-		}
-
-		return undefined;
-	}
-
-	createRenderPipeline(desc) {
-		const vertex = desc['vertex'];
-		vertex.module = vertex.module[native_];
-
-		const buffers = vertex['buffers'];
-		if (Array.isArray(buffers)) {
-			vertex['buffers'] = buffers.map((buffer) => {
-				buffer.attributes = buffer.attributes.map((attr) => {
-					attr['format'] = parseVertexFormat(attr['format']);
-					return attr;
-				});
-				switch (buffer.stepMode) {
-					case 'vertex':
-						buffer.stepMode = 0;
+	popErrorScope() {
+		return new Promise((resolve, reject) => {
+			this.native.popErrorScope((type, message) => {
+				switch (type) {
+					case 0:
+						resolve(null);
 						break;
-					case 'instance':
-						buffer.stepMode = 1;
+					case 1:
+						// should not reach
+						// throw internal error
+						resolve(new GPUInternalError());
+						break;
+					case 2:
+						resolve(new GPUOutOfMemoryError());
+						break;
+					case 3:
+						resolve(new GPUValidationError(message));
+						break;
+					case 4:
+						resolve(new GPUInternalError());
 						break;
 				}
-
-				return buffer;
 			});
-		}
-
-		const depthStencil = desc['depthStencil'];
-		if (depthStencil) {
-		}
-		const fragment = desc['fragment'];
-		if (fragment) {
-			fragment.module = fragment.module[native_];
-		}
-
-		const layout = desc['layout'];
-
-		if (layout instanceof GPUPipelineLayout) {
-			desc.layout = desc.layout[native_];
-		}
-
-		const multisample = desc['multisample'];
-		const primitive = desc['primitive'];
-
-		if (primitive) {
-			switch (primitive.topology) {
-				case 'point-list':
-					primitive.topology = 0;
-					break;
-				case 'line-list':
-					primitive.topology = 1;
-					break;
-				case 'line-strip':
-					primitive.topology = 2;
-					break;
-				case 'triangle-list':
-					primitive.topology = 3;
-					break;
-				case 'triangle-strip':
-					primitive.topology = 4;
-					break;
-				default:
-					break;
-			}
-		}
-
-		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(desc));
+		});
 	}
 
-	createCommandEncoder(desc) {
-		const encoder = this.native.createCommandEncoder(desc);
-		return GPUCommandEncoder.fromNative(encoder);
+	pushErrorScope(filter: GPUErrorFilter) {
+		this.native.pushErrorScope(filter);
 	}
 
 	private _queue;

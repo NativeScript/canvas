@@ -5,9 +5,9 @@
 #include "GPUQuerySetImpl.h"
 #include "Caches.h"
 
-GPUQuerySetImpl::GPUQuerySetImpl(CanvasGPUQuerySet *querySet) : querySet_(querySet) {}
+GPUQuerySetImpl::GPUQuerySetImpl(const CanvasGPUQuerySet *querySet) : querySet_(querySet) {}
 
-CanvasGPUQuerySet *GPUQuerySetImpl::GetQuerySet() {
+const CanvasGPUQuerySet *GPUQuerySetImpl::GetQuerySet() {
     return this->querySet_;
 }
 
@@ -21,7 +21,7 @@ void GPUQuerySetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isol
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUDevice"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQuerySet"), func);
 }
 
 GPUQuerySetImpl *GPUQuerySetImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -46,8 +46,92 @@ v8::Local<v8::FunctionTemplate> GPUQuerySetImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "count"),
+            GetCount
+    );
+
+
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "type"),
+            GetType
+    );
+
+
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "destroy"),
+            v8::FunctionTemplate::New(isolate, &Destroy));
+
 
     cache->GPUQuerySetTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+void
+GPUQuerySetImpl::GetCount(v8::Local<v8::Name> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    auto isolate = info.GetIsolate();
+    if (ptr != nullptr) {
+        info.GetReturnValue().Set(canvas_native_webgpu_query_set_get_count(ptr->GetQuerySet()));
+        return;
+    }
+
+    info.GetReturnValue().Set(0);
+}
+
+
+void
+GPUQuerySetImpl::GetType(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    auto isolate = info.GetIsolate();
+    if (ptr != nullptr) {
+        auto type = canvas_native_webgpu_query_set_get_type(ptr->GetQuerySet());
+        switch (type) {
+            case CanvasQueryTypeOcclusion:
+                info.GetReturnValue().Set(ConvertToV8String(isolate, "occlusion"));
+                break;
+            case CanvasQueryTypeTimestamp:
+                info.GetReturnValue().Set(ConvertToV8String(isolate, "timestamp"));
+                break;
+        }
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
+}
+
+void
+GPUQuerySetImpl::GetLabel(v8::Local<v8::Name> name,
+                          const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    auto isolate = info.GetIsolate();
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_query_set_get_label(ptr->GetQuerySet());
+        if (label != nullptr) {
+            info.GetReturnValue().Set(ConvertToV8String(isolate, label));
+            canvas_native_string_destroy(label);
+            return;
+        }
+    }
+
+    info.GetReturnValue().SetEmptyString();
+}
+
+
+void GPUQuerySetImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+    // todo
+
 }

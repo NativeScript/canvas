@@ -102,7 +102,6 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "createView"),
             v8::FunctionTemplate::New(isolate, &CreateView));
 
-
     cache->GPUTextureTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;

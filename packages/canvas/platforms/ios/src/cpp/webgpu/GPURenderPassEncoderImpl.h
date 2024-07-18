@@ -14,7 +14,7 @@ public:
     GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
 
     ~GPURenderPassEncoderImpl() {
-        canvas_native_webgpu_render_pass_release(this->GetPass());
+        canvas_native_webgpu_render_pass_encoder_release(this->GetPass());
     }
 
     const CanvasGPURenderPassEncoder *GetPass();
@@ -37,14 +37,43 @@ public:
         return scope.Escape(object);
     }
 
-
-    static void SetPipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-    static void SetVertexBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void BeginOcclusionQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Draw(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void DrawIndexed(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void DrawIndexedIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void DrawIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void End(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void EndOcclusionQuery(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void ExecuteBundles(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void InsertDebugMarker(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PopDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void PushDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetBindGroup(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetBlendConstant(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetIndexBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetPipeline(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetScissorRect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetStencilReference(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetVertexBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void SetViewport(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
 private:

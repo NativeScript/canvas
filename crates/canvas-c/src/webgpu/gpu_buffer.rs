@@ -43,6 +43,16 @@ pub struct CanvasGPUBuffer {
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
+impl Drop for CanvasGPUBuffer {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(self.id => global.buffer_drop(self.buffer, false));
+        }
+    }
+}
+
+
 impl CanvasGPUBuffer {
     pub fn size(&self) -> u64 {
         self.size
@@ -63,6 +73,28 @@ impl CanvasGPUBuffer {
         let global = self.instance.global();
         gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_buffer_reference(
+    buffer: *const CanvasGPUBuffer
+) {
+    if buffer.is_null() {
+        return;
+    }
+
+    Arc::increment_strong_count(buffer);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_buffer_release(
+    buffer: *const CanvasGPUBuffer
+) {
+    if buffer.is_null() {
+        return;
+    }
+
+    Arc::decrement_strong_count(buffer);
 }
 
 #[no_mangle]
@@ -88,11 +120,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     buffer: *const CanvasGPUBuffer,
     offset: i64,
     size: i64,
-    dst: *mut u8,
-    dst_size: usize,
-) {
+) -> *mut c_void {
     if buffer.is_null() {
-        return;
+        return std::ptr::null_mut();
     }
     let buffer = unsafe { &*buffer };
     let offset: u64 = offset.try_into().ok().unwrap_or_default();
@@ -103,14 +133,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
 
     let range = gfx_select!( buffer_id => global.buffer_get_mapped_range(buffer_id, offset, size));
 
+
     match range {
-        Ok((buf, len)) => {
-            let src = std::slice::from_raw_parts(buf, len as usize);
-            let dst = std::slice::from_raw_parts_mut(dst, dst_size);
-            dst.copy_from_slice(src);
+        Ok((buf, _)) => {
+            buf as *mut c_void
         }
         Err(err) => {
-            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range")
+            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range");
+            std::ptr::null_mut()
         }
     }
 }

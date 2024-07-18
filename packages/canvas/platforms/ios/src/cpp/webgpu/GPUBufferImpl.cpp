@@ -214,8 +214,16 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
         size = (int64_t) sizeVal.As<v8::Number>()->Value();
     }
 
-    auto buf = args[2].As<v8::ArrayBuffer>();
-    auto store = buf->GetBackingStore();
-    canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size,
-                                                 (uint8_t *) store->Data(), store->ByteLength());
+    auto buf = canvas_native_webgpu_buffer_get_mapped_range(ptr->GetGPUBuffer(), offset, size);
+    auto isolate = args.GetIsolate();
+    if (buf == nullptr) {
+        args.GetReturnValue().Set(v8::ArrayBuffer::New(isolate, 0));
+    } else {
+        auto store = v8::ArrayBuffer::NewBackingStore(buf, size, [](void *data, size_t length,
+                                                                    void *deleter_data) {
+                                                                     
+                                                                 }, nullptr);
+        auto ab = v8::ArrayBuffer::New(isolate, std::move(store));
+        args.GetReturnValue().Set(ab);
+    }
 }

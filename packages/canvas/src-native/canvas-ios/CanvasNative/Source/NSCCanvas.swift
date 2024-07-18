@@ -396,8 +396,8 @@ public class NSCCanvas: UIView {
             if((mtlView.layer as? CAMetalLayer) != nil){
                 let layer = mtlView.layer as! CAMetalLayer
                 // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
-                layer.presentsWithTransaction = false
-                layer.framebufferOnly = true
+              //  layer.presentsWithTransaction = false
+               // layer.framebufferOnly = true
             }
         }
      
@@ -454,8 +454,8 @@ public class NSCCanvas: UIView {
             if((mtlView.layer as? CAMetalLayer) != nil){
                 let layer = mtlView.layer as! CAMetalLayer
                 // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
-                layer.presentsWithTransaction = false
-                layer.framebufferOnly = true
+              //  layer.presentsWithTransaction = false
+               // layer.framebufferOnly = true
             }
         }
         

@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::sync::Arc;
-use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
+
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUBindGroup {

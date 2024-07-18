@@ -11,7 +11,7 @@
 
 class GPUBindGroupLayoutImpl : ObjectWrapperImpl {
 public:
-    GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *groupLayout);
+    explicit GPUBindGroupLayoutImpl(const CanvasGPUBindGroupLayout *groupLayout);
 
     ~GPUBindGroupLayoutImpl() {
         canvas_native_webgpu_bind_group_layout_release(this->GetBindGroupLayout());

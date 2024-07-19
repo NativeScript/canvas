@@ -22,7 +22,7 @@ void GPUTextureImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUTexture"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUTexture"), func).FromJust();;
 }
 
 GPUTextureImpl *GPUTextureImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -116,13 +116,13 @@ GPUTextureImpl::GetDimension(v8::Local<v8::Name> name,
         auto isolate = info.GetIsolate();
         switch (width) {
             case CanvasTextureDimension::CanvasTextureDimensionD1:
-                info.GetReturnValue().Set(ConvertToV8String(isolate, "d1"));
+                info.GetReturnValue().Set(ConvertToV8String(isolate, "1d"));
                 break;
             case CanvasTextureDimension::CanvasTextureDimensionD2:
-                info.GetReturnValue().Set(ConvertToV8String(isolate, "d2"));
+                info.GetReturnValue().Set(ConvertToV8String(isolate, "1d"));
                 break;
             case CanvasTextureDimension::CanvasTextureDimensionD3:
-                info.GetReturnValue().Set(ConvertToV8String(isolate, "d3"));
+                info.GetReturnValue().Set(ConvertToV8String(isolate, "3d"));
                 break;
         }
 
@@ -240,12 +240,12 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     auto desc = args[0];
     CanvasCreateTextureViewDescriptor *descriptor = nullptr;
-    if(desc->IsObject()){
+    if (desc->IsObject()) {
 
     }
     auto view = canvas_native_webgpu_texture_create_texture_view(ptr->GetTexture(), descriptor);
 
-    if(view != nullptr){
+    if (view != nullptr) {
         auto ret = GPUTextureViewImpl::NewInstance(isolate, new GPUTextureViewImpl(view));
         args.GetReturnValue().Set(ret);
         return;

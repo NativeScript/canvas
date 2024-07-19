@@ -1,5 +1,6 @@
 import { GPUColorDict } from './Interfaces';
-
+// export type GPUImageCopyExternalImageSource = ImageBitmap | ImageData | HTMLImageElement | HTMLVideoElement | VideoFrame | HTMLCanvasElement | OffscreenCanvas;
+export type GPUOrigin2D = [number, number] | { x?: number; y?: number };
 export type GPUExtent3D = [number, number, number] | { depthOrArrayLayers?: number; height?: number; width: number };
 export type GPUOrigin3D = [number, number, number] | { x: number; y: number; z: number };
 export type GPUTextureAspect = 'all' | 'stencil-only' | 'depth-only';

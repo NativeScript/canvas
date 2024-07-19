@@ -3,6 +3,7 @@ import { contextPtr_, native_ } from './Constants';
 import { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
 import { GPUAdapter } from './GPUAdapter';
+import { GPUTextureFormat } from './Types';
 export class GPUCanvasContext {
 	_type;
 	static {
@@ -45,6 +46,7 @@ export class GPUCanvasContext {
 			usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
 			colorSpace: 'srgb',
 			alphaMode: 'opaque',
+			presentMode: 'fifo',
 			...options,
 		};
 
@@ -69,7 +71,12 @@ export class GPUCanvasContext {
 		this[native_].presentSurface(texture?.[native_]);
 	}
 
-	capabilities(adapter: GPUAdapter) {
-		return this[native_].capabilities(adapter[native_]);
+	getCapabilities(adapter: GPUAdapter): {
+		format: GPUTextureFormat[];
+		presentModes: ('autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox')[];
+		alphaModes: 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit';
+		usages: number;
+	} {
+		return this[native_].getCapabilities(adapter[native_]);
 	}
 }

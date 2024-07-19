@@ -136,7 +136,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
 
     match range {
         Ok((buf, _)) => {
-            buf as *mut c_void
+            buf.as_ptr() as *mut c_void
         }
         Err(err) => {
             handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range");

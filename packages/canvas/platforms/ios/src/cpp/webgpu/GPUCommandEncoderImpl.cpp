@@ -28,7 +28,7 @@ void GPUCommandEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandEncoder"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandEncoder"), func).FromJust();;
 }
 
 GPUCommandEncoderImpl *GPUCommandEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -321,9 +321,9 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                         context).ToChecked();
             } else if (loadVal->IsString()) {
                 auto val = ConvertFromV8String(isolate, loadVal);
-                if (strcmp(val.c_str(), "clear") == 0) {
+                if (val == "clear") {
                     load = CanvasLoadOp::CanvasLoadOpClear;
-                } else if (strcmp(val.c_str(), "load") == 0) {
+                } else if (val == "load") {
                     load = CanvasLoadOp::CanvasLoadOpLoad;
                 }
             }
@@ -337,9 +337,9 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                         context).ToChecked();
             } else if (storeVal->IsString()) {
                 auto val = ConvertFromV8String(isolate, storeVal);
-                if (strcmp(val.c_str(), "discard") == 0) {
+                if (val == "discard") {
                     store = CanvasStoreOp::CanvasStoreOpDiscard;
-                } else if (strcmp(val.c_str(), "store") == 0) {
+                } else if (val == "store") {
                     store = CanvasStoreOp::CanvasStoreOpStore;
                 }
             }
@@ -422,20 +422,20 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             v8::Local<v8::Value> endOfPassWriteIndexVal;
 
 
-            timestampWrites->Get(context,
+            auto beginningOfPassWriteIndexValSuccess = timestampWrites->Get(context,
                                  ConvertToV8String(isolate, "beginningOfPassWriteIndex")).ToLocal(
                     &beginningOfPassWriteIndexVal);
 
-            timestampWrites->Get(context,
+            auto endOfPassWriteIndexValSuccess = timestampWrites->Get(context,
                                  ConvertToV8String(isolate, "endOfPassWriteIndex")).ToLocal(
                     &endOfPassWriteIndexVal);
 
 
-            if (beginningOfPassWriteIndexVal->IsInt32()) {
+            if (beginningOfPassWriteIndexValSuccess && beginningOfPassWriteIndexVal->IsInt32()) {
                 beginningOfPassWriteIndex = beginningOfPassWriteIndexVal.As<v8::Int32>()->Value();
             }
 
-            if (endOfPassWriteIndexVal->IsInt32()) {
+            if (endOfPassWriteIndexValSuccess && endOfPassWriteIndexVal->IsInt32()) {
                 endOfPassWriteIndex = endOfPassWriteIndexVal.As<v8::Int32>()->Value();
             }
 

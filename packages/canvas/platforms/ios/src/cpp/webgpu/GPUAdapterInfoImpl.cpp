@@ -21,7 +21,7 @@ void GPUAdapterInfoImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *i
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUAdapterInfo"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUAdapterInfo"), func).FromJust();;
 }
 
 GPUAdapterInfoImpl *GPUAdapterInfoImpl::GetPointer(const v8::Local<v8::Object> &object) {

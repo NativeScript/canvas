@@ -98,7 +98,7 @@ pub extern "C" fn canvas_native_webgpu_instance_release(instance: *const CanvasW
 pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
     instance: *const CanvasWebGPUInstance,
     options: *const CanvasGPURequestAdapterOptions,
-    callback: extern "C" fn(*mut CanvasGPUAdapter, *mut c_void),
+    callback: extern "C" fn(*const CanvasGPUAdapter, *mut c_void),
     callback_data: *mut c_void,
 ) {
     use super::prelude::build_features;
@@ -128,17 +128,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         #[cfg(target_os = "windows")]
         let backends = wgpu_types::Backends::DX12;
-        
 
         let adapter = global.request_adapter(
             &opts,
-            wgpu_core::instance::AdapterInputs::Mask(backends, |_| None),
+            wgpu_core::instance::AdapterInputs::Mask(backends, |b| None),
         );
 
         let adapter = adapter.map(|adapter_id| {
             let features = gfx_select!(adapter_id => global.adapter_features(adapter_id))
                 .map(build_features)
                 .unwrap_or_default();
+
 
             let limits =
                 gfx_select!(adapter_id => global.adapter_limits(adapter_id)).unwrap_or_default();
@@ -151,12 +151,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
                 limits,
             };
 
-            Box::into_raw(Box::new(ret))
+            Arc::into_raw(Arc::new(ret))
         });
         let callback = unsafe {
-            std::mem::transmute::<*const i64, fn(*mut CanvasGPUAdapter, *mut c_void)>(callback as _)
+            std::mem::transmute::<*const i64, fn(*const CanvasGPUAdapter, *mut c_void)>(callback as _)
         };
         let callback_data = callback_data as *mut c_void;
-        callback(adapter.unwrap_or(std::ptr::null_mut()), callback_data);
+        callback(adapter.unwrap_or(std::ptr::null()), callback_data);
     });
 }

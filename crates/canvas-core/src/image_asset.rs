@@ -410,6 +410,21 @@ impl ImageAsset {
             .map(|d| unsafe { std::slice::from_raw_parts(d.data.as_ptr(), d.data.len()) })
     }
 
+    pub fn get_bytes_mut(&self) -> Option<&mut [u8]> {
+        self.write()
+            .image
+            .as_mut()
+            .map(|d| unsafe { std::slice::from_raw_parts_mut(d.data.as_mut_ptr(), d.data.len()) })
+    }
+
+    pub fn len(&self) -> usize {
+        self.read()
+            .image
+            .as_ref()
+            .map(|d| d.data.len())
+            .unwrap_or_default()
+    }
+
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
         self.read().image.as_ref().map(|d| d.data.clone())
     }

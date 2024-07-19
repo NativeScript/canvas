@@ -20,6 +20,7 @@
 #include "GPUComputePipelineImpl.h"
 #include "GPUQuerySetImpl.h"
 #include "GPURenderBundleEncoderImpl.h"
+#include "GPUUtils.h"
 
 GPUDeviceImpl::GPUDeviceImpl(const CanvasGPUDevice *device) : device_(device) {}
 
@@ -37,7 +38,7 @@ void GPUDeviceImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUDevice"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUDevice"), func).FromJust();;
 }
 
 GPUDeviceImpl *GPUDeviceImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -163,7 +164,6 @@ GPUDeviceImpl::SetUncapturedError(const v8::FunctionCallbackInfo<v8::Value> &arg
     auto cb = args[0];
     auto callback = new JSICallback(isolate, cb.As<v8::Function>());
 
-
     canvas_native_webgpu_device_set_uncaptured_error_callback(ptr->GetGPUDevice(),
                                                               [](CanvasGPUErrorType type, char *msg,
                                                                  void *data) {
@@ -227,6 +227,8 @@ GPUDeviceImpl::SetUncapturedError(const v8::FunctionCallbackInfo<v8::Value> &arg
 //                                                                  delete static_cast<JSICallback *>(data);
 
                                                               }, callback);
+
+
 }
 
 
@@ -248,6 +250,7 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
             if (item != nullptr) {
                 auto keyValue = ConvertToV8OneByteString(isolate, (char *) item);
                 map->Set(context, keyValue, keyValue);
+                canvas_native_string_destroy(item);
             }
 
         }
@@ -1385,7 +1388,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     CanvasDepthStencilState *stencil = nullptr;
 
-    if (stencilValue->IsObject()) {
+    if (!stencilValue.IsEmpty() && stencilValue->IsObject()) {
         auto stencilObj = stencilValue.As<v8::Object>();
         stencil = new CanvasDepthStencilState{};
         stencil->depth_bias = 0;
@@ -1393,6 +1396,19 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         stencil->depth_bias_slope_scale = 0;
         stencil->stencil_read_mask = 0xFFFFFFFF;
         stencil->stencil_write_mask = 0xFFFFFFFF;
+        stencil->stencil_front = CanvasStencilFaceState{
+                CanvasCompareFunctionAlways,
+                CanvasStencilOperationKeep,
+                CanvasStencilOperationKeep,
+                CanvasStencilOperationKeep
+        };
+
+        stencil->stencil_back = CanvasStencilFaceState{
+                CanvasCompareFunctionAlways,
+                CanvasStencilOperationKeep,
+                CanvasStencilOperationKeep,
+                CanvasStencilOperationKeep
+        };
         // todo throw if failed
         v8::Local<v8::Value> formatValue;
 
@@ -1409,13 +1425,160 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             // todo throw
         }
 
+        v8::Local<v8::Value> depthBiasVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "depthBias")).ToLocal(&depthBiasVal);
+
+        if (!depthBiasVal.IsEmpty() && depthBiasVal->IsInt32()) {
+            stencil->depth_bias = depthBiasVal->Int32Value(context).FromJust();
+        }
+
+        v8::Local<v8::Value> depthBiasClampVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "depthBiasClamp")).ToLocal(
+                &depthBiasClampVal);
+
+        if (!depthBiasClampVal.IsEmpty() && depthBiasClampVal->IsInt32()) {
+            stencil->depth_bias_clamp = depthBiasClampVal->Int32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> depthBiasSlopeScaleVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "depthBiasSlopeScale")).ToLocal(
+                &depthBiasSlopeScaleVal);
+
+        if (!depthBiasSlopeScaleVal.IsEmpty() && depthBiasSlopeScaleVal->IsInt32()) {
+            stencil->depth_bias_slope_scale = depthBiasSlopeScaleVal->Int32Value(
+                    context).FromJust();
+        }
+
+        v8::Local<v8::Value> depthCompareVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "depthCompare")).ToLocal(
+                &depthCompareVal);
+
+        auto depthCompareStr = ConvertFromV8String(isolate, depthCompareVal);
+
+        if (depthCompareStr == "never") {
+            stencil->depth_compare = CanvasCompareFunctionNever;
+        } else if (depthCompareStr == "less") {
+            stencil->depth_compare = CanvasCompareFunctionLess;
+        } else if (depthCompareStr == "equal") {
+            stencil->depth_compare = CanvasCompareFunctionEqual;
+        } else if (depthCompareStr == "less-equal") {
+            stencil->depth_compare = CanvasCompareFunctionLessEqual;
+        } else if (depthCompareStr == "greater") {
+            stencil->depth_compare = CanvasCompareFunctionGreater;
+        } else if (depthCompareStr == "not-equal") {
+            stencil->depth_compare = CanvasCompareFunctionNotEqual;
+        } else if (depthCompareStr == "greater-equal") {
+            stencil->depth_compare = CanvasCompareFunctionGreaterEqual;
+        } else if (depthCompareStr == "always") {
+            stencil->depth_compare = CanvasCompareFunctionAlways;
+        }
+
+        stencil->depth_write_enabled = stencilObj->Get(context, ConvertToV8String(isolate,
+                                                                                  "depthWriteEnabled")).ToLocalChecked()->BooleanValue(
+                isolate);
+
+
+        v8::Local<v8::Value> stencilBackVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "stencilBack")).ToLocal(
+                &stencilBackVal);
+
+        if (!stencilBackVal.IsEmpty() && stencilBackVal->IsObject()) {
+            auto stencilBackObj = stencilBackVal.As<v8::Object>();
+
+            v8::Local<v8::Value> compareVal;
+            stencilBackObj->Get(context, ConvertToV8String(isolate, "compare")).ToLocal(
+                    &compareVal);
+
+            stencil->stencil_back.compare = ParseCompareFunction(isolate, compareVal,
+                                                                 stencil->stencil_back.compare);
+
+            v8::Local<v8::Value> depthFailOpVal;
+            stencilBackObj->Get(context, ConvertToV8String(isolate, "depthFailOp")).ToLocal(
+                    &depthFailOpVal);
+
+            stencil->stencil_back.depth_fail_op = ParseStencilOperation(isolate, depthFailOpVal,
+                                                                        stencil->stencil_back.depth_fail_op);
+
+
+            v8::Local<v8::Value> failOpVal;
+            stencilBackObj->Get(context, ConvertToV8String(isolate, "failOp")).ToLocal(
+                    &failOpVal);
+
+            stencil->stencil_back.fail_op = ParseStencilOperation(isolate, failOpVal,
+                                                                  stencil->stencil_back.fail_op);
+
+            v8::Local<v8::Value> passOpVal;
+            stencilBackObj->Get(context, ConvertToV8String(isolate, "passOp")).ToLocal(
+                    &passOpVal);
+
+            stencil->stencil_back.pass_op = ParseStencilOperation(isolate, passOpVal,
+                                                                  stencil->stencil_back.pass_op);
+
+        }
+
+
+        v8::Local<v8::Value> stencilFrontVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "stencilFront")).ToLocal(
+                &stencilFrontVal);
+
+        if (!stencilFrontVal.IsEmpty() && stencilFrontVal->IsObject()) {
+            auto stencilFrontObj = stencilFrontVal.As<v8::Object>();
+
+            v8::Local<v8::Value> compareVal;
+            stencilFrontObj->Get(context, ConvertToV8String(isolate, "compare")).ToLocal(
+                    &compareVal);
+
+            stencil->stencil_front.compare = ParseCompareFunction(isolate, compareVal,
+                                                                  stencil->stencil_front.compare);
+
+            v8::Local<v8::Value> depthFailOpVal;
+            stencilFrontObj->Get(context, ConvertToV8String(isolate, "depthFailOp")).ToLocal(
+                    &depthFailOpVal);
+
+            stencil->stencil_front.depth_fail_op = ParseStencilOperation(isolate, depthFailOpVal,
+                                                                         stencil->stencil_front.depth_fail_op);
+
+
+            v8::Local<v8::Value> failOpVal;
+            stencilFrontObj->Get(context, ConvertToV8String(isolate, "failOp")).ToLocal(
+                    &failOpVal);
+
+            stencil->stencil_front.fail_op = ParseStencilOperation(isolate, failOpVal,
+                                                                   stencil->stencil_front.fail_op);
+
+            v8::Local<v8::Value> passOpVal;
+            stencilFrontObj->Get(context, ConvertToV8String(isolate, "passOp")).ToLocal(
+                    &passOpVal);
+
+            stencil->stencil_front.pass_op = ParseStencilOperation(isolate, passOpVal,
+                                                                   stencil->stencil_front.pass_op);
+
+        }
+
+        v8::Local<v8::Value> stencilReadMaskVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "stencilReadMask")).ToLocal(
+                &stencilReadMaskVal);
+
+        if (!stencilReadMaskVal.IsEmpty() && stencilReadMaskVal->IsUint32()) {
+            stencil->stencil_read_mask = stencilReadMaskVal->Uint32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> stencilWriteMaskVal;
+        stencilObj->Get(context, ConvertToV8String(isolate, "stencilWriteMask")).ToLocal(
+                &stencilWriteMaskVal);
+
+        if (!stencilWriteMaskVal.IsEmpty() && stencilWriteMaskVal->IsUint32()) {
+            stencil->stencil_write_mask = stencilWriteMaskVal->Uint32Value(context).FromJust();
+        }
+
     }
 
 
     v8::Local<v8::Value> fragmentValue;
     options->Get(context, ConvertToV8String(isolate, "fragment")).ToLocal(
             &fragmentValue);
-
 
     CanvasFragmentState *fragment = nullptr;
 
@@ -1445,21 +1608,17 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 // todo throw
                 args.GetReturnValue().SetUndefined();
                 return;
-            } else {
-
-            }
+            } else {}
 
             auto format = CanvasGPUTextureFormat{
                     formatResult.some.tag
             };
-
 
             uint32_t writeMask = 0xF;
 
             v8::Local<v8::Value> writeMaskVal;
 
             state->Get(context, ConvertToV8String(isolate, "writeMask")).ToLocal(&writeMaskVal);
-
 
             if (!writeMaskVal.IsEmpty() && writeMaskVal->IsUint32()) {
                 writeMask = writeMaskVal->Uint32Value(context).FromJust();
@@ -1469,50 +1628,77 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                     CanvasOptionalBlendStateNone
             };
 
-
             v8::Local<v8::Value> blendVal;
 
             state->Get(context, ConvertToV8String(isolate, "blend")).ToLocal(&blendVal);
-
 
             if (!blendVal.IsEmpty() && blendVal->IsObject()) {
                 auto blendObj = blendVal.As<v8::Object>();
                 auto alpha = blendObj->Get(context, ConvertToV8String(isolate,
                                                                       "alpha")).ToLocalChecked().As<v8::Object>();
-                auto alpha_src_factor = (CanvasBlendFactor) alpha->Get(context,
-                                                                       ConvertToV8String(isolate,
-                                                                                         "src_factor")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
-                auto alpha_dst_factor = (CanvasBlendFactor) alpha->Get(context,
-                                                                       ConvertToV8String(isolate,
-                                                                                         "dst_factor")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
-                auto alpha_operation = (CanvasBlendOperation) alpha->Get(context,
-                                                                         ConvertToV8String(isolate,
-                                                                                           "operation")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
 
-                auto alpha_val = CanvasBlendComponent{alpha_src_factor, alpha_dst_factor,
-                                                      alpha_operation};
+                v8::Local<v8::Value> alphaSrcFactorVal;
+
+                alpha->Get(context,
+                           ConvertToV8String(isolate,
+                                             "srcFactor")).ToLocal(&alphaSrcFactorVal);
+
+                auto alphaSrcFactor = ParseBlendFactor(isolate, alphaSrcFactorVal,
+                                                       CanvasBlendFactorZero);
+
+                v8::Local<v8::Value> alphaDstFactorVal;
+                alpha->Get(context,
+                           ConvertToV8String(isolate,
+                                             "dstFactor")).ToLocal(&alphaDstFactorVal);
+
+                auto alphaDstFactor = ParseBlendFactor(isolate, alphaDstFactorVal,
+                                                       CanvasBlendFactorZero);
+
+                v8::Local<v8::Value> alphaOperationVal;
+
+                alpha->Get(context,
+                           ConvertToV8String(isolate,
+                                             "operation")).ToLocal(&alphaOperationVal);
+
+                auto alphaOperation = ParseBlendOperation(isolate, alphaOperationVal,
+                                                          CanvasBlendOperationAdd);
+
+                auto alpha_val = CanvasBlendComponent{alphaSrcFactor, alphaDstFactor,
+                                                      alphaOperation};
 
                 auto color = blendObj->Get(context, ConvertToV8String(isolate,
                                                                       "color")).ToLocalChecked().As<v8::Object>();
-                auto color_src_factor = (CanvasBlendFactor) color->Get(context,
-                                                                       ConvertToV8String(isolate,
-                                                                                         "src_factor")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
-                auto color_dst_factor = (CanvasBlendFactor) color->Get(context,
-                                                                       ConvertToV8String(isolate,
-                                                                                         "dst_factor")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
-                auto color_operation = (CanvasBlendOperation) color->Get(context,
-                                                                         ConvertToV8String(isolate,
-                                                                                           "operation")).ToLocalChecked()->Uint32Value(
-                        context).FromJust();
 
 
-                auto color_val = CanvasBlendComponent{color_src_factor, color_dst_factor,
-                                                      color_operation};
+                v8::Local<v8::Value> colorSrcFactorVal;
+
+                color->Get(context,
+                           ConvertToV8String(isolate,
+                                             "srcFactor")).ToLocal(&colorSrcFactorVal);
+
+                auto colorSrcFactor = ParseBlendFactor(isolate, colorSrcFactorVal,
+                                                       CanvasBlendFactorZero);
+
+                v8::Local<v8::Value> colorDstFactorVal;
+                color->Get(context,
+                           ConvertToV8String(isolate,
+                                             "dstFactor")).ToLocal(&colorDstFactorVal);
+
+                auto colorDstFactor = ParseBlendFactor(isolate, colorDstFactorVal,
+                                                       CanvasBlendFactorZero);
+
+                v8::Local<v8::Value> colorOperationVal;
+
+                color->Get(context,
+                           ConvertToV8String(isolate,
+                                             "operation")).ToLocal(&colorOperationVal);
+
+                auto colorOperation = ParseBlendOperation(isolate, colorOperationVal,
+                                                          CanvasBlendOperationAdd);
+
+
+                auto color_val = CanvasBlendComponent{colorSrcFactor, colorDstFactor,
+                                                      colorOperation};
 
 
                 blend = CanvasOptionalBlendState{
@@ -1522,7 +1708,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                         }
                 };
             }
-
 
             auto targetState = CanvasColorTargetState{
                     format,
@@ -1639,7 +1824,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     v8::Local<v8::Value> multisampleValue;
     options->Get(context, ConvertToV8String(isolate, "multisample")).ToLocal(
-            &stencilValue);
+            &multisampleValue);
 
 
     CanvasMultisampleState *multisample = nullptr;
@@ -1711,39 +1896,60 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         primitiveObj->Get(context, ConvertToV8String(isolate, "cullMode")).ToLocal(
                 &cullModeValue);
 
-        if (!cullModeValue.IsEmpty() && cullModeValue->IsUint32()) {
-            auto cullMode = cullModeValue.As<v8::Uint32>()->Value();
+        if (!cullModeValue.IsEmpty()) {
+            if (cullModeValue->IsUint32()) {
+                auto cullMode = cullModeValue.As<v8::Uint32>()->Value();
 
-            switch (cullMode) {
-                case 0:
+                switch (cullMode) {
+                    case 0:
+                        primitive->cull_mode = CanvasCullMode::CanvasCullModeNone;
+                        break;
+                    case 1:
+                        primitive->cull_mode = CanvasCullMode::CanvasCullModeFront;
+                        break;
+                    case 2:
+                        primitive->cull_mode = CanvasCullMode::CanvasCullModeBack;
+                        break;
+                }
+            } else if (cullModeValue->IsString()) {
+
+                auto cullMode = ConvertFromV8String(isolate, cullModeValue);
+
+                if (cullMode == "none") {
                     primitive->cull_mode = CanvasCullMode::CanvasCullModeNone;
-                    break;
-                case 1:
+                } else if (cullMode == "front") {
                     primitive->cull_mode = CanvasCullMode::CanvasCullModeFront;
-                    break;
-                case 2:
+                } else if (cullMode == "back") {
                     primitive->cull_mode = CanvasCullMode::CanvasCullModeBack;
-                    break;
+                }
             }
-        }
 
+        }
 
         v8::Local<v8::Value> frontFaceValue;
         primitiveObj->Get(context, ConvertToV8String(isolate, "frontFace")).ToLocal(
                 &frontFaceValue);
 
-        if (!frontFaceValue.IsEmpty() && frontFaceValue->IsUint32()) {
-            auto cullMode = cullModeValue.As<v8::Uint32>()->Value();
-
-            switch (cullMode) {
-                case 0:
+        if (!frontFaceValue.IsEmpty()) {
+            if (frontFaceValue->IsUint32()) {
+                auto frontFace = frontFaceValue.As<v8::Uint32>()->Value();
+                switch (frontFace) {
+                    case 0:
+                        primitive->front_face = CanvasFrontFace::CanvasFrontFaceCcw;
+                        break;
+                    case 1:
+                        primitive->front_face = CanvasFrontFace::CanvasFrontFaceCw;
+                        break;
+                    default:
+                        break;
+                }
+            } else if (frontFaceValue->IsString()) {
+                auto frontFace = ConvertFromV8String(isolate, frontFaceValue);
+                if (frontFace == "ccw") {
                     primitive->front_face = CanvasFrontFace::CanvasFrontFaceCcw;
-                    break;
-                case 1:
+                } else if (frontFace == "cw") {
                     primitive->front_face = CanvasFrontFace::CanvasFrontFaceCw;
-                    break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -1752,25 +1958,40 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         primitiveObj->Get(context, ConvertToV8String(isolate, "stripIndexFormat")).ToLocal(
                 &stripIndexFormatValue);
 
-        if (!stripIndexFormatValue.IsEmpty() && stripIndexFormatValue->IsUint32()) {
-            auto stripIndexFormat = stripIndexFormatValue.As<v8::Uint32>()->Value();
+        if (!stripIndexFormatValue.IsEmpty()) {
+            if (stripIndexFormatValue->IsUint32()) {
+                auto stripIndexFormat = stripIndexFormatValue.As<v8::Uint32>()->Value();
+                switch (stripIndexFormat) {
+                    case 0:
+                        primitive->strip_index_format = CanvasOptionalIndexFormat{
+                                CanvasOptionalIndexFormatSome,
+                                CanvasIndexFormat::CanvasIndexFormatUint16
+                        };
+                        break;
+                    case 1:
+                        primitive->strip_index_format = CanvasOptionalIndexFormat{
+                                CanvasOptionalIndexFormatSome,
+                                CanvasIndexFormat::CanvasIndexFormatUint32
+                        };
+                        break;
+                    default:
+                        break;
+                }
+            } else if (stripIndexFormatValue->IsString()) {
+                auto stripIndexFormat = ConvertFromV8String(isolate, stripIndexFormatValue);
 
 
-            switch (stripIndexFormat) {
-                case 0:
+                if (stripIndexFormat == "uint16") {
                     primitive->strip_index_format = CanvasOptionalIndexFormat{
                             CanvasOptionalIndexFormatSome,
                             CanvasIndexFormat::CanvasIndexFormatUint16
                     };
-                    break;
-                case 1:
+                } else if (stripIndexFormat == "uint32") {
                     primitive->strip_index_format = CanvasOptionalIndexFormat{
                             CanvasOptionalIndexFormatSome,
                             CanvasIndexFormat::CanvasIndexFormatUint32
                     };
-                    break;
-                default:
-                    break;
+                }
             }
         }
 
@@ -1779,27 +2000,44 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         primitiveObj->Get(context, ConvertToV8String(isolate, "topology")).ToLocal(
                 &topologyValue);
 
-        if (!topologyValue.IsEmpty() && topologyValue->IsUint32()) {
-            auto topology = stripIndexFormatValue.As<v8::Uint32>()->Value();
-            switch (topology) {
-                case 0:
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
-                    break;
-                case 1:
+        if (!topologyValue.IsEmpty()) {
+
+            if (topologyValue->IsUint32()) {
+                auto topology = stripIndexFormatValue.As<v8::Uint32>()->Value();
+                switch (topology) {
+                    case 0:
+                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                        break;
+                    case 1:
+                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
+                        break;
+                    case 2:
+                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
+                        break;
+                    case 3:
+                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
+                        break;
+                    case 4:
+                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
+                        break;
+                    default:
+                        break;
+                }
+            } else if (topologyValue->IsString()) {
+                auto topology = ConvertFromV8String(isolate, stripIndexFormatValue);
+                if (topology == "line-list") {
                     primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
-                    break;
-                case 2:
+                } else if (topology == "line-strip") {
                     primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
-                    break;
-                case 3:
+                } else if (topology == "point-list") {
+                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                } else if (topology == "triangle-list") {
                     primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
-                    break;
-                case 4:
+                } else if (topology == "triangle-strip") {
                     primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
-                    break;
-                default:
-                    break;
+                }
             }
+
         }
 
 
@@ -1807,7 +2045,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         primitiveObj->Get(context, ConvertToV8String(isolate, "unclippedDepth")).ToLocal(
                 &unclippedDepthValue);
 
-        if (!unclippedDepthValue.IsEmpty()) {
+        if (!unclippedDepthValue.IsEmpty() && unclippedDepthValue->IsBoolean()) {
             primitive->unclipped_depth = unclippedDepthValue->BooleanValue(isolate);
         }
 
@@ -1884,7 +2122,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             auto buffers = buffersVal.As<v8::Array>();
             auto len = buffers->Length();
 
-
             for (int i = 0; i < len; i++) {
                 auto buffer = buffers->Get(context, i).ToLocalChecked().As<v8::Object>();
 
@@ -1914,6 +2151,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                         auto format = attr->Get(context, ConvertToV8String(isolate,
                                                                            "format")).ToLocalChecked()->Uint32Value(
                                 context).ToChecked();
+
                         auto offset = (uint64_t) attr->Get(context, ConvertToV8String(isolate,
                                                                                       "offset")).ToLocalChecked()->NumberValue(
                                 context).ToChecked();
@@ -1934,7 +2172,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 }
 
 
-                CanvasVertexStepMode stepMode = CanvasVertexStepMode::CanvasVertexStepModeVertex;
+                CanvasVertexStepMode stepMode = CanvasVertexStepModeVertex;
 
                 v8::Local<v8::Value> stepModeVal;
 

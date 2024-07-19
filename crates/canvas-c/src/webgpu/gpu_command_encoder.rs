@@ -94,7 +94,8 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
 
         let end_of_pass_write_index: Option<u32> = end_of_pass_write_index.try_into().ok();
 
-        Some(wgpu_core::command::ComputePassTimestampWrites {
+
+        Some(wgpu_core::command::PassTimestampWrites {
             query_set: query_set.query,
             beginning_of_pass_write_index,
             end_of_pass_write_index,
@@ -105,12 +106,26 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
 
     let command_encoder = unsafe { &*command_encoder };
 
+    let global = command_encoder.instance.global();
+
     let desc = wgpu_core::command::ComputePassDescriptor {
         label: label.clone(),
         timestamp_writes: timestamp_writes.as_ref(),
     };
 
-    let pass = wgpu_core::command::ComputePass::new(command_encoder.encoder, &desc);
+    let (pass, err) = global.command_encoder_create_compute_pass(command_encoder.encoder, &desc);
+
+    let error_sink = command_encoder.error_sink.as_ref();
+    if let Some(cause) = err {
+        handle_error(
+            global,
+            error_sink,
+            cause,
+            "",
+            label.clone(),
+            "canvas_native_webgpu_command_encoder_begin_compute_pass",
+        );
+    }
 
     let pass_encoder = CanvasGPUComputePassEncoder {
         label,
@@ -183,7 +198,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         };
 
         let query_set_id = query_set.query;
-        Some(wgpu_core::command::RenderPassTimestampWrites {
+        Some(wgpu_core::command::PassTimestampWrites {
             query_set: query_set_id,
             beginning_of_pass_write_index,
             end_of_pass_write_index,
@@ -194,6 +209,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
 
     let command_encoder = unsafe { &*command_encoder };
     let command_encoder_id = command_encoder.encoder;
+    let global = command_encoder.instance.global();
 
     let depth_stencil_attachment = if !depth_stencil_attachment.is_null() {
         let depth_stencil_attachment = &*depth_stencil_attachment;
@@ -233,12 +249,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         timestamp_writes: timestamp_writes.as_ref(),
         occlusion_query_set,
     };
-    let pass = wgpu_core::command::RenderPass::new(command_encoder_id, &desc);
+    let (pass, err) = global.command_encoder_create_render_pass(command_encoder_id, &desc);
+
+    let error_sink = command_encoder.error_sink.as_ref();
+    if let Some(cause) = err {
+        handle_error(
+            global,
+            error_sink,
+            cause,
+            "",
+            label.clone(),
+            "canvas_native_webgpu_command_encoder_begin_render_pass",
+        );
+    }
+
 
     let pass_encoder = CanvasGPURenderPassEncoder {
         label,
         instance: command_encoder.instance.clone(),
-        pass: Box::into_raw(Box::new(pass)),
+        pass: parking_lot::Mutex::new(Some(pass)),
         error_sink: command_encoder.error_sink.clone(),
     };
     Arc::into_raw(Arc::new(pass_encoder))
@@ -525,6 +554,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
             "canvas_native_webgpu_command_encoder_finish",
         );
     }
+
 
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
         instance: command_encoder.instance.clone(),

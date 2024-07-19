@@ -78,6 +78,7 @@ public:
 
 private:
     const CanvasGPURenderPassEncoder *pass_;
+    bool ended_ = false;
 };
 
 

@@ -12,7 +12,12 @@ impl Drop for CanvasGPUCommandBuffer {
     fn drop(&mut self) {
         if self.open.load(std::sync::atomic::Ordering::SeqCst) && !std::thread::panicking() {
             let context = self.instance.global();
-            gfx_select!(self.id => context.command_buffer_drop(self.command_buffer));
+            let command_buffer = self.command_buffer;
+            gfx_select!(self.id => context.command_buffer_drop(command_buffer));
+            // let mut lock = self.command_buffer.lock();
+            // if let Some(command_buffer) = lock.take() {
+            //     gfx_select!(self.id => context.command_buffer_drop(command_buffer));
+            // }
         }
     }
 }

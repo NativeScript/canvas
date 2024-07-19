@@ -3,13 +3,14 @@
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::{Read, Write};
+use std::os::raw::{c_char, c_int, c_uint};
 use std::os::raw::c_ulong;
 use std::os::raw::c_void;
-use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock};
 
+use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::drawing_paths::fill_rule::FillRule;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
@@ -19,7 +20,6 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 pub use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
-use canvas_2d::context::{Context, ContextWrapper};
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_backend_texture, from_bitmap_slice, from_image_slice, from_image_slice_encoded,
@@ -33,6 +33,7 @@ use canvas_webgl::utils::gl::bytes_per_pixel;
 use once_cell::sync::OnceCell;
 
 use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
+
 pub mod webgpu;
 
 #[repr(C)]
@@ -711,7 +712,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         width as i32,
         height as i32,
     )
-    .unwrap();
+        .unwrap();
 
     gl_context.make_current();
 
@@ -1953,7 +1954,6 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
                 source.make_current();
 
 
-
                 #[cfg(any(target_os = "ios", target_os = "macos"))] {
                     let snapshot = source_ctx.snapshot();
                     let info = snapshot.image_info();
@@ -1964,7 +1964,7 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
                         if let Some(image) = from_backend_texture(&mut ctx, &image, origin, info) {
                             return Some(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                                 context.get_context().create_pattern(image, repetition),
-                            ))
+                            ));
                         }
                     }
 
@@ -1972,13 +1972,12 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
                 }
 
                 #[cfg(target_os = "android")] {
-
                     let snapshot = source_ctx.raster_snapshot();
 
                     if let Some(image) = snapshot {
                         return Some(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                             context.get_context().create_pattern(image, repetition),
-                        ))
+                        ));
                     }
 
 
@@ -4641,6 +4640,15 @@ pub extern "C" fn canvas_native_image_asset_has_error(asset: *mut ImageAsset) ->
     true
 }
 
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_get_data(asset: *mut ImageAsset) -> *mut U8Buffer {
+    if asset.is_null() {
+        return std::ptr::null_mut();
+    }
+    let asset = unsafe { &*asset };
+    Box::into_raw(Box::new(U8Buffer::from(asset.clone())))
+}
+
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct ThreadCallbackData {
@@ -5282,8 +5290,8 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
         format.as_ref(),
         quality,
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[derive(Debug)]
@@ -7723,8 +7731,8 @@ pub extern "C" fn canvas_native_webgl_get_program_info_log(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -7766,8 +7774,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     CString::new(
         canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -7812,8 +7820,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
         shader,
         state.get_inner_mut(),
     ))
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]
@@ -9698,8 +9706,8 @@ pub extern "C" fn canvas_native_webgl2_get_active_uniform_block_name(
             state.get_inner_mut(),
         ),
     )
-    .unwrap()
-    .into_raw()
+        .unwrap()
+        .into_raw()
 }
 
 #[no_mangle]

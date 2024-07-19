@@ -175,16 +175,16 @@ Application.on('uncaughtError', (args) => {
 Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');
 	if (global.isAndroid) {
-		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
+	//	jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
 	} else {
-		monitor = GDPerformanceMonitor.new();
-		monitor.startMonitoringWithConfiguration((label) => {
-			label.backgroundColor = UIColor.blackColor;
-			label.textColor = UIColor.whiteColor;
-			label.layer.borderColor = UIColor.redColor;
-		});
-		monitor.appVersionHidden = true;
-		monitor.deviceVersionHidden = true;
+		// monitor = GDPerformanceMonitor.new();
+		// monitor.startMonitoringWithConfiguration((label) => {
+		// 	label.backgroundColor = UIColor.blackColor;
+		// 	label.textColor = UIColor.whiteColor;
+		// 	label.layer.borderColor = UIColor.redColor;
+		// });
+		// monitor.appVersionHidden = true;
+		// monitor.deviceVersionHidden = true;
 	}
 });
 Application.run({ moduleName: 'app-root' });

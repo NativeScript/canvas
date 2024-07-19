@@ -21,7 +21,7 @@ void GPUBufferImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBuffer"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBuffer"), func).FromJust();;
 }
 
 GPUBufferImpl *GPUBufferImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -221,7 +221,7 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
     } else {
         auto store = v8::ArrayBuffer::NewBackingStore(buf, size, [](void *data, size_t length,
                                                                     void *deleter_data) {
-                                                                     
+
                                                                  }, nullptr);
         auto ab = v8::ArrayBuffer::New(isolate, std::move(store));
         args.GetReturnValue().Set(ab);

@@ -1,6 +1,6 @@
 <Page xmlns:canvas="@nativescript/canvas" xmlns:ui="@nativescript/canvas/dom/index" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
     <Page.actionBar>
-        <ActionBar title="canvas 2.0" icon="" class="action-bar">
+        <ActionBar title="canvas 2.0 WebGPU" icon="" class="action-bar">
         </ActionBar>
     </Page.actionBar>
 

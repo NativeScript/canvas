@@ -3,7 +3,7 @@ import type { GPUQuerySet } from './GPUQuerySet';
 import type { GPUShaderModule } from './GPUShaderModule';
 import type { GPUTexture } from './GPUTexture';
 import type { GPUTextureView } from './GPUTextureView';
-import { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUVertexFormat, GPUVertexStepMode } from './Types';
+import { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUVertexFormat, GPUVertexStepMode } from './Types';
 export interface GPUExternalTextureBindingLayout {}
 
 export interface GPUProgrammableStage {
@@ -141,4 +141,25 @@ export interface GPUImageCopyTexture {
 	mipLevel?: number;
 	origin?: GPUOrigin3D;
 	texture: GPUTexture;
+}
+
+export interface GPUImageCopyExternalImage {
+	flipY?: boolean;
+	origin?: GPUOrigin2D;
+	source: any;
+}
+
+export interface GPUImageCopyTextureTagged {
+	aspect?: GPUTextureAspect;
+	colorSpace?: PredefinedColorSpace;
+	mipLevel?: number;
+	origin?: GPUOrigin3D;
+	premultipliedAlpha?: boolean;
+	texture: GPUTexture;
+}
+
+export interface GPUImageDataLayout {
+	bytesPerRow: number;
+	offset?: number;
+	rowsPerImage?: number;
 }

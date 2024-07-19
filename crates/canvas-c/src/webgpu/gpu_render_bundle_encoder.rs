@@ -19,7 +19,7 @@ pub struct CanvasGPURenderBundleEncoder {
 impl Drop for CanvasGPURenderBundleEncoder {
     fn drop(&mut self) {
         if !std::thread::panicking() {
-            ;
+            if self.encoder.is_null() { return; }
             drop(unsafe { Box::from_raw(self.encoder) });
         }
     }

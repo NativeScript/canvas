@@ -1,3 +1,7 @@
+use wgpu_types::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
+
+use crate::buffers::StringBuffer;
+
 use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat},
     gpu_texture_view::CanvasGPUTextureView,
@@ -162,29 +166,33 @@ impl From<wgpu_types::Color> for CanvasColor {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasImageDataLayout {
     offset: u64,
-    bytes_per_row: Option<u32>,
-    rows_per_image: Option<u32>,
+    bytes_per_row: i32,
+    rows_per_image: i32,
 }
 
 impl From<wgpu_types::ImageDataLayout> for CanvasImageDataLayout {
     fn from(value: wgpu_types::ImageDataLayout) -> Self {
         Self {
             offset: value.offset,
-            bytes_per_row: value.bytes_per_row,
-            rows_per_image: value.rows_per_image,
+            bytes_per_row: value.bytes_per_row.unwrap_or_default() as i32,
+            rows_per_image: value.rows_per_image.unwrap_or_default() as i32,
         }
     }
 }
 
 impl Into<wgpu_types::ImageDataLayout> for CanvasImageDataLayout {
     fn into(self) -> wgpu_types::ImageDataLayout {
+        let bytes_per_row: Option<u32> = self.bytes_per_row.try_into().ok();
+        let rows_per_image: Option<u32> = self.rows_per_image.try_into().ok();
+
         wgpu_types::ImageDataLayout {
             offset: self.offset,
-            bytes_per_row: self.bytes_per_row,
-            rows_per_image: self.rows_per_image,
+            bytes_per_row,
+            rows_per_image,
         }
     }
 }
@@ -684,7 +692,6 @@ impl Into<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChan
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-
 pub enum CanvasLoadOp {
     Clear = 0,
     Load = 1,
@@ -794,3 +801,84 @@ pub struct CanvasRenderPassDepthStencilAttachment {
     pub(crate) stencil_store_op: CanvasStoreOp,
     pub(crate) stencil_read_only: bool,
 }
+
+
+#[repr(C)]
+pub struct CanvasSurfaceCapabilities {
+    pub formats: *const StringBuffer,
+    pub present_modes: *const StringBuffer,
+    pub alpha_modes: *const StringBuffer,
+    pub usages: u32,
+}
+
+impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
+    fn from(value: SurfaceCapabilities) -> Self {
+        let formats = Box::into_raw(Box::new(
+            StringBuffer::from(value.formats.into_iter().map(|v| {
+                let format: CanvasGPUTextureFormat = v.into();
+                format.into()
+            }).collect::<Vec<String>>())
+        ));
+
+        let present_modes = Box::into_raw(Box::new(
+            StringBuffer::from(value.present_modes.into_iter().map(|v| {
+                match v {
+                    PresentMode::AutoVsync => "autoVsync".to_string(),
+                    PresentMode::AutoNoVsync => "autoNoVsync".to_string(),
+                    PresentMode::Fifo => "fifo".to_string(),
+                    PresentMode::FifoRelaxed => "fifoRelaxed".to_string(),
+                    PresentMode::Immediate => "immediate".to_string(),
+                    PresentMode::Mailbox => "mailbox".to_string(),
+                }
+            }).collect::<Vec<_>>())
+        ));
+
+
+        let alpha_modes = Box::into_raw(Box::new(
+            StringBuffer::from(value.alpha_modes.into_iter().map(|v| {
+                match v {
+                    CompositeAlphaMode::Auto => "auto".to_string(),
+                    CompositeAlphaMode::Opaque => "opaque".to_string(),
+                    CompositeAlphaMode::PreMultiplied => "premultiplied".to_string(),
+                    CompositeAlphaMode::PostMultiplied => "postmultiplied".to_string(),
+                    CompositeAlphaMode::Inherit => "inherit".to_string()
+                }
+            }).collect::<Vec<_>>())
+        ));
+
+        Self {
+            formats,
+            present_modes,
+            alpha_modes,
+            usages: value.usages.bits(),
+        }
+    }
+}
+
+impl Drop for CanvasSurfaceCapabilities {
+    fn drop(&mut self) {
+        if !self.formats.is_null() {
+            let _ = unsafe { Box::from_raw(self.formats as *mut StringBuffer) };
+        }
+
+        if !self.present_modes.is_null() {
+            let _ = unsafe { Box::from_raw(self.present_modes as *mut StringBuffer) };
+        }
+
+        if !self.alpha_modes.is_null() {
+            let _ = unsafe { Box::from_raw(self.alpha_modes as *mut StringBuffer) };
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_struct_surface_capabilities_release(
+    cap: *mut CanvasSurfaceCapabilities
+) {
+    if cap.is_null() {
+        return;
+    }
+    let _ = Box::from_raw(cap);
+}
+
+

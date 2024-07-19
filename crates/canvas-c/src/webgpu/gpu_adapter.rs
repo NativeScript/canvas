@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::buffers::StringBuffer;
 use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
+use crate::webgpu::gpu_queue::QueueId;
 
 use super::{
     gpu::CanvasWebGPUInstance, gpu_adapter_info::CanvasGPUAdapterInfo, gpu_device::CanvasGPUDevice,
@@ -146,6 +147,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             label,
             required_features: features,
             required_limits: limits,
+            memory_hints: Default::default(),
         };
 
 
@@ -179,8 +181,12 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
             let queue = Arc::new(
                 CanvasGPUQueue {
-                    instance: instance_copy.clone(),
-                    queue,
+                    queue: Arc::new(
+                        QueueId {
+                            id: queue,
+                            instance: instance_copy.clone(),
+                        }
+                    ),
                     error_sink: error_sink.clone(),
                 }
             );

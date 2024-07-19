@@ -7,6 +7,10 @@
 #include "GPUBufferImpl.h"
 #include "GPUCommandBufferImpl.h"
 #include "JSICallback.h"
+#include "GPUTextureImpl.h"
+#include "ImageAssetImpl.h"
+#include "ImageBitmapImpl.h"
+#include "ImageDataImpl.h"
 
 GPUQueueImpl::GPUQueueImpl(const CanvasGPUQueue *queue) : queue_(queue) {}
 
@@ -24,7 +28,7 @@ void GPUQueueImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQueue"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQueue"), func).FromJust();;
 }
 
 GPUQueueImpl *GPUQueueImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -51,8 +55,8 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
 
 
     tmpl->Set(
-            ConvertToV8String(isolate, "writeBuffer"),
-            v8::FunctionTemplate::New(isolate, &WriteBuffer));
+            ConvertToV8String(isolate, "copyExternalImageToTexture"),
+            v8::FunctionTemplate::New(isolate, &CopyExternalImageToTexture));
 
     tmpl->Set(
             ConvertToV8String(isolate, "submit"),
@@ -63,10 +67,249 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &SubmitWorkDone));
 
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "writeBuffer"),
+            v8::FunctionTemplate::New(isolate, &WriteBuffer));
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "writeTexture"),
+            v8::FunctionTemplate::New(isolate, &WriteTexture));
+
 
     cache->GPUQueueTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto sourceVal = args[0];
+    auto destinationVal = args[1];
+    auto sizeVal = args[2];
+
+    if (sourceVal->IsObject() && destinationVal->IsObject() &&
+        sizeVal->IsObject()) {
+
+        auto sourceObj = sourceVal.As<v8::Object>();
+
+        v8::Local<v8::Value> sourceSourceValue;
+        sourceObj->Get(context, ConvertToV8String(isolate, "source")).ToLocal(&sourceSourceValue);
+
+        auto sourceType = GetNativeType(sourceSourceValue);
+
+        U8Buffer *buffer = nullptr;
+
+        if (sourceType == NativeType::ImageBitmap) {
+            auto imageAsset = ImageBitmapImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
+        } else if (sourceType == NativeType::ImageAsset) {
+            auto imageAsset = ImageAssetImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
+        } else if (sourceType == NativeType::ImageData) {
+            auto imageData = ImageDataImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            buffer = canvas_native_image_data_get_data(imageData->GetImageData());
+        }
+
+        if (buffer == nullptr) {
+            // todo error ??
+            return;
+        }
+
+        auto destinationObj = destinationVal.As<v8::Object>();
+
+        auto textureVal = destinationObj->Get(context, ConvertToV8String(isolate,
+                                                                         "texture")).ToLocalChecked();
+        auto texture = GPUTextureImpl::GetPointer(textureVal.As<v8::Object>())->GetTexture();
+
+        uint32_t mipLevel = 0;
+        CanvasOrigin3d origin{0, 0, 0};
+        CanvasTextureAspect aspect = CanvasTextureAspectAll;
+
+        v8::Local<v8::Value> mipLevelVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "mipLevel")).ToLocal(
+                &mipLevelVal) &&
+            mipLevelVal->IsUint32()) {
+            mipLevel = mipLevelVal->Uint32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> originVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "origin")).ToLocal(
+                &originVal) &&
+            originVal->IsObject()) {
+            auto originObj = originVal.As<v8::Object>();
+
+            v8::Local<v8::Value> xVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "x")).ToLocal(&xVal) &&
+                xVal->IsUint32()) {
+                origin.x = xVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> yVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "y")).ToLocal(&yVal) &&
+                yVal->IsUint32()) {
+                origin.y = yVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> zVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "z")).ToLocal(&zVal) &&
+                zVal->IsUint32()) {
+                origin.z = zVal->Uint32Value(context).FromJust();
+            }
+
+        }
+
+
+        v8::Local<v8::Value> aspectVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "aspect")).ToLocal(
+                &aspectVal)) {
+            if (aspectVal->IsString()) {
+                auto aspectStr = ConvertFromV8String(isolate, aspectVal);
+                if (aspectStr == "depth-only") {
+                    aspect = CanvasTextureAspectDepthOnly;
+                } else if (aspectStr == "stencil-only") {
+                    aspect = CanvasTextureAspectStencilOnly;
+                } else if (aspectStr == "all") {
+                    aspect = CanvasTextureAspectAll;
+                }
+            }
+        }
+
+        CanvasImageCopyTexture destination{
+                texture,
+                mipLevel,
+                origin,
+                aspect
+        };
+
+
+        CanvasImageDataLayout layout{
+                0, -1, -1
+        };
+
+
+        auto sizeObj = sizeVal.As<v8::Object>();
+
+        CanvasExtent3d extent3D{0, 1, 1};
+
+        v8::Local<v8::Value> widthVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
+            widthVal->IsUint32()) {
+            extent3D.width = widthVal->Uint32Value(context).FromJust();
+        }
+
+        v8::Local<v8::Value> heightVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
+            heightVal->IsUint32()) {
+            extent3D.height = heightVal->Uint32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> depthOrArrayLayersVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
+                &depthOrArrayLayersVal) &&
+            depthOrArrayLayersVal->IsUint32()) {
+            extent3D.depth_or_array_layers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
+        }
+
+
+        auto data = canvas_native_u8_buffer_get_bytes(buffer);
+        auto size = canvas_native_u8_buffer_get_length(buffer);
+
+        if (data == nullptr || size == 0) {
+            // todo error
+            return;
+        }
+
+        canvas_native_webgpu_queue_write_texture(ptr->GetGPUQueue(), &destination, &layout,
+                                                 &extent3D, data, size);
+
+    }
+}
+
+void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    std::vector<const CanvasGPUCommandBuffer *> commandBuffers;
+    auto commandBuffersVal = args[0];
+
+    if (commandBuffersVal->IsArray()) {
+        auto commandBuffersArray = commandBuffersVal.As<v8::Array>();
+        auto len = commandBuffersArray->Length();
+
+        for (int i = 0; i < len; i++) {
+            v8::Local<v8::Value> item;
+            commandBuffersArray->Get(context, i).ToLocal(&item);
+            auto type = GetNativeType(item);
+            if (type == NativeType::GPUCommandBuffer) {
+                auto buffer = GPUCommandBufferImpl::GetPointer(item.As<v8::Object>());
+                if (buffer != nullptr) {
+                    commandBuffers.push_back(buffer->GetGPUCommandBuffer());
+                }
+            }
+        }
+
+
+        canvas_native_webgpu_queue_submit(ptr->GetGPUQueue(), commandBuffers.data(),
+                                          commandBuffers.size());
+
+    }
+
+
+}
+
+void GPUQueueImpl::SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+
+    auto cb = args[0];
+    auto callback = new JSICallback(isolate, cb.As<v8::Function>());
+
+    canvas_native_webgpu_queue_on_submitted_work_done(ptr->GetGPUQueue(),
+                                                      [](char *error, void *data) {
+                                                          auto cb = static_cast<JSICallback *>(data);
+
+                                                          v8::Isolate *isolate = cb->isolate_;
+                                                          v8::Locker locker(isolate);
+                                                          v8::Isolate::Scope isolate_scope(
+                                                                  isolate);
+                                                          v8::HandleScope handle_scope(
+                                                                  isolate);
+                                                          v8::Local<v8::Function> callback = cb->callback_->Get(
+                                                                  isolate);
+                                                          v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                                                          v8::Context::Scope context_scope(
+                                                                  context);
+
+
+                                                          callback->Call(context,
+                                                                         context->Global(),
+                                                                         0, nullptr);
+
+
+                                                          delete static_cast<JSICallback *>(data);
+                                                      },
+                                                      callback);
+
+
 }
 
 void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -116,8 +359,7 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
 }
 
-
-void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUQueueImpl::WriteTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -126,69 +368,150 @@ void GPUQueueImpl::Submit(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    std::vector<const CanvasGPUCommandBuffer *> commandBuffers;
-    auto commandBuffersVal = args[0];
+    bool flipY = false;
 
-    if (commandBuffersVal->IsArray()) {
-        auto commandBuffersArray = commandBuffersVal.As<v8::Array>();
-        auto len = commandBuffersArray->Length();
 
-        for (int i = 0; i < len; i++) {
-            v8::Local<v8::Value> item;
-            commandBuffersArray->Get(context, i).ToLocal(&item);
-            if (!item.IsEmpty() && item->IsObject()) {
-                auto buffer = GPUCommandBufferImpl::GetPointer(item.As<v8::Object>());
-                if (buffer != nullptr) {
-                    commandBuffers.push_back(buffer->GetGPUCommandBuffer());
+    auto destinationVal = args[0];
+    auto dataVal = args[1];
+    auto dataLayoutVal = args[2];
+    auto sizeVal = args[3];
+
+    if (destinationVal->IsObject() && dataVal->IsObject() && dataLayoutVal->IsObject() &&
+        sizeVal->IsObject()) {
+        auto destinationObj = destinationVal.As<v8::Object>();
+
+        auto textureVal = destinationObj->Get(context, ConvertToV8String(isolate,
+                                                                         "texture")).ToLocalChecked();
+        auto texture = GPUTextureImpl::GetPointer(textureVal.As<v8::Object>())->GetTexture();
+
+        uint32_t mipLevel = 0;
+        CanvasOrigin3d origin{0, 0, 0};
+        CanvasTextureAspect aspect = CanvasTextureAspectAll;
+
+        v8::Local<v8::Value> mipLevelVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "mipLevel")).ToLocal(
+                &mipLevelVal) &&
+            mipLevelVal->IsUint32()) {
+            mipLevel = mipLevelVal->Uint32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> originVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "origin")).ToLocal(
+                &originVal) &&
+            originVal->IsObject()) {
+            auto originObj = originVal.As<v8::Object>();
+
+            v8::Local<v8::Value> xVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "x")).ToLocal(&xVal) &&
+                xVal->IsUint32()) {
+                origin.x = xVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> yVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "y")).ToLocal(&yVal) &&
+                yVal->IsUint32()) {
+                origin.y = yVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> zVal;
+            if (originObj->Get(context, ConvertToV8String(isolate, "z")).ToLocal(&zVal) &&
+                zVal->IsUint32()) {
+                origin.z = zVal->Uint32Value(context).FromJust();
+            }
+
+        }
+
+
+        v8::Local<v8::Value> aspectVal;
+        if (destinationObj->Get(context, ConvertToV8String(isolate, "aspect")).ToLocal(
+                &aspectVal)) {
+            if (aspectVal->IsString()) {
+                auto aspectStr = ConvertFromV8String(isolate, aspectVal);
+                if (aspectStr == "depth-only") {
+                    aspect = CanvasTextureAspectDepthOnly;
+                } else if (aspectStr == "stencil-only") {
+                    aspect = CanvasTextureAspectStencilOnly;
+                } else if (aspectStr == "all") {
+                    aspect = CanvasTextureAspectAll;
                 }
             }
         }
 
-        canvas_native_webgpu_queue_submit(ptr->GetGPUQueue(), commandBuffers.data(),
-                                          commandBuffers.size());
+        CanvasImageCopyTexture destination{
+                texture,
+                mipLevel,
+                origin,
+                aspect
+        };
+        auto dataObj = dataVal.As<v8::Object>();
+        auto array = dataVal.As<v8::TypedArray>();
+        auto ab = array->Buffer();
+        auto offset = array->ByteOffset();
+        auto store = ab->GetBackingStore();
+        auto data = static_cast<const uint8_t *>(store->Data()) + offset;
+        auto size = array->ByteLength();
+
+        auto dataLayoutObj = dataLayoutVal.As<v8::Object>();
+
+        CanvasImageDataLayout layout{
+                0, -1, -1
+        };
+
+        v8::Local<v8::Value> offsetVal;
+        if (dataLayoutObj->Get(context, ConvertToV8String(isolate, "offset")).ToLocal(&offsetVal) &&
+            offsetVal->IsNumber()) {
+            layout.offset = (uint64_t) offsetVal->NumberValue(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> bytesPerRowVal;
+        if (dataLayoutObj->Get(context, ConvertToV8String(isolate, "bytesPerRow")).ToLocal(
+                &bytesPerRowVal) &&
+            bytesPerRowVal->IsInt32()) {
+            layout.bytes_per_row = bytesPerRowVal->Int32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> rowsPerImageVal;
+        if (dataLayoutObj->Get(context, ConvertToV8String(isolate, "rowsPerImage")).ToLocal(
+                &rowsPerImageVal) &&
+            rowsPerImageVal->IsInt32()) {
+            layout.rows_per_image = rowsPerImageVal->Int32Value(context).FromJust();
+        }
+
+
+        auto sizeObj = sizeVal.As<v8::Object>();
+
+        CanvasExtent3d extent3D{0, 1, 1};
+
+        v8::Local<v8::Value> widthVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
+            widthVal->IsUint32()) {
+            extent3D.width = widthVal->Uint32Value(context).FromJust();
+        }
+
+        v8::Local<v8::Value> heightVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
+            heightVal->IsUint32()) {
+            extent3D.height = heightVal->Uint32Value(context).FromJust();
+        }
+
+
+        v8::Local<v8::Value> depthOrArrayLayersVal;
+        if (sizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
+                &depthOrArrayLayersVal) &&
+            depthOrArrayLayersVal->IsUint32()) {
+            extent3D.depth_or_array_layers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
+        }
+
+        canvas_native_webgpu_queue_write_texture(ptr->GetGPUQueue(), &destination, &layout,
+                                                 &extent3D, data, size);
 
     }
 
 
 }
 
-void GPUQueueImpl::SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto *ptr = GetPointer(args.This());
-    if (ptr == nullptr) {
-        return;
-    }
 
-    auto isolate = args.GetIsolate();
-
-    auto cb = args[0];
-    auto callback = new JSICallback(isolate, cb.As<v8::Function>());
-
-    canvas_native_webgpu_queue_on_submitted_work_done(ptr->GetGPUQueue(),
-                                                      [](char *error, void *data) {
-                                                          auto cb = static_cast<JSICallback *>(data);
-
-                                                          v8::Isolate *isolate = cb->isolate_;
-                                                          v8::Locker locker(isolate);
-                                                          v8::Isolate::Scope isolate_scope(
-                                                                  isolate);
-                                                          v8::HandleScope handle_scope(
-                                                                  isolate);
-                                                          v8::Local<v8::Function> callback = cb->callback_->Get(
-                                                                  isolate);
-                                                          v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                          v8::Context::Scope context_scope(
-                                                                  context);
-
-
-                                                          callback->Call(context,
-                                                                         context->Global(),
-                                                                         0, nullptr);
-
-
-                                                          delete static_cast<JSICallback *>(data);
-                                                      },
-                                                      callback);
-
-
-}
 

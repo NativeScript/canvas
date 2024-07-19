@@ -10,7 +10,9 @@ use std::sync::Arc;
 
 use wgpu_core::binding_model::BufferBinding;
 use wgpu_core::command::{CreateRenderBundleError, RenderBundleEncoder};
+use wgpu_core::device::DeviceError;
 use wgpu_core::resource::CreateBufferError;
+use wgpu_types::Features;
 
 use crate::buffers::StringBuffer;
 use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasQueryType};
@@ -202,7 +204,7 @@ pub struct CanvasGPUDevice {
 
 
 impl CanvasGPUDevice {
-    pub fn features(&self) -> Result<wgpu_types::Features, wgpu_core::device::InvalidDevice> {
+    pub fn features(&self) -> Result<Features, DeviceError> {
         let device_id = self.device;
         let global = self.instance.global();
         gfx_select!(device_id => global.device_features(device_id))
@@ -698,20 +700,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
             entry_point,
             constants,
             zero_initialize_workgroup_memory: true,
+            vertex_pulling_transform: false,
         },
+        cache: None,
     };
 
-    let implicit_pipelines = match layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(_) => None,
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => {
-            Some(wgpu_core::device::ImplicitPipelineIds {
-                root_id: None,
-                group_ids: &[None; MAX_BIND_GROUPS],
-            })
-        }
-    };
 
-    let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, implicit_pipelines));
+    let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, None));
 
     let error_sink = device.error_sink.as_ref();
 
@@ -807,18 +802,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
             entry_point,
             constants,
             zero_initialize_workgroup_memory: true,
+            vertex_pulling_transform: false,
         },
+        cache: None,
     };
 
-    let implicit_pipelines = match layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(_) => None,
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => {
-            Some(wgpu_core::device::ImplicitPipelineIds {
-                root_id: None,
-                group_ids: &[None; MAX_BIND_GROUPS],
-            })
-        }
-    };
+
     let callback = callback as i64;
     let callback_data = callback_data as i64;
 
@@ -826,7 +815,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
     let error_sink = device.error_sink.clone();
 
     std::thread::spawn(move || {
-        let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, implicit_pipelines));
+        let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, None));
 
         let callback = unsafe {
             std::mem::transmute::<*const i64, extern "C" fn(*const CanvasGPUComputePipeline, super::error::CanvasGPUErrorType, *mut c_char, *mut c_void)>(
@@ -992,7 +981,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
                 query,
                 count,
                 type_,
-                label
+                label,
             }
         )
     )
@@ -1393,6 +1382,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
                     constants: Cow::Owned(constants),
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
+                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1406,6 +1396,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
                     constants,
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
+                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1480,6 +1471,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
             constants,
             // Required to be true for WebGPU
             zero_initialize_workgroup_memory: true,
+            vertex_pulling_transform: false,
         },
         buffers: Cow::Owned(vertex_buffers),
     };
@@ -1493,20 +1485,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         multisample,
         fragment,
         multiview: None,
+        cache: None,
     };
 
-    let implicit_pipelines = match descriptor.layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(_) => None,
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => {
-            Some(wgpu_core::device::ImplicitPipelineIds {
-                root_id: None,
-                group_ids: &[None; MAX_BIND_GROUPS],
-            })
-        }
-    };
 
     let error_sink = device.error_sink.as_ref();
-    let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, implicit_pipelines));
+    let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, None));
 
     if let Some(cause) = error {
         if let wgpu_core::pipeline::CreateRenderPipelineError::Internal { stage, ref error } = cause {
@@ -1601,6 +1585,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
                     constants: Cow::Owned(constants),
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
+                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1614,6 +1599,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
                     constants,
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
+                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1688,6 +1674,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
             constants,
             // Required to be true for WebGPU
             zero_initialize_workgroup_memory: true,
+            vertex_pulling_transform: false,
         },
         buffers: Cow::Owned(vertex_buffers),
     };
@@ -1701,17 +1688,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
         multisample,
         fragment,
         multiview: None,
+        cache: None,
     };
 
-    let implicit_pipelines = match descriptor.layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(_) => None,
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => {
-            Some(wgpu_core::device::ImplicitPipelineIds {
-                root_id: None,
-                group_ids: &[None; MAX_BIND_GROUPS],
-            })
-        }
-    };
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
@@ -1720,7 +1699,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
     let error_sink = device.error_sink.clone();
 
     std::thread::spawn(move || {
-        let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, implicit_pipelines));
+        let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, None));
 
 
         let callback = unsafe {

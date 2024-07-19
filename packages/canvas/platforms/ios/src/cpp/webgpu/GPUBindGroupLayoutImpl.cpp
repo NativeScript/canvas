@@ -22,7 +22,7 @@ void GPUBindGroupLayoutImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBindGroupLayout"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBindGroupLayout"), func).FromJust();;
 }
 
 GPUBindGroupLayoutImpl *GPUBindGroupLayoutImpl::GetPointer(const v8::Local<v8::Object> &object) {

@@ -22,7 +22,7 @@ void GPUSamplerImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUSampler"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUSampler"), func).FromJust();;
 }
 
 GPUSamplerImpl *GPUSamplerImpl::GetPointer(const v8::Local<v8::Object> &object) {

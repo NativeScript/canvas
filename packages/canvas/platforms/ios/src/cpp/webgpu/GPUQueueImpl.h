@@ -36,12 +36,15 @@ public:
         return scope.Escape(object);
     }
 
-
-    static void WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static void CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Submit(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void WriteTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 
 private:

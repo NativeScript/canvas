@@ -9,6 +9,7 @@ use raw_window_handle::{
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
+use crate::webgpu::structs::CanvasSurfaceCapabilities;
 
 use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
@@ -347,7 +348,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         view_formats,
     };
 
-
     if let Some(cause) =
         gfx_select!(surface_id => global.surface_configure(surface_id, device_id, &config))
     {
@@ -472,7 +472,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     let texture = unsafe { &*texture };
 
     if let Err(cause) = gfx_select!(device => global.surface_present(surface_id)) {
-
         handle_error_fatal(
             global,
             cause,
@@ -491,9 +490,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
 pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     context: *const CanvasGPUCanvasContext,
     adapter: *const CanvasGPUAdapter,
-) {
+) -> *mut CanvasSurfaceCapabilities {
     if context.is_null() || adapter.is_null() {
-        return;
+        return std::ptr::null_mut();
     }
 
     let adapter = unsafe { &*adapter };
@@ -506,12 +505,11 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     if let Ok(capabilities) =
         gfx_select!(surface_id => global.surface_get_capabilities(surface_id, adapter_id))
     {
-        #[cfg(target_os = "android")]
-        log::debug!(target: "JS", "canvas_native_webgpu_context_get_capabilities : {:?}", capabilities);
-
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
-        println!("canvas_native_webgpu_context_get_capabilities : {:?}", capabilities);
+        let cap: CanvasSurfaceCapabilities = capabilities.into();
+        return Box::into_raw(Box::new(cap));
     }
+
+    std::ptr::null_mut()
 }
 
 

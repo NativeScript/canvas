@@ -3119,6 +3119,7 @@ WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8:
         auto item = canvas_native_string_buffer_get_value_at(exts, i);
         if (item != nullptr) {
             array->Set(context, i, ConvertToV8OneByteString(isolate, (char *) item)).FromJust();
+            canvas_native_string_destroy(item);
         }
 
     }

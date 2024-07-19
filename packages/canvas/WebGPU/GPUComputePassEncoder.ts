@@ -16,6 +16,7 @@ export class GPUComputePassEncoder {
 
 	end() {
 		this[native_].end();
+		this[native_] = null;
 	}
 
 	insertDebugMarker(markerLabel: string) {

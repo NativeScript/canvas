@@ -502,12 +502,10 @@ impl From<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
             wgpu_types::TextureFormat::Rg16Unorm => CanvasGPUTextureFormat::Rg16Unorm,
             wgpu_types::TextureFormat::Rg16Snorm => CanvasGPUTextureFormat::Rg16Snorm,
             wgpu_types::TextureFormat::Rg16Float => CanvasGPUTextureFormat::Rg16Float,
-            wgpu_types::TextureFormat::Rgba8Unorm => CanvasGPUTextureFormat::Rgba8Unorm,
             wgpu_types::TextureFormat::Rgba8UnormSrgb => CanvasGPUTextureFormat::Rgba8UnormSrgb,
             wgpu_types::TextureFormat::Rgba8Snorm => CanvasGPUTextureFormat::Rgba8Snorm,
             wgpu_types::TextureFormat::Rgba8Uint => CanvasGPUTextureFormat::Rgba8Uint,
             wgpu_types::TextureFormat::Rgba8Sint => CanvasGPUTextureFormat::Rgba8Sint,
-            wgpu_types::TextureFormat::Bgra8Unorm => CanvasGPUTextureFormat::Bgra8Unorm,
             wgpu_types::TextureFormat::Bgra8UnormSrgb => CanvasGPUTextureFormat::Bgra8UnormSrgb,
             wgpu_types::TextureFormat::Rgb9e5Ufloat => CanvasGPUTextureFormat::Rgb9e5Ufloat,
             wgpu_types::TextureFormat::Rgb10a2Uint => CanvasGPUTextureFormat::Rgb10a2Uint,
@@ -696,6 +694,116 @@ impl Into<Option<wgpu_types::TextureFormat>> for CanvasOptionsGPUTextureFormat {
                 Some(value)
             }
         }
+    }
+}
+
+impl Into<String> for CanvasGPUTextureFormat {
+    fn into(self) -> String {
+        let s: String;
+        let name = match self {
+            CanvasGPUTextureFormat::R8Unorm => "r8unorm",
+            CanvasGPUTextureFormat::R8Snorm => "r8snorm",
+            CanvasGPUTextureFormat::R8Uint => "r8uint",
+            CanvasGPUTextureFormat::R8Sint => "r8sint",
+            CanvasGPUTextureFormat::R16Uint => "r16uint",
+            CanvasGPUTextureFormat::R16Sint => "r16sint",
+            CanvasGPUTextureFormat::R16Unorm => "r16unorm",
+            CanvasGPUTextureFormat::R16Snorm => "r16snorm",
+            CanvasGPUTextureFormat::R16Float => "r16float",
+            CanvasGPUTextureFormat::Rg8Unorm => "rg8unorm",
+            CanvasGPUTextureFormat::Rg8Snorm => "rg8snorm",
+            CanvasGPUTextureFormat::Rg8Uint => "rg8uint",
+            CanvasGPUTextureFormat::Rg8Sint => "rg8sint",
+            CanvasGPUTextureFormat::R32Uint => "r32uint",
+            CanvasGPUTextureFormat::R32Sint => "r32sint",
+            CanvasGPUTextureFormat::R32Float => "r32float",
+            CanvasGPUTextureFormat::Rg16Uint => "rg16uint",
+            CanvasGPUTextureFormat::Rg16Sint => "rg16sint",
+            CanvasGPUTextureFormat::Rg16Unorm => "rg16unorm",
+            CanvasGPUTextureFormat::Rg16Snorm => "rg16snorm",
+            CanvasGPUTextureFormat::Rg16Float => "rg16float",
+            CanvasGPUTextureFormat::Rgba8Unorm => "rgba8unorm",
+            CanvasGPUTextureFormat::Rgba8UnormSrgb => "rgba8unorm-srgb",
+            CanvasGPUTextureFormat::Rgba8Snorm => "rgba8snorm",
+            CanvasGPUTextureFormat::Rgba8Uint => "rgba8uint",
+            CanvasGPUTextureFormat::Rgba8Sint => "rgba8sint",
+            CanvasGPUTextureFormat::Bgra8Unorm => "bgra8unorm",
+            CanvasGPUTextureFormat::Bgra8UnormSrgb => "bgra8unorm-srgb",
+            CanvasGPUTextureFormat::Rgb10a2Uint => "rgb10a2uint",
+            CanvasGPUTextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
+            CanvasGPUTextureFormat::Rg11b10Float => "rg11b10ufloat",
+            CanvasGPUTextureFormat::Rg32Uint => "rg32uint",
+            CanvasGPUTextureFormat::Rg32Sint => "rg32sint",
+            CanvasGPUTextureFormat::Rg32Float => "rg32float",
+            CanvasGPUTextureFormat::Rgba16Uint => "rgba16uint",
+            CanvasGPUTextureFormat::Rgba16Sint => "rgba16sint",
+            CanvasGPUTextureFormat::Rgba16Unorm => "rgba16unorm",
+            CanvasGPUTextureFormat::Rgba16Snorm => "rgba16snorm",
+            CanvasGPUTextureFormat::Rgba16Float => "rgba16float",
+            CanvasGPUTextureFormat::Rgba32Uint => "rgba32uint",
+            CanvasGPUTextureFormat::Rgba32Sint => "rgba32sint",
+            CanvasGPUTextureFormat::Rgba32Float => "rgba32float",
+            CanvasGPUTextureFormat::Stencil8 => "stencil8",
+            CanvasGPUTextureFormat::Depth32Float => "depth32float",
+            CanvasGPUTextureFormat::Depth16Unorm => "depth16unorm",
+            CanvasGPUTextureFormat::Depth32FloatStencil8 => "depth32float-stencil8",
+            CanvasGPUTextureFormat::Depth24Plus => "depth24plus",
+            CanvasGPUTextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
+            CanvasGPUTextureFormat::NV12 => "nv12",
+            CanvasGPUTextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
+            CanvasGPUTextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
+            CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",
+            CanvasGPUTextureFormat::Bc2RgbaUnorm => "bc2-rgba-unorm",
+            CanvasGPUTextureFormat::Bc2RgbaUnormSrgb => "bc2-rgba-unorm-srgb",
+            CanvasGPUTextureFormat::Bc3RgbaUnorm => "bc3-rgba-unorm",
+            CanvasGPUTextureFormat::Bc3RgbaUnormSrgb => "bc3-rgba-unorm-srgb",
+            CanvasGPUTextureFormat::Bc4RUnorm => "bc4-r-unorm",
+            CanvasGPUTextureFormat::Bc4RSnorm => "bc4-r-snorm",
+            CanvasGPUTextureFormat::Bc5RgUnorm => "bc5-rg-unorm",
+            CanvasGPUTextureFormat::Bc5RgSnorm => "bc5-rg-snorm",
+            CanvasGPUTextureFormat::Bc6hRgbUfloat => "bc6h-rgb-ufloat",
+            CanvasGPUTextureFormat::Bc6hRgbFloat => "bc6h-rgb-float",
+            CanvasGPUTextureFormat::Bc7RgbaUnorm => "bc7-rgba-unorm",
+            CanvasGPUTextureFormat::Bc7RgbaUnormSrgb => "bc7-rgba-unorm-srgb",
+            CanvasGPUTextureFormat::Etc2Rgb8Unorm => "etc2-rgb8unorm",
+            CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb => "etc2-rgb8unorm-srgb",
+            CanvasGPUTextureFormat::Etc2Rgb8A1Unorm => "etc2-rgb8a1unorm",
+            CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb => "etc2-rgb8a1unorm-srgb",
+            CanvasGPUTextureFormat::Etc2Rgba8Unorm => "etc2-rgba8unorm",
+            CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb => "etc2-rgba8unorm-srgb",
+            CanvasGPUTextureFormat::EacR11Unorm => "eac-r11unorm",
+            CanvasGPUTextureFormat::EacR11Snorm => "eac-r11snorm",
+            CanvasGPUTextureFormat::EacRg11Unorm => "eac-rg11unorm",
+            CanvasGPUTextureFormat::EacRg11Snorm => "eac-rg11snorm",
+            CanvasGPUTextureFormat::Astc { block, channel } => {
+                let block = match block {
+                    CanvasAstcBlock::B4x4 => "4x4",
+                    CanvasAstcBlock::B5x4 => "5x4",
+                    CanvasAstcBlock::B5x5 => "5x5",
+                    CanvasAstcBlock::B6x5 => "6x5",
+                    CanvasAstcBlock::B6x6 => "6x6",
+                    CanvasAstcBlock::B8x5 => "8x5",
+                    CanvasAstcBlock::B8x6 => "8x6",
+                    CanvasAstcBlock::B8x8 => "8x8",
+                    CanvasAstcBlock::B10x5 => "10x5",
+                    CanvasAstcBlock::B10x6 => "10x6",
+                    CanvasAstcBlock::B10x8 => "10x8",
+                    CanvasAstcBlock::B10x10 => "10x10",
+                    CanvasAstcBlock::B12x10 => "12x10",
+                    CanvasAstcBlock::B12x12 => "12x12",
+                };
+
+                let channel = match channel {
+                    CanvasAstcChannel::Unorm => "unorm",
+                    CanvasAstcChannel::UnormSrgb => "unorm-srgb",
+                    CanvasAstcChannel::Hdr => "hdr",
+                };
+
+                s = format!("astc-{block}-{channel}");
+                &s
+            }
+        };
+        name.to_string()
     }
 }
 

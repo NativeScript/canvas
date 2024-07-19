@@ -27,7 +27,7 @@ void GPURenderBundleEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Is
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderBundleEncoder"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderBundleEncoder"), func).FromJust();;
 }
 
 GPURenderBundleEncoderImpl *
@@ -352,7 +352,7 @@ void GPURenderBundleEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8:
             auto data = static_cast<uint8_t *>(buffer->GetBackingStore()->Data()) + offset;
             auto size = buf->Length();
             auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
-            auto offset_length = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
+            auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
             canvas_native_webgpu_render_bundle_encoder_set_bind_group(ptr->GetEncoder(), index,
                                                                       bindgroup->GetBindGroup(),
                                                                       static_cast<const uint32_t *>(static_cast<void *>(data)),

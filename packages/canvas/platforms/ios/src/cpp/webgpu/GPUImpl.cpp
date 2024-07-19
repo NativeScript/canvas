@@ -20,7 +20,7 @@ void GPUImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPU"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPU"), func).FromJust();;
 }
 
 
@@ -128,7 +128,7 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
             std::move(func)
     };
     canvas_native_webgpu_request_adapter(ptr->GetGPUInstance(), &opts,
-                                         [](CanvasGPUAdapter *adapter, void *data) {
+                                         [](const CanvasGPUAdapter *adapter, void *data) {
                                              if (data != nullptr) {
                                                  auto func = static_cast<AsyncCallback *>(data);
                                                  if (func->isolate != nullptr) {

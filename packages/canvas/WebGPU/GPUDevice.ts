@@ -214,11 +214,9 @@ export class GPUDevice extends EventTarget {
 				}
 			}
 		}
-		console.log(descriptor);
-		
+
 		const group = this.native.createBindGroup(descriptor);
 
-		console.log(group);
 		if (group) {
 			return GPUBindGroup.fromNative(group);
 		}
@@ -326,17 +324,9 @@ export class GPUDevice extends EventTarget {
 		if (Array.isArray(buffers)) {
 			vertex.buffers = buffers.map((buffer) => {
 				buffer.attributes = buffer.attributes.map((attr) => {
-					attr['format'] = parseVertexFormat(attr['format']) as never;
+					attr.format = parseVertexFormat(attr.format) as never;
 					return attr;
 				});
-				switch (buffer.stepMode) {
-					case 'vertex':
-						buffer.stepMode = 0 as never;
-						break;
-					case 'instance':
-						buffer.stepMode = 1 as never;
-						break;
-				}
 
 				return buffer;
 			});
@@ -351,30 +341,6 @@ export class GPUDevice extends EventTarget {
 
 		if (layout instanceof GPUPipelineLayout) {
 			descriptor.layout = descriptor.layout[native_];
-		}
-
-		const primitive = descriptor.primitive;
-
-		if (primitive) {
-			switch (primitive.topology) {
-				case 'point-list':
-					primitive.topology = 0 as never;
-					break;
-				case 'line-list':
-					primitive.topology = 1 as never;
-					break;
-				case 'line-strip':
-					primitive.topology = 2 as never;
-					break;
-				case 'triangle-list':
-					primitive.topology = 3 as never;
-					break;
-				case 'triangle-strip':
-					primitive.topology = 4 as never;
-					break;
-				default:
-					break;
-			}
 		}
 
 		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(descriptor));

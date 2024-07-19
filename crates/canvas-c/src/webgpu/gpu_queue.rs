@@ -11,23 +11,27 @@ use super::{
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
 
+pub struct QueueId {
+    pub(crate) instance: Arc<CanvasWebGPUInstance>,
+    pub(crate) id: wgpu_core::id::QueueId,
+}
+
+impl Drop for QueueId {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(self.id => global.queue_drop(self.id));
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct CanvasGPUQueue {
-    pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) queue: wgpu_core::id::QueueId,
+    pub(crate) queue: Arc<QueueId>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
 unsafe impl Send for CanvasGPUQueue {}
-
-impl Drop for CanvasGPUQueue {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            let global = self.instance.global();
-            gfx_select!(self.id => global.queue_drop(self.queue));
-        }
-    }
-}
 
 
 #[no_mangle]
@@ -88,9 +92,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
     }
 
     let queue = &*queue;
-    let queue_id = queue.queue;
+    let queue_id = queue.queue.id;
 
-    let global = queue.instance.global();
+    let global = queue.queue.instance.global();
 
     let source = &*source;
 
@@ -166,9 +170,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
     }
 
     let queue = &*queue;
-    let queue_id = queue.queue;
+    let queue_id = queue.queue.id;
 
-    let global = queue.instance.global();
+    let global = queue.queue.instance.global();
 
     let func = callback as i64;
     let data = callback_data as i64;
@@ -195,22 +199,21 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
     }
 
     let queue = &*queue;
-    let queue_id = queue.queue;
-
-    let global = queue.instance.global();
+    let queue_id = queue.queue.id;
+    let global = queue.queue.instance.global();
 
     let command_buffer_ids = std::slice::from_raw_parts(command_buffers, command_buffers_size)
         .iter()
         .map(|buffer| {
             let buffer = &**buffer;
-
             buffer.open.store(false, std::sync::atomic::Ordering::SeqCst);
-
+            // let mut id = buffer.command_buffer.lock();
+            // id.take()
             buffer.command_buffer
         })
-        .collect::<Vec<wgpu_core::id::CommandBufferId>>();
+        .collect::<Vec<_>>();
 
-    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, command_buffer_ids.as_slice())) {
+    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids)) {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }
 }
@@ -230,9 +233,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
     }
 
     let queue = &*queue;
-    let queue_id = queue.queue;
+    let queue_id = queue.queue.id;
 
-    let global = queue.instance.global();
+    let global = queue.queue.instance.global();
 
     let buffer = &*buffer;
     let buffer_id = buffer.buffer;
@@ -266,9 +269,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     }
 
     let queue = &*queue;
-    let queue_id = queue.queue;
+    let queue_id = queue.queue.id;
 
-    let global = queue.instance.global();
+    let global = queue.queue.instance.global();
 
     let destination = &*destination;
 

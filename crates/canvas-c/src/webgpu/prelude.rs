@@ -147,9 +147,6 @@ pub fn build_features(features: wgpu_types::Features) -> Vec<&'static str> {
     if features.contains(wgpu_types::Features::SHADER_EARLY_DEPTH_TEST) {
         return_features.push("shader-early-depth-test");
     }
-    if features.contains(wgpu_types::Features::SHADER_UNUSED_VERTEX_OUTPUT) {
-        return_features.push("shader-unused-vertex-output");
-    }
 
     return_features
 }
@@ -331,9 +328,6 @@ pub fn parse_required_features(
                     features.set(wgpu_types::Features::SHADER_EARLY_DEPTH_TEST, true);
                 }
 
-                "shader-unused-vertex-output" => {
-                    features.set(wgpu_types::Features::SHADER_UNUSED_VERTEX_OUTPUT, true);
-                }
                 _ => {}
             }
         }

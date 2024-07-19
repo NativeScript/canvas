@@ -22,7 +22,7 @@ void GPUShaderModuleImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUShaderModule"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUShaderModule"), func).FromJust();;
 }
 
 GPUShaderModuleImpl *GPUShaderModuleImpl::GetPointer(const v8::Local<v8::Object> &object) {

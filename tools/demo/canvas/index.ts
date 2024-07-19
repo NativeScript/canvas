@@ -468,102 +468,87 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
-			const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+			const capabilities = (context as any).getCapabilities(adapter);
+			const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+			const alphaMode = capabilities.alphaModes[0];
 
 			context.configure({
 				device,
 				format: presentationFormat,
-				alphaMode: global.isIOS ? 'postmultiplied' : ('inherit' as any),
+				alphaMode
 			});
 
-			const code = `
-    struct Uniforms {
-      time: f32
-    }
-    @group(0) @binding(0) var<uniform> u: Uniforms;
+			const tri = `@vertex
+fn main(
+  @builtin(vertex_index) VertexIndex : u32
+) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 3>(
+    vec2(0.0, 0.5),
+    vec2(-0.5, -0.5),
+    vec2(0.5, -0.5)
+  );
 
-    struct Vertex {
-      @location(0) pos: vec4f
-    };
-    struct VertexOut {
-      @builtin(position) pos: vec4f,
-      @location(0) color: vec4f
-    }
+  return vec4f(pos[VertexIndex], 0.0, 1.0);
+}`;
 
-    @vertex fn vertexMain(v: Vertex) -> VertexOut {
-      let x = sin(u.time);
-      let y = cos(u.time);
-      let pos = vec4f(mat2x2f(y, -x, x, y) * v.pos.xy, 0, 1);
-      let color = vec4f(v.pos.zw, 0.5 + x * 0.5, 1);
-      return VertexOut(pos, color);
-    }
-    @fragment fn fragmentMain(v: VertexOut) -> @location(0) vec4f {
-      return v.color;
-    }
-  `;
+			const red = `@fragment
+fn main() -> @location(0) vec4f {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}`;
 
-			const module = device.createShaderModule({ code });
 			const pipeline = device.createRenderPipeline({
 				layout: 'auto',
 				vertex: {
-					module,
-					entryPoint: 'vertexMain',
-					buffers: [
-						{
-							// layout for our vertex data (positions and colors)
-							arrayStride: 4 * 4,
-							attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x4' }],
-						},
-					],
+					module: device.createShaderModule({
+						code: tri,
+					}),
+					entryPoint: 'main',
 				},
 				fragment: {
-					module,
-					entryPoint: 'fragmentMain',
-					targets: [{ format: presentationFormat }],
+					module: device.createShaderModule({
+						code: red,
+					}),
+					targets: [
+						{
+							format: presentationFormat,
+						},
+					],
+					entryPoint: 'main',
 				},
-				primitive: { topology: 'triangle-strip' },
+				primitive: {
+					topology: 'triangle-list',
+				},
 			});
 
-			const uniformValues = new Float32Array(1); // a uniform buffer for passing current time
-			const uniformBuffer = device.createBuffer({ size: uniformValues.byteLength, usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST, mappedAtCreation: false });
-			const bindGroup = device.createBindGroup({
-				layout: pipeline.getBindGroupLayout(0),
-				entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-			});
-
-			const vertexData = Float32Array.of(-0.7, 0.7, 0, 1, -0.7, -0.7, 0, 0, 0.7, 0.7, 1, 1, 0.7, -0.7, 1, 0);
-			const vertexBuffer = device.createBuffer({ size: vertexData.byteLength, usage: global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.COPY_DST, mappedAtCreation: false });
-			device.queue.writeBuffer(vertexBuffer, 0, vertexData);
-
-			let start = performance.now();
-
-			(function render(time) {
-				const frame = context.getCurrentTexture();
-				// if(!frame){
-				// 	requestAnimationFrame(render);
-				// 	return;
-				// }
-				uniformValues[0] = (time - start) / 1000;
-				device.queue.writeBuffer(uniformBuffer, 0, uniformValues);
-
-				const encoder = device.createCommandEncoder();
-				const output = {
-					clearValue: [1, 0, 0, 1] as any,
-					loadOp: 'clear',
-					storeOp: 'store',
-					view: frame.createView(),
-				};
-				const pass = encoder.beginRenderPass({ colorAttachments: [output as never] });
-				pass.setPipeline(pipeline);
-				pass.setVertexBuffer(0, vertexBuffer);
-				pass.setBindGroup(0, bindGroup);
-				pass.draw(4);
-				pass.end();
-				device.queue.submit([encoder.finish()]);
-				(<any>context).presentSurface(frame);
-
-				requestAnimationFrame(render);
-			})(start);
+			function frame() {
+				const framebuffer = context.getCurrentTexture();
+				if (!framebuffer) {
+				  requestAnimationFrame(frame);
+				  return;
+				}
+		  
+				const commandEncoder = device.createCommandEncoder();
+				const textureView = framebuffer.createView();
+		  
+				const passEncoder = commandEncoder.beginRenderPass({
+				  colorAttachments: [
+					{
+					  view: textureView,
+					  clearValue: [0, 0, 0, 1],
+					  loadOp: 'clear',
+					  storeOp: 'store',
+					},
+				  ],
+				});
+				passEncoder.setPipeline(pipeline);
+				passEncoder.draw(3);
+				passEncoder.end();
+		  
+				device.queue.submit([commandEncoder.finish()]);
+				(<any>context).presentSurface(framebuffer);
+				requestAnimationFrame(frame);
+			  }
+			  requestAnimationFrame(frame);
 		}
 	}
 

@@ -23,7 +23,7 @@ void GPUCanvasContextImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCanvasContext"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCanvasContext"), func).FromJust();;
 }
 
 GPUCanvasContextImpl *GPUCanvasContextImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -66,7 +66,7 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
             v8::FunctionTemplate::New(isolate, &PresentSurface));
 
     tmpl->Set(
-            ConvertToV8String(isolate, "capabilities"),
+            ConvertToV8String(isolate, "getCapabilities"),
             v8::FunctionTemplate::New(isolate, &GetCapabilities));
 
 
@@ -244,18 +244,63 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
     if (ptr == nullptr) {
         return;
     }
-
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
     auto adapterVal = args[0];
+    auto ret = v8::Object::New(isolate);
 
     if (!adapterVal.IsEmpty() && adapterVal->IsObject()) {
         auto adapter = GPUAdapterImpl::GetPointer(adapterVal.As<v8::Object>());
         auto ctx = ptr->GetContext();
 
         if (adapter != nullptr) {
-            canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter());
+            auto cap = canvas_native_webgpu_context_get_capabilities(ctx, adapter->GetGPUAdapter());
+            auto formats_len = canvas_native_string_buffer_get_length(cap->formats);
+            auto formats = v8::Array::New(isolate, (int) formats_len);
+            for (int i = 0; i < formats_len; i++) {
+                auto format = canvas_native_string_buffer_get_value_at(cap->formats, i);
+                formats->Set(context, i, ConvertToV8String(isolate, format));
+                canvas_native_string_destroy(format);
+            }
+
+            auto present_modes_len = canvas_native_string_buffer_get_length(cap->present_modes);
+            auto present_modes = v8::Array::New(isolate, (int) present_modes_len);
+
+
+            for (int i = 0; i < present_modes_len; i++) {
+                auto mode = canvas_native_string_buffer_get_value_at(cap->present_modes, i);
+                present_modes->Set(context, i, ConvertToV8String(isolate, mode));
+                canvas_native_string_destroy(mode);
+            }
+
+            auto alpha_modes_len = canvas_native_string_buffer_get_length(cap->alpha_modes);
+            auto alpha_modes = v8::Array::New(isolate, (int) alpha_modes_len);
+
+
+            for (int i = 0; i < alpha_modes_len; i++) {
+                auto mode = canvas_native_string_buffer_get_value_at(cap->alpha_modes, i);
+                alpha_modes->Set(context, i, ConvertToV8String(isolate, mode));
+                canvas_native_string_destroy(mode);
+            }
+
+            ret->Set(context, ConvertToV8String(isolate, "format"), formats);
+            ret->Set(context, ConvertToV8String(isolate, "presentModes"), present_modes);
+            ret->Set(context, ConvertToV8String(isolate, "alphaModes"), alpha_modes);
+            ret->Set(context, ConvertToV8String(isolate, "usages"),
+                     v8::Uint32::New(isolate, cap->usages));
+
+            canvas_native_webgpu_struct_surface_capabilities_release(cap);
+
+            args.GetReturnValue().Set(ret);
+            return;
         }
 
 
     }
-    args.GetReturnValue().SetUndefined();
+
+    ret->Set(context, ConvertToV8String(isolate, "format"), v8::Array::New(isolate));
+    ret->Set(context, ConvertToV8String(isolate, "presentModes"), v8::Array::New(isolate));
+    ret->Set(context, ConvertToV8String(isolate, "alphaModes"), v8::Array::New(isolate));
+    ret->Set(context, ConvertToV8String(isolate, "usages"), v8::Uint32::New(isolate, 0));
+    args.GetReturnValue().Set(ret);
 }

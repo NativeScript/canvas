@@ -1,10 +1,14 @@
-use bytes::BytesMut;
 use std::ffi::{c_char, CString};
+
+use bytes::BytesMut;
+
+use crate::ImageAsset;
 
 #[derive(Clone)]
 enum U8BufferInner {
     BytesMut(BytesMut),
     Vec(Vec<u8>),
+    ImageAsset(ImageAsset),
 }
 
 #[derive(Clone)]
@@ -19,6 +23,9 @@ impl U8Buffer {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value,
             U8BufferInner::Vec(value) => value.as_slice(),
+            U8BufferInner::ImageAsset(value) => {
+                value.0.get_bytes().unwrap_or(&[])
+            }
         }
     }
 
@@ -26,6 +33,9 @@ impl U8Buffer {
         match &mut self.0 {
             U8BufferInner::BytesMut(value) => value,
             U8BufferInner::Vec(value) => value.as_mut_slice(),
+            U8BufferInner::ImageAsset(value) => {
+                value.0.get_bytes_mut().unwrap_or(&mut [])
+            }
         }
     }
 
@@ -33,6 +43,9 @@ impl U8Buffer {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value.len(),
             U8BufferInner::Vec(value) => value.len(),
+            U8BufferInner::ImageAsset(value) => {
+                value.0.len()
+            }
         }
     }
 }
@@ -52,6 +65,12 @@ impl From<Vec<u8>> for U8Buffer {
 impl From<BytesMut> for U8Buffer {
     fn from(value: BytesMut) -> Self {
         U8Buffer(U8BufferInner::BytesMut(value))
+    }
+}
+
+impl From<ImageAsset> for U8Buffer {
+    fn from(value: ImageAsset) -> Self {
+        U8Buffer(U8BufferInner::ImageAsset(value.clone()))
     }
 }
 

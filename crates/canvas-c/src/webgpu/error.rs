@@ -5,21 +5,32 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 
 fn format_error(context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 'static)) -> String {
-    let mut err_descs = vec![];
+    let mut output = String::new();
+    let mut level = 1;
 
-    let mut err_str = String::new();
-    wgpu_core::error::format_pretty_any(&mut err_str, context, err);
-    err_descs.push(err_str);
+    fn print_tree(output: &mut String, level: &mut usize, e: &(dyn Error + 'static)) {
+        let mut print = |e: &(dyn Error + 'static)| {
+            use std::fmt::Write;
+            writeln!(output, "{}{}", " ".repeat(*level * 2), e).unwrap();
 
-    let mut source_opt = err.source();
-    while let Some(source) = source_opt {
-        let mut source_str = String::new();
-        wgpu_core::error::format_pretty_any(&mut source_str, context, source);
-        err_descs.push(source_str);
-        source_opt = source.source();
+            if let Some(e) = e.source() {
+                *level += 1;
+                print_tree(output, level, e);
+                *level -= 1;
+            }
+        };
+        if let Some(multi) = e.downcast_ref::<wgpu_core::error::MultiError>() {
+            for e in multi.errors() {
+                print(e);
+            }
+        } else {
+            print(e);
+        }
     }
 
-    format!("Validation Error\n\nCaused by:\n{}", err_descs.join(""))
+    print_tree(&mut output, &mut level, err);
+
+    format!("Validation Error\n\nCaused by:\n{}", output)
 }
 
 pub(crate) fn handle_error(
@@ -32,12 +43,10 @@ pub(crate) fn handle_error(
 ) {
     let cause_error = cause.to_string();
     let error = wgpu_core::error::ContextError {
-        string,
-        cause: Box::new(cause),
+        fn_ident: string,
         label: label.unwrap_or_default().to_string(),
-        label_key,
+        source: Box::new(cause),
     };
-
 
     let mut sink = sink_mutex.lock();
     let mut source_opt: Option<&(dyn Error + 'static)> = Some(&error);

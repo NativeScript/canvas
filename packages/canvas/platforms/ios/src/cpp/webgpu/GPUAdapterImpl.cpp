@@ -96,6 +96,7 @@ GPUAdapterImpl::GetFeatures(v8::Local<v8::Name> name,
             if (item != nullptr) {
                 auto keyValue = ConvertToV8OneByteString(isolate, (char *) item);
                 map->Set(context, keyValue, keyValue);
+                canvas_native_string_destroy(item);
             }
 
         }

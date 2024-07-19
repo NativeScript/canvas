@@ -21,7 +21,7 @@ void GPUTextureViewImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *i
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUTextureView"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUTextureView"), func).FromJust();;
 }
 
 GPUTextureViewImpl *GPUTextureViewImpl::GetPointer(const v8::Local<v8::Object> &object) {

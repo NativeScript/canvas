@@ -22,7 +22,7 @@ void GPUSupportedLimitsImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUSupportedLimits"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUSupportedLimits"), func).FromJust();;
 }
 
 GPUSupportedLimitsImpl *GPUSupportedLimitsImpl::GetPointer(v8::Local<v8::Object> object) {

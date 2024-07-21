@@ -27,7 +27,8 @@ void GPURenderBundleEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Is
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderBundleEncoder"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderBundleEncoder"),
+                      func).FromJust();
 }
 
 GPURenderBundleEncoderImpl *
@@ -342,7 +343,7 @@ void GPURenderBundleEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8:
 
     if (type == NativeType::GPUBindGroup) {
         auto index = indexVal->Uint32Value(context).FromJust();
-        auto bindgroup = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
+        auto bindGroup = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
 
         if (dynamicOffsets->IsUint8Array()) {
             auto buf = dynamicOffsets.As<v8::Uint32Array>();
@@ -354,12 +355,12 @@ void GPURenderBundleEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8:
             auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
             auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
             canvas_native_webgpu_render_bundle_encoder_set_bind_group(ptr->GetEncoder(), index,
-                                                                      bindgroup->GetBindGroup(),
+                                                                      bindGroup->GetBindGroup(),
                                                                       static_cast<const uint32_t *>(static_cast<void *>(data)),
                                                                       size, start, offset_length);
         } else {
             canvas_native_webgpu_render_bundle_encoder_set_bind_group(ptr->GetEncoder(), index,
-                                                                      bindgroup->GetBindGroup(),
+                                                                      bindGroup->GetBindGroup(),
                                                                       nullptr, 0, 0, 0);
         }
     }

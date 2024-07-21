@@ -23,6 +23,8 @@ export class GPUQueue {
 				source.source = (source.source as any).native;
 			} else if (source.source instanceof ImageData) {
 				source.source = (source.source as any).native;
+			} else if (source.source instanceof ImageAsset) {
+				source.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'IMG' || source.source.tagName === 'IMAGE')) {
 				if (source.source._asset instanceof ImageAsset) {
 					source.source = source.source._asset.native;
@@ -59,8 +61,12 @@ export class GPUQueue {
 		});
 	}
 
-	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: Uint8Array | Array<number>, dataOffset: number, size?: number) {
+	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset?: number, size?: number) {
 		if (Array.isArray(data)) {
+			data = new Uint8Array(data);
+		} else if (ArrayBuffer.isView(data)) {
+			data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+		} else if ((data as any) instanceof ArrayBuffer) {
 			data = new Uint8Array(data);
 		}
 

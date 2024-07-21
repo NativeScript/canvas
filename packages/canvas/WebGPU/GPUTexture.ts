@@ -1,5 +1,6 @@
 import { native_ } from './Constants';
 import { GPUTextureView } from './GPUTextureView';
+import type { GPUTextureViewDescriptor } from './Interfaces';
 
 export class GPUTexture {
 	[native_];
@@ -37,7 +38,7 @@ export class GPUTexture {
 		return null;
 	}
 
-	createView(desc?) {
+	createView(desc?: GPUTextureViewDescriptor) {
 		const view = this[native_].createView(desc);
 		return GPUTextureView.fromNative(view);
 	}

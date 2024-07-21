@@ -14,6 +14,14 @@ module.exports = (env) => {
   webpack.Utils.addCopyRule('**/*.svg')
   webpack.Utils.addCopyRule('**/*.mp4')
   webpack.Utils.addCopyRule('**/*.so')
+  webpack.Utils.addCopyRule('**/*.wgsl')
+
+  webpack.Utils.addCopyRule({
+    from: '../../../tools/demo/canvas/webgpu/shaders', 
+		to: 'webgpu/shaders',
+    context: webpack.Utils.project.getProjectFilePath('node_modules')
+  });
+
 
   webpack.Utils.addCopyRule({
     from: '../../../tools/demo/canvas/assets', 

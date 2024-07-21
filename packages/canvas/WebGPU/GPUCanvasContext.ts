@@ -1,9 +1,9 @@
 import { Helpers } from '../helpers';
 import { contextPtr_, native_ } from './Constants';
-import { GPUDevice } from './GPUDevice';
+import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
-import { GPUAdapter } from './GPUAdapter';
-import { GPUTextureFormat } from './Types';
+import type { GPUAdapter } from './GPUAdapter';
+import type { GPUTextureFormat } from './Types';
 export class GPUCanvasContext {
 	_type;
 	static {
@@ -41,7 +41,7 @@ export class GPUCanvasContext {
 		return this[native_];
 	}
 
-	configure(options: { device: GPUDevice; format: any; usage?: number /* default=0x10 - GPUTextureUsage.RENDER_ATTACHMENT */; viewFormats?: number[] /* default=[] */; colorSpace?: 'display-p3' | 'srgb' /* default="srgb" */; alphaMode?: 'opaque' | 'premultiplied' }) {
+	configure(options: { device: GPUDevice; format: any; usage?: number /* default=0x10 - GPUTextureUsage.RENDER_ATTACHMENT */; viewFormats?: number[] /* default=[] */; colorSpace?: 'display-p3' | 'srgb' /* default="srgb" */; alphaMode?: 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit'; presentModes?: 'autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox' }) {
 		const opts = {
 			usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
 			colorSpace: 'srgb',
@@ -67,7 +67,7 @@ export class GPUCanvasContext {
 		return null;
 	}
 
-	presentSurface(texture) {
+	presentSurface(texture: GPUTexture) {
 		this[native_].presentSurface(texture?.[native_]);
 	}
 

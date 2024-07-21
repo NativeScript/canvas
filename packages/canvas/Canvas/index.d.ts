@@ -3,6 +3,7 @@ import {CanvasBase} from './common';
 import {CanvasRenderingContext2D} from '../Canvas2D/CanvasRenderingContext2D';
 import {WebGLRenderingContext} from '../WebGL/WebGLRenderingContext';
 import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
+import { GPUCanvasContext } from '../WebGPU';
 
 export declare function createSVGMatrix(): DOMMatrix;
 
@@ -50,7 +51,9 @@ export declare class Canvas extends CanvasBase {
 
 	getContext(type: 'webgl2', options?: any): WebGL2RenderingContext | null;
 
-	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | null;
+	getContext(type: 'webgpu', options?: any): GPUCanvasContext | null;
+
+	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null;
 
 	getBoundingClientRect(): {
 		x: number;

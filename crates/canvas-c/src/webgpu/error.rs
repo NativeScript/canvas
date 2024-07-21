@@ -78,6 +78,8 @@ pub(crate) fn handle_error_fatal(
     // );
     let error = cause.to_string();
 
+    println!("error ? {:?}", error);
+
     // log::error!("Error in {operation}: {f}",
     //     f = error);
 

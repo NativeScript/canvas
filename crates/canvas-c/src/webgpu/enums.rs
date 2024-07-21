@@ -665,15 +665,7 @@ impl Into<wgpu_types::TextureFormat> for CanvasGPUTextureFormat {
         }
     }
 }
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub enum CanvasOptionsGPUTextureFormat {
-    None,
-    Some(CanvasGPUTextureFormat),
-}
-
-impl From<Option<wgpu_types::TextureFormat>> for CanvasOptionsGPUTextureFormat {
+impl From<Option<wgpu_types::TextureFormat>> for CanvasOptionalGPUTextureFormat {
     fn from(value: Option<wgpu_types::TextureFormat>) -> Self {
         match value {
             Some(value) => {
@@ -685,11 +677,11 @@ impl From<Option<wgpu_types::TextureFormat>> for CanvasOptionsGPUTextureFormat {
     }
 }
 
-impl Into<Option<wgpu_types::TextureFormat>> for CanvasOptionsGPUTextureFormat {
+impl Into<Option<wgpu_types::TextureFormat>> for CanvasOptionalGPUTextureFormat {
     fn into(self) -> Option<wgpu_types::TextureFormat> {
         match self {
-            CanvasOptionsGPUTextureFormat::None => None,
-            CanvasOptionsGPUTextureFormat::Some(value) => {
+            CanvasOptionalGPUTextureFormat::None => None,
+            CanvasOptionalGPUTextureFormat::Some(value) => {
                 let value: wgpu_types::TextureFormat = value.into();
                 Some(value)
             }
@@ -919,6 +911,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
 }
 
 #[repr(C)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum CanvasOptionalGPUTextureFormat {
     None,
     Some(CanvasGPUTextureFormat),
@@ -2286,3 +2279,9 @@ impl From<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction
         }
     }
 }
+
+pub const CanvasGPUTextureUsageCopySrc: u32 =  1 << 0;
+pub const CanvasGPUTextureUsageCopyDst: u32 =  1 << 1;
+pub const CanvasGPUTextureUsageTextureBinding: u32 =  1 << 2;
+pub const CanvasGPUTextureUsageStorageBinding: u32 =  1 << 3;
+pub const CanvasGPUTextureUsageRenderAttachment: u32 =  1 << 4;

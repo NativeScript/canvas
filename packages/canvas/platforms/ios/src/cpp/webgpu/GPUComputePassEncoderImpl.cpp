@@ -230,7 +230,7 @@ void GPUComputePassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::
             auto data = static_cast<uint8_t *>(buffer->GetBackingStore()->Data()) + offset;
             auto size = buf->Length();
             auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
-            auto offset_length = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
+            auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
             canvas_native_webgpu_compute_pass_encoder_set_bind_group(ptr->GetComputePass(), index,
                                                                      bindgroup->GetBindGroup(),
                                                                      static_cast<const uint32_t *>(static_cast<void *>(data)),

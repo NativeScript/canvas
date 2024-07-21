@@ -298,7 +298,7 @@ void GPURenderPassEncoderImpl::End(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (ptr == nullptr) {
         return;
     }
-    
+
     canvas_native_webgpu_render_pass_encoder_end(ptr->GetPass());
 }
 

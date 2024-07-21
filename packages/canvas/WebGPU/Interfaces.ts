@@ -3,7 +3,7 @@ import type { GPUQuerySet } from './GPUQuerySet';
 import type { GPUShaderModule } from './GPUShaderModule';
 import type { GPUTexture } from './GPUTexture';
 import type { GPUTextureView } from './GPUTextureView';
-import { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUVertexFormat, GPUVertexStepMode } from './Types';
+import type { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode } from './Types';
 export interface GPUExternalTextureBindingLayout {}
 
 export interface GPUProgrammableStage {
@@ -162,4 +162,15 @@ export interface GPUImageDataLayout {
 	bytesPerRow: number;
 	offset?: number;
 	rowsPerImage?: number;
+}
+
+export interface GPUTextureViewDescriptor {
+	arrayLayerCount?: number;
+	aspect?: GPUTextureAspect;
+	baseArrayLayer?: number;
+	baseMipLevel?: number;
+	dimension: GPUTextureViewDimension;
+	format?: GPUTextureFormat;
+	label?: string;
+	mipLevelCount?: number;
 }

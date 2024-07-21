@@ -14,8 +14,8 @@ import { GPUBindGroupLayout } from './GPUBindGroupLayout';
 import { GPUTextureView } from './GPUTextureView';
 import { GPUSampler } from './GPUSampler';
 import { GPUExternalTexture } from './GPUExternalTexture';
-import { GPUAddressMode, GPUCompareFunction, GPUErrorFilter, GPUFilterMode, GPUMipmapFilterMode, GPUQueryType, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension } from './Types';
-import { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPUVertexState } from './Interfaces';
+import type { GPUAddressMode, GPUCompareFunction, GPUErrorFilter, GPUFilterMode, GPUMipmapFilterMode, GPUQueryType, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension } from './Types';
+import type { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPUVertexState } from './Interfaces';
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
@@ -151,6 +151,7 @@ export class GPUDevice extends EventTarget {
 		}
 		return null;
 	}
+
 	get lost() {
 		if (!this._lostPromise) {
 			this._lostPromise = new Promise((resolve, reject) => {
@@ -444,12 +445,7 @@ export class GPUDevice extends EventTarget {
 			depthOrArrayLayers: sizeIsArray ? descriptor.size[2] ?? 1 : (<GPUExtent3DDict>descriptor.size)?.depthOrArrayLayers ?? 1,
 		};
 
-		const texture = this.native.createTexture(opts);
-
-		if (texture) {
-			return GPUTexture.fromNative(texture);
-		}
-		return undefined;
+		return GPUTexture.fromNative(this.native.createTexture(opts));
 	}
 
 	popErrorScope() {
@@ -482,7 +478,7 @@ export class GPUDevice extends EventTarget {
 		this.native.pushErrorScope(filter);
 	}
 
-	private _queue;
+	private _queue: GPUQueue;
 	get queue() {
 		if (!this._queue) {
 			this._queue = GPUQueue.fromNative(this[native_].queue);

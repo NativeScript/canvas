@@ -134,6 +134,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             wgpu_core::instance::AdapterInputs::Mask(backends, |b| None),
         );
 
+
         let adapter = adapter.map(|adapter_id| {
             let features = gfx_select!(adapter_id => global.adapter_features(adapter_id))
                 .map(build_features)

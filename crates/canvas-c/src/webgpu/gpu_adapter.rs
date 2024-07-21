@@ -4,7 +4,8 @@ use std::{
     ,
 };
 use std::sync::Arc;
-
+use wgpu_core::instance::InvalidAdapter;
+use wgpu_types::DownlevelCapabilities;
 use crate::buffers::StringBuffer;
 use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
 use crate::webgpu::gpu_queue::QueueId;
@@ -132,18 +133,14 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         unsafe { *required_limits }.into()
     };
 
-    let label = if !label.is_null() {
-        Some(unsafe { CStr::from_ptr(label).to_string_lossy() })
-    } else {
-        None
-    };
+    let label = ptr_into_label(label);
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let adapter_id = adapter.adapter;
     let instance = adapter.instance.clone();
     std::thread::spawn(move || {
-        let descriptor = wgpu_types::DeviceDescriptor {
+        let mut descriptor = wgpu_types::DeviceDescriptor {
             label,
             required_features: features,
             required_limits: limits,

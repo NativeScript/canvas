@@ -23,7 +23,7 @@ void GPUCanvasContextImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCanvasContext"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCanvasContext"), func).FromJust();
 }
 
 GPUCanvasContextImpl *GPUCanvasContextImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -287,7 +287,7 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
             ret->Set(context, ConvertToV8String(isolate, "presentModes"), present_modes);
             ret->Set(context, ConvertToV8String(isolate, "alphaModes"), alpha_modes);
             ret->Set(context, ConvertToV8String(isolate, "usages"),
-                     v8::Uint32::New(isolate, cap->usages));
+                     v8::Uint32::NewFromUnsigned(isolate, cap->usages));
 
             canvas_native_webgpu_struct_surface_capabilities_release(cap);
 

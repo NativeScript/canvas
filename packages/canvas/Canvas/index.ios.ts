@@ -7,8 +7,6 @@ import { ImageSource, Utils, profile, Screen, PercentLength } from '@nativescrip
 import { GPUCanvasContext } from '../WebGPU';
 declare var NSCCanvas, NSCCanvasListener;
 
-export * from './common';
-
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
 }

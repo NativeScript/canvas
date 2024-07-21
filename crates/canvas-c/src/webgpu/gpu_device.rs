@@ -1763,17 +1763,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
 
 #[repr(C)]
 pub struct CanvasCreateTextureDescriptor {
-    label: *const c_char,
-    dimension: CanvasTextureDimension,
-    format: CanvasGPUTextureFormat,
-    mipLevelCount: u32,
-    sampleCount: u32,
-    width: u32,
-    height: u32,
-    depthOrArrayLayers: u32,
-    usage: u32,
-    view_formats: *const CanvasGPUTextureFormat,
-    view_formats_size: usize,
+    pub label: *const c_char,
+    pub dimension: CanvasTextureDimension,
+    pub format: CanvasGPUTextureFormat,
+    pub mipLevelCount: u32,
+    pub sampleCount: u32,
+    pub width: u32,
+    pub height: u32,
+    pub depthOrArrayLayers: u32,
+    pub usage: u32,
+    pub view_formats: *const CanvasGPUTextureFormat,
+    pub view_formats_size: usize,
 }
 
 #[no_mangle]
@@ -1855,17 +1855,17 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
 
 #[repr(C)]
 pub struct CanvasCreateSamplerDescriptor {
-    label: *const c_char,
-    address_mode_u: CanvasAddressMode,
-    address_mode_v: CanvasAddressMode,
-    address_mode_w: CanvasAddressMode,
-    mag_filter: CanvasFilterMode,
-    min_filter: CanvasFilterMode,
-    mipmap_filter: CanvasFilterMode, // TODO: GPUMipmapFilterMode
-    lod_min_clamp: f32,
-    lod_max_clamp: f32,
-    compare: CanvasOptionalCompareFunction,
-    max_anisotropy: u16,
+    pub label: *const c_char,
+    pub address_mode_u: CanvasAddressMode,
+    pub address_mode_v: CanvasAddressMode,
+    pub address_mode_w: CanvasAddressMode,
+    pub mag_filter: CanvasFilterMode,
+    pub min_filter: CanvasFilterMode,
+    pub mipmap_filter: CanvasFilterMode, // TODO: GPUMipmapFilterMode
+    pub lod_min_clamp: f32,
+    pub lod_max_clamp: f32,
+    pub compare: CanvasOptionalCompareFunction,
+    pub max_anisotropy: u16,
 }
 
 

@@ -1,13 +1,13 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
+use std::os::raw::{c_char, c_void};
+use std::ptr;
 
 use chrono::Timelike;
 use glutin::display::GetGlDisplay;
 use glutin::prelude::*;
 use rand::Rng;
-use raw_window_handle::{
-    HasRawWindowHandle, RawWindowHandle,
-};
+use raw_window_handle::{AppKitWindowHandle, HasRawWindowHandle, RawWindowHandle};
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -16,8 +16,15 @@ use canvas_2d::context::compositing::composite_operation_type::CompositeOperatio
 use canvas_2d::context::ContextWrapper;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
+use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
+use canvas_c::webgpu::error::CanvasGPUErrorType;
 use canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter;
-use canvas_c::webgpu::gpu_device::CanvasGPUDevice;
+use canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer;
+use canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture;
+use canvas_c::webgpu::gpu_device::{canvas_native_webgpu_device_get_queue, CanvasCreateRenderPipelineDescriptor, CanvasCreateSamplerDescriptor, CanvasCreateTextureDescriptor, CanvasFragmentState, CanvasGPUAutoLayoutMode, CanvasGPUDevice, CanvasGPUPipelineLayoutOrGPUAutoLayoutMode, CanvasPrimitiveState, CanvasProgrammableStage, CanvasVertexState};
+use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
+use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
+use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyExternalImage, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
 use canvas_core::gl::get_shader_info_log;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
@@ -576,6 +583,536 @@ pub extern "C" fn my_callback(adapter: *const CanvasGPUAdapter, data: *mut std::
     )
 }
 
+fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
+    let SHADERS = r#"
+    struct VertexOut {
+      @builtin(position) position : vec4f,
+      @location(0) color : vec4f
+    }
+
+    @vertex
+    fn vertex_main(@location(0) position: vec4f,
+                   @location(1) color: vec4f) -> VertexOut
+    {
+      var output : VertexOut;
+      output.position = position;
+      output.color = color;
+      return output;
+    }
+
+    @fragment
+    fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
+    {
+      return fragData.color;
+    }
+    "#;
+
+    let source = CString::new(SHADERS).unwrap();
+
+    let data = unsafe { &mut *data };
+
+    let device = data.device.unwrap();
+
+    let module = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(
+        device,
+        std::ptr::null(),
+        source.as_ptr(),
+    );
+
+
+    let instance = data.instance;
+
+    let context = unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_nsview(
+            instance,
+            window.ns_view.as_ptr(),
+            data.width,
+            data.height,
+        )
+    };
+
+    let RENDER_ATTACHMENT = 1 << 4 as u32;
+
+    let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration { alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied, usage: RENDER_ATTACHMENT, presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo, view_formats: std::ptr::null(), view_formats_size: 0 };
+
+    unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(context, device, &config); }
+
+    let texture = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_current_texture(context);
+
+    let desc = std::ptr::null() as _;
+
+    let view = unsafe { canvas_native_webgpu_texture_create_texture_view(texture, desc) };
+
+
+    let vertices: Vec<f32> = vec![0.0, 0.6, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, -0.5, -0.6, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.5, -0.6, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0];
+
+    let usage: u32 = 0x0020 | 0x0008;
+    let buffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(device, std::ptr::null(), vertices.len() as u64 * 4, usage, false);
+
+
+    let queue = canvas_native_webgpu_device_get_queue(device);
+    unsafe { canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(queue, buffer, 0, vertices.as_ptr() as _, vertices.len() * 4, 0, -1) }
+
+    let vertext_entry_point = CString::new("vertex_main").unwrap();
+
+    let vertex_attributes = vec![
+        canvas_c::webgpu::structs::CanvasVertexAttribute { format: canvas_c::webgpu::enums::CanvasVertexFormat::Float32x4, offset: 0, shader_location: 0 },
+        canvas_c::webgpu::structs::CanvasVertexAttribute { format: canvas_c::webgpu::enums::CanvasVertexFormat::Float32x4, offset: 16, shader_location: 1 },
+    ];
+
+    let buffers = vec![canvas_c::webgpu::gpu_device::CanvasVertexBufferLayout { array_stride: 32, step_mode: canvas_c::webgpu::enums::CanvasVertexStepMode::Vertex, attributes: vertex_attributes.as_ptr(), attributes_size: vertex_attributes.len() }];
+    let vertex = canvas_c::webgpu::gpu_device::CanvasVertexState { module: module, entry_point: vertext_entry_point.as_ptr(), constants: std::ptr::null(), buffers: buffers.as_ptr(), buffers_size: buffers.len() };
+
+    let primitive = canvas_c::webgpu::gpu_device::CanvasPrimitiveState { topology: canvas_c::webgpu::enums::CanvasPrimitiveTopology::TriangleList, strip_index_format: canvas_c::webgpu::enums::CanvasOptionalIndexFormat::None, front_face: canvas_c::webgpu::enums::CanvasFrontFace::Ccw, cull_mode: canvas_c::webgpu::enums::CanvasCullMode::None, unclipped_depth: false };
+
+    let fragment_entry_point = CString::new("fragment_main").unwrap();
+    let fragment_targets = vec![canvas_c::webgpu::structs::CanvasColorTargetState { format: canvas_c::webgpu::enums::CanvasGPUTextureFormat::Bgra8Unorm, blend: canvas_c::webgpu::structs::CanvasOptionalBlendState::None, write_mask: 0xF }];
+    let fragment = canvas_c::webgpu::gpu_device::CanvasFragmentState { targets: fragment_targets.as_ptr(), targets_size: fragment_targets.len(), module: module, entry_point: fragment_entry_point.as_ptr(), constants: std::ptr::null() };
+
+    let descriptor = canvas_c::webgpu::gpu_device::CanvasCreateRenderPipelineDescriptor { label: std::ptr::null(), layout: canvas_c::webgpu::gpu_device::CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(canvas_c::webgpu::gpu_device::CanvasGPUAutoLayoutMode::Auto), vertex: &vertex, primitive: &primitive, depth_stencil: std::ptr::null(), multisample: std::ptr::null(), fragment: &fragment };
+    let pipeline = unsafe { canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_render_pipeline(device, &descriptor) };
+
+    let command_encoder = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(device, std::ptr::null());
+
+    let color_attachments = vec![canvas_c::webgpu::structs::CanvasRenderPassColorAttachment { view: view, resolve_target: std::ptr::null() as _, channel: canvas_c::webgpu::structs::CanvasPassChannelColor { load_op: canvas_c::webgpu::structs::CanvasLoadOp::Clear, store_op: canvas_c::webgpu::structs::CanvasStoreOp::Store, clear_value: canvas_c::webgpu::structs::CanvasColor { r: 0., g: 0.5, b: 1., a: 1. }, read_only: false } }];
+
+    let render_pass = unsafe { canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(command_encoder, std::ptr::null(), color_attachments.as_ptr(), color_attachments.len(), std::ptr::null(), std::ptr::null(), std::ptr::null(), -1, -1) };
+
+    unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_pipeline(render_pass, pipeline) }
+
+
+    unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(render_pass, 0, buffer, 0, -1) }
+
+
+    unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(render_pass, 3, 1, 0, 0) }
+
+
+    unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_end(render_pass) };
+
+
+    let exe = unsafe { canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(command_encoder, std::ptr::null()) };
+
+    let command_buffers = vec![exe];
+
+    unsafe { canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_submit(queue, command_buffers.as_ptr() as _, command_buffers.len()) };
+
+
+    unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_present_surface(context, texture) }
+}
+
+struct BlurSettings {
+    filterSize: u32,
+    iterations: u32,
+    blockDim: u32,
+}
+fn update_blur_settings(blur_settings: &mut BlurSettings, device: *const CanvasGPUDevice, buffer: *const CanvasGPUBuffer) {
+    let tile_dim = 128;
+    blur_settings.blockDim = tile_dim - blur_settings.filterSize - 1;
+    let queue = canvas_native_webgpu_device_get_queue(device);
+    let data = [blur_settings.filterSize, blur_settings.blockDim];
+    unsafe {
+        canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(queue, buffer, 0, data.as_ptr() as *const u8, data.len() * 4, 0, 0);
+    }
+    unsafe { canvas_native_webgpu_queue_release(queue) }
+}
+
+
+unsafe extern "C" fn handle_error(type_: CanvasGPUErrorType, msg: *mut c_char, user_data: *mut c_void) {
+    println!("uncap type {:?}:- {}", type_, CStr::from_ptr(msg).to_string_lossy());
+}
+
+unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
+    let di_3d = include_bytes!("./Di-3d.png");
+    let blurWGSL = CString::new(include_str!("./blur.wgsl").to_string()).unwrap();
+    let fullscreenTexturedQuadWGSL = CString::new(include_str!("./fullscreenTexturedQuad.wgsl").to_string()).unwrap();
+
+    let user_data = data as *mut c_void;
+    let data = unsafe { &mut *data };
+
+    let device = data.device.unwrap();
+
+    canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_set_uncaptured_error_callback(device, Some(handle_error), user_data);
+
+    let instance = data.instance;
+
+    let context = unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_nsview(
+            instance,
+            window.ns_view.as_ptr(),
+            data.width,
+            data.height,
+        )
+    };
+
+    let RENDER_ATTACHMENT = 1 << 4 as u32;
+
+    let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration { alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied, usage: RENDER_ATTACHMENT, presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo, view_formats: std::ptr::null(), view_formats_size: 0 };
+
+    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(context, device, &config);
+
+    let layout = CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto);
+
+    let compute_module = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(device, ptr::null(), blurWGSL.as_ptr());
+
+    let compute = CanvasProgrammableStage {
+        module: compute_module,
+        entry_point: c"main".as_ptr(),
+        constants: ptr::null_mut(),
+    };
+
+    let blurPipeline = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_compute_pipeline(
+        device, ptr::null_mut(),
+        layout,
+        &compute,
+    );
+
+
+    let targets = [
+        CanvasColorTargetState {
+            format: CanvasGPUTextureFormat::Bgra8Unorm,
+            blend: CanvasOptionalBlendState::None,
+            write_mask: 0xF,
+        }
+    ];
+
+    let render_fragment_module = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(device, ptr::null(), fullscreenTexturedQuadWGSL.as_ptr());
+
+
+    let fragment = CanvasFragmentState {
+        targets: targets.as_ptr(),
+        targets_size: targets.len(),
+        module: render_fragment_module,
+        entry_point: c"frag_main".as_ptr(),
+        constants: ptr::null_mut(),
+    };
+
+    let vertex = CanvasVertexState {
+        module: render_fragment_module,
+        entry_point: c"vert_main".as_ptr(),
+        constants: ptr::null_mut(),
+        buffers: ptr::null_mut(),
+        buffers_size: 0,
+    };
+
+    let primitive = CanvasPrimitiveState {
+        topology: CanvasPrimitiveTopology::TriangleList,
+        strip_index_format: CanvasOptionalIndexFormat::None,
+        front_face: CanvasFrontFace::Ccw,
+        cull_mode: CanvasCullMode::None,
+        unclipped_depth: false,
+    };
+
+    let desc = CanvasCreateRenderPipelineDescriptor {
+        label: ptr::null_mut(),
+        layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto),
+        vertex: &vertex,
+        primitive: &primitive,
+        depth_stencil: ptr::null_mut(),
+        multisample: ptr::null_mut(),
+        fragment: &fragment,
+    };
+
+    let fullscreenQuadPipeline = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_render_pipeline(device, &desc);
+
+    let sampler_desc = CanvasCreateSamplerDescriptor {
+        label: ptr::null_mut(),
+        address_mode_u: CanvasAddressMode::ClampToEdge,
+        address_mode_v: CanvasAddressMode::ClampToEdge,
+        address_mode_w: CanvasAddressMode::ClampToEdge,
+        mag_filter: CanvasFilterMode::Linear,
+        min_filter: CanvasFilterMode::Linear,
+        mipmap_filter: CanvasFilterMode::Nearest,
+        lod_min_clamp: 0.0,
+        lod_max_clamp: 32f32,
+        compare: CanvasOptionalCompareFunction::None,
+        max_anisotropy: 1,
+    };
+
+    let sampler = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_sampler(device, &sampler_desc);
+
+    let image_bitmap = canvas_c::canvas_native_image_asset_create();
+    canvas_c::canvas_native_image_asset_load_from_raw(image_bitmap, di_3d.as_ptr(), di_3d.len());
+
+
+    let srcWidth = canvas_c::canvas_native_image_asset_width(image_bitmap);
+    let srcHeight = canvas_c::canvas_native_image_asset_height(image_bitmap);
+
+    let mut texture_desc = CanvasCreateTextureDescriptor {
+        label: ptr::null_mut(),
+        dimension: CanvasTextureDimension::D2,
+        format: CanvasGPUTextureFormat::R8Unorm,
+        mipLevelCount: 1,
+        sampleCount: 1,
+        width: 0,
+        height: 1,
+        depthOrArrayLayers: 1,
+        usage: 0,
+        view_formats: ptr::null_mut(),
+        view_formats_size: 0,
+    };
+
+    texture_desc.width = srcWidth;
+    texture_desc.height = srcHeight;
+    texture_desc.format = CanvasGPUTextureFormat::Rgba8Unorm;
+    texture_desc.usage = CanvasGPUTextureUsageTextureBinding | CanvasGPUTextureUsageCopyDst | CanvasGPUTextureUsageRenderAttachment;
+
+    let cubeTexture = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_texture(device, &texture_desc);
+
+    let queue = canvas_native_webgpu_device_get_queue(device);
+
+    let source_buffer = canvas_c::canvas_native_image_asset_get_data(image_bitmap);
+
+    let source_bytes = canvas_c::buffers::canvas_native_u8_buffer_get_bytes(source_buffer);
+
+    let source_size = canvas_c::buffers::canvas_native_u8_buffer_get_length(source_buffer);
+
+    let source = CanvasImageCopyExternalImage {
+        source: source_bytes,
+        source_size,
+        origin: CanvasOrigin2d {
+            x: 0,
+            y: 0,
+        },
+        flip_y: false,
+        width: srcWidth,
+        height: srcHeight,
+    };
+
+    let destination = CanvasImageCopyTexture {
+        texture: cubeTexture,
+        origin: CanvasOrigin3d {
+            x: 0,
+            y: 0,
+            z: 0,
+        },
+        aspect: CanvasTextureAspect::All,
+        mip_level: 0,
+    };
+
+    let ex = CanvasExtent3d {
+        width: srcWidth,
+        height: srcHeight,
+        depth_or_array_layers: 1,
+    };
+
+    canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &source, &destination, &ex);
+
+    let textures = [0, 1].into_iter()
+        .map(|_| {
+            let texture_desc = CanvasCreateTextureDescriptor {
+                label: ptr::null_mut(),
+                dimension: CanvasTextureDimension::D2,
+                format: CanvasGPUTextureFormat::Rgba8Unorm,
+                mipLevelCount: 1,
+                sampleCount: 1,
+                width: srcWidth,
+                height: srcHeight,
+                depthOrArrayLayers: 1,
+                usage: CanvasGPUTextureUsageTextureBinding | CanvasGPUTextureUsageCopyDst | CanvasGPUTextureUsageStorageBinding,
+                view_formats: ptr::null_mut(),
+                view_formats_size: 0,
+            };
+            canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_texture(device, &texture_desc)
+        }).collect::<Vec<_>>();
+
+    let buffer0 = {
+        let buffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(device, ptr::null_mut(), 4, 0x0040, true);
+        let ptr = canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_get_mapped_range(buffer, -1, -1);
+        let slice = std::slice::from_raw_parts_mut(ptr as *mut u32, 4);
+        slice[0] = 0;
+        canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_unmap(buffer);
+        buffer
+    };
+
+    let buffer1 = {
+        let buffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(device, ptr::null_mut(), 4, 0x0040, true);
+        let ptr = canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_get_mapped_range(buffer, -1, -1);
+        let slice = std::slice::from_raw_parts_mut(ptr as *mut u32, 4);
+        slice[0] = 1;
+        canvas_c::webgpu::gpu_buffer::canvas_native_webgpu_buffer_unmap(buffer);
+        buffer
+    };
+
+    let blurParamsBuffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(device, ptr::null_mut(), 8, 0x0008 | 0x0040, false);
+
+    let compute_constants_layout = canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(blurPipeline, 0);
+
+    let compute_consts_entries = [
+        CanvasBindGroupEntry { binding: 0, resource: CanvasBindGroupEntryResource::Sampler(sampler) },
+        CanvasBindGroupEntry {
+            binding: 1,
+            resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
+                buffer: blurParamsBuffer,
+                offset: -1,
+                size: -1,
+            }),
+        }
+    ];
+
+    let computeConstants = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(device, ptr::null_mut(), compute_constants_layout, compute_consts_entries.as_ptr(), compute_consts_entries.len());
+
+    let compute_bind_group0_layout = canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(blurPipeline, 1);
+
+    let cube_texture_view = canvas_native_webgpu_texture_create_texture_view(cubeTexture, ptr::null());
+
+    let texture_0_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[0], ptr::null());
+
+    let compute_bind_group0_entries = [
+        CanvasBindGroupEntry { binding: 1, resource: CanvasBindGroupEntryResource::TextureView(cube_texture_view) },
+        CanvasBindGroupEntry { binding: 2, resource: CanvasBindGroupEntryResource::TextureView(texture_0_texture_view) },
+        CanvasBindGroupEntry {
+            binding: 3,
+            resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
+                buffer: buffer0,
+                offset: -1,
+                size: -1,
+            }),
+        }
+    ];
+
+    let computeBindGroup0 = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(device, ptr::null_mut(), compute_bind_group0_layout, compute_bind_group0_entries.as_ptr(), compute_bind_group0_entries.len());
+
+    let compute_bind_group1_layout = canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(blurPipeline, 1);
+
+    let texture_0_group1_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[0], ptr::null());
+
+    let texture_1_group1_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[1], ptr::null());
+
+    let compute_bind_group1_entries = [
+        CanvasBindGroupEntry { binding: 1, resource: CanvasBindGroupEntryResource::TextureView(texture_0_group1_texture_view) },
+        CanvasBindGroupEntry { binding: 2, resource: CanvasBindGroupEntryResource::TextureView(texture_1_group1_texture_view) },
+        CanvasBindGroupEntry {
+            binding: 3,
+            resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
+                buffer: buffer1,
+                offset: -1,
+                size: -1,
+            }),
+        }
+    ];
+
+    let computeBindGroup1 = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(device, ptr::null_mut(), compute_bind_group1_layout, compute_bind_group1_entries.as_ptr(), compute_bind_group1_entries.len());
+
+    let compute_bind_group2_layout = canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(blurPipeline, 1);
+
+    let texture_0_group2_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[0], ptr::null());
+
+    let texture_1_group2_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[1], ptr::null());
+
+    let compute_bind_group2_entries = [
+        CanvasBindGroupEntry { binding: 1, resource: CanvasBindGroupEntryResource::TextureView(texture_1_group2_texture_view) },
+        CanvasBindGroupEntry { binding: 2, resource: CanvasBindGroupEntryResource::TextureView(texture_0_group2_texture_view) },
+        CanvasBindGroupEntry {
+            binding: 3,
+            resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
+                buffer: buffer0,
+                offset: -1,
+                size: -1,
+            }),
+        }
+    ];
+
+    let computeBindGroup2 = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(device, ptr::null_mut(), compute_bind_group2_layout, compute_bind_group2_entries.as_ptr(), compute_bind_group2_entries.len());
+
+    let show_result_group_layout = canvas_c::webgpu::gpu_render_pipeline::canvas_native_webgpu_render_pipeline_get_bind_group_layout(fullscreenQuadPipeline, 0);
+
+    let texture_1_result_group_texture_view = canvas_native_webgpu_texture_create_texture_view(textures[1], ptr::null());
+
+    let show_result_group_entries = [
+        CanvasBindGroupEntry { binding: 0, resource: CanvasBindGroupEntryResource::Sampler(sampler) },
+        CanvasBindGroupEntry { binding: 1, resource: CanvasBindGroupEntryResource::TextureView(texture_1_result_group_texture_view) },
+    ];
+
+    let showResultBindGroup = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
+        device, ptr::null_mut(), show_result_group_layout, show_result_group_entries.as_ptr(), show_result_group_entries.len(),
+    );
+
+    let mut settings = BlurSettings {
+        filterSize: 15,
+        iterations: 2,
+        blockDim: 0,
+    };
+
+    update_blur_settings(&mut settings, device, blurParamsBuffer);
+
+
+    let commandEncoder = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(device, ptr::null());
+
+    let computePass = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_compute_pass(commandEncoder, ptr::null(), ptr::null(), -1, -1);
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_pipeline(computePass, blurPipeline);
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 0, computeConstants, ptr::null(), 0, 0, 0);
+
+
+    let blockDim = settings.blockDim;
+
+    let batch = [4, 4];
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup0, ptr::null(), 0, 0, 0);
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcWidth.div_ceil(blockDim), srcHeight.div_ceil(batch[1]), 1);
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcHeight.div_ceil(batch[1]), srcWidth.div_ceil(blockDim), 1);
+
+    for i in 0..settings.iterations - 1 {
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup2, ptr::null(), 0, 0, 0);
+
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcWidth.div_ceil(blockDim), srcHeight.div_ceil(batch[1]), 1);
+
+
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
+
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcHeight.div_ceil(batch[1]), srcWidth.div_ceil(blockDim), 1);
+    }
+
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_end(computePass);
+
+
+    let texture = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_current_texture(context);
+
+    let texture_view = canvas_native_webgpu_texture_create_texture_view(texture, ptr::null());
+
+    let colorAttachments = [
+        CanvasRenderPassColorAttachment {
+            view: texture_view,
+            resolve_target: ptr::null(),
+            channel: CanvasPassChannelColor {
+                load_op: CanvasLoadOp::Clear,
+                store_op: CanvasStoreOp::Store,
+                clear_value: CanvasColor {
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 1.0,
+                },
+                read_only: false,
+            },
+        }
+    ];
+
+    let passEncoder = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(commandEncoder, ptr::null(), colorAttachments.as_ptr(), colorAttachments.len(), ptr::null(), ptr::null(), ptr::null(), -1, -1);
+
+    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_pipeline(passEncoder, fullscreenQuadPipeline);
+
+    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_bind_group(passEncoder, 0, showResultBindGroup, ptr::null(), 0, 0, 0);
+
+    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(passEncoder, 6, 1, 0, 0);
+
+    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_end(passEncoder);
+
+    let command_buffers = [
+        canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(commandEncoder, ptr::null())
+    ];
+
+    canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_submit(queue, command_buffers.as_ptr(), command_buffers.len());
+
+
+    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_present_surface(context, texture);
+}
+
 fn main() {
     let event_loop = EventLoop::new().unwrap();
     let window_builder = WindowBuilder::new();
@@ -771,154 +1308,21 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 match event {
                     WindowEvent::Resized(resized) => {
-                        println!("Resized {:?}", resized);
+                        let data_ = unsafe { &*data };
 
 
-                        let SHADERS = r#"
-    struct VertexOut {
-      @builtin(position) position : vec4f,
-      @location(0) color : vec4f
-    }
-    
-    @vertex
-    fn vertex_main(@location(0) position: vec4f,
-                   @location(1) color: vec4f) -> VertexOut
-    {
-      var output : VertexOut;
-      output.position = position;
-      output.color = color;
-      return output;
-    }
-    
-    @fragment
-    fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
-    {
-      return fragData.color;
-    }
-    "#;
-
-                        let source = CString::new(SHADERS).unwrap();
-
-                        let data = unsafe { &mut *data };
-
-                        let device = data.device.unwrap();
-
-                        let module = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(
-                            device,
-                            std::ptr::null(),
-                            source.as_ptr(),
-                        );
-
-
-                        let instance = data.instance;
-                        match data.window {
+                        match data_.window {
                             RawWindowHandle::AppKit(window) => {
-                                let context = unsafe {
-                                    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_nsview(
-                                        instance,
-                                        window.ns_view.as_ptr(),
-                                        data.width,
-                                        data.height,
-                                    )
-                                };
+                                println!("Resized {:?}", resized);
 
-                                let RENDER_ATTACHMENT = 1 << 4 as u32;
-
-                                let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration { alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied, usage: RENDER_ATTACHMENT, presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo, view_formats: std::ptr::null(), view_formats_size: 0 };
-
-                                unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(context, device, &config); }
-
-
-                                let texture = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_current_texture(context);
-
-                                let desc = std::ptr::null() as _;
-
-                                let view = unsafe { canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view(texture, desc) };
-
-
-                                let vertices: Vec<f32> = vec![0.0, 0.6, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, -0.5, -0.6, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.5, -0.6, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0];
-
-
-                                /*
-
-                                MAP_READ = 0x0001,
-                         MAP_WRITE = 0x0002,
-                         COPY_SRC = 0x0004,
-                         COPY_DST = 0x0008,
-                         INDEX = 0x0010,
-                         VERTEX = 0x0020,
-                         UNIFORM = 0x0040,
-                         STORAGE = 0x0080,
-                         INDIRECT = 0x0100,
-                         QUERY_RESOLVE = 0x0200,
-                     }
-
-                                 */
-                                let usage: u32 = 0x0020 | 0x0008;
-                                let buffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(device, std::ptr::null(), vertices.len() as u64 * 4, usage, false);
-
-
-                                let queue = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_queue(device);
-                                unsafe { canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(queue, buffer, 0, vertices.as_ptr() as _, vertices.len() * 4, 0, -1) }
-
-                                let vertext_entry_point = CString::new("vertex_main").unwrap();
-
-                                let vertex_attributes = vec![
-                                    canvas_c::webgpu::structs::CanvasVertexAttribute { format: canvas_c::webgpu::enums::CanvasVertexFormat::Float32x4, offset: 0, shader_location: 0 },
-                                    canvas_c::webgpu::structs::CanvasVertexAttribute { format: canvas_c::webgpu::enums::CanvasVertexFormat::Float32x4, offset: 16, shader_location: 1 },
-                                ];
-
-                                let buffers = vec![canvas_c::webgpu::gpu_device::CanvasVertexBufferLayout { array_stride: 32, step_mode: canvas_c::webgpu::enums::CanvasVertexStepMode::Vertex, attributes: vertex_attributes.as_ptr(), attributes_size: vertex_attributes.len() }];
-                                let vertex = canvas_c::webgpu::gpu_device::CanvasVertexState { module: module, entry_point: vertext_entry_point.as_ptr(), constants: std::ptr::null(), buffers: buffers.as_ptr(), buffers_size: buffers.len() };
-
-                                let primitive = canvas_c::webgpu::gpu_device::CanvasPrimitiveState { topology: canvas_c::webgpu::enums::CanvasPrimitiveTopology::TriangleList, strip_index_format: canvas_c::webgpu::enums::CanvasOptionalIndexFormat::None, front_face: canvas_c::webgpu::enums::CanvasFrontFace::Ccw, cull_mode: canvas_c::webgpu::enums::CanvasCullMode::None, unclipped_depth: false };
-
-                                let fragment_entry_point = CString::new("fragment_main").unwrap();
-                                let fragment_targets = vec![canvas_c::webgpu::structs::CanvasColorTargetState { format: canvas_c::webgpu::enums::CanvasGPUTextureFormat::Bgra8Unorm, blend: canvas_c::webgpu::structs::CanvasOptionalBlendState::None, write_mask: 0xF }];
-                                let fragment = canvas_c::webgpu::gpu_device::CanvasFragmentState { targets: fragment_targets.as_ptr(), targets_size: fragment_targets.len(), module: module, entry_point: fragment_entry_point.as_ptr(), constants: std::ptr::null() };
-
-                                let descriptor = canvas_c::webgpu::gpu_device::CanvasCreateRenderPipelineDescriptor { label: std::ptr::null(), layout: canvas_c::webgpu::gpu_device::CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(canvas_c::webgpu::gpu_device::CanvasGPUAutoLayoutMode::Auto), vertex: &vertex, primitive: &primitive, depth_stencil: std::ptr::null(), multisample: std::ptr::null(), fragment: &fragment };
-                                let pipeline = unsafe { canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_render_pipeline(device, &descriptor) };
-
-                                let command_encoder = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(device, std::ptr::null());
-
-                                let color_attachments = vec![canvas_c::webgpu::structs::CanvasRenderPassColorAttachment { view: view, resolve_target: std::ptr::null() as _, channel: canvas_c::webgpu::structs::CanvasPassChannelColor { load_op: canvas_c::webgpu::structs::CanvasLoadOp::Clear, store_op: canvas_c::webgpu::structs::CanvasStoreOp::Store, clear_value: canvas_c::webgpu::structs::CanvasColor { r: 0., g: 0.5, b: 1., a: 1. }, read_only: false } }];
-
-                                let render_pass = unsafe { canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(command_encoder, std::ptr::null(), color_attachments.as_ptr(), color_attachments.len(), std::ptr::null(), std::ptr::null(), std::ptr::null(), -1, -1) };
-
-                                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_pipeline(render_pass, pipeline) }
-
-
-                                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(render_pass, 0, buffer, 0, -1) }
-
-
-                                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(render_pass, 3, 1, 0, 0) }
-
-
-                                unsafe { canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_end(render_pass) };
-
-
-                                // unsafe {
-                                //     canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_release(render_pass);
-                                // }
-
-
-                                let exe = unsafe { canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(command_encoder, std::ptr::null()) };
-
-                                let command_buffers = vec![exe];
-
-                                unsafe { canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_submit(queue, command_buffers.as_ptr() as _, command_buffers.len()) };
-
-
-                                unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_present_surface(context, texture) }
-
-
-
-
-                                println!("finish {:?}", exe);
+                                //  webgpu_triangle(data, window);
+                                unsafe { webgpu_blur(data, window); }
                             }
-                            _ => todo!(),
+                            _ => {}
                         }
+
+
+
 
                         /* canvas_webgl::webgl::canvas_native_webgl_viewport(
                              0,

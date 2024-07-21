@@ -7,7 +7,7 @@ use crate::webgpu::prelude::ptr_into_label;
 use super::{
     enums::{
         CanvasGPUTextureFormat, CanvasOptionalTextureViewDimension,
-        CanvasOptionsGPUTextureFormat, CanvasTextureDimension,
+        CanvasOptionalGPUTextureFormat, CanvasTextureDimension,
     },
     gpu::CanvasWebGPUInstance,
     gpu_texture_view::CanvasGPUTextureView,
@@ -57,9 +57,8 @@ impl Drop for CanvasGPUTexture {
 
 #[repr(C)]
 pub struct CanvasCreateTextureViewDescriptor {
-    texture: *const CanvasGPUTexture,
     label: *const c_char,
-    format: CanvasOptionsGPUTextureFormat,
+    format: CanvasOptionalGPUTextureFormat,
     dimension: CanvasOptionalTextureViewDimension,
     range: *const CanvasImageSubresourceRange,
 }

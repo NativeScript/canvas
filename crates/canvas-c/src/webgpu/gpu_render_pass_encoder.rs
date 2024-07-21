@@ -240,8 +240,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
                 label,
                 "canvas_native_webgpu_render_pass_encoder_end",
             );
-        } else {
-            let _ = lock.take();
+        }
+
+        if let Some(pass) = lock.take() {
+            drop(pass);
         }
     }
 }

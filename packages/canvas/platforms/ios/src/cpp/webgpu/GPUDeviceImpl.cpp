@@ -1371,8 +1371,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     CanvasCreateRenderPipelineDescriptor descriptor{};
     descriptor.label = nullptr;
 
-    char *error = nullptr;
-
     auto optionsVal = args[0];
 
     if (!optionsVal->IsObject()) {
@@ -1893,10 +1891,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
         v8::Local<v8::Value> cullModeValue;
-        primitiveObj->Get(context, ConvertToV8String(isolate, "cullMode")).ToLocal(
-                &cullModeValue);
 
-        if (!cullModeValue.IsEmpty()) {
+        if (primitiveObj->Get(context, ConvertToV8String(isolate, "cullMode")).ToLocal(
+                                                                                       &cullModeValue)) {
             if (cullModeValue->IsUint32()) {
                 auto cullMode = cullModeValue.As<v8::Uint32>()->Value();
 
@@ -1927,10 +1924,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         v8::Local<v8::Value> frontFaceValue;
-        primitiveObj->Get(context, ConvertToV8String(isolate, "frontFace")).ToLocal(
-                &frontFaceValue);
 
-        if (!frontFaceValue.IsEmpty()) {
+        if (primitiveObj->Get(context, ConvertToV8String(isolate, "frontFace")).ToLocal(
+                                                                                        &frontFaceValue)) {
             if (frontFaceValue->IsUint32()) {
                 auto frontFace = frontFaceValue.As<v8::Uint32>()->Value();
                 switch (frontFace) {
@@ -1955,10 +1951,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
         v8::Local<v8::Value> stripIndexFormatValue;
-        primitiveObj->Get(context, ConvertToV8String(isolate, "stripIndexFormat")).ToLocal(
-                &stripIndexFormatValue);
 
-        if (!stripIndexFormatValue.IsEmpty()) {
+        if (primitiveObj->Get(context, ConvertToV8String(isolate, "stripIndexFormat")).ToLocal(
+                                                                                               &stripIndexFormatValue)) {
             if (stripIndexFormatValue->IsUint32()) {
                 auto stripIndexFormat = stripIndexFormatValue.As<v8::Uint32>()->Value();
                 switch (stripIndexFormat) {
@@ -1997,10 +1992,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
         v8::Local<v8::Value> topologyValue;
-        primitiveObj->Get(context, ConvertToV8String(isolate, "topology")).ToLocal(
-                &topologyValue);
 
-        if (!topologyValue.IsEmpty()) {
+        if (primitiveObj->Get(context, ConvertToV8String(isolate, "topology")).ToLocal(
+                                                                                       &topologyValue)) {
 
             if (topologyValue->IsUint32()) {
                 auto topology = stripIndexFormatValue.As<v8::Uint32>()->Value();
@@ -2487,10 +2481,9 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
         }
 
         v8::Local<v8::Value> codeVal;
-        desc->Get(context, ConvertToV8String(isolate, "code")).ToLocal(&codeVal);
 
         std::string code;
-        if (!codeVal.IsEmpty() && codeVal->IsString()) {
+        if (desc->Get(context, ConvertToV8String(isolate, "code")).ToLocal(&codeVal) && codeVal->IsString()) {
             code = ConvertFromV8String(isolate, codeVal);
         }
 
@@ -2537,37 +2530,33 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
     if (optionsVal->IsObject()) {
         auto options = optionsVal.As<v8::Object>();
         v8::Local<v8::Value> depthOrArrayLayersVal;
-        options->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal);
 
-        if (depthOrArrayLayersVal->IsUint32()) {
+        if (options->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
+                                                                                            &depthOrArrayLayersVal) && depthOrArrayLayersVal->IsUint32()) {
             descriptor.depthOrArrayLayers = depthOrArrayLayersVal.As<v8::Uint32>()->Value();
         }
 
 
         v8::Local<v8::Value> widthVal;
-        options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(
-                &widthVal);
 
-        if (widthVal->IsUint32()) {
+        if ( options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(
+                                                                                &widthVal) &&widthVal->IsUint32()) {
             descriptor.width = widthVal.As<v8::Uint32>()->Value();
         }
 
 
         v8::Local<v8::Value> heightVal;
-        options->Get(context, ConvertToV8String(isolate, "height")).ToLocal(
-                &heightVal);
 
-        if (heightVal->IsUint32()) {
+        if (options->Get(context, ConvertToV8String(isolate, "height")).ToLocal(
+                                                                                &heightVal) && heightVal->IsUint32()) {
             descriptor.height = heightVal.As<v8::Uint32>()->Value();
         }
 
 
         v8::Local<v8::Value> usageVal;
-        options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
-                &usageVal);
 
-        if (usageVal->IsUint32()) {
+        if (options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
+                                                                               &usageVal) && usageVal->IsUint32()) {
             descriptor.usage = usageVal.As<v8::Uint32>()->Value();
         }
 
@@ -2602,7 +2591,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
                 descriptor.dimension = CanvasTextureDimension::CanvasTextureDimensionD1;
             } else if (dimension == "2d") {
                 descriptor.dimension = CanvasTextureDimension::CanvasTextureDimensionD2;
-            } else if (dimension == "d3") {
+            } else if (dimension == "3d") {
                 descriptor.dimension = CanvasTextureDimension::CanvasTextureDimensionD3;
             }
 
@@ -2617,7 +2606,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
             auto format = ConvertFromV8String(isolate, formatVal);
 
             // todo use enum
-            CanvasGPUTextureFormat fmt{};
+            //CanvasGPUTextureFormat fmt{};
 
             auto fmtOpt = canvas_native_webgpu_enum_string_to_gpu_texture(format.c_str());
             if (fmtOpt.tag == CanvasOptionalGPUTextureFormatSome) {

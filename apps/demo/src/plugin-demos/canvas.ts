@@ -95,7 +95,6 @@ export class DemoModel extends DemoSharedCanvas {
 	sprites = [];
 	constructor() {
 		super();
-		this.image.fromFile('~/assets/file-assets/webgl/svh.jpeg');
 	}
 
 	domLoaded(event) {

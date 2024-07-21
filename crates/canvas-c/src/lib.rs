@@ -101,7 +101,7 @@ pub static API_LEVEL: OnceCell<i32> = OnceCell::new();
 #[cfg(target_os = "android")]
 pub mod choreographer;
 
-mod buffers;
+pub mod buffers;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
 

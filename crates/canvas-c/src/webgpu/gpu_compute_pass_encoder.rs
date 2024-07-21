@@ -16,19 +16,19 @@ pub struct CanvasGPUComputePassEncoder {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     #[cfg(any(target_os = "android"))]
-    pub(crate) pass: *mut wgpu_core::command::ComputePass<wgpu_core::api::Vulkan>,
+    pub(crate) pass: parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Vulkan>>>,
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    pub(crate) pass: *mut wgpu_core::command::ComputePass<wgpu_core::api::Metal>,
+    pub(crate) pass: parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Metal>>>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
-impl Drop for CanvasGPUComputePassEncoder {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            drop(unsafe { Box::from_raw(self.pass) });
-        }
-    }
-}
+// impl Drop for CanvasGPUComputePassEncoder {
+//     fn drop(&mut self) {
+//         if !std::thread::panicking() {
+//             drop(unsafe { Box::from_raw(self.pass) });
+//         }
+//     }
+// }
 // CanvasGPUComputePassEncoder is thread-unsafe
 unsafe impl Send for CanvasGPUComputePassEncoder {}
 unsafe impl Sync for CanvasGPUComputePassEncoder {}
@@ -67,18 +67,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
-
-    if let Err(cause) = compute_pass.dispatch_workgroups(global, workgroup_count_x, workgroup_count_y, workgroup_count_z) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups",
-        );
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        if let Err(cause) = compute_pass.dispatch_workgroups(global, workgroup_count_x, workgroup_count_y, workgroup_count_z) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups",
+            );
+        }
     }
 }
 
@@ -96,20 +97,21 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        let indirect_buffer = &*indirect_buffer;
+        let indirect_buffer = indirect_buffer.buffer;
 
-    let indirect_buffer = &*indirect_buffer;
-    let indirect_buffer = indirect_buffer.buffer;
-
-    if let Err(cause) = compute_pass.dispatch_workgroups_indirect(global, indirect_buffer, indirect_offset as u64) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect",
-        );
+        if let Err(cause) = compute_pass.dispatch_workgroups_indirect(global, indirect_buffer, indirect_offset as u64) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect",
+            );
+        }
     }
 }
 
@@ -128,17 +130,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
 
     let global = compute_pass.instance.global();
 
-    let compute_pass = &mut *compute_pass.pass;
+    let mut lock = compute_pass.pass.lock();
 
-    if let Err(cause) = compute_pass.end(global) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            label,
-            "canvas_native_webgpu_compute_pass_end",
-        );
+    if let Some(compute_pass) = lock.as_mut() {
+        if let Err(cause) = compute_pass.end(global) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                label,
+                "canvas_native_webgpu_compute_pass_end",
+            );
+        }
+        if let Some(pass) = lock.take() {
+            drop(pass);
+        }
+
     }
 }
 
@@ -155,21 +163,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
     let label = CStr::from_ptr(label);
     let label = label.to_string_lossy();
 
-    if let Err(cause) = compute_pass.insert_debug_marker(global, label.as_ref(),
-                                                         0) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_insert_debug_marker",
-        );
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        if let Err(cause) = compute_pass.insert_debug_marker(global, label.as_ref(),
+                                                             0) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_insert_debug_marker",
+            );
+        }
     }
 }
 
@@ -184,17 +194,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_pop_debug_gro
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
-    if let Err(cause) = compute_pass.pop_debug_group(global) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_pop_debug_group",
-        );
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        if let Err(cause) = compute_pass.pop_debug_group(global) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_pop_debug_group",
+            );
+        }
     }
 }
 
@@ -210,21 +222,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
-    let label = CStr::from_ptr(label);
-    let label = label.to_string_lossy();
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        let label = CStr::from_ptr(label);
+        let label = label.to_string_lossy();
 
-    if let Err(cause) = compute_pass.push_debug_group(global, label.as_ref(),
-                                                      0) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_push_debug_group",
-        );
+        if let Err(cause) = compute_pass.push_debug_group(global, label.as_ref(),
+                                                          0) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_push_debug_group",
+            );
+        }
     }
 }
 
@@ -246,46 +260,48 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
-    let bind_group = &*bind_group;
-    let bind_group_id = bind_group.group;
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        let bind_group = &*bind_group;
+        let bind_group_id = bind_group.group;
 
-    if !dynamic_offsets.is_null() && dynamic_offsets_size > 0 {
-        let dynamic_offsets = std::slice::from_raw_parts(dynamic_offsets, dynamic_offsets_size);
+        if !dynamic_offsets.is_null() && dynamic_offsets_size > 0 {
+            let dynamic_offsets = std::slice::from_raw_parts(dynamic_offsets, dynamic_offsets_size);
 
-        let start = dynamic_offsets_start;
-        let len = dynamic_offsets_length;
+            let start = dynamic_offsets_start;
+            let len = dynamic_offsets_length;
 
-        // Assert that length and start are both in bounds
-        assert!(start <= dynamic_offsets.len());
-        assert!(len <= dynamic_offsets.len() - start);
+            // Assert that length and start are both in bounds
+            assert!(start <= dynamic_offsets.len());
+            assert!(len <= dynamic_offsets.len() - start);
 
-        let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
+            let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-        if let Err(cause) = compute_pass.set_bind_group(global, index,
-                                                        bind_group_id,
-                                                        dynamic_offsets) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
-            );
-        }
-    } else {
-        if let Err(cause) = compute_pass.set_bind_group(global, index,
-                                                        bind_group_id, &[]) {
-            handle_error(
-                global,
-                error_sink,
-                cause,
-                "encoder",
-                None,
-                "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
-            );
+            if let Err(cause) = compute_pass.set_bind_group(global, index,
+                                                            bind_group_id,
+                                                            dynamic_offsets) {
+                handle_error(
+                    global,
+                    error_sink,
+                    cause,
+                    "encoder",
+                    None,
+                    "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
+                );
+            }
+        } else {
+            if let Err(cause) = compute_pass.set_bind_group(global, index,
+                                                            bind_group_id, &[]) {
+                handle_error(
+                    global,
+                    error_sink,
+                    cause,
+                    "encoder",
+                    None,
+                    "canvas_native_webgpu_compute_pass_encoder_set_bind_group",
+                );
+            }
         }
     }
 }
@@ -303,19 +319,21 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_pipeline(
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
     let error_sink = compute_pass.error_sink.as_ref();
-    let compute_pass = &mut *compute_pass.pass;
 
-    let pipeline = &*pipeline;
-    let pipeline_id = pipeline.pipeline;
+    let mut lock = compute_pass.pass.lock();
+    if let Some(compute_pass) = lock.as_mut() {
+        let pipeline = &*pipeline;
+        let pipeline_id = pipeline.pipeline;
 
-    if let Err(cause) = compute_pass.set_pipeline(global, pipeline_id) {
-        handle_error(
-            global,
-            error_sink,
-            cause,
-            "encoder",
-            None,
-            "canvas_native_webgpu_compute_pass_encoder_set_pipeline",
-        );
+        if let Err(cause) = compute_pass.set_pipeline(global, pipeline_id) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                None,
+                "canvas_native_webgpu_compute_pass_encoder_set_pipeline",
+            );
+        }
     }
 }

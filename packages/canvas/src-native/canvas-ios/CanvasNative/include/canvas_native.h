@@ -8,6 +8,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define CanvasGPUTextureUsageCopySrc (1 << 0)
+
+#define CanvasGPUTextureUsageCopyDst (1 << 1)
+
+#define CanvasGPUTextureUsageTextureBinding (1 << 2)
+
+#define CanvasGPUTextureUsageStorageBinding (1 << 3)
+
+#define CanvasGPUTextureUsageRenderAttachment (1 << 4)
+
 typedef enum CanvasAddressMode {
   /**
    * Clamp the value to the edge of the texture
@@ -1731,20 +1741,6 @@ typedef struct CanvasSurfaceCapabilities {
   uint32_t usages;
 } CanvasSurfaceCapabilities;
 
-typedef enum CanvasOptionsGPUTextureFormat_Tag {
-  CanvasOptionsGPUTextureFormatNone,
-  CanvasOptionsGPUTextureFormatSome,
-} CanvasOptionsGPUTextureFormat_Tag;
-
-typedef struct CanvasOptionsGPUTextureFormat {
-  CanvasOptionsGPUTextureFormat_Tag tag;
-  union {
-    struct {
-      struct CanvasGPUTextureFormat some;
-    };
-  };
-} CanvasOptionsGPUTextureFormat;
-
 typedef struct CanvasImageSubresourceRange {
   enum CanvasTextureAspect aspect;
   uint32_t base_mip_level;
@@ -1754,9 +1750,8 @@ typedef struct CanvasImageSubresourceRange {
 } CanvasImageSubresourceRange;
 
 typedef struct CanvasCreateTextureViewDescriptor {
-  const struct CanvasGPUTexture *texture;
   const char *label;
-  struct CanvasOptionsGPUTextureFormat format;
+  struct CanvasOptionalGPUTextureFormat format;
   enum CanvasOptionalTextureViewDimension dimension;
   const struct CanvasImageSubresourceRange *range;
 } CanvasCreateTextureViewDescriptor;

@@ -130,7 +130,7 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
     let pass_encoder = CanvasGPUComputePassEncoder {
         label,
         instance: command_encoder.instance.clone(),
-        pass: Box::into_raw(Box::new(pass)),
+        pass: parking_lot::Mutex::new(Some(pass)),
         error_sink: command_encoder.error_sink.clone(),
     };
     Arc::into_raw(Arc::new(pass_encoder))

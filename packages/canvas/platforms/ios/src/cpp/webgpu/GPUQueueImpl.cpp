@@ -11,6 +11,8 @@
 #include "ImageAssetImpl.h"
 #include "ImageBitmapImpl.h"
 #include "ImageDataImpl.h"
+#include "CanvasRenderingContext2DImpl.h"
+#include "WebGLRenderingContextBase.h"
 
 GPUQueueImpl::GPUQueueImpl(const CanvasGPUQueue *queue) : queue_(queue) {}
 
@@ -106,21 +108,63 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
         auto sourceType = GetNativeType(sourceSourceValue);
 
         U8Buffer *buffer = nullptr;
-
+        uint32_t width = 0;
+        uint32_t height = 0;
         if (sourceType == NativeType::ImageBitmap) {
             auto imageAsset = ImageBitmapImpl::GetPointer(sourceSourceValue.As<v8::Object>());
             buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
+            width = canvas_native_image_asset_width(imageAsset->GetImageAsset());
+            height = canvas_native_image_asset_height(imageAsset->GetImageAsset());
         } else if (sourceType == NativeType::ImageAsset) {
             auto imageAsset = ImageAssetImpl::GetPointer(sourceSourceValue.As<v8::Object>());
             buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
+            width = canvas_native_image_asset_width(imageAsset->GetImageAsset());
+            height = canvas_native_image_asset_height(imageAsset->GetImageAsset());
         } else if (sourceType == NativeType::ImageData) {
             auto imageData = ImageDataImpl::GetPointer(sourceSourceValue.As<v8::Object>());
             buffer = canvas_native_image_data_get_data(imageData->GetImageData());
+            width = canvas_native_image_data_get_width(imageData->GetImageData());
+            height = canvas_native_image_data_get_height(imageData->GetImageData());
+        } else if (sourceType == NativeType::CanvasRenderingContext2D) {
+            auto c2d = CanvasRenderingContext2DImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+        } else if (sourceType == NativeType::WebGLRenderingContextBase) {
+            auto webgl = WebGLRenderingContextBase::GetPointer(sourceSourceValue.As<v8::Object>());
         }
 
         if (buffer == nullptr) {
             // todo error ??
             return;
+        }
+
+        CanvasOrigin2d sourceOrigin{0, 0};
+
+
+        v8::Local<v8::Value> sourceOriginVal;
+        if (sourceObj->Get(context, ConvertToV8String(isolate, "origin")).ToLocal(
+                &sourceOriginVal) &&
+            sourceOriginVal->IsObject()) {
+            auto sourceOriginObj = sourceOriginVal.As<v8::Object>();
+
+            v8::Local<v8::Value> xVal;
+            if (sourceOriginObj->Get(context, ConvertToV8String(isolate, "x")).ToLocal(&xVal) &&
+                xVal->IsUint32()) {
+                sourceOrigin.x = xVal->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> yVal;
+            if (sourceOriginObj->Get(context, ConvertToV8String(isolate, "y")).ToLocal(&yVal) &&
+                yVal->IsUint32()) {
+                sourceOrigin.y = yVal->Uint32Value(context).FromJust();
+            }
+
+        }
+
+        bool flipY = false;
+
+        v8::Local<v8::Value> flipYVal;
+        if (sourceObj->Get(context, ConvertToV8String(isolate, "flipY")).ToLocal(&flipYVal) &&
+                flipYVal->IsBoolean()) {
+            flipY = flipYVal->BooleanValue(isolate);
         }
 
         auto destinationObj = destinationVal.As<v8::Object>();
@@ -189,12 +233,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
                 origin,
                 aspect
         };
-
-
-        CanvasImageDataLayout layout{
-                0, -1, -1
-        };
-
+        
 
         auto sizeObj = sizeVal.As<v8::Object>();
 
@@ -229,8 +268,19 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
             return;
         }
 
-        canvas_native_webgpu_queue_write_texture(ptr->GetGPUQueue(), &destination, &layout,
-                                                 &extent3D, data, size);
+        CanvasImageCopyExternalImage source{
+                data,
+                size,
+                sourceOrigin,
+                flipY,
+                width,
+                height,
+        };
+
+
+        canvas_native_webgpu_queue_copy_external_image_to_texture(ptr->GetGPUQueue(), &source,
+                                                                  &destination,
+                                                                  &extent3D);
 
     }
 }
@@ -444,7 +494,6 @@ void GPUQueueImpl::WriteTexture(const v8::FunctionCallbackInfo<v8::Value> &args)
                 origin,
                 aspect
         };
-        auto dataObj = dataVal.As<v8::Object>();
         auto array = dataVal.As<v8::TypedArray>();
         auto ab = array->Buffer();
         auto offset = array->ByteOffset();

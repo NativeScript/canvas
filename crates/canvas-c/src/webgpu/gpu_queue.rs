@@ -116,11 +116,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
+    let bytesPerRow = source.source_size / (source.width as usize * source.height as usize);
+
     let data_layout = wgpu_types::ImageDataLayout {
         offset: 0,
-        bytes_per_row: None,
-        rows_per_image: None,
+        bytes_per_row: Some(source.width * bytesPerRow as u32),
+        rows_per_image: Some(source.height),
     };
+
+
 
     let destination = wgpu_types::ImageCopyTexture {
         texture: destination_texture_id,

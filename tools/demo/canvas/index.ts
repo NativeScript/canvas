@@ -457,28 +457,8 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async webgpuTriangle() {
-		if (navigator.gpu) {
-			const adapter = await navigator.gpu.requestAdapter();
-			const device = await adapter.requestDevice();
 
-			// device.addEventListener("uncapturederror", (event: any) => {
-			// 	// Re-surface the error
-			// 	console.error("A WebGPU error was not captured:", event.error.message);
-			//   });
-
-			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
-
-			const capabilities = (context as any).getCapabilities(adapter);
-			const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
-			const alphaMode = capabilities.alphaModes[0];
-
-			context.configure({
-				device,
-				format: presentationFormat,
-				alphaMode
-			});
-
-			const tri = `@vertex
+		const tri = `@vertex
 fn main(
   @builtin(vertex_index) VertexIndex : u32
 ) -> @builtin(position) vec4f {
@@ -495,6 +475,27 @@ fn main(
 fn main() -> @location(0) vec4f {
   return vec4(1.0, 0.0, 0.0, 1.0);
 }`;
+
+		if (navigator.gpu) {
+			const adapter = await navigator.gpu.requestAdapter();
+			const device = await adapter.requestDevice();
+
+			device.addEventListener("uncapturederror", (event: any) => {
+				console.error("A WebGPU error was not captured:", event.error.message);
+			  });
+
+			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+
+			const capabilities = (context as any).getCapabilities(adapter);
+			const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+			const alphaMode = capabilities.alphaModes[0];
+
+			context.configure({
+				device,
+				format: presentationFormat,
+				alphaMode
+			});
+
 
 			const pipeline = device.createRenderPipeline({
 				layout: 'auto',
@@ -554,7 +555,29 @@ fn main() -> @location(0) vec4f {
 
 	draw() {
 		//this.webgpuTest();
-		this.webgpuTriangle();
+		//this.webgpuTriangle();
+		// const rc = require('./webgpu/rotatingCube');
+		// rc.run(this.canvas);
+		// const particles = require('./webgpu/particles');
+		// particles.run(this.canvas);
+
+		// const texturedCube = require('./webgpu/texturedCube');
+		// texturedCube.run(this.canvas);
+
+		// const imageBlur = require('./webgpu/imageBlur');
+		// imageBlur.run(this.canvas);
+
+
+		// const cubeMap = require('./webgpu/cubeMap');
+		// cubeMap.run(this.canvas);
+
+		// const instancedCube = require('./webgpu/instancedCube');
+		// instancedCube.run(this.canvas);
+
+
+		const computeBoids = require('./webgpu/computeBoids');
+		computeBoids.run(this.canvas);
+
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);
 		//	const ctx = this.canvas.getContext('2d');

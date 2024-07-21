@@ -1997,7 +1997,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                                                                                        &topologyValue)) {
 
             if (topologyValue->IsUint32()) {
-                auto topology = stripIndexFormatValue.As<v8::Uint32>()->Value();
+                auto topology = topologyValue.As<v8::Uint32>()->Value();
                 switch (topology) {
                     case 0:
                         primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
@@ -2018,7 +2018,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                         break;
                 }
             } else if (topologyValue->IsString()) {
-                auto topology = ConvertFromV8String(isolate, stripIndexFormatValue);
+                auto topology = ConvertFromV8String(isolate, topologyValue);
                 if (topology == "line-list") {
                     primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
                 } else if (topology == "line-strip") {

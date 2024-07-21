@@ -430,10 +430,11 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createTexture(descriptor: { size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
+	createTexture(descriptor: { label?: string, size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
 		const sizeIsArray = Array.isArray(descriptor.size);
 
 		const opts = {
+			label: descriptor?.label,
 			mipLevelCount: descriptor?.mipLevelCount ?? 1,
 			sampleCount: descriptor?.sampleCount ?? 1,
 			dimension: descriptor?.dimension ?? '2d',

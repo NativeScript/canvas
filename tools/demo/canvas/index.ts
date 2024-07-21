@@ -558,6 +558,7 @@ fn main() -> @location(0) vec4f {
 		//this.webgpuTriangle();
 		// const rc = require('./webgpu/rotatingCube');
 		// rc.run(this.canvas);
+
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
@@ -567,16 +568,15 @@ fn main() -> @location(0) vec4f {
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
 
-
 		// const cubeMap = require('./webgpu/cubeMap');
 		// cubeMap.run(this.canvas);
 
-		// const instancedCube = require('./webgpu/instancedCube');
-		// instancedCube.run(this.canvas);
+		const instancedCube = require('./webgpu/instancedCube');
+		instancedCube.run(this.canvas);
 
-
-		const computeBoids = require('./webgpu/computeBoids');
-		computeBoids.run(this.canvas);
+		// const computeBoids = require('./webgpu/computeBoids');
+		// computeBoids.run(this.canvas);
+		
 
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);

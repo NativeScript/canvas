@@ -287,7 +287,7 @@ export async function run(canvas: Canvas) {
 						// tex_in / tex_out
 						binding: 3,
 						resource: texture.createView({
-							format: 'bgra8unorm',
+							format: 'rgba8unorm',
 							dimension: '2d',
 							baseMipLevel: level,
 							mipLevelCount: 1,

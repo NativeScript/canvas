@@ -67,7 +67,6 @@ import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
 import { Svg } from '@nativescript/canvas-svg';
-import { GPUMapMode } from '@nativescript/canvas/WebGPU/Constants';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -457,7 +456,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	async webgpuTriangle() {
-
 		const tri = `@vertex
 fn main(
   @builtin(vertex_index) VertexIndex : u32
@@ -471,7 +469,7 @@ fn main(
   return vec4f(pos[VertexIndex], 0.0, 1.0);
 }`;
 
-			const red = `@fragment
+		const red = `@fragment
 fn main() -> @location(0) vec4f {
   return vec4(1.0, 0.0, 0.0, 1.0);
 }`;
@@ -480,9 +478,9 @@ fn main() -> @location(0) vec4f {
 			const adapter = await navigator.gpu.requestAdapter();
 			const device = await adapter.requestDevice();
 
-			device.addEventListener("uncapturederror", (event: any) => {
-				console.error("A WebGPU error was not captured:", event.error.message);
-			  });
+			device.addEventListener('uncapturederror', (event: any) => {
+				console.error('A WebGPU error was not captured:', event.error.message);
+			});
 
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
@@ -493,9 +491,8 @@ fn main() -> @location(0) vec4f {
 			context.configure({
 				device,
 				format: presentationFormat,
-				alphaMode
+				alphaMode,
 			});
-
 
 			const pipeline = device.createRenderPipeline({
 				layout: 'auto',
@@ -524,32 +521,32 @@ fn main() -> @location(0) vec4f {
 			function frame() {
 				const framebuffer = context.getCurrentTexture();
 				if (!framebuffer) {
-				  requestAnimationFrame(frame);
-				  return;
+					requestAnimationFrame(frame);
+					return;
 				}
-		  
+
 				const commandEncoder = device.createCommandEncoder();
 				const textureView = framebuffer.createView();
-		  
+
 				const passEncoder = commandEncoder.beginRenderPass({
-				  colorAttachments: [
-					{
-					  view: textureView,
-					  clearValue: [0, 0, 0, 1],
-					  loadOp: 'clear',
-					  storeOp: 'store',
-					},
-				  ],
+					colorAttachments: [
+						{
+							view: textureView,
+							clearValue: [0, 0, 0, 1],
+							loadOp: 'clear',
+							storeOp: 'store',
+						},
+					],
 				});
 				passEncoder.setPipeline(pipeline);
 				passEncoder.draw(3);
 				passEncoder.end();
-		  
+
 				device.queue.submit([commandEncoder.finish()]);
 				(<any>context).presentSurface(framebuffer);
 				requestAnimationFrame(frame);
-			  }
-			  requestAnimationFrame(frame);
+			}
+			requestAnimationFrame(frame);
 		}
 	}
 
@@ -562,7 +559,7 @@ fn main() -> @location(0) vec4f {
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
-		// const texturedCube = require('./webgpu/texturedCube');
+		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
 		// texturedCube.run(this.canvas);
 
 		// const imageBlur = require('./webgpu/imageBlur');
@@ -571,12 +568,20 @@ fn main() -> @location(0) vec4f {
 		// const cubeMap = require('./webgpu/cubeMap');
 		// cubeMap.run(this.canvas);
 
-		const instancedCube = require('./webgpu/instancedCube');
-		instancedCube.run(this.canvas);
+		// const instancedCube = require('./webgpu/instancedCube');
+		// instancedCube.run(this.canvas);
 
-		// const computeBoids = require('./webgpu/computeBoids');
-		// computeBoids.run(this.canvas);
-		
+		const computeBoids = require('./webgpu/gpgpu/computeBoids');
+		computeBoids.run(this.canvas);
+
+		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
+		// twoCubes.run(this.canvas);
+
+		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
+		// fractualCube.run(this.canvas);
+
+		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
+		// wireframe.run(this.canvas);
 
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);

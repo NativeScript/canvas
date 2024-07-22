@@ -1,14 +1,14 @@
 import { fromObject, Observable } from '@nativescript/core';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUTexture } from './GPUTexture';
-import { native_ } from './Constants';
+import { adapter_, native_ } from './Constants';
 import { GPUShaderModule } from './GPUShaderModule';
 import { GPUQueue } from './GPUQueue';
 import { GPUPipelineLayout } from './GPUPipelineLayout';
 import { parseVertexFormat } from './Utils';
 import { GPURenderPipeline } from './GPURenderPipeline';
 import { GPUCommandEncoder } from './GPUCommandEncoder';
-import { GPUInternalError, GPUOutOfMemoryError, GPUValidationError } from './Errors';
+import { GPUDeviceLostInfo, GPUInternalError, GPUOutOfMemoryError, GPUValidationError } from './Errors';
 import { GPUBindGroup } from './GPUBindGroup';
 import { GPUBindGroupLayout } from './GPUBindGroupLayout';
 import { GPUTextureView } from './GPUTextureView';
@@ -19,6 +19,7 @@ import type { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragment
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
+import { GPUAdapter } from './GPUAdapter';
 
 // Doing so because :D
 export class EventTarget {
@@ -142,11 +143,12 @@ export class GPUDevice extends EventTarget {
 		}
 	}
 
-	static fromNative(device) {
+	static fromNative(device, adapter: GPUAdapter) {
 		if (device) {
 			const ret = new GPUDevice();
 			device.setuncapturederror(ret._uncapturederror.bind(this));
 			ret[native_] = device;
+			ret[adapter_] = adapter;
 			return ret;
 		}
 		return null;
@@ -430,7 +432,7 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createTexture(descriptor: { label?: string, size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
+	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
 		const sizeIsArray = Array.isArray(descriptor.size);
 
 		const opts = {

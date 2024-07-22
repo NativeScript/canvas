@@ -23,7 +23,6 @@ export async function run(canvas: Canvas) {
 	context.configure({
 		device,
 		format: presentationFormat,
-		alphaMode: 'postmultiplied',
 	});
 
 	const blurPipeline = device.createComputePipeline({
@@ -69,7 +68,7 @@ export async function run(canvas: Canvas) {
 	// const imageBitmap = await createImageBitmap(await response.blob());
 
 	const imageBitmap = new ImageAsset();
-	imageBitmap.fromFileSync('~/assets/file-assets/webgpu/Di-3d.png');
+	await imageBitmap.fromFile('~/assets/file-assets/webgpu/Di-3d.png');
 
 	const [srcWidth, srcHeight] = [imageBitmap.width, imageBitmap.height];
 	const cubeTexture = device.createTexture({

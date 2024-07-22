@@ -4,15 +4,27 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.annotation.Nullable
 import dalvik.annotation.optimization.FastNative
+import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGL
+import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGLPointer
+import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
 /**
  * Created by triniwiz on 5/4/20
  */
-class NSCImageAsset {
+class NSCImageAsset(asset: Long) {
+	var asset: Long = asset
+		private set
 
 	interface Callback {
 		fun onComplete(done: Boolean)
+	}
+
+	@Synchronized
+	@Throws(Throwable::class)
+	protected fun finalize() {
+		destroyImageAsset(asset)
+		asset = 0
 	}
 
 	companion object {
@@ -20,7 +32,6 @@ class NSCImageAsset {
 		init {
 			NSCCanvas.loadLib()
 		}
-
 
 		@JvmStatic
 		fun createImageAsset(): Long {
@@ -49,12 +60,10 @@ class NSCImageAsset {
 			return nativeLoadFromPath(asset, path)
 		}
 
-
 		@JvmStatic
 		fun getError(asset: Long): String {
 			return nativeGetError(asset) ?: ""
 		}
-
 
 		@JvmStatic
 		fun loadImageFromBitmapAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
@@ -64,6 +73,49 @@ class NSCImageAsset {
 			}
 		}
 
+		@JvmStatic
+		fun loadImageFromPathAsync(asset: Long, path: String, callback: Callback) {
+			executorService.execute {
+				val done = nativeLoadFromPath(asset, path)
+				callback.onComplete(done)
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromUrlAsync(asset: Long, url: String, callback: Callback) {
+			executorService.execute {
+				val done = nativeLoadFromUrl(asset, url)
+				callback.onComplete(done)
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromUrlBuffer(asset: Long, buffer: ByteBuffer, callback: Callback) {
+			executorService.execute {
+				val done: Boolean = if (buffer.isDirect) {
+					nativeLoadFromBuffer(asset, buffer)
+				} else {
+					nativeLoadFromBytes(asset, buffer.array())
+				}
+				callback.onComplete(done)
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromUrlBytes(asset: Long, bytes: ByteArray, callback: Callback) {
+			executorService.execute {
+				val done = nativeLoadFromBytes(asset, bytes)
+				callback.onComplete(done)
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromBytesAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
+			executorService.execute {
+				val done = nativeLoadFromBitmap(asset, bitmap)
+				callback.onComplete(done)
+			}
+		}
 
 		@JvmStatic
 		fun getDimensions(asset: Long): IntArray {
@@ -83,6 +135,16 @@ class NSCImageAsset {
 
 		@JvmStatic
 		private external fun nativeLoadFromPath(asset: Long, path: String): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadFromUrl(asset: Long, path: String): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadFromBuffer(asset: Long, buffer: ByteBuffer): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadFromBytes(asset: Long, bytes: ByteArray): Boolean
+
 
 		@JvmStatic
 		private external fun nativeGetDimensions(asset: Long, dimensions: IntArray)

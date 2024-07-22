@@ -35,6 +35,12 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_of_the_valorous_rabbit';
 import { ghost_card } from './examples/ghost_card';
 import { tiny_poly_world } from './games/tiny_poly_world';
+import { Canvas } from '@nativescript/canvas';
+import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
+
+import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
+
+import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If, color, toneMapping, viewportSharedTexture, viewportTopLeft, checker, uv, timerLocal, oscSine, output, MeshStandardNodeMaterial } from 'three/examples/jsm/nodes/Nodes';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -60,6 +66,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		this.canvas = args.object;
 		//x jet game
 
+		//this.webgpu_backdrop(this.canvas);
+		this.webgpu_1m_particles(this.canvas);
+
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -82,7 +91,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//const canvas = document.createElement('canvas') as any;
 		//canvas.width = 1000;
 		//canvas.height = 1000;
-		this.threeOcean(this.canvas);
+		//this.threeOcean(this.canvas);
 
 		//this.skinningAndMorphing(this.canvas);
 
@@ -115,6 +124,381 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//ghost_card(this.canvas);
 	}
 
+	async webgpu_backdrop(canvas: Canvas) {
+		const adapter = await navigator.gpu?.requestAdapter();
+		const device: GPUDevice = (await adapter?.requestDevice()) as never;
+		const context = canvas.getContext('webgpu');
+
+		let camera, scene, renderer;
+		let portals,
+			rotate = true;
+		let mixer, clock;
+
+		try {
+			// const WebGPU = require('three/examples/jsm/capabilities/WebGPU.js');
+			// const WebGPU = require('three/examples/jsm/capabilities/WebGPU.js');
+			//	const WebGL = require('three/examples/jsm/capabilities/WebGL.js');
+			// console.log('WebGPU.isAvailable', WebGPU.isAvailable(), 'WebGL.isWebGL2Available', WebGL.isWebGL2Available());
+			// if (WebGPU.isAvailable() === false && WebGL.isWebGL2Available() === false) {
+			// 	document.body.appendChild(WebGPU.getErrorMessage());
+			// 	throw new Error('No WebGPU or WebGL2 support');
+			// }
+		} catch (error) {
+			console.log('error', error);
+		}
+		camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
+		camera.position.set(1, 2, 3);
+
+		scene = new THREE.Scene();
+		scene.backgroundNode = viewportTopLeft.y.mix(color(0x66bbff), color(0x4466ff));
+		camera.lookAt(0, 1, 0);
+
+		clock = new THREE.Clock();
+
+		//lights
+
+		const light = new THREE.SpotLight(0xffffff, 1);
+		light.power = 2000;
+		camera.add(light);
+		scene.add(camera);
+
+		const loader = new GLTFLoader();
+		loader.load(this.root + '/models/gltf/Michelle.glb', function (gltf) {
+			const object = gltf.scene;
+			mixer = new THREE.AnimationMixer(object);
+
+			// @ts-ignore
+			const material = object.children[0].children[0].material;
+
+			// output material effect ( better using hsv )
+			// ignore output.sRGBToLinear().linearTosRGB() for now
+
+			material.outputNode = oscSine(timerLocal(0.1)).mix(output, output.add(0.1).posterize(4).mul(2));
+
+			const action = mixer.clipAction(gltf.animations[0]);
+			action.play();
+
+			scene.add(object);
+		});
+
+		// portals
+
+		const geometry = new THREE.SphereGeometry(0.3, 32, 16);
+
+		portals = new THREE.Group();
+		scene.add(portals);
+
+		function addBackdropSphere(backdropNode, backdropAlphaNode = null) {
+			const distance = 1;
+			const id = portals.children.length;
+			const rotation = THREE.MathUtils.degToRad(id * 45);
+
+			const material = new MeshStandardNodeMaterial({ color: 0x0066ff });
+			material.roughnessNode = float(0.2);
+			material.metalnessNode = float(0);
+			material.backdropNode = backdropNode;
+			material.backdropAlphaNode = backdropAlphaNode;
+			material.transparent = true;
+
+			const mesh = new THREE.Mesh(geometry, material);
+			mesh.position.set(Math.cos(rotation) * distance, 1, Math.sin(rotation) * distance);
+
+			portals.add(mesh);
+		}
+
+		addBackdropSphere(viewportSharedTexture().bgr.hue(oscSine().mul(Math.PI)));
+		addBackdropSphere(viewportSharedTexture().rgb.oneMinus());
+		addBackdropSphere(viewportSharedTexture().rgb.saturation(0));
+		addBackdropSphere(viewportSharedTexture().rgb.saturation(10), oscSine());
+		addBackdropSphere(viewportSharedTexture().rgb.overlay(checker(uv().mul(10))));
+		addBackdropSphere(viewportSharedTexture(viewportTopLeft.mul(40).floor().div(40)));
+		addBackdropSphere(viewportSharedTexture(viewportTopLeft.mul(80).floor().div(80)).add(color(0x0033ff)));
+		addBackdropSphere(vec3(0, 0, viewportSharedTexture().b));
+
+		//renderer
+
+		const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
+
+		renderer = new WebGPURenderer({ antialias: true, context, device });
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(canvas.width, canvas.height);
+		renderer.setAnimationLoop(animate);
+		renderer.toneMappingNode = toneMapping(THREE.LinearToneMapping, 0.3);
+
+		// document.body.appendChild(renderer.domElement);
+
+		// const controls = new OrbitControls(camera, canvas as never);
+		// controls.target.set(0, 1, 0);
+		// controls.addEventListener('start', () => (rotate = false));
+		// controls.addEventListener('end', () => (rotate = true));
+		// controls.update();
+
+		window.addEventListener('resize', onWindowResize);
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		function animate() {
+			const delta = clock.getDelta();
+
+			if (mixer) mixer.update(delta);
+
+			if (rotate) portals.rotation.y += delta * 0.5;
+
+			renderer.render(scene, camera);
+		}
+	}
+
+
+	async webgpu_1m_particles(canvas: Canvas) {
+		const adapter = await navigator.gpu?.requestAdapter();
+		const device: GPUDevice = (await adapter?.requestDevice()) as never;
+		const context = canvas.getContext('webgpu');
+
+		const particleCount = 1000000;
+
+		const gravity = uniform(-0.0098);
+		const bounce = uniform(0.8);
+		const friction = uniform(0.99);
+		const size = uniform(0.12);
+
+		const clickPosition = uniform(new THREE.Vector3());
+
+		let camera, scene, renderer;
+		let controls, stats;
+		let computeParticles;
+
+		//const timestamps = document.getElementById('timestamps');
+
+
+		const root = this.root;
+
+		console.log('root', this.root);
+
+		function init() {
+			const { width, height } = canvas;
+
+
+			const innerWidth = width as number;
+			const innerHeight = height as number;
+
+			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
+			camera.position.set(15, 30, 15);
+
+			scene = new THREE.Scene();
+
+			// textures
+
+			console.log('textureLoader', root + '/textures/sprite1.png');
+			const textureLoader = new THREE.TextureLoader();
+			textureLoader.setPath(root)
+			const map = textureLoader.load('textures/sprite1.png');
+
+			console.log("??");
+
+			//
+			const createBuffer = () => storage(new StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
+
+			const positionBuffer = createBuffer();
+			const velocityBuffer = createBuffer();
+			const colorBuffer = createBuffer();
+
+			// compute
+
+			const computeInit = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const color = colorBuffer.element(instanceIndex);
+
+				const randX = instanceIndex.hash();
+				const randY = instanceIndex.add(2).hash();
+				const randZ = instanceIndex.add(3).hash();
+
+				position.x = randX.mul(100).add(-50);
+				position.y = 0; // randY.mul( 10 );
+				position.z = randZ.mul(100).add(-50);
+
+				color.assign(vec3(randX, randY, randZ));
+			})().compute(particleCount);
+
+			//
+
+			const computeUpdate = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const velocity = velocityBuffer.element(instanceIndex);
+
+				velocity.addAssign(vec3(0.0, gravity, 0.0));
+				position.addAssign(velocity);
+
+				velocity.mulAssign(friction);
+
+				// floor
+
+				If(position.y.lessThan(0), () => {
+					position.y = 0;
+					velocity.y = velocity.y.negate().mul(bounce);
+
+					// floor friction
+
+					velocity.x = velocity.x.mul(0.9);
+					velocity.z = velocity.z.mul(0.9);
+				});
+			});
+
+			computeParticles = computeUpdate().compute(particleCount);
+
+			// create nodes
+
+			const textureNode = texture(map);
+
+			// create particles
+
+			const particleMaterial = new SpriteNodeMaterial();
+			particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
+			particleMaterial.positionNode = positionBuffer.toAttribute();
+			particleMaterial.scaleNode = size;
+			particleMaterial.depthWrite = false;
+			particleMaterial.depthTest = true;
+			particleMaterial.transparent = true;
+
+			const particles = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), particleMaterial);
+			particles.count = particleCount;
+			particles.frustumCulled = false;
+			scene.add(particles);
+
+			//
+
+			const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
+			scene.add(helper);
+
+			const geometry = new THREE.PlaneGeometry(1000, 1000);
+			geometry.rotateX(-Math.PI / 2);
+
+			const plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ visible: false }));
+			scene.add(plane);
+
+			const raycaster = new THREE.Raycaster();
+			const pointer = new THREE.Vector2();
+
+			//
+
+			const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
+
+			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, context, device });
+
+			const element = new (<any>HTMLCanvasElement)(canvas);
+			renderer['backend'] = element;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(innerWidth, innerHeight);
+			renderer.setAnimationLoop(animate);
+			//document.body.appendChild(renderer.domElement);
+
+			// stats = new Stats();
+			// document.body.appendChild(stats.dom);
+
+			//
+
+			renderer.compute(computeInit);
+
+			// click event
+
+			const computeHit = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const velocity = velocityBuffer.element(instanceIndex);
+
+				const dist = position.distance(clickPosition);
+				const direction = position.sub(clickPosition).normalize();
+				const distArea = float(6).sub(dist).max(0);
+
+				const power = distArea.mul(0.01);
+				const relativePower = power.mul(instanceIndex.hash().mul(0.5).add(0.5));
+
+				velocity.assign(velocity.add(direction.mul(relativePower)));
+			})().compute(particleCount);
+
+			//
+
+			function onMove(event) {
+				pointer.set((event.clientX / innerWidth) * 2 - 1, -(event.clientY / innerHeight) * 2 + 1);
+
+				raycaster.setFromCamera(pointer, camera);
+
+				const intersects = raycaster.intersectObjects([plane], false);
+
+				if (intersects.length > 0) {
+					const { point } = intersects[0];
+
+					// move to uniform
+
+					clickPosition.value.copy(point);
+					clickPosition.value.y = -1;
+
+					// compute
+
+					renderer.compute(computeHit);
+				}
+			}
+
+			// events
+
+			canvas.addEventListener('pointermove', onMove);
+			//
+
+			controls = new OrbitControls(camera, canvas as never);
+			controls.minDistance = 5;
+			controls.maxDistance = 200;
+			controls.target.set(0, 0, 0);
+			controls.update();
+
+			//
+
+			window.addEventListener('resize', onWindowResize);
+
+			// gui
+
+			// const gui = new GUI();
+
+			// gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
+			// gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
+			// gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
+			// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
+		}
+
+		init();
+
+		function onWindowResize() {
+			const { innerWidth, innerHeight } = window;
+
+			camera.aspect = innerWidth / innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(innerWidth, innerHeight);
+		}
+
+		async function animate() {
+		//	stats.update();
+
+			await renderer.computeAsync(computeParticles);
+
+			await renderer.renderAsync(scene, camera);
+
+			// throttle the logging
+
+			// if (renderer.hasFeature('timestamp-query')) {
+			// 	if (renderer.info.render.calls % 5 === 0) {
+			// 		timestamps.innerHTML = `
+
+			// 				Compute ${renderer.info.compute.frameCalls} pass in ${renderer.info.compute.timestamp.toFixed(6)}ms<br>
+			// 				Draw ${renderer.info.render.drawCalls} pass in ${renderer.info.render.timestamp.toFixed(6)}ms`;
+			// 	}
+			// } else {
+			// 	timestamps.innerHTML = 'Timestamp queries not supported';
+			// }
+		}
+	}
 	topDown(canvas) {
 		const context = canvas.getContext('webgl2');
 		const gridHelper = new THREE.GridHelper(40, 20, 16777215, 16777215);
@@ -3296,7 +3680,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			} );
 			*/
 		}
-
 
 		function init() {
 			initGUI();

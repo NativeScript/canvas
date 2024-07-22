@@ -911,7 +911,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CanvasOptionalGPUTextureFormat {
     None,
     Some(CanvasGPUTextureFormat),

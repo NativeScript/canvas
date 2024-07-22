@@ -9,23 +9,25 @@
 #include <vector>
 #include "Helpers.h"
 #include "Common.h"
+
 #ifdef __APPLE__
 #include "NSOperationQueueWrapper.h"
 #endif
+
 #include "ObjectWrapperImpl.h"
 
-class ImageAssetImpl: ObjectWrapperImpl{
+class ImageAssetImpl : ObjectWrapperImpl {
 public:
 
-    ImageAssetImpl(ImageAsset* asset);
+    explicit ImageAssetImpl(ImageAsset *asset);
 
     ~ImageAssetImpl();
 
-    ImageAsset* GetImageAsset();
+    ImageAsset *GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
-    static ImageAssetImpl *GetPointer(const v8::Local<v8::Object>& object);
+    static ImageAssetImpl *GetPointer(const v8::Local<v8::Object> &object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
@@ -38,10 +40,12 @@ public:
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void GetAddr(v8::Local<v8::String> name,
-                         const v8::PropertyCallbackInfo<v8::Value> &info);
+                        const v8::PropertyCallbackInfo<v8::Value> &info);
+
+    static void GetReference(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetError(v8::Local<v8::String> name,
-                          const v8::PropertyCallbackInfo<v8::Value> &info);
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 //    static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -57,11 +61,11 @@ public:
 
     static void FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-   /* static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+    /* static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-    static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);*/
+     static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);*/
 
 
 private:
-    ImageAsset* asset_;
+    ImageAsset *asset_;
 };

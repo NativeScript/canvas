@@ -423,11 +423,14 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
 
 
             auto beginningOfPassWriteIndexValSuccess = timestampWrites->Get(context,
-                                 ConvertToV8String(isolate, "beginningOfPassWriteIndex")).ToLocal(
+                                                                            ConvertToV8String(
+                                                                                    isolate,
+                                                                                    "beginningOfPassWriteIndex")).ToLocal(
                     &beginningOfPassWriteIndexVal);
 
             auto endOfPassWriteIndexValSuccess = timestampWrites->Get(context,
-                                 ConvertToV8String(isolate, "endOfPassWriteIndex")).ToLocal(
+                                                                      ConvertToV8String(isolate,
+                                                                                        "endOfPassWriteIndex")).ToLocal(
                     &endOfPassWriteIndexVal);
 
 
@@ -626,9 +629,11 @@ void GPUCommandEncoderImpl::CopyBufferToTexture(const v8::FunctionCallbackInfo<v
 
             if (xVal->IsUint32()) {
                 origin.x = xVal->Uint32Value(context).FromJust();
-            } else if (yVal->IsUint32()) {
+            }
+            if (yVal->IsUint32()) {
                 origin.y = yVal->Uint32Value(context).FromJust();
-            } else if (zVal->IsUint32()) {
+            }
+            if (zVal->IsUint32()) {
                 origin.z = zVal->Uint32Value(context).FromJust();
             }
 
@@ -651,36 +656,7 @@ void GPUCommandEncoderImpl::CopyBufferToTexture(const v8::FunctionCallbackInfo<v
                 texture, mipLevel, origin, aspect
         };
 
-        auto copySizeObj = copySize.As<v8::Object>();
-
-
-        uint32_t depthOrArrayLayers = 1;
-        uint32_t height = 1;
-
-
-        v8::Local<v8::Value> widthVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal);
-
-        v8::Local<v8::Value> heightVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal);
-
-        if (!heightVal.IsEmpty() && heightVal->IsUint32()) {
-            height = heightVal->Uint32Value(context).FromJust();
-        }
-
-        v8::Local<v8::Value> depthOrArrayLayersVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal);
-
-        if (!depthOrArrayLayersVal.IsEmpty() && depthOrArrayLayersVal->IsUint32()) {
-            depthOrArrayLayers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
-        }
-
-        CanvasExtent3d cz{
-                widthVal->Uint32Value(context).FromJust(),
-                height,
-                depthOrArrayLayers
-        };
+        CanvasExtent3d cz = ParseExtent3d(isolate, copySize);
         canvas_native_webgpu_command_encoder_copy_buffer_to_texture(
                 ptr->GetEncoder(),
                 &copy,
@@ -787,9 +763,11 @@ void GPUCommandEncoderImpl::CopyTextureToBuffer(const v8::FunctionCallbackInfo<v
 
             if (xVal->IsUint32()) {
                 origin.x = xVal->Uint32Value(context).FromJust();
-            } else if (yVal->IsUint32()) {
+            }
+            if (yVal->IsUint32()) {
                 origin.y = yVal->Uint32Value(context).FromJust();
-            } else if (zVal->IsUint32()) {
+            }
+            if (zVal->IsUint32()) {
                 origin.z = zVal->Uint32Value(context).FromJust();
             }
 
@@ -812,36 +790,7 @@ void GPUCommandEncoderImpl::CopyTextureToBuffer(const v8::FunctionCallbackInfo<v
                 texture, mipLevel, origin, aspect
         };
 
-        auto copySizeObj = copySize.As<v8::Object>();
-
-
-        uint32_t depthOrArrayLayers = 1;
-        uint32_t height = 1;
-
-
-        v8::Local<v8::Value> widthVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal);
-
-        v8::Local<v8::Value> heightVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal);
-
-        if (!heightVal.IsEmpty() && heightVal->IsUint32()) {
-            height = heightVal->Uint32Value(context).FromJust();
-        }
-
-        v8::Local<v8::Value> depthOrArrayLayersVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal);
-
-        if (!depthOrArrayLayersVal.IsEmpty() && depthOrArrayLayersVal->IsUint32()) {
-            depthOrArrayLayers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
-        }
-
-        CanvasExtent3d cz{
-                widthVal->Uint32Value(context).FromJust(),
-                height,
-                depthOrArrayLayers
-        };
+        CanvasExtent3d cz = ParseExtent3d(isolate, copySize);
         canvas_native_webgpu_command_encoder_copy_texture_to_buffer(
                 ptr->GetEncoder(),
                 &ct,
@@ -859,7 +808,6 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
         return;
     }
 
-
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
@@ -869,7 +817,6 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
     auto copySize = args[2];
 
     if (source->IsObject() && destination->IsObject() && copySize->IsObject()) {
-        const CanvasGPUBuffer *buffer = nullptr;
         auto src = source.As<v8::Object>();
 
         uint32_t mipLevelA = 0;
@@ -878,13 +825,11 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
 
         const CanvasGPUTexture *textureA = nullptr;
 
-
         v8::Local<v8::Value> srcTextureVal;
         src->Get(context, ConvertToV8String(isolate, "texture")).ToLocal(&srcTextureVal);
         if (GetNativeType(srcTextureVal) == NativeType::GPUTexture) {
             textureA = GPUTextureImpl::GetPointer(srcTextureVal.As<v8::Object>())->GetTexture();
         }
-
 
         v8::Local<v8::Value> mipLevelAVal;
         src->Get(context, ConvertToV8String(isolate, "mipLevel")).ToLocal(&mipLevelAVal);
@@ -900,7 +845,6 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
         if (!originAVal.IsEmpty() && originAVal->IsObject()) {
             auto originObj = originAVal.As<v8::Object>();
 
-
             v8::Local<v8::Value> xVal;
             v8::Local<v8::Value> yVal;
             v8::Local<v8::Value> zVal;
@@ -910,18 +854,18 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
 
             if (xVal->IsUint32()) {
                 originA.x = xVal->Uint32Value(context).FromJust();
-            } else if (yVal->IsUint32()) {
+            }
+            if (yVal->IsUint32()) {
                 originA.y = yVal->Uint32Value(context).FromJust();
-            } else if (zVal->IsUint32()) {
+            }
+            if (zVal->IsUint32()) {
                 originA.z = zVal->Uint32Value(context).FromJust();
             }
 
         }
 
-
         v8::Local<v8::Value> aspectAVal;
         src->Get(context, ConvertToV8String(isolate, "aspect")).ToLocal(&aspectAVal);
-
 
         auto aspectAStr = ConvertFromV8String(isolate, aspectAVal);
 
@@ -930,11 +874,9 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
         } else if (aspectAStr == "depth-only") {
             aspectA = CanvasTextureAspectDepthOnly;
         }
-
         CanvasImageCopyTexture copy{
                 textureA, mipLevelA, originA, aspectA
         };
-
 
         uint32_t mipLevel = 0;
         CanvasOrigin3d origin{0, 0, 0};
@@ -961,10 +903,8 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
         v8::Local<v8::Value> originVal;
         dst->Get(context, ConvertToV8String(isolate, "origin")).ToLocal(&originVal);
 
-
         if (!originVal.IsEmpty() && originVal->IsObject()) {
             auto originObj = originVal.As<v8::Object>();
-
 
             v8::Local<v8::Value> xVal;
             v8::Local<v8::Value> yVal;
@@ -975,9 +915,11 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
 
             if (xVal->IsUint32()) {
                 origin.x = xVal->Uint32Value(context).FromJust();
-            } else if (yVal->IsUint32()) {
+            }
+            if (yVal->IsUint32()) {
                 origin.y = yVal->Uint32Value(context).FromJust();
-            } else if (zVal->IsUint32()) {
+            }
+            if (zVal->IsUint32()) {
                 origin.z = zVal->Uint32Value(context).FromJust();
             }
 
@@ -986,7 +928,6 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
 
         v8::Local<v8::Value> aspectVal;
         dst->Get(context, ConvertToV8String(isolate, "aspect")).ToLocal(&aspectVal);
-
 
         auto aspectStr = ConvertFromV8String(isolate, aspectVal);
 
@@ -1000,36 +941,7 @@ void GPUCommandEncoderImpl::CopyTextureToTexture(const v8::FunctionCallbackInfo<
                 texture, mipLevel, origin, aspect
         };
 
-        auto copySizeObj = copySize.As<v8::Object>();
-
-
-        uint32_t depthOrArrayLayers = 1;
-        uint32_t height = 1;
-
-
-        v8::Local<v8::Value> widthVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal);
-
-        v8::Local<v8::Value> heightVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal);
-
-        if (!heightVal.IsEmpty() && heightVal->IsUint32()) {
-            height = heightVal->Uint32Value(context).FromJust();
-        }
-
-        v8::Local<v8::Value> depthOrArrayLayersVal;
-        copySizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal);
-
-        if (!depthOrArrayLayersVal.IsEmpty() && depthOrArrayLayersVal->IsUint32()) {
-            depthOrArrayLayers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
-        }
-
-        CanvasExtent3d cz{
-                widthVal->Uint32Value(context).FromJust(),
-                height,
-                depthOrArrayLayers
-        };
+        CanvasExtent3d cz = ParseExtent3d(isolate, copySize);
 
         canvas_native_webgpu_command_encoder_copy_texture_to_texture(
                 ptr->GetEncoder(),

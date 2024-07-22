@@ -1732,6 +1732,8 @@ typedef struct CanvasGPUSurfaceConfiguration {
   enum CanvasGPUPresentMode presentMode;
   const struct CanvasGPUTextureFormat *view_formats;
   uintptr_t view_formats_size;
+  const struct CanvasExtent3d *size;
+  struct CanvasOptionalGPUTextureFormat format;
 } CanvasGPUSurfaceConfiguration;
 
 typedef struct CanvasSurfaceCapabilities {
@@ -2747,6 +2749,8 @@ int32_t canvas_native_image_data_get_height(const struct ImageData *image_data);
 struct U8Buffer *canvas_native_image_data_get_data(struct ImageData *image_data);
 
 struct ImageData *canvas_native_image_data_get_shared_instance(struct ImageData *image_data);
+
+int64_t canvas_native_image_asset_get_addr(struct ImageAsset *asset);
 
 struct ImageAsset *canvas_native_image_asset_create(void);
 

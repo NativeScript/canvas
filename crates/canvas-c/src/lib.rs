@@ -4481,6 +4481,15 @@ impl ImageAsset {
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_image_asset_get_addr(asset: *mut ImageAsset) -> i64 {
+    if asset.is_null() {
+        return 0;
+    }
+    asset as i64
+}
+
+
+#[no_mangle]
 pub extern "C" fn canvas_native_image_asset_create() -> *mut ImageAsset {
     Box::into_raw(Box::new(ImageAsset::default()))
 }

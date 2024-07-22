@@ -122,4 +122,57 @@ ParseBlendOperation(v8::Isolate *isolate, const v8::Local<v8::Value> &obj,
     return defaultValue;
 }
 
+inline static CanvasExtent3d
+ParseExtent3d(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
+
+    auto context = isolate->GetCurrentContext();
+    CanvasExtent3d ret{
+            0, 1, 1
+    };
+    
+    if(!obj.IsEmpty()){
+        if (obj->IsArray()) {
+            auto array = obj.As<v8::Array>();
+            v8::Local<v8::Value> width;
+            if (array->Get(context, 0).ToLocal(&width) &&
+                width->IsUint32()) {
+                ret.width = width->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> height;
+            if (array->Get(context, 1).ToLocal(&height) &&
+                height->IsUint32()) {
+                ret.height = height->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> depthOrArrayLayers;
+            if (array->Get(context, 2).ToLocal(
+                    &depthOrArrayLayers) && depthOrArrayLayers->IsUint32()) {
+                ret.depth_or_array_layers = depthOrArrayLayers->Uint32Value(context).FromJust();
+            }
+        } else if (obj->IsObject()) {
+            auto extObj = obj.As<v8::Object>();
+            v8::Local<v8::Value> width;
+            if (extObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&width) &&
+                width->IsUint32()) {
+                ret.width = width->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> height;
+            if (extObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&height) &&
+                height->IsUint32()) {
+                ret.height = height->Uint32Value(context).FromJust();
+            }
+
+            v8::Local<v8::Value> depthOrArrayLayers;
+            if (extObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
+                    &depthOrArrayLayers) && depthOrArrayLayers->IsUint32()) {
+                ret.depth_or_array_layers = depthOrArrayLayers->Uint32Value(context).FromJust();
+            }
+        }
+    }
+
+    return ret;
+}
+
 #endif //CANVAS_ANDROID_GPUUTILS_H

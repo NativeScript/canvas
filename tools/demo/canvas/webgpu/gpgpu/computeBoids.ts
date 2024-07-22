@@ -1,4 +1,4 @@
-import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUMapMode, GPUQuerySet, GPUTexture, GPUTextureUsage, ImageAsset } from '@nativescript/canvas';
+import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUMapMode, GPUQuerySet, GPUTexture, GPUTextureUsage, ImageAsset, GPUBuffer } from '@nativescript/canvas';
 
 import { File, knownFolders } from '@nativescript/core';
 
@@ -30,7 +30,6 @@ export async function run(canvas: Canvas) {
 	context.configure({
 		device,
 		format: presentationFormat,
-		alphaMode: 'postmultiplied',
 	});
 
 	const spriteShaderModule = device.createShaderModule({ code: spriteWGSL });
@@ -98,10 +97,10 @@ export async function run(canvas: Canvas) {
 		},
 	});
 
-	const renderPassDescriptor: GPURenderPassDescriptor = {
+	const renderPassDescriptor = {
 		colorAttachments: [
 			{
-				view: undefined as unknown as GPUTextureView, // Assigned later
+				view: undefined, // Assigned later
 				clearValue: [0, 0, 0, 1],
 				loadOp: 'clear' as const,
 				storeOp: 'store' as const,
@@ -109,7 +108,7 @@ export async function run(canvas: Canvas) {
 		],
 	};
 
-	const computePassDescriptor: GPUComputePassDescriptor = {};
+	const computePassDescriptor = {};
 
 	/** Storage for timestamp query results */
 	let querySet: GPUQuerySet | undefined = undefined;
@@ -129,12 +128,12 @@ export async function run(canvas: Canvas) {
 			size: 4 * BigInt64Array.BYTES_PER_ELEMENT,
 			usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
 		});
-		computePassDescriptor.timestampWrites = {
+		(<any>computePassDescriptor).timestampWrites = {
 			querySet: querySet as never,
 			beginningOfPassWriteIndex: 0,
 			endOfPassWriteIndex: 1,
 		};
-		renderPassDescriptor.timestampWrites = {
+		(<any>renderPassDescriptor).timestampWrites = {
 			querySet: querySet as never,
 			beginningOfPassWriteIndex: 2,
 			endOfPassWriteIndex: 3,

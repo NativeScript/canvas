@@ -74,18 +74,45 @@ export class GPUCommandEncoder {
 	copyBufferToTexture(source: GPUImageCopyBuffer, destination: GPUImageCopyTexture, copySize: GPUExtent3D) {
 		source.buffer = source.buffer[native_];
 		destination.texture = destination.texture[native_];
+
+		if (Array.isArray(copySize)) {
+			copySize = {
+				width: copySize[0],
+				height: copySize[1] ?? 1,
+				depthOrArrayLayers: copySize[2] ?? 1,
+			};
+		}
+
 		this[native_].copyBufferToTexture(source, destination, copySize);
 	}
 
 	copyTextureToBuffer(source: GPUImageCopyTexture, destination: GPUImageCopyBuffer, copySize: GPUExtent3D) {
 		source.texture = source.texture[native_];
 		destination.buffer = destination.buffer[native_];
+
+		if (Array.isArray(copySize)) {
+			copySize = {
+				width: copySize[0],
+				height: copySize[1] ?? 1,
+				depthOrArrayLayers: copySize[2] ?? 1,
+			};
+		}
+
 		this[native_].copyTextureToBuffer(source, destination, copySize);
 	}
 
 	copyTextureToTexture(source: GPUImageCopyTexture, destination: GPUImageCopyTexture, copySize: GPUExtent3D) {
 		source.texture = source.texture[native_];
 		destination.texture = destination.texture[native_];
+
+		if (Array.isArray(copySize)) {
+			copySize = {
+				width: copySize[0],
+				height: copySize[1] ?? 1,
+				depthOrArrayLayers: copySize[2] ?? 1,
+			};
+		}
+
 		this[native_].copyTextureToTexture(source, destination, copySize);
 	}
 

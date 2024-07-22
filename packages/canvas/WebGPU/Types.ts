@@ -1,4 +1,4 @@
-import { GPUColorDict } from './Interfaces';
+import type { GPUColorDict } from './Interfaces';
 // export type GPUImageCopyExternalImageSource = ImageBitmap | ImageData | HTMLImageElement | HTMLVideoElement | VideoFrame | HTMLCanvasElement | OffscreenCanvas;
 export type GPUOrigin2D = [number, number] | { x?: number; y?: number };
 export type GPUExtent3D = [number, number, number] | [number, number] | { depthOrArrayLayers?: number; height?: number; width: number };
@@ -121,3 +121,7 @@ export type GPUTextureFormat =
 	| 'astc-12x12-unorm-srgb';
 
 export type GPUVertexFormat = 'uint8x2' | 'uint8x4' | 'sint8x2' | 'sint8x4' | 'unorm8x2' | 'unorm8x4' | 'snorm8x2' | 'snorm8x4' | 'uint16x2' | 'uint16x4' | 'sint16x2' | 'sint16x4' | 'unorm16x2' | 'unorm16x4' | 'snorm16x2' | 'snorm16x4' | 'float16x2' | 'float16x4' | 'float32' | 'float32x2' | 'float32x3' | 'float32x4' | 'uint32' | 'uint32x2' | 'uint32x3' | 'uint32x4' | 'sint32' | 'sint32x2' | 'sint32x3' | 'sint32x4' | 'unorm10-10-10-2';
+
+export type GPUCanvasAlphaMode = 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit';
+
+export type GPUCanvasPresentMode = 'autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox';

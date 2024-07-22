@@ -21,7 +21,7 @@ struct Options {
 
 class ImageBitmapImpl : public ObjectWrapperImpl {
 public:
-    ImageBitmapImpl(ImageAsset *asset);
+    explicit ImageBitmapImpl(ImageAsset *asset);
 
     ~ImageBitmapImpl();
 

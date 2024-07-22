@@ -5,6 +5,7 @@
 #include "GPUCanvasContextImpl.h"
 #include "Caches.h"
 #include "GPUAdapterImpl.h"
+#include "GPUUtils.h"
 
 GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(
         context) {}
@@ -110,20 +111,22 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
     config.view_formats = nullptr;
     config.view_formats_size = 0;
     config.usage = 0x10;
+    config.format = CanvasOptionalGPUTextureFormat{
+            CanvasOptionalGPUTextureFormatNone
+    };
+    config.size = nullptr;
 
 
-    /* ignore for now
+    v8::Local<v8::Value> formatValue;
 
-     v8::Local<v8::Value> formatValue;
+    if (options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
+            &formatValue)) {
+        auto format = ConvertFromV8String(isolate, formatValue);
+        config.format = canvas_native_webgpu_enum_string_to_gpu_texture(format.c_str());
+    }
 
-
-     options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
-     &deviceValue);
-
-     */
 
     v8::Local<v8::Value> usageValue;
-
     options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
             &usageValue);
 
@@ -134,10 +137,8 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
 
     v8::Local<v8::Value> presentModeValue;
 
-    options->Get(context, ConvertToV8String(isolate, "presentMode")).ToLocal(
-            &presentModeValue);
-
-    if (!presentModeValue.IsEmpty()) {
+    if (options->Get(context, ConvertToV8String(isolate, "presentMode")).ToLocal(
+            &presentModeValue)) {
         if (presentModeValue->IsString()) {
             auto presentMode = ConvertFromV8String(isolate, presentModeValue);
             if (strcmp(presentMode.c_str(), "autoVsync") == 0) {
@@ -162,10 +163,9 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
 
 
     v8::Local<v8::Value> alphaModeValue;
-    options->Get(context, ConvertToV8String(isolate, "alphaMode")).ToLocal(
-            &alphaModeValue);
 
-    if (!alphaModeValue.IsEmpty()) {
+    if (options->Get(context, ConvertToV8String(isolate, "alphaMode")).ToLocal(
+            &alphaModeValue)) {
         if (alphaModeValue->IsString()) {
             auto alphaMode = ConvertFromV8String(isolate, alphaModeValue);
             if (strcmp(alphaMode.c_str(), "premultiplied") == 0) {
@@ -184,6 +184,17 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
                     context).ToChecked();
         }
 
+    }
+
+
+    v8::Local<v8::Value> sizeValue;
+    options->Get(context, ConvertToV8String(isolate, "size")).ToLocal(
+            &usageValue);
+
+    CanvasExtent3d size = ParseExtent3d(isolate, sizeValue);
+
+    if (size.width > 0) {
+        config.size = &size;
     }
 
     canvas_native_webgpu_context_configure(ptr->GetContext(), device->GetGPUDevice(), &config);

@@ -1,9 +1,9 @@
 import { Helpers } from '../helpers';
-import { contextPtr_, native_ } from './Constants';
+import { adapter_, contextPtr_, GPUTextureUsage, native_ } from './Constants';
 import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
 import type { GPUAdapter } from './GPUAdapter';
-import type { GPUTextureFormat } from './Types';
+import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 export class GPUCanvasContext {
 	_type;
 	static {
@@ -41,14 +41,26 @@ export class GPUCanvasContext {
 		return this[native_];
 	}
 
-	configure(options: { device: GPUDevice; format: any; usage?: number /* default=0x10 - GPUTextureUsage.RENDER_ATTACHMENT */; viewFormats?: number[] /* default=[] */; colorSpace?: 'display-p3' | 'srgb' /* default="srgb" */; alphaMode?: 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit'; presentModes?: 'autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox' }) {
+	configure(options: { device: GPUDevice; format: GPUTextureFormat; usage?: number; viewFormats?: GPUTextureFormat[]; colorSpace?: 'display-p3' | 'srgb'; alphaMode?: GPUCanvasAlphaMode; presentMode?: GPUCanvasPresentMode; size?: GPUExtent3D }) {
 		const opts = {
-			usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
+			usage: GPUTextureUsage.RENDER_ATTACHMENT,
 			colorSpace: 'srgb',
 			alphaMode: 'opaque',
 			presentMode: 'fifo',
 			...options,
 		};
+
+		if (__ANDROID__ || __IOS__) {
+			const capabilities = this.getCapabilities(options?.device?.[adapter_]);
+
+			if (!options.presentMode) {
+				opts.presentMode = capabilities.presentModes[0];
+			}
+
+			if (!options.alphaMode) {
+				opts.alphaMode = capabilities.alphaModes[0];
+			}
+		}
 
 		opts.device = options?.device?.[native_];
 		this[native_].configure(opts);
@@ -74,7 +86,7 @@ export class GPUCanvasContext {
 	getCapabilities(adapter: GPUAdapter): {
 		format: GPUTextureFormat[];
 		presentModes: ('autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox')[];
-		alphaModes: 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit';
+		alphaModes: GPUCanvasAlphaMode;
 		usages: number;
 	} {
 		return this[native_].getCapabilities(adapter[native_]);

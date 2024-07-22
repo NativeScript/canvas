@@ -43,9 +43,7 @@ export class GPUAdapter {
 	requestAdapterInfo(): Promise<GPUAdapterInfo> {
 		return new Promise((resolve, reject) => {
 			const info = this[native_].requestAdapterInfo();
-			const ret = new GPUAdapterInfo();
-			ret._native = info;
-			resolve(ret);
+			resolve(GPUAdapterInfo.fromNative(info));
 		});
 	}
 
@@ -56,7 +54,7 @@ export class GPUAdapter {
 				if (error) {
 					reject(error);
 				} else {
-					const ret = GPUDevice.fromNative(device);
+					const ret = GPUDevice.fromNative(device, this);
 					resolve(ret);
 				}
 			});

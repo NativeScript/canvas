@@ -1,30 +1,24 @@
-import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUTextureUsage, GPUTexture, ImageAsset } from '@nativescript/canvas';
+import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUTextureUsage } from '@nativescript/canvas';
+import { mat4, vec3 } from '../../../wgpu-matrix/wgpu-matrix';
 
-import { mat4, vec3 } from '../../wgpu-matrix/wgpu-matrix';
-
-import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from './meshes/cube';
+import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../meshes/cube';
 import { knownFolders, File } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
-	const adapter = await navigator.gpu?.requestAdapter();
-	const device: GPUDevice = (await adapter?.requestDevice()) as never;
+	const path = knownFolders.currentApp().path;
 
-	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
+	const basicVertWGSL = File.fromPath(path + '/webgpu/shaders/basic.vert.wgsl').readTextSync();
+	const vertexPositionColorWGSL = File.fromPath(path + '/webgpu/shaders/vertexPositionColor.frag.wgsl').readTextSync();
+
+	const adapter = await navigator.gpu?.requestAdapter();
+	const device = (await adapter?.requestDevice()) as never as GPUDevice;
+
+	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
 	const devicePixelRatio = window.devicePixelRatio;
 	// canvas.width = canvas.clientWidth * devicePixelRatio;
 	// canvas.height = canvas.clientHeight * devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-
-	const appPath = knownFolders.currentApp().path;
-	const basicVertWGSLFile = File.fromPath(appPath + '/webgpu/shaders/basic.vert.wgsl');
-
-	// readText async fails on android
-	const basicVertWGSL = basicVertWGSLFile.readTextSync();
-
-	const sampleTextureMixColorWGSLFile = File.fromPath(appPath + '/webgpu/shaders/sampleTextureMixColor.frag.wgsl');
-
-	const sampleTextureMixColorWGSL = sampleTextureMixColorWGSLFile.readTextSync();
 
 	context.configure({
 		device,
@@ -35,7 +29,7 @@ export async function run(canvas: Canvas) {
 	// Create a vertex buffer from the cube data.
 	const verticesBuffer = device.createBuffer({
 		size: cubeVertexArray.byteLength,
-		usage: global.GPUBufferUsage.VERTEX,
+		usage: GPUBufferUsage.VERTEX,
 		mappedAtCreation: true,
 	});
 	new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
@@ -70,7 +64,7 @@ export async function run(canvas: Canvas) {
 		},
 		fragment: {
 			module: device.createShaderModule({
-				code: sampleTextureMixColorWGSL,
+				code: vertexPositionColorWGSL,
 			}),
 			targets: [
 				{
@@ -103,52 +97,39 @@ export async function run(canvas: Canvas) {
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});
 
-	const uniformBufferSize = 4 * 16; // 4x4 matrix
+	const matrixSize = 4 * 16; // 4x4 matrix
+	const offset = 256; // uniformBindGroup offset must be 256-byte aligned
+	const uniformBufferSize = offset + matrixSize;
+
 	const uniformBuffer = device.createBuffer({
 		size: uniformBufferSize,
 		usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 	});
 
-	// Fetch the image and upload it into a GPUTexture.
-	let cubeTexture: GPUTexture;
-	{
-		// const response = await fetch('../../assets/img/Di-3d.png');
-		// const imageBitmap = await createImageBitmap(await response.blob());
-
-		const imageBitmap = new ImageAsset();
-		imageBitmap.fromFileSync('~/assets/file-assets/webgpu/webgpu.png');
-        
-
-		cubeTexture = device.createTexture({
-			size: [imageBitmap.width, imageBitmap.height, 1],
-			format: 'rgba8unorm',
-			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-		});
-		device.queue.copyExternalImageToTexture({ source: imageBitmap }, { texture: cubeTexture }, [imageBitmap.width, imageBitmap.height]);
-	}
-
-	// Create a sampler with linear filtering for smooth interpolation.
-	const sampler = device.createSampler({
-		magFilter: 'linear',
-		minFilter: 'linear',
-	});
-
-	const uniformBindGroup = device.createBindGroup({
+	const uniformBindGroup1 = device.createBindGroup({
 		layout: pipeline.getBindGroupLayout(0),
 		entries: [
 			{
 				binding: 0,
 				resource: {
 					buffer: uniformBuffer,
+					offset: 0,
+					size: matrixSize,
 				},
 			},
+		],
+	});
+
+	const uniformBindGroup2 = device.createBindGroup({
+		layout: pipeline.getBindGroupLayout(0),
+		entries: [
 			{
-				binding: 1,
-				resource: sampler,
-			},
-			{
-				binding: 2,
-				resource: cubeTexture.createView(),
+				binding: 0,
+				resource: {
+					buffer: uniformBuffer,
+					offset: offset,
+					size: matrixSize,
+				},
 			},
 		],
 	});
@@ -172,33 +153,51 @@ export async function run(canvas: Canvas) {
 		},
 	};
 
-	const aspect = (canvas.width as number) / (canvas.height as number);
+	const aspect = (canvas.width as number) * devicePixelRatio / (canvas.height as number)  * devicePixelRatio;
 	const projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
-	const modelViewProjectionMatrix = mat4.create();
 
-	function getTransformationMatrix() {
-		const viewMatrix = mat4.identity();
-		mat4.translate(viewMatrix, vec3.fromValues(0, 0, -4), viewMatrix);
+	const modelMatrix1 = mat4.translation(vec3.create(-2, 0, 0));
+	const modelMatrix2 = mat4.translation(vec3.create(2, 0, 0));
+	const modelViewProjectionMatrix1 = mat4.create();
+	const modelViewProjectionMatrix2 = mat4.create();
+	const viewMatrix = mat4.translation(vec3.fromValues(0, 0, -7));
+
+	const tmpMat41 = mat4.create();
+	const tmpMat42 = mat4.create();
+
+	function updateTransformationMatrix() {
 		const now = Date.now() / 1000;
-		mat4.rotate(viewMatrix, vec3.fromValues(Math.sin(now), Math.cos(now), 0), 1, viewMatrix);
 
-		mat4.multiply(projectionMatrix, viewMatrix, modelViewProjectionMatrix);
+		mat4.rotate(modelMatrix1, vec3.fromValues(Math.sin(now), Math.cos(now), 0), 1, tmpMat41);
+		mat4.rotate(modelMatrix2, vec3.fromValues(Math.cos(now), Math.sin(now), 0), 1, tmpMat42);
 
-		return modelViewProjectionMatrix;
+		mat4.multiply(viewMatrix, tmpMat41, modelViewProjectionMatrix1);
+		mat4.multiply(projectionMatrix, modelViewProjectionMatrix1, modelViewProjectionMatrix1);
+		mat4.multiply(viewMatrix, tmpMat42, modelViewProjectionMatrix2);
+		mat4.multiply(projectionMatrix, modelViewProjectionMatrix2, modelViewProjectionMatrix2);
 	}
 
 	function frame() {
-		const transformationMatrix = getTransformationMatrix();
-		device.queue.writeBuffer(uniformBuffer, 0, transformationMatrix.buffer, transformationMatrix.byteOffset, transformationMatrix.byteLength);
+		updateTransformationMatrix();
+		device.queue.writeBuffer(uniformBuffer, 0, modelViewProjectionMatrix1.buffer, modelViewProjectionMatrix1.byteOffset, modelViewProjectionMatrix1.byteLength);
+		device.queue.writeBuffer(uniformBuffer, offset, modelViewProjectionMatrix2.buffer, modelViewProjectionMatrix2.byteOffset, modelViewProjectionMatrix2.byteLength);
+
 		const texture = context.getCurrentTexture();
 		renderPassDescriptor.colorAttachments[0].view = texture.createView();
 
 		const commandEncoder = device.createCommandEncoder();
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor as never);
 		passEncoder.setPipeline(pipeline);
-		passEncoder.setBindGroup(0, uniformBindGroup);
 		passEncoder.setVertexBuffer(0, verticesBuffer);
+
+		// Bind the bind group (with the transformation matrix) for
+		// each cube, and draw.
+		passEncoder.setBindGroup(0, uniformBindGroup1);
 		passEncoder.draw(cubeVertexCount);
+
+		passEncoder.setBindGroup(0, uniformBindGroup2);
+		passEncoder.draw(cubeVertexCount);
+
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
 

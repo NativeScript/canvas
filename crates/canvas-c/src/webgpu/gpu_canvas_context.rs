@@ -6,10 +6,11 @@ use raw_window_handle::{
     AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
 };
 
+use crate::webgpu::enums::CanvasOptionalGPUTextureFormat;
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
-use crate::webgpu::structs::CanvasSurfaceCapabilities;
+use crate::webgpu::structs::{CanvasExtent3d, CanvasSurfaceCapabilities};
 
 use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
@@ -294,6 +295,8 @@ pub struct CanvasGPUSurfaceConfiguration {
     pub presentMode: CanvasGPUPresentMode,
     pub view_formats: *const CanvasGPUTextureFormat,
     pub view_formats_size: usize,
+    pub size: *const CanvasExtent3d,
+    pub format: CanvasOptionalGPUTextureFormat,
 }
 
 #[no_mangle]
@@ -327,22 +330,34 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    let format = wgpu_types::TextureFormat::Bgra8Unorm;
-
+    let mut format = wgpu_types::TextureFormat::Bgra8Unorm;
 
     #[cfg(any(target_os = "android"))]
-    let format = wgpu_types::TextureFormat::Rgba8Unorm;
+    let mut format = wgpu_types::TextureFormat::Rgba8Unorm;
+
+    match config.format {
+        CanvasOptionalGPUTextureFormat::None => {}
+        CanvasOptionalGPUTextureFormat::Some(value) => {
+            format = value.into();
+        }
+    }
 
     let usage = wgpu_types::TextureUsages::from_bits_truncate(config.usage);
 
-    let view_data = context.view_data.lock();
+    let view_data = if !config.size.is_null() {
+        let size = &*config.size;
+        (size.width, size.height)
+    } else {
+        let view_data = context.view_data.lock();
+        (view_data.width, view_data.height)
+    };
 
     let config = wgpu_types::SurfaceConfiguration::<Vec<wgpu_types::TextureFormat>> {
         desired_maximum_frame_latency: 2,
         usage,
         format,
-        width: view_data.height,
-        height: view_data.width,
+        width: view_data.0,
+        height: view_data.1,
         present_mode: config.presentMode.into(),
         alpha_mode: config.alphaMode.into(),
         view_formats,
@@ -363,8 +378,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 usage,
                 dimension: wgpu_types::TextureDimension::D2,
                 size: wgpu_types::Extent3d {
-                    width: view_data.width,
-                    height: view_data.height,
+                    width: view_data.0,
+                    height: view_data.1,
                     depth_or_array_layers: 1,
                 },
                 format,
@@ -388,11 +403,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
         return;
     }
     let context = &*context;
-    let surface_id = context.surface;
-    let global = context.instance.global();
-    let device = &*device;
-    let device_id = device.device;
-    let config = &*config;
+
+    let mut lock = context.data.lock();
+    *lock = None;
 }
 
 #[no_mangle]

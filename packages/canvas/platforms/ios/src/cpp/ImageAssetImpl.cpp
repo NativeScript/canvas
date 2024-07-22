@@ -66,6 +66,12 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "__addr"),
             GetAddr);
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "__getRef"),
+            v8::FunctionTemplate::New(isolate, GetReference));
+
+
+
 //    tmpl->Set(
 //            ConvertToV8String(isolate, "scale"),
 //            v8::FunctionTemplate::New(isolate, &Scale));
@@ -97,14 +103,14 @@ v8::Local<v8::FunctionTemplate> ImageAssetImpl::GetCtor(v8::Isolate *isolate) {
             v8::FunctionTemplate::New(isolate, &FromBytesCb));
 
 
- /*   tmpl->Set(
-            ConvertToV8String(isolate, "saveSync"),
-            v8::FunctionTemplate::New(isolate, &SaveSync));
+    /*   tmpl->Set(
+               ConvertToV8String(isolate, "saveSync"),
+               v8::FunctionTemplate::New(isolate, &SaveSync));
 
-    tmpl->Set(
-            ConvertToV8String(isolate, "saveCb"),
-            v8::FunctionTemplate::New(isolate, &SaveCb));
-*/
+       tmpl->Set(
+               ConvertToV8String(isolate, "saveCb"),
+               v8::FunctionTemplate::New(isolate, &SaveCb));
+   */
 
     cache->ImageAssetTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -160,12 +166,26 @@ ImageAssetImpl::GetAddr(v8::Local<v8::String> name,
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
-        auto addr = static_cast<intptr_t *>(static_cast<void *>(ptr->GetImageAsset()));
-        auto ret = std::to_string(*addr);
-        info.GetReturnValue().Set(ConvertToV8String(isolate, ret.c_str()));
+        auto ret = std::to_string(canvas_native_image_asset_get_addr(ptr->GetImageAsset()));
+        info.GetReturnValue().Set(ConvertToV8String(isolate, ret));
         return;
     }
     info.GetReturnValue().SetEmptyString();
+}
+
+
+void
+ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        auto isolate = args.GetIsolate();
+        auto reference = canvas_native_image_asset_shared_clone(ptr->GetImageAsset());
+        auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
+        args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
+        return;
+    }
+
+    args.GetReturnValue().SetEmptyString();
 }
 
 void
@@ -376,7 +396,6 @@ void ImageAssetImpl::FromFileSync(const v8::FunctionCallbackInfo<v8::Value> &arg
 
     auto done = canvas_native_image_asset_load_from_path(ptr->GetImageAsset(), path.c_str());
 
-
     args.GetReturnValue().Set(done);
 }
 
@@ -390,7 +409,6 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     if (args.Length() < 2) {
         return;
     }
-
 
     auto path = ConvertFromV8String(isolate, args[0]);
 
@@ -450,8 +468,6 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
                       sizeof(bool));
 
             }, std::move(path));
-
-    thread.detach();
 
 #endif
 
@@ -651,6 +667,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 #endif
 
 }
+
 /*
 void ImageAssetImpl::SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     ImageAssetImpl *ptr = GetPointer(args.This());

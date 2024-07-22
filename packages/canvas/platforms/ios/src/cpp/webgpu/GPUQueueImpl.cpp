@@ -163,7 +163,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
         v8::Local<v8::Value> flipYVal;
         if (sourceObj->Get(context, ConvertToV8String(isolate, "flipY")).ToLocal(&flipYVal) &&
-                flipYVal->IsBoolean()) {
+            flipYVal->IsBoolean()) {
             flipY = flipYVal->BooleanValue(isolate);
         }
 
@@ -233,32 +233,9 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
                 origin,
                 aspect
         };
-        
-
-        auto sizeObj = sizeVal.As<v8::Object>();
-
-        CanvasExtent3d extent3D{0, 1, 1};
-
-        v8::Local<v8::Value> widthVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
-            widthVal->IsUint32()) {
-            extent3D.width = widthVal->Uint32Value(context).FromJust();
-        }
-
-        v8::Local<v8::Value> heightVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
-            heightVal->IsUint32()) {
-            extent3D.height = heightVal->Uint32Value(context).FromJust();
-        }
 
 
-        v8::Local<v8::Value> depthOrArrayLayersVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal) &&
-            depthOrArrayLayersVal->IsUint32()) {
-            extent3D.depth_or_array_layers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
-        }
-
+        CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
 
         auto data = canvas_native_u8_buffer_get_bytes(buffer);
         auto size = canvas_native_u8_buffer_get_length(buffer);
@@ -530,29 +507,7 @@ void GPUQueueImpl::WriteTexture(const v8::FunctionCallbackInfo<v8::Value> &args)
         }
 
 
-        auto sizeObj = sizeVal.As<v8::Object>();
-
-        CanvasExtent3d extent3D{0, 1, 1};
-
-        v8::Local<v8::Value> widthVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "width")).ToLocal(&widthVal) &&
-            widthVal->IsUint32()) {
-            extent3D.width = widthVal->Uint32Value(context).FromJust();
-        }
-
-        v8::Local<v8::Value> heightVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "height")).ToLocal(&heightVal) &&
-            heightVal->IsUint32()) {
-            extent3D.height = heightVal->Uint32Value(context).FromJust();
-        }
-
-
-        v8::Local<v8::Value> depthOrArrayLayersVal;
-        if (sizeObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                &depthOrArrayLayersVal) &&
-            depthOrArrayLayersVal->IsUint32()) {
-            extent3D.depth_or_array_layers = depthOrArrayLayersVal->Uint32Value(context).FromJust();
-        }
+        CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
 
         canvas_native_webgpu_queue_write_texture(ptr->GetGPUQueue(), &destination, &layout,
                                                  &extent3D, data, size);

@@ -7,45 +7,41 @@ extern crate log;
 
 use std::os::raw::c_void;
 
+use ::jni::JavaVM;
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
-use ::jni::JavaVM;
 use android_logger::Config;
 use itertools::izip;
+use jni::{JNIEnv, NativeMethod};
 use jni::objects::JClass;
 use jni::sys::jlong;
-use jni::{JNIEnv, NativeMethod};
 use log::LevelFilter;
 use once_cell::sync::OnceCell;
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
     nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender,
     nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext,
-    nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGLPointerRefCount,
-    nativeGLPointerRefCountNormal, nativeGetGLPointer, nativeGetGLPointerNormal, nativeInitGL,
-    nativeInitGLNoSurface, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL,
-    nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal,
-    nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal,
-    nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface,
-    nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap, nativeInitWebGPU
+    nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer,
+    nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL,
+    nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal,
+    nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer,
+    nativeReleaseGLPointerNormal, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface,
+    nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal,
+    nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap,
 };
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
     nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset,
     nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap,
     nativeDrawImageWithAsset, nativeDrawImageWithBitmap,
 };
-use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
-    nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
-    nativeLoadFromBitmap, nativeLoadFromPath,
-};
+use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{nativeTexImage2D, nativeTexSubImage2D};
-
-use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
-use crate::utils::gl::texture_render::nativeDrawFrame;
 use crate::utils::{
     nativeInitContextWithCustomSurface, nativeInitContextWithCustomSurfaceNormal,
     nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
 };
+use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
+use crate::utils::gl::texture_render::nativeDrawFrame;
 
 mod jni_compat;
 pub mod utils;
@@ -290,12 +286,12 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_rendering_context_2d_signatures,
                 canvas_rendering_context_2d_methods
             )
-            .map(|(name, signature, method)| NativeMethod {
-                name: name.into(),
-                sig: signature.into(),
-                fn_ptr: method,
-            })
-            .collect();
+                .map(|(name, signature, method)| NativeMethod {
+                    name: name.into(),
+                    sig: signature.into(),
+                    fn_ptr: method,
+                })
+                .collect();
 
             let _ = env.register_native_methods(
                 &canvas_rendering_context_2d_class,
@@ -313,6 +309,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeGetDimensions",
                 "nativeLoadFromPath",
                 "nativeGetError",
+                "nativeLoadFromUrl",
+                "nativeLoadFromBytes",
+                "nativeLoadFromBuffer"
             ];
 
             let image_asset_signatures = if ret >= ANDROID_O {
@@ -323,6 +322,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J[I)V",
                     "(JLjava/lang/String;)Z",
                     "(J)Ljava/lang/String;",
+                    "(JLjava/lang/String;)Z",
+                    "(J[B)Z",
+                    "(JLjava/nio/ByteBuffer;)Z",
                 ]
             } else {
                 [
@@ -332,6 +334,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J[I)V",
                     "!(JLjava/lang/String;)Z",
                     "!(J)Ljava/lang/String;",
+                    "!(JLjava/lang/String;)Z",
+                    "!(J[B)Z",
+                    "!(JLjava/nio/ByteBuffer;)Z",
                 ]
             };
 
@@ -342,6 +347,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 nativeGetDimensions as *mut c_void,
                 nativeLoadFromPath as *mut c_void,
                 nativeGetError as *mut c_void,
+                nativeLoadFromUrl as *mut c_void,
+                nativeLoadFromBytes as *mut c_void,
+                nativeLoadFromBuffer as *mut c_void
             ];
 
             let image_asset_native_methods: Vec<NativeMethod> = izip!(
@@ -349,16 +357,15 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 image_asset_signatures,
                 image_asset_methods
             )
-            .map(|(name, signature, method)| NativeMethod {
-                name: name.into(),
-                sig: signature.into(),
-                fn_ptr: method,
-            })
-            .collect();
+                .map(|(name, signature, method)| NativeMethod {
+                    name: name.into(),
+                    sig: signature.into(),
+                    fn_ptr: method,
+                })
+                .collect();
 
             let _ = env
                 .register_native_methods(&image_asset_class, image_asset_native_methods.as_slice());
-
 
 
             let webgl_rendering_class = env

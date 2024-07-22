@@ -9,6 +9,8 @@ export class GPUOutOfMemoryError extends GPUError {}
 
 export class GPUInternalError extends GPUError {}
 
+export class GPUDeviceLostInfo extends GPUError {}
+
 export class GPUUncapturedErrorEvent {
 	[native_];
 	constructor(type: 'internal' | 'out-of-memory' | 'validation', options: { error: GPUError }) {

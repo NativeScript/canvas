@@ -1,6 +1,6 @@
-use jni::objects::{JClass, JIntArray, JObject, JString};
-use jni::sys::{jboolean, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
+use jni::objects::{JByteArray, JByteBuffer, JClass, JIntArray, JObject, JString, ReleaseMode};
+use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE, jobject};
 use ndk::bitmap::BitmapFormat;
 
 use canvas_c::ImageAsset;
@@ -74,8 +74,8 @@ pub extern "system" fn nativeLoadFromPath(
 
     match env.get_string(&path) {
         Ok(path) => {
-            let path: String = path.into();
-            if asset.load_from_path(path.as_str()) {
+            let path = path.to_string_lossy();
+            if asset.load_from_path(path.as_ref()) {
                 return JNI_TRUE;
             }
             JNI_FALSE
@@ -87,6 +87,90 @@ pub extern "system" fn nativeLoadFromPath(
         }
     }
 }
+
+
+#[no_mangle]
+pub extern "system" fn nativeLoadFromUrl(
+    mut env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    url: JString,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let asset = asset as *mut ImageAsset;
+
+    match env.get_string(&url) {
+        Ok(path) => {
+            if canvas_c::canvas_native_image_asset_load_from_url(asset, path.as_ptr()) {
+                return JNI_TRUE;
+            }
+            JNI_FALSE
+        }
+        Err(error) => {
+            let asset = unsafe { &mut *asset };
+            let error = error.to_string();
+            asset.set_error(error.as_str());
+            JNI_FALSE
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn nativeLoadFromBytes(
+    mut env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    byteArray: JByteArray,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let asset = asset as *mut ImageAsset;
+
+    match env.get_array_elements_critical(&byteArray, ReleaseMode::NoCopyBack) {
+        Ok(bytes) => {
+            let size = bytes.len();
+            let slice = std::slice::from_raw_parts_mut(bytes.as_ptr() as *mut u8, size);
+            let asset = unsafe { &mut *asset };
+            if asset.load_from_bytes(slice) {
+                return JNI_TRUE;
+            }
+            JNI_FALSE
+        }
+        Err(_) => JNI_FALSE
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeLoadFromBuffer(
+    mut env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    buffer: JByteBuffer,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let asset = asset as *mut ImageAsset;
+
+    if let (Ok(buf), Ok(size)) = (
+        env.get_direct_buffer_address(&buffer),
+        env.get_direct_buffer_capacity(&buffer),
+    ) {
+        let slice = unsafe { std::slice::from_raw_parts(buf, size) };
+        let asset = unsafe { &mut *asset };
+        if asset.load_from_bytes(slice) {
+            return JNI_TRUE;
+        }
+    }
+    JNI_FALSE
+}
+
 
 #[no_mangle]
 pub extern "system" fn nativeGetDimensions(

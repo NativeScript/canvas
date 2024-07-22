@@ -7,7 +7,7 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
-
+#include "GPUUtils.h"
 class GPUCommandEncoderImpl : ObjectWrapperImpl {
 public:
     explicit GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);

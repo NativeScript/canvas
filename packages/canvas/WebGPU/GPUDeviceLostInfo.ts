@@ -1,11 +1,13 @@
+import { native_ } from './Constants';
+
 class GPUDeviceLostInfo {
-	_native;
+	[native_];
 
 	get message() {
-		return this._native.message;
+		return this[native_].message;
 	}
 
 	get reason() {
-		return this._native.reason;
+		return this[native_].reason;
 	}
 }

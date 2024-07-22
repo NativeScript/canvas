@@ -24,6 +24,18 @@ export enum GPUTextureUsage {
 	TEXTURE_BINDING = 4,
 }
 
+export enum GPUShaderStage {
+	VERTEX = 0x1,
+	FRAGMENT = 0x2,
+	COMPUTE = 0x4,
+}
+
+export enum GPUDeviceLostReason {
+	'unknown',
+	'destroyed',
+}
+
 export const native_ = Symbol('[[native]]');
 export const mapState_ = Symbol('[[mapState]]');
 export const contextPtr_ = Symbol('[[contextPtr]]');
+export const adapter_ = Symbol('[[adapter]]');

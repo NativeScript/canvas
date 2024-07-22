@@ -23,7 +23,6 @@ export async function run(canvas: Canvas) {
 	context.configure({
 		device,
 		format: presentationFormat,
-		alphaMode: 'postmultiplied',
 	});
 
 	// Create a vertex buffer from the cube data.

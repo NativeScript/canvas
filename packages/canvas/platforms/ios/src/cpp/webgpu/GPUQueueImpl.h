@@ -8,10 +8,11 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "GPUUtils.h"
 
 class GPUQueueImpl : ObjectWrapperImpl {
 public:
-    GPUQueueImpl(const CanvasGPUQueue *queue);
+    explicit GPUQueueImpl(const CanvasGPUQueue *queue);
 
     ~GPUQueueImpl() {
         canvas_native_webgpu_queue_release(this->GetGPUQueue());

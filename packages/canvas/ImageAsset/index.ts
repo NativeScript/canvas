@@ -10,11 +10,16 @@ export class ImageAsset {
 	}
 
 	_native;
+	_android;
 	get native() {
 		return this._native;
 	}
 	constructor(native?) {
 		this._native = native || new global.CanvasModule.ImageAsset();
+		if (__ANDROID__) {
+			const ref = long(this.native.__getRef());
+			this._android = new (<any>org).nativescript.canvas.NSCImageAsset(ref);
+		}
 	}
 
 	get width() {
@@ -52,6 +57,25 @@ export class ImageAsset {
 
 	fromUrl(url: string) {
 		return new Promise((resolve, reject) => {
+			if (__ANDROID__) {
+				const asset = this._android.getAsset();
+				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromUrlAsync(
+					asset,
+					url,
+					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+						onComplete(success) {
+							if (!success) {
+								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								reject(error);
+							} else {
+								resolve(success);
+							}
+						},
+					})
+				);
+				return;
+			}
+
 			this._incrementStrongRef();
 			this.native.fromUrlCb(url, (success, error) => {
 				if (error) {
@@ -81,6 +105,25 @@ export class ImageAsset {
 				if (path.startsWith('~/')) {
 					path = filePath.join(knownFolders.currentApp().path, path.replace('~/', ''));
 				}
+			}
+
+			if (__ANDROID__) {
+				const asset = this._android.getAsset();
+				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
+					asset,
+					path,
+					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+						onComplete(success) {
+							if (!success) {
+								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								reject(error);
+							} else {
+								resolve(success);
+							}
+						},
+					})
+				);
+				return;
 			}
 
 			this._incrementStrongRef();
@@ -127,6 +170,25 @@ export class ImageAsset {
 
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
+			if (__ANDROID__) {
+				const asset = this._android.getAsset();
+				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
+					asset,
+					bytes,
+					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+						onComplete(success) {
+							if (!success) {
+								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								reject(error);
+							} else {
+								resolve(success);
+							}
+						},
+					})
+				);
+				return;
+			}
+
 			this._incrementStrongRef();
 			this.native.fromBytesCb(bytes, (success, error) => {
 				if (error) {

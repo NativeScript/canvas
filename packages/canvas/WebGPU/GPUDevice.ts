@@ -104,42 +104,47 @@ export class GPUDevice extends EventTarget {
 	}
 
 	private _uncapturederror(type: number, message: string) {
-		const emitter = this._emitter?.deref();
+		let emitter: Observable;
+		if (__ANDROID__) {
+			emitter = this._emitter?.get();
+		} else {
+			emitter = this._emitter?.deref();
+		}
+
+		let error;
+
+		switch (type) {
+			case 1:
+				// lost
+				// noop
+				break;
+			case 2:
+				// oom
+				error = new GPUOutOfMemoryError();
+				break;
+			case 3:
+				// validation
+				error = new GPUValidationError(message);
+				break;
+			case 4:
+				// internal
+				error = new GPUInternalError();
+				break;
+		}
+
 		if (emitter) {
 			const has = emitter.hasListeners('uncapturederror');
 			if (has) {
-				//	emitter.notify();
-				switch (type) {
-					case 1:
-						// lost
-						// noop
-						break;
-					case 2:
-						// oom
-						emitter.notify({
-							eventName: 'uncapturederror',
-							object: fromObject({}),
-							error: new GPUOutOfMemoryError(),
-						});
-						break;
-					case 3:
-						// validation
-						emitter.notify({
-							eventName: 'uncapturederror',
-							object: fromObject({}),
-							error: new GPUValidationError(message),
-						});
-						break;
-					case 4:
-						// internal
-						emitter.notify({
-							eventName: 'uncapturederror',
-							object: fromObject({}),
-							error: new GPUInternalError(),
-						});
-						break;
-				}
+				emitter.notify({
+					eventName: 'uncapturederror',
+					object: fromObject({}),
+					error,
+				});
+			} else {
+				console.error(error);
 			}
+		} else {
+			console.error(error);
 		}
 	}
 
@@ -361,14 +366,6 @@ export class GPUDevice extends EventTarget {
 						attr['format'] = parseVertexFormat(attr['format']) as never;
 						return attr;
 					});
-					switch (buffer.stepMode) {
-						case 'vertex':
-							buffer.stepMode = 0 as never;
-							break;
-						case 'instance':
-							buffer.stepMode = 1 as never;
-							break;
-					}
 
 					return buffer;
 				});
@@ -383,30 +380,6 @@ export class GPUDevice extends EventTarget {
 
 			if (layout instanceof GPUPipelineLayout) {
 				descriptor.layout = descriptor.layout[native_];
-			}
-
-			const primitive = descriptor.primitive;
-
-			if (primitive) {
-				switch (primitive.topology) {
-					case 'point-list':
-						primitive.topology = 0 as never;
-						break;
-					case 'line-list':
-						primitive.topology = 1 as never;
-						break;
-					case 'line-strip':
-						primitive.topology = 2 as never;
-						break;
-					case 'triangle-list':
-						primitive.topology = 3 as never;
-						break;
-					case 'triangle-strip':
-						primitive.topology = 4 as never;
-						break;
-					default:
-						break;
-				}
 			}
 
 			this[native_].createRenderPipeline(descriptor, (error, pipeline) => {

@@ -76,15 +76,16 @@ pub(crate) fn handle_error_fatal(
     //     "Error in {operation}: {f}",
     //     f = format_error(context, &cause)
     // );
-    let error = cause.to_string();
-
-    println!("error ? {:?}", error);
 
     // log::error!("Error in {operation}: {f}",
     //     f = error);
 
-    log::error!("Error in {operation}: {f}",
-        f = format_error(global, &cause))
+    let error = cause.to_string();
+
+    log::error!("Error in {operation}: {error}")
+
+    // log::error!("Error in {operation}: {f}",
+    //     f = format_error(global, &cause))
 }
 
 #[repr(C)]

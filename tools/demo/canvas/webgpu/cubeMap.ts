@@ -22,7 +22,7 @@ export async function run(canvas: Canvas) {
 
 	context.configure({
 		device,
-		format: presentationFormat,
+		format: presentationFormat
 	});
 
 	// Create a vertex buffer from the cube data.
@@ -31,6 +31,7 @@ export async function run(canvas: Canvas) {
 		usage: GPUBufferUsage.VERTEX,
 		mappedAtCreation: true,
 	});
+	console.log(cubeVertexArray.byteLength);
 	new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
 	verticesBuffer.unmap();
 
@@ -203,10 +204,15 @@ export async function run(canvas: Canvas) {
 	}
 
 	function frame() {
+		const texture = context.getCurrentTexture();
+
+		if (!texture) {
+			requestAnimationFrame(frame);
+			return;
+		}
+		
 		updateTransformationMatrix();
 		device.queue.writeBuffer(uniformBuffer, 0, modelViewProjectionMatrix.buffer, modelViewProjectionMatrix.byteOffset, modelViewProjectionMatrix.byteLength);
-
-		const texture = context.getCurrentTexture();
 
 		renderPassDescriptor.colorAttachments[0].view = texture.createView();
 

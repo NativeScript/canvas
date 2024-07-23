@@ -23,7 +23,6 @@ export async function run(canvas: Canvas) {
 	context.configure({
 		device,
 		format: presentationFormat,
-		alphaMode: 'postmultiplied',
 	});
 
 	// Create a vertex buffer from the cube data.
@@ -153,7 +152,7 @@ export async function run(canvas: Canvas) {
 		},
 	};
 
-	const aspect = (canvas.width as number) * devicePixelRatio / (canvas.height as number)  * devicePixelRatio;
+	const aspect = (canvas.width as number) / (canvas.height as number);
 	const projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
 
 	const modelMatrix1 = mat4.translation(vec3.create(-2, 0, 0));

@@ -39,8 +39,7 @@ export async function run(canvas: Canvas) {
 
 	context.configure({
 		device,
-		format: presentationFormat,
-		alphaMode: 'postmultiplied',
+		format: presentationFormat
 	});
 
 	const particlesBuffer = device.createBuffer({

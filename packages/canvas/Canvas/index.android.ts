@@ -344,6 +344,8 @@ export class Canvas extends CanvasBase {
 					this._canvas.initWebGPUContext(long(ptr));
 
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
+
+					(this._gpuContext as any)._canvas = this;
 				}
 
 				return this._gpuContext;

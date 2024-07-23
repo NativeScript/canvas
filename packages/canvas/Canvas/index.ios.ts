@@ -362,9 +362,10 @@ export class Canvas extends CanvasBase {
 					const ptr = navigator.gpu.native.__getPointer();
 					const number = NSNumber.numberWithLong(Number(ptr));
 					this._canvas.initWebGPUContext(number);
-		
+
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
-					
+
+					(this._gpuContext as any)._canvas = this;
 				}
 
 				return this._gpuContext;

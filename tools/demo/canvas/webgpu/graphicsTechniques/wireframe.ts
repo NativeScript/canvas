@@ -27,7 +27,6 @@ export async function run(canvas: Canvas) {
 		context.configure({
 			device,
 			format: presentationFormat,
-			alphaMode: 'postmultiplied',
 		});
 
 		const settings = {
@@ -364,7 +363,7 @@ export async function run(canvas: Canvas) {
 			const encoder = device.createCommandEncoder();
 
 			// make a render pass encoder to encode render specific commands
-			const pass = encoder.beginRenderPass(renderPassDescriptor);
+			const pass = encoder.beginRenderPass(renderPassDescriptor as never);
 			pass.setPipeline(litPipeline);
 
 			objectInfos.forEach(({ uniformBuffer, uniformValues, worldViewProjectionMatrixValue, worldMatrixValue, litBindGroup, model: { vertexBuffer, indexBuffer, indexFormat, vertexCount } }, i) => {

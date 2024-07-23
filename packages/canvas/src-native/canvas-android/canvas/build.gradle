@@ -45,6 +45,7 @@ println "Runtime using NDK_PATH: " + NDK_PATH
 
 
 android {
+	namespace "org.nativescript.canvas"
 	compileSdkVersion 33
 	defaultConfig {
 		minSdkVersion 19

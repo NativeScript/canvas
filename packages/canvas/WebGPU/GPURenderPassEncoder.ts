@@ -58,6 +58,7 @@ export class GPURenderPassEncoder {
 		if (!group) {
 			return;
 		}
+
 		if (Array.isArray(dynamicOffsetsData)) {
 			const data = new Uint32Array(dynamicOffsetsData);
 			this[native_].setBindGroup(index, group, data, 0, data.length);

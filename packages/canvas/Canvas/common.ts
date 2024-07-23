@@ -257,27 +257,23 @@ export class Touch {
 	stopPropagation() {}
 }
 
-export class TouchList {
-	private _list: Touch[];
-
+export class TouchList extends Array {
 	static fromList(list: Touch[]): TouchList {
 		const ret = new TouchList();
-		ret._list = list;
+		ret.splice(0, 0, ...list);
 		return ret;
 	}
 
 	static empty() {
-		const ret = new TouchList();
-		ret._list = [];
-		return ret;
+		return new TouchList();
 	}
 
 	item(index: number): Touch {
-		return this._list[index];
+		return this[index];
 	}
 
 	get length(): number {
-		return this._list.length;
+		return this.length;
 	}
 }
 
@@ -616,7 +612,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 
 		if (this._touchMoveCallbacks.length > 0) {
-			const changedTouches = [];
+			const changedTouches = TouchList.empty();
 
 			for (const pointer of pointers) {
 				changedTouches.push(
@@ -735,7 +731,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (this._touchEndCallbacks.length > 0) {
 			const touches = TouchList.fromList(this._touches);
 
-			const changedTouches = [
+			const changedTouches = TouchList.fromList([
 				new Touch({
 					identifier: ptrId,
 					target: null,
@@ -746,7 +742,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 				}),
-			];
+			]);
 
 			const event = new TouchEvent('touchend', {
 				touches,

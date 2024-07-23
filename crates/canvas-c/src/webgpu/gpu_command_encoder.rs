@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::ptr_into_label;
-
+use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
 use super::{
     enums::CanvasTextureAspect,
     gpu::CanvasWebGPUInstance,
@@ -214,15 +214,22 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
     let depth_stencil_attachment = if !depth_stencil_attachment.is_null() {
         let depth_stencil_attachment = &*depth_stencil_attachment;
         let view = &*depth_stencil_attachment.view;
+
+        let depth_load: Option<CanvasLoadOp> = depth_stencil_attachment.depth_load_op.into();
+        let depth_store: Option<CanvasStoreOp> = depth_stencil_attachment.depth_store_op.into();
+
+        let stencil_load: Option<CanvasLoadOp> = depth_stencil_attachment.stencil_load_op.into();
+        let stencil_store: Option<CanvasStoreOp> = depth_stencil_attachment.stencil_store_op.into();
+
         let depth = wgpu_core::command::PassChannel {
-            load_op: depth_stencil_attachment.depth_load_op.into(),
-            store_op: depth_stencil_attachment.depth_store_op.into(),
+            load_op: depth_load.unwrap_or(CanvasLoadOp::Clear).into(),
+            store_op: depth_store.unwrap_or(CanvasStoreOp::Store).into(),
             clear_value: depth_stencil_attachment.depth_clear_value,
             read_only: depth_stencil_attachment.depth_read_only,
         };
         let stencil = wgpu_core::command::PassChannel {
-            load_op: depth_stencil_attachment.stencil_load_op.into(),
-            store_op: depth_stencil_attachment.stencil_store_op.into(),
+            load_op: stencil_load.unwrap_or(CanvasLoadOp::Clear).into(),
+            store_op: stencil_store.unwrap_or(CanvasStoreOp::Store).into(),
             clear_value: depth_stencil_attachment.stencil_clear_value,
             read_only: depth_stencil_attachment.stencil_read_only,
         };
@@ -249,6 +256,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         timestamp_writes: timestamp_writes.as_ref(),
         occlusion_query_set,
     };
+
     let (pass, err) = global.command_encoder_create_render_pass(command_encoder_id, &desc);
 
     let error_sink = command_encoder.error_sink.as_ref();

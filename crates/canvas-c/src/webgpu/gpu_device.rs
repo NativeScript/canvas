@@ -1404,7 +1404,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
     } else {
         None
     };
-
     let primitive: wgpu_types::PrimitiveState = if !descriptor.primitive.is_null() {
         let primitive = *descriptor.primitive;
         primitive.into()

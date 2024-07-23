@@ -27,7 +27,8 @@ void GPURenderPassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isol
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPassEncoder"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPassEncoder"),
+                      func).FromJust();;
 }
 
 GPURenderPassEncoderImpl *
@@ -53,7 +54,6 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
-
     tmpl->Set(
             ConvertToV8String(isolate, "beginOcclusionQuery"),
             v8::FunctionTemplate::New(isolate, &BeginOcclusionQuery));
@@ -66,7 +66,6 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
             ConvertToV8String(isolate, "drawIndexed"),
             v8::FunctionTemplate::New(isolate, &DrawIndexed));
 
-
     tmpl->Set(
             ConvertToV8String(isolate, "drawIndexedIndirect"),
             v8::FunctionTemplate::New(isolate, &DrawIndexedIndirect));
@@ -75,11 +74,9 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
             ConvertToV8String(isolate, "drawIndirect"),
             v8::FunctionTemplate::New(isolate, &DrawIndirect));
 
-
     tmpl->Set(
             ConvertToV8String(isolate, "end"),
             v8::FunctionTemplate::New(isolate, &End));
-
 
     tmpl->Set(
             ConvertToV8String(isolate, "endOcclusionQuery"),
@@ -173,7 +170,6 @@ void GPURenderPassEncoderImpl::Draw(const v8::FunctionCallbackInfo<v8::Value> &a
     if (vertexCountVal->IsUint32()) {
         auto vertexCount = vertexCountVal.As<v8::Uint32>()->Value();
 
-
         if (instanceCountVal->IsUint32()) {
             instanceCount = instanceCountVal.As<v8::Uint32>()->Value();
         }
@@ -209,12 +205,16 @@ void GPURenderPassEncoderImpl::DrawIndexed(const v8::FunctionCallbackInfo<v8::Va
 
 
     auto indexCountVal = args[0];
-    auto firstIndexVal = args[1];
-    auto baseVertexVal = args[2];
-    auto firstInstanceVal = args[3];
+    auto instanceCountVal = args[1];
+    auto firstIndexVal = args[2];
+    auto baseVertexVal = args[3];
+    auto firstInstanceVal = args[4];
 
     if (indexCountVal->IsUint32()) {
 
+        if (instanceCountVal->IsUint32()) {
+            instanceCount = instanceCountVal.As<v8::Uint32>()->Value();
+        }
 
         if (firstIndexVal->IsUint32()) {
             firstIndex = firstIndexVal.As<v8::Uint32>()->Value();
@@ -415,11 +415,11 @@ void GPURenderPassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::V
             auto data = static_cast<uint8_t *>(buffer->GetBackingStore()->Data()) + offset;
             auto size = buf->Length();
             auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
-            auto offset_length = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
+            auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
             canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
-                                                                      bindgroup->GetBindGroup(),
-                                                                      static_cast<const uint32_t *>(static_cast<void *>(data)),
-                                                                      size, start, offset_length);
+                                                                    bindgroup->GetBindGroup(),
+                                                                    static_cast<const uint32_t *>(static_cast<void *>(data)),
+                                                                    size, start, offset_length);
         } else {
             canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
                                                                     bindgroup->GetBindGroup(),
@@ -435,7 +435,6 @@ void GPURenderPassEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v8:
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto bufferVal = args[0];
     auto indexFormatVal = args[1];
@@ -482,41 +481,13 @@ void GPURenderPassEncoderImpl::SetBlendConstant(const v8::FunctionCallbackInfo<v
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto colorVal = args[0];
 
-    if (colorVal->IsObject()) {
+    if (colorVal->IsObject() || colorVal->IsArray()) {
 
-        auto color = CanvasColor{0, 0, 0, 0};
-        auto colorObj = colorVal.As<v8::Object>();
+        auto color = ParseColor(isolate, colorVal);
 
-        v8::Local<v8::Value> r;
-        v8::Local<v8::Value> g;
-        v8::Local<v8::Value> b;
-        v8::Local<v8::Value> a;
-
-        colorObj->Get(context, ConvertToV8String(isolate, "r")).ToLocal(&r);
-        colorObj->Get(context, ConvertToV8String(isolate, "g")).ToLocal(&g);
-        colorObj->Get(context, ConvertToV8String(isolate, "b")).ToLocal(&b);
-        colorObj->Get(context, ConvertToV8String(isolate, "a")).ToLocal(&a);
-
-        if (!r.IsEmpty() && r->IsNumber()) {
-            color.r = r.As<v8::Number>()->Value();
-        }
-
-        if (!g.IsEmpty() && g->IsNumber()) {
-            color.g = g.As<v8::Number>()->Value();
-        }
-
-
-        if (!b.IsEmpty() && b->IsNumber()) {
-            color.b = b.As<v8::Number>()->Value();
-        }
-
-        if (!a.IsEmpty() && a->IsNumber()) {
-            color.a = a.As<v8::Number>()->Value();
-        }
 
         canvas_native_webgpu_render_pass_encoder_set_blend_constant(ptr->GetPass(), &color);
     }
@@ -530,12 +501,10 @@ void GPURenderPassEncoderImpl::SetPipeline(const v8::FunctionCallbackInfo<v8::Va
     }
 
     auto pipelineVal = args[0];
-    if (pipelineVal->IsObject()) {
+    if(GetNativeType(pipelineVal) == NativeType::GPURenderPipeline){
         auto pipeline = GPURenderPipelineImpl::GetPointer(pipelineVal.As<v8::Object>());
-        if (pipeline != nullptr) {
-            canvas_native_webgpu_render_pass_encoder_set_pipeline(ptr->GetPass(),
-                                                                  pipeline->GetGPUPipeline());
-        }
+        canvas_native_webgpu_render_pass_encoder_set_pipeline(ptr->GetPass(),
+                                                              pipeline->GetGPUPipeline());
     }
 }
 
@@ -598,11 +567,12 @@ void GPURenderPassEncoderImpl::SetVertexBuffer(const v8::FunctionCallbackInfo<v8
 
     if (slotVal->IsUint32() && bufferVal->IsObject()) {
         auto slot = slotVal.As<v8::Uint32>()->Value();
-        auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
-        if (buffer == nullptr) {
+        if (GetNativeType(bufferVal) != NativeType::GPUBuffer) {
             // todo throw ??
             return;
         }
+
+        auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
 
         if (offsetVal->IsNumber()) {
             offset = (int64_t) offsetVal.As<v8::Number>()->Value();

@@ -377,6 +377,8 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
     char *label = nullptr;
 
     auto optionsVal = args[0];
+    
+    std::vector<CanvasBindGroupEntry> entries;
 
     if (optionsVal->IsObject()) {
         auto options = optionsVal.As<v8::Object>();
@@ -401,7 +403,6 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
             }
         }
 
-        std::vector<CanvasBindGroupEntry> entries;
 
         v8::Local<v8::Value> entriesVal;
         options->Get(context, ConvertToV8String(isolate, "entries")).ToLocal(&entriesVal);
@@ -466,7 +467,8 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
                                         int64_t offset = -1;
 
                                         v8::Local<v8::Value> offsetVal;
-                                        bufferObj->Get(context,
+                                        
+                                        resourceObj->Get(context,
                                                        ConvertToV8String(isolate,
                                                                          "offset")).ToLocal(
                                                 &offsetVal);
@@ -478,9 +480,9 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
                                         int64_t size = -1;
 
                                         v8::Local<v8::Value> sizeVal;
-                                        bufferObj->Get(context,
+                                        resourceObj->Get(context,
                                                        ConvertToV8String(isolate, "size")).ToLocal(
-                                                &offsetVal);
+                                                &sizeVal);
                                         if (!sizeVal.IsEmpty() && sizeVal->IsNumber()) {
                                             size = (int64_t) sizeVal->NumberValue(
                                                     context).ToChecked();
@@ -595,7 +597,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
 
                         v8::Local<v8::Value> hasDynamicOffsetVal;
                         bufferObj->Get(context,
-                                       ConvertToV8String(isolate, "hasDynamicOffset ")).ToLocal(
+                                       ConvertToV8String(isolate, "hasDynamicOffset")).ToLocal(
                                 &hasDynamicOffsetVal);
 
 
@@ -607,7 +609,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
 
                         v8::Local<v8::Value> minBindingSizeVal;
                         bufferObj->Get(context,
-                                       ConvertToV8String(isolate, "minBindingSize ")).ToLocal(
+                                       ConvertToV8String(isolate, "minBindingSize")).ToLocal(
                                 &minBindingSizeVal);
 
 
@@ -1086,9 +1088,10 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
 
                     if (!keyVal.IsEmpty() && keyVal->IsString() && !valueVal.IsEmpty() &&
                         valueVal->IsNumber()) {
+                        auto val = ConvertFromV8String(isolate, keyVal);
                         canvas_native_webgpu_constants_insert(
                                 store,
-                                *v8::String::Utf8Value(isolate, keyVal),
+                                val.c_str(),
                                 valueVal.As<v8::Number>()->Value()
                         );
                     }
@@ -1412,9 +1415,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
         stencilObj->Get(context, ConvertToV8String(isolate, "format")).ToLocal(&formatValue);
         if (!formatValue.IsEmpty() && formatValue->IsString()) {
-            auto val = *v8::String::Utf8Value(isolate, formatValue);
+            auto val = ConvertFromV8String(isolate, formatValue);
             auto format = canvas_native_webgpu_enum_string_to_gpu_texture(
-                    val);
+                    val.c_str());
             if (format.tag ==
                 CanvasOptionalGPUTextureFormat_Tag::CanvasOptionalGPUTextureFormatSome) {
                 stencil->format = format.some;
@@ -1434,8 +1437,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         stencilObj->Get(context, ConvertToV8String(isolate, "depthBiasClamp")).ToLocal(
                 &depthBiasClampVal);
 
-        if (!depthBiasClampVal.IsEmpty() && depthBiasClampVal->IsInt32()) {
-            stencil->depth_bias_clamp = depthBiasClampVal->Int32Value(context).FromJust();
+        if (!depthBiasClampVal.IsEmpty() && depthBiasClampVal->IsNumber()) {
+            stencil->depth_bias_clamp = (float)depthBiasClampVal->NumberValue(context).FromJust();
         }
 
 
@@ -1443,8 +1446,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         stencilObj->Get(context, ConvertToV8String(isolate, "depthBiasSlopeScale")).ToLocal(
                 &depthBiasSlopeScaleVal);
 
-        if (!depthBiasSlopeScaleVal.IsEmpty() && depthBiasSlopeScaleVal->IsInt32()) {
-            stencil->depth_bias_slope_scale = depthBiasSlopeScaleVal->Int32Value(
+        if (!depthBiasSlopeScaleVal.IsEmpty() && depthBiasSlopeScaleVal->IsNumber()) {
+            stencil->depth_bias_slope_scale = (float)depthBiasSlopeScaleVal->NumberValue(
                     context).FromJust();
         }
 
@@ -1570,6 +1573,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         if (!stencilWriteMaskVal.IsEmpty() && stencilWriteMaskVal->IsUint32()) {
             stencil->stencil_write_mask = stencilWriteMaskVal->Uint32Value(context).FromJust();
         }
+        
+        descriptor.depth_stencil = stencil;
 
     }
 
@@ -1907,6 +1912,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                     case 2:
                         primitive->cull_mode = CanvasCullMode::CanvasCullModeBack;
                         break;
+                    default:
+                        break;
                 }
             } else if (cullModeValue->IsString()) {
 
@@ -2058,7 +2065,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     std::vector<CanvasVertexBufferLayout> bufferLayout;
 
     std::vector<std::vector<CanvasVertexAttribute>> attributes;
-
 
     if (!vertexValue.IsEmpty() && vertexValue->IsObject()) {
         auto vertexObj = vertexValue.As<v8::Object>();
@@ -2255,6 +2261,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             free((void *) descriptor.vertex->entry_point);
         }
 
+    }
+    
+    if(descriptor.depth_stencil != nullptr){
+        delete descriptor.depth_stencil;
     }
 
 
@@ -2599,10 +2609,9 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
         v8::Local<v8::Value> formatVal;
-        options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
-                &formatVal);
 
-        if (formatVal->IsString()) {
+        if (options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
+                                                                                &formatVal) && formatVal->IsString()) {
             auto format = ConvertFromV8String(isolate, formatVal);
 
             // todo use enum

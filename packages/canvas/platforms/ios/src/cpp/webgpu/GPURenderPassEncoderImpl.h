@@ -8,10 +8,11 @@
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
+#include "GPUUtils.h"
 
 class GPURenderPassEncoderImpl : ObjectWrapperImpl {
 public:
-    GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
+    explicit GPURenderPassEncoderImpl(const CanvasGPURenderPassEncoder *pass);
 
     ~GPURenderPassEncoderImpl() {
         canvas_native_webgpu_render_pass_encoder_release(this->GetPass());
@@ -78,7 +79,6 @@ public:
 
 private:
     const CanvasGPURenderPassEncoder *pass_;
-    bool ended_ = false;
 };
 
 

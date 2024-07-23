@@ -686,8 +686,6 @@ typedef struct CanvasGPUTexture CanvasGPUTexture;
 
 typedef struct CanvasGPUTextureView CanvasGPUTextureView;
 
-typedef struct CanvasRenderPassDepthStencilAttachment CanvasRenderPassDepthStencilAttachment;
-
 typedef struct CanvasRenderingContext2D CanvasRenderingContext2D;
 
 typedef struct CanvasWebGPUInstance CanvasWebGPUInstance;
@@ -865,6 +863,46 @@ typedef struct CanvasRenderPassColorAttachment {
   const struct CanvasGPUTextureView *resolve_target;
   struct CanvasPassChannelColor channel;
 } CanvasRenderPassColorAttachment;
+
+typedef enum CanvasOptionalLoadOp_Tag {
+  CanvasOptionalLoadOpNone,
+  CanvasOptionalLoadOpSome,
+} CanvasOptionalLoadOp_Tag;
+
+typedef struct CanvasOptionalLoadOp {
+  CanvasOptionalLoadOp_Tag tag;
+  union {
+    struct {
+      enum CanvasLoadOp some;
+    };
+  };
+} CanvasOptionalLoadOp;
+
+typedef enum CanvasOptionalStoreOp_Tag {
+  CanvasOptionalStoreOpNone,
+  CanvasOptionalStoreOpSome,
+} CanvasOptionalStoreOp_Tag;
+
+typedef struct CanvasOptionalStoreOp {
+  CanvasOptionalStoreOp_Tag tag;
+  union {
+    struct {
+      enum CanvasStoreOp some;
+    };
+  };
+} CanvasOptionalStoreOp;
+
+typedef struct CanvasRenderPassDepthStencilAttachment {
+  const struct CanvasGPUTextureView *view;
+  float depth_clear_value;
+  struct CanvasOptionalLoadOp depth_load_op;
+  struct CanvasOptionalStoreOp depth_store_op;
+  bool depth_read_only;
+  uint32_t stencil_clear_value;
+  struct CanvasOptionalLoadOp stencil_load_op;
+  struct CanvasOptionalStoreOp stencil_store_op;
+  bool stencil_read_only;
+} CanvasRenderPassDepthStencilAttachment;
 
 typedef struct CanvasImageCopyBuffer {
   const struct CanvasGPUBuffer *buffer;

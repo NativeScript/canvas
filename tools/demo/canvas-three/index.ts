@@ -48,7 +48,7 @@ class IconMesh extends THREE.Mesh {
 	}
 }
 
-global.console.warn = () => {};
+// global.console.warn = () => {};
 
 export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvas: any;
@@ -67,7 +67,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//x jet game
 
 		//this.webgpu_backdrop(this.canvas);
-		this.webgpu_1m_particles(this.canvas);
+		//this.webgpu_1m_particles(this.canvas);
+		this.webgpu_cube(this.canvas);
 
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
@@ -122,6 +123,65 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
+	}
+
+	async webgpu_cube(canvas: Canvas) {
+		const adapter = await navigator.gpu?.requestAdapter();
+		const device: GPUDevice = (await adapter?.requestDevice()) as never;
+		const context = canvas.getContext('webgpu');
+
+		var camera, scene, renderer;
+		var geometry, material, mesh;
+
+		function init() {
+			const { width, height } = canvas;
+
+			const innerWidth = width as number; //* window.devicePixelRatio;
+			const innerHeight = height as number; //* window.devicePixelRatio;
+
+			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
+			camera.position.set(15, 30, 15);
+
+			scene = new THREE.Scene();
+
+			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+			material = new THREE.MeshNormalMaterial();
+
+			mesh = new THREE.Mesh(geometry, material);
+			scene.add(mesh);
+
+			const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
+
+			renderer = new WebGPURenderer({ antialias: false, context, device, canvas });
+
+			console.log('??');
+
+			renderer.setPixelRatio(window.devicePixelRatio);
+			console.log('1');
+			//	renderer.setSize(innerWidth, innerHeight);
+			console.log('2');
+			// renderer.setAnimationLoop(animate);
+		}
+
+		init();
+
+		async function animate() {
+			console.log('help', Date.now());
+			mesh.rotation.x += 0.01;
+			mesh.rotation.y += 0.02;
+
+			try {
+				renderer.render(scene, camera);
+
+				context.presentSurface(context.getCurrentTexture());
+
+				requestAnimationFrame(animate);
+			} catch (error) {
+				console.log('error', error);
+			}
+		}
+
+		animate();
 	}
 
 	async webgpu_backdrop(canvas: Canvas) {
@@ -253,7 +313,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 	}
 
-
 	async webgpu_1m_particles(canvas: Canvas) {
 		const adapter = await navigator.gpu?.requestAdapter();
 		const device: GPUDevice = (await adapter?.requestDevice()) as never;
@@ -274,14 +333,12 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//const timestamps = document.getElementById('timestamps');
 
-
 		const root = this.root;
 
 		console.log('root', this.root);
 
 		function init() {
 			const { width, height } = canvas;
-
 
 			const innerWidth = width as number;
 			const innerHeight = height as number;
@@ -295,10 +352,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			console.log('textureLoader', root + '/textures/sprite1.png');
 			const textureLoader = new THREE.TextureLoader();
-			textureLoader.setPath(root)
+			textureLoader.setPath(root);
 			const map = textureLoader.load('textures/sprite1.png');
 
-			console.log("??");
+			console.log('??');
 
 			//
 			const createBuffer = () => storage(new StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
@@ -479,7 +536,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		async function animate() {
-		//	stats.update();
+			//	stats.update();
 
 			await renderer.computeAsync(computeParticles);
 
@@ -499,6 +556,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// }
 		}
 	}
+
 	topDown(canvas) {
 		const context = canvas.getContext('webgl2');
 		const gridHelper = new THREE.GridHelper(40, 20, 16777215, 16777215);

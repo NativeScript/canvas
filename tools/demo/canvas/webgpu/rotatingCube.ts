@@ -31,9 +31,7 @@ export async function run(canvas: Canvas) {
 
 	context.configure({
 		device,
-		format: presentationFormat,
-		alphaMode,
-		presentModes,
+		format: presentationFormat
 	});
 	// Create a vertex buffer from the cube data.
 	const verticesBuffer = device.createBuffer({

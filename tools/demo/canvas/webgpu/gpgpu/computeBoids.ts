@@ -181,7 +181,7 @@ export async function run(canvas: Canvas) {
 	//   gui.add(simParams, key).onFinishChange(updateSimParams);
 	// });
 
-	const numParticles = 1500;
+	const numParticles = global.isAndroid ? 750 : 1500;
 	const initialParticleData = new Float32Array(numParticles * 4);
 	for (let i = 0; i < numParticles; ++i) {
 		initialParticleData[4 * i + 0] = 2 * (Math.random() - 0.5);

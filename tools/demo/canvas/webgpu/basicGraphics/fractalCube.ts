@@ -5,7 +5,8 @@ import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cube
 import { knownFolders, File } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
-	const adapter = await navigator.gpu?.requestAdapter();
+	try {
+		const adapter = await navigator.gpu?.requestAdapter();
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
@@ -98,7 +99,7 @@ export async function run(canvas: Canvas) {
 			format: 'depth24plus',
 		},
 	});
-
+	
 	const depthTexture = device.createTexture({
 		size: [width * devicePixelRatio, height * devicePixelRatio],
 		format: 'depth24plus',
@@ -213,4 +214,8 @@ export async function run(canvas: Canvas) {
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);
+	} catch (error) {
+		console.log('???/');
+		console.log(error);
+	}
 }

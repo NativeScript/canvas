@@ -559,8 +559,8 @@ fn main() -> @location(0) vec4f {
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
-		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
-		// texturedCube.run(this.canvas);
+		const texturedCube = require('./webgpu/basicGraphics/texturedCube');
+		texturedCube.run(this.canvas);
 
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
@@ -571,8 +571,8 @@ fn main() -> @location(0) vec4f {
 		// const instancedCube = require('./webgpu/instancedCube');
 		// instancedCube.run(this.canvas);
 
-		const computeBoids = require('./webgpu/gpgpu/computeBoids');
-		computeBoids.run(this.canvas);
+		// const computeBoids = require('./webgpu/gpgpu/computeBoids');
+		// computeBoids.run(this.canvas);
 
 		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
 		// twoCubes.run(this.canvas);
@@ -582,6 +582,9 @@ fn main() -> @location(0) vec4f {
 
 		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
 		// wireframe.run(this.canvas);
+
+		// const cameras = require('./webgpu/graphicsTechniques/cameras/cameras.ts');
+		// cameras.run(this.canvas);
 
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);

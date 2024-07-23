@@ -6,6 +6,7 @@ import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 export class GPUCanvasContext {
 	_type;
+	_canvas: any;
 	static {
 		Helpers.initialize();
 	}
@@ -70,22 +71,32 @@ export class GPUCanvasContext {
 		this[native_].unconfigure();
 	}
 
+	_currentTexture: GPUTexture;
 	getCurrentTexture() {
-		const texture = this[native_].getCurrentTexture();
-		if (texture) {
-			return GPUTexture.fromNative(texture);
+		if (this._currentTexture) {
+			return this._currentTexture;
 		}
+		const texture = this[native_].getCurrentTexture();
+		// if (texture) {
+		// 	this._currentTexture = GPUTexture.fromNative(texture);
+		// } else {
+		// 	this._currentTexture = null;
+		// }
 
-		return null;
+		// return this._currentTexture;
+		return GPUTexture.fromNative(texture);
 	}
 
 	presentSurface(texture: GPUTexture) {
+		if (this._currentTexture === texture) {
+			this._currentTexture = null;
+		}
 		this[native_].presentSurface(texture?.[native_]);
 	}
 
 	getCapabilities(adapter: GPUAdapter): {
 		format: GPUTextureFormat[];
-		presentModes: ('autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox')[];
+		presentModes: GPUCanvasPresentMode[];
 		alphaModes: GPUCanvasAlphaMode;
 		usages: number;
 	} {

@@ -28,7 +28,7 @@ void GPUCommandEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandEncoder"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandEncoder"), func).FromJust();
 }
 
 GPUCommandEncoderImpl *GPUCommandEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -257,45 +257,18 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             v8::Local<v8::Value> clearValueVal;
             colorAttachment->Get(context, ConvertToV8String(isolate, "clearValue")).ToLocal(
                     &clearValueVal);
-            auto clearValue = CanvasColor{0, 0, 0, 0};
-            if (!clearValueVal.IsEmpty() && clearValueVal->IsObject()) {
-                auto clearValueObj = clearValueVal.As<v8::Object>();
 
-                v8::Local<v8::Value> r;
-                v8::Local<v8::Value> g;
-                v8::Local<v8::Value> b;
-                v8::Local<v8::Value> a;
+            auto clearValue = ParseColor(isolate, clearValueVal);
 
-                clearValueObj->Get(context, ConvertToV8String(isolate, "r")).ToLocal(&r);
-                clearValueObj->Get(context, ConvertToV8String(isolate, "g")).ToLocal(&g);
-                clearValueObj->Get(context, ConvertToV8String(isolate, "b")).ToLocal(&b);
-                clearValueObj->Get(context, ConvertToV8String(isolate, "a")).ToLocal(&a);
+            v8::Local<v8::Value> viewVal;
+            colorAttachment->Get(context, ConvertToV8String(isolate,
+                                                            "view")).ToLocal(&viewVal);
 
-                if (!r.IsEmpty() && r->IsNumber()) {
-                    clearValue.r = r.As<v8::Number>()->Value();
-                }
-
-                if (!g.IsEmpty() && g->IsNumber()) {
-                    clearValue.g = g.As<v8::Number>()->Value();
-                }
-
-
-                if (!b.IsEmpty() && b->IsNumber()) {
-                    clearValue.b = b.As<v8::Number>()->Value();
-                }
-
-                if (!a.IsEmpty() && a->IsNumber()) {
-                    clearValue.a = a.As<v8::Number>()->Value();
-                }
-            }
-
-
-            auto viewVal = colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                                           "view")).ToLocalChecked();
-
-            auto view = GPUTextureViewImpl::GetPointer(viewVal.As<v8::Object>());
-
-
+            const CanvasGPUTextureView *view = nullptr;
+         
+            auto viewPtr = GPUTextureViewImpl::GetPointer(viewVal.As<v8::Object>());
+            view = viewPtr->GetTextureView();
+            
             const CanvasGPUTextureView *resolve_target = nullptr;
 
             v8::Local<v8::Value> resolve_target_val;
@@ -313,34 +286,37 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             // default
             CanvasLoadOp load = CanvasLoadOp::CanvasLoadOpClear;
             CanvasStoreOp store = CanvasStoreOp::CanvasStoreOpStore;
-            auto loadVal = colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                                           "loadOp")).ToLocalChecked();
+            v8::Local<v8::Value> loadVal;
 
-            if (loadVal->IsUint32()) {
-                load = (CanvasLoadOp) loadVal->Uint32Value(
-                        context).ToChecked();
-            } else if (loadVal->IsString()) {
-                auto val = ConvertFromV8String(isolate, loadVal);
-                if (val == "clear") {
-                    load = CanvasLoadOp::CanvasLoadOpClear;
-                } else if (val == "load") {
-                    load = CanvasLoadOp::CanvasLoadOpLoad;
+            if(colorAttachment->Get(context, ConvertToV8String(isolate,
+                                                               "loadOp")).ToLocal(&loadVal)){
+                if (loadVal->IsUint32()) {
+                    load = (CanvasLoadOp) loadVal->Uint32Value(
+                            context).ToChecked();
+                } else if (loadVal->IsString()) {
+                    auto val = ConvertFromV8String(isolate, loadVal);
+                    if (val == "clear") {
+                        load = CanvasLoadOp::CanvasLoadOpClear;
+                    } else if (val == "load") {
+                        load = CanvasLoadOp::CanvasLoadOpLoad;
+                    }
                 }
             }
-
-
-            auto storeVal = colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                                            "storeOp")).ToLocalChecked();
-
-            if (!storeVal.IsEmpty() && storeVal->IsUint32()) {
-                store = (CanvasStoreOp) storeVal->Uint32Value(
-                        context).ToChecked();
-            } else if (storeVal->IsString()) {
-                auto val = ConvertFromV8String(isolate, storeVal);
-                if (val == "discard") {
-                    store = CanvasStoreOp::CanvasStoreOpDiscard;
-                } else if (val == "store") {
-                    store = CanvasStoreOp::CanvasStoreOpStore;
+    
+         
+            v8::Local<v8::Value> storeVal;
+            if(colorAttachment->Get(context, ConvertToV8String(isolate,
+                                                               "storeOp")).ToLocal(&storeVal)){
+                if (storeVal->IsUint32()) {
+                    store = (CanvasStoreOp) storeVal->Uint32Value(
+                            context).ToChecked();
+                } else if (storeVal->IsString()) {
+                    auto val = ConvertFromV8String(isolate, storeVal);
+                    if (val == "discard") {
+                        store = CanvasStoreOp::CanvasStoreOpDiscard;
+                    } else if (val == "store") {
+                        store = CanvasStoreOp::CanvasStoreOpStore;
+                    }
                 }
             }
 
@@ -352,7 +328,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             };
 
             auto attachment = CanvasRenderPassColorAttachment{
-                    view->GetTextureView(),
+                    view,
                     resolve_target,
                     channel
             };
@@ -362,8 +338,8 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
         }
 
 
+        // todo add when supported
         v8::Local<v8::Value> maxDrawCountVal;
-
         desc->Get(context, ConvertToV8String(isolate, "maxDrawCount")).ToLocal(&maxDrawCountVal);
 
 
@@ -376,8 +352,164 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
 
         if (!depthStencilAttachmentVal.IsEmpty() && depthStencilAttachmentVal->IsObject()) {
             auto depthStencilAttachmentObj = depthStencilAttachmentVal.As<v8::Object>();
-        }
+            depthStencilAttachment = new CanvasRenderPassDepthStencilAttachment{};
 
+
+            v8::Local<v8::Value> viewVal;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "view")).ToLocal(&viewVal);
+
+            auto viewPtr = GPUTextureViewImpl::GetPointer(viewVal.As<v8::Object>());
+            depthStencilAttachment->view = viewPtr->GetTextureView();
+
+
+            v8::Local<v8::Value> depthClearValue;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "depthClearValue")).ToLocal(
+                    &depthClearValue);
+
+            depthStencilAttachment->depth_clear_value = 0;
+
+            if (!depthClearValue.IsEmpty() && depthClearValue->IsNumber()) {
+                depthStencilAttachment->depth_clear_value = (float) depthClearValue->NumberValue(
+                        context).FromJust();
+            }
+
+            v8::Local<v8::Value> depthLoadOp;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "depthLoadOp")).ToLocal(
+                    &depthLoadOp);
+
+            depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
+                CanvasOptionalLoadOpNone
+            };
+
+            if (!depthLoadOp.IsEmpty() && depthLoadOp->IsString()) {
+                auto value = ConvertFromV8String(isolate, depthLoadOp);
+                if (value == "load") {
+                    depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
+                        CanvasOptionalLoadOpSome,
+                        CanvasLoadOpLoad
+                    };
+                } else if (value == "clear") {
+                    depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
+                        CanvasOptionalLoadOpSome,
+                        CanvasLoadOpClear
+                    };
+                }
+            }
+
+
+            v8::Local<v8::Value> depthStoreOp;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "depthStoreOp")).ToLocal(
+                    &depthStoreOp);
+
+            depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
+                CanvasOptionalStoreOpNone
+            };
+
+            if (!depthStoreOp.IsEmpty() && depthStoreOp->IsString()) {
+                auto value = ConvertFromV8String(isolate, depthStoreOp);
+                if (value == "store") {
+                    depthStencilAttachment->depth_store_op = depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
+                        CanvasOptionalStoreOpSome,
+                        CanvasStoreOpStore
+                    };
+                } else if (value == "discard") {
+                    depthStencilAttachment->depth_store_op = depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
+                        CanvasOptionalStoreOpSome,
+                        CanvasStoreOpDiscard
+                    };
+                }
+            }
+
+
+            v8::Local<v8::Value> depthReadOnly;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "depthReadOnly")).ToLocal(
+                    &depthReadOnly);
+
+            depthStencilAttachment->depth_read_only = false;
+            if (!depthReadOnly.IsEmpty() && depthReadOnly->IsBoolean()) {
+                depthStencilAttachment->depth_read_only = depthReadOnly->BooleanValue(isolate);
+            }
+
+
+            v8::Local<v8::Value> stencilClearValue;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "stencilClearValue")).ToLocal(
+                    &stencilClearValue);
+
+            depthStencilAttachment->stencil_clear_value = 0;
+
+            if (!stencilClearValue.IsEmpty() && stencilClearValue->IsUint32()) {
+                depthStencilAttachment->stencil_clear_value = stencilClearValue->Uint32Value(
+                        context).FromJust();
+            }
+
+
+            v8::Local<v8::Value> stencilLoadOp;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "stencilLoadOp")).ToLocal(
+                    &stencilLoadOp);
+
+            depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
+                CanvasOptionalLoadOpNone
+            };
+
+            if (!stencilLoadOp.IsEmpty() && stencilLoadOp->IsString()) {
+                auto value = ConvertFromV8String(isolate, stencilLoadOp);
+                if (value == "load") {
+                    depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
+                        CanvasOptionalLoadOpSome,
+                        CanvasLoadOpLoad
+                    };
+                } else if (value == "clear") {
+                    depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
+                        CanvasOptionalLoadOpSome,
+                        CanvasLoadOpClear
+                    };
+                }
+            }
+
+
+            v8::Local<v8::Value> stencilStoreOp;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "stencilStoreOp")).ToLocal(
+                    &stencilStoreOp);
+
+            depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
+                CanvasOptionalStoreOpNone
+            };
+
+            if (!stencilStoreOp.IsEmpty() && stencilStoreOp->IsString()) {
+                auto value = ConvertFromV8String(isolate, stencilStoreOp);
+                if (value == "store") {
+                    depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
+                        CanvasOptionalStoreOpSome,
+                        CanvasStoreOpStore
+                    };
+                } else if (value == "discard") {
+                    depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
+                        CanvasOptionalStoreOpSome,
+                        CanvasStoreOpDiscard
+                    };
+                }
+            }
+
+
+            v8::Local<v8::Value> stencilReadOnly;
+            depthStencilAttachmentObj->Get(context, ConvertToV8String(isolate,
+                                                                      "stencilReadOnly")).ToLocal(
+                    &stencilReadOnly);
+
+            depthStencilAttachment->stencil_read_only = false;
+            if (!stencilReadOnly.IsEmpty() && stencilReadOnly->IsBoolean()) {
+                depthStencilAttachment->stencil_read_only = stencilReadOnly->BooleanValue(isolate);
+            }
+
+        }
 
         const CanvasGPUQuerySet *occlusion_query_set = nullptr;
         v8::Local<v8::Value> occlusionQuerySetVal;
@@ -386,8 +518,8 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
         desc->Get(context, ConvertToV8String(isolate, "occlusionQuerySet")).ToLocal(
                 &occlusionQuerySetVal);
 
-
-        if (!occlusionQuerySetVal.IsEmpty() && occlusionQuerySetVal->IsObject()) {
+        
+        if (GetNativeType(occlusionQuerySetVal) == NativeType::GPUQuerySet) {
             auto occlusionQuerySet = GPUQuerySetImpl::GetPointer(
                     occlusionQuerySetVal.As<v8::Object>());
             occlusion_query_set = occlusionQuerySet->GetQuerySet();
@@ -410,7 +542,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     &querySetVal);
 
 
-            if (!querySetVal.IsEmpty() && querySetVal->IsObject()) {
+            if (GetNativeType(querySetVal) == NativeType::GPUQuerySet) {
                 auto queryPtr = GPUQuerySetImpl::GetPointer(querySetVal.As<v8::Object>());
                 if (queryPtr != nullptr) {
                     querySet = queryPtr->GetQuerySet();
@@ -450,6 +582,10 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                 depthStencilAttachment, occlusion_query_set,
                 querySet, beginningOfPassWriteIndex, endOfPassWriteIndex
         );
+
+        if (depthStencilAttachment != nullptr) {
+            delete depthStencilAttachment;
+        }
 
 
     }
@@ -970,10 +1106,9 @@ void GPUCommandEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (descVal->IsObject()) {
         auto desc = descVal.As<v8::Object>();
         v8::Local<v8::Value> labelVal;
-        desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
+        didSet = desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
+        if (didSet && labelVal->IsString()) {
             label = ConvertFromV8String(isolate, labelVal);
-            didSet = true;
         }
     }
 

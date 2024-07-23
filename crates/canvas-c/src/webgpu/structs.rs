@@ -747,6 +747,24 @@ pub enum CanvasOptionalLoadOp {
     Some(CanvasLoadOp),
 }
 
+impl From<Option<CanvasLoadOp>> for CanvasOptionalLoadOp {
+    fn from(value: Option<CanvasLoadOp>) -> Self {
+        match value {
+            Some(value) => Self::Some(value),
+            None => Self::None,
+        }
+    }
+}
+
+impl Into<Option<CanvasLoadOp>> for CanvasOptionalLoadOp {
+    fn into(self) -> Option<CanvasLoadOp> {
+        match self {
+            CanvasOptionalLoadOp::None => None,
+            CanvasOptionalLoadOp::Some(value) => Some(value),
+        }
+    }
+}
+
 impl From<Option<wgpu_core::command::LoadOp>> for CanvasOptionalLoadOp {
     fn from(value: Option<wgpu_core::command::LoadOp>) -> Self {
         match value {
@@ -772,6 +790,24 @@ pub enum CanvasOptionalStoreOp {
     Some(CanvasStoreOp),
 }
 
+impl From<Option<CanvasStoreOp>> for CanvasOptionalStoreOp {
+    fn from(value: Option<CanvasStoreOp>) -> Self {
+        match value {
+            Some(value) => Self::Some(value),
+            None => Self::None,
+        }
+    }
+}
+
+impl Into<Option<CanvasStoreOp>> for CanvasOptionalStoreOp {
+    fn into(self) -> Option<CanvasStoreOp> {
+        match self {
+            CanvasOptionalStoreOp::None => None,
+            CanvasOptionalStoreOp::Some(value) => Some(value),
+        }
+    }
+}
+
 impl From<Option<wgpu_core::command::StoreOp>> for CanvasOptionalStoreOp {
     fn from(value: Option<wgpu_core::command::StoreOp>) -> Self {
         match value {
@@ -790,18 +826,18 @@ impl Into<Option<wgpu_core::command::StoreOp>> for CanvasOptionalStoreOp {
     }
 }
 
+#[repr(C)]
 pub struct CanvasRenderPassDepthStencilAttachment {
-    pub(crate) view: *const CanvasGPUTextureView,
-    pub(crate) depth_clear_value: f32,
-    pub(crate) depth_load_op: CanvasLoadOp,
-    pub(crate) depth_store_op: CanvasStoreOp,
-    pub(crate) depth_read_only: bool,
-    pub(crate) stencil_clear_value: u32,
-    pub(crate) stencil_load_op: CanvasLoadOp,
-    pub(crate) stencil_store_op: CanvasStoreOp,
-    pub(crate) stencil_read_only: bool,
+    pub view: *const CanvasGPUTextureView,
+    pub depth_clear_value: f32,
+    pub depth_load_op: CanvasOptionalLoadOp,
+    pub depth_store_op: CanvasOptionalStoreOp,
+    pub depth_read_only: bool,
+    pub stencil_clear_value: u32,
+    pub stencil_load_op: CanvasOptionalLoadOp,
+    pub stencil_store_op: CanvasOptionalStoreOp,
+    pub stencil_read_only: bool,
 }
-
 
 #[repr(C)]
 pub struct CanvasSurfaceCapabilities {

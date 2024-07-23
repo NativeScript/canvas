@@ -29,6 +29,11 @@ export class GPUTexture {
 	get usage() {
 		return this[native_].usage;
 	}
+
+	destroy() {
+		this[native_].destroy();
+	}
+
 	static fromNative(texture) {
 		if (texture) {
 			const ret = new GPUTexture();

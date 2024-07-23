@@ -129,8 +129,8 @@ ParseExtent3d(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
     CanvasExtent3d ret{
             0, 1, 1
     };
-    
-    if(!obj.IsEmpty()){
+
+    if (!obj.IsEmpty()) {
         if (obj->IsArray()) {
             auto array = obj.As<v8::Array>();
             v8::Local<v8::Value> width;
@@ -168,6 +168,73 @@ ParseExtent3d(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
             if (extObj->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
                     &depthOrArrayLayers) && depthOrArrayLayers->IsUint32()) {
                 ret.depth_or_array_layers = depthOrArrayLayers->Uint32Value(context).FromJust();
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+inline static CanvasColor
+ParseColor(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
+
+    auto context = isolate->GetCurrentContext();
+    CanvasColor ret{
+            0, 0, 0, 0
+    };
+
+    if (!obj.IsEmpty()) {
+        if (obj->IsArray()) {
+            auto array = obj.As<v8::Array>();
+            v8::Local<v8::Value> r;
+            if (array->Get(context, 0).ToLocal(&r) &&
+                r->IsNumber()) {
+                ret.r = r->NumberValue(context).FromJust();
+            }
+
+            v8::Local<v8::Value> g;
+            if (array->Get(context, 1).ToLocal(&g) &&
+                g->IsNumber()) {
+                ret.g = g->NumberValue(context).FromJust();
+            }
+
+            v8::Local<v8::Value> b;
+            if (array->Get(context, 2).ToLocal(
+                    &b) && b->IsNumber()) {
+                ret.b = b->NumberValue(context).FromJust();
+            }
+
+
+            v8::Local<v8::Value> a;
+            if (array->Get(context, 3).ToLocal(
+                    &a) && a->IsNumber()) {
+                ret.a = a->NumberValue(context).FromJust();
+            }
+        } else if (obj->IsObject()) {
+            auto colorObj = obj.As<v8::Object>();
+            v8::Local<v8::Value> r;
+            if (colorObj->Get(context, ConvertToV8String(isolate, "r")).ToLocal(&r) &&
+                r->IsNumber()) {
+                ret.r = r->NumberValue(context).FromJust();
+            }
+
+            v8::Local<v8::Value> g;
+            if (colorObj->Get(context, ConvertToV8String(isolate, "g")).ToLocal(&g) &&
+                g->IsNumber()) {
+                ret.g = g->NumberValue(context).FromJust();
+            }
+
+            v8::Local<v8::Value> b;
+            if (colorObj->Get(context, ConvertToV8String(isolate, "b")).ToLocal(
+                    &b) && b->IsNumber()) {
+                ret.b = b->NumberValue(context).FromJust();
+            }
+
+            v8::Local<v8::Value> a;
+            if (colorObj->Get(context, ConvertToV8String(isolate, "a")).ToLocal(
+                    &a) && a->IsNumber()) {
+                ret.a = a->NumberValue(context).FromJust();
             }
         }
     }

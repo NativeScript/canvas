@@ -39,7 +39,11 @@ export class GPUCommandEncoder {
 			if (Array.isArray(attachment.clearValue)) {
 				attachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
 			}
-			attachment.view = attachment.view[native_];
+			if (attachment.view) {
+				attachment.view = attachment.view[native_];
+			} else {
+				/// ???
+			}
 
 			if (attachment.resolveTarget) {
 				attachment.resolveTarget = attachment.resolveTarget[native_];

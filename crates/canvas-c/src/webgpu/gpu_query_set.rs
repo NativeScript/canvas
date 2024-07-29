@@ -14,7 +14,6 @@ pub struct CanvasGPUQuerySet {
     pub(super) label: Option<Cow<'static, str>>,
 }
 
-
 impl Drop for CanvasGPUQuerySet {
     fn drop(&mut self) {
         if !std::thread::panicking() {
@@ -26,7 +25,7 @@ impl Drop for CanvasGPUQuerySet {
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_label(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) -> *mut c_char {
     if query_set.is_null() {
         return std::ptr::null_mut();
@@ -35,15 +34,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_label(
     let query_set = &*query_set;
     match query_set.label.as_ref() {
         None => std::ptr::null_mut(),
-        Some(label) => {
-            CString::new(label.to_string()).unwrap().into_raw()
-        }
+        Some(label) => CString::new(label.to_string()).unwrap().into_raw(),
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_count(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) -> u32 {
     if query_set.is_null() {
         return 0;
@@ -55,24 +52,22 @@ pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_count(
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_type(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) -> CanvasQueryType {
     let query_set = &*query_set;
     query_set.type_
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_destroy(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) {
     // todo
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_reference(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) {
     if query_set.is_null() {
         return;
@@ -81,10 +76,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_query_set_reference(
     Arc::increment_strong_count(query_set);
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_release(
-    query_set: *const CanvasGPUQuerySet
+    query_set: *const CanvasGPUQuerySet,
 ) {
     if query_set.is_null() {
         return;

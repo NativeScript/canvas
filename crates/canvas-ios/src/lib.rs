@@ -35,7 +35,6 @@ pub(crate) struct iOSWebGPUContext {
     ios_view: iOSView,
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_init_ios_webgpu(
     instance: i64,

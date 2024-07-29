@@ -81,7 +81,7 @@ impl Context {
     }
 
     fn draw_text(
-        &mut self,
+        &self,
         text: &str,
         x: c_float,
         y: c_float,
@@ -259,29 +259,29 @@ impl Context {
                 } else {
                     1.0
                 };
-                self.surface.canvas().save();
-                if need_scale {
-                    let matrix = skia_safe::Matrix::scale((ratio, 1.0));
-                    self.surface.canvas().concat(&matrix);
-                    // self.surface.canvas().scale((ratio, 1.0));
-                }
-                let paint_y = y + baseline_offset;
+                self.with_canvas(|canvas| {
+                    canvas.save();
+                    if need_scale {
+                        canvas.scale((ratio, 1.0));
+                    }
+                    let paint_y = y + baseline_offset;
 
-                text_style.set_foreground_paint(paint);
+                    text_style.set_foreground_paint(paint);
 
-                paragraph.paint(
-                    self.surface.canvas(),
-                    (
-                        if need_scale {
-                            (paint_x + (1. - ratio) * offset_x) / ratio
-                        } else {
-                            paint_x
-                        },
-                        paint_y,
-                    ),
-                );
+                    paragraph.paint(
+                        canvas,
+                        (
+                            if need_scale {
+                                (paint_x + (1. - ratio) * offset_x) / ratio
+                            } else {
+                                paint_x
+                            },
+                            paint_y,
+                        ),
+                    );
 
-                self.surface.canvas().restore();
+                    canvas.restore();
+                });
             }
             Some(text_metrics) => {
                 let offset = -baseline_offset - alphabetic_baseline;
@@ -299,21 +299,8 @@ impl Context {
         }
     }
 
-    pub fn measure_text(&mut self, text: &str) -> TextMetrics {
-        let mut text_metrics = TextMetrics {
-            width: 0.0,
-            actual_bounding_box_left: 0.0,
-            actual_bounding_box_right: 0.0,
-            font_bounding_box_ascent: 0.0,
-            font_bounding_box_descent: 0.0,
-            actual_bounding_box_ascent: 0.0,
-            actual_bounding_box_descent: 0.0,
-            em_height_ascent: 0.0,
-            em_height_descent: 0.0,
-            hanging_baseline: 0.0,
-            alphabetic_baseline: 0.0,
-            ideographic_baseline: 0.0,
-        };
+    pub fn measure_text(&self, text: &str) -> TextMetrics {
+        let mut text_metrics = TextMetrics::default();
 
         if text.is_empty() {
             return text_metrics;

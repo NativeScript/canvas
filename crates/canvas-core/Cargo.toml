@@ -9,23 +9,18 @@ edition = "2021"
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings" }
-raw-window-handle = "0.5.2"
-parking_lot = "0.12.0"
+raw-window-handle = "0.6.2"
+parking_lot = "0.12.3"
 stb_image = { git = "https://github.com/triniwiz/rust-stb-image", rev = "869380b" }
 skia-safe = { version = "0.75.0", features = ["gl", "textlayout"], optional = true }
-once_cell = "1.19.0"
-log = "0.4.21"
+log = "0.4.22"
 
-[target.'cfg(target_os = "ios")'.dependencies]
-icrate = { version = "0.0.4", features = ["objc2", "Foundation", "Foundation_NSData"] }
+[target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]
+icrate = { version = "0.1.2", features = ["objc2", "Foundation", "Foundation_NSData"] }
 core-foundation = "0.9.3"
+objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 egl = "0.2.7"
-glutin = "0.31.1"
+glutin = { version = "0.32.0", features = ["egl"] }
 android_log = "0.1.3"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-winit = "0.29.4"
-glutin-winit = "0.4.2"
-glutin = "0.31.1"

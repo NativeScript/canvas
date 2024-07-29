@@ -3,7 +3,6 @@ use skia_safe::{Image, Shader, TileMode};
 use crate::context::filter_quality::FilterQuality;
 use crate::context::matrix::Matrix;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum Repetition {
     Repeat = 0,
@@ -57,7 +56,7 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn to_pattern_shader(
+    pub fn pattern_shader(
         pattern: &Pattern,
         image_smoothing_quality: FilterQuality,
     ) -> Option<Shader> {
@@ -85,10 +84,6 @@ impl Pattern {
     }
 
     pub fn set_pattern_transform(&mut self, matrix: &Matrix) {
-        /* let mut affine: [f32; 6] = [0f32; 6];
-        let slice = matrix.affine();
-        affine.copy_from_slice(slice.as_slice());
-        self.matrix.set_affine(&affine);*/
         let matrix = matrix.to_m33();
         self.matrix.pre_concat(&matrix);
     }

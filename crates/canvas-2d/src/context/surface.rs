@@ -1,10 +1,12 @@
 #![allow(dead_code)]
 
-use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
+use std::sync::Arc;
 
-use crate::context::{Context, Device, State};
+use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, PictureRecorder, Rect};
+
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, Recorder, State, SurfaceData};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -19,9 +21,8 @@ impl Context {
         ppi: f32,
         direction: TextDirection,
     ) -> Self {
-        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
-
-        let mut state = State::from_device(device, direction);
+        let mut state = State::default();
+        state.direction = direction;
 
         let color_type = if alpha {
             ColorType::RGBA8888
@@ -35,30 +36,29 @@ impl Context {
             AlphaType::Premul
         };
 
-        let info = if device.is_np {
-            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
-        } else {
-            ImageInfo::new(
-                ISize::new(width as i32, height as i32),
-                color_type,
-                alpha_type,
-                None,
-            )
-        };
+        let info = ImageInfo::new(
+            ISize::new(width as i32, height as i32),
+            color_type,
+            alpha_type,
+            None,
+        );
 
         let mut surface = surfaces::raster(&info, None, None).unwrap();
-
-        if density > 1. {
-            surface.canvas().scale((density, density));
-        }
-
+        let bounds = Rect::from_wh(width, height);
+        let recorder = Recorder::new(bounds);
         Context {
+            direct_context: None,
+            surface_data: SurfaceData {
+                bounds,
+                ppi,
+                scale: density,
+            },
             surface,
+            recorder: Arc::new(parking_lot::Mutex::new(recorder)),
             path: Path::default(),
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            device,
         }
     }
 
@@ -70,8 +70,6 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
-
         let color_type = if alpha {
             ColorType::RGBA8888
         } else {
@@ -84,7 +82,8 @@ impl Context {
             AlphaType::Premul
         };
 
-        let info = if device.is_np {
+        let bounds = Rect::from_wh(width, height);
+        let info = if bounds.is_empty() {
             ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
         } else {
             ImageInfo::new(
@@ -95,22 +94,24 @@ impl Context {
             )
         };
 
-        context.device = device;
         context.path = Path::default();
         context.reset_state();
 
-        if let Some(mut surface) = surfaces::raster(&info, None, None) {
-
-            if density > 1. {
-                surface.canvas().scale((density, density));
-            }
-            
+        if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
+            context.surface_data.bounds = bounds;
+            let mut lock = context.recorder.lock();
+            lock.current = PictureRecorder::new();
+            lock.cache = None;
+            lock.is_dirty = false;
+            lock.layers.clear();
+            context.surface_data.scale = density;
+            context.surface_data.ppi = ppi;
         }
     }
 
     pub fn flush_buffer(context: &mut Context, width: i32, height: i32, buffer: &mut [u8]) {
-        if context.device.is_np {
+        if context.surface_data.bounds.is_empty() {
             return;
         }
         let info = ImageInfo::new(
@@ -120,15 +121,23 @@ impl Context {
             None,
         );
         let mut surface = surfaces::wrap_pixels(&info, buffer, None, None).unwrap();
-        let canvas = surface.canvas();
         let mut paint = skia_safe::Paint::default();
-        paint.set_anti_alias(true);
-        paint.set_style(skia_safe::PaintStyle::Fill);
-        paint.set_blend_mode(skia_safe::BlendMode::Clear);
-        canvas.draw_rect(
-            Rect::from_xywh(0f32, 0f32, width as f32, height as f32),
-            &paint,
-        );
-        context.draw_on_surface(&mut surface);
+        {
+            let canvas = surface.canvas();
+            paint.set_anti_alias(true);
+            paint.set_style(skia_safe::PaintStyle::Fill);
+            paint.set_blend_mode(skia_safe::BlendMode::Clear);
+            canvas.draw_rect(
+                Rect::from_xywh(0f32, 0f32, width as f32, height as f32),
+                &paint,
+            );
+        }
+
+        let mut lock = context.recorder.lock();
+        if let Some(image) = lock.get_image() {
+            surface
+                .canvas()
+                .draw_image(image, skia_safe::Point::default(), Some(&paint));
+        }
     }
 }

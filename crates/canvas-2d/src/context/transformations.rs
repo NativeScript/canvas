@@ -1,77 +1,79 @@
 use std::f32::consts::PI;
-use std::os::raw::c_float;
 
-use skia_safe::{Matrix, Point, M44};
+use skia_safe::Matrix;
 
 use crate::context::Context;
 
 const DEG: f32 = 180.0 / PI;
 
 impl Context {
-    pub fn get_transform(&mut self) -> Matrix {
-        self.surface.canvas().local_to_device_as_3x3()
+    pub fn get_transform(&self) -> crate::context::matrix::Matrix {
+        self.state.matrix.clone()
+    }
+    pub fn rotate(&mut self, angle: f32) {
+        self.with_matrix(|mat| {
+            let matrix = skia_safe::M44::from(Matrix::rotate_deg(angle * DEG));
+            mat.0.pre_concat(&matrix);
+            mat
+        });
     }
 
-    pub fn rotate(&mut self, angle: c_float) {
-        self.surface.canvas().rotate(angle * DEG, None);
+    pub fn scale(&mut self, x: f32, y: f32) {
+        self.with_matrix(|mat| {
+            mat.0.pre_scale(x, y);
+            mat
+        });
     }
 
-    pub fn scale(&mut self, x: c_float, y: c_float) {
-        self.surface.canvas().scale((x, y));
+    pub fn translate(&mut self, x: f32, y: f32) {
+        self.with_matrix(|mat| {
+            mat.0.pre_translate(x, y, None);
+            mat
+        });
     }
 
-    pub fn translate(&mut self, x: c_float, y: c_float) {
-        self.surface.canvas().translate(Point::new(x, y));
-    }
-
-    pub fn transform(
-        &mut self,
-        a: c_float,
-        b: c_float,
-        c: c_float,
-        d: c_float,
-        e: c_float,
-        f: c_float,
-    ) {
+    pub fn transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         let affine = [a, b, c, d, e, f];
         let transform = Matrix::from_affine(&affine);
-        self.surface.canvas().concat(&transform);
+        self.with_matrix(|mat| {
+            let matrix = skia_safe::M44::from(transform);
+            mat.0.pre_concat(&matrix);
+            mat
+        });
     }
 
     pub fn transform_with_matrix(&mut self, matrix: &Matrix) {
-        let mut current = self.surface.canvas().local_to_device_as_3x3();
-        current.pre_concat(matrix);
-
-        let m = M44::from(&current);
-        self.surface.canvas().set_matrix(&m);
+        self.with_matrix(|mat| {
+            let matrix = skia_safe::M44::from(matrix);
+            mat.0.pre_concat(&matrix);
+            mat
+        });
     }
 
-    pub fn set_transform(
-        &mut self,
-        a: c_float,
-        b: c_float,
-        c: c_float,
-        d: c_float,
-        e: c_float,
-        f: c_float,
-    ) {
+    pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         let affine = [a, b, c, d, e, f];
         let matrix = Matrix::from_affine(&affine);
 
-        let m44 = M44::from(matrix);
-        self.surface.canvas().set_matrix(&m44);
+        self.with_matrix(|mat| {
+            let matrix = skia_safe::M44::from(matrix);
+            mat.0.pre_concat(&matrix);
+            mat
+        });
     }
 
-    pub fn set_transform_matrix(&mut self, matrix: &Matrix) {
-        self.surface.canvas().reset_matrix();
+    pub fn set_transform_matrix(&mut self, matrix: &crate::context::matrix::Matrix) {
         let matrix = matrix.clone();
 
-        let m44 = M44::from(matrix);
-        self.surface.canvas().set_matrix(&m44);
-      
+        self.with_matrix(|mat| {
+            mat.0 = matrix.0;
+            mat
+        });
     }
 
     pub fn reset_transform(&mut self) {
-        self.surface.canvas().reset_matrix();
+        self.with_matrix(|mat| {
+            mat.reset();
+            mat
+        });
     }
 }

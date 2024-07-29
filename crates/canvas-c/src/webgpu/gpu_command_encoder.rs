@@ -1,9 +1,6 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::sync::Arc;
+use std::{ffi::CStr, os::raw::c_char};
 
-use crate::webgpu::error::handle_error;
-use crate::webgpu::prelude::ptr_into_label;
-use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
 use super::{
     enums::CanvasTextureAspect,
     gpu::CanvasWebGPUInstance,
@@ -18,6 +15,9 @@ use super::{
         CanvasRenderPassDepthStencilAttachment,
     },
 };
+use crate::webgpu::error::handle_error;
+use crate::webgpu::prelude::ptr_into_label;
+use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
 
 pub struct CanvasGPUCommandEncoder {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -35,10 +35,9 @@ impl Drop for CanvasGPUCommandEncoder {
     }
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
-    command_encoder: *const CanvasGPUCommandEncoder
+    command_encoder: *const CanvasGPUCommandEncoder,
 ) {
     if command_encoder.is_null() {
         return;
@@ -49,7 +48,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_release(
-    command_encoder: *const CanvasGPUCommandEncoder
+    command_encoder: *const CanvasGPUCommandEncoder,
 ) {
     if command_encoder.is_null() {
         return;
@@ -93,7 +92,6 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
             beginning_of_pass_write_index.try_into().ok();
 
         let end_of_pass_write_index: Option<u32> = end_of_pass_write_index.try_into().ok();
-
 
         Some(wgpu_core::command::PassTimestampWrites {
             query_set: query_set.query,
@@ -271,7 +269,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         );
     }
 
-
     let pass_encoder = CanvasGPURenderPassEncoder {
         label,
         instance: command_encoder.instance.clone(),
@@ -431,7 +428,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
     let src_texture_id = src_texture.texture;
     let dst = &*dst;
 
-
     let dst_buffer = &*dst.buffer;
 
     let dst_buffer_id = dst_buffer.buffer;
@@ -491,7 +487,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
     let src_texture_id = src_texture.texture;
     let dst = &*dst;
 
-
     let dst_texture = &*dst.texture;
 
     let dst_texture_id = dst_texture.texture;
@@ -542,7 +537,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
 
-    command_encoder.open.store(false, std::sync::atomic::Ordering::SeqCst);
+    command_encoder
+        .open
+        .store(false, std::sync::atomic::Ordering::SeqCst);
 
     let label = ptr_into_label(label);
 
@@ -562,7 +559,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
             "canvas_native_webgpu_command_encoder_finish",
         );
     }
-
 
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
         instance: command_encoder.instance.clone(),

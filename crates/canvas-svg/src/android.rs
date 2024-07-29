@@ -1,8 +1,8 @@
 use std::ffi::c_void;
 
-use jni::JNIEnv;
 use jni::objects::{JByteBuffer, JClass, JObject, JString};
 use jni::sys::jfloat;
+use jni::JNIEnv;
 use ndk::bitmap::AndroidBitmap;
 
 #[no_mangle]

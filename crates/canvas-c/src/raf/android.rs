@@ -15,21 +15,19 @@ struct RafInner {
     use_deprecated: bool,
     is_prepared: bool,
 }
-pub struct Raf {
-    inner: Arc<parking_lot::RwLock<RafInner>>,
-}
+pub struct Raf(Arc<parking_lot::Mutex<RafInner>>);
 
 impl Raf {
     extern "C" fn callback(frame_time_nanos: c_long, data: *mut std::os::raw::c_void) {
         if !data.is_null() {
             let data_ptr = data;
-            let data = data as *mut Raf;
-            let data_value = unsafe { &mut *data };
-            let lock = data_value.inner.read();
+            let data = data as *const Raf;
+            let data_value = unsafe { &*data };
+            let lock = data_value.0.lock();
             let started = lock.started;
             if !started {
                 drop(lock);
-                let _ = unsafe { Box::from_raw(data) };
+                let _ = unsafe { Arc::from_raw(data) };
                 return;
             }
             if let Some(callback) = lock.callback.as_ref() {
@@ -51,18 +49,16 @@ impl Raf {
     }
 
     pub fn new(callback: RafCallback) -> Self {
-        Self {
-            inner: Arc::new(parking_lot::RwLock::new(RafInner {
-                started: false,
-                callback,
-                is_prepared: false,
-                use_deprecated: true, //*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
-            })),
-        }
+        Self(Arc::new(parking_lot::Mutex::new(RafInner {
+            started: false,
+            callback,
+            is_prepared: false,
+            use_deprecated: true, //*crate::API_LEVEL.get().unwrap_or(&-1) < 24,
+        })))
     }
 
-    pub fn start(&mut self) {
-        let mut lock = self.inner.write();
+    pub fn start(&self) {
+        let mut lock = self.0.lock();
         unsafe {
             if !lock.is_prepared {
                 ndk::looper::ThreadLooper::prepare();
@@ -80,18 +76,18 @@ impl Raf {
         lock.started = true;
     }
 
-    pub fn stop(&mut self) {
-        let mut lock = self.inner.write();
+    pub fn stop(&self) {
+        let mut lock = self.0.lock();
         lock.started = false;
     }
 
-    pub fn set_callback(&mut self, callback: RafCallback) {
-        let mut lock = self.inner.write();
+    pub fn set_callback(&self, callback: RafCallback) {
+        let mut lock = self.0.lock();
         lock.callback = callback;
     }
 
     pub fn started(&self) -> bool {
-        self.inner.read().started
+        self.0.lock().started
     }
 }
 

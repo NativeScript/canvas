@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use once_cell::sync::OnceCell;
 use regex::Regex;
 use skia_safe::font_style::Width;
+use std::sync::OnceLock;
 
-pub(crate) static FONT_REGEXP: OnceCell<Regex> = OnceCell::new();
+pub(crate) static FONT_REGEXP: OnceLock<Regex> = OnceLock::new();
 
 const DEFAULT_FONT: &str = "sans-serif";
 
@@ -134,7 +134,7 @@ pub(crate) fn init_font_regexp() -> Regex {
     ){0,4}               
     (
       ([\d\.]+)                                       # size
-      (%|px|pt|pc|in|cm|mm|%|em|ex|ch|rem|q)?\s*      # unit
+      (%|px|pt|pc|in|cm|mm|em|ex|ch|rem|q)?\s*      # unit
     )
     # line-height is ignored here, as per the spec
     # Borrowed from https://github.com/Automattic/node-canvas/blob/master/lib/parse-font.js#L21

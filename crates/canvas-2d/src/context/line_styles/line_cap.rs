@@ -1,6 +1,5 @@
 use skia_safe::paint::Cap;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum LineCap {
     CapButt = 0,

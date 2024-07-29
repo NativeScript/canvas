@@ -11,7 +11,9 @@ pub struct CanvasGPUComputePipeline {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(pipeline: *const CanvasGPUComputePipeline) {
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(
+    pipeline: *const CanvasGPUComputePipeline,
+) {
     if pipeline.is_null() {
         return;
     }
@@ -19,14 +21,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(pipelin
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_release(pipeline: *const CanvasGPUComputePipeline) {
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_release(
+    pipeline: *const CanvasGPUComputePipeline,
+) {
     if pipeline.is_null() {
         return;
     }
 
     Arc::decrement_strong_count(pipeline);
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_get_bind_group_layout(

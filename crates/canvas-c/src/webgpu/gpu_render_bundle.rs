@@ -16,10 +16,9 @@ impl Drop for CanvasGPURenderBundle {
     }
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_reference(
-    bundle: *const CanvasGPURenderBundle
+    bundle: *const CanvasGPURenderBundle,
 ) {
     if bundle.is_null() {
         return;
@@ -28,10 +27,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_reference(
     Arc::increment_strong_count(bundle);
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_release(
-    bundle: *const CanvasGPURenderBundle
+    bundle: *const CanvasGPURenderBundle,
 ) {
     if bundle.is_null() {
         return;

@@ -1,4 +1,4 @@
-use skia_safe::{CubicResampler, FilterMode, MipmapMode, SamplingOptions};
+use skia_safe::{FilterMode, MipmapMode, SamplingOptions};
 
 #[derive(Copy, Clone)]
 pub enum FilterQuality {

@@ -24,7 +24,7 @@ impl Drop for CanvasGPUCommandBuffer {
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_buffer_reference(
-    command_buffer: *const CanvasGPUCommandBuffer
+    command_buffer: *const CanvasGPUCommandBuffer,
 ) {
     if command_buffer.is_null() {
         return;
@@ -33,10 +33,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_buffer_reference(
     Arc::increment_strong_count(command_buffer);
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_buffer_release(
-    command_buffer: *const CanvasGPUCommandBuffer
+    command_buffer: *const CanvasGPUCommandBuffer,
 ) {
     if command_buffer.is_null() {
         return;

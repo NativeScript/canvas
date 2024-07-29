@@ -40,7 +40,6 @@ impl Default for CanvasGPURequestAdapterOptions {
     }
 }
 
-
 #[derive(Clone)]
 struct CanvasWebGPUInstanceInner {
     pub(crate) global: Arc<Global>,
@@ -57,7 +56,6 @@ impl CanvasWebGPUInstance {
 
 unsafe impl Send for CanvasWebGPUInstance {}
 pub type WebGPUInstance = Arc<CanvasWebGPUInstance>;
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUInstance {
@@ -92,7 +90,6 @@ pub extern "C" fn canvas_native_webgpu_instance_release(instance: *const CanvasW
     }
     let _ = unsafe { Arc::decrement_strong_count(instance) };
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
@@ -134,12 +131,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             wgpu_core::instance::AdapterInputs::Mask(backends, |b| None),
         );
 
-
         let adapter = adapter.map(|adapter_id| {
             let features = gfx_select!(adapter_id => global.adapter_features(adapter_id))
                 .map(build_features)
                 .unwrap_or_default();
-
 
             let limits =
                 gfx_select!(adapter_id => global.adapter_limits(adapter_id)).unwrap_or_default();
@@ -155,7 +150,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
             Arc::into_raw(Arc::new(ret))
         });
         let callback = unsafe {
-            std::mem::transmute::<*const i64, fn(*const CanvasGPUAdapter, *mut c_void)>(callback as _)
+            std::mem::transmute::<*const i64, fn(*const CanvasGPUAdapter, *mut c_void)>(
+                callback as _,
+            )
         };
         let callback_data = callback_data as *mut c_void;
         callback(adapter.unwrap_or(std::ptr::null()), callback_data);

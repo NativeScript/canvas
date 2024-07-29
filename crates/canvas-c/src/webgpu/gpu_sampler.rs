@@ -9,7 +9,6 @@ pub struct CanvasGPUSampler {
     pub(crate) label: Option<Cow<'static, str>>,
 }
 
-
 impl Drop for CanvasGPUSampler {
     fn drop(&mut self) {
         if !std::thread::panicking() {
@@ -20,9 +19,7 @@ impl Drop for CanvasGPUSampler {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(
-    sampler: *const CanvasGPUSampler
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(sampler: *const CanvasGPUSampler) {
     if sampler.is_null() {
         return;
     }
@@ -31,9 +28,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_sampler_release(
-    sampler: *const CanvasGPUSampler
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_sampler_release(sampler: *const CanvasGPUSampler) {
     if sampler.is_null() {
         return;
     }

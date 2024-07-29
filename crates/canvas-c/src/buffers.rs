@@ -1,13 +1,15 @@
 use std::ffi::{c_char, CString};
+use std::sync::Arc;
 
 use bytes::BytesMut;
+use parking_lot::Mutex;
 
-use crate::ImageAsset;
+use crate::image_asset::ImageAsset;
 
 #[derive(Clone)]
 enum U8BufferInner {
     BytesMut(BytesMut),
-    Vec(Vec<u8>),
+    Vec(Arc<Mutex<Vec<u8>>>),
     ImageAsset(ImageAsset),
 }
 
@@ -16,36 +18,39 @@ pub struct U8Buffer(U8BufferInner);
 
 impl U8Buffer {
     pub fn new_with_vec(value: Vec<u8>) -> Self {
-        Self(U8BufferInner::Vec(value))
+        Self(U8BufferInner::Vec(Arc::new(Mutex::new(value))))
     }
 
     pub fn get_buffer(&self) -> &[u8] {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value,
-            U8BufferInner::Vec(value) => value.as_slice(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.get_bytes().unwrap_or(&[])
+            U8BufferInner::Vec(value) => {
+                let lock = value.lock();
+                unsafe { std::slice::from_raw_parts(lock.as_ptr(), lock.len()) }
             }
+            U8BufferInner::ImageAsset(value) => value.0.get_bytes().unwrap_or(&[]),
         }
     }
 
     pub fn get_buffer_mut(&mut self) -> &mut [u8] {
         match &mut self.0 {
             U8BufferInner::BytesMut(value) => value,
-            U8BufferInner::Vec(value) => value.as_mut_slice(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.get_bytes_mut().unwrap_or(&mut [])
+            U8BufferInner::Vec(value) => {
+                let mut lock = value.lock();
+                unsafe { std::slice::from_raw_parts_mut(lock.as_mut_ptr(), lock.len()) }
             }
+            U8BufferInner::ImageAsset(value) => value.0.get_bytes_mut().unwrap_or(&mut []),
         }
     }
 
     pub fn length(&self) -> usize {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value.len(),
-            U8BufferInner::Vec(value) => value.len(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.len()
+            U8BufferInner::Vec(value) => {
+                let lock = value.lock();
+                lock.len()
             }
+            U8BufferInner::ImageAsset(value) => value.0.len(),
         }
     }
 }
@@ -58,7 +63,7 @@ impl Default for U8Buffer {
 
 impl From<Vec<u8>> for U8Buffer {
     fn from(value: Vec<u8>) -> Self {
-        U8Buffer(U8BufferInner::Vec(value))
+        U8Buffer(U8BufferInner::Vec(Arc::new(Mutex::new(value))))
     }
 }
 

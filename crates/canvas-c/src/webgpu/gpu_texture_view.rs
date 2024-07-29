@@ -8,7 +8,6 @@ pub struct CanvasGPUTextureView {
     pub(crate) texture_view: wgpu_core::id::TextureViewId,
 }
 
-
 impl Drop for CanvasGPUTextureView {
     fn drop(&mut self) {
         if !std::thread::panicking() {
@@ -20,7 +19,7 @@ impl Drop for CanvasGPUTextureView {
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_texture_view_reference(
-    texture_view: *const CanvasGPUTextureView
+    texture_view: *const CanvasGPUTextureView,
 ) {
     if texture_view.is_null() {
         return;
@@ -31,7 +30,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_view_reference(
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_texture_view_release(
-    texture_view: *const CanvasGPUTextureView
+    texture_view: *const CanvasGPUTextureView,
 ) {
     if texture_view.is_null() {
         return;

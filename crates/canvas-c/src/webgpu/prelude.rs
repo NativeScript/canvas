@@ -1,5 +1,5 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
+use std::{ffi::CStr, os::raw::c_char};
 
 #[inline]
 pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Label<'a> {

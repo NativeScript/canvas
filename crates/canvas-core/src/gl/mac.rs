@@ -1,632 +1,407 @@
-use std::ffi::CString;
-use std::num::NonZeroU32;
+use std::ffi::c_void;
+use std::ptr::NonNull;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
-#[cfg(target_os = "macos")]
-use glutin::api::cgl::{context::PossiblyCurrentContext, display::Display, surface::Surface};
-use glutin::config::{Api, ColorBufferType, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig};
-use glutin::context::{ContextApi, GlContext, Version};
-use glutin::display::GetGlDisplay;
-use glutin::prelude::GlSurface;
-use glutin::prelude::*;
-use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use once_cell::sync::OnceCell;
+use core_foundation::base::TCFType;
+use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
+use core_foundation::string::CFString;
+use icrate::objc2::rc::Id;
+use icrate::objc2::{class, msg_send, msg_send_id};
+use objc2_foundation::NSObject;
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
-use raw_window_handle::{
-    AppKitDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
-};
-use winit::event_loop::EventLoop;
-use winit::window::Window;
+use raw_window_handle::RawWindowHandle;
 
 use crate::context_attributes::ContextAttributes;
 
-pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
-
-#[derive(Debug)]
-pub(crate) enum SurfaceHelper {
-    Window(Surface<WindowSurface>),
-    Pbuffer(Surface<PbufferSurface>),
-    Pixmap(Surface<PixmapSurface>),
-}
+pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
 #[derive(Debug, Default)]
 pub struct GLContextInner {
-    surface: Option<SurfaceHelper>,
-    context: Option<PossiblyCurrentContext>,
-    display: Option<Display>,
-    window: Option<Window>,
-    event: Option<EventLoop<()>>,
+    context: Option<NSOpenGLContext>,
+    sharegroup: NSOpenGLContext,
+    view: Option<NSOpenGLView>,
     transfer_surface_info: crate::gl::TransferSurface,
 }
 
 unsafe impl Sync for GLContextInner {}
 
 unsafe impl Send for GLContextInner {}
+#[repr(u64)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NSOpenGLPixelFormatAttribute {
+    NSOpenGLPFAAllRenderers = 1,
+    NSOpenGLPFATripleBuffer = 3,
+    NSOpenGLPFADoubleBuffer = 5,
+    NSOpenGLPFAStereo = 6,
+    NSOpenGLPFAAuxBuffers = 7,
+    NSOpenGLPFAColorSize = 8,
+    NSOpenGLPFAAlphaSize = 11,
+    NSOpenGLPFADepthSize = 12,
+    NSOpenGLPFAStencilSize = 13,
+    NSOpenGLPFAAccumSize = 14,
+    NSOpenGLPFAMinimumPolicy = 51,
+    NSOpenGLPFAMaximumPolicy = 52,
+    NSOpenGLPFAOffScreen = 53,
+    NSOpenGLPFAFullScreen = 54,
+    NSOpenGLPFASampleBuffers = 55,
+    NSOpenGLPFASamples = 56,
+    NSOpenGLPFAAuxDepthStencil = 57,
+    NSOpenGLPFAColorFloat = 58,
+    NSOpenGLPFAMultisample = 59,
+    NSOpenGLPFASupersample = 60,
+    NSOpenGLPFASampleAlpha = 61,
+    NSOpenGLPFARendererID = 70,
+    NSOpenGLPFASingleRenderer = 71,
+    NSOpenGLPFANoRecovery = 72,
+    NSOpenGLPFAAccelerated = 73,
+    NSOpenGLPFAClosestPolicy = 74,
+    NSOpenGLPFARobust = 75,
+    NSOpenGLPFABackingStore = 76,
+    NSOpenGLPFAMPSafe = 78,
+    NSOpenGLPFAWindow = 80,
+    NSOpenGLPFAMultiScreen = 81,
+    NSOpenGLPFACompliant = 83,
+    NSOpenGLPFAScreenMask = 84,
+    NSOpenGLPFAPixelBuffer = 90,
+    NSOpenGLPFARemotePixelBuffer = 91,
+    NSOpenGLPFAAllowOfflineRenderers = 96,
+    NSOpenGLPFAAcceleratedCompute = 97,
+    NSOpenGLPFAOpenGLProfile = 99,
+    NSOpenGLPFAVirtualScreenCount = 128,
+}
+
+#[repr(u64)]
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NSOpenGLPFAOpenGLProfiles {
+    NSOpenGLProfileVersionLegacy = 0x1000,
+    NSOpenGLProfileVersion3_2Core = 0x3200,
+    NSOpenGLProfileVersion4_1Core = 0x4100,
+}
+
+#[derive(Clone, Debug)]
+pub struct NSOpenGLContext(Id<NSObject>);
+
+impl NSOpenGLContext {
+    pub fn new(format: NSOpenGLPixelFormat, share_context: Option<NSOpenGLContext>) -> Self {
+        let cls = class!(NSOpenGLPixelFormat);
+        let instance = unsafe { msg_send_id![cls, alloc] };
+        match share_context {
+            None => {
+                let nil: *mut NSObject = std::ptr::null_mut();
+                NSOpenGLContext(unsafe {
+                    msg_send_id![
+                        instance,
+                        initWithFormat: &*format.0,
+                        shareContext: nil
+                    ]
+                })
+            }
+            Some(share_context) => NSOpenGLContext(unsafe {
+                msg_send_id![
+                    instance,
+                    initWithFormat: &*format.0,
+                    shareContext: &*share_context.0
+                ]
+            }),
+        }
+    }
+
+    pub fn make_current_context(&self) -> bool {
+        let _: () = unsafe { msg_send![&self.0, makeCurrentContext] };
+        // confirm ??
+        true
+    }
+
+    pub fn current_context() -> Option<NSOpenGLContext> {
+        let cls = class!(NSOpenGLContext);
+        let context: Option<Id<NSObject>> = unsafe { msg_send_id![cls, currentContext] };
+        context.map(NSOpenGLContext)
+    }
+
+    pub fn remove_current_context(&self) -> bool {
+        unsafe {
+            let cls = class!(NSOpenGLContext);
+            let _: () = msg_send![cls, clearCurrentContext];
+            true
+        }
+    }
+
+    pub fn remove_if_current(&self) -> bool {
+        unsafe {
+            let cls = class!(NSOpenGLContext);
+            let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
+
+            match current {
+                Some(current) => {
+                    let is_equal: bool = msg_send![&current, isEqual: &*self.0];
+                    if is_equal {
+                        let _: () = msg_send![cls, clearCurrentContext];
+                        return true;
+                    }
+                    false
+                }
+                None => false,
+            }
+        }
+    }
+}
+
+impl Default for NSOpenGLContext {
+    fn default() -> Self {
+        let format = NSOpenGLPixelFormat::init_with_attributes(&[
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFADepthSize as u32,
+            24,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFAColorSize as u32,
+            24,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFAAlphaSize as u32,
+            8,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFAStencilSize as u32,
+            8,
+            NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
+            NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
+            0,
+        ]);
+        NSOpenGLContext::new(format, None)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NSOpenGLPixelFormat(Id<NSObject>);
+
+impl NSOpenGLPixelFormat {
+    pub fn init_with_attributes(attribs: &[u32]) -> Self {
+        let cls = class!(NSOpenGLPixelFormat);
+        let instance = unsafe { msg_send_id![cls, alloc] };
+        NSOpenGLPixelFormat(unsafe {
+            msg_send_id![
+                instance,
+                initWithAttributes: attribs.as_ptr()
+            ]
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct NSOpenGLView(Id<NSObject>);
+impl NSOpenGLView {
+    pub fn new_with_frame_pixel_format(
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        format: NSOpenGLPixelFormat,
+    ) -> Self {
+        unsafe {
+            let cls = class!(NSOpenGLView);
+            let instance = msg_send_id![cls, alloc];
+            let point = objc2_foundation::CGPoint::new(x as f64, y as f64);
+            let size = objc2_foundation::CGSize::new(width as f64, height as f64);
+            let frame = objc2_foundation::CGRect::new(point, size);
+            NSOpenGLView(msg_send_id![instance, initWithFrame: frame, pixelFormat: &*format.0])
+        }
+    }
+
+    pub fn frame(&self) -> objc2_foundation::CGRect {
+        let frame: objc2_foundation::CGRect = unsafe { msg_send![&self.0, frame] };
+        frame
+    }
+
+    pub fn flush_buffer(&self) {
+        let _: () = unsafe { msg_send![&self.0, flushBuffer] };
+    }
+
+    pub fn open_gl_context(&self) -> NSOpenGLContext {
+        let context: Id<NSObject> = unsafe { msg_send_id![&self.0, openGLContext] };
+        NSOpenGLContext(context)
+    }
+
+    pub fn set_open_gl_context(&self, context: Option<NSOpenGLContext>) {
+        match context {
+            Some(context) => {
+                let _: () = unsafe { msg_send![&self.0, setOpenGLContext: &*context.0] };
+            }
+            None => {
+                let nil: *mut NSObject = std::ptr::null_mut();
+                let _: () = unsafe { msg_send![&self.0, setOpenGLContext: nil] };
+            }
+        }
+    }
+
+    fn get_proc_address(&self, addr: &str) -> *const c_void {
+        let symbol_name = CFString::new(addr);
+        let framework_name = CFString::new("com.apple.opengles");
+        unsafe {
+            let framework = CFBundleGetBundleWithIdentifier(framework_name.as_concrete_TypeRef());
+            CFBundleGetFunctionPointerForName(framework, symbol_name.as_concrete_TypeRef()).cast()
+        }
+    }
+}
 
 #[derive(Debug, Default)]
-pub struct GLContext {
-    inner: Arc<RwLock<GLContextInner>>,
-}
+pub struct GLContext(Arc<RwLock<GLContextInner>>);
 
 impl GLContext {
     // pointer has to
     pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.inner))
+        Arc::into_raw(Arc::clone(&self.0))
     }
 
     pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
-        Self {
-            inner: unsafe { Arc::from_raw(raw) },
-        }
+        unsafe { Self(Arc::from_raw(raw)) }
     }
 }
 
 impl Clone for GLContext {
     fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-        }
+        Self(Arc::clone(&self.0))
     }
 }
 
-impl Into<ConfigTemplate> for ContextAttributes {
-    fn into(self) -> ConfigTemplate {
-        let mut builder = ConfigTemplateBuilder::new()
-            .prefer_hardware_accelerated(Some(true))
-            .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if self.get_depth() { 16 } else { 0 })
-            .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(ColorBufferType::Rgb {
-                r_size: 8,
-                g_size: 8,
-                b_size: 8,
-            })
-            .with_transparency(self.get_alpha());
+fn parse_context_attributes(context_attrs: &ContextAttributes) -> NSOpenGLPixelFormat {
+    let mut attributes = vec![
+        NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
+        NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
+        NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
+        NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
+        NSOpenGLPixelFormatAttribute::NSOpenGLPFAColorSize as u32,
+        24,
+    ];
 
-        if !self.get_is_canvas() && self.get_antialias() {
-            builder = builder.with_multisampling(4)
-        }
-        builder.build()
+    if context_attrs.get_alpha() {
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFAAlphaSize as u32);
+        attributes.push(8);
     }
-}
 
-impl From<&mut ContextAttributes> for ConfigTemplate {
-    fn from(value: &mut ContextAttributes) -> Self {
-        let mut builder = ConfigTemplateBuilder::new()
-            .prefer_hardware_accelerated(Some(true))
-            .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if value.get_depth() { 16 } else { 0 })
-            .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(ColorBufferType::Rgb {
-                r_size: 8,
-                g_size: 8,
-                b_size: 8,
-            })
-            .with_transparency(value.get_alpha());
-
-        if !value.get_is_canvas() && value.get_antialias() {
-            builder = builder.with_multisampling(4)
-        }
-        builder.build()
+    if context_attrs.get_depth() {
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFADepthSize as u32);
+        attributes.push(24);
     }
-}
 
-impl Into<ConfigTemplateBuilder> for ContextAttributes {
-    fn into(self) -> ConfigTemplateBuilder {
-        let mut builder = ConfigTemplateBuilder::new()
-            .prefer_hardware_accelerated(Some(true))
-            .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if self.get_depth() { 16 } else { 0 })
-            .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(ColorBufferType::Rgb {
-                r_size: 8,
-                g_size: 8,
-                b_size: 8,
-            })
-            .with_transparency(self.get_alpha());
-
-        if !self.get_is_canvas() && self.get_antialias() {
-            builder = builder.with_multisampling(4)
-        }
-        builder
+    if context_attrs.get_stencil() {
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFAStencilSize as u32);
+        attributes.push(8);
     }
-}
 
-impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
-    fn from(value: &mut ContextAttributes) -> Self {
-        let mut builder = ConfigTemplateBuilder::new()
-            .prefer_hardware_accelerated(Some(true))
-            .with_multisampling(if value.get_antialias() { 4 } else { 0 })
-            .with_alpha_size(if value.get_alpha() { 8 } else { 0 })
-            .with_depth_size(if value.get_depth() { 16 } else { 0 })
-            .with_stencil_size(if value.get_stencil() { 8 } else { 0 })
-            .with_buffer_type(ColorBufferType::Rgb {
-                r_size: 8,
-                g_size: 8,
-                b_size: 8,
-            })
-            .with_transparency(value.get_alpha());
-
-        if !value.get_is_canvas() && value.get_antialias() {
-            builder = builder.with_multisampling(4)
-        }
-        builder
+    if !context_attrs.get_is_canvas() && context_attrs.get_antialias() {
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFAMultisample as u32);
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFASampleBuffers as u32);
+        attributes.push(1u32);
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFASamples as u32);
+        attributes.push(4);
     }
-}
 
-// impl Into<glutin::config::ConfigTemplate> for ContextAttributes {
-//     fn into(self) -> ConfigTemplate {
-//         ConfigTemplateBuilder::new()
-//             .with_alpha_size(
-//                 if self.get_alpha() { 8 } else { 0 }
-//             )
-//             .with_depth_size(if self.get_depth() { 16 } else { 0 })
-//             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-//             .with_buffer_type(ColorBufferType::Rgb {
-//                 r_size: 8,
-//                 g_size: 8,
-//                 b_size: 8,
-//             })
-//             .with_transparency(self.get_alpha())
-//             .build()
-//     }
-// }
+    NSOpenGLPixelFormat::init_with_attributes(attributes.as_slice())
+}
 
 #[cfg(target_os = "macos")]
 impl GLContext {
-    pub fn set_surface(
-        &mut self,
-        context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        window: RawWindowHandle,
-    ) -> bool {
-        let is_2d = context_attrs.get_is_canvas();
-        let multi_sample = context_attrs.get_antialias();
-        let cfg = context_attrs.into();
-        let mut inner = self.inner.write();
-        unsafe {
-            if let Some(display) = inner.display.as_ref() {
-                let config = display
-                    .find_configs(cfg)
-                    .map(|c| {
-                        c.reduce(|accum, cconfig| {
-                            if is_2d {
-                                let transparency_check =
-                                    cconfig.supports_transparency().unwrap_or(false)
-                                        & !accum.supports_transparency().unwrap_or(false);
-
-                                return if transparency_check
-                                    || cconfig.num_samples() < accum.num_samples()
-                                {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
-                            }
-
-                            let supports_transparency =
-                                cconfig.supports_transparency().unwrap_or(false);
-
-                            let alpha_requested = context_attrs.get_alpha();
-
-                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let mut stencil_size = if context_attrs.get_stencil() {
-                                8u8
-                            } else {
-                                0u8
-                            };
-                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
-
-                            if multi_sample {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() > 0
-                                {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() > cconfig.num_samples()
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
-                                }
-                            } else {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() == 0
-                                {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() == 0
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
-                                }
-                            }
-                            accum
-                        })
-                    })
-                    .ok()
-                    .flatten();
-
-                return match config {
-                    Some(config) => {
-                        if context_attrs.get_antialias() && config.num_samples() == 0 {
-                            context_attrs.set_antialias(false);
-                        }
-
-                        context_attrs.set_samples(config.num_samples());
-
-                        let surface_attr =
-                            glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
-                                .build(
-                                    window,
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
-                                );
-
-                        let surface = display
-                            .create_window_surface(&config, &surface_attr)
-                            .map(SurfaceHelper::Window)
-                            .ok();
-
-                        let ret = surface.is_some();
-
-                        inner.surface = surface;
-
-                        ret
-                    }
-                    None => false,
-                };
+    pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
+        let view: Option<Id<NSObject>> = unsafe { Id::retain(view.as_ptr() as _) };
+        match view {
+            None => false,
+            Some(id) => {
+                self.0.write().view = Some(NSOpenGLView(id));
+                true
             }
         }
-        false
+    }
+
+    pub fn set_surface_with_window(&mut self, window: RawWindowHandle) -> bool {
+        match window {
+            RawWindowHandle::AppKit(handle) => self.set_surface(handle.ns_view),
+            _ => false,
+        }
     }
 
     pub fn create_shared_window_context(
         context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        window: RawWindowHandle,
+        view: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<GLContext> {
-        GLContext::create_window_context_internal(
-            context_attrs,
-            width,
-            height,
-            window,
-            Some(context),
-        )
+        let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
+        match view {
+            None => None,
+            Some(view) => {
+                let view = NSOpenGLView(view);
+                GLContext::create_window_context_with_gl_view(context_attrs, view, Some(context))
+            }
+        }
     }
 
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        window: RawWindowHandle,
+        view: NonNull<c_void>,
     ) -> Option<GLContext> {
-        GLContext::create_window_context_internal(context_attrs, width, height, window, None)
-    }
-
-    fn create_window_context_internal(
-        context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        window: RawWindowHandle,
-        context: Option<&GLContext>,
-    ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
-            Ok(display) => unsafe {
-                let dsply = display.clone();
-                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
-                    gl_bindings::load_with(|symbol| {
-                        let symbol = CString::new(symbol).unwrap();
-                        dsply.get_proc_address(symbol.as_c_str()).cast()
-                    });
-                    true
-                });
-
-                let is_2d = context_attrs.get_is_canvas();
-                let multi_sample = context_attrs.get_antialias();
-                let cfg = context_attrs.into();
-                let config = display
-                    .find_configs(cfg)
-                    .map(|mut c| {
-                        c.reduce(|accum, cconfig| {
-                            if is_2d {
-                                let transparency_check =
-                                    cconfig.supports_transparency().unwrap_or(false)
-                                        & !accum.supports_transparency().unwrap_or(false);
-
-                                return if transparency_check
-                                    || cconfig.num_samples() < accum.num_samples()
-                                {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
-                            }
-
-                            let supports_transparency =
-                                cconfig.supports_transparency().unwrap_or(false);
-
-                            let alpha_requested = context_attrs.get_alpha();
-
-                            let mut alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let mut stencil_size = if context_attrs.get_stencil() {
-                                8u8
-                            } else {
-                                0u8
-                            };
-                            let mut depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
-
-                            if multi_sample {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && cconfig.depth_size() == depth_size
-                                    && cconfig.num_samples() > 0
-                                {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() == depth_size
-                                        && accum.num_samples() > cconfig.num_samples()
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
-                                }
-                            } else {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() == 0
-                                {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() == 0
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
-                                }
-                            }
-                            accum
-                        })
-                    })
-                    .ok()
-                    .flatten();
-
-                match config {
-                    Some(config) => {
-                        if context_attrs.get_antialias() && config.num_samples() == 0 {
-                            context_attrs.set_antialias(false);
-                        }
-
-                        context_attrs.set_samples(config.num_samples());
-
-                        let surface_attr =
-                            glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
-                                .build(
-                                    window,
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
-                                );
-
-                        let surface = display
-                            .create_window_surface(&config, &surface_attr)
-                            .map(SurfaceHelper::Window)
-                            .ok();
-
-                        let mut context_attrs_builder =
-                            glutin::context::ContextAttributesBuilder::new().with_context_api(
-                                ContextApi::OpenGl(Some(if context_attrs.get_is_canvas() {
-                                    Version::new(2, 1)
-                                } else {
-                                    Version::new(3, 0)
-                                })),
-                            );
-
-                        if let Some(context) = context {
-                            let inner = context.inner.read();
-                            if let Some(context) = inner.context.as_ref() {
-                                context_attrs_builder =
-                                    context_attrs_builder.with_context_api(context.context_api());
-                            }
-                        }
-
-                        let context_attrs = context_attrs_builder.build(Some(window));
-
-                        let context = display
-                            .create_context(&config, &context_attrs)
-                            .map(|v| v.treat_as_possibly_current())
-                            .ok();
-
-                        Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
-                                surface,
-                                context,
-                                display: Some(display),
-                                window: None,
-                                event: None,
-                                transfer_surface_info: Default::default(),
-                            })),
-                        })
-                    }
-                    None => None,
-                }
-            },
-            Err(_) => None,
-        }
-    }
-
-    pub fn set_window_surface(
-        &mut self,
-        context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        window: RawWindowHandle,
-    ) {
-        unsafe {
-            let mut inner = self.inner.write();
-            if let Some(display) = inner.display.as_ref() {
-                let dsply = display.clone();
-                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
-                    gl_bindings::load_with(|symbol| {
-                        let symbol = CString::new(symbol).unwrap();
-                        dsply.get_proc_address(symbol.as_c_str()).cast()
-                    });
-                    true
-                });
-
-                let is_2d = context_attrs.get_is_canvas();
-                let cfg = context_attrs.clone().into();
-                let multi_sample = context_attrs.get_antialias();
-                let config = display
-                    .find_configs(cfg)
-                    .map(|c| {
-                        c.reduce(|accum, cconfig| {
-                            if is_2d {
-                                let transparency_check =
-                                    cconfig.supports_transparency().unwrap_or(false)
-                                        & !accum.supports_transparency().unwrap_or(false);
-
-                                return if transparency_check
-                                    || cconfig.num_samples() < accum.num_samples()
-                                {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
-                            }
-
-                            let supports_transparency =
-                                cconfig.supports_transparency().unwrap_or(false);
-
-                            let alpha_requested = context_attrs.get_alpha();
-
-                            let alpha_size = if alpha_requested { 8u8 } else { 0u8 };
-                            let stencil_size = if context_attrs.get_stencil() {
-                                8u8
-                            } else {
-                                0u8
-                            };
-                            let depth_size = if context_attrs.get_depth() { 16u8 } else { 0u8 };
-
-                            if multi_sample {
-                                if supports_transparency == alpha_requested
-                                    && cconfig.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && cconfig.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && cconfig.depth_size() >= depth_size
-                                    && cconfig.num_samples() > 0
-                                {
-                                    if accum.supports_transparency().unwrap_or(false)
-                                        == alpha_requested
-                                        && accum.alpha_size() == alpha_size
-                                        && context_attrs.get_stencil()
-                                        && accum.stencil_size() == stencil_size
-                                        && context_attrs.get_depth()
-                                        && accum.depth_size() >= depth_size
-                                        && accum.num_samples() > cconfig.num_samples()
-                                    {
-                                        return accum;
-                                    }
-
-                                    return cconfig;
-                                }
-                            } else if supports_transparency == alpha_requested
-                                && cconfig.alpha_size() == alpha_size
-                                && context_attrs.get_stencil()
-                                && cconfig.stencil_size() == stencil_size
-                                && context_attrs.get_depth()
-                                && cconfig.depth_size() >= depth_size
-                                && cconfig.num_samples() == 0
-                            {
-                                if accum.supports_transparency().unwrap_or(false) == alpha_requested
-                                    && accum.alpha_size() == alpha_size
-                                    && context_attrs.get_stencil()
-                                    && accum.stencil_size() == stencil_size
-                                    && context_attrs.get_depth()
-                                    && accum.depth_size() >= depth_size
-                                    && accum.num_samples() == 0
-                                {
-                                    return accum;
-                                }
-
-                                return cconfig;
-                            }
-
-                            accum
-                        })
-                    })
-                    .ok()
-                    .flatten();
-
-                if let Some(config) = config {
-                    if context_attrs.get_antialias() && config.num_samples() == 0 {
-                        context_attrs.set_antialias(false);
-                    }
-
-                    context_attrs.set_samples(config.num_samples());
-
-                    let surface_attr =
-                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
-                            window,
-                            NonZeroU32::try_from(width as u32).unwrap(),
-                            NonZeroU32::try_from(height as u32).unwrap(),
-                        );
-
-                    let surface = display
-                        .create_window_surface(&config, &surface_attr)
-                        .map(SurfaceHelper::Window)
-                        .ok();
-
-                    inner.surface = surface;
-                }
+        let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
+        match view {
+            None => None,
+            Some(view) => {
+                let view = NSOpenGLView(view);
+                GLContext::create_window_context_with_gl_view(context_attrs, view, None)
             }
         }
+    }
+
+    pub(crate) fn create_window_context_with_gl_view(
+        context_attrs: &mut ContextAttributes,
+        view: NSOpenGLView,
+        shared_context: Option<&GLContext>,
+    ) -> Option<GLContext> {
+        let view_copy = view.clone();
+        IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+            gl_bindings::load_with(|symbol| view_copy.get_proc_address(symbol).cast());
+            true
+        });
+
+        let share_group = match shared_context {
+            Some(context) => {
+                let inner = context.0.read();
+                inner.sharegroup.clone()
+            }
+            _ => {
+                let format = NSOpenGLPixelFormat::init_with_attributes(&[
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFADepthSize as u32,
+                    24,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFAColorSize as u32,
+                    24,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFAAlphaSize as u32,
+                    8,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFAStencilSize as u32,
+                    8,
+                    NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
+                    NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
+                    0,
+                ]);
+                NSOpenGLContext::new(format, None)
+            }
+        };
+
+        let format = parse_context_attributes(context_attrs);
+
+        let context = NSOpenGLContext::new(format, Some(share_group.clone()));
+
+        // if context.is_none() {
+        //     return None;
+        // }
+
+        view.set_open_gl_context(Some(context.clone()));
+
+        let inner = GLContextInner {
+            context: Some(context),
+            sharegroup: share_group,
+            view: Some(view),
+            transfer_surface_info: Default::default(),
+        };
+
+        Some(GLContext(Arc::new(RwLock::new(inner))))
     }
 
     pub fn create_offscreen_context(
@@ -634,60 +409,11 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        use winit::event_loop::EventLoop;
-        use winit::window::WindowBuilder;
+        let format = parse_context_attributes(context_attrs);
+        let view =
+            NSOpenGLView::new_with_frame_pixel_format(0., 0., width as f32, height as f32, format);
 
-        let event_loop = EventLoop::new().unwrap();
-        let window_builder = WindowBuilder::new();
-
-        let window = window_builder
-            .with_inner_size(winit::dpi::PhysicalSize::new(width, height))
-            .with_visible(false)
-            .build(&event_loop)
-            .unwrap();
-
-        let raw_window_handle = window.raw_window_handle();
-
-        GLContext::create_window_context(context_attrs, width, height, raw_window_handle).map(
-            |ctx| {
-                {
-                    let mut context = ctx.inner.write();
-                    context.window = Some(window);
-                    context.event = Some(event_loop);
-                }
-                ctx
-            },
-        )
-    }
-
-    pub fn create_offscreen_context_with_event_loop(
-        context_attrs: &mut ContextAttributes,
-        width: i32,
-        height: i32,
-        event_loop: &EventLoop<()>,
-    ) -> Option<GLContext> {
-        use winit::window::WindowBuilder;
-
-        let window_builder = WindowBuilder::new();
-
-        let window = window_builder
-            .with_inner_size(winit::dpi::PhysicalSize::new(width, height))
-            .with_visible(false)
-            .build(event_loop)
-            .unwrap();
-
-        let raw_window_handle = window.raw_window_handle();
-
-        GLContext::create_window_context(context_attrs, width, height, raw_window_handle).map(
-            |ctx| {
-                {
-                    let mut context = ctx.inner.write();
-                    context.window = Some(window);
-                    context.event = None;
-                }
-                ctx
-            },
-        )
+        GLContext::create_window_context_with_gl_view(context_attrs, view, None)
     }
 
     fn has_extension(extensions: &str, name: &str) -> bool {
@@ -695,139 +421,80 @@ impl GLContext {
     }
 
     pub fn has_gl2support() -> bool {
-        match unsafe { Display::new(RawDisplayHandle::AppKit(AppKitDisplayHandle::empty())) } {
-            Ok(display) => unsafe {
-                display
-                    .find_configs(
-                        ConfigTemplateBuilder::default()
-                            .with_api(Api::OPENGL)
-                            .build(),
-                    )
-                    .is_ok()
-            },
-            Err(_) => false,
-        }
+        true
     }
 
-
-    pub fn set_vsync(&self, sync: bool) -> bool {
-        let inner = self.inner.read();
-        let vsync = if sync {
-            SwapInterval::Wait(NonZeroU32::new(1).unwrap())
-        } else {
-            SwapInterval::DontWait
-        };
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => window.set_swap_interval(context, vsync).is_ok(),
-                SurfaceHelper::Pbuffer(buffer) => buffer.set_swap_interval(context, vsync).is_ok(),
-                SurfaceHelper::Pixmap(map) => map.set_swap_interval(context, vsync).is_ok(),
-            },
-            _ => false,
-        }
+    pub fn set_vsync(&self, _sync: bool) -> bool {
+        true
     }
-
 
     pub fn make_current(&self) -> bool {
-        let inner = self.inner.read();
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => context.make_current(window).is_ok(),
-                SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).is_ok(),
-                SurfaceHelper::Pixmap(map) => context.make_current(map).is_ok(),
-            },
-            _ => false,
-        }
+        let inner = self.0.read();
+        inner
+            .view
+            .as_ref()
+            .map(|view| view.open_gl_context().make_current_context())
+            .unwrap_or_default()
     }
 
-
-    pub fn remove_if_current(&self) {
-        let inner = self.inner.read();
-        let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => window.is_current(context),
-                SurfaceHelper::Pbuffer(buffer) => buffer.is_current(context),
-                SurfaceHelper::Pixmap(map) => map.is_current(context),
-            },
-            _ => false,
-        };
-
-        if !is_current {
-            return;
-        }
+    pub fn remove_if_current(&self) -> bool {
+        let inner = self.0.read();
+        inner
+            .view
+            .as_ref()
+            .map(|view| view.open_gl_context().remove_if_current())
+            .unwrap_or_default()
     }
-
 
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.inner.read();
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
-            (Some(context), Some(surface)) => match surface {
-                SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
-                SurfaceHelper::Pbuffer(buffer) => buffer.swap_buffers(context).is_ok(),
-                SurfaceHelper::Pixmap(map) => map.swap_buffers(context).is_ok(),
-            },
-            _ => false,
-        }
+        let inner = self.0.read();
+        inner
+            .view
+            .as_ref()
+            .map(|view| {
+                view.flush_buffer();
+                true
+            })
+            .unwrap_or_default()
     }
-
 
     pub fn get_surface_width(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
-            .surface
+            .view
             .as_ref()
-            .map(|v| match v {
-                SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
-                SurfaceHelper::Pbuffer(buffer) => buffer.width().unwrap_or_default() as i32,
-                SurfaceHelper::Pixmap(pixmap) => pixmap.width().unwrap_or_default() as i32,
-            })
+            .map(|view| view.frame().size.width as i32)
             .unwrap_or_default()
     }
-
 
     pub fn get_surface_height(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
-            .surface
+            .view
             .as_ref()
-            .map(|v| match v {
-                SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
-                SurfaceHelper::Pbuffer(buffer) => buffer.height().unwrap_or_default() as i32,
-                SurfaceHelper::Pixmap(pixmap) => pixmap.height().unwrap_or_default() as i32,
-            })
+            .map(|view| view.frame().size.height as i32)
             .unwrap_or_default()
     }
 
-
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
-            .surface
+            .view
             .as_ref()
-            .map(|v| match v {
-                SurfaceHelper::Window(window) => (
-                    window.width().unwrap_or_default() as i32,
-                    window.height().unwrap_or_default() as i32,
-                ),
-                SurfaceHelper::Pbuffer(buffer) => (
-                    buffer.width().unwrap_or_default() as i32,
-                    buffer.height().unwrap_or_default() as i32,
-                ),
-                SurfaceHelper::Pixmap(pixmap) => (
-                    pixmap.width().unwrap_or_default() as i32,
-                    pixmap.height().unwrap_or_default() as i32,
-                ),
+            .map(|view| {
+                let frame = view.frame();
+                (frame.size.width as i32, frame.size.height as i32)
             })
             .unwrap_or_default()
     }
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
+        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
     }
 
     pub fn get_transfer_surface_info_mut(
         &self,
     ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.inner.write(), |v| &mut v.transfer_surface_info)
+        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
     }
 }

@@ -26,7 +26,6 @@ pub fn to_radians(degrees: f32) -> f32 {
     degrees / 180.0 * PI
 }
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum TileMode {
     Clamp = 0,
@@ -46,7 +45,6 @@ impl Into<skia_safe::TileMode> for TileMode {
     }
 }
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum ColorChannel {
     R = 0,
@@ -522,13 +520,28 @@ impl Context {
                     for (i, value) in value.into_iter().enumerate() {
                         match i {
                             0 => {
-                                offset.x = parse_size(value, self.device);
+                                offset.x = parse_size(
+                                    value,
+                                    self.surface_data.bounds.width(),
+                                    self.surface_data.bounds.height(),
+                                    self.surface_data.ppi,
+                                );
                             }
                             1 => {
-                                offset.y = parse_size(value, self.device);
+                                offset.y = parse_size(
+                                    value,
+                                    self.surface_data.bounds.width(),
+                                    self.surface_data.bounds.height(),
+                                    self.surface_data.ppi,
+                                );
                             }
                             2 => {
-                                blur = parse_size(value, self.device);
+                                blur = parse_size(
+                                    value,
+                                    self.surface_data.bounds.width(),
+                                    self.surface_data.bounds.height(),
+                                    self.surface_data.ppi,
+                                );
                             }
                             3 => {
                                 if let Some(parsed_color) = parse_color(value) {

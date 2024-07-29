@@ -1,6 +1,5 @@
 use skia_safe::BlendMode;
 
-#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub enum CompositeOperationType {
     SourceOver = 0,

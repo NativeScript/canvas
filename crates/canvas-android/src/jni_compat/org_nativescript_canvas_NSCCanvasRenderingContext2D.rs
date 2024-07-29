@@ -50,7 +50,6 @@ pub extern "system" fn nativeCreatePattern(
     0
 }
 
-
 fn draw_image_dx_dy(
     context: jlong,
     image_data: &[u8],
@@ -70,15 +69,11 @@ fn draw_image_dx_dy(
     if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
         context.make_current();
         let mut context = context.get_context_mut();
-        context.draw_image_dx_dy(
-            &image, dx, dy
-        );
+        context.draw_image_dx_dy(&image, dx, dy);
         return JNI_TRUE;
     }
     JNI_FALSE
 }
-
-
 
 fn draw_image_dx_dy_dw_dh(
     context: jlong,
@@ -101,9 +96,7 @@ fn draw_image_dx_dy_dw_dh(
     if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
         context.make_current();
         let mut context = context.get_context_mut();
-        context.draw_image_dx_dy_dw_dh(
-            &image, dx, dy, d_width, d_height
-        );
+        context.draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
         return JNI_TRUE;
     }
     JNI_FALSE
@@ -155,14 +148,7 @@ pub extern "system" fn nativeDrawImageDxDyWithBitmap(
 ) -> jboolean {
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
     if let Some((bytes, _)) = bytes {
-        return draw_image_dx_dy(
-            context,
-            bytes.as_slice(),
-            width,
-            height,
-            dx,
-            dy
-        );
+        return draw_image_dx_dy(context, bytes.as_slice(), width, height, dx, dy);
     }
     JNI_FALSE
 }

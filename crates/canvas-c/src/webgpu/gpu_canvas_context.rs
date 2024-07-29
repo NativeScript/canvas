@@ -2,9 +2,7 @@ use std::os::raw::c_void;
 use std::sync::Arc;
 
 use parking_lot::lock_api::Mutex;
-use raw_window_handle::{
-    AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle,
-};
+use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
 use crate::webgpu::enums::CanvasOptionalGPUTextureFormat;
 use crate::webgpu::error::handle_error_fatal;
@@ -38,7 +36,6 @@ struct ViewData {
     width: u32,
     height: u32,
 }
-
 
 pub struct CanvasGPUCanvasContext {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -120,9 +117,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 surface: surface_id,
                 data: Mutex::default(),
                 has_surface_presented: Arc::default(),
-                view_data: Mutex::new(
-                    ViewData { width, height }
-                ),
+                view_data: Mutex::new(ViewData { width, height }),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -525,10 +520,9 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     std::ptr::null_mut()
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_reference(
-    context: *const CanvasGPUCanvasContext
+    context: *const CanvasGPUCanvasContext,
 ) {
     if context.is_null() {
         return;
@@ -537,10 +531,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_reference(
     Arc::increment_strong_count(context);
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_release(
-    context: *const CanvasGPUCanvasContext
+    context: *const CanvasGPUCanvasContext,
 ) {
     if context.is_null() {
         return;

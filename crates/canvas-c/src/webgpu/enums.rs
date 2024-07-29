@@ -4,7 +4,10 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgpu_types::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
+use wgpu_types::{
+    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode,
+    QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType,
+};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
@@ -1821,7 +1824,6 @@ impl Into<Option<wgpu_types::FrontFace>> for CanvasOptionalFrontFace {
     }
 }
 
-
 #[repr(C)]
 pub struct CanvasBufferBinding {
     pub buffer: *const CanvasGPUBuffer,
@@ -1837,7 +1839,9 @@ impl Into<BufferBinding> for CanvasBufferBinding {
         BufferBinding {
             buffer_id,
             offset: self.offset.try_into().unwrap_or_default(),
-            size: self.size.try_into()
+            size: self
+                .size
+                .try_into()
                 .map(|value: u64| NonZeroU64::new(value))
                 .ok()
                 .flatten(),
@@ -1861,7 +1865,10 @@ pub struct CanvasBindGroupEntry {
 impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
     fn into(self) -> BindGroupEntry<'static> {
         match self.resource {
-            CanvasBindGroupEntryResource::Buffer(buffer) => BindGroupEntry { binding: self.binding, resource: wgpu_core::binding_model::BindingResource::Buffer(buffer.into()) },
+            CanvasBindGroupEntryResource::Buffer(buffer) => BindGroupEntry {
+                binding: self.binding,
+                resource: wgpu_core::binding_model::BindingResource::Buffer(buffer.into()),
+            },
             CanvasBindGroupEntryResource::Sampler(sampler) => {
                 let sampler = unsafe { &*sampler };
                 let sampler_id = sampler.sampler;
@@ -1881,7 +1888,6 @@ impl Into<BindGroupEntry<'static>> for CanvasBindGroupEntry {
         }
     }
 }
-
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -1952,11 +1958,10 @@ impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
         match self {
             CanvasStorageTextureAccess::WriteOnly => StorageTextureAccess::WriteOnly,
             CanvasStorageTextureAccess::ReadOnly => StorageTextureAccess::ReadOnly,
-            CanvasStorageTextureAccess::ReadWrite => StorageTextureAccess::ReadWrite
+            CanvasStorageTextureAccess::ReadWrite => StorageTextureAccess::ReadWrite,
         }
     }
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -1988,7 +1993,7 @@ impl From<TextureSampleType> for CanvasTextureSampleType {
             }
             TextureSampleType::Depth => Self::Depth,
             TextureSampleType::Sint => Self::Sint,
-            TextureSampleType::Uint => Self::Uint
+            TextureSampleType::Uint => Self::Uint,
         }
     }
 }
@@ -1997,10 +2002,12 @@ impl Into<TextureSampleType> for CanvasTextureSampleType {
     fn into(self) -> TextureSampleType {
         match self {
             CanvasTextureSampleType::Float => TextureSampleType::Float { filterable: true },
-            CanvasTextureSampleType::UnfilterableFloat => TextureSampleType::Float { filterable: false },
+            CanvasTextureSampleType::UnfilterableFloat => {
+                TextureSampleType::Float { filterable: false }
+            }
             CanvasTextureSampleType::Depth => TextureSampleType::Depth,
             CanvasTextureSampleType::Sint => TextureSampleType::Sint,
-            CanvasTextureSampleType::Uint => TextureSampleType::Uint
+            CanvasTextureSampleType::Uint => TextureSampleType::Uint,
         }
     }
 }
@@ -2012,7 +2019,6 @@ pub struct CanvasStorageTextureBindingLayout {
     format: CanvasGPUTextureFormat,
     view_dimension: CanvasTextureViewDimension,
 }
-
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -2061,7 +2067,6 @@ pub struct CanvasBufferBindingLayout {
     min_binding_size: i64,
 }
 
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum CanvasBufferBindingType {
@@ -2090,7 +2095,9 @@ impl Into<BufferBindingType> for CanvasBufferBindingType {
         match self {
             CanvasBufferBindingType::Uniform => BufferBindingType::Uniform,
             CanvasBufferBindingType::Storage => BufferBindingType::Storage { read_only: false },
-            CanvasBufferBindingType::ReadOnlyStorage => BufferBindingType::Storage { read_only: true }
+            CanvasBufferBindingType::ReadOnlyStorage => {
+                BufferBindingType::Storage { read_only: true }
+            }
         }
     }
 }
@@ -2119,29 +2126,24 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
             binding: self.binding,
             visibility: wgpu_types::ShaderStages::from_bits(self.visibility).unwrap(),
             ty: match self.binding_type {
-                CanvasBindingType::Buffer(buffer) => {
-                    wgpu_types::BindingType::Buffer {
-                        ty: buffer.type_.into(),
-                        has_dynamic_offset: buffer.has_dynamic_offset,
-                        min_binding_size: buffer.min_binding_size.try_into()
-                            .map(|value: u64| NonZeroU64::new(value))
-                            .ok()
-                            .flatten()
-
-
-                        ,
-                    }
-                }
+                CanvasBindingType::Buffer(buffer) => wgpu_types::BindingType::Buffer {
+                    ty: buffer.type_.into(),
+                    has_dynamic_offset: buffer.has_dynamic_offset,
+                    min_binding_size: buffer
+                        .min_binding_size
+                        .try_into()
+                        .map(|value: u64| NonZeroU64::new(value))
+                        .ok()
+                        .flatten(),
+                },
                 CanvasBindingType::Sampler(sampler) => {
                     wgpu_types::BindingType::Sampler(sampler.type_.into())
                 }
-                CanvasBindingType::Texture(texture) => {
-                    wgpu_types::BindingType::Texture {
-                        sample_type: texture.sample_type.into(),
-                        view_dimension: texture.view_dimension.into(),
-                        multisampled: texture.multisampled,
-                    }
-                }
+                CanvasBindingType::Texture(texture) => wgpu_types::BindingType::Texture {
+                    sample_type: texture.sample_type.into(),
+                    view_dimension: texture.view_dimension.into(),
+                    multisampled: texture.multisampled,
+                },
                 CanvasBindingType::StorageTexture(storage_texture) => {
                     wgpu_types::BindingType::StorageTexture {
                         access: storage_texture.access.into(),
@@ -2155,7 +2157,6 @@ impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {
     }
 }
 
-
 #[repr(C)]
 #[derive(Copy, Clone, PartialOrd, PartialEq)]
 pub enum CanvasQueryType {
@@ -2167,11 +2168,10 @@ impl Into<wgpu_types::QueryType> for CanvasQueryType {
     fn into(self) -> QueryType {
         match self {
             CanvasQueryType::Occlusion => QueryType::Occlusion,
-            CanvasQueryType::Timestamp => QueryType::Timestamp
+            CanvasQueryType::Timestamp => QueryType::Timestamp,
         }
     }
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -2199,14 +2199,13 @@ pub enum CanvasAddressMode {
     ClampToBorder = 3,
 }
 
-
 impl Into<wgpu_types::AddressMode> for CanvasAddressMode {
     fn into(self) -> AddressMode {
         match self {
             CanvasAddressMode::ClampToEdge => AddressMode::ClampToEdge,
             CanvasAddressMode::Repeat => AddressMode::Repeat,
             CanvasAddressMode::MirrorRepeat => AddressMode::MirrorRepeat,
-            CanvasAddressMode::ClampToBorder => AddressMode::ClampToBorder
+            CanvasAddressMode::ClampToBorder => AddressMode::ClampToBorder,
         }
     }
 }
@@ -2217,11 +2216,10 @@ impl From<wgpu_types::AddressMode> for CanvasAddressMode {
             AddressMode::ClampToEdge => Self::ClampToEdge,
             AddressMode::Repeat => Self::Repeat,
             AddressMode::MirrorRepeat => Self::MirrorRepeat,
-            AddressMode::ClampToBorder => Self::ClampToBorder
+            AddressMode::ClampToBorder => Self::ClampToBorder,
         }
     }
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -2233,12 +2231,11 @@ pub enum CanvasFilterMode {
     Linear = 1,
 }
 
-
 impl Into<wgpu_types::FilterMode> for CanvasFilterMode {
     fn into(self) -> FilterMode {
         match self {
             CanvasFilterMode::Nearest => FilterMode::Nearest,
-            CanvasFilterMode::Linear => FilterMode::Linear
+            CanvasFilterMode::Linear => FilterMode::Linear,
         }
     }
 }
@@ -2247,11 +2244,10 @@ impl From<wgpu_types::FilterMode> for CanvasFilterMode {
     fn from(value: FilterMode) -> Self {
         match value {
             FilterMode::Nearest => Self::Nearest,
-            FilterMode::Linear => Self::Linear
+            FilterMode::Linear => Self::Linear,
         }
     }
 }
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -2264,9 +2260,7 @@ impl Into<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction
     fn into(self) -> Option<CompareFunction> {
         match self {
             CanvasOptionalCompareFunction::None => None,
-            CanvasOptionalCompareFunction::Some(value) => {
-                Some(value.into())
-            }
+            CanvasOptionalCompareFunction::Some(value) => Some(value.into()),
         }
     }
 }
@@ -2275,13 +2269,13 @@ impl From<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction
     fn from(value: Option<CompareFunction>) -> Self {
         match value {
             None => Self::None,
-            Some(value) => Self::Some(value.into())
+            Some(value) => Self::Some(value.into()),
         }
     }
 }
 
-pub const CanvasGPUTextureUsageCopySrc: u32 =  1 << 0;
-pub const CanvasGPUTextureUsageCopyDst: u32 =  1 << 1;
-pub const CanvasGPUTextureUsageTextureBinding: u32 =  1 << 2;
-pub const CanvasGPUTextureUsageStorageBinding: u32 =  1 << 3;
-pub const CanvasGPUTextureUsageRenderAttachment: u32 =  1 << 4;
+pub const CanvasGPUTextureUsageCopySrc: u32 = 1 << 0;
+pub const CanvasGPUTextureUsageCopyDst: u32 = 1 << 1;
+pub const CanvasGPUTextureUsageTextureBinding: u32 = 1 << 2;
+pub const CanvasGPUTextureUsageStorageBinding: u32 = 1 << 3;
+pub const CanvasGPUTextureUsageRenderAttachment: u32 = 1 << 4;

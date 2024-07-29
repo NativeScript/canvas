@@ -134,9 +134,10 @@ pub extern "C" fn canvas_native_webgpu_create_limits() -> *mut CanvasGPUSupporte
     Box::into_raw(Box::new(wgpu_types::Limits::default().into()))
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_limits_release(limits: *mut CanvasGPUSupportedLimits) {
+pub unsafe extern "C" fn canvas_native_webgpu_limits_release(
+    limits: *mut CanvasGPUSupportedLimits,
+) {
     if limits.is_null() {
         return;
     }

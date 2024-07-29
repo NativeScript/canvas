@@ -849,38 +849,45 @@ pub struct CanvasSurfaceCapabilities {
 
 impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
     fn from(value: SurfaceCapabilities) -> Self {
-        let formats = Box::into_raw(Box::new(
-            StringBuffer::from(value.formats.into_iter().map(|v| {
-                let format: CanvasGPUTextureFormat = v.into();
-                format.into()
-            }).collect::<Vec<String>>())
-        ));
+        let formats = Box::into_raw(Box::new(StringBuffer::from(
+            value
+                .formats
+                .into_iter()
+                .map(|v| {
+                    let format: CanvasGPUTextureFormat = v.into();
+                    format.into()
+                })
+                .collect::<Vec<String>>(),
+        )));
 
-        let present_modes = Box::into_raw(Box::new(
-            StringBuffer::from(value.present_modes.into_iter().map(|v| {
-                match v {
+        let present_modes = Box::into_raw(Box::new(StringBuffer::from(
+            value
+                .present_modes
+                .into_iter()
+                .map(|v| match v {
                     PresentMode::AutoVsync => "autoVsync".to_string(),
                     PresentMode::AutoNoVsync => "autoNoVsync".to_string(),
                     PresentMode::Fifo => "fifo".to_string(),
                     PresentMode::FifoRelaxed => "fifoRelaxed".to_string(),
                     PresentMode::Immediate => "immediate".to_string(),
                     PresentMode::Mailbox => "mailbox".to_string(),
-                }
-            }).collect::<Vec<_>>())
-        ));
+                })
+                .collect::<Vec<_>>(),
+        )));
 
-
-        let alpha_modes = Box::into_raw(Box::new(
-            StringBuffer::from(value.alpha_modes.into_iter().map(|v| {
-                match v {
+        let alpha_modes = Box::into_raw(Box::new(StringBuffer::from(
+            value
+                .alpha_modes
+                .into_iter()
+                .map(|v| match v {
                     CompositeAlphaMode::Auto => "auto".to_string(),
                     CompositeAlphaMode::Opaque => "opaque".to_string(),
                     CompositeAlphaMode::PreMultiplied => "premultiplied".to_string(),
                     CompositeAlphaMode::PostMultiplied => "postmultiplied".to_string(),
-                    CompositeAlphaMode::Inherit => "inherit".to_string()
-                }
-            }).collect::<Vec<_>>())
-        ));
+                    CompositeAlphaMode::Inherit => "inherit".to_string(),
+                })
+                .collect::<Vec<_>>(),
+        )));
 
         Self {
             formats,
@@ -909,12 +916,10 @@ impl Drop for CanvasSurfaceCapabilities {
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_struct_surface_capabilities_release(
-    cap: *mut CanvasSurfaceCapabilities
+    cap: *mut CanvasSurfaceCapabilities,
 ) {
     if cap.is_null() {
         return;
     }
     let _ = Box::from_raw(cap);
 }
-
-

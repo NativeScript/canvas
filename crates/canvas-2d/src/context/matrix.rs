@@ -6,11 +6,22 @@ use std::os::raw::c_float;
 use skia_safe::M44;
 
 #[derive(Clone, Debug)]
-pub struct Matrix(M44);
+pub struct Matrix(pub(crate) M44);
 
 impl Default for Matrix {
     fn default() -> Self {
         Self::new()
+    }
+}
+impl From<M44> for Matrix {
+    fn from(matrix: M44) -> Self {
+        Self(matrix)
+    }
+}
+
+impl From<&M44> for Matrix {
+    fn from(matrix: &M44) -> Self {
+        Self(matrix.clone())
     }
 }
 
@@ -114,6 +125,14 @@ impl IndexMut<Member2DName> for [f32] {
 impl Matrix {
     pub fn new() -> Self {
         Self(M44::new_identity())
+    }
+
+    pub fn clone_inner(&self) -> M44 {
+        self.0.clone()
+    }
+
+    pub fn reset(&mut self) {
+        self.0 = M44::new_identity();
     }
 
     pub fn set_scale(&mut self, x: f32, y: f32, z: f32) {

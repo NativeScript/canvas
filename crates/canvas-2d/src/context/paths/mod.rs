@@ -5,26 +5,21 @@ use crate::context::Context;
 pub mod path;
 
 impl Context {
-
     pub fn begin_path(&mut self) {
         self.path.begin_path();
     }
-
 
     pub fn close_path(&mut self) {
         self.path.close_path();
     }
 
-
     pub fn move_to(&mut self, x: c_float, y: c_float) {
         self.path.move_to(x, y);
     }
 
-
     pub fn line_to(&mut self, x: c_float, y: c_float) {
         self.path.line_to(x, y);
     }
-
 
     pub fn bezier_curve_to(
         &mut self,
@@ -38,11 +33,9 @@ impl Context {
         self.path.bezier_curve_to(cp1x, cp1y, cp2x, cp2y, x, y);
     }
 
-
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
         self.path.quadratic_curve_to(cpx, cpy, x, y);
     }
-
 
     pub fn arc(
         &mut self,
@@ -57,11 +50,9 @@ impl Context {
             .arc(x, y, radius, start_angle, end_angle, anticlockwise);
     }
 
-
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
         self.path.arc_to(x1, y1, x2, y2, radius);
     }
-
 
     pub fn ellipse(
         &mut self,
@@ -86,11 +77,9 @@ impl Context {
         );
     }
 
-
     pub fn rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
         self.path.rect(x, y, width, height);
     }
-
 
     pub fn round_rect(
         &mut self,

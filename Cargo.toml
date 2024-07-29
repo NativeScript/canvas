@@ -10,7 +10,6 @@ members = [
 	"crates/canvas-android",
 	"crates/canvas-ios",
 	"crates/playground",
-	"crates/canvas-cxx",
 	"crates/canvas-c",
 	"crates/canvas-svg"]
 
@@ -26,4 +25,4 @@ strip = true
 
 [workspace.dependencies.wgt]
 package = "wgpu-types"
-version = "0.20.0"
+version = "22.0.0"

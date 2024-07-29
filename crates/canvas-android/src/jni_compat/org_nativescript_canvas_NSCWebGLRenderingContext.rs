@@ -1,8 +1,8 @@
 use std::os::raw::c_void;
 
-use jni::JNIEnv;
 use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jint, jlong, JNI_TRUE};
+use jni::JNIEnv;
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
 

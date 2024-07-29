@@ -2,9 +2,9 @@ use std::os::raw::c_float;
 
 use skia_safe::PathEffect;
 
-use crate::context::Context;
 use crate::context::line_styles::line_cap::LineCap;
 use crate::context::line_styles::line_join::LineJoin;
+use crate::context::Context;
 
 pub mod line_cap;
 pub mod line_join;
@@ -12,10 +12,7 @@ pub mod line_join;
 impl Context {
     pub fn set_line_width(&mut self, width: c_float) {
         self.state.line_width = width;
-        self.state
-            .paint
-            .stroke_paint_mut()
-            .set_stroke_width(width);
+        self.state.paint.stroke_paint_mut().set_stroke_width(width);
     }
 
     pub fn line_width(&self) -> c_float {
@@ -52,10 +49,7 @@ impl Context {
 
     pub fn set_miter_limit(&mut self, limit: c_float) {
         self.state.miter_limit = limit;
-        self.state
-            .paint
-            .stroke_paint_mut()
-            .set_stroke_miter(limit);
+        self.state.paint.stroke_paint_mut().set_stroke_miter(limit);
     }
 
     pub fn set_line_dash(&mut self, dash: &[c_float]) {
@@ -68,10 +62,7 @@ impl Context {
         let mut effect: Option<PathEffect> = None;
         if !dash.is_empty() {
             // scale line_dash_offset
-            effect = PathEffect::dash(
-                line_dash.as_slice(),
-                self.state.line_dash_offset,
-            );
+            effect = PathEffect::dash(line_dash.as_slice(), self.state.line_dash_offset);
         }
         self.state.line_dash_list = dash.to_vec();
         self.state.paint.stroke_paint_mut().set_path_effect(effect);

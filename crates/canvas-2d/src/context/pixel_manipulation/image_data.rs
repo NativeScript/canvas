@@ -1,10 +1,11 @@
 use bytes::BytesMut;
+use parking_lot::Mutex;
 use std::os::raw::c_int;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 struct ImageDataInner {
-    pub(crate) data: BytesMut,
+    pub(crate) data: Arc<Mutex<BytesMut>>,
     pub(crate) width: c_int,
     pub(crate) height: c_int,
     pub(crate) scale: f32,
@@ -19,7 +20,7 @@ impl ImageData {
         Self(ImageDataInner {
             width,
             height,
-            data,
+            data: Arc::new(Mutex::new(data)),
             scale: 1.,
         })
     }
@@ -29,7 +30,7 @@ impl ImageData {
         Self(ImageDataInner {
             width,
             height,
-            data,
+            data: Arc::new(Mutex::new(data)),
             scale: 1.,
         })
     }
@@ -38,7 +39,7 @@ impl ImageData {
         Self(ImageDataInner {
             width,
             height,
-            data,
+            data: Arc::new(Mutex::new(data)),
             scale: 1.,
         })
     }
@@ -52,22 +53,32 @@ impl ImageData {
     }
 
     pub fn data(&self) -> &[u8] {
-        self.0.data.as_ref()
+        // ..
+        let (ptr, len) = {
+            let lock = self.0.data.lock();
+            (lock.as_ptr(), lock.len())
+        };
+        unsafe { std::slice::from_raw_parts(ptr, len) }
     }
 
     pub fn data_mut(&mut self) -> &mut [u8] {
-        self.0.data.as_mut()
+        // ..
+        let (ptr, len) = {
+            let mut lock = self.0.data.lock();
+            (lock.as_mut_ptr(), lock.len())
+        };
+        unsafe { std::slice::from_raw_parts_mut(ptr, len) }
     }
 
     pub fn data_len(&self) -> usize {
-        self.0.data.len()
+        self.0.data.lock().len()
     }
 
     pub unsafe fn data_raw(&mut self) -> *mut u8 {
-        self.0.data.as_mut_ptr()
+        self.0.data.lock().as_mut_ptr()
     }
 
-    pub fn bytes_mut(&self) -> BytesMut {
+    pub fn bytes_mut(&self) -> Arc<Mutex<BytesMut>> {
         self.0.data.clone()
     }
 }

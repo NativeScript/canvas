@@ -16,9 +16,7 @@ unsafe impl Send for RafInner {}
 
 unsafe impl Sync for RafInner {}
 
-pub struct Raf {
-    inner: Arc<parking_lot::RwLock<RafInner>>,
-}
+pub struct Raf(Arc<parking_lot::Mutex<RafInner>>);
 
 unsafe impl Send for Raf {}
 
@@ -26,7 +24,7 @@ unsafe impl Sync for Raf {}
 
 impl Raf {
     pub fn new(callback: RafCallback) -> Self {
-        let inner = Arc::new(parking_lot::RwLock::new(RafInner {
+        let inner = Arc::new(parking_lot::Mutex::new(RafInner {
             dl: None,
             started: false,
             callback,
@@ -35,9 +33,9 @@ impl Raf {
         let clone = Arc::clone(&inner);
 
         {
-            let mut lock = inner.write();
+            let mut lock = inner.lock();
             lock.dl = DisplayLink::new(move |ts| {
-                let lock = clone.read();
+                let lock = clone.lock();
                 if !lock.started {
                     return;
                 }
@@ -51,29 +49,29 @@ impl Raf {
         Self { inner }
     }
 
-    pub fn start(&mut self) {
-        let mut lock = self.inner.write();
+    pub fn start(&self) {
+        let mut lock = self.0.lock();
         if let Some(dl) = lock.dl.as_mut() {
             let _ = dl.resume();
             lock.started = !dl.is_paused();
         }
     }
 
-    pub fn stop(&mut self) {
-        let mut lock = self.inner.write();
+    pub fn stop(&self) {
+        let mut lock = self.0.lock();
         if let Some(dl) = lock.dl.as_mut() {
             let _ = dl.pause();
             lock.started = !dl.is_paused();
         }
     }
 
-    pub fn set_callback(&mut self, callback: RafCallback) {
-        let mut lock = self.inner.write();
+    pub fn set_callback(&self, callback: RafCallback) {
+        let mut lock = self.0.lock();
         lock.callback = callback;
     }
 
     pub fn started(&self) -> bool {
-        self.inner.read().started
+        self.0.lock().started
     }
 }
 

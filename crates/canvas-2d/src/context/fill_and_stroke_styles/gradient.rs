@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::os::raw::c_float;
 
 use skia_safe::gradient_shader::GradientShaderColors;
@@ -60,7 +58,7 @@ impl Gradient {
         }
     }
 
-    pub fn to_shader(gradient: &Gradient) -> Option<Shader> {
+    pub fn shader(gradient: &Gradient) -> Option<Shader> {
         match gradient {
             Gradient::Linear {
                 start,
@@ -73,7 +71,7 @@ impl Gradient {
             } => {
                 if let Some(matrix) = matrix {
                     let matrix = matrix.to_m33();
-                    Gradient::to_linear_gradient_shader(
+                    Gradient::linear_gradient_shader(
                         *start,
                         *stop,
                         stops.as_slice(),
@@ -82,7 +80,7 @@ impl Gradient {
                         *tile_mode,
                     )
                 } else {
-                    Gradient::to_linear_gradient_shader(
+                    Gradient::linear_gradient_shader(
                         *start,
                         *stop,
                         stops.as_slice(),
@@ -105,7 +103,7 @@ impl Gradient {
             } => {
                 if let Some(matrix) = matrix {
                     let matrix = matrix.to_m33();
-                    Gradient::to_radial_gradient_shader(
+                    Gradient::radial_gradient_shader(
                         *start,
                         *start_radius,
                         *stop,
@@ -116,7 +114,7 @@ impl Gradient {
                         *tile_mode,
                     )
                 } else {
-                    Gradient::to_radial_gradient_shader(
+                    Gradient::radial_gradient_shader(
                         *start,
                         *start_radius,
                         *stop,
@@ -139,7 +137,7 @@ impl Gradient {
             } => {
                 if let Some(matrix) = matrix {
                     let matrix = matrix.to_m33();
-                    Gradient::to_conic_gradient_shader(
+                    Gradient::conic_gradient_shader(
                         *center,
                         *angle,
                         stops.as_slice(),
@@ -148,7 +146,7 @@ impl Gradient {
                         *tile_mode,
                     )
                 } else {
-                    Gradient::to_conic_gradient_shader(
+                    Gradient::conic_gradient_shader(
                         *center,
                         *angle,
                         stops.as_slice(),
@@ -161,7 +159,7 @@ impl Gradient {
         }
     }
 
-    fn to_radial_gradient_shader(
+    fn radial_gradient_shader(
         start: Point,
         start_radius: c_float,
         stop: Point,
@@ -185,7 +183,7 @@ impl Gradient {
         )
     }
 
-    fn to_linear_gradient_shader(
+    fn linear_gradient_shader(
         start: Point,
         stop: Point,
         stops: &[f32],
@@ -205,7 +203,7 @@ impl Gradient {
         )
     }
 
-    fn to_conic_gradient_shader(
+    fn conic_gradient_shader(
         center: Point,
         angle: f32,
         stops: &[f32],

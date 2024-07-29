@@ -85,12 +85,8 @@ pub extern "system" fn nativeInitGL(
                     xr_compatible == JNI_TRUE,
                     is_canvas == JNI_TRUE,
                 );
-                if let Some(gl_context) = GLContext::create_window_context(
-                    &mut attrs,
-                    window.width(),
-                    window.height(),
-                    window.raw_window_handle(),
-                ) {
+                if let Some(gl_context) = GLContext::create_window_context(&mut attrs, window.ptr())
+                {
                     let context = AndroidGLContext {
                         android_window: Some(window),
                         gl_context,

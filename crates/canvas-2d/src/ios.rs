@@ -1,10 +1,11 @@
 use std::os::raw::c_void;
+use std::sync::{Arc, Mutex};
 
-use skia_safe::{gpu, Color, ColorType, PixelGeometry, Surface, SurfaceProps, SurfacePropsFlags};
+use skia_safe::{gpu, Color, ColorType, PixelGeometry, SurfaceProps, SurfacePropsFlags};
 
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Device, State};
+use crate::context::{Context, Recorder, State, SurfaceData};
 
 #[cfg(feature = "metal")]
 impl Context {
@@ -21,29 +22,18 @@ impl Context {
         ppi: f32,
         direction: u8,
     ) -> Self {
-        let context_device = Device {
-            width,
-            height,
-            density,
-            non_gpu: false,
-            samples: samples as usize,
-            alpha,
-            ppi,
-        };
-
         let backend = unsafe {
-            skia_safe::gpu::mtl::BackendContext::new(
-                device.as_ptr() as skia_safe::gpu::mtl::Handle,
-                queue.as_ptr() as skia_safe::gpu::mtl::Handle,
-                std::ptr::null(),
+            gpu::mtl::BackendContext::new(
+                device.as_ptr() as gpu::mtl::Handle,
+                queue.as_ptr() as gpu::mtl::Handle,
             )
         };
-        let mut context = skia_safe::gpu::DirectContext::new_metal(backend, None).unwrap();
+        let mut context = gpu::direct_contexts::make_metal(backend, None);
         let surface_props = SurfaceProps::new(SurfacePropsFlags::default(), PixelGeometry::Unknown);
         let surface_holder = unsafe {
             gpu::surfaces::wrap_mtk_view(
                 &mut context,
-                view as skia_safe::gpu::mtl::Handle,
+                view as gpu::mtl::Handle,
                 gpu::SurfaceOrigin::TopLeft,
                 Some(samples),
                 ColorType::BGRA8888,
@@ -52,13 +42,31 @@ impl Context {
             )
         };
 
+        let mut state = State::default();
+        state.direction = TextDirection::from(direction as u32);
+
+        let bounds = skia_safe::Rect::from_wh(width, height);
+        let recorder = Recorder::new(bounds);
         Context {
+            surface_data: SurfaceData {
+                bounds,
+                scale: density,
+                ppi,
+            },
             surface: surface_holder.unwrap(),
+            direct_context: context,
+            recorder: Arc::new(parking_lot::Mutex::new(recorder)),
             path: Path::default(),
-            state: State::from_device(context_device, TextDirection::from(direction as u32)),
+            state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            device: context_device,
         }
+    }
+
+    pub fn resize_metal(context: &mut Context, width: f32, height: f32) {
+        let bounds = skia_safe::Rect::from_wh(width, height);
+        context.surface_data.bounds = bounds;
+        let mut recorder = context.recorder.lock();
+        recorder.set_bounds(bounds);
     }
 }

@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::os::raw::c_char;
 use std::sync::Arc;
 
-fn format_error(context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 'static)) -> String {
+fn format_error(_context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 'static)) -> String {
     let mut output = String::new();
     let mut level = 1;
 
@@ -34,10 +34,10 @@ fn format_error(context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 's
 }
 
 pub(crate) fn handle_error(
-    context: &Arc<wgpu_core::global::Global>,
+    _context: &Arc<wgpu_core::global::Global>,
     sink_mutex: &parking_lot::Mutex<crate::webgpu::gpu_device::ErrorSinkRaw>,
     cause: impl Error + Send + Sync + 'static,
-    label_key: &'static str,
+    _label_key: &'static str,
     label: wgpu_core::Label,
     string: &'static str,
 ) {
@@ -68,7 +68,7 @@ pub(crate) fn handle_error(
 }
 
 pub(crate) fn handle_error_fatal(
-    global: &Arc<wgpu_core::global::Global>,
+    _global: &Arc<wgpu_core::global::Global>,
     cause: impl Error + Send + Sync + 'static,
     operation: &'static str,
 ) {
@@ -98,7 +98,6 @@ pub enum CanvasGPUErrorType {
     Internal,
 }
 
-
 pub enum CanvasGPUError {
     None,
     Lost,
@@ -114,11 +113,10 @@ impl Display for CanvasGPUError {
             CanvasGPUError::OutOfMemory { .. } => f.write_str("Out of Memory"),
             CanvasGPUError::Validation(value) => f.write_str(value),
             CanvasGPUError::None => f.write_str(""),
-            CanvasGPUError::Internal => f.write_str("Internal")
+            CanvasGPUError::Internal => f.write_str("Internal"),
         }
     }
 }
-
 
 fn fmt_err(err: &(dyn Error + 'static)) -> String {
     let mut output = err.to_string();
@@ -153,29 +151,29 @@ fn fmt_err(err: &(dyn Error + 'static)) -> String {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_error_get_type(error: *const CanvasGPUError) -> CanvasGPUErrorType {
+pub unsafe extern "C" fn canvas_native_webgpu_error_get_type(
+    error: *const CanvasGPUError,
+) -> CanvasGPUErrorType {
     let error = error.as_ref().expect("invalid error");
     match error {
         CanvasGPUError::Lost => CanvasGPUErrorType::Lost,
         CanvasGPUError::OutOfMemory => CanvasGPUErrorType::OutOfMemory,
         CanvasGPUError::Validation(_) => CanvasGPUErrorType::Validation,
         CanvasGPUError::Internal => CanvasGPUErrorType::Internal,
-        CanvasGPUError::None => CanvasGPUErrorType::None
+        CanvasGPUError::None => CanvasGPUErrorType::None,
     }
 }
-
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_error_get_message(error: *const CanvasGPUError) -> *mut c_char {
+pub unsafe extern "C" fn canvas_native_webgpu_error_get_message(
+    error: *const CanvasGPUError,
+) -> *mut c_char {
     let error = error.as_ref().expect("invalid error");
     match error {
-        CanvasGPUError::Validation(value) => {
-            CString::new(value.to_string()).unwrap().into_raw()
-        }
-        _ => std::ptr::null_mut()
+        CanvasGPUError::Validation(value) => CString::new(value.to_string()).unwrap().into_raw(),
+        _ => std::ptr::null_mut(),
     }
 }
-
 
 impl From<wgpu_core::device::DeviceError> for CanvasGPUError {
     fn from(err: wgpu_core::device::DeviceError) -> Self {

@@ -33,11 +33,8 @@ pub struct CanvasGPUQueue {
 
 unsafe impl Send for CanvasGPUQueue {}
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(
-    queue: *const CanvasGPUQueue
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(queue: *const CanvasGPUQueue) {
     if queue.is_null() {
         return;
     }
@@ -45,18 +42,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(
     Arc::increment_strong_count(queue);
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_release(
-    queue: *const CanvasGPUQueue
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_queue_release(queue: *const CanvasGPUQueue) {
     if queue.is_null() {
         return;
     }
 
     Arc::decrement_strong_count(queue);
 }
-
 
 fn get_offset_image(
     buffer: &[u8],
@@ -105,7 +98,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let destination = &*destination;
 
-
     let destination_texture = &*destination.texture;
 
     let destination_texture_id = destination_texture.texture;
@@ -123,8 +115,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
         bytes_per_row: Some(source.width * bytesPerRow as u32),
         rows_per_image: Some(source.height),
     };
-
-
 
     let destination = wgpu_types::ImageCopyTexture {
         texture: destination_texture_id,
@@ -188,7 +178,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
 
     if let Err(cause) = gfx_select!(queue_id => global.queue_on_submitted_work_done(queue_id, done))
     {
-        handle_error_fatal(global, cause, "canvas_native_webgpu_queue_on_submitted_work_done");
+        handle_error_fatal(
+            global,
+            cause,
+            "canvas_native_webgpu_queue_on_submitted_work_done",
+        );
     }
 }
 
@@ -210,14 +204,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         .iter()
         .map(|buffer| {
             let buffer = &**buffer;
-            buffer.open.store(false, std::sync::atomic::Ordering::SeqCst);
+            buffer
+                .open
+                .store(false, std::sync::atomic::Ordering::SeqCst);
             // let mut id = buffer.command_buffer.lock();
             // id.take()
             buffer.command_buffer
         })
         .collect::<Vec<_>>();
 
-    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids)) {
+    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids))
+    {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }
 }
@@ -255,7 +252,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
 
     if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data))
     {
-        handle_error(global, queue.error_sink.as_ref(), cause, "", None, "canvas_native_webgpu_queue_write_buffer");
+        handle_error(
+            global,
+            queue.error_sink.as_ref(),
+            cause,
+            "",
+            None,
+            "canvas_native_webgpu_queue_write_buffer",
+        );
     }
 }
 

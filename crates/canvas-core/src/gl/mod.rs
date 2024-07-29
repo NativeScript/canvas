@@ -82,10 +82,12 @@ pub struct TransferSurface {
     pos: i32,
     matrix_pos: i32,
     sampler_pos: i32,
+    #[allow(dead_code)]
     matrix: [f32; 16],
     initialized: bool,
 }
 
+#[allow(dead_code)]
 fn get_shader_parameter(shader: u32, pname: u32) -> i32 {
     let mut params = 0i32;
     unsafe { gl_bindings::GetShaderiv(shader, pname, &mut params) }
@@ -243,8 +245,8 @@ impl TransferSurface {
         width: u32,
         height: u32,
         internal_format: i32,
-        format: i32,
-        flip_y_webgl: bool,
+        _format: i32,
+        _flip_y_webgl: bool,
         texture_id: u32,
     ) {
         let mut previous_texture = -1_i32;
@@ -304,7 +306,7 @@ impl TransferSurface {
         yoffset: i32,
         width: u32,
         height: u32,
-        flip_y_webgl: bool,
+        _flip_y_webgl: bool,
         texture_id: u32,
     ) {
         let mut previous_texture = -1_i32;

@@ -183,7 +183,7 @@ pub(crate) struct WebGLStateInner {
 }
 
 #[derive(Debug)]
-pub struct WebGLState(pub(crate) Rc<RefCell<WebGLStateInner>>);
+pub struct WebGLState(pub Rc<RefCell<WebGLStateInner>>);
 
 impl WebGLState {
     pub(crate) fn resized(&mut self) {
@@ -467,16 +467,13 @@ impl WebGLState {
         self.get().gl_context.get_surface_height()
     }
 
-
     pub fn make_current(&self) -> bool {
         self.get().gl_context.make_current()
     }
 
-
     pub fn swap_buffers(&self) -> bool {
         self.get().gl_context.swap_buffers()
     }
-
 
     pub fn make_current_and_swap_buffers(&self) -> bool {
         let current = self.get();

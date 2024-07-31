@@ -518,6 +518,8 @@ export function fillRule(canvas) {
 	// Fill path
 	ctx.fillStyle = 'green';
 	ctx.fill(region, 'evenodd');
+
+	console.log(canvas.toDataURL(), canvas.width, canvas.height);
 }
 
 export function scale(canvas) {
@@ -579,7 +581,6 @@ export function clip(canvas) {
 
 	// Draw stuff that gets clipped
 	ctx.fillStyle = 'blue';
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = 'orange';
 	ctx.fillRect(0, 0, 100, 100);

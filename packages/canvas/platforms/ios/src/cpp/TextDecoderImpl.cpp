@@ -57,12 +57,6 @@ v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     return ctorTmpl;
 }
 
-void MyWeakCallback(const v8::WeakCallbackInfo<TextDecoderImpl>& info) {
-    TextDecoderImpl* obj = info.GetParameter();
-    // Perform cleanup or any necessary actions when the object is no longer reachable
-    delete obj;
-}
-
 void TextDecoderImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto count = args.Length();
     auto value = args[0];

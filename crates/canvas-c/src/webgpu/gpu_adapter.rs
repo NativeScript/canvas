@@ -1,13 +1,12 @@
-use crate::buffers::StringBuffer;
-use crate::webgpu::gpu_device::{ErrorSinkRaw, DEFAULT_DEVICE_LOST_HANDLER};
-use crate::webgpu::gpu_queue::QueueId;
-use std::sync::Arc;
 use std::{
-    ffi::{CStr, CString},
+    ffi::CString,
     os::raw::{c_char, c_void},
 };
-use wgpu_core::instance::InvalidAdapter;
-use wgpu_types::DownlevelCapabilities;
+use std::sync::Arc;
+
+use crate::buffers::StringBuffer;
+use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
+use crate::webgpu::gpu_queue::QueueId;
 
 use super::{
     gpu::CanvasWebGPUInstance, gpu_adapter_info::CanvasGPUAdapterInfo, gpu_device::CanvasGPUDevice,
@@ -119,7 +118,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let adapter = unsafe { &*adapter };
     let features = parse_required_features(required_features, required_features_length);
 
-    let mut limits = if required_limits.is_null() {
+    let limits = if required_limits.is_null() {
         wgpu_types::Limits::default()
     } else {
         unsafe { *required_limits }.into()
@@ -132,7 +131,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let adapter_id = adapter.adapter;
     let instance = adapter.instance.clone();
     std::thread::spawn(move || {
-        let mut descriptor = wgpu_types::DeviceDescriptor {
+        let descriptor = wgpu_types::DeviceDescriptor {
             label,
             required_features: features,
             required_limits: limits,

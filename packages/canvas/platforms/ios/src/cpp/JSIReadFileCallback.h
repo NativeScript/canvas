@@ -38,9 +38,9 @@ struct JSIReadFileCallback {
 
     ~JSIReadFileCallback() {
         callback_.Reset();
-        canvas_native_u8_buffer_destroy(data_);
+        canvas_native_u8_buffer_release(data_);
         data_ = nullptr;
-        
+
         canvas_native_string_destroy(error_);
         error_ = nullptr;
     }
@@ -86,9 +86,9 @@ struct JSIReadFileCallback {
         close(fd_[0]);
         ALooper_release(looper_);
         callback_.Reset();
-        canvas_native_u8_buffer_destroy(data_);
+        canvas_native_u8_buffer_release(data_);
         data_ = nullptr;
-        
+
         canvas_native_string_destroy(error_);
         error_ = nullptr;
     }

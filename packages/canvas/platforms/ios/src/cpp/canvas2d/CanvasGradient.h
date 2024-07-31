@@ -10,10 +10,10 @@
 
 class CanvasGradient: ObjectWrapperImpl {
 public:
-    CanvasGradient(PaintStyle*style);
+    explicit CanvasGradient(PaintStyle*style);
 
     ~CanvasGradient(){
-        canvas_native_paint_style_destroy(this->GetPaintStyle());
+        canvas_native_paint_style_release(this->GetPaintStyle());
         this->style_ = nullptr;
     }
 

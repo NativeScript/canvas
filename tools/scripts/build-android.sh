@@ -16,7 +16,7 @@ NDK_TARGET=$TARGET
 # fi
 
 API_VERSION="21"
-NDK_VERSION="23.2.8568313"
+NDK_VERSION="26.3.11579264"
 NDK_HOST="darwin-x86_64"
 
 # needed so we can overwrite it in the CI
@@ -35,10 +35,9 @@ RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
 
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
-    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics -C target-cpu=native"
+    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics -C target-cpu=native -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
 fi
 
 
-
- RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
+RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
 

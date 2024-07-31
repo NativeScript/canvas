@@ -10,7 +10,8 @@ use skia_safe::{
 
 use context::Context;
 
-mod android;
+#[cfg(target_os = "android")]
+pub mod android;
 pub mod context;
 pub mod image_bitmap;
 pub mod ios;
@@ -91,7 +92,6 @@ pub fn bytes_to_data_url(
 }
 
 pub(crate) fn flush_custom_surface(context: &Context, width: i32, height: i32, dst: &mut [u8]) {
-    unsafe {
         context.flush();
         let info = ImageInfo::new(
             ISize::new(width, height),
@@ -113,5 +113,4 @@ pub(crate) fn flush_custom_surface(context: &Context, width: i32, height: i32, d
                 }
             }
         }
-    }
 }

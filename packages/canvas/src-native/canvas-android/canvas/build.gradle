@@ -46,10 +46,10 @@ println "Runtime using NDK_PATH: " + NDK_PATH
 
 android {
 	namespace "org.nativescript.canvas"
-	compileSdkVersion 33
+	compileSdkVersion 34
 	defaultConfig {
-		minSdkVersion 19
-		targetSdkVersion 33
+		minSdkVersion 21
+		targetSdkVersion 34
 		versionCode 1
 		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -59,7 +59,8 @@ android {
 				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
 					"-DANDROID_STL=c++_shared",
-					"-DANDROID_NDK_ROOT=${NDK_PATH}"
+					"-DANDROID_NDK_ROOT=${NDK_PATH}",
+				"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
 			}
 		}
 		ndk {
@@ -75,12 +76,12 @@ android {
 	}
 
 	compileOptions {
-		sourceCompatibility JavaVersion.VERSION_1_8
-		targetCompatibility JavaVersion.VERSION_1_8
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
 	}
 
 	kotlinOptions {
-		jvmTarget = "1.8"
+		jvmTarget = "17"
 	}
 
 	externalNativeBuild {
@@ -89,7 +90,7 @@ android {
 		}
 	}
 
-	ndkVersion '23.2.8568313'
+	ndkVersion '27.0.12077973'
 
 }
 

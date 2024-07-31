@@ -99,7 +99,7 @@ impl Context {
             row_bytes = (sw * 4.0) as usize;
         }
 
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             let _ = canvas.write_pixels(
                 &info,
                 &data.data(),

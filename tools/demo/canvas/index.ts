@@ -559,8 +559,8 @@ fn main() -> @location(0) vec4f {
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
-		const texturedCube = require('./webgpu/basicGraphics/texturedCube');
-		texturedCube.run(this.canvas);
+		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
+		// texturedCube.run(this.canvas);
 
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
@@ -725,6 +725,7 @@ fn main() -> @location(0) vec4f {
 		//const ctx = canvas.getContext('2d');
 		//clearRect(this.canvas);
 		//fillRule(this.canvas);
+
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -774,7 +775,7 @@ fn main() -> @location(0) vec4f {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		//this.clock(this.canvas);
+		this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
 		//this.coloredParticles(this.canvas);
@@ -1728,9 +1729,9 @@ fn main() -> @location(0) vec4f {
 		// 	patternContext.clear(patternContext.COLOR_BUFFER_BIT);
 		// }
 
-		const scale = Screen.mainScreen.scale;
+		// const scale = Screen.mainScreen.scale;
 
-		const size = 50 * scale;
+		const size = 50;
 		const patternContext = patternCanvas.getContext('2d') as any;
 
 		//glViewport(0,0,50,50);
@@ -1745,19 +1746,6 @@ fn main() -> @location(0) vec4f {
 		patternContext.fillRect(0, 0, size, size);
 		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
-
-		if (global.isIOS) {
-			var vp = interop.alloc(16);
-
-			glGetIntegerv(0x0ba2, vp);
-
-			const x = new interop.Reference<number>(interop.types.int32, vp);
-			const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
-			const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
-			const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
-
-			console.log(x.value, y.value, w.value, h.value);
-		}
 
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -1888,7 +1876,7 @@ fn main() -> @location(0) vec4f {
 			ctx.save();
 
 			ctx.clearRect(0, 0, 150, 150);
-			ctx.translate(75 * Screen.mainScreen.scale, 75 * Screen.mainScreen.scale);
+			ctx.translate(75, 75);
 			ctx.scale(0.4, 0.4);
 			ctx.rotate(-Math.PI / 2);
 			ctx.strokeStyle = 'black';

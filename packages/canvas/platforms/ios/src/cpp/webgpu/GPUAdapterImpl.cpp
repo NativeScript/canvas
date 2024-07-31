@@ -100,7 +100,7 @@ GPUAdapterImpl::GetFeatures(v8::Local<v8::Name> name,
             }
 
         }
-        canvas_native_string_buffer_destroy(features);
+        canvas_native_string_buffer_release(features);
 
         info.GetReturnValue().Set(map);
 

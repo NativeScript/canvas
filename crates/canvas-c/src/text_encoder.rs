@@ -8,19 +8,11 @@ use crate::buffers::U8Buffer;
 pub struct TextEncoder(canvas_2d::context::text_encoder::TextEncoder);
 
 #[no_mangle]
-pub extern "C" fn canvas_native_text_encoder_reference(value: *mut TextEncoder) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Arc::increment_strong_count(value) };
-}
-
-#[no_mangle]
 pub extern "C" fn canvas_native_text_encoder_release(value: *mut TextEncoder) {
     if value.is_null() {
         return;
     }
-    let _ = unsafe { Arc::decrement_strong_count(value) };
+    let _ = unsafe { Box::from_raw(value) };
 }
 
 #[no_mangle]

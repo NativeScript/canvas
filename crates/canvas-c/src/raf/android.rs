@@ -93,12 +93,10 @@ impl Raf {
 
 impl Clone for Raf {
     fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-        }
+        Self(Arc::clone(&self.0))
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.inner = Arc::clone(&source.inner)
+        self.0 = Arc::clone(&source.0)
     }
 }

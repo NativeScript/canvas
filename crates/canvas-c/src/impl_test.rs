@@ -85,7 +85,6 @@ pub fn draw_image_space_test(
 
     // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, asset);
 
-    unsafe {
         crate::canvas_native_webgl_tex_image2d_canvas2d(
             gl_bindings::TEXTURE_2D as i32,
             0,
@@ -95,7 +94,6 @@ pub fn draw_image_space_test(
             canvas,
             state,
         );
-    }
 
     crate::canvas_native_webgl_tex_parameteri(
         gl_bindings::TEXTURE_2D,

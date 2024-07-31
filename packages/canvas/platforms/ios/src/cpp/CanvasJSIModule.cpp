@@ -324,7 +324,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
+                auto shared_asset = canvas_native_image_asset_reference(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
 
@@ -401,7 +401,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
+                                canvas_native_image_asset_release(shared_asset);
 
                                 write(jsi_callback->fd_[1],
                                       &done,
@@ -440,7 +440,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
+                            canvas_native_image_asset_release(shared_asset);
 
                             write(jsi_callback->fd_[1],
                                   &done,
@@ -479,7 +479,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
+                                canvas_native_image_asset_release(shared_asset);
 
 
                                 auto main_task = [jsi_callback, current_queue, done]() {
@@ -553,7 +553,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
+                            canvas_native_image_asset_release(shared_asset);
 
                             auto main_task = [jsi_callback, current_queue, done]() {
 
@@ -601,7 +601,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
             } else if (len == 5 || len == 6) {
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
+                auto shared_asset = canvas_native_image_asset_reference(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
 
@@ -686,7 +686,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
+                                canvas_native_image_asset_release(shared_asset);
 
 
                                 write(jsi_callback->fd_[1],
@@ -736,7 +736,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
+                            canvas_native_image_asset_release(shared_asset);
 
 
                             write(jsi_callback->fd_[1],
@@ -786,7 +786,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
+                                canvas_native_image_asset_release(shared_asset);
 
 
                                 auto main_task = [jsi_callback, current_queue, done]() {
@@ -871,7 +871,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
+                            canvas_native_image_asset_release(shared_asset);
 
                             auto main_task = [jsi_callback, current_queue, done]() {
 
@@ -1183,7 +1183,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                     jsi_callback->SetError(const_cast<char *>(error));
                 }
-                canvas_native_helper_destroy(ret);
+                canvas_native_helper_release(ret);
 
                 write(jsi_callback->fd_[1],
                       &done,
@@ -1221,7 +1221,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
             jsi_callback->SetError((char*)error);
         }
 
-        canvas_native_helper_destroy(ret);
+        canvas_native_helper_release(ret);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
 

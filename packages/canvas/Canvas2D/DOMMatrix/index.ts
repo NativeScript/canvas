@@ -243,7 +243,7 @@ export class DOMMatrix {
 	}
 
 	rotate(angle: number, cx: number, cy: number) {
-		const val = this.native.rotate(angle, cx, cy, this.native);
+		const val = this.native.rotate(angle, cx ?? 0, cy ?? 0, this.native);
 		if (val) {
 			return new DOMMatrix(val);
 		}

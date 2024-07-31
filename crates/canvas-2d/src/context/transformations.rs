@@ -8,26 +8,25 @@ const DEG: f32 = 180.0 / PI;
 
 impl Context {
     pub fn get_transform(&self) -> crate::context::matrix::Matrix {
-        self.state.matrix.clone()
+        crate::context::matrix::Matrix::from(&self.state.matrix)
     }
     pub fn rotate(&mut self, angle: f32) {
         self.with_matrix(|mat| {
-            let matrix = skia_safe::M44::from(Matrix::rotate_deg(angle * DEG));
-            mat.0.pre_concat(&matrix);
+            mat.pre_rotate(angle * DEG, None);
             mat
         });
     }
 
     pub fn scale(&mut self, x: f32, y: f32) {
         self.with_matrix(|mat| {
-            mat.0.pre_scale(x, y);
+            mat.pre_scale((x, y), None);
             mat
         });
     }
 
     pub fn translate(&mut self, x: f32, y: f32) {
         self.with_matrix(|mat| {
-            mat.0.pre_translate(x, y, None);
+            mat.pre_translate(skia_safe::Vector::new(x, y));
             mat
         });
     }
@@ -36,16 +35,14 @@ impl Context {
         let affine = [a, b, c, d, e, f];
         let transform = Matrix::from_affine(&affine);
         self.with_matrix(|mat| {
-            let matrix = skia_safe::M44::from(transform);
-            mat.0.pre_concat(&matrix);
+            mat.pre_concat(&transform);
             mat
         });
     }
 
     pub fn transform_with_matrix(&mut self, matrix: &Matrix) {
         self.with_matrix(|mat| {
-            let matrix = skia_safe::M44::from(matrix);
-            mat.0.pre_concat(&matrix);
+            mat.pre_concat(&matrix);
             mat
         });
     }
@@ -55,8 +52,7 @@ impl Context {
         let matrix = Matrix::from_affine(&affine);
 
         self.with_matrix(|mat| {
-            let matrix = skia_safe::M44::from(matrix);
-            mat.0.pre_concat(&matrix);
+            mat.pre_concat(&matrix);
             mat
         });
     }
@@ -65,7 +61,7 @@ impl Context {
         let matrix = matrix.clone();
 
         self.with_matrix(|mat| {
-            mat.0 = matrix.0;
+            *mat = matrix.0.to_m33();
             mat
         });
     }

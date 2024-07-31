@@ -151,7 +151,7 @@ impl Context {
             .map(|value| skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3]))
             .collect();
 
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             canvas.draw_atlas(
                 &image,
                 xform.as_slice(),
@@ -166,7 +166,7 @@ impl Context {
     }
 
     pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
                 self.state.paint.fill_paint(),
@@ -175,7 +175,7 @@ impl Context {
     }
 
     pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
                 self.state.paint.stroke_paint(),
@@ -184,7 +184,7 @@ impl Context {
     }
 
     pub fn draw_paint(&mut self, color: &str) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             if let Some(color) = color::parse_color(color) {
                 let mut paint = Paint::default();
                 paint.set_anti_alias(true).set_color(color);
@@ -194,13 +194,13 @@ impl Context {
     }
 
     pub fn draw_point(&mut self, x: c_float, y: c_float) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             canvas.draw_point(skia_safe::Point::new(x, y), self.state.paint.stroke_paint());
         });
     }
 
     pub fn draw_points(&mut self, mode: PointMode, points: &[c_float]) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             let count = points.len();
             if count % 2 == 0 {
                 let points: Vec<_> = points
@@ -259,7 +259,7 @@ impl Context {
         colors: &[Color],
         blend_mode: CompositeOperationType,
     ) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             let positions: Vec<_> = vertices
                 .chunks(2)
                 .into_iter()

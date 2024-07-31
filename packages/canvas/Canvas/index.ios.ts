@@ -286,8 +286,12 @@ export class Canvas extends CanvasBase {
 	}
 
 	_setNativeViewFrame(nativeView: any, frame: any): void {
+		//this._canvas.forceLayout(frame.size.width, frame.size.height);
+		const f = CGRectMake(0, 0, frame.size.width, frame.size.height);
+		this._canvas.subviews[0].frame = f;
+		this._canvas.subviews[1].frame = f;
+
 		nativeView.frame = frame;
-		this._canvas.forceLayout(frame.size.width, frame.size.height);
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {

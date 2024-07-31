@@ -11,14 +11,14 @@
 class TextEncoderImpl: ObjectWrapperImpl {
 
 public:
-    TextEncoderImpl(TextEncoder* encoder);
+    explicit TextEncoderImpl(TextEncoder* encoder);
     ~TextEncoderImpl() {
-        canvas_native_text_encoder_destroy(this->GetTextEncoder());
+        canvas_native_text_encoder_release(this->GetTextEncoder());
         this->encoder_ = nullptr;
     }
 
     TextEncoder* GetTextEncoder();
-    
+
     static void Init(const v8::Local<v8::Object>& canvasModule, v8::Isolate *isolate);
 
     static TextEncoderImpl *GetPointer(v8::Local<v8::Object> object);

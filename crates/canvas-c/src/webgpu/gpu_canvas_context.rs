@@ -2,7 +2,7 @@ use std::os::raw::c_void;
 use std::sync::Arc;
 
 use parking_lot::lock_api::Mutex;
-use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
+use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
 
 use crate::webgpu::enums::CanvasOptionalGPUTextureFormat;
 use crate::webgpu::error::handle_error_fatal;
@@ -25,16 +25,16 @@ struct TextureData {
     sample_count: u32,
 }
 
-struct SurfaceData {
+pub struct SurfaceData {
     device_id: wgpu_core::id::DeviceId,
     error_sink: ErrorSink,
     texture_data: TextureData,
 }
 
 #[derive(Copy, Clone, Debug)]
-struct ViewData {
-    width: u32,
-    height: u32,
+pub struct ViewData {
+    pub width: u32,
+    pub height: u32,
 }
 
 pub struct CanvasGPUCanvasContext {
@@ -176,6 +176,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
     width: u32,
     height: u32,
 ) -> *const CanvasGPUCanvasContext {
+    use raw_window_handle::AppKitDisplayHandle;
     if instance.is_null() {
         return std::ptr::null();
     }
@@ -304,7 +305,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         return;
     }
     Arc::increment_strong_count(context);
-    let mut context = Arc::from_raw(context);
+    let context = Arc::from_raw(context);
     let surface_id = context.surface;
     let global = context.instance.global();
     let device = unsafe { &*device };
@@ -389,6 +390,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
 }
 
 #[no_mangle]
+#[allow(unused)]
 pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
     context: *const CanvasGPUCanvasContext,
     device: *mut CanvasGPUDevice,

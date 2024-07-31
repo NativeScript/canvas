@@ -1,9 +1,11 @@
 use std::ffi::c_uint;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use base64::Engine;
 use parking_lot::MutexGuard;
-use skia_safe::{Color, EncodedImageFormat, Image, PictureRecorder, Point, Surface};
+use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, PictureRecorder, Point, Surface};
+use skia_safe::BlendMode;
+use skia_safe::image::CachingHint;
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -46,7 +48,7 @@ pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
 
-#[cfg(target_os = "android")]
+#[cfg(feature = "vulkan")]
 pub mod surface_vulkan;
 
 #[derive(Clone)]
@@ -75,7 +77,7 @@ pub struct State {
     pub(crate) word_spacing: f32,
     pub(crate) letter_spacing_value: String,
     pub(crate) letter_spacing: f32,
-    pub(crate) matrix: Matrix,
+    pub(crate) matrix: skia_safe::Matrix,
     pub(crate) clip: Option<Path>,
 }
 
@@ -111,7 +113,7 @@ impl Default for State {
             word_spacing: 0.,
             letter_spacing_value: "0px".to_string(),
             letter_spacing: 0.,
-            matrix: Matrix(skia_safe::M44::new_identity()),
+            matrix: skia_safe::Matrix::new_identity(),
             clip: None,
         }
     }
@@ -176,6 +178,22 @@ impl Recorder {
         }
     }
 
+    pub fn set_clip(&mut self, clip: &Option<Path>) {
+        let clip = clip.clone();
+        self.clip = clip.map(|clip| clip.0);
+        self.restore();
+    }
+    pub fn restore(&mut self) {
+        if let Some(canvas) = self.current.recording_canvas() {
+            canvas.restore_to_count(1);
+            canvas.save();
+            if let Some(clip) = &self.clip {
+                canvas.clip_path(&clip, skia_safe::ClipOp::Intersect, true /* antialias */);
+            }
+            canvas.set_matrix(&self.matrix.into());
+        }
+    }
+
     pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {
         *self = Recorder::new(bounds);
     }
@@ -197,7 +215,7 @@ impl Recorder {
     pub fn set_matrix(&mut self, matrix: skia_safe::Matrix) {
         self.matrix = matrix;
         if let Some(canvas) = self.current.recording_canvas() {
-            canvas.set_matrix(&skia_safe::M44::from(&matrix));
+            canvas.set_matrix(&matrix.into());
         }
     }
 
@@ -216,7 +234,7 @@ impl Recorder {
         self.flush();
         if self.cache.is_none() {
             let size = self.bounds.size().to_floor();
-            if let Some(picture) = self.layers.last(){
+            if let Some(picture) = self.layers.last() {
                 self.cache = skia_safe::images::deferred_from_picture(
                     picture,
                     size,
@@ -238,8 +256,8 @@ impl Recorder {
             let width = bounds.width();
             let height = bounds.height();
             let mut info = skia_safe::ImageInfo::new(
-                skia_safe::ISize::new(width as i32, height as i32),
-                skia_safe::ColorType::RGBA8888,
+                ISize::new(width as i32, height as i32),
+                ColorType::RGBA8888,
                 skia_safe::AlphaType::Unpremul,
                 None,
             );
@@ -249,7 +267,7 @@ impl Recorder {
                 &mut info,
                 pixels.as_mut_slice(),
                 row_bytes as usize,
-                skia_safe::IPoint::new(0, 0),
+                IPoint::new(0, 0),
                 skia_safe::image::CachingHint::Allow,
             );
             pixels
@@ -313,6 +331,17 @@ impl Recorder {
 
         "data:,".to_string()
     }
+
+    pub fn get_picture(&self) -> Option<skia_safe::Picture> {
+        let mut compositor = PictureRecorder::new();
+        compositor.begin_recording(self.bounds, None);
+        if let Some(output) = compositor.recording_canvas() {
+            for pict in self.layers.iter() {
+                pict.playback(output);
+            }
+        }
+        compositor.finish_recording_as_picture(Some(&self.bounds))
+    }
 }
 
 impl Default for Recorder {
@@ -329,20 +358,6 @@ impl Default for Recorder {
     }
 }
 
-#[cfg(any(not(target_os = "android")))]
-pub struct Context {
-    pub(crate) surface_data: SurfaceData,
-    pub(crate) surface: Surface,
-    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
-    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
-    pub(crate) recorder: Arc<parking_lot::Mutex<Recorder>>,
-    pub(crate) path: Path,
-    pub(crate) state: State,
-    pub(crate) state_stack: Vec<State>,
-    pub(crate) font_color: Color,
-}
-
-#[cfg(target_os = "android")]
 pub struct Context {
     pub(crate) surface_data: SurfaceData,
     pub(crate) surface: Surface,
@@ -359,15 +374,112 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
-pub type ContextWrapper = Arc<Mutex<Context>>;
 
 impl Context {
+    pub fn as_data_url(&mut self, format: &str, quality: c_uint) -> String {
+        if self.surface_data.bounds.is_empty() {
+            return "data:,".to_string();
+        }
 
+        let mut ret = "data:,".to_string();
+        self.with_recorder(|mut recorder| {
+            ret = recorder.as_data_url(format, quality);
+        });
+        ret
+    }
     pub fn get_image(&self) -> Option<Image> {
         let recorder = Arc::clone(&self.recorder);
         let mut recorder = recorder.lock();
         recorder.get_image()
     }
+
+    pub fn get_pixels(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>) {
+        let origin = origin.into();
+        let size = size.into();
+        let info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+
+        if let Some(img) = self.get_image() {
+            img.read_pixels(&info, buffer, info.min_row_bytes(), origin, CachingHint::Allow);
+        }
+    }
+
+
+    pub fn render_to_surface(&mut self) {
+        let recorder = Arc::clone(&self.recorder);
+        let recorder = recorder.lock();
+        self.surface.canvas().reset_matrix();
+        self.surface.canvas().scale((self.surface_data.scale, self.surface_data.scale));
+        self.surface.canvas().clear(Color::TRANSPARENT);
+
+        if let Some(picture) = recorder.get_picture() {
+            self.surface.canvas().draw_picture(picture, None, None);
+        }
+    }
+
+    pub fn flush_and_render_to_surface(&mut self) {
+        let recorder = Arc::clone(&self.recorder);
+        let mut recorder = recorder.lock();
+        if recorder.is_dirty {
+            recorder.flush();
+            self.render_picture_to_surface(recorder.get_picture());
+            self.flush_surface();
+        }
+    }
+
+
+    pub fn render_picture_to_surface(&mut self, picture: Option<skia_safe::Picture>) {
+        let canvas = self.surface.canvas();
+        canvas.reset_matrix();
+        canvas.scale((self.surface_data.scale, self.surface_data.scale));
+        canvas.clear(Color::TRANSPARENT);
+
+        let blend = self.state.global_composite_operation.get_blend_mode();
+        match blend {
+            BlendMode::SrcIn | BlendMode::SrcOut |
+            BlendMode::DstIn | BlendMode::DstOut |
+            BlendMode::DstATop | BlendMode::Src => {
+                let mut layer_paint = skia_safe::Paint::default();
+                layer_paint.set_anti_alias(true);
+                layer_paint.set_blend_mode(BlendMode::SrcOver);
+                let mut layer_recorder = skia_safe::PictureRecorder::new();
+                layer_recorder.begin_recording(self.surface_data.bounds, None);
+                if let Some(layer) = layer_recorder.recording_canvas() {
+                    layer.set_matrix(&self.state.matrix.into());
+
+                    if let Some(picture) = picture {
+                        layer.draw_picture(picture, None, None);
+                    }
+                }
+
+
+                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
+                    canvas.save();
+                    canvas.set_matrix(&skia_safe::Matrix::new_identity().into());
+                    let mut blend_paint = skia_safe::Paint::default();
+                    blend_paint.set_anti_alias(true);
+                    blend_paint.set_blend_mode(self.state.global_composite_operation.get_blend_mode());
+                    canvas.draw_picture(&pict, None, Some(&blend_paint));
+                    canvas.restore();
+                }
+            }
+            _ => {
+                if let Some(picture) = picture {
+                    canvas.draw_picture(picture, None, None);
+                }
+            }
+        };
+    }
+
+    pub fn flush_surface(&mut self) {
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        match self.direct_context.as_mut() {
+            Some(ctx) => {
+                ctx.flush_and_submit();
+            }
+            _ => {}
+        }
+    }
+
     pub fn get_surface_data(&self) -> &SurfaceData {
         &self.surface_data
     }
@@ -381,10 +493,14 @@ impl Context {
     }
     pub fn with_matrix<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut Matrix) -> &Matrix,
+        F: FnOnce(&mut skia_safe::Matrix) -> &skia_safe::Matrix,
     {
         f(&mut self.state.matrix);
-        self.with_recorder(|mut recorder| recorder.set_matrix(self.state.matrix.to_m33()));
+        self.with_recorder(|mut recorder| recorder.set_matrix(self.state.matrix));
+    }
+
+    pub fn dimensions(&self) -> (f32, f32) {
+        (self.surface_data.bounds.width(), self.surface_data.bounds.height())
     }
 
     pub fn width(&self) -> f32 {
@@ -405,6 +521,18 @@ impl Context {
         }
     }
 
+    pub fn with_canvas_dirty<F>(&self, f: F)
+    where
+        F: FnOnce(&skia_safe::Canvas),
+    {
+        let recorder = Arc::clone(&self.recorder);
+        let mut recorder = recorder.lock();
+        if let Some(canvas) = recorder.current.recording_canvas() {
+            f(canvas);
+            recorder.is_dirty = true;
+        }
+    }
+
     pub fn reset_state(&mut self) {
         let direction = self.state.direction;
         self.state = State::default();
@@ -413,14 +541,15 @@ impl Context {
     }
 
     pub fn clear_canvas(&mut self) {
-        self.surface.canvas().clear(Color::TRANSPARENT);
-        if let Some(mut context) = self.surface.direct_context() {
-            context.flush_submit_and_sync_cpu();
-        }
+        self.with_canvas_dirty(|canvas| {
+            canvas.clear(Color::TRANSPARENT);
+        });
     }
 
     pub fn flush(&self) {
-        let mut lock = self.recorder.lock();
-        lock.flush();
+        {
+            let mut lock = self.recorder.lock();
+            lock.flush();
+        }
     }
 }

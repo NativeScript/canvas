@@ -12,9 +12,9 @@
 class RafImpl {
 public:
     RafImpl(OnRafCallback *rafCallback, intptr_t callback, Raf* raf);
-    
+
     ~RafImpl(){
-        canvas_native_raf_destroy(this->GetRaf());
+        canvas_native_raf_release(this->GetRaf());
         this->raf_ = nullptr;
         delete rafCallback_;
     }

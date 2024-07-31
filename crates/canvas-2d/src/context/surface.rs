@@ -43,11 +43,16 @@ impl Context {
             None,
         );
 
-        let mut surface = surfaces::raster(&info, None, None).unwrap();
+        let surface = surfaces::raster(&info, None, None).unwrap();
         let bounds = Rect::from_wh(width, height);
         let recorder = Recorder::new(bounds);
+
         Context {
             direct_context: None,
+            #[cfg(feature = "vulkan")]
+            ash_graphics: None,
+            #[cfg(feature = "vulkan")]
+            vk_surface: None,
             surface_data: SurfaceData {
                 bounds,
                 ppi,

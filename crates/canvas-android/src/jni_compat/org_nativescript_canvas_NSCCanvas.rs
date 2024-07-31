@@ -1,16 +1,23 @@
 use std::ffi::c_void;
+use std::ptr;
 
-use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
-use jni::objects::{JClass, JObject};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
+use jni::objects::{JClass, JObject};
+use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE, jobject};
 use ndk::native_window::NativeWindow;
 use parking_lot::RwLock;
-use raw_window_handle::HasRawWindowHandle;
-use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect};
+use raw_window_handle::RawWindowHandle;
+use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect};
 
+use canvas_2d::context::paths::path::Path;
+use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
 use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
+
+fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
+    let handle = raw_window_handle::AndroidNdkWindowHandle::new(ptr::NonNull::new(window.ptr().as_ptr() as *mut c_void).unwrap());
+    return RawWindowHandle::AndroidNdk(handle);
+}
 
 #[allow(dead_code)]
 pub(crate) struct AndroidGLContext {
@@ -21,7 +28,7 @@ pub(crate) struct AndroidGLContext {
 
 #[no_mangle]
 pub extern "system" fn nativeInitWebGPU(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _: JClass,
     instance: jlong,
     surface: jobject,
@@ -46,9 +53,51 @@ pub extern "system" fn nativeInitWebGPU(
     0
 }
 
+
+
+/*
+#[no_mangle]
+pub extern "system" fn nativeCreate2dContextVulkan(
+    env: JNIEnv,
+    _: JClass,
+    width: jint,
+    height: jint,
+    surface: jobject,
+    alpha: jboolean,
+    density: jfloat,
+    samples: jint,
+    font_color: jint,
+    ppi: jfloat,
+    direction: jint,
+) -> jlong {
+    unsafe {
+        let interface = env.get_native_interface();
+        if let Some(window) = NativeWindow::from_surface(interface, surface) {
+            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_vulkan(
+                canvas_2d::context::Context::new_vulkan(
+                    width as f32,
+                    height as f32,
+                    window.ptr().as_ptr() as *mut c_void,
+                    density,
+                    samples as u32,
+                    alpha == JNI_TRUE,
+                    font_color,
+                    ppi,
+                    direction as u8,
+                ),
+                alpha == JNI_TRUE,
+            );
+            return Box::into_raw(Box::new(ctx_2d)) as jlong;
+        }
+    }
+    0
+}
+
+*/
+
 #[no_mangle]
 pub extern "system" fn nativeInitGL(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _: JClass,
     surface: jobject,
     alpha: jboolean,
@@ -85,7 +134,9 @@ pub extern "system" fn nativeInitGL(
                     xr_compatible == JNI_TRUE,
                     is_canvas == JNI_TRUE,
                 );
-                if let Some(gl_context) = GLContext::create_window_context(&mut attrs, window.ptr())
+
+                let window_handle = to_raw_window_handler(&window);
+                if let Some(gl_context) = GLContext::create_window_context(&mut attrs, window.width(), window.height(), window_handle)
                 {
                     let context = AndroidGLContext {
                         android_window: Some(window),
@@ -174,8 +225,9 @@ fn native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let ctx_2d = canvas_c::CanvasRenderingContext2D::new(
-        canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
+
+    let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
+        canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
             density,
@@ -185,7 +237,7 @@ fn native_create_2d_context(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
-        )),
+        ),
         context.gl_context.clone(),
         alpha == JNI_TRUE,
     );
@@ -246,11 +298,12 @@ pub extern "system" fn nativeUpdateGLSurface(
     let context = unsafe { &mut *context };
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            let handle = to_raw_window_handler(&window);
             context.gl_context.set_window_surface(
                 &mut context.contextAttributes,
                 window.width(),
                 window.height(),
-                window.raw_window_handle(),
+                handle,
             );
             context.android_window = Some(window);
             drop(env);
@@ -491,7 +544,7 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
 
     //  context.make_current();
     {
-        let mut ctx = context.get_context_mut();
+        let ctx = context.get_context_mut();
         ctx.set_fill_style_with_color("red");
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
@@ -509,7 +562,7 @@ pub extern "system" fn nativeContext2DTestNormal(_env: JNIEnv, _: JClass, contex
 
     context.make_current();
     {
-        let mut ctx = context.get_context_mut();
+        let ctx = context.get_context_mut();
         ctx.set_fill_style_with_color("red");
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
@@ -527,10 +580,10 @@ pub extern "system" fn nativeContext2DPathTest(context: jlong) {
 
     context.make_current();
     {
-        let mut ctx = context.get_context_mut();
+        let ctx = context.get_context_mut();
 
         // Create path
-        let mut region = canvas_2d::context::paths::path::Path::default();
+        let mut region = Path::default();
         region.move_to(30f32, 90f32);
         region.line_to(110f32, 20f32);
         region.line_to(240f32, 130f32);
@@ -560,10 +613,10 @@ pub extern "system" fn nativeContext2DPathTestNormal(_env: JNIEnv, _: JClass, co
 
     context.make_current();
     {
-        let mut ctx = context.get_context_mut();
+        let ctx = context.get_context_mut();
 
         // Create path
-        let mut region = canvas_2d::context::paths::path::Path::default();
+        let mut region = Path::default();
         region.move_to(30f32, 90f32);
         region.line_to(110f32, 20f32);
         region.line_to(240f32, 130f32);
@@ -665,7 +718,7 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                 );
                 let context = context as *mut canvas_c::CanvasRenderingContext2D;
                 let context = unsafe { &mut *context };
-                let mut context = context.get_context_mut();
+                let context = context.get_context_mut();
 
                 let mut surface =
                     skia_safe::surfaces::wrap_pixels(&info, image_data, None, None).unwrap();
@@ -683,7 +736,9 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                     ),
                     &paint,
                 );
-                context.draw_on_surface(&mut surface);
+                if let Some(image) = context.get_image() {
+                    surface.canvas().draw_image(image, (0, 0), None);
+                }
             }
         }),
     );

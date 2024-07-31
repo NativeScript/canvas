@@ -88,6 +88,10 @@ impl Context {
         let recorder = Recorder::new(bounds);
         Context {
             direct_context,
+            #[cfg(feature = "vulkan")]
+            ash_graphics: None,
+            #[cfg(feature = "vulkan")]
+            vk_surface: None,
             surface_data: SurfaceData {
                 bounds,
                 scale: density,

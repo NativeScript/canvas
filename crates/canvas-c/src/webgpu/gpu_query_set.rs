@@ -59,6 +59,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_type(
 }
 
 #[no_mangle]
+#[allow(unused)]
 pub unsafe extern "C" fn canvas_native_webgpu_query_set_destroy(
     query_set: *const CanvasGPUQuerySet,
 ) {

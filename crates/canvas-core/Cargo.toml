@@ -12,7 +12,7 @@ gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.6.2"
 parking_lot = "0.12.3"
 stb_image = { git = "https://github.com/triniwiz/rust-stb-image", rev = "869380b" }
-skia-safe = { version = "0.75.0", features = ["gl", "textlayout"], optional = true }
+skia-safe = { workspace = true, features = ["gl", "textlayout"], optional = true }
 log = "0.4.22"
 
 [target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]

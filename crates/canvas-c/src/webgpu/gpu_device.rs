@@ -2,14 +2,14 @@ use std::cmp::PartialEq;
 use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::{ Cow},
     collections::HashMap,
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
 };
 
 use wgpu_core::binding_model::BufferBinding;
-use wgpu_core::command::{CreateRenderBundleError, RenderBundleEncoder};
+use wgpu_core::command::{ RenderBundleEncoder};
 use wgpu_core::device::DeviceError;
 use wgpu_core::resource::CreateBufferError;
 use wgpu_types::Features;

@@ -10,8 +10,6 @@ impl Context {
         match self
             .state
             .matrix
-            .0
-            .to_m33()
             .map_rect(Rect::new(x, y, width, height))
             .0
             .contains(&self.surface_data.bounds)
@@ -20,7 +18,7 @@ impl Context {
             true => {
                 let mut recorder = skia_safe::PictureRecorder::new();
                 let canvas = recorder.begin_recording(self.surface_data.bounds, None);
-                canvas.set_matrix(&self.state.matrix.0);
+                canvas.set_matrix(&self.state.matrix.into());
 
                 if let Some(clip) = self.state.clip.as_ref() {
                     canvas.clip_path(clip.path(), skia_safe::ClipOp::Intersect, Some(true));
@@ -29,17 +27,18 @@ impl Context {
                 self.recorder = Arc::new(parking_lot::Mutex::new(Recorder {
                     bounds: self.surface_data.bounds,
                     current: recorder,
-                    is_dirty: false,
+                    is_dirty: true,
                     layers: vec![],
                     cache: None,
                     matrix: skia_safe::Matrix::new_identity(),
                     clip: None,
                 }));
+
             }
 
             // otherwise, paint over the specified region but preserve overdrawn vectors
             false => {
-                self.with_canvas(|canvas| {
+                self.with_canvas_dirty(|canvas| {
                     let mut paint = Paint::default();
                     paint
                         .set_anti_alias(true)
@@ -58,7 +57,7 @@ impl Context {
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             if let Some(paint) = self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
@@ -76,7 +75,7 @@ impl Context {
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
-        self.with_canvas(|canvas| {
+        self.with_canvas_dirty(|canvas| {
             if let Some(paint) = &mut self.state.paint.stroke_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,

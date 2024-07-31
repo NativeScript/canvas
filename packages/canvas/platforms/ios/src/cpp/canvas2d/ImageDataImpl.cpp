@@ -23,9 +23,9 @@ public:
     }
 
     ~ImageDataBuffer() {
-        canvas_native_u8_buffer_destroy(slice_);
+        canvas_native_u8_buffer_release(slice_);
         slice_ = nullptr;
-        canvas_native_image_data_destroy(imageData_);
+        canvas_native_image_data_release(imageData_);
         imageData_ = nullptr;
     }
 
@@ -181,8 +181,7 @@ ImageDataImpl::GetData(v8::Local<v8::Name> name,
     if (ptr != nullptr) {
         auto isolate = info.GetIsolate();
 
-        auto data = new ImageDataBuffer(
-                canvas_native_image_data_get_shared_instance(ptr->GetImageData()));
+        auto data = new ImageDataBuffer(ptr->GetImageData());
 
         auto length = data->size();
         auto store = v8::ArrayBuffer::NewBackingStore(data->data(), length,

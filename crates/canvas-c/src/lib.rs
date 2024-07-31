@@ -7,7 +7,8 @@ pub use canvas_2d::context::text_styles::text_align::TextAlign;
 #[cfg(target_os = "android")]
 use std::sync::OnceLock;
 
-pub mod canvas2d;
+mod c2d;
+pub use c2d::*;
 
 pub mod webgpu;
 
@@ -19,16 +20,21 @@ pub static API_LEVEL: OnceLock<i32> = OnceLock::new();
 #[cfg(target_os = "android")]
 pub mod choreographer;
 
-pub mod buffers;
-pub mod helper;
-pub mod image_asset;
+mod buffers;
+pub use buffers::*;
+mod helper;
+pub use helper::*;
+mod image_asset;
+pub use image_asset::*;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod raf;
-pub mod text_decoder;
-pub mod text_encoder;
-pub mod webgl;
-
-// pub mod impl_test;
+mod text_decoder;
+pub use text_decoder::*;
+mod text_encoder;
+pub use text_encoder::*;
+mod webgl;
+pub use webgl::*;
+pub mod impl_test;
 /* Raf */
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[derive(Clone)]

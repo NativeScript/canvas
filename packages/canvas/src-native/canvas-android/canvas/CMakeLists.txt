@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22.0)
+cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(canvasnativev8)
@@ -41,7 +41,7 @@ set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
 message(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR})
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH -Wno-vla-extension -Wno-deprecated")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -203,37 +203,22 @@ find_library(egl EGL)
 
 add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
 
-if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND NOT "${ANDROID_ABI}" MATCHES "x86_64")
-  # On API Level 19 and lower we need to link with android_support
-  # because it contains some implementation of functions such as "strtoll" and "strtoul"
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${OPENGL_LIB}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
-          #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
-          ${CANVAS_ANDROID_LIB}
-          android
-          )
 
-else ()
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${OPENGL_LIB}
-          ${graphics}
-          ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
-          ${CANVAS_ANDROID_LIB}
-          android
-          )
-endif ()
+target_link_libraries(canvasnativev8
+        ${system-log}
+        ${system-z}
+        ${egl}
+        ${OPENGL_LIB}
+        ${graphics}
+        ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+        ${CANVAS_ANDROID_LIB}
+        android
+)
 
-# API 35 support
-if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
-  target_link_options(canvasnativev8 PRIVATE "-Wl,-z,max-page-size=16384")
-endif()
+## API 35 support
+#if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
+#  target_link_options(canvasnativev8 PRIVATE "-Wl,-z,max-page-size=16384")
+#endif()
 
 
 add_custom_command(TARGET canvasnativev8

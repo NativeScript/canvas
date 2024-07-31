@@ -254,7 +254,7 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
             }
 
         }
-        canvas_native_string_buffer_destroy(features);
+        canvas_native_string_buffer_release(features);
 
         info.GetReturnValue().Set(map);
 
@@ -377,7 +377,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
     char *label = nullptr;
 
     auto optionsVal = args[0];
-    
+
     std::vector<CanvasBindGroupEntry> entries;
 
     if (optionsVal->IsObject()) {
@@ -467,7 +467,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
                                         int64_t offset = -1;
 
                                         v8::Local<v8::Value> offsetVal;
-                                        
+
                                         resourceObj->Get(context,
                                                        ConvertToV8String(isolate,
                                                                          "offset")).ToLocal(
@@ -1573,7 +1573,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         if (!stencilWriteMaskVal.IsEmpty() && stencilWriteMaskVal->IsUint32()) {
             stencil->stencil_write_mask = stencilWriteMaskVal->Uint32Value(context).FromJust();
         }
-        
+
         descriptor.depth_stencil = stencil;
 
     }
@@ -2262,7 +2262,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
     }
-    
+
     if(descriptor.depth_stencil != nullptr){
         delete descriptor.depth_stencil;
     }

@@ -685,7 +685,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
 
         let size: Option<u64> = size.try_into().ok();
 
-        let mut sizeValue: Option<std::num::NonZero<u64>> = None;
+        let sizeValue: Option<std::num::NonZero<u64>>;
 
         if let Some(value) = size {
             sizeValue = std::num::NonZero::new(value);

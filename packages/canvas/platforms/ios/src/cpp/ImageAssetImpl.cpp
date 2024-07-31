@@ -15,7 +15,7 @@ ImageAssetImpl::ImageAssetImpl(ImageAsset *asset) : asset_(asset) {
 }
 
 ImageAssetImpl::~ImageAssetImpl() {
-    canvas_native_image_asset_destroy(this->GetImageAsset());
+    canvas_native_image_asset_release(this->GetImageAsset());
     asset_ = nullptr;
 }
 
@@ -179,7 +179,7 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto ptr = GetPointer(args.This());
     if (ptr != nullptr) {
         auto isolate = args.GetIsolate();
-        auto reference = canvas_native_image_asset_shared_clone(ptr->GetImageAsset());
+        auto reference = canvas_native_image_asset_reference(ptr->GetImageAsset());
         auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
         args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
         return;
@@ -230,7 +230,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
     auto url = ConvertFromV8String(isolate, args[0]);
 
-    auto asset = canvas_native_image_asset_shared_clone(ptr->asset_);
+    auto asset = canvas_native_image_asset_reference(ptr->asset_);
 
     auto callback = args[1].As<v8::Function>();
 
@@ -277,7 +277,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
                     const std::string &url) {
                 auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
 
-                canvas_native_image_asset_destroy(asset);
+                canvas_native_image_asset_release(asset);
 
                 write(jsi_callback->fd_[1],
                       &done,
@@ -346,7 +346,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto task = [jsi_callback, current_queue, queue, asset, url]() {
 
         auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
-        canvas_native_image_asset_destroy(asset);
+        canvas_native_image_asset_release(asset);
 
         auto main_task = [jsi_callback, current_queue, queue, url, done]() {
 
@@ -412,7 +412,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     auto path = ConvertFromV8String(isolate, args[0]);
 
-    auto asset = canvas_native_image_asset_shared_clone(
+    auto asset = canvas_native_image_asset_reference(
             ptr->GetImageAsset());
 
     auto callback = args[1].As<v8::Function>();
@@ -461,7 +461,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
                 auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
 
-                canvas_native_image_asset_destroy(asset);
+                canvas_native_image_asset_release(asset);
 
                 write(jsi_callback->fd_[1],
                       &done,
@@ -482,7 +482,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
         auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
 
-        canvas_native_image_asset_destroy(asset);
+        canvas_native_image_asset_release(asset);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
 
@@ -562,7 +562,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
     auto data = (uint8_t *) bytes->GetBackingStore()->Data();
 
-    auto asset = canvas_native_image_asset_shared_clone(ptr->GetImageAsset());
+    auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 
     auto callback = args[1].As<v8::Function>();
 
@@ -608,7 +608,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
                 auto done = canvas_native_image_asset_load_from_raw(asset, data, size);
 
-                canvas_native_image_asset_destroy(asset);
+                canvas_native_image_asset_release(asset);
 
                 write(jsi_callback->fd_[1],
                       &done,
@@ -631,7 +631,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
         auto done = canvas_native_image_asset_load_from_raw(asset, data, size);
 
-        canvas_native_image_asset_destroy(asset);
+        canvas_native_image_asset_release(asset);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
 

@@ -10,11 +10,11 @@
 
 class TextDecoderImpl: ObjectWrapperImpl {
 public:
-  
-    TextDecoderImpl(TextDecoder *decoder);
+
+    explicit TextDecoderImpl(TextDecoder *decoder);
 
     ~TextDecoderImpl() {
-        canvas_native_text_decoder_destroy(this->GetTextDecoder());
+        canvas_native_text_decoder_release(this->GetTextDecoder());
         this->decoder_ = nullptr;
     }
 

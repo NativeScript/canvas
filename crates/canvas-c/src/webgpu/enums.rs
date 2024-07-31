@@ -5,7 +5,7 @@ use std::{
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
 use wgpu_types::{
-    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode,
+    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode,
     QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType,
 };
 
@@ -2274,8 +2274,13 @@ impl From<Option<wgpu_types::CompareFunction>> for CanvasOptionalCompareFunction
     }
 }
 
+#[allow(non_upper_case_globals)]
 pub const CanvasGPUTextureUsageCopySrc: u32 = 1 << 0;
+#[allow(non_upper_case_globals)]
 pub const CanvasGPUTextureUsageCopyDst: u32 = 1 << 1;
+#[allow(non_upper_case_globals)]
 pub const CanvasGPUTextureUsageTextureBinding: u32 = 1 << 2;
+#[allow(non_upper_case_globals)]
 pub const CanvasGPUTextureUsageStorageBinding: u32 = 1 << 3;
+#[allow(non_upper_case_globals)]
 pub const CanvasGPUTextureUsageRenderAttachment: u32 = 1 << 4;

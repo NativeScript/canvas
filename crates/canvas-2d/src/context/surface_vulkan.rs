@@ -58,7 +58,7 @@ impl AshGraphics {
             let layer_names: [&CString; 0] = []; // [CString::new("VK_LAYER_LUNARG_standard_validation").unwrap()];
             let extension_names_raw = []; // extension_names();
 
-            let app_info = vk::ApplicationInfo::builder()
+            let app_info = vk::ApplicationInfo::default()
                 .application_name(&app_name)
                 .application_version(0)
                 .engine_name(&app_name)
@@ -70,7 +70,7 @@ impl AshGraphics {
                 .map(|raw_name| raw_name.as_ptr())
                 .collect();
 
-            let create_info = vk::InstanceCreateInfo::builder()
+            let create_info = vk::InstanceCreateInfo::default()
                 .application_info(&app_info)
                 .enabled_layer_names(&layers_names_raw)
                 .enabled_extension_names(&extension_names_raw);
@@ -110,14 +110,13 @@ impl AshGraphics {
 
             let priorities = [1.0];
 
-            let queue_info = [vk::DeviceQueueCreateInfo::builder()
+            let queue_info = [vk::DeviceQueueCreateInfo::default()
                 .queue_family_index(queue_family_index as _)
-                .queue_priorities(&priorities)
-                .build()];
+                .queue_priorities(&priorities)];
 
             let device_extension_names_raw = [];
 
-            let device_create_info = vk::DeviceCreateInfo::builder()
+            let device_create_info = vk::DeviceCreateInfo::default()
                 .queue_create_infos(&queue_info)
                 .enabled_extension_names(&device_extension_names_raw)
                 .enabled_features(&features);

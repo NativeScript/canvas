@@ -1,5 +1,5 @@
 use crate::buffers::U32Buffer;
-use crate::canvas2d::context::CanvasRenderingContext2D;
+use crate::c2d::CanvasRenderingContext2D;
 use crate::image_asset::ImageAsset;
 use crate::webgl::gl::{WebGLActiveInfo, WebGLResult, WebGLState};
 use std::ffi::{CStr, CString};

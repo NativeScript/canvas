@@ -11,10 +11,10 @@
 
 class Path2D : ObjectWrapperImpl {
 public:
-    Path2D(Path *path);
+    explicit Path2D(Path *path);
 
     ~Path2D() {
-        canvas_native_path_destroy(this->GetPath());
+        canvas_native_path_release(this->GetPath());
         this->path_ = nullptr;
     }
 

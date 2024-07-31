@@ -1,11 +1,11 @@
 use std::os::raw::c_void;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use skia_safe::{gpu, Color, ColorType, PixelGeometry, SurfaceProps, SurfacePropsFlags};
+use skia_safe::{Color, ColorType, gpu, PixelGeometry, SurfaceProps, SurfacePropsFlags};
 
+use crate::context::{Context, Recorder, State, SurfaceData};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Recorder, State, SurfaceData};
 
 #[cfg(feature = "metal")]
 impl Context {
@@ -24,18 +24,18 @@ impl Context {
     ) -> Self {
         let backend = unsafe {
             gpu::mtl::BackendContext::new(
-                device.as_ptr() as gpu::mtl::Handle,
-                queue.as_ptr() as gpu::mtl::Handle,
+                device as gpu::mtl::Handle,
+                queue as gpu::mtl::Handle,
             )
         };
-        let mut context = gpu::direct_contexts::make_metal(backend, None);
+        let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
         let surface_props = SurfaceProps::new(SurfacePropsFlags::default(), PixelGeometry::Unknown);
         let surface_holder = unsafe {
             gpu::surfaces::wrap_mtk_view(
                 &mut context,
                 view as gpu::mtl::Handle,
                 gpu::SurfaceOrigin::TopLeft,
-                Some(samples),
+                samples.try_into().ok(),
                 ColorType::BGRA8888,
                 None,
                 Some(&surface_props),
@@ -54,7 +54,7 @@ impl Context {
                 ppi,
             },
             surface: surface_holder.unwrap(),
-            direct_context: context,
+            direct_context: Some(context),
             recorder: Arc::new(parking_lot::Mutex::new(recorder)),
             path: Path::default(),
             state,

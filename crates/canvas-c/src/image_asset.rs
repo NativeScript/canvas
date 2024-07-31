@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::Read;
 use std::os::raw::{c_char, c_int, c_uint};
-use std::sync::Arc;
 
 use crate::buffers::U8Buffer;
 
@@ -42,7 +41,7 @@ impl ImageAsset {
     //     self.0.size()
     // }
 
-    #[cfg(any(unix))]
+    #[cfg(unix)]
     pub fn load_from_fd(&self, fd: c_int) -> bool {
         self.0.load_from_fd(fd)
     }
@@ -105,19 +104,29 @@ pub extern "C" fn canvas_native_image_asset_get_addr(asset: *mut ImageAsset) -> 
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_create() -> *const ImageAsset {
-    Arc::into_raw(Arc::new(ImageAsset::default()))
+pub extern "C" fn canvas_native_image_asset_create() -> *mut ImageAsset {
+    Box::into_raw(Box::new(ImageAsset::default()))
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_reference(asset: *const ImageAsset) {
-    assert!(!asset.is_null());
-    unsafe { Arc::increment_strong_count(asset) }
+pub extern "C" fn canvas_native_image_asset_reference(asset: *mut ImageAsset) -> *mut ImageAsset {
+    if asset.is_null() {
+        return std::ptr::null_mut();
+    }
+    let asset = unsafe { &mut *asset };
+
+    Box::into_raw(Box::new(asset.clone()))
 }
 
-// fn canvas_native_image_asset_get_size(asset: &ImageAsset) -> usize {
-//     asset.size()
-// }
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_release(asset: *mut ImageAsset) {
+    if asset.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(asset) };
+}
+
 
 #[cfg(any(unix))]
 #[no_mangle]
@@ -134,13 +143,13 @@ pub extern "C" fn canvas_native_image_asset_load_from_fd(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_path(
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     path: *const c_char,
 ) -> bool {
     if asset.is_null() {
         return false;
     }
-    let asset = unsafe { &mut *asset };
+    let asset = unsafe { &*asset };
     let path = unsafe { CStr::from_ptr(path) };
     let path = path.to_string_lossy();
     asset.load_from_path(path.as_ref())
@@ -148,31 +157,31 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_raw(
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     array: *const u8,
     size: usize,
 ) -> bool {
     let array = unsafe { std::slice::from_raw_parts(array, size) };
-    let asset = unsafe { &mut *asset };
+    let asset = unsafe { &*asset };
     asset.load_from_bytes(array)
 }
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_url(
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     url: *const c_char,
 ) -> bool {
     if asset.is_null() || url.is_null() {
         return false;
     }
-    let asset = unsafe { &mut *asset };
+    let asset = unsafe { &*asset };
     let url = unsafe { CStr::from_ptr(url) };
     let url = url.to_string_lossy().to_string();
-    canvas_native_image_asset_load_from_url_internal(&mut asset.0, url.as_str())
+    canvas_native_image_asset_load_from_url_internal(&asset.0, url.as_str())
 }
 
 pub(crate) fn canvas_native_image_asset_load_from_url_internal(
-    asset: &mut canvas_core::image_asset::ImageAsset,
+    asset: &canvas_core::image_asset::ImageAsset,
     url: &str,
 ) -> bool {
     use std::io::prelude::*;
@@ -212,18 +221,13 @@ pub(crate) fn canvas_native_image_asset_load_from_url_internal(
     false
 }
 
-// #[no_mangle]
-//pub extern "C" fn canvas_native_image_asset_get_bytes(asset: *mut ImageAsset) -> Option<*const U8Buffer> {
-//     asset.get_bytes()
-// }
-
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_addr(asset: *mut ImageAsset) -> i64 {
+pub extern "C" fn canvas_native_image_asset_addr(asset: *const ImageAsset) -> i64 {
     asset as i64
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_width(asset: *mut ImageAsset) -> u32 {
+pub extern "C" fn canvas_native_image_asset_width(asset: *const ImageAsset) -> u32 {
     if asset.is_null() {
         return 0;
     }
@@ -232,7 +236,7 @@ pub extern "C" fn canvas_native_image_asset_width(asset: *mut ImageAsset) -> u32
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_height(asset: *mut ImageAsset) -> u32 {
+pub extern "C" fn canvas_native_image_asset_height(asset: *const ImageAsset) -> u32 {
     if asset.is_null() {
         return 0;
     }
@@ -241,7 +245,7 @@ pub extern "C" fn canvas_native_image_asset_height(asset: *mut ImageAsset) -> u3
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_get_error(asset: *mut ImageAsset) -> *const c_char {
+pub extern "C" fn canvas_native_image_asset_get_error(asset: *const ImageAsset) -> *const c_char {
     if asset.is_null() {
         return std::ptr::null_mut();
     }
@@ -250,7 +254,7 @@ pub extern "C" fn canvas_native_image_asset_get_error(asset: *mut ImageAsset) ->
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_has_error(asset: *mut ImageAsset) -> bool {
+pub extern "C" fn canvas_native_image_asset_has_error(asset: *const ImageAsset) -> bool {
     if asset.is_null() {
         return false;
     }
@@ -262,7 +266,7 @@ pub extern "C" fn canvas_native_image_asset_has_error(asset: *mut ImageAsset) ->
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_get_data(asset: *mut ImageAsset) -> *mut U8Buffer {
+pub extern "C" fn canvas_native_image_asset_get_data(asset: *const ImageAsset) -> *mut U8Buffer {
     if asset.is_null() {
         return std::ptr::null_mut();
     }

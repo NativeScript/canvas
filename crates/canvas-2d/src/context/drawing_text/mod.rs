@@ -3,12 +3,12 @@ use std::os::raw::c_float;
 
 use skia_safe::{Canvas, Paint};
 
+use crate::context::Context;
 use crate::context::drawing_text::global_fonts::FONT_LIBRARY;
 use crate::context::drawing_text::text_metrics::TextMetrics;
 use crate::context::text_styles::text_align::TextAlign;
 use crate::context::text_styles::text_baseline::TextBaseLine;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::Context;
 
 pub(crate) const MAX_TEXT_WIDTH: f32 = 100_000.0;
 
@@ -28,20 +28,21 @@ impl Context {
         );
 
         let text = text.replace('\n', " ");
+        self.with_canvas_dirty(|canvas| {
+            if let Some(shadow_paint) = shadow_paint {
+                canvas.save();
+                Context::apply_shadow_offset_matrix(
+                    canvas,
+                    self.state.shadow_offset.x,
+                    self.state.shadow_offset.y,
+                );
+                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &shadow_paint);
+                canvas.restore();
+            }
 
-        if let Some(shadow_paint) = shadow_paint {
-            self.surface.canvas().save();
-            Context::apply_shadow_offset_matrix(
-                self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
-            );
-            self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
-            self.surface.canvas().restore();
-        }
-
-        let paint = self.state.paint.fill_paint().clone();
-        self.draw_text(text.as_str(), x, y, width, None, &paint);
+            let paint = self.state.paint.fill_paint().clone();
+            self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &paint);
+        });
     }
 
     pub fn stroke_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
@@ -54,19 +55,21 @@ impl Context {
 
         let text = text.replace('\n', " ");
 
-        if let Some(shadow_paint) = shadow_paint {
-            self.surface.canvas().save();
-            Context::apply_shadow_offset_matrix(
-                self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
-            );
-            self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
-            self.surface.canvas().restore();
-        }
+        self.with_canvas_dirty(|canvas| {
+            if let Some(shadow_paint) = shadow_paint {
+                canvas.save();
+                Context::apply_shadow_offset_matrix(
+                    canvas,
+                    self.state.shadow_offset.x,
+                    self.state.shadow_offset.y,
+                );
+                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &shadow_paint);
+                canvas.restore();
+            }
 
-        let paint = self.state.paint.stroke_paint().clone();
-        self.draw_text(text.as_str(), x, y, width, None, &paint);
+            let paint = self.state.paint.stroke_paint().clone();
+            self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &paint);
+        });
     }
 
     fn apply_shadow_offset_matrix(canvas: &Canvas, shadow_offset_x: f32, shadow_offset_y: f32) {
@@ -82,6 +85,7 @@ impl Context {
 
     fn draw_text(
         &self,
+        canvas: Option<&Canvas>,
         text: &str,
         x: c_float,
         y: c_float,
@@ -95,7 +99,7 @@ impl Context {
         let slant = self.state.font_style.style;
         let font_style = skia_safe::FontStyle::new(weight, stretch.into(), slant.into());
         let text_direction = self.state.direction;
-        let mut families: Vec<_> = self.state.font_style.family.split(',').collect();
+        let families: Vec<_> = self.state.font_style.family.split(',').collect();
 
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());
@@ -251,39 +255,38 @@ impl Context {
             }
         }
 
-        match metrics {
-            None => {
+        match (metrics, canvas) {
+            (None, Some(canvas)) => {
                 let need_scale = line_width > max_width;
                 let ratio = if need_scale {
                     max_width / line_width
                 } else {
                     1.0
                 };
-                self.with_canvas(|canvas| {
-                    canvas.save();
-                    if need_scale {
-                        canvas.scale((ratio, 1.0));
-                    }
-                    let paint_y = y + baseline_offset;
 
-                    text_style.set_foreground_paint(paint);
+                canvas.save();
+                if need_scale {
+                    canvas.scale((ratio, 1.0));
+                }
+                let paint_y = y + baseline_offset;
 
-                    paragraph.paint(
-                        canvas,
-                        (
-                            if need_scale {
-                                (paint_x + (1. - ratio) * offset_x) / ratio
-                            } else {
-                                paint_x
-                            },
-                            paint_y,
-                        ),
-                    );
+                text_style.set_foreground_paint(paint);
 
-                    canvas.restore();
-                });
+                paragraph.paint(
+                    canvas,
+                    (
+                        if need_scale {
+                            (paint_x + (1. - ratio) * offset_x) / ratio
+                        } else {
+                            paint_x
+                        },
+                        paint_y,
+                    ),
+                );
+
+                canvas.restore();
             }
-            Some(text_metrics) => {
+            (Some(text_metrics), _) => {
                 let offset = -baseline_offset - alphabetic_baseline;
                 text_metrics.actual_bounding_box_ascent = -ascent + offset;
                 text_metrics.actual_bounding_box_descent = descent - offset;
@@ -296,6 +299,7 @@ impl Context {
                 text_metrics.font_bounding_box_descent = font_metrics.descent - offset;
                 text_metrics.alphabetic_baseline = -font_metrics.ascent + offset;
             }
+            _ => {}
         }
     }
 
@@ -308,7 +312,7 @@ impl Context {
 
         let paint = self.state.paint.fill_paint().clone();
 
-        self.draw_text(text, 0., 0., -1., Some(&mut text_metrics), &paint);
+        self.draw_text(None, text, 0., 0., -1., Some(&mut text_metrics), &paint);
 
         text_metrics
     }

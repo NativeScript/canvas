@@ -10,10 +10,10 @@
 
 class CanvasPattern : ObjectWrapperImpl {
 public:
-    CanvasPattern(PaintStyle *style);
+    explicit CanvasPattern(PaintStyle *style);
 
     ~CanvasPattern() {
-        canvas_native_paint_style_destroy(this->GetPaintStyle());
+        canvas_native_paint_style_release(this->GetPaintStyle());
         this->style_ = nullptr;
     }
 

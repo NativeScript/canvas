@@ -1,46 +1,69 @@
-use bytes::BytesMut;
-use parking_lot::Mutex;
 use std::os::raw::c_int;
 use std::sync::Arc;
 
+use bytes::BytesMut;
+
 #[derive(Debug, Clone)]
 struct ImageDataInner {
-    pub(crate) data: Arc<Mutex<BytesMut>>,
+    pub(crate) data: *mut BytesMut,
     pub(crate) width: c_int,
     pub(crate) height: c_int,
     pub(crate) scale: f32,
+    len: usize,
+    ref_count: Arc<()>,
 }
+
+unsafe impl Send for ImageDataInner {}
 
 #[derive(Debug, Clone)]
 pub struct ImageData(ImageDataInner);
 
+impl Drop for ImageDataInner {
+    fn drop(&mut self) {
+        let ref_count = Arc::strong_count(&self.ref_count);
+
+        if ref_count == 1 {
+            let _ = unsafe { Box::from_raw(self.data) };
+        }
+    }
+}
+
 impl ImageData {
     pub fn new(width: c_int, height: c_int) -> Self {
-        let data = BytesMut::zeroed((width * height * 4) as usize);
+        let len = (width * height * 4) as usize;
+        let data = BytesMut::zeroed(len);
         Self(ImageDataInner {
             width,
             height,
-            data: Arc::new(Mutex::new(data)),
+            data: Box::into_raw(Box::new(data)),
             scale: 1.,
+            ref_count: Arc::default(),
+            len,
         })
     }
 
     pub fn new_with_data(width: c_int, height: c_int, data: &[u8]) -> Self {
+        let len = data.len();
         let data = BytesMut::from(data);
         Self(ImageDataInner {
             width,
             height,
-            data: Arc::new(Mutex::new(data)),
+            data: Box::into_raw(Box::new(data)),
             scale: 1.,
+            ref_count: Arc::default(),
+            len,
         })
     }
 
     pub fn new_with_buffer(width: c_int, height: c_int, data: BytesMut) -> Self {
+        let len = data.len();
         Self(ImageDataInner {
             width,
             height,
-            data: Arc::new(Mutex::new(data)),
+            data: Box::into_raw(Box::new(data)),
             scale: 1.,
+            ref_count: Arc::default(),
+            len,
         })
     }
 
@@ -53,35 +76,34 @@ impl ImageData {
     }
 
     pub fn data(&self) -> &[u8] {
-        // ..
-        let (ptr, len) = {
-            let lock = self.0.data.lock();
-            (lock.as_ptr(), lock.len())
-        };
-        unsafe { std::slice::from_raw_parts(ptr, len) }
+        unsafe { (&*self.0.data).as_ref() }
     }
 
     pub fn data_mut(&mut self) -> &mut [u8] {
-        // ..
-        let (ptr, len) = {
-            let mut lock = self.0.data.lock();
-            (lock.as_mut_ptr(), lock.len())
-        };
-        unsafe { std::slice::from_raw_parts_mut(ptr, len) }
+        unsafe { (&mut *self.0.data).as_mut() }
     }
 
     pub fn data_len(&self) -> usize {
-        self.0.data.lock().len()
+        self.0.len
     }
 
-    pub unsafe fn data_raw(&mut self) -> *mut u8 {
-        self.0.data.lock().as_mut_ptr()
-    }
-
-    pub fn bytes_mut(&self) -> Arc<Mutex<BytesMut>> {
-        self.0.data.clone()
+    pub fn data_raw(&mut self) -> *mut u8 {
+        unsafe { (&mut *self.0.data).as_mut_ptr() }
     }
 }
+
+impl AsRef<[u8]> for ImageData {
+    fn as_ref(&self) -> &[u8] {
+        self.data()
+    }
+}
+
+impl AsMut<[u8]> for ImageData {
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.data_mut()
+    }
+}
+
 
 impl From<&ImageData> for ImageData {
     fn from(data: &ImageData) -> Self {

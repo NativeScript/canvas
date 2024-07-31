@@ -164,7 +164,7 @@ impl ImageAsset {
             .unwrap_or_default()
     }
 
-    #[cfg(any(unix))]
+    #[cfg(unix)]
     pub fn load_from_fd(&self, fd: c_int) -> bool {
         if fd == 0 {
             let mut lock = self.0.lock();

@@ -68,58 +68,6 @@ pub extern "system" fn nativeTexImage2D(
             }
         }
     }
-
-    /*
-    unsafe {
-        crate::utils::image::bitmap_handler(
-            &env,
-            bitmap,
-            Box::new(move |cb| {
-                if let Some((bytes, info)) = cb {
-                    context.gl_context.make_current();
-                    let width = info.width();
-                    let height = info.height();
-                    if flip_y == JNI_TRUE {
-                        let mut buffer = bytes.to_vec();
-                        canvas_webgl::utils::gl::flip_in_place(
-                            buffer.as_mut_ptr(),
-                            buffer.len(),
-                            info.stride() as usize,
-                            height as usize,
-                        );
-
-                        gl_bindings::TexImage2D(
-                            target as u32,
-                            level,
-                            internalformat,
-                            width as i32,
-                            height as i32,
-                            0,
-                            format as u32,
-                            type_ as u32,
-                            buffer.as_ptr() as *const c_void,
-                        );
-                    } else {
-                        gl_bindings::TexImage2D(
-                            target as u32,
-                            level,
-                            internalformat,
-                            width as i32,
-                            height as i32,
-                            0,
-                            format as u32,
-                            type_ as u32,
-                            bytes.as_ptr() as *const c_void,
-                        );
-                    }
-                }
-            }),
-        )
-    }
-
-    drop(env);
-
-    */
 }
 
 #[no_mangle]
@@ -185,56 +133,4 @@ pub extern "system" fn nativeTexSubImage2D(
             }
         }
     }
-
-    /*
-    unsafe {
-        crate::utils::image::bitmap_handler(
-            &env,
-            bitmap,
-            Box::new(move |cb| {
-                if let Some((bytes, info)) = cb {
-                    context.gl_context.make_current();
-                    let width = info.width();
-                    let height = info.height();
-                    if flip_y == JNI_TRUE {
-                        let mut buffer = bytes.to_vec();
-                        canvas_webgl::utils::gl::flip_in_place(
-                            buffer.as_mut_ptr(),
-                            buffer.len(),
-                            info.stride() as usize,
-                            height as usize,
-                        );
-
-                        gl_bindings::TexSubImage2D(
-                            target as u32,
-                            level,
-                            xoffset,
-                            yoffset,
-                            width as i32,
-                            height as i32,
-                            format as u32,
-                            type_ as u32,
-                            buffer.as_ptr() as *const c_void,
-                        );
-                    } else {
-                        gl_bindings::TexSubImage2D(
-                            target as u32,
-                            level,
-                            xoffset,
-                            yoffset,
-                            width as i32,
-                            height as i32,
-                            format as u32,
-                            type_ as u32,
-                            bytes.as_ptr() as *const c_void,
-                        );
-                    }
-                }
-            }),
-        )
-    }
-
-    drop(env);
-
-    */
 }

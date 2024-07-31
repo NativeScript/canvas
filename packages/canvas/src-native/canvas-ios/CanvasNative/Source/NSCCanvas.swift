@@ -550,7 +550,9 @@ public class NSCCanvas: UIView {
             viewSize.width = frame.size.width
             viewSize.height = frame.size.height
             isReady = true
-            readyListener?.contextReady()
+            DispatchQueue.main.async { [self] in
+                readyListener?.contextReady()
+            }
         }
         
         /*

@@ -15,15 +15,8 @@ use winit::window::WindowBuilder;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_2d::context::ContextWrapper;
-use canvas_c::webgpu::enums::{
-    CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding,
-    CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat,
-    CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment,
-    CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding,
-    CanvasOptionalCompareFunction, CanvasOptionalIndexFormat, CanvasPrimitiveTopology,
-    CanvasTextureAspect, CanvasTextureDimension,
-};
+use canvas_c::CanvasRenderingContext2D;
+use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
 use canvas_c::webgpu::error::CanvasGPUErrorType;
 use canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter;
 use canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer;
@@ -45,23 +38,20 @@ use canvas_core::gl::get_shader_info_log;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
 use canvas_webgl::webgl::{
-    canvas_native_webgl_attach_shader, canvas_native_webgl_bind_buffer,
-    canvas_native_webgl_bind_texture, canvas_native_webgl_buffer_data_f32,
-    canvas_native_webgl_clear, canvas_native_webgl_clear_color, canvas_native_webgl_compile_shader,
-    canvas_native_webgl_create_buffer, canvas_native_webgl_create_program,
-    canvas_native_webgl_create_shader, canvas_native_webgl_create_texture,
-    canvas_native_webgl_delete_program, canvas_native_webgl_delete_shader,
-    canvas_native_webgl_draw_arrays, canvas_native_webgl_enable_vertex_attrib_array,
-    canvas_native_webgl_get_attrib_location, canvas_native_webgl_get_error,
+    canvas_native_webgl_attach_shader
+    , canvas_native_webgl_buffer_data_f32
+    , canvas_native_webgl_compile_shader
+    , canvas_native_webgl_create_program,
+    canvas_native_webgl_create_shader,
+    canvas_native_webgl_delete_program, canvas_native_webgl_delete_shader
+
+    ,
     canvas_native_webgl_get_program_info_log, canvas_native_webgl_get_program_parameter,
-    canvas_native_webgl_get_shader_info_log, canvas_native_webgl_get_shader_parameter,
-    canvas_native_webgl_get_uniform_location, canvas_native_webgl_link_program,
-    canvas_native_webgl_shader_source, canvas_native_webgl_tex_parameteri,
-    canvas_native_webgl_uniform2f, canvas_native_webgl_uniform4fv, canvas_native_webgl_use_program,
-    canvas_native_webgl_vertex_attrib_pointer, canvas_native_webgl_viewport,
-};
-use canvas_webgl::webgl2::{
-    canvas_native_webgl2_bind_vertex_array, canvas_native_webgl2_create_vertex_array,
+    canvas_native_webgl_get_shader_info_log, canvas_native_webgl_get_shader_parameter
+    , canvas_native_webgl_link_program,
+    canvas_native_webgl_shader_source
+
+    ,
 };
 
 // Vertex and fragment shaders
@@ -131,7 +121,9 @@ fn set_rectangle(state: &mut WebGLState, x: f32, y: f32, width: f32, height: f32
     canvas_native_webgl_buffer_data_f32(0x8892, &vertices, 0x88E4, state);
 }
 
-fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextWrapper) {
+/*
+
+fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut CanvasRenderingContext2D) {
     // Compile shaders
 
     let fs = include_str!("./fs.txt");
@@ -207,7 +199,7 @@ fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextW
     // state.remove_if_current();
     gl_state.make_current();
 
-    let mut ctx = ctx_2d.get_context_mut();
+    let mut ctx = ctx_2d.get_context_mut();;
 
     ctx.set_font("30px Arial");
 
@@ -220,43 +212,21 @@ fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextW
     ctx.set_fill_style(fill_style);
     ctx.fill_text("Hello, WebGL!", 50., 50., None);
 
-    // ctx.flush_and_sync_cpu();
-    //
-    // gl_state.swap_buffers();
-
-    let (_, texture_id) = ctx.snapshot_with_texture_id();
-
-    // let mut buf = ctx.read_pixels();
-    //  drop(ctx);
-
-    // dbg!(to_data_url(ctx_2d, "image/jpg", 100));
-
-    // gl_state.remove_if_current();
-    state.make_current();
-
-    gl_state.init_transfer_surface(texture_id);
-
-    gl_state.draw_tex_image_2d(
-        0x0DE1, 0, w as u32, h as u32, 0x1908, 0x1908, false, texture_id,
+    canvas_native_webgl_tex_image2d_canvas2d(
+        0x0DE1,
+        0,
+        0x1908,
+        w,
+        h,
+        ctx_2d,
+        state.deref_mut(),
     );
-
-    // canvas_native_webgl_tex_image2d(
-    //     0x0DE1,
-    //     0,
-    //     0x1908,
-    //     w,
-    //     h,
-    //     0,
-    //     0x1908,
-    //     0x1401,
-    //     buf.as_slice(),
-    //     state,
-    // );
-
     canvas_native_webgl_draw_arrays(primitive_type, offset_draw, count, state);
 }
 
-fn leaves(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut ContextWrapper) {
+*/
+/*
+fn leaves(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut Context) {
     let drawingBufferWidth = state.get_drawing_buffer_width();
     let drawingBufferHeight = state.get_drawing_buffer_height();
 
@@ -542,6 +512,7 @@ void main() {
     canvas_native_webgl_draw_arrays(primitive_type, offset, count, state);
 }
 
+*/
 struct Data {
     adapter: Option<*const CanvasGPUAdapter>,
     device: Option<*const CanvasGPUDevice>,
@@ -628,7 +599,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
 
     let module = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(
         device,
-        std::ptr::null(),
+        ptr::null(),
         source.as_ptr(),
     );
 
@@ -645,12 +616,20 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
 
     let RENDER_ATTACHMENT = 1 << 4 as u32;
 
+    let size = CanvasExtent3d {
+        width: data.width,
+        height: data.height,
+        depth_or_array_layers: 1,
+    };
+
     let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration {
         alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied,
         usage: RENDER_ATTACHMENT,
         presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
-        view_formats: std::ptr::null(),
+        view_formats: ptr::null(),
         view_formats_size: 0,
+        size: &size,
+        format: CanvasOptionalGPUTextureFormat::None,
     };
 
     unsafe {
@@ -908,12 +887,19 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let RENDER_ATTACHMENT = 1 << 4 as u32;
 
+    let size = CanvasExtent3d {
+        width: data.width,
+        height: data.height,
+        depth_or_array_layers: 1,
+    };
     let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration {
         alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied,
         usage: RENDER_ATTACHMENT,
         presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
-        view_formats: std::ptr::null(),
+        view_formats: ptr::null(),
         view_formats_size: 0,
+        size: &size,
+        format: CanvasOptionalGPUTextureFormat::None,
     };
 
     canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(
@@ -1050,9 +1036,9 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let source_buffer = canvas_c::canvas_native_image_asset_get_data(image_bitmap);
 
-    let source_bytes = canvas_c::buffers::canvas_native_u8_buffer_get_bytes(source_buffer);
+    let source_bytes = canvas_c::canvas_native_u8_buffer_get_bytes(source_buffer);
 
-    let source_size = canvas_c::buffers::canvas_native_u8_buffer_get_length(source_buffer);
+    let source_size = canvas_c::canvas_native_u8_buffer_get_length(source_buffer);
 
     let source = CanvasImageCopyExternalImage {
         source: source_bytes,
@@ -1426,7 +1412,7 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let raw_window_handle = window.raw_window_handle();
+  //  let raw_window_handle = window.raw_window_handle();
 
     /*let mut attrs = ContextAttributes::default();
     attrs.set_antialias(false);
@@ -1464,7 +1450,7 @@ fn main() {
 
     // let mut done = false;
 
-    // let mut ctx_2d = ContextWrapper::new(Context::new_gl(
+    // let mut ctx_2d = Context::new(Context::new_gl(
     //     size.width as f32,
     //     size.height as f32,
     //     1.,
@@ -1554,7 +1540,7 @@ fn main() {
     let w = gl_state_other.drawing_buffer_width();
     let h = gl_state_other.drawing_buffer_height();
 
-    let mut ctx_2d = ContextWrapper::new(Context::new_gl(
+    let mut ctx_2d = Context::new(Context::new_gl(
         w as f32,
         h as f32,
         1.,
@@ -1612,12 +1598,11 @@ fn main() {
 
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
-                                println!("Resized {:?}", resized);
 
-                                //  webgpu_triangle(data, window);
-                                unsafe {
-                                    webgpu_blur(data, window);
-                                }
+                                 // webgpu_triangle(data, window);
+                                // unsafe {
+                                //     webgpu_blur(data, window);
+                                // }
                             }
                             _ => {}
                         }
@@ -2230,10 +2215,9 @@ impl RainbowOctopus {
     }
 }
 
-fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
-    let device = *ctx.get_context_mut().device();
-    let w = device.width;
-    let h = device.height;
+fn rainbow_octopus(ctx: &mut CanvasRenderingContext2D, ro: &mut RainbowOctopus) {
+    let w = ctx.get_context().width();
+    let h = ctx.get_context().height();
 
     let pi = std::f32::consts::PI;
 
@@ -2299,16 +2283,15 @@ fn rainbow_octopus(ctx: &ContextWrapper, ro: &mut RainbowOctopus) {
 }
 
 fn colorRain(
-    ctx: &mut ContextWrapper,
+    ctx: &mut CanvasRenderingContext2D,
     colors: &mut Vec<f32>,
     dots: &mut Vec<f32>,
     dots_vel: &mut Vec<f32>,
 ) {
     //initial
-    let device = *ctx.get_context().device();
     let mut ctx = ctx.get_context_mut();
-    let w = device.width;
-    let h = device.height;
+    let w = ctx.width();
+    let h = ctx.height();
 
     //parameters
     let total = w / 2.;
@@ -2364,7 +2347,7 @@ fn colorRain(
 }
 
 struct Particle {
-    context: ContextWrapper,
+    context: *mut CanvasRenderingContext2D,
     x: f32,
     y: f32,
     vx: f32,
@@ -2388,18 +2371,18 @@ fn math_random() -> f32 {
 }
 
 impl Particle {
-    pub fn new(context: &ContextWrapper, width: f32, height: f32) -> Self {
-        Self {
-            context: context.clone(),
-            x: math_random() * width,
-            y: math_random() * height,
-            vx: -1. + math_random() * 2.,
-            vy: -1. + math_random() * 2.,
-            radius: 4.,
-        }
-    }
+    // pub fn new(context: &Context, width: f32, height: f32) -> Self {
+    //     Self {
+    //         context: context.clone(),
+    //         x: math_random() * width,
+    //         y: math_random() * height,
+    //         vx: -1. + math_random() * 2.,
+    //         vy: -1. + math_random() * 2.,
+    //         radius: 4.,
+    //     }
+    // }
     pub fn draw(&self) {
-        let mut context = self.context.get_context_mut();
+        let mut context = ( unsafe { &mut*self.context }).get_context_mut();
         context.set_fill_style(PaintStyle::white());
         context.begin_path();
 
@@ -2417,7 +2400,7 @@ impl Particle {
     }
 }
 
-fn distance(ctx: &ContextWrapper, chunk: &mut [Particle]) {
+fn distance(ctx: &mut CanvasRenderingContext2D, chunk: &mut [Particle]) {
     let p1 = &chunk[0];
     let p2 = &chunk[1];
     let dx = p1.x - p2.x;
@@ -2456,7 +2439,7 @@ fn distance(ctx: &ContextWrapper, chunk: &mut [Particle]) {
     }
 }
 
-fn update(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Particle]) {
+fn update(ctx: &mut CanvasRenderingContext2D, width: f32, height: f32, particles: &mut [Particle]) {
     for chunk in particles.chunks_mut(2).into_iter() {
         let mut p = chunk.get_mut(0).unwrap();
         p.x += p.vx;
@@ -2478,7 +2461,7 @@ fn update(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Partic
     }
 }
 
-fn draw(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Particle]) {
+fn draw(ctx: &mut CanvasRenderingContext2D, width: f32, height: f32, particles: &mut [Particle]) {
     paint_canvas(ctx, width, height);
 
     for particle in particles.into_iter() {
@@ -2487,7 +2470,7 @@ fn draw(ctx: &ContextWrapper, width: f32, height: f32, particles: &mut [Particle
     update(ctx, width, height, particles);
 }
 
-fn paint_canvas(ctx: &ContextWrapper, width: f32, height: f32) {
+fn paint_canvas(ctx: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     let mut ctx = ctx.get_context_mut();
 
     ctx.set_fill_style(PaintStyle::black());
@@ -2497,7 +2480,8 @@ fn paint_canvas(ctx: &ContextWrapper, width: f32, height: f32) {
 
 const MIN_DIST: f32 = 50f32;
 
-fn swarm(ctx: &mut ContextWrapper, particles: &mut Vec<Particle>, particle_count: i32) {
+/*
+fn swarm(ctx: &mut Context, particles: &mut Vec<Particle>, particle_count: i32) {
     let mut init = || {
         let mut W = 0.;
         let mut H = 0.;
@@ -2529,7 +2513,8 @@ fn swarm(ctx: &mut ContextWrapper, particles: &mut Vec<Particle>, particle_count
     init();
 }
 
-fn clock(ctx: &mut ContextWrapper) {
+*/
+fn clock(ctx: &mut CanvasRenderingContext2D) {
     let pi = std::f32::consts::PI;
     let now = chrono::offset::Local::now();
     let mut ctx = ctx.get_context_mut();
@@ -2631,7 +2616,7 @@ fn clock(ctx: &mut ContextWrapper) {
 }
 
 fn solar(
-    ctx: &ContextWrapper,
+    ctx: &mut CanvasRenderingContext2D,
     earth: &ImageAsset,
     moon: &ImageAsset,
     sun: &ImageAsset,
@@ -2639,10 +2624,9 @@ fn solar(
     stroke: PaintStyle,
 ) {
     let mut ctx = ctx.get_context_mut();
-
-    let device = *ctx.device();
+    let (width, height) = ctx.dimensions();
     ctx.set_global_composite_operation(CompositeOperationType::DestinationOver);
-    ctx.clear_rect(0., 0., device.width, device.height); // clear canvas
+    ctx.clear_rect(0., 0., width, height); // clear canvas
     ctx.set_fill_style(fill);
     ctx.set_stroke_style(stroke);
     ctx.save();

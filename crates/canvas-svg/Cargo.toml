@@ -10,7 +10,7 @@ crate-type = ["staticlib"]
 
 
 [dependencies]
-skia-safe = { version = "0.75.0", features = ["svg", "textlayout"] }
+skia-safe = { workspace = true, features = ["svg", "textlayout"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21.1"

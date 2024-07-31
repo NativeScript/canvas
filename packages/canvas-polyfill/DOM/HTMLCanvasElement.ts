@@ -2,10 +2,10 @@ import { Canvas } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
 import setValue from 'set-value';
 import { DOMParser } from '@xmldom/xmldom';
+
 export class HTMLCanvasElement extends HTMLElement {
-	constructor() {
+	constructor(canvas?: Canvas) {
 		super('canvas');
-		let canvas = undefined;
 		if (arguments.length > 0) {
 			canvas = arguments[0];
 		}
@@ -65,4 +65,14 @@ export class HTMLCanvasElement extends HTMLElement {
 	setPointerCapture(id: string) {}
 
 	releasePointerCapture(id: string) {}
+
+	getRootNode() {
+		console.log('???');
+		// todo
+		return this;
+	}
 }
+
+(<any>Canvas.prototype).toHTMLCanvas = function () {
+	return new HTMLCanvasElement(this);
+};

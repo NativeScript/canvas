@@ -1,7 +1,9 @@
 use std::os::raw::c_void;
 use std::sync::Arc;
 
+#[cfg(feature = "vulkan")]
 use ash::vk;
+#[cfg(feature = "vulkan")]
 use ash::vk::Handle;
 use skia_safe::{gpu, Color};
 
@@ -32,7 +34,7 @@ impl Context {
                     Some(f) => f as _,
                     None => {
                         println!("resolve of {} failed", of.name().to_str().unwrap());
-                        str::ptr::null()
+                        std::ptr::null()
                     }
                 }
             };
@@ -69,7 +71,7 @@ impl Context {
         };
 
         let info = skia_safe::ImageInfo::new(
-            skia_safe::ISize::new(width, height),
+            skia_safe::ISize::new(width as i32, height as i32),
             skia_safe::ColorType::N32,
             alpha_type,
             Some(skia_safe::ColorSpace::new_srgb()),

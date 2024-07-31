@@ -2,9 +2,9 @@ use std::borrow::BorrowMut;
 
 use skia_safe::{ClipOp, Matrix, Point};
 
+use crate::context::Context;
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::paths::path::Path;
-use crate::context::Context;
 
 pub mod fill_rule;
 
@@ -22,7 +22,7 @@ impl Context {
             path.0.set_fill_type(rule.to_fill_type());
             let path = path.path();
 
-            self.with_canvas(|canvas| {
+            self.with_canvas_dirty(|canvas| {
                 if let Some(paint) = self.state.paint.fill_shadow_paint(
                     self.state.shadow_offset,
                     self.state.shadow_color,
@@ -34,11 +34,11 @@ impl Context {
                 canvas.draw_path(path, &paint);
             });
         } else {
-            let path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
-
+            let mut path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
+            path.0.set_fill_type(skia_safe::path::FillType::Winding);
             let path = path.path();
 
-            self.with_canvas(|canvas| {
+            self.with_canvas_dirty(|canvas| {
                 if is_fill {
                     if let Some(paint) = self.state.paint.fill_shadow_paint(
                         self.state.shadow_offset,
@@ -78,6 +78,7 @@ impl Context {
         let mut clip = path
             .map(|path| path.clone())
             .unwrap_or_else(|| self.path.clone());
+
         clip.set_fill_type(fill_rule.unwrap_or(FillRule::NonZero));
 
         self.state.clip = match &self.state.clip {
@@ -91,17 +92,15 @@ impl Context {
             None => Some(clip.clone()),
         };
 
-        self.with_canvas(|canvas| {
-            if let Some(clip) = &self.state.clip {
-                canvas.clip_path(clip.path(), Some(ClipOp::Intersect), Some(true));
-            }
+        self.with_recorder(|mut recorder| {
+            recorder.set_clip(&self.state.clip)
         });
     }
 
     pub fn point_in_path(&self, path: Option<&Path>, x: f32, y: f32, rule: FillRule) -> bool {
         let path = path.unwrap_or(&self.path);
 
-        let total_matrix = self.state.matrix.to_m33();
+        let total_matrix = self.state.matrix;
         let invertible = is_invertible(&total_matrix);
         if !invertible {
             return false;
@@ -120,7 +119,7 @@ impl Context {
 
     pub fn point_in_stroke(&self, path: Option<&Path>, x: f32, y: f32) -> bool {
         let path = path.unwrap_or(&self.path);
-        let matrix = self.state.matrix.0.to_m33();
+        let matrix = self.state.matrix;
         let invertible = is_invertible(&matrix);
         if !invertible {
             return false;

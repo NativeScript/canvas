@@ -3,15 +3,15 @@
 use std::os::raw::c_float;
 
 use csscolorparser::parse;
-use skia_safe::paint::{Cap, Style};
-pub use skia_safe::Color;
 use skia_safe::{BlendMode, Point};
+pub use skia_safe::Color;
+use skia_safe::paint::{Cap, Style};
 
+use crate::context::Context;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
-use crate::context::Context;
 use crate::utils::color::to_parsed_color;
 
 #[derive(Clone)]

@@ -1,14 +1,15 @@
 use std::ffi::CString;
+use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
 use glutin::api::egl::{
-    config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
+    context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
 
 use glutin::config::{
-    Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder, GetGlConfig,
+    Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder
 };
 use glutin::context::{ContextApi, Version};
 use glutin::display::AsRawDisplay;
@@ -45,6 +46,14 @@ unsafe impl Send for GLContextInner {}
 
 #[derive(Default)]
 pub struct GLContext(Arc<RwLock<GLContextInner>>);
+
+impl Debug for GLContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // todo
+        f.debug_struct("GLContext")
+            .finish()
+    }
+}
 
 impl GLContext {
     // pointer has to
@@ -376,7 +385,7 @@ impl GLContext {
         window: RawWindowHandle,
         shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -707,7 +716,7 @@ impl GLContext {
 
                 let is_2d = context_attrs.get_is_canvas();
                 let multi_sample = context_attrs.get_antialias();
-                let mut cfg: ConfigTemplateBuilder = context_attrs.into();
+                let cfg: ConfigTemplateBuilder = context_attrs.into();
 
                 let cfg = cfg
                     .with_surface_type(ConfigSurfaceTypes::PBUFFER)
@@ -717,7 +726,7 @@ impl GLContext {
                     )
                     .build();
 
-                let mut config = display
+                let config = display
                     .find_configs(cfg)
                     .map(|c| {
                         c.reduce(|accum, cconfig| {
@@ -773,7 +782,7 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -953,7 +962,7 @@ impl GLContext {
     }
 
     pub fn has_gl2support() -> bool {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 display
                     .find_configs(
@@ -1051,7 +1060,7 @@ impl GLContext {
     }
 
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
@@ -1063,7 +1072,7 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1076,7 +1085,7 @@ impl GLContext {
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1089,7 +1098,7 @@ impl GLContext {
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1111,12 +1120,12 @@ impl GLContext {
     }
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
+        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
     }
 
     pub fn get_transfer_surface_info_mut(
         &self,
     ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.inner.write(), |v| &mut v.transfer_surface_info)
+        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
     }
 }

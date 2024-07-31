@@ -2,7 +2,6 @@ use crate::buffers::U8Buffer;
 use std::ffi::{CStr, CString};
 use std::io::Read;
 use std::os::raw::c_char;
-use std::sync::Arc;
 
 #[derive(Clone, Default)]
 pub struct FileHelper {
@@ -10,24 +9,17 @@ pub struct FileHelper {
     error: Option<String>,
 }
 
+
 #[no_mangle]
-pub extern "C" fn canvas_native_helper_reference(value: *const FileHelper) {
+pub extern "C" fn canvas_native_helper_release(value: *mut FileHelper) {
     if value.is_null() {
         return;
     }
-    let _ = unsafe { Arc::increment_strong_count(value) };
+    let _ = unsafe { Box::from_raw(value) };
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_helper_release(value: *const FileHelper) {
-    if value.is_null() {
-        return;
-    }
-    let _ = unsafe { Arc::decrement_strong_count(value) };
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *const FileHelper {
+pub extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *mut FileHelper {
     assert!(!path.is_null());
     let path = unsafe { CStr::from_ptr(path) };
     let path = path.to_string_lossy();
@@ -42,7 +34,7 @@ pub extern "C" fn canvas_native_helper_read_file(path: *const c_char) -> *const 
         }
         Err(error) => ret.error = Some(error.to_string()),
     }
-    Arc::into_raw(Arc::new(ret))
+    Box::into_raw(Box::new(ret))
 }
 
 #[no_mangle]
@@ -57,14 +49,14 @@ pub unsafe extern "C" fn canvas_native_helper_read_file_has_error(file: *const F
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_helper_read_file_get_data(
     file: *mut FileHelper,
-) -> *const U8Buffer {
+) -> *mut U8Buffer {
     assert!(!file.is_null());
     let file = &*file;
     let data = match &file.data {
         None => U8Buffer::default(),
         Some(data) => data.clone(),
     };
-    Arc::into_raw(Arc::new(data))
+    Box::into_raw(Box::new(data))
 }
 
 #[no_mangle]

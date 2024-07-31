@@ -376,8 +376,8 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = CanvasRenderingContext2D::new(
-        canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new_gl(
+    let mut ctx_2d = CanvasRenderingContext2D::new_gl(
+        canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
             density,
@@ -387,7 +387,7 @@ pub extern "C" fn canvas_native_create_2d_context(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
-        )),
+        ),
         context.gl_context.clone(),
         alpha,
     );
@@ -487,8 +487,9 @@ pub extern "C" fn canvas_native_context_2d_test_to_data_url(context: i64) -> *mu
 
     context.make_current();
     let mut ctx = context.get_context_mut();
-    ctx.flush_and_sync_cpu();
-    let ret = canvas_2d::to_data_url_context(ctx.deref_mut(), "image/png", 92);
+    // ctx.flush_and_render_to_surface();
+
+    let ret = ctx.as_data_url("image/png", 92);
     CString::new(ret).unwrap().into_raw()
 }
 
@@ -539,14 +540,14 @@ pub extern "C" fn canvas_native_context_create_pattern_raw(
 
     if let Some(image) = from_image_slice(bytes, width, height) {
         let repetition = unsafe { CStr::from_ptr(repetition).to_string_lossy() };
-        return Box::into_raw(Box::new(PaintStyle::new(Some(
+        return Box::into_raw(Box::new(PaintStyle::new(
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                 context.get_context().create_pattern(
                     image,
                     Repetition::try_from(repetition.as_ref()).unwrap_or(Repetition::NoRepeat),
                 ),
             ),
-        )))) as i64;
+        ))) as i64;
     }
 
     0
@@ -566,7 +567,6 @@ fn draw_image(
     d_width: f32,
     d_height: f32,
 ) -> bool {
-    unsafe {
         if context == 0 {
             return false;
         }
@@ -577,14 +577,13 @@ fn draw_image(
 
         if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
             context.make_current();
-            let mut context = context.get_context_mut();
+            let context = context.get_context_mut();
             context.draw_image_src_xywh_dst_xywh(
                 &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
             );
             return true;
         }
         false
-    }
 }
 
 #[no_mangle]
@@ -721,7 +720,10 @@ pub extern "C" fn canvas_native_context_custom_with_buffer_flush(
             skia_safe::Rect::from_xywh(0f32, 0f32, width, height),
             &paint,
         );
-        context.draw_on_surface(&mut surface);
+
+        if let Some(image) = context.get_image() {
+            surface.canvas().draw_image(image, (0, 0), None);
+        }
     }
 }
 
@@ -736,7 +738,7 @@ pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
     direction: c_int,
 ) -> c_longlong {
     let mut ctx_2d = CanvasRenderingContext2D::new(
-        canvas_2d::context::ContextWrapper::new(canvas_2d::context::Context::new(
+        canvas_2d::context::Context::new(
             width as f32,
             height as f32,
             density,
@@ -744,8 +746,7 @@ pub extern "C" fn canvas_native_context_init_context_with_custom_surface(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
-        )),
-        GLContext::default(),
+        ),
         alpha,
     );
 

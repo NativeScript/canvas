@@ -557,12 +557,12 @@ class NSCCanvas : FrameLayout {
 
 
 	@JvmOverloads
-	fun snapshot(flip: Boolean = false): Bitmap? {
+	fun snapshot(flip: Boolean = false): Bitmap {
 		var bitmap: Bitmap? = null
 		var needsToFlip = false
 		if (is2D) {
 			bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-			nativeCustomWithBitmapFlush(native2DContext, bitmap!!)
+			nativeCustomWithBitmapFlush(native2DContext, bitmap)
 			return bitmap
 		} else {
 			if (surfaceType == SurfaceType.Surface) {
@@ -577,7 +577,7 @@ class NSCCanvas : FrameLayout {
 			if (bitmap == null) {
 				needsToFlip = true
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-				nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap!!)
+				nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap)
 			}
 		}
 
@@ -651,9 +651,13 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib() {
 			if (!isLibraryLoaded) {
+			try {
 				System.loadLibrary("canvasnative")
 				System.loadLibrary("canvasnativev8")
 				isLibraryLoaded = true
+			}catch (e: Exception){
+				e.printStackTrace()
+			}
 			}
 		}
 

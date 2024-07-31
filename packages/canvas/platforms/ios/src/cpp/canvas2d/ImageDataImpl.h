@@ -10,10 +10,10 @@
 
 class ImageDataImpl: ObjectWrapperImpl {
 public:
-    ImageDataImpl(ImageData* imageData);
-    
+    explicit ImageDataImpl(ImageData* imageData);
+
     ~ImageDataImpl(){
-        canvas_native_image_data_destroy(this->GetImageData());
+        canvas_native_image_data_release(this->GetImageData());
         this->imageData_ = nullptr;
     }
 

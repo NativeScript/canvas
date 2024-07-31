@@ -184,12 +184,17 @@ class MainActivity : AppCompatActivity() {
 				)
 
 
+//
+				//	NSCCanvas.context2DImageTest(context)
+				NSCCanvas.context2DPathTest(ctx)
+
+
 //				val scale = resources.displayMetrics.density
 //				val maxW = resources.displayMetrics.widthPixels / scale
 //				val maxH = resources.displayMetrics.heightPixels / scale
-				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F,0F, 300f, 300f)
-
-				NSCCanvas.context2DRender(ctx)
+		//		NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F,0F, 300f, 300f)
+//
+		//		NSCCanvas.context2DRender(ctx)
 
 			}
 

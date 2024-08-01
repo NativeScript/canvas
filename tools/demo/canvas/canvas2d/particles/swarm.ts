@@ -15,7 +15,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 			H = height || canvas.getMeasuredHeight();
 
 		// Some variables for later use
-		var particleCount = 400,
+		var particleCount = 100,
 			particles = [],
 			minDist = 50,
 			dist;
@@ -27,6 +27,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 
 			// This will create a rectangle of white color from the
 			// top left (0,0) to the bottom right corner (W,H)
+			//ctx.clearRect(0,0, W,H);
 			ctx.fillRect(0, 0, W, H);
 		}
 

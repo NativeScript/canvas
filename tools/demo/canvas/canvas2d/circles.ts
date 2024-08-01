@@ -29,11 +29,11 @@ class Circle {
 	}
 }
 
-let circles = [];
 let circlesNum = 1200;
 let minRadius = 100;
 let maxRadius = 1200;
 let speed = 0.01;
+let circles = new Array(circlesNum);
 let canvas;
 let ctx;
 
@@ -67,21 +67,21 @@ export function circle_demo(view) {
 		}
 	});
 
+	const width = canvas.width;
+	const height = canvas.height;
 	canvas = canvas as Canvas;
 	ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-	minRadius = Math.min(canvas.width, canvas.height) * 0.05;
-	maxRadius = Math.max(canvas.width, canvas.height) * 0.1;
+	minRadius = Math.min(width, height) * 0.05;
+	maxRadius = Math.max(width, height) * 0.1;
 
 	for (let i = 0; i < circlesNum; i++) {
-		circles.push(
-			new Circle({
-				width: canvas.width,
-				height: canvas.height,
-				minRadius: minRadius,
-				maxRadius: maxRadius,
-			})
-		);
+		circles[i] = new Circle({
+			width,
+			height,
+			minRadius: minRadius,
+			maxRadius: maxRadius,
+		});
 	}
 
 	drawAnimation();
@@ -97,7 +97,7 @@ function drawAnimation() {
 	started = true;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	circles.forEach((circle) => circle.draw(ctx, speed));
+	for (const circle of circles) [circle.draw(ctx, speed)];
 
 	raf = requestAnimationFrame(() => drawAnimation());
 }

@@ -2,11 +2,11 @@
 
 use std::sync::Arc;
 
-use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, PictureRecorder, Rect};
+use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, PictureRecorder, Rect, surfaces};
 
+use crate::context::{Context, Recorder, State, SurfaceData};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Recorder, State, SurfaceData};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -37,7 +37,7 @@ impl Context {
         };
 
         let info = ImageInfo::new(
-            ISize::new(width as i32, height as i32),
+            ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
             color_type,
             alpha_type,
             None,
@@ -92,7 +92,7 @@ impl Context {
             ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
         } else {
             ImageInfo::new(
-                ISize::new(width as i32, height as i32),
+                ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
                 color_type,
                 alpha_type,
                 None,
@@ -115,34 +115,40 @@ impl Context {
         }
     }
 
-    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, buffer: &mut [u8]) {
+    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, density: f32, buffer: &mut [u8]) {
         if context.surface_data.bounds.is_empty() {
             return;
         }
         let info = ImageInfo::new(
-            ISize::new(width, height),
+            ISize::new((width as f32 * density).floor() as i32, (height as f32 * density).floor() as i32),
             ColorType::RGBA8888,
             AlphaType::Unknown,
             None,
         );
         let mut surface = surfaces::wrap_pixels(&info, buffer, None, None).unwrap();
-        let mut paint = skia_safe::Paint::default();
         {
             let canvas = surface.canvas();
+            let mut paint = skia_safe::Paint::default();
             paint.set_anti_alias(true);
             paint.set_style(skia_safe::PaintStyle::Fill);
             paint.set_blend_mode(skia_safe::BlendMode::Clear);
             canvas.draw_rect(
-                Rect::from_xywh(0f32, 0f32, width as f32, height as f32),
+                Rect::from_xywh(
+                    0f32,
+                    0f32,
+                    info.width() as f32,
+                    info.height() as f32,
+                ),
                 &paint,
             );
         }
 
         let mut lock = context.recorder.lock();
-        if let Some(image) = lock.get_image() {
+        if let Some(image) = lock.get_picture() {
+            let scaled = skia_safe::Matrix::scale((density, density));
             surface
                 .canvas()
-                .draw_image(image, skia_safe::Point::default(), Some(&paint));
+                .draw_picture(image, Some(&scaled), None);
         }
     }
 }

@@ -775,10 +775,10 @@ fn main() -> @location(0) vec4f {
 		// ctx.fillRect(0,0,400,400)
 		//ellipse(this.canvas);
 		//this.drawPatternWithCanvas(this.canvas);
-		this.clock(this.canvas);
+		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
-		//this.coloredParticles(this.canvas);
+		this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
 		//swarm(this.canvas);
 		//this.drawHouse(this.canvas);

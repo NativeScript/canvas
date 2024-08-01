@@ -54,7 +54,6 @@ pub extern "system" fn nativeInitWebGPU(
 }
 
 
-
 /*
 #[no_mangle]
 pub extern "system" fn nativeCreate2dContextVulkan(
@@ -328,7 +327,10 @@ pub extern "system" fn nativeUpdate2DSurface(
 
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
-            context.resize(window.width() as f32, window.height() as f32)
+            let width = window.width() as f32;
+            let height = window.height() as f32;
+            let density = context.get_context().density();
+            context.resize((width / density).floor(), (height / density).floor())
         }
         drop(env);
     }
@@ -704,12 +706,19 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
         Box::new(move |cb| {
             if let Some((image_data, image_info)) = cb {
                 let mut ct = ColorType::RGBA8888;
+                #[allow(deprecated)]
+                use ndk::bitmap::BitmapFormat::RGBA_4444;
 
-                if image_info.format() == ndk::bitmap::BitmapFormat::RGB_565 {
-                    ct = ColorType::RGB565;
-                } else if image_info.format() == ndk::bitmap::BitmapFormat::RGBA_4444 {
-                    ct = ColorType::ARGB4444;
+                match image_info.format() {
+                    ndk::bitmap::BitmapFormat::RGB_565 => {
+                        ct = ColorType::RGB565;
+                    }
+                    RGBA_4444 => {
+                        ct = ColorType::ARGB4444;
+                    }
+                    _ => {}
                 }
+
                 let info = ImageInfo::new(
                     ISize::new(image_info.width() as i32, image_info.height() as i32),
                     ct,
@@ -718,7 +727,6 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                 );
                 let context = context as *mut canvas_c::CanvasRenderingContext2D;
                 let context = unsafe { &mut *context };
-                let context = context.get_context_mut();
 
                 let mut surface =
                     skia_safe::surfaces::wrap_pixels(&info, image_data, None, None).unwrap();
@@ -736,8 +744,11 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                     ),
                     &paint,
                 );
-                if let Some(image) = context.get_image() {
-                    surface.canvas().draw_image(image, (0, 0), None);
+                let context = context.get_context_mut();
+                let density = context.density();
+                if let Some(image) = context.get_picture() {
+                    let scaled = skia_safe::Matrix::scale((density, density));
+                    surface.canvas().draw_picture(image, Some(&scaled), None);
                 }
             }
         }),

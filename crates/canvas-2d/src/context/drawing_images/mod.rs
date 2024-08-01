@@ -143,7 +143,7 @@ impl Context {
 
         let paint = self.state.paint.image_paint();
 
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(paint,|canvas, paint| {
             canvas.draw_image_with_sampling_options(
                 image,
                 skia_safe::Point::new(x, y),
@@ -175,7 +175,7 @@ impl Context {
 
         let paint = self.state.paint.image_paint();
 
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(paint, |canvas, paint| {
             canvas.draw_image_rect_with_sampling_options(
                 image,
                 Some((&src, SrcRectConstraint::Strict)),
@@ -204,7 +204,7 @@ impl Context {
             .image_smoothing_quality_set(self.state.image_filter_quality());
         let paint = self.state.paint.image_paint();
 
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(paint,|canvas, paint| {
             canvas.draw_image_rect_with_sampling_options(
                 image,
                 Some((&src, SrcRectConstraint::Strict)),

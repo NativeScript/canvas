@@ -49,10 +49,8 @@ impl Context {
 
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         let affine = [a, b, c, d, e, f];
-        let matrix = Matrix::from_affine(&affine);
-
         self.with_matrix(|mat| {
-            mat.pre_concat(&matrix);
+            mat.set_affine(&affine);
             mat
         });
     }

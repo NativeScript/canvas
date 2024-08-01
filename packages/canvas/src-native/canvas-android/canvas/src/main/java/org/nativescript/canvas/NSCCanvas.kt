@@ -1,5 +1,6 @@
 package org.nativescript.canvas
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -25,12 +26,24 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
 
 
 /**
  * Created by triniwiz on 3/29/20
  */
 class NSCCanvas : FrameLayout {
+	var surfaceWidth: Int = 0
+		set(value) {
+			field = value
+			layoutSurface(value, surfaceHeight, this)
+		}
+
+	var surfaceHeight: Int = 0
+		set(value) {
+			field = value
+			layoutSurface(surfaceWidth, value, this)
+		}
 
 	var nativeGL: Long = 0
 		private set
@@ -91,13 +104,15 @@ class NSCCanvas : FrameLayout {
 		surfaceView.canvas = this
 		surfaceType = type
 		setBackgroundColor(Color.TRANSPARENT)
+		val internalWidth = (resources.displayMetrics.density * 300).toInt()
+		val internalHeight = (resources.displayMetrics.density * 150).toInt()
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
 					textureView,
 					LayoutParams(
-						ViewGroup.LayoutParams.MATCH_PARENT,
-						ViewGroup.LayoutParams.MATCH_PARENT
+						internalWidth,
+						internalHeight
 					)
 				)
 			}
@@ -106,8 +121,8 @@ class NSCCanvas : FrameLayout {
 				addView(
 					surfaceView,
 					LayoutParams(
-						ViewGroup.LayoutParams.MATCH_PARENT,
-						ViewGroup.LayoutParams.MATCH_PARENT
+						internalWidth,
+						internalHeight
 					)
 				)
 			}
@@ -351,11 +366,6 @@ class NSCCanvas : FrameLayout {
 			textureView.surface
 		}
 
-		if (version > 0 && drawingBufferWidth == 0 || drawingBufferHeight == 0) {
-			// force
-			layoutSurface(drawingBufferWidth, drawingBufferHeight, this)
-		}
-
 		surface?.let {
 			nativeGL = nativeInitGL(
 				it,
@@ -375,10 +385,20 @@ class NSCCanvas : FrameLayout {
 			nativeContext = nativeGetGLPointer(nativeGL)
 
 		} ?: run {
-			if (drawingBufferWidth == 0 || drawingBufferHeight == 0) {
+			if (surfaceWidth == 0 || surfaceHeight == 0) {
+				var width = surfaceWidth
+				var height = surfaceHeight
+
+				if (width == 0) {
+					width = 1
+				}
+
+				if (height == 0) {
+					height = 1
+				}
 				nativeGL = nativeInitGLNoSurface(
-					1,
-					1,
+					width,
+					height,
 					alpha,
 					antialias,
 					depth,
@@ -418,7 +438,7 @@ class NSCCanvas : FrameLayout {
 		this.isAlpha = alpha
 	}
 
-	internal var is2D = false
+	private var is2D = false
 
 	fun create2DContext(
 		alpha: Boolean,
@@ -462,10 +482,12 @@ class NSCCanvas : FrameLayout {
 
 		GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 
+		val densityInverse = 1.0f / density
+
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
-			this.drawingBufferWidth,
-			this.drawingBufferHeight,
+			floor(drawingBufferWidth * densityInverse).toInt(),
+			floor(drawingBufferHeight * densityInverse).toInt(),
 			alpha,
 			density,
 			samples,
@@ -491,7 +513,6 @@ class NSCCanvas : FrameLayout {
 		isAttachedToWindow = true
 	}
 
-
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
 		listener?.surfaceResize(w, h)
@@ -512,14 +533,17 @@ class NSCCanvas : FrameLayout {
 					nativeUpdate2DSurface(it, native2DContext)
 				}
 			} ?: run {
-				nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferHeight, nativeGL)
+				nativeUpdateGLNoSurface(drawingBufferWidth, drawingBufferHeight, nativeGL)
 				if (is2D) {
 
 					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 
+					val density = context.resources.displayMetrics.density
+					val densityInverse = 1.0f / density
+
 					nativeUpdate2DSurfaceNoSurface(
-						this.drawingBufferWidth,
-						this.drawingBufferHeight,
+						floor(drawingBufferWidth * densityInverse).toInt(),
+						floor(drawingBufferHeight * densityInverse).toInt(),
 						native2DContext
 					)
 				}
@@ -538,7 +562,6 @@ class NSCCanvas : FrameLayout {
 	}
 
 	var listener: Listener? = null
-
 
 	private val defaultMatrix = Matrix()
 	private val invertMatrix = Matrix()
@@ -651,13 +674,13 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib() {
 			if (!isLibraryLoaded) {
-			try {
-				System.loadLibrary("canvasnative")
-				System.loadLibrary("canvasnativev8")
-				isLibraryLoaded = true
-			}catch (e: Exception){
-				e.printStackTrace()
-			}
+				try {
+					System.loadLibrary("canvasnative")
+					System.loadLibrary("canvasnativev8")
+					isLibraryLoaded = true
+				} catch (e: Exception) {
+					e.printStackTrace()
+				}
 			}
 		}
 
@@ -716,11 +739,11 @@ class NSCCanvas : FrameLayout {
 			rootParams.height = height
 
 
-			if (rootParams.width == 0) {
+			if (rootParams.width <= 0) {
 				rootParams.width = 1
 			}
 
-			if (rootParams.height == 0) {
+			if (rootParams.height <= 0) {
 				rootParams.height = 1
 			}
 

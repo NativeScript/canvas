@@ -1,15 +1,7 @@
-use std::os::raw::c_void;
-use std::sync::Arc;
-
 #[cfg(feature = "vulkan")]
 use ash::vk;
 #[cfg(feature = "vulkan")]
 use ash::vk::Handle;
-use skia_safe::{gpu, Color};
-
-use crate::context::paths::path::Path;
-use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Recorder, State, SurfaceData};
 
 #[cfg(feature = "vulkan")]
 impl Context {
@@ -54,7 +46,7 @@ impl Context {
 
             gpu::direct_contexts::make_vulkan(&backend_context, None)
         }
-        .unwrap();
+            .unwrap();
 
         let surface_fn =
             ash::khr::android_surface::Instance::new(&ash_graphics.entry, &ash_graphics.instance);
@@ -71,7 +63,7 @@ impl Context {
         };
 
         let info = skia_safe::ImageInfo::new(
-            skia_safe::ISize::new(width as i32, height as i32),
+            skia_safe::ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
             skia_safe::ColorType::N32,
             alpha_type,
             Some(skia_safe::ColorSpace::new_srgb()),
@@ -87,7 +79,7 @@ impl Context {
             false,
             None,
         )
-        .unwrap();
+            .unwrap();
 
         let mut state = State::default();
         state.direction = TextDirection::from(direction as u32);
@@ -127,7 +119,7 @@ impl Context {
             };
 
             let info = skia_safe::ImageInfo::new(
-                skia_safe::ISize::new(width as i32, height as i32),
+                skia_safe::ISize::new((width * context.surface_data.scale).floor() as i32, (height * context.surface_data.scale).floor() as i32),
                 skia_safe::ColorType::N32,
                 alpha_type,
                 Some(skia_safe::ColorSpace::new_srgb()),
@@ -143,7 +135,7 @@ impl Context {
                 false,
                 None,
             )
-            .unwrap();
+                .unwrap();
 
             let bounds = skia_safe::Rect::from_wh(width, height);
             context.surface_data.bounds = bounds;

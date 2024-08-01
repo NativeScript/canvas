@@ -151,7 +151,8 @@ impl Context {
             .map(|value| skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3]))
             .collect();
 
-        self.with_canvas_dirty(|canvas| {
+        let paint = skia_safe::Paint::default();
+        self.render_to_canvas(&paint, |canvas, _paint| {
             canvas.draw_atlas(
                 &image,
                 xform.as_slice(),
@@ -166,41 +167,41 @@ impl Context {
     }
 
     pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(self.state.paint.fill_paint(), |canvas, paint| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
-                self.state.paint.fill_paint(),
+                paint,
             );
         });
     }
 
     pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
-                self.state.paint.stroke_paint(),
+                paint,
             );
         });
     }
 
     pub fn draw_paint(&mut self, color: &str) {
-        self.with_canvas_dirty(|canvas| {
-            if let Some(color) = color::parse_color(color) {
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_color(color);
+        if let Some(color) = color::parse_color(color) {
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_color(color);
+            self.render_to_canvas(&paint, |canvas, paint| {
                 canvas.draw_paint(&paint);
-            }
-        });
+            });
+        }
     }
 
     pub fn draw_point(&mut self, x: c_float, y: c_float) {
-        self.with_canvas_dirty(|canvas| {
-            canvas.draw_point(skia_safe::Point::new(x, y), self.state.paint.stroke_paint());
+        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
+            canvas.draw_point(skia_safe::Point::new(x, y), paint);
         });
     }
 
     pub fn draw_points(&mut self, mode: PointMode, points: &[c_float]) {
-        self.with_canvas_dirty(|canvas| {
+        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
             let count = points.len();
             if count % 2 == 0 {
                 let points: Vec<_> = points
@@ -212,7 +213,7 @@ impl Context {
                 canvas.draw_points(
                     mode.into(),
                     points.as_slice(),
-                    self.state.paint.stroke_paint(),
+                    paint,
                 );
             }
         });
@@ -259,7 +260,9 @@ impl Context {
         colors: &[Color],
         blend_mode: CompositeOperationType,
     ) {
-        self.with_canvas_dirty(|canvas| {
+        let mut paint = Paint::default();
+        paint.set_anti_alias(true);
+        self.render_to_canvas(&paint, |canvas, paint| {
             let positions: Vec<_> = vertices
                 .chunks(2)
                 .into_iter()
@@ -284,9 +287,8 @@ impl Context {
                         Some(indices)
                     },
                 );
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true);
-                canvas.draw_vertices(&v, blend_mode.get_blend_mode(), &paint);
+
+                canvas.draw_vertices(&v, blend_mode.get_blend_mode(), paint);
             }
         });
     }

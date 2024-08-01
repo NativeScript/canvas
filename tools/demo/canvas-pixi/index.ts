@@ -966,8 +966,7 @@ void main()
 	}
 
 	dynamicGraphics(canvas) {
-		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, antialias: false }) as any;
+		const app = new PIXI.Application({ view: canvas.toHTMLCanvas(), antialias: false }) as any;
 
 		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
 

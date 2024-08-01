@@ -83,6 +83,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	// Draws the background for the canvas, because space
 	drawBg = function (ctx, color) {
 		ctx.fillStyle = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+		// ctx.clearRect(0, 0, width, height);
 		ctx.fillRect(0, 0, width, height);
 	};
 

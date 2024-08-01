@@ -88,7 +88,12 @@ fn setup_aarch64_android_workaround() {
             let mut data = String::new();
             let _ = android_version_txt.read_to_string(&mut data);
             let line = data.lines().take(1).next();
-            line.unwrap_or("").to_string()
+            let mut line = line.unwrap_or("").to_string();
+            // in ndk 27 the clang version is 18.0.1 but the directory is named 18 ... let tweak it
+            if android_ndk_home.contains("27.0.12077973") {
+                line = "18".to_string();
+            }
+            line
         } else {
             DEFAULT_CLANG_VERSION.to_string()
         };

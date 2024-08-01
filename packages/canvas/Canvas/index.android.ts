@@ -244,6 +244,7 @@ export class Canvas extends CanvasBase {
 		}
 
 		const size = this._physicalSize;
+		console.log(size);
 		org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
 		if (this._is2D) {
@@ -281,11 +282,6 @@ export class Canvas extends CanvasBase {
 				if (this._webglContext || this._webgl2Context) {
 					return null;
 				}
-
-				this._isBatch = true;
-				this.width = 500;
-				this.height = 500;
-				this._isBatch = false;
 
 				if (!this._2dContext) {
 					this._layoutNative();
@@ -328,6 +324,7 @@ export class Canvas extends CanvasBase {
 					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
+
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';
 					this._contextType = ContextType.WebGL2;
@@ -347,7 +344,6 @@ export class Canvas extends CanvasBase {
 
 					(this._gpuContext as any)._canvas = this;
 				}
-
 				return this._gpuContext;
 			}
 		}

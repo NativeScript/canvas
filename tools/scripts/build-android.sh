@@ -11,9 +11,9 @@ fi
 
 NDK_TARGET=$TARGET
 
-# if [ "$TARGET" = "arm-linux-androideabi" ]; then
-#     NDK_TARGET="armv7a-linux-androideabi"
-# fi
+ if [ "$TARGET" = "arm-linux-androideabi" ]; then
+     NDK_TARGET="armv7a-linux-androideabi"
+ fi
 
 API_VERSION="21"
 NDK_VERSION="26.3.11579264"
@@ -36,6 +36,10 @@ RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
     RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics -C target-cpu=native -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+fi
+
+if [ "$TARGET" = "x86_64-linux-android" ]; then
+    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
 fi
 
 

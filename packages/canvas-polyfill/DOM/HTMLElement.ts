@@ -3,42 +3,35 @@ import { ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 
 export class Style {
-	_proxy;
-	constructor() {
-		const values = new Map();
-		this._values = values;
-		this._proxy = new Proxy(this, {
-			set(target, prop, value) {
-				target.setProperty(prop, value);
-				return true;
-			},
-			get(target, prop, receiver) {
-				return target.getPropertyValue(prop);
-			},
-		});
-	}
-
-	_values: Map<any, any>;
+	private _values: Map<string, any>;
 	nativeElement: WeakRef<ViewBase>;
 
-	setProperty(key: string | symbol, val: unknown) {
-		const nativeElement = this.nativeElement?.deref?.();
-		let value = val;
-		if (typeof value === 'string' && value.includes('px')) {
-			value = value.replace('px', '');
-		}
-		if (nativeElement !== null) {
-			setValue(nativeElement, key, val);
-		}
-		this._values.set(key, val);
+	constructor() {
+		this._values = new Map();
 	}
 
-	getPropertyValue(key: string | symbol) {
-		const nativeElement = this.nativeElement?.deref?.();
-		if (nativeElement !== null) {
-			return nativeElement[key];
+	private _nativeElement() {
+		if (__ANDROID__) {
+			return this.nativeElement?.get?.();
 		}
-		return this._values.get(key);
+		if (__IOS__) {
+			return this.nativeElement?.deref?.();
+		}
+		return undefined;
+	}
+
+	get width() {
+		return 0;
+	}
+	set width(value) {
+		console.log('style.width', value);
+	}
+
+	get height() {
+		return 0;
+	}
+	set height(value) {
+		console.log('style.height', value);
 	}
 }
 
@@ -51,9 +44,6 @@ export class HTMLElement extends Element {
 	}
 
 	get style() {
-		if (this.nativeElement) {
-			return this.nativeElement.style;
-		}
 		return this._style;
 	}
 

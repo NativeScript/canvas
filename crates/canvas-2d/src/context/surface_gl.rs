@@ -55,7 +55,7 @@ impl Context {
             }
 
             let target = gpu::backend_render_targets::make_gl(
-                (width as i32, height as i32),
+                ((width * density).floor() as i32, (height * density).floor() as i32),
                 Some(samples as usize),
                 0,
                 frame_buffer,
@@ -152,7 +152,7 @@ impl Context {
             }
 
             let target = gpu::backend_render_targets::make_gl(
-                (width as i32, height as i32),
+                ((width * density).floor() as i32, (height * density).floor() as i32),
                 Some(samples as usize),
                 0,
                 frame_buffer,

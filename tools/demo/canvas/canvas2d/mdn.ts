@@ -518,8 +518,6 @@ export function fillRule(canvas) {
 	// Fill path
 	ctx.fillStyle = 'green';
 	ctx.fill(region, 'evenodd');
-
-	console.log(canvas.toDataURL(), canvas.width, canvas.height);
 }
 
 export function scale(canvas) {
@@ -549,11 +547,14 @@ export function pattern(canvas) {
 export function patternWithCanvas(canvas) {
 	const patternCanvas = Canvas.createCustomView();
 
+	
+	// Give the pattern a width and height of 50
+	patternCanvas.style.width = 50;
+	patternCanvas.style.height = 50;
 	const patternContext = patternCanvas.getContext('2d') as any;
 
-	// Give the pattern a width and height of 50
-	patternCanvas.width = 50;
-	patternCanvas.height = 50;
+	console.log(patternContext.width, patternContext.height, patternContext._canvas.width, patternContext._canvas.height, patternContext._canvas._canvas)
+	
 
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';

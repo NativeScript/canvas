@@ -2,7 +2,6 @@
 
 extern crate android_logger;
 extern crate core;
-#[macro_use]
 extern crate log;
 
 use std::os::raw::c_void;
@@ -12,9 +11,8 @@ use ::jni::sys::jint;
 use ::jni::JavaVM;
 use android_logger::Config;
 use itertools::izip;
-use jni::objects::JClass;
 use jni::sys::jlong;
-use jni::{JNIEnv, NativeMethod};
+use jni::{ NativeMethod};
 use log::LevelFilter;
 use std::sync::OnceLock;
 
@@ -79,6 +77,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
             let ret = sdk_int.unwrap().i().unwrap();
 
+            #[cfg(target_os = "android")]
             canvas_c::API_LEVEL.get_or_init(|| ret);
 
             let canvas_class = env.find_class(NSC_CANVAS_CLASS).unwrap();

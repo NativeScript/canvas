@@ -45,7 +45,7 @@ impl Into<FillRule> for CanvasFillRule {
     fn into(self) -> FillRule {
         match self {
             CanvasFillRule::NonZero => FillRule::NonZero,
-            CanvasFillRule::EvenOdd => FillRule::NonZero
+            CanvasFillRule::EvenOdd => FillRule::EvenOdd
         }
     }
 }

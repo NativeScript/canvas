@@ -19,6 +19,8 @@ export class HTMLCanvasElement extends HTMLElement {
 		if (!this.nativeElement.__domElement) {
 			this.nativeElement.__domElement = new DOMParser().parseFromString('<canvas></canvas>', 'text/html').documentElement as never;
 		}
+
+		this.style.nativeElement = new WeakRef(this.nativeElement);
 	}
 
 	get _canvas() {
@@ -67,8 +69,6 @@ export class HTMLCanvasElement extends HTMLElement {
 	releasePointerCapture(id: string) {}
 
 	getRootNode() {
-		console.log('???');
-		// todo
 		return this;
 	}
 }

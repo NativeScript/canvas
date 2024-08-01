@@ -28,20 +28,22 @@ impl Context {
         );
 
         let text = text.replace('\n', " ");
-        self.with_canvas_dirty(|canvas| {
-            if let Some(shadow_paint) = shadow_paint {
+
+        let paint = self.state.paint.fill_paint();
+
+        self.render_to_canvas(&paint, |canvas, paint| {
+            if let Some(shadow_paint) = &shadow_paint {
                 canvas.save();
                 Context::apply_shadow_offset_matrix(
                     canvas,
                     self.state.shadow_offset.x,
                     self.state.shadow_offset.y,
                 );
-                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &shadow_paint);
+                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            let paint = self.state.paint.fill_paint().clone();
-            self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &paint);
+            self.draw_text(Some(canvas), text.as_str(), x, y, width, None, paint);
         });
     }
 
@@ -55,19 +57,20 @@ impl Context {
 
         let text = text.replace('\n', " ");
 
-        self.with_canvas_dirty(|canvas| {
-            if let Some(shadow_paint) = shadow_paint {
+        let paint = self.state.paint.stroke_paint();
+        self.render_to_canvas(&paint, |canvas, paint| {
+            if let Some(shadow_paint) = &shadow_paint {
                 canvas.save();
                 Context::apply_shadow_offset_matrix(
                     canvas,
                     self.state.shadow_offset.x,
                     self.state.shadow_offset.y,
                 );
-                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &shadow_paint);
+                self.draw_text(Some(canvas), text.as_str(), x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            let paint = self.state.paint.stroke_paint().clone();
+
             self.draw_text(Some(canvas), text.as_str(), x, y, width, None, &paint);
         });
     }

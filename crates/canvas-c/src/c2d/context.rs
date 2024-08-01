@@ -83,7 +83,7 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     unsafe {
         gl_bindings::ClearColor(0., 0., 0., 0.);
         gl_bindings::Clear(gl_bindings::COLOR_BUFFER_BIT);
-        gl_bindings::Viewport(0, 0, width as i32, height as i32);
+        gl_bindings::Viewport(0, 0, (width * density).floor() as i32, (height * density).floor() as i32);
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, fb.as_mut_ptr());
     }
 
@@ -1572,6 +1572,7 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     let source = unsafe { &*source };
     let context = unsafe { &*context };
     let repetition: Repetition = repetition.into();
+    source.make_current();
     match source.context.get_image() {
         None => std::ptr::null_mut(),
         Some(image) => {

@@ -22,7 +22,7 @@ impl Context {
             path.0.set_fill_type(rule.to_fill_type());
             let path = path.path();
 
-            self.with_canvas_dirty(|canvas| {
+            self.render_to_canvas(paint,|canvas, paint| {
                 if let Some(paint) = self.state.paint.fill_shadow_paint(
                     self.state.shadow_offset,
                     self.state.shadow_color,
@@ -31,14 +31,14 @@ impl Context {
                     canvas.draw_path(path, &paint);
                 }
 
-                canvas.draw_path(path, &paint);
+                canvas.draw_path(path, paint);
             });
         } else {
             let mut path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
             path.0.set_fill_type(skia_safe::path::FillType::Winding);
             let path = path.path();
 
-            self.with_canvas_dirty(|canvas| {
+            self.render_to_canvas(paint,|canvas, paint| {
                 if is_fill {
                     if let Some(paint) = self.state.paint.fill_shadow_paint(
                         self.state.shadow_offset,
@@ -57,7 +57,7 @@ impl Context {
                     }
                 }
 
-                canvas.draw_path(path, &paint);
+                canvas.draw_path(path, paint);
             });
         }
     }

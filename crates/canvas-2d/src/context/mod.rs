@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use base64::Engine;
 use parking_lot::MutexGuard;
+use regex::bytes::Replacer;
 use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, PictureRecorder, Point, Surface};
 use skia_safe::BlendMode;
 use skia_safe::image::CachingHint;
@@ -19,7 +20,6 @@ use text_styles::{
 };
 
 use crate::context::drawing_text::typography::Font;
-use crate::context::matrix::Matrix;
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -167,11 +167,12 @@ impl Recorder {
     pub fn new(bounds: skia_safe::Rect) -> Self {
         let mut current = PictureRecorder::new();
         current.begin_recording(bounds, None);
+        current.recording_canvas().unwrap().save();
         Self {
             current,
             bounds,
             is_dirty: false,
-            layers: vec![],
+            layers: Vec::with_capacity(2),
             cache: None,
             matrix: skia_safe::Matrix::new_identity(),
             clip: None,
@@ -222,11 +223,17 @@ impl Recorder {
     pub fn flush(&mut self) {
         if self.is_dirty {
             if let Some(layer) = self.current.finish_recording_as_picture(Some(&self.bounds)) {
+                if self.layers.len() == self.layers.capacity() {
+                    if !self.layers.is_empty() {
+                        let _ = self.layers.pop();
+                    }
+                }
                 self.layers.push(layer);
             }
             self.current.begin_recording(self.bounds, None);
             self.is_dirty = false;
             self.cache = None;
+            self.restore();
         }
     }
 
@@ -234,7 +241,7 @@ impl Recorder {
         self.flush();
         if self.cache.is_none() {
             let size = self.bounds.size().to_floor();
-            if let Some(picture) = self.layers.last() {
+            if let Some(picture) = self.get_picture() {
                 self.cache = skia_safe::images::deferred_from_picture(
                     picture,
                     size,
@@ -255,10 +262,10 @@ impl Recorder {
         let read_data = |image: &Image, bounds: skia_safe::Rect| {
             let width = bounds.width();
             let height = bounds.height();
-            let mut info = skia_safe::ImageInfo::new(
+            let mut info = ImageInfo::new(
                 ISize::new(width as i32, height as i32),
                 ColorType::RGBA8888,
-                skia_safe::AlphaType::Unpremul,
+                AlphaType::Unpremul,
                 None,
             );
             let row_bytes = info.width() * 4;
@@ -268,7 +275,7 @@ impl Recorder {
                 pixels.as_mut_slice(),
                 row_bytes as usize,
                 IPoint::new(0, 0),
-                skia_safe::image::CachingHint::Allow,
+                CachingHint::Allow,
             );
             pixels
         };
@@ -387,6 +394,12 @@ impl Context {
         });
         ret
     }
+
+    pub fn get_picture(&self) -> Option<skia_safe::Picture> {
+        let recorder = Arc::clone(&self.recorder);
+        let mut recorder = recorder.lock();
+        recorder.get_picture()
+    }
     pub fn get_image(&self) -> Option<Image> {
         let recorder = Arc::clone(&self.recorder);
         let mut recorder = recorder.lock();
@@ -432,42 +445,9 @@ impl Context {
         canvas.reset_matrix();
         canvas.scale((self.surface_data.scale, self.surface_data.scale));
         canvas.clear(Color::TRANSPARENT);
-
-        let blend = self.state.global_composite_operation.get_blend_mode();
-        match blend {
-            BlendMode::SrcIn | BlendMode::SrcOut |
-            BlendMode::DstIn | BlendMode::DstOut |
-            BlendMode::DstATop | BlendMode::Src => {
-                let mut layer_paint = skia_safe::Paint::default();
-                layer_paint.set_anti_alias(true);
-                layer_paint.set_blend_mode(BlendMode::SrcOver);
-                let mut layer_recorder = skia_safe::PictureRecorder::new();
-                layer_recorder.begin_recording(self.surface_data.bounds, None);
-                if let Some(layer) = layer_recorder.recording_canvas() {
-                    layer.set_matrix(&self.state.matrix.into());
-
-                    if let Some(picture) = picture {
-                        layer.draw_picture(picture, None, None);
-                    }
-                }
-
-
-                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
-                    canvas.save();
-                    canvas.set_matrix(&skia_safe::Matrix::new_identity().into());
-                    let mut blend_paint = skia_safe::Paint::default();
-                    blend_paint.set_anti_alias(true);
-                    blend_paint.set_blend_mode(self.state.global_composite_operation.get_blend_mode());
-                    canvas.draw_picture(&pict, None, Some(&blend_paint));
-                    canvas.restore();
-                }
-            }
-            _ => {
-                if let Some(picture) = picture {
-                    canvas.draw_picture(picture, None, None);
-                }
-            }
-        };
+        if let Some(picture) = picture {
+            canvas.draw_picture(picture, None, None);
+        }
     }
 
     pub fn flush_surface(&mut self) {
@@ -509,6 +489,9 @@ impl Context {
     pub fn height(&self) -> f32 {
         self.surface_data.bounds.height()
     }
+    pub fn density(&self) -> f32 {
+        self.surface_data.scale
+    }
 
     pub fn with_canvas<F>(&self, f: F)
     where
@@ -531,6 +514,46 @@ impl Context {
             f(canvas);
             recorder.is_dirty = true;
         }
+    }
+
+    pub fn render_to_canvas<F>(&self, paint: &skia_safe::Paint, f: F)
+    where
+        F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
+    {
+        let blend = self.state.global_composite_operation.get_blend_mode();
+        match blend {
+            BlendMode::SrcIn | BlendMode::SrcOut |
+            BlendMode::DstIn | BlendMode::DstOut |
+            BlendMode::DstATop | BlendMode::Src => {
+                let mut layer_paint = paint.clone();
+                layer_paint.set_anti_alias(true);
+                layer_paint.set_blend_mode(BlendMode::SrcOver);
+                let mut layer_recorder = skia_safe::PictureRecorder::new();
+                layer_recorder.begin_recording(self.surface_data.bounds, None);
+                if let Some(layer) = layer_recorder.recording_canvas() {
+                    layer.set_matrix(&self.state.matrix.into());
+                    f(layer, &layer_paint);
+                }
+
+
+                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
+                    self.with_canvas_dirty(|canvas| {
+                        canvas.save();
+                        canvas.set_matrix(&skia_safe::Matrix::new_identity().into());
+                        let mut blend_paint = skia_safe::Paint::default();
+                        blend_paint.set_anti_alias(true);
+                        blend_paint.set_blend_mode(self.state.global_composite_operation.get_blend_mode());
+                        canvas.draw_picture(&pict, None, Some(&blend_paint));
+                        canvas.restore();
+                    })
+                }
+            }
+            _ => {
+                self.with_canvas_dirty(|canvas| {
+                    f(canvas, paint)
+                });
+            }
+        };
     }
 
     pub fn reset_state(&mut self) {

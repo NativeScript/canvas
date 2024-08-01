@@ -1,9 +1,8 @@
 use std::os::raw::c_void;
-use std::sync::Arc;
 
 use skia_safe::{Color, ColorType, gpu, PixelGeometry, SurfaceProps, SurfacePropsFlags};
 
-use crate::context::{Context, Recorder, State, SurfaceData};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 
@@ -46,16 +45,16 @@ impl Context {
         state.direction = TextDirection::from(direction as u32);
 
         let bounds = skia_safe::Rect::from_wh(width, height);
-        let recorder = Recorder::new(bounds);
         Context {
             surface_data: SurfaceData {
                 bounds,
                 scale: density,
                 ppi,
+                engine: SurfaceEngine::Metal,
             },
             surface: surface_holder.unwrap(),
+            is_dirty: false,
             direct_context: Some(context),
-            recorder: Arc::new(parking_lot::Mutex::new(recorder)),
             path: Path::default(),
             state,
             state_stack: vec![],
@@ -66,7 +65,5 @@ impl Context {
     pub fn resize_metal(context: &mut Context, width: f32, height: f32) {
         let bounds = skia_safe::Rect::from_wh(width, height);
         context.surface_data.bounds = bounds;
-        let mut recorder = context.recorder.lock();
-        recorder.set_bounds(bounds);
     }
 }

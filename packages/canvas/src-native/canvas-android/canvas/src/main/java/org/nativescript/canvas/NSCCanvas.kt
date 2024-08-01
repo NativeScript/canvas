@@ -1,19 +1,15 @@
 package org.nativescript.canvas
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
-import android.graphics.PixelFormat
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
@@ -23,10 +19,9 @@ import dalvik.annotation.optimization.FastNative
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.floor
+import kotlin.math.min
 
 
 /**
@@ -37,12 +32,14 @@ class NSCCanvas : FrameLayout {
 		set(value) {
 			field = value
 			layoutSurface(value, surfaceHeight, this)
+			scaleSurface()
 		}
 
 	var surfaceHeight: Int = 0
 		set(value) {
 			field = value
 			layoutSurface(surfaceWidth, value, this)
+			scaleSurface()
 		}
 
 	var nativeGL: Long = 0
@@ -98,6 +95,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	private fun init(context: Context, attrs: AttributeSet?, type: SurfaceType) {
+		clipChildren = false
 		textureView = GLView(context, attrs)
 		textureView.canvas = this
 		surfaceView = GLViewSV(context, attrs)
@@ -106,6 +104,9 @@ class NSCCanvas : FrameLayout {
 		setBackgroundColor(Color.TRANSPARENT)
 		val internalWidth = (resources.displayMetrics.density * 300).toInt()
 		val internalHeight = (resources.displayMetrics.density * 150).toInt()
+
+		surfaceWidth = internalWidth
+		surfaceHeight = internalHeight
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
@@ -127,6 +128,12 @@ class NSCCanvas : FrameLayout {
 				)
 			}
 		}
+
+		// Force layout
+
+	//	layoutSurface(internalWidth, internalHeight, this)
+
+	//	scaleSurface()
 	}
 
 
@@ -430,8 +437,6 @@ class NSCCanvas : FrameLayout {
 					is2D
 				)
 			}
-
-
 			nativeContext = nativeGetGLPointer(nativeGL)
 		}
 
@@ -482,12 +487,10 @@ class NSCCanvas : FrameLayout {
 
 		GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 
-		val densityInverse = 1.0f / density
-
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
-			floor(drawingBufferWidth * densityInverse).toInt(),
-			floor(drawingBufferHeight * densityInverse).toInt(),
+			drawingBufferWidth,
+			drawingBufferHeight,
 			alpha,
 			density,
 			samples,
@@ -515,7 +518,39 @@ class NSCCanvas : FrameLayout {
 
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
+		scaleSurface()
 		listener?.surfaceResize(w, h)
+	}
+
+	private fun scaleSurface() {
+		val frameWidth: Int = width
+		val frameHeight: Int = height
+
+		val scaleX: Float = frameWidth.toFloat() / drawingBufferWidth.toFloat()
+		val scaleY: Float = frameHeight.toFloat() / drawingBufferHeight.toFloat()
+
+		val scale = min(scaleX.toDouble(), scaleY.toDouble()).toFloat()
+
+		val newWidth = Math.round(drawingBufferWidth * scale)
+		val newHeight = Math.round(drawingBufferHeight * scale)
+
+		val dx = (frameWidth - newWidth) / 2f
+		val dy = (frameHeight - newHeight) / 2f
+
+		if (surfaceType == SurfaceType.Surface) {
+			val layoutParams = surfaceView.layoutParams
+			layoutParams.width = newWidth
+			layoutParams.height = newHeight
+			surfaceView.layoutParams = layoutParams
+			surfaceView.translationX = dx
+			surfaceView.translationY = dy
+
+		} else {
+			val matrix = Matrix()
+			matrix.setScale(scale, scale)
+			matrix.postTranslate(dx, dy)
+			textureView.setTransform(matrix)
+		}
 	}
 
 	internal fun resize() {
@@ -538,17 +573,15 @@ class NSCCanvas : FrameLayout {
 
 					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 
-					val density = context.resources.displayMetrics.density
-					val densityInverse = 1.0f / density
-
 					nativeUpdate2DSurfaceNoSurface(
-						floor(drawingBufferWidth * densityInverse).toInt(),
-						floor(drawingBufferHeight * densityInverse).toInt(),
+						drawingBufferWidth,
+						drawingBufferHeight,
 						native2DContext
 					)
 				}
 			}
 
+			scaleSurface()
 		}
 	}
 
@@ -679,7 +712,6 @@ class NSCCanvas : FrameLayout {
 					System.loadLibrary("canvasnativev8")
 					isLibraryLoaded = true
 				} catch (e: Exception) {
-					e.printStackTrace()
 				}
 			}
 		}

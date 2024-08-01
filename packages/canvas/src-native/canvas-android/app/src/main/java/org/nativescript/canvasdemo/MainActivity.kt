@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
 //					Color.BLACK
 //				)
 //
-				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d)
+				val bm =	Bitmap.createScaledBitmap(BitmapFactory.decodeResource(resources, R.drawable.di_3d), 512, 512, false)
 //
 //				val scale = resources.displayMetrics.density
 //
@@ -183,18 +183,22 @@ class MainActivity : AppCompatActivity() {
 					Color.BLACK
 				)
 
+				canvas!!.surfaceWidth = resources.displayMetrics.widthPixels
+				canvas!!.surfaceHeight = resources.displayMetrics.heightPixels
+
 
 //
 				//	NSCCanvas.context2DImageTest(context)
-				NSCCanvas.context2DPathTest(ctx)
+			//	NSCCanvas.context2DPathTest(ctx)
 
 
-//				val scale = resources.displayMetrics.density
-//				val maxW = resources.displayMetrics.widthPixels / scale
-//				val maxH = resources.displayMetrics.heightPixels / scale
-		//		NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F,0F, 300f, 300f)
-//
-		//		NSCCanvas.context2DRender(ctx)
+				val scale = resources.displayMetrics.density.toFloat()
+				val maxW = resources.displayMetrics.widthPixels
+				val maxH = resources.displayMetrics.heightPixels
+
+				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F, 0F, maxW.toFloat() / scale ,maxH.toFloat() /scale)
+////
+				NSCCanvas.context2DRender(ctx)
 
 			}
 

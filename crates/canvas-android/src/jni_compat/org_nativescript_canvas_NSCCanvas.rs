@@ -745,11 +745,7 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                     &paint,
                 );
                 let context = context.get_context_mut();
-                let density = context.density();
-                if let Some(image) = context.get_picture() {
-                    let scaled = skia_safe::Matrix::scale((density, density));
-                    surface.canvas().draw_picture(image, Some(&scaled), None);
-                }
+                context.draw_on_surface(&mut surface);
             }
         }),
     );

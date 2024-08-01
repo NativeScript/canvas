@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
-use canvas_2d::context::{Context, Recorder};
+use canvas_2d::context::{Context};
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
@@ -64,11 +64,7 @@ pub extern "C" fn canvas_native_context_release(value: *mut CanvasRenderingConte
 }
 
 fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u32) -> String {
-    let mut ret = "data:,".to_string();
-    context
-        .context
-        .with_recorder(|mut recorder| ret = recorder.as_data_url(format, quality));
-    ret
+    context.context.as_data_url(format, quality)
 }
 
 #[cfg(feature = "gl")]
@@ -1569,7 +1565,7 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
 ) -> *mut PaintStyle {
     assert!(!source.is_null());
     assert!(!context.is_null());
-    let source = unsafe { &*source };
+    let source = unsafe { &mut *source };
     let context = unsafe { &*context };
     let repetition: Repetition = repetition.into();
     source.make_current();
@@ -1845,7 +1841,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
     assert!(!context.is_null());
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
-    let source = unsafe { &*source };
+    let source = unsafe { &mut *source };
     source.make_current();
     if let Some(image) = source.context.get_image() {
         context.make_current();
@@ -1865,7 +1861,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
     assert!(!context.is_null());
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
-    let source = unsafe { &*source };
+    let source = unsafe { &mut *source };
     source.make_current();
 
     if let Some(image) = source.context.get_image() {
@@ -1890,7 +1886,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     assert!(!context.is_null());
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
-    let source = unsafe { &*source };
+    let source = unsafe { &mut *source };
     source.make_current();
 
     if let Some(image) = source.context.get_image() {
@@ -2316,7 +2312,7 @@ pub extern "C" fn canvas_native_context_get_image_data(
     sw: f32,
     sh: f32,
 ) -> *mut ImageData {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     context.make_current();
     Box::into_raw(Box::new(ImageData(
         context.context.get_image_data(sx, sy, sw, sh),
@@ -2697,8 +2693,8 @@ pub extern "C" fn canvas_native_context_translate(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_context_flush(context: *const CanvasRenderingContext2D) {
-    let context = unsafe { &*context };
+pub extern "C" fn canvas_native_context_flush(context: *mut CanvasRenderingContext2D) {
+    let context = unsafe { &mut *context };
     context.make_current();
     context.context.flush();
 }

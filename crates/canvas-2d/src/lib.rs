@@ -91,7 +91,7 @@ pub fn bytes_to_data_url(
     return "data:,".to_string();
 }
 
-pub(crate) fn flush_custom_surface(context: &Context, width: i32, height: i32, dst: &mut [u8]) {
+pub(crate) fn flush_custom_surface(context: &mut Context, width: i32, height: i32, dst: &mut [u8]) {
         context.flush();
         let info = ImageInfo::new(
             ISize::new(width, height),
@@ -100,12 +100,10 @@ pub(crate) fn flush_custom_surface(context: &Context, width: i32, height: i32, d
             None,
         );
 
-        let mut locker = context.recorder.lock();
         if let Some(mut dst_surface) = surfaces::wrap_pixels(&info, dst, None, None) {
             let dst_canvas = dst_surface.canvas();
 
-            if let Some(image) = locker.get_image() {
-                dst_canvas.scale((context.surface_data.scale, context.surface_data.scale));
+            if let Some(image) = context.get_image() {
                 dst_canvas.draw_image(image, Point::new(0., 0.), None);
 
                 if let Some(mut context) = dst_surface.direct_context() {

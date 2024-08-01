@@ -99,5 +99,7 @@ function drawAnimation() {
 
 	for (const circle of circles) [circle.draw(ctx, speed)];
 
-	raf = requestAnimationFrame(() => drawAnimation());
+	console.log(canvas.toDataURL());
+
+	//raf = requestAnimationFrame(() => drawAnimation());
 }

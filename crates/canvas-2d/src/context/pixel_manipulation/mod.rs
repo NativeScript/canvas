@@ -14,7 +14,7 @@ impl Context {
     }
 
     pub fn get_image_data(
-        &self,
+        &mut self,
         sx: c_float,
         sy: c_float,
         sw: c_float,
@@ -28,16 +28,17 @@ impl Context {
         );
         let row_bytes = info.width() * 4;
         let mut slice = bytes::BytesMut::zeroed((row_bytes * info.height()) as usize);
-        if let Some(image) = self.get_image() {
-            let _ = image.read_pixels(
-                &info,
-                slice.as_mut(),
-                row_bytes as usize,
-                IPoint::new(sx as i32, sy as i32),
-                skia_safe::image::CachingHint::Allow
-            );
-        }
-       
+
+        self.flush();
+
+        let _ = self.surface.read_pixels(
+            &info,
+            slice.as_mut(),
+            row_bytes as usize,
+            IPoint::new(sx as i32, sy as i32)
+        );
+
+
         ImageData::new_with_buffer(info.width(), info.height(), slice)
     }
 

@@ -1,5 +1,5 @@
-use skia_safe::canvas::SrcRectConstraint;
 use skia_safe::{Image, Rect};
+use skia_safe::canvas::SrcRectConstraint;
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -141,13 +141,13 @@ impl Context {
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
 
-        let paint = self.state.paint.image_paint();
-
-        self.render_to_canvas(paint,|canvas, paint| {
+        let paint = self.state.paint.image_paint().clone();
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_image_with_sampling_options(
                 image,
                 skia_safe::Point::new(x, y),
-                self.state.image_smoothing_quality,
+                quality,
                 Some(paint),
             );
         });
@@ -173,14 +173,14 @@ impl Context {
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
 
-        let paint = self.state.paint.image_paint();
-
-        self.render_to_canvas(paint, |canvas, paint| {
+        let paint = self.state.paint.image_paint().clone();
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_image_rect_with_sampling_options(
                 image,
                 Some((&src, SrcRectConstraint::Strict)),
                 dst,
-                self.state.image_smoothing_quality,
+                quality,
                 paint,
             );
         });
@@ -202,14 +202,15 @@ impl Context {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint();
+        let paint = self.state.paint.image_paint().clone();
 
-        self.render_to_canvas(paint,|canvas, paint| {
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_image_rect_with_sampling_options(
                 image,
                 Some((&src, SrcRectConstraint::Strict)),
                 dst,
-                self.state.image_smoothing_quality,
+                quality,
                 paint,
             );
         });

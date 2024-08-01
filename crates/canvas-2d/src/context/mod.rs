@@ -1,10 +1,8 @@
 use std::ffi::c_uint;
-use std::sync::Arc;
 
 use base64::Engine;
-use parking_lot::MutexGuard;
 use regex::bytes::Replacer;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, PictureRecorder, Point, Surface};
+use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, Point, Surface};
 use skia_safe::BlendMode;
 use skia_safe::image::CachingHint;
 
@@ -129,10 +127,20 @@ impl State {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum SurfaceEngine {
+    CPU,
+    GL,
+    Vulkan,
+    Metal,
+}
+
+
 pub struct SurfaceData {
     pub(crate) bounds: skia_safe::Rect,
     pub(crate) scale: f32,
     pub(crate) ppi: f32,
+    pub(crate) engine: SurfaceEngine,
 }
 
 impl SurfaceData {
@@ -153,110 +161,131 @@ impl SurfaceData {
     }
 }
 
-pub struct Recorder {
-    pub current: PictureRecorder,
-    pub is_dirty: bool,
-    pub layers: Vec<skia_safe::Picture>,
-    pub cache: Option<Image>,
-    pub matrix: skia_safe::Matrix,
-    pub clip: Option<skia_safe::Path>,
-    pub bounds: skia_safe::Rect,
+pub struct Context {
+    pub(crate) surface_data: SurfaceData,
+    pub(crate) surface: Surface,
+    pub(crate) is_dirty: bool,
+    #[cfg(feature = "vulkan")]
+    pub(crate) ash_graphics: Option<surface_vulkan::AshGraphics>,
+    #[cfg(feature = "vulkan")]
+    pub(crate) vk_surface: Option<ash::vk::SurfaceKHR>,
+    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
+    pub(crate) path: Path,
+    pub(crate) state: State,
+    pub(crate) state_stack: Vec<State>,
+    pub(crate) font_color: Color,
 }
 
-impl Recorder {
-    pub fn new(bounds: skia_safe::Rect) -> Self {
-        let mut current = PictureRecorder::new();
-        current.begin_recording(bounds, None);
-        current.recording_canvas().unwrap().save();
-        Self {
-            current,
-            bounds,
-            is_dirty: false,
-            layers: Vec::with_capacity(2),
-            cache: None,
-            matrix: skia_safe::Matrix::new_identity(),
-            clip: None,
+
+impl Context {
+    pub fn get_pixels(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>) {
+        let origin = origin.into();
+        let size = size.into();
+        let info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+
+        if let Some(img) = self.get_image() {
+            img.read_pixels(&info, buffer, info.min_row_bytes(), origin, CachingHint::Allow);
         }
     }
 
-    pub fn set_clip(&mut self, clip: &Option<Path>) {
-        let clip = clip.clone();
-        self.clip = clip.map(|clip| clip.0);
-        self.restore();
+    pub fn flush_and_render_to_surface(&mut self) {
+        self.flush();
     }
-    pub fn restore(&mut self) {
-        if let Some(canvas) = self.current.recording_canvas() {
-            canvas.restore_to_count(1);
-            canvas.save();
-            if let Some(clip) = &self.clip {
-                canvas.clip_path(&clip, skia_safe::ClipOp::Intersect, true /* antialias */);
+
+    pub fn flush_surface(&mut self) {
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        match self.direct_context.as_mut() {
+            Some(ctx) => {
+                ctx.flush_and_submit();
             }
-            canvas.set_matrix(&self.matrix.into());
+            _ => {}
         }
     }
 
-    pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {
-        *self = Recorder::new(bounds);
+    pub fn get_surface_engine(&self) -> SurfaceEngine {
+        self.surface_data.engine
     }
+
+    pub fn get_surface_data(&self) -> &SurfaceData {
+        &self.surface_data
+    }
+
+    pub fn with_matrix<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut skia_safe::Matrix) -> &skia_safe::Matrix,
+    {
+        f(&mut self.state.matrix);
+    }
+
+    pub fn dimensions(&self) -> (f32, f32) {
+        (self.surface_data.bounds.width(), self.surface_data.bounds.height())
+    }
+
+    pub fn width(&self) -> f32 {
+        self.surface_data.bounds.width()
+    }
+    pub fn height(&self) -> f32 {
+        self.surface_data.bounds.height()
+    }
+    pub fn density(&self) -> f32 {
+        self.surface_data.scale
+    }
+
+    pub fn with_canvas<F>(&mut self, f: F)
+    where
+        F: FnOnce(&skia_safe::Canvas),
+    {
+        f(self.surface.canvas());
+    }
+
+    pub fn with_canvas_dirty<F>(&mut self, f: F)
+    where
+        F: FnOnce(&skia_safe::Canvas),
+    {
+        f(self.surface.canvas());
+        self.is_dirty = true;
+    }
+
+
+    pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {}
 
     pub fn update_bounds(&mut self, bounds: skia_safe::Rect) {
-        self.bounds = bounds;
+        self.surface_data.bounds = bounds;
     }
 
     pub fn append<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
     {
-        if let Some(canvas) = self.current.recording_canvas() {
-            f(canvas);
-            self.is_dirty = true;
-        }
+        f(self.surface.canvas());
+        self.is_dirty = true;
     }
 
-    pub fn set_matrix(&mut self, matrix: skia_safe::Matrix) {
-        self.matrix = matrix;
-        if let Some(canvas) = self.current.recording_canvas() {
-            canvas.set_matrix(&matrix.into());
-        }
-    }
 
     pub fn flush(&mut self) {
         if self.is_dirty {
-            if let Some(layer) = self.current.finish_recording_as_picture(Some(&self.bounds)) {
-                if self.layers.len() == self.layers.capacity() {
-                    if !self.layers.is_empty() {
-                        let _ = self.layers.pop();
-                    }
-                }
-                self.layers.push(layer);
-            }
-            self.current.begin_recording(self.bounds, None);
+            self.flush_surface();
             self.is_dirty = false;
-            self.cache = None;
-            self.restore();
         }
     }
 
     pub fn get_image(&mut self) -> Option<Image> {
         self.flush();
-        if self.cache.is_none() {
-            let size = self.bounds.size().to_floor();
-            if let Some(picture) = self.get_picture() {
-                self.cache = skia_safe::images::deferred_from_picture(
-                    picture,
-                    size,
-                    None,
-                    None,
-                    skia_safe::images::BitDepth::U8,
-                    Some(skia_safe::ColorSpace::new_srgb()),
-                    None,
-                );
-            }
+
+        let snapshot = self.surface.image_snapshot();
+        if self.surface_data.engine == SurfaceEngine::GL {
+            snapshot.make_raster_image(
+                self.direct_context.as_mut(),
+                Some(CachingHint::Allow),
+            )
+        } else {
+            Some(snapshot)
         }
-        self.cache.clone()
     }
     pub fn as_data(&mut self) -> Vec<u8> {
-        if self.bounds.is_empty() {
+        let bounds = self.surface_data.bounds;
+        if bounds.is_empty() {
             return vec![];
         }
         let read_data = |image: &Image, bounds: skia_safe::Rect| {
@@ -281,242 +310,63 @@ impl Recorder {
         };
 
         if let Some(ref cache) = self.get_image() {
-            read_data(cache, self.bounds)
+            read_data(cache, bounds)
         } else {
             vec![]
         }
     }
 
     pub fn as_data_url(&mut self, format: &str, quality: c_uint) -> String {
-        if self.bounds.is_empty() {
+        if self.surface_data.bounds.is_empty() {
             return "data:,".to_string();
         }
 
         self.flush();
 
-        if let Some(image) = self.cache.as_ref() {
-            let mut quality = quality;
-            if quality > 100 || quality < 0 {
-                quality = 92;
-            }
-            let data_txt = "data:";
-            let base_64_txt = ";base64,";
-            let mut encoded_prefix =
-                String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
-            encoded_prefix.push_str("data:");
-            encoded_prefix.push_str(format);
-            encoded_prefix.push_str(";base64,");
-            let data = image.encode(
-                None,
-                match format {
-                    "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
-                    "image/webp" => EncodedImageFormat::WEBP,
-                    "image/gif" => EncodedImageFormat::GIF,
-                    "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
-                        EncodedImageFormat::HEIF
-                    }
-                    _ => EncodedImageFormat::PNG,
-                },
-                quality,
-            );
-            return match data {
-                Some(data) => {
-                    let encoded_data =
-                        base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
-                    if encoded_data.is_empty() {
-                        return "data:,".to_string();
-                    }
-                    let mut encoded =
-                        String::with_capacity(encoded_prefix.len() + encoded_data.len());
-                    encoded.push_str(&encoded_prefix);
-                    encoded.push_str(&encoded_data);
-                    encoded
+        let image = self.surface.image_snapshot();
+
+        let mut quality = quality;
+        if quality > 100 || quality < 0 {
+            quality = 92;
+        }
+        let data_txt = "data:";
+        let base_64_txt = ";base64,";
+        let mut encoded_prefix =
+            String::with_capacity(data_txt.len() + format.len() + base_64_txt.len());
+        encoded_prefix.push_str("data:");
+        encoded_prefix.push_str(format);
+        encoded_prefix.push_str(";base64,");
+        let data = image.encode(
+            self.direct_context.as_mut(),
+            match format {
+                "image/jpg" | "image/jpeg" => EncodedImageFormat::JPEG,
+                "image/webp" => EncodedImageFormat::WEBP,
+                "image/gif" => EncodedImageFormat::GIF,
+                "image/heif" | "image/heic" | "image/heif-sequence" | "image/heic-sequence" => {
+                    EncodedImageFormat::HEIF
                 }
-                _ => "data:,".to_string(),
-            };
-        }
-
-        "data:,".to_string()
-    }
-
-    pub fn get_picture(&self) -> Option<skia_safe::Picture> {
-        let mut compositor = PictureRecorder::new();
-        compositor.begin_recording(self.bounds, None);
-        if let Some(output) = compositor.recording_canvas() {
-            for pict in self.layers.iter() {
-                pict.playback(output);
+                _ => EncodedImageFormat::PNG,
+            },
+            quality,
+        );
+        return match data {
+            Some(data) => {
+                let encoded_data =
+                    base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+                if encoded_data.is_empty() {
+                    return "data:,".to_string();
+                }
+                let mut encoded =
+                    String::with_capacity(encoded_prefix.len() + encoded_data.len());
+                encoded.push_str(&encoded_prefix);
+                encoded.push_str(&encoded_data);
+                encoded
             }
-        }
-        compositor.finish_recording_as_picture(Some(&self.bounds))
-    }
-}
-
-impl Default for Recorder {
-    fn default() -> Self {
-        Self {
-            current: PictureRecorder::new(),
-            is_dirty: false,
-            layers: vec![],
-            cache: None,
-            matrix: skia_safe::Matrix::new_identity(),
-            clip: None,
-            bounds: skia_safe::Rect::default(),
-        }
-    }
-}
-
-pub struct Context {
-    pub(crate) surface_data: SurfaceData,
-    pub(crate) surface: Surface,
-    #[cfg(feature = "vulkan")]
-    pub(crate) ash_graphics: Option<surface_vulkan::AshGraphics>,
-    #[cfg(feature = "vulkan")]
-    pub(crate) vk_surface: Option<ash::vk::SurfaceKHR>,
-    #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
-    pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
-    pub(crate) recorder: Arc<parking_lot::Mutex<Recorder>>,
-    pub(crate) path: Path,
-    pub(crate) state: State,
-    pub(crate) state_stack: Vec<State>,
-    pub(crate) font_color: Color,
-}
-
-
-impl Context {
-    pub fn as_data_url(&mut self, format: &str, quality: c_uint) -> String {
-        if self.surface_data.bounds.is_empty() {
-            return "data:,".to_string();
-        }
-
-        let mut ret = "data:,".to_string();
-        self.with_recorder(|mut recorder| {
-            ret = recorder.as_data_url(format, quality);
-        });
-        ret
+            _ => "data:,".to_string(),
+        };
     }
 
-    pub fn get_picture(&self) -> Option<skia_safe::Picture> {
-        let recorder = Arc::clone(&self.recorder);
-        let mut recorder = recorder.lock();
-        recorder.get_picture()
-    }
-    pub fn get_image(&self) -> Option<Image> {
-        let recorder = Arc::clone(&self.recorder);
-        let mut recorder = recorder.lock();
-        recorder.get_image()
-    }
-
-    pub fn get_pixels(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>) {
-        let origin = origin.into();
-        let size = size.into();
-        let info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
-
-        if let Some(img) = self.get_image() {
-            img.read_pixels(&info, buffer, info.min_row_bytes(), origin, CachingHint::Allow);
-        }
-    }
-
-
-    pub fn render_to_surface(&mut self) {
-        let recorder = Arc::clone(&self.recorder);
-        let recorder = recorder.lock();
-        self.surface.canvas().reset_matrix();
-        self.surface.canvas().scale((self.surface_data.scale, self.surface_data.scale));
-        self.surface.canvas().clear(Color::TRANSPARENT);
-
-        if let Some(picture) = recorder.get_picture() {
-            self.surface.canvas().draw_picture(picture, None, None);
-        }
-    }
-
-    pub fn flush_and_render_to_surface(&mut self) {
-        let recorder = Arc::clone(&self.recorder);
-        let mut recorder = recorder.lock();
-        if recorder.is_dirty {
-            recorder.flush();
-            self.render_picture_to_surface(recorder.get_picture());
-            self.flush_surface();
-        }
-    }
-
-
-    pub fn render_picture_to_surface(&mut self, picture: Option<skia_safe::Picture>) {
-        let canvas = self.surface.canvas();
-        canvas.reset_matrix();
-        canvas.scale((self.surface_data.scale, self.surface_data.scale));
-        canvas.clear(Color::TRANSPARENT);
-        if let Some(picture) = picture {
-            canvas.draw_picture(picture, None, None);
-        }
-    }
-
-    pub fn flush_surface(&mut self) {
-        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
-        match self.direct_context.as_mut() {
-            Some(ctx) => {
-                ctx.flush_and_submit();
-            }
-            _ => {}
-        }
-    }
-
-    pub fn get_surface_data(&self) -> &SurfaceData {
-        &self.surface_data
-    }
-    pub fn with_recorder<F>(&self, f: F)
-    where
-        F: FnOnce(MutexGuard<Recorder>),
-    {
-        let recorder = Arc::clone(&self.recorder);
-        let recorder = recorder.lock();
-        f(recorder);
-    }
-    pub fn with_matrix<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut skia_safe::Matrix) -> &skia_safe::Matrix,
-    {
-        f(&mut self.state.matrix);
-        self.with_recorder(|mut recorder| recorder.set_matrix(self.state.matrix));
-    }
-
-    pub fn dimensions(&self) -> (f32, f32) {
-        (self.surface_data.bounds.width(), self.surface_data.bounds.height())
-    }
-
-    pub fn width(&self) -> f32 {
-        self.surface_data.bounds.width()
-    }
-    pub fn height(&self) -> f32 {
-        self.surface_data.bounds.height()
-    }
-    pub fn density(&self) -> f32 {
-        self.surface_data.scale
-    }
-
-    pub fn with_canvas<F>(&self, f: F)
-    where
-        F: FnOnce(&skia_safe::Canvas),
-    {
-        let recorder = Arc::clone(&self.recorder);
-        let mut recorder = recorder.lock();
-        if let Some(canvas) = recorder.current.recording_canvas() {
-            f(canvas)
-        }
-    }
-
-    pub fn with_canvas_dirty<F>(&self, f: F)
-    where
-        F: FnOnce(&skia_safe::Canvas),
-    {
-        let recorder = Arc::clone(&self.recorder);
-        let mut recorder = recorder.lock();
-        if let Some(canvas) = recorder.current.recording_canvas() {
-            f(canvas);
-            recorder.is_dirty = true;
-        }
-    }
-
-    pub fn render_to_canvas<F>(&self, paint: &skia_safe::Paint, f: F)
+    pub fn render_to_canvas<F>(&mut self, paint: &skia_safe::Paint, f: F)
     where
         F: Fn(&skia_safe::Canvas, &skia_safe::Paint),
     {
@@ -531,21 +381,14 @@ impl Context {
                 let mut layer_recorder = skia_safe::PictureRecorder::new();
                 layer_recorder.begin_recording(self.surface_data.bounds, None);
                 if let Some(layer) = layer_recorder.recording_canvas() {
-                    layer.set_matrix(&self.state.matrix.into());
                     f(layer, &layer_paint);
                 }
 
-
                 if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
-                    self.with_canvas_dirty(|canvas| {
-                        canvas.save();
-                        canvas.set_matrix(&skia_safe::Matrix::new_identity().into());
-                        let mut blend_paint = skia_safe::Paint::default();
-                        blend_paint.set_anti_alias(true);
-                        blend_paint.set_blend_mode(self.state.global_composite_operation.get_blend_mode());
-                        canvas.draw_picture(&pict, None, Some(&blend_paint));
-                        canvas.restore();
-                    })
+                    let canvas = self.surface.canvas();
+                    canvas.save();
+                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&layer_paint));
+                    canvas.restore();
                 }
             }
             _ => {
@@ -569,10 +412,14 @@ impl Context {
         });
     }
 
-    pub fn flush(&self) {
-        {
-            let mut lock = self.recorder.lock();
-            lock.flush();
-        }
+
+    pub fn draw_on_surface(&mut self, surface: &mut Surface) {
+        let src_surface = &mut self.surface;
+        src_surface.draw(
+            surface.canvas(),
+            Point::new(0., 0.),
+            FilterQuality::High,
+            None,
+        )
     }
 }

@@ -738,7 +738,7 @@ fn main() -> @location(0) vec4f {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		//circle_demo(this.canvas);
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -778,7 +778,7 @@ fn main() -> @location(0) vec4f {
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
-		this.coloredParticles(this.canvas);
+		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
 		//swarm(this.canvas);
 		//this.drawHouse(this.canvas);

@@ -9,12 +9,12 @@ use crate::context::paths::path::Path;
 pub mod fill_rule;
 
 impl Context {
-    fn fill_or_stroke(&self, is_fill: bool, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
+    fn fill_or_stroke(&mut self, is_fill: bool, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
         let paint;
         if is_fill {
-            paint = self.state.paint.fill_paint();
+            paint = self.state.paint.fill_paint().clone();
         } else {
-            paint = self.state.paint.stroke_paint();
+            paint = self.state.paint.stroke_paint().clone();
         }
 
         if let Some(rule) = fill_rule {
@@ -22,13 +22,15 @@ impl Context {
             path.0.set_fill_type(rule.to_fill_type());
             let path = path.path();
 
-            self.render_to_canvas(paint,|canvas, paint| {
-                if let Some(paint) = self.state.paint.fill_shadow_paint(
-                    self.state.shadow_offset,
-                    self.state.shadow_color,
-                    self.state.shadow_blur,
-                ) {
-                    canvas.draw_path(path, &paint);
+            let shadow_paint = self.state.paint.fill_shadow_paint(
+                self.state.shadow_offset,
+                self.state.shadow_color,
+                self.state.shadow_blur,
+            );
+
+            self.render_to_canvas(&paint, |canvas, paint| {
+                if let Some(paint) = &shadow_paint {
+                    canvas.draw_path(path, paint);
                 }
 
                 canvas.draw_path(path, paint);
@@ -38,25 +40,23 @@ impl Context {
             path.0.set_fill_type(skia_safe::path::FillType::Winding);
             let path = path.path();
 
-            self.render_to_canvas(paint,|canvas, paint| {
-                if is_fill {
-                    if let Some(paint) = self.state.paint.fill_shadow_paint(
-                        self.state.shadow_offset,
-                        self.state.shadow_color,
-                        self.state.shadow_blur,
-                    ) {
-                        canvas.draw_path(path, &paint);
-                    }
-                } else {
-                    if let Some(paint) = self.state.paint.stroke_shadow_paint(
-                        self.state.shadow_offset,
-                        self.state.shadow_color,
-                        self.state.shadow_blur,
-                    ) {
-                        canvas.draw_path(path, &paint);
-                    }
+            let shadow_paint = if is_fill {
+                self.state.paint.fill_shadow_paint(
+                    self.state.shadow_offset,
+                    self.state.shadow_color,
+                    self.state.shadow_blur,
+                )
+            } else {
+                self.state.paint.stroke_shadow_paint(
+                    self.state.shadow_offset,
+                    self.state.shadow_color,
+                    self.state.shadow_blur,
+                )
+            };
+            self.render_to_canvas(&paint, |canvas, paint| {
+                if let Some(paint) = &shadow_paint {
+                    canvas.draw_path(path, paint);
                 }
-
                 canvas.draw_path(path, paint);
             });
         }
@@ -75,26 +75,15 @@ impl Context {
     }
 
     pub fn clip(&mut self, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-        let mut clip = path
+        let mut path = path
             .map(|path| path.clone())
             .unwrap_or_else(|| self.path.clone());
 
-        clip.set_fill_type(fill_rule.unwrap_or(FillRule::NonZero));
+        path.set_fill_type(fill_rule.unwrap_or(FillRule::NonZero));
 
-        self.state.clip = match &self.state.clip {
-            Some(old_clip) => match old_clip
-                .path()
-                .op(clip.path(), skia_safe::PathOp::Intersect)
-            {
-                None => None,
-                Some(path) => Some(Path(path)),
-            },
-            None => Some(clip.clone()),
-        };
-
-        self.with_recorder(|mut recorder| {
-            recorder.set_clip(&self.state.clip)
-        });
+        self.surface
+            .canvas()
+            .clip_path(path.path(), Some(ClipOp::Intersect), Some(true));
     }
 
     pub fn point_in_path(&self, path: Option<&Path>, x: f32, y: f32, rule: FillRule) -> bool {

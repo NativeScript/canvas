@@ -167,7 +167,8 @@ impl Context {
     }
 
     pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.render_to_canvas(self.state.paint.fill_paint(), |canvas, paint| {
+        let paint = self.state.paint.fill_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
                 paint,
@@ -176,7 +177,8 @@ impl Context {
     }
 
     pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_oval(
                 skia_safe::Rect::from_xywh(x, y, width, height),
                 paint,
@@ -195,13 +197,15 @@ impl Context {
     }
 
     pub fn draw_point(&mut self, x: c_float, y: c_float) {
-        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
             canvas.draw_point(skia_safe::Point::new(x, y), paint);
         });
     }
 
     pub fn draw_points(&mut self, mode: PointMode, points: &[c_float]) {
-        self.render_to_canvas(self.state.paint.stroke_paint(), |canvas, paint| {
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
             let count = points.len();
             if count % 2 == 0 {
                 let points: Vec<_> = points

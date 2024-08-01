@@ -1,7 +1,11 @@
+use std::os::raw::c_void;
 #[cfg(feature = "vulkan")]
 use ash::vk;
 #[cfg(feature = "vulkan")]
 use ash::vk::Handle;
+use skia_safe::gpu;
+use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use crate::context::text_styles::text_direction::TextDirection;
 
 #[cfg(feature = "vulkan")]
 impl Context {
@@ -63,7 +67,7 @@ impl Context {
         };
 
         let info = skia_safe::ImageInfo::new(
-            skia_safe::ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
+            skia_safe::ISize::new(width as i32, height as i32),
             skia_safe::ColorType::N32,
             alpha_type,
             Some(skia_safe::ColorSpace::new_srgb()),
@@ -91,15 +95,16 @@ impl Context {
                 bounds,
                 scale: density,
                 ppi,
+                engine: SurfaceEngine::Vulkan,
             },
             surface,
             vk_surface,
             ash_graphics: None,
-            recorder: Arc::new(parking_lot::Mutex::new(Recorder::new(bounds))),
             path: Path::default(),
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            is_dirty: false,
         }
     }
 
@@ -119,7 +124,7 @@ impl Context {
             };
 
             let info = skia_safe::ImageInfo::new(
-                skia_safe::ISize::new((width * context.surface_data.scale).floor() as i32, (height * context.surface_data.scale).floor() as i32),
+                skia_safe::ISize::new(width as i32, height as i32),
                 skia_safe::ColorType::N32,
                 alpha_type,
                 Some(skia_safe::ColorSpace::new_srgb()),
@@ -139,7 +144,6 @@ impl Context {
 
             let bounds = skia_safe::Rect::from_wh(width, height);
             context.surface_data.bounds = bounds;
-            context.recorder = Arc::new(parking_lot::Mutex::new(Recorder::new(bounds)));
             context.surface = surface;
         }
     }

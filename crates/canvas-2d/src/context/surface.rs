@@ -1,10 +1,8 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
+use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
 
-use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, PictureRecorder, Rect, surfaces};
-
-use crate::context::{Context, Recorder, State, SurfaceData};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 
@@ -45,7 +43,6 @@ impl Context {
 
         let surface = surfaces::raster(&info, None, None).unwrap();
         let bounds = Rect::from_wh(width, height);
-        let recorder = Recorder::new(bounds);
 
         Context {
             direct_context: None,
@@ -57,13 +54,14 @@ impl Context {
                 bounds,
                 ppi,
                 scale: density,
+                engine: SurfaceEngine::CPU,
             },
             surface,
-            recorder: Arc::new(parking_lot::Mutex::new(recorder)),
             path: Path::default(),
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
+            is_dirty: false,
         }
     }
 
@@ -89,10 +87,21 @@ impl Context {
 
         let bounds = Rect::from_wh(width, height);
         let info = if bounds.is_empty() {
-            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
+            let mut width = width;
+            if width <= 0. {
+                width = 1.
+            }
+            let mut height = height;
+
+            if height <= 0. {
+                height = 1.
+            }
+
+
+            ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None)
         } else {
             ImageInfo::new(
-                ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
+                ISize::new(width as i32, height as i32),
                 color_type,
                 alpha_type,
                 None,
@@ -105,11 +114,6 @@ impl Context {
         if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
             context.surface_data.bounds = bounds;
-            let mut lock = context.recorder.lock();
-            lock.current = PictureRecorder::new();
-            lock.cache = None;
-            lock.is_dirty = false;
-            lock.layers.clear();
             context.surface_data.scale = density;
             context.surface_data.ppi = ppi;
         }
@@ -143,12 +147,6 @@ impl Context {
             );
         }
 
-        let mut lock = context.recorder.lock();
-        if let Some(image) = lock.get_picture() {
-            let scaled = skia_safe::Matrix::scale((density, density));
-            surface
-                .canvas()
-                .draw_picture(image, Some(&scaled), None);
-        }
+        context.draw_on_surface(&mut surface);
     }
 }

@@ -1101,31 +1101,29 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
     let canvas = unsafe { &mut *canvas };
 
     canvas.make_current();
-    canvas.context.with_recorder(|mut recorder| {
-        let (width, height) = (recorder.bounds.width(), recorder.bounds.height());
-        let snapshot = recorder.as_data();
+    let (width, height) = (canvas.context.width(), canvas.context.height());
+    let snapshot = canvas.context.as_data();
 
-        // todo handle pre-multipied
-        // let premultiply = state.get_inner().get_premultiplied_alpha();
+    // todo handle pre-multipied
+    // let premultiply = state.get_inner().get_premultiplied_alpha();
 
-        // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+    // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
 
-        state.0.make_current();
+    state.0.make_current();
 
-        canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
-            target,
-            level,
-            internalformat,
-            width as i32,
-            height as i32,
-            depth,
-            border,
-            format,
-            type_,
-            snapshot.as_slice(),
-            state.get_inner_mut(),
-        )
-    });
+    canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
+        target,
+        level,
+        internalformat,
+        width as i32,
+        height as i32,
+        depth,
+        border,
+        format,
+        type_,
+        snapshot.as_slice(),
+        state.get_inner_mut(),
+    )
 }
 
 #[no_mangle]
@@ -1360,31 +1358,29 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
     canvas.make_current();
-    canvas.context.with_recorder(|mut recorder| {
-        let data = recorder.as_data();
-        let (width, height) = (recorder.bounds.width(), recorder.bounds.height());
+    let (width, height) = (canvas.context.width(), canvas.context.height());
+    let data = canvas.context.as_data();
 
-        //  let premultiply = state.get_inner().get_premultiplied_alpha();
+    //  let premultiply = state.get_inner().get_premultiplied_alpha();
 
-        // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+    // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
 
-        state.0.make_current();
+    state.0.make_current();
 
-        canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
-            target,
-            level,
-            xoffset,
-            yoffset,
-            zoffset,
-            width as i32,
-            height as i32,
-            depth,
-            format,
-            type_,
-            data.as_slice(),
-            state.get_inner_mut(),
-        );
-    });
+    canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        zoffset,
+        width as i32,
+        height as i32,
+        depth,
+        format,
+        type_,
+        data.as_slice(),
+        state.get_inner_mut(),
+    );
 }
 
 #[no_mangle]

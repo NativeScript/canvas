@@ -22,16 +22,16 @@ export async function run(canvas: Canvas) {
 	const adapter = await navigator.gpu.requestAdapter();
 	const device: GPUDevice = (await adapter.requestDevice()) as never;
 
-    device.addEventListener('uncapturederror', event =>{
-        console.log(event);
-        console.log(event.error);
-    });
+	device.addEventListener('uncapturederror', (event) => {
+		console.log(event);
+		console.log(event.error);
+	});
 
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
 
 	const devicePixelRatio = window.devicePixelRatio;
-	//canvas.width = canvas.clientWidth * devicePixelRatio;
-	//canvas.height = canvas.clientHeight * devicePixelRatio;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 
 	const capabilities = (context as any).getCapabilities(adapter);
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
@@ -39,7 +39,7 @@ export async function run(canvas: Canvas) {
 
 	context.configure({
 		device,
-		format: presentationFormat
+		format: presentationFormat,
 	});
 
 	const particlesBuffer = device.createBuffer({
@@ -124,7 +124,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [(canvas.width as number) * devicePixelRatio, Math.floor((canvas.height as number) * devicePixelRatio)],
+		size: [canvas.width as number, canvas.height as number],
 		format: 'depth24plus',
 		usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
 	});
@@ -199,7 +199,6 @@ export async function run(canvas: Canvas) {
 
 		const imageBitmap = new ImageAsset();
 		imageBitmap.fromFileSync('~/assets/file-assets/webgpu/webgpu.png');
-
 
 		// Calculate number of mip levels required to generate the probability map
 		while (textureWidth < imageBitmap.width || textureHeight < imageBitmap.height) {

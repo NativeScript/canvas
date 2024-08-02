@@ -9,16 +9,21 @@ class NSCPIXIApplication extends Pixii.Application {
 		let clientWidth = 300;
 		let clientHeight = 150;
 		if (context) {
-			clientWidth = context.canvas.width;
-			clientHeight = context.canvas.height;
-		}
-		if (view) {
-			clientWidth = view.width;
-			clientHeight = view.height;
+			clientWidth = context.canvas.width * Screen.mainScreen.scale;
+			clientHeight = context.canvas.height * Screen.mainScreen.scale;
 		}
 		if (!view) {
 			view = context.canvas.toHTMLCanvas();
 		}
+
+		if (view) {
+			clientWidth = view.clientWidth;
+			clientHeight = view.clientHeight;
+		}
+
+		view.width = view.clientWidth * Screen.mainScreen.scale;
+		view.height = view.clientHeight * Screen.mainScreen.scale;
+
 		const width = props.width || clientWidth;
 		const height = props.height || clientHeight;
 
@@ -26,7 +31,7 @@ class NSCPIXIApplication extends Pixii.Application {
 
 		super({
 			...props,
-			resolution: 1,
+			resolution: Screen.mainScreen.scale,
 			view,
 			width,
 			height,

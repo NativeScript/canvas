@@ -19,12 +19,26 @@ export class HTMLCanvasElement extends HTMLElement {
 		if (!this.nativeElement.__domElement) {
 			this.nativeElement.__domElement = new DOMParser().parseFromString('<canvas></canvas>', 'text/html').documentElement as never;
 		}
-
-		this.style.nativeElement = new WeakRef(this.nativeElement);
 	}
 
 	get _canvas() {
 		return this.nativeElement;
+	}
+
+	get innerWidth() {
+		return this.clientWidth;
+	}
+
+	get innerHeight() {
+		return this.clientHeight;
+	}
+
+	get clientWidth() {
+		return this.nativeElement['clientWidth'] as never;
+	}
+
+	get clientHeight() {
+		return this.nativeElement['clientHeight'] as never;
 	}
 
 	set width(value) {

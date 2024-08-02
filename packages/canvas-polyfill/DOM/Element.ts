@@ -302,14 +302,14 @@ export class Element extends Node {
 
 	get innerWidth() {
 		if (this.nativeElement) {
-			return this.nativeElement['width'] as never;
+			return this.nativeElement['innerWidth'] ?? (this.nativeElement['width'] as never);
 		}
 		return this['width'];
 	}
 
 	get innerHeight() {
 		if (this.nativeElement) {
-			return this.nativeElement['height'] as never;
+			return this.nativeElement['innerHeight'] ?? (this.nativeElement['height'] as never);
 		}
 		return this['height'];
 	}

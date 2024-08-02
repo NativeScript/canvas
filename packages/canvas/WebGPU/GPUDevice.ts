@@ -210,7 +210,7 @@ export class GPUDevice extends EventTarget {
 	}) {
 		descriptor.layout = descriptor?.layout?.[native_];
 		if (Array.isArray(descriptor.entries)) {
-			for (const entry of descriptor.entries) {
+			descriptor.entries = descriptor.entries.map((entry) => {
 				if (entry.resource instanceof GPUTextureView) {
 					entry.resource = entry.resource[native_];
 				} else if (entry.resource instanceof GPUSampler) {
@@ -220,7 +220,10 @@ export class GPUDevice extends EventTarget {
 				} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
 					entry.resource.buffer = entry.resource.buffer[native_];
 				}
-			}
+				return entry;
+			});
+
+			console.log(descriptor);
 		}
 
 		const group = this.native.createBindGroup(descriptor);

@@ -580,8 +580,8 @@ fn main() -> @location(0) vec4f {
 		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
 		// fractualCube.run(this.canvas);
 
-		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
-		// wireframe.run(this.canvas);
+		const wireframe = require('./webgpu/graphicsTechniques/wireframe');
+		wireframe.run(this.canvas);
 
 		// const cameras = require('./webgpu/graphicsTechniques/cameras/cameras.ts');
 		// cameras.run(this.canvas);
@@ -738,7 +738,7 @@ fn main() -> @location(0) vec4f {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		circle_demo(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);

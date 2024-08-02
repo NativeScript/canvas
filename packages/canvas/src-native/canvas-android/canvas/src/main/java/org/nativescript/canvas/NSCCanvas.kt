@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
@@ -31,17 +32,22 @@ class NSCCanvas : FrameLayout {
 	var surfaceWidth: Int = 0
 		set(value) {
 			field = value
-			layoutSurface(value, surfaceHeight, this)
-			scaleSurface()
+			if (!internalSet) {
+				layoutSurface(value, surfaceHeight, this)
+				resize()
+			}
 		}
 
 	var surfaceHeight: Int = 0
 		set(value) {
 			field = value
-			layoutSurface(surfaceWidth, value, this)
-			scaleSurface()
+			if (!internalSet) {
+				layoutSurface(surfaceWidth, value, this)
+				resize()
+			}
 		}
 
+	private var internalSet = false
 	var nativeGL: Long = 0
 		private set
 
@@ -105,6 +111,7 @@ class NSCCanvas : FrameLayout {
 		val internalWidth = (resources.displayMetrics.density * 300).toInt()
 		val internalHeight = (resources.displayMetrics.density * 150).toInt()
 
+		internalSet = true
 		surfaceWidth = internalWidth
 		surfaceHeight = internalHeight
 		when (surfaceType) {
@@ -128,12 +135,7 @@ class NSCCanvas : FrameLayout {
 				)
 			}
 		}
-
-		// Force layout
-
-	//	layoutSurface(internalWidth, internalHeight, this)
-
-	//	scaleSurface()
+		internalSet = false
 	}
 
 
@@ -518,9 +520,10 @@ class NSCCanvas : FrameLayout {
 
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
-		scaleSurface()
+		resize()
 		listener?.surfaceResize(w, h)
 	}
+
 
 	private fun scaleSurface() {
 		val frameWidth: Int = width
@@ -562,7 +565,8 @@ class NSCCanvas : FrameLayout {
 			}
 
 			surface?.let {
-				nativeUpdateGLSurface(it, nativeGL)
+				// todo test with surface-view
+				// nativeUpdateGLSurface(it, nativeGL)
 				if (is2D) {
 					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 					nativeUpdate2DSurface(it, native2DContext)
@@ -581,6 +585,8 @@ class NSCCanvas : FrameLayout {
 				}
 			}
 
+			scaleSurface()
+		} else {
 			scaleSurface()
 		}
 	}
@@ -606,11 +612,9 @@ class NSCCanvas : FrameLayout {
 		invertFlipMatrix.postScale(-1f, -1f)
 	}
 
-
 	fun makeContextCurrent() {
 		nativeMakeGLCurrent(nativeGL)
 	}
-
 
 	@JvmOverloads
 	fun snapshot(flip: Boolean = false): Bitmap {
@@ -747,7 +751,6 @@ class NSCCanvas : FrameLayout {
 			canvas.measure(w, h)
 			canvas.layout(0, 0, width, height)
 		}
-
 
 		@JvmStatic
 		fun layoutSurface(width: Float, height: Float, canvas: NSCCanvas) {

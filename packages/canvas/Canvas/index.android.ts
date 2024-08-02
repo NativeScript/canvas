@@ -63,11 +63,9 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			const textureView = this._canvas.getChildAt(0) as android.view.TextureView;
-
-			const matrix = new android.graphics.Matrix();
-			matrix.setScale(Screen.mainScreen.scale, Screen.mainScreen.scale);
-			//textureView.setTransform(matrix);
+			// default canvas size
+			this._canvas.setSurfaceWidth(300);
+			this._canvas.setSurfaceHeight(150);
 
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
@@ -95,39 +93,61 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.width;
+		return this.getMeasuredWidth() / Screen.mainScreen.scale;
 	}
 
 	get clientHeight() {
-		return this.height;
+		return this.getMeasuredHeight() / Screen.mainScreen.scale;
 	}
 
 	get drawingBufferHeight() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
 		return this._canvas.getDrawingBufferHeight();
 	}
 
 	get drawingBufferWidth() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
 		return this._canvas.getDrawingBufferWidth();
 	}
 
 	// @ts-ignore
-	get width(): any {
-		return this._logicalSize.width;
+	get width(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.getSurfaceWidth();
 	}
 
-	set width(value) {
-		this._didLayout = false;
-		this._layoutNative();
+	set width(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.setSurfaceWidth(value);
 	}
 
 	// @ts-ignore
-	get height(): any {
-		return this._logicalSize.height;
+	get height(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.getSurfaceHeight();
 	}
 
-	set height(value) {
-		this._didLayout = false;
-		this._layoutNative();
+	set height(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.setSurfaceHeight(value);
 	}
 
 	static createCustomView() {
@@ -243,13 +263,12 @@ export class Canvas extends CanvasBase {
 			return;
 		}
 
-		const size = this._physicalSize;
-		console.log(size);
-		org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
+		// const size = this._physicalSize;
+		// org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
 
-		if (this._is2D) {
-			this._2dContext.native.__resize(size.width, size.height);
-		}
+		// if (this._is2D) {
+		// 	this._2dContext.native.__resize(size.width, size.height);
+		// }
 
 		this._didLayout = true;
 	}

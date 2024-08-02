@@ -17,6 +17,8 @@ export async function run(canvas: Canvas) {
 		const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
 		const devicePixelRatio = window.devicePixelRatio;
+		canvas.width = canvas.clientWidth * devicePixelRatio;
+		canvas.height = canvas.clientHeight * devicePixelRatio;
 		const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 		const path = knownFolders.currentApp().path;
@@ -348,7 +350,7 @@ export async function run(canvas: Canvas) {
 			renderPassDescriptor.depthStencilAttachment.view = depthTexture.createView();
 
 			const fov = (60 * Math.PI) / 180;
-			const aspect = canvas.clientWidth / canvas.clientHeight;
+			const aspect = canvas.width as number / (canvas.height as number);
 			const projection = mat4.perspective(fov, aspect, 0.1, 1000);
 
 			const view = mat4.lookAt(

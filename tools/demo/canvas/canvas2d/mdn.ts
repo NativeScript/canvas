@@ -545,26 +545,26 @@ export function pattern(canvas) {
 }
 
 export function patternWithCanvas(canvas) {
+	
 	const patternCanvas = Canvas.createCustomView();
-
+	patternCanvas.width = 50 * window.devicePixelRatio;
+	patternCanvas.height = 50 * window.devicePixelRatio;
 	
 	// Give the pattern a width and height of 50
-	patternCanvas.style.width = 50;
-	patternCanvas.style.height = 50;
+	patternCanvas.width = 50 * window.devicePixelRatio;
+	patternCanvas.height = 50 * window.devicePixelRatio;
 	const patternContext = patternCanvas.getContext('2d') as any;
-
-	console.log(patternContext.width, patternContext.height, patternContext._canvas.width, patternContext._canvas.height, patternContext._canvas._canvas)
-	
 
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+	patternContext.arc(0, 0, 50 * window.devicePixelRatio, 0, 0.5 * Math.PI);
 	patternContext.stroke();
 
 	//const url = patternCanvas.toDataURL('image/png', 92);
 	//console.log('toDataURL', url);
-
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const ctx = canvas.getContext('2d');
 
 	// Create our primary canvas and fill it with the pattern

@@ -21,17 +21,17 @@ export class Style {
 	}
 
 	get width() {
-		return 0;
+		return this._values.get('width');
 	}
 	set width(value) {
-		console.log('style.width', value);
+		this._values.set('width', value);
 	}
 
 	get height() {
-		return 0;
+		return this._values.get('height');
 	}
 	set height(value) {
-		console.log('style.height', value);
+		this._values.set('height', value);
 	}
 }
 
@@ -44,6 +44,9 @@ export class HTMLElement extends Element {
 	}
 
 	get style() {
+		if (this._nativeElement) {
+			return this._nativeElement.style;
+		}
 		return this._style;
 	}
 

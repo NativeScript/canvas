@@ -16,8 +16,8 @@ export async function run(canvas: Canvas) {
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
 	const devicePixelRatio = window.devicePixelRatio;
-	// canvas.width = canvas.clientWidth * devicePixelRatio;
-	// canvas.height = canvas.clientHeight * devicePixelRatio;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	context.configure({
@@ -91,7 +91,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [(canvas.width as number) * devicePixelRatio, (canvas.height as number) * devicePixelRatio],
+		size: [canvas.width as number, canvas.height as number],
 		format: 'depth24plus',
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});

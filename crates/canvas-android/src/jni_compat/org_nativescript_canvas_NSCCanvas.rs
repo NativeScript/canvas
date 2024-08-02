@@ -298,6 +298,7 @@ pub extern "system" fn nativeUpdateGLSurface(
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let handle = to_raw_window_handler(&window);
+
             context.gl_context.set_window_surface(
                 &mut context.contextAttributes,
                 window.width(),
@@ -329,8 +330,7 @@ pub extern "system" fn nativeUpdate2DSurface(
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let width = window.width() as f32;
             let height = window.height() as f32;
-            let density = context.get_context().density();
-            context.resize((width / density).floor(), (height / density).floor())
+            context.resize(width, height)
         }
         drop(env);
     }

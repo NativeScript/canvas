@@ -20,10 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 import * as utils from './utils';
-import { QuatArg, QuatType } from './quat';
-import { Mat3Arg } from './mat3.js';
-import { Mat4Arg } from './mat4.js';
-import { Vec3Arg } from './vec3.js';
+import type { QuatArg, QuatType } from './quat';
+import { Mat3Arg } from './mat3';
+import { Mat4Arg } from './mat4';
+import { Vec3Arg } from './vec3';
 import { getAPI as getVec3API } from './vec3-impl';
 import { BaseArgType } from './types';
 

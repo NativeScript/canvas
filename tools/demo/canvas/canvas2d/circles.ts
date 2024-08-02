@@ -67,10 +67,16 @@ export function circle_demo(view) {
 		}
 	});
 
-	const width = canvas.width;
-	const height = canvas.height;
+	const width = canvas.clientWidth * window.devicePixelRatio;
+	const height = canvas.clientHeight * window.devicePixelRatio;
+
+	canvas.width = width;
+	canvas.height = height;
+
+
 	canvas = canvas as Canvas;
 	ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+	ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	minRadius = Math.min(width, height) * 0.05;
 	maxRadius = Math.max(width, height) * 0.1;
@@ -99,7 +105,5 @@ function drawAnimation() {
 
 	for (const circle of circles) [circle.draw(ctx, speed)];
 
-	console.log(canvas.toDataURL());
-
-	//raf = requestAnimationFrame(() => drawAnimation());
+	raf = requestAnimationFrame(() => drawAnimation());
 }

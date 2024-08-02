@@ -1,4 +1,4 @@
-import { CSSType, PercentLength, View, Utils, Property, booleanConverter, CoreTypes, Screen } from '@nativescript/core';
+import { CSSType, PercentLength, View, Utils, Property, booleanConverter, CoreTypes, Screen, CssProperty, Style } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
 
 export interface ICanvasBase {
@@ -386,6 +386,7 @@ class Size {
 		};
 	}
 }
+
 
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {

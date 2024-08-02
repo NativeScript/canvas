@@ -3171,7 +3171,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	skinningAndMorphing(canvas) {
 		const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
 
-		const { width, height } = canvas;
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+
+		const { clientWidth: width, clientHeight: height } = canvas;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;
 		var camera, scene, renderer, model, face;
 
@@ -3233,15 +3236,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			);
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
+			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 			//renderer.outputEncoding = THREE.sRGBEncoding;
 			//container.appendChild( renderer.domElement );
 
 			window.addEventListener('resize', onWindowResize, false);
 
-
-			
 			const controls = new OrbitControls(camera, canvas.toHTMLCanvas());
 			controls.update();
 
@@ -3393,8 +3394,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let camera, scene, renderer;
 		let controls, water, sun, mesh;
 
-		let width = canvas.width;
-		let height = canvas.height;
+		let width = canvas.clientWidth;
+		let height = canvas.clientHeight;
 
 		init(this.root);
 		animate();
@@ -3403,7 +3404,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//
 
 			const dom = new (<any>HTMLCanvasElement)(canvas);
-
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
 

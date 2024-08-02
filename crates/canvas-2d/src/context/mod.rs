@@ -136,6 +136,7 @@ pub enum SurfaceEngine {
 }
 
 
+#[derive(Debug, Copy, Clone)]
 pub struct SurfaceData {
     pub(crate) bounds: skia_safe::Rect,
     pub(crate) scale: f32,

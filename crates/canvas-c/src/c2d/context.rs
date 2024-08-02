@@ -70,6 +70,8 @@ fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u3
 #[cfg(feature = "gl")]
 pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     let alpha = context.alpha;
+    let gl = &context.gl_context;
+    context.make_current();
     let context = &mut context.context;
     let density = context.get_surface_data().scale();
     let ppi = context.get_surface_data().ppi();
@@ -77,11 +79,12 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     let mut fb = [0];
 
     unsafe {
+        gl_bindings::Viewport(0, 0, width as i32, height as i32);
         gl_bindings::ClearColor(0., 0., 0., 0.);
         gl_bindings::Clear(gl_bindings::COLOR_BUFFER_BIT);
-        gl_bindings::Viewport(0, 0, (width * density).floor() as i32, (height * density).floor() as i32);
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, fb.as_mut_ptr());
     }
+    gl.swap_buffers();
 
     Context::resize_gl(context, width, height, density, fb[0], 0, alpha, ppi)
 }
@@ -197,7 +200,6 @@ impl CanvasRenderingContext2D {
     }
 
     pub fn resize(&mut self, width: f32, height: f32) {
-        self.gl_context.make_current();
         resize(self, width, height);
     }
 

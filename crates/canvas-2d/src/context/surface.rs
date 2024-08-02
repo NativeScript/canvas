@@ -35,7 +35,7 @@ impl Context {
         };
 
         let info = ImageInfo::new(
-            ISize::new((width * density).floor() as i32, (height * density).floor() as i32),
+            ISize::new(width as i32, height as i32),
             color_type,
             alpha_type,
             None,
@@ -124,7 +124,7 @@ impl Context {
             return;
         }
         let info = ImageInfo::new(
-            ISize::new((width as f32 * density).floor() as i32, (height as f32 * density).floor() as i32),
+            ISize::new(width as i32, height as i32),
             ColorType::RGBA8888,
             AlphaType::Unknown,
             None,

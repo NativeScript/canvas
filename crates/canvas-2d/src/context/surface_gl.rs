@@ -180,6 +180,7 @@ impl Context {
                 0,
                 frame_buffer,
             );
+
             let surface_props = skia_safe::SurfaceProps::new(
                 skia_safe::SurfacePropsFlags::default(),
                 PixelGeometry::Unknown,
@@ -202,6 +203,7 @@ impl Context {
             direct_context = Some(ctx);
             surface
         };
+
 
         if let Some(surface) = surface {
             context.direct_context = direct_context;

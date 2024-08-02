@@ -685,6 +685,7 @@ impl GLContext {
                             NonZeroU32::try_from(height as u32).unwrap(),
                         );
 
+
                     let surface = display
                         .create_window_surface(&config, &surface_attr)
                         .map(SurfaceHelper::Window)

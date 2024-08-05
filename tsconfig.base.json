@@ -31,7 +31,8 @@
 			"@nativescript/canvas-polyfill": ["packages/canvas-polyfill/index.ts"],
 			"@nativescript/canvas-svg": ["packages/canvas-svg/index.d.ts"],
 			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
-			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"]
+			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"],
+			"@nativescript/*": ["packages/*"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

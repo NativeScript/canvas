@@ -1,8 +1,8 @@
-import {DOMMatrix} from '../Canvas2D';
-import {CanvasBase} from './common';
-import {CanvasRenderingContext2D} from '../Canvas2D/CanvasRenderingContext2D';
-import {WebGLRenderingContext} from '../WebGL/WebGLRenderingContext';
-import {WebGL2RenderingContext} from '../WebGL2/WebGL2RenderingContext';
+import { DOMMatrix } from '../Canvas2D';
+import { CanvasBase } from './common';
+import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
+import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
+import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
 
 export declare function createSVGMatrix(): DOMMatrix;
@@ -27,6 +27,7 @@ export declare class Canvas extends CanvasBase {
 	private _2dContext;
 	private canvas;
 	native: any;
+	parentElement: any;
 
 	constructor();
 
@@ -43,7 +44,6 @@ export declare class Canvas extends CanvasBase {
 	disposeNativeView(): void;
 
 	toDataURL(type?: string, encoderOptions?: number): any;
-
 
 	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
 
@@ -66,8 +66,7 @@ export declare class Canvas extends CanvasBase {
 		left: number;
 	};
 
-
 	snapshot(): ImageSource | null;
-	
+
 	snapshot(flip?: boolean): ImageSource | null;
 }

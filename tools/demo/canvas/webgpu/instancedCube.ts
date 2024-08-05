@@ -17,6 +17,10 @@ export async function run(canvas: Canvas) {
 
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
+	const devicePixelRatio = window.devicePixelRatio;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
+
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
 	context.configure({

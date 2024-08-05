@@ -4,7 +4,7 @@ use std::{
     ffi::CString,
     os::raw::{c_char, c_void},
 };
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 
 use super::gpu::CanvasWebGPUInstance;
@@ -47,7 +47,8 @@ impl Drop for CanvasGPUBuffer {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.buffer_drop(self.buffer, false));
+            let id = self.buffer;
+            gfx_select!(id => global.buffer_drop(self.buffer, false));
         }
     }
 }
@@ -70,7 +71,7 @@ impl CanvasGPUBuffer {
     pub fn unmap(&self) {
         let buffer_id = self.buffer;
         let global = self.instance.global();
-        gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
+        let _ = gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
     }
 }
 
@@ -217,5 +218,5 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
     let global = buffer.instance.global();
     let buffer_id = buffer.buffer;
 
-    gfx_select!(buffer_id => global.buffer_map_async(buffer_id, offset, size, op));
+    let _ = gfx_select!(buffer_id => global.buffer_map_async(buffer_id, offset, size, op));
 }

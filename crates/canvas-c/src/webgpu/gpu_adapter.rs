@@ -4,6 +4,8 @@ use std::{
 };
 use std::sync::Arc;
 
+//use wgpu_core::gfx_select;
+
 use crate::buffers::StringBuffer;
 use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
 use crate::webgpu::gpu_queue::QueueId;
@@ -18,14 +20,14 @@ pub struct CanvasGPUAdapter {
     pub(crate) adapter: wgpu_core::id::AdapterId,
     pub(crate) is_fallback_adapter: bool,
     pub(crate) features: Vec<&'static str>,
-    pub(crate) limits: wgpu_types::Limits,
+    pub(crate) limits: wgt::Limits,
 }
 
 impl Drop for CanvasGPUAdapter {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.adapter_drop(self.adapter));
+            gfx_select!(self.adapter => global.adapter_drop(self.adapter));
         }
     }
 }
@@ -76,7 +78,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_get_limits(
     adapter: *const CanvasGPUAdapter,
 ) -> *mut CanvasGPUSupportedLimits {
     if adapter.is_null() {
-        return Box::into_raw(Box::new(wgpu_types::Limits::default().into()));
+        return Box::into_raw(Box::new(wgt::Limits::default().into()));
     }
     let adapter = unsafe { &*adapter };
     Box::into_raw(Box::new(adapter.limits.clone().into()))
@@ -119,7 +121,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let features = parse_required_features(required_features, required_features_length);
 
     let limits = if required_limits.is_null() {
-        wgpu_types::Limits::default()
+        wgt::Limits::default()
     } else {
         unsafe { *required_limits }.into()
     };
@@ -129,9 +131,9 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let adapter_id = adapter.adapter;
-    let instance = adapter.instance.clone();
+    let instance = Arc::clone(&adapter.instance);
     std::thread::spawn(move || {
-        let descriptor = wgpu_types::DeviceDescriptor {
+        let descriptor = wgt::DeviceDescriptor {
             label,
             required_features: features,
             required_limits: limits,
@@ -169,7 +171,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             let queue = Arc::new(CanvasGPUQueue {
                 queue: Arc::new(QueueId {
                     id: queue,
-                    instance: instance_copy.clone(),
+                    instance: Arc::clone(&instance_copy),
                 }),
                 error_sink: error_sink.clone(),
             });

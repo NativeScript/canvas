@@ -138,7 +138,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 			const touches = args.touches.item(0);
 			const first = touches;
 			cleanUpArray();
-			initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
+			initParticles(first.clientX, first.clientY);
 		});
 
 		canvas.addEventListener('touchmove', (args) => {
@@ -146,7 +146,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 			if (Array.isArray(touches)) {
 				const first = touches[0];
 				cleanUpArray();
-				initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
+				initParticles(first.clientX, first.clientY);
 			}
 		});
 

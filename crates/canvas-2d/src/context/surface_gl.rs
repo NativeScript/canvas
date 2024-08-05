@@ -1,7 +1,7 @@
 use skia_safe::{AlphaType, Color, ColorType, gpu, ImageInfo, ISize, PixelGeometry, surfaces};
 use skia_safe::gpu::gl::Interface;
 
-use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 
@@ -112,7 +112,7 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            is_dirty: false,
+            surface_state: SurfaceState::None,
         }
     }
 
@@ -164,7 +164,6 @@ impl Context {
                 return;
             }
             let mut ctx = ctx.unwrap();
-            ctx.reset(None);
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -204,9 +203,9 @@ impl Context {
             surface
         };
 
-
         if let Some(surface) = surface {
             context.direct_context = direct_context;
+            context.surface_state = SurfaceState::None;
             context.surface_data.engine = engine;
             context.surface_data.bounds = bounds;
             context.surface_data.scale = density;

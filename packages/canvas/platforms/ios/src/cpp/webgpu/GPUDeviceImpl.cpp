@@ -248,7 +248,7 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
         for (int i = 0; i < len; ++i) {
             auto item = canvas_native_string_buffer_get_value_at(features, i);
             if (item != nullptr) {
-                auto keyValue = ConvertToV8OneByteString(isolate, (char *) item);
+                auto keyValue = ConvertToV8String(isolate, (char *) item);
                 map->Set(context, keyValue, keyValue);
                 canvas_native_string_destroy(item);
             }
@@ -1233,7 +1233,6 @@ void GPUDeviceImpl::CreateQuerySet(const v8::FunctionCallbackInfo<v8::Value> &ar
     if (!labelVal.IsEmpty() && labelVal->IsString()) {
         label = *v8::String::Utf8Value(isolate, labelVal);
     }
-
 
     v8::Local<v8::Value> typeVal;
     options->Get(context, ConvertToV8String(isolate, "type")).ToLocal(&labelVal);

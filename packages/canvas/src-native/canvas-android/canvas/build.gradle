@@ -16,7 +16,7 @@ project.ext {
 	SNAPSHOT_REPOSITORY_URL = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 }
 
-def computeKotlinVersion = { -> project.hasProperty("kotlin_version") ? kotlin_version : "1.7.10" }
+def computeKotlinVersion = { -> project.hasProperty("kotlin_version") ? kotlin_version : "1.9.25" }
 
 def NDK_PATH = ""
 def hasNdkDirectory = project.hasProperty("ndkDirectory")

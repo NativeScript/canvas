@@ -1,4 +1,4 @@
-import { CSSType, PercentLength, View, Utils, Property, booleanConverter, CoreTypes, Screen, CssProperty, Style } from '@nativescript/core';
+import { CSSType, View, Property, booleanConverter } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
 
 export interface ICanvasBase {
@@ -362,31 +362,6 @@ export const doc = {
 		},
 	},
 };
-
-class Size {
-	private view: CanvasBase;
-	private type: 'physical' | 'logical';
-	constructor(view: CanvasBase, type: 'physical' | 'logical' = 'logical') {
-		this.view = view;
-		this.type = type;
-	}
-
-	get width() {
-		return this.view._getSize(this.view.style.width, this.view.getMeasuredWidth(), this.type);
-	}
-
-	get height() {
-		return this.view._getSize(this.view.style.height, this.view.getMeasuredHeight(), this.type);
-	}
-
-	toJSON() {
-		return {
-			width: this.width,
-			height: this.height,
-		};
-	}
-}
-
 
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
@@ -1031,10 +1006,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this._classList;
 	}
 
-	_physicalSize = new Size(this, 'physical');
-
-	_logicalSize = new Size(this, 'logical');
-
 	_handlePowerPreference(powerPreference: string) {
 		switch (powerPreference) {
 			case 'default':
@@ -1139,51 +1110,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		bottom: number;
 		left: number;
 	};
-
-	_getSize(value: string | number | CoreTypes.LengthPercentUnit | CoreTypes.LengthDipUnit | CoreTypes.LengthPxUnit | 'auto', measuredSize: number, type: 'logical' | 'physical' = 'logical'): number {
-		const isPhysical = type === 'physical';
-		if (value === undefined || value === null) {
-			return 0;
-		}
-
-		if (value === 'auto') {
-			const size = measuredSize;
-			if (isPhysical) {
-				return Math.floor(size);
-			}
-			return Math.floor(size / Screen.mainScreen.scale);
-		}
-
-		if (typeof value === 'string') {
-			value = PercentLength.parse(value);
-		}
-
-		switch (typeof value) {
-			case 'number': {
-				if (isPhysical) {
-					return Math.floor((value || 0) * Screen.mainScreen.scale);
-				}
-				return value || 0;
-			}
-			case 'object': {
-				if (value.unit === 'dip' || value.unit === 'px') {
-					if (isPhysical) {
-						return Math.floor((value.value || 0) * Screen.mainScreen.scale);
-					}
-					return value.value || 0;
-				} else if (value.unit === '%') {
-					if (isPhysical) {
-						return Math.floor(measuredSize * value.value ?? 0);
-					}
-					return Math.floor((measuredSize * value.value ?? 0) / Screen.mainScreen.scale);
-				}
-
-				return 0;
-			}
-			default:
-				return 0;
-		}
-	}
 
 	setPointerCapture(id) {}
 

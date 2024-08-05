@@ -2478,7 +2478,7 @@ void canvas_native_context_transform(struct CanvasRenderingContext2D *context,
 
 void canvas_native_context_translate(struct CanvasRenderingContext2D *context, float x, float y);
 
-void canvas_native_context_flush(const struct CanvasRenderingContext2D *context);
+void canvas_native_context_flush(struct CanvasRenderingContext2D *context);
 
 void canvas_native_context_render(struct CanvasRenderingContext2D *context);
 
@@ -2834,6 +2834,8 @@ char *canvas_native_webgpu_error_get_message(const struct CanvasGPUError *error)
 const struct CanvasWebGPUInstance *canvas_native_webgpu_instance_create(void);
 
 void canvas_native_webgpu_instance_release(const struct CanvasWebGPUInstance *instance);
+
+int64_t canvas_native_webgpu_get_pointer_addr(const struct CanvasWebGPUInstance *instance);
 
 void canvas_native_webgpu_request_adapter(const struct CanvasWebGPUInstance *instance,
                                           const struct CanvasGPURequestAdapterOptions *options,

@@ -100,11 +100,11 @@ impl Context {
             surface,
             vk_surface,
             ash_graphics: None,
-            path: Path::default(),
+            path: Default::default(),
             state,
             state_stack: vec![],
-            font_color: Color::new(font_color as u32),
-            is_dirty: false,
+            font_color: skia_safe::Color::new(font_color as u32),
+            surface_state: false,
         }
     }
 

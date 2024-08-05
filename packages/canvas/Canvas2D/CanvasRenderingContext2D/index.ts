@@ -120,6 +120,40 @@ function toBlendMode(value: string): number {
 	}
 }
 
+function drawNativeImage(args: any[], image, context: any) {
+	let dirty = false;
+	const ptr = context.context.__getPointer();
+	if (args.length === 3) {
+		if (__ANDROID__) {
+			dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2]);
+		}
+
+		if (__IOS__) {
+			dirty = NSCCanvasRenderingContext2D.drawImage(ptr, image, args[1], args[2]);
+		}
+	} else if (args.length === 5) {
+		if (__ANDROID__) {
+			dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2], args[3], args[4]);
+		}
+
+		if (__IOS__) {
+			dirty = NSCCanvasRenderingContext2D.drawImage(ptr, image, args[1], args[2], args[3], args[4]);
+		}
+	} else if (args.length === 9) {
+		if (__ANDROID__) {
+			dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(ptr), image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+
+		if (__IOS__) {
+			dirty = NSCCanvasRenderingContext2D.drawImage(ptr, image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+	}
+
+	if (dirty) {
+		context.context.__makeDirty();
+	}
+}
+
 export class CanvasRenderingContext2D {
 	public static isDebug = true;
 	private context;
@@ -419,28 +453,28 @@ export class CanvasRenderingContext2D {
 		} else if (image instanceof ImageSource) {
 			//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
 			//const createPattern = this.context.__createPatternWithNative; //this._getMethod('__createPatternWithNative');
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				img = image.android;
 				const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(this.context.__getPointer()), img, repetition);
 				return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 			}
 
-			if (global.isIOS) {
+			if (__IOS__) {
 				img = image.ios;
 				const pattern = NSCCanvasRenderingContext2D.createPattern(this.context.__getPointer(), img, repetition);
 				return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 			}
 
 			return null;
-		} else if (global.isAndroid && image instanceof android.graphics.Bitmap) {
+		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
 			//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
 			const createPattern = this.context.__createPatternWithNative; //this._getMethod('__createPatternWithNative');
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(this.context.__getPointer()), image, repetition);
 				return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 			}
 
-			if (global.isIOS) {
+			if (__IOS__) {
 				const pattern = NSCCanvasRenderingContext2D.createPattern(this.context.__getPointer(), image, repetition);
 				return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 			}
@@ -451,7 +485,7 @@ export class CanvasRenderingContext2D {
 		} else if (image instanceof Canvas) {
 			img = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
-			if (global.isAndroid && image._image instanceof android.graphics.Bitmap) {
+			if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
 				//todo ios
 				img = image._image;
 			} else if (image._asset instanceof ImageAsset) {
@@ -459,13 +493,13 @@ export class CanvasRenderingContext2D {
 			} else if (typeof image.src === 'string') {
 				//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
 				//const createPattern = this.context.__createPatternWithNative; //this._getMethod('__createPatternWithNative');
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					img = ImageSource.fromFileSync(image.src).android;
 					const pattern = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.createPattern(long(this.context.__getPointer()), img, repetition);
 					return new CanvasPattern(this.context.__createPatternWithNative(pattern));
 				}
 
-				if (global.isiOS) {
+				if (__IOS__) {
 					img = ImageSource.fromFileSync(image.src).android;
 					const pattern = NSCCanvasRenderingContext2D.createPattern(this.context.__getPointer(), img, repetition);
 					return new CanvasPattern(this.context.__createPatternWithNative(pattern));
@@ -532,94 +566,57 @@ export class CanvasRenderingContext2D {
 	drawImage(...args): void {
 		//const drawImage = this.context.drawImage; //this._getMethod('drawImage');
 
-		const drawNativeImage = (args, image) => {
-			//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
-			//const makeDirty = this.context.__makeDirty; //this._getMethod('__makeDirty');
-
-			let dirty = false;
-
-			if (args.length === 3) {
-				if (global.isAndroid) {
-					dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(this.context.__getPointer()), image, args[1], args[2]);
-				}
-
-				if (global.isIOS) {
-					dirty = NSCCanvasRenderingContext2D.drawImage(this.context.__getPointer(), image, args[1], args[2]);
-				}
-			} else if (args.length === 5) {
-				if (global.isAndroid) {
-					dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(this.context.__getPointer()), image, args[1], args[2], args[3], args[4]);
-				}
-
-				if (global.isIOS) {
-					dirty = NSCCanvasRenderingContext2D.drawImage(this.context.__getPointer(), image, args[1], args[2], args[3], args[4]);
-				}
-			} else if (args.length === 9) {
-				if (global.Android) {
-					dirty = (org as any).nativescript.canvas.NSCCanvasRenderingContext2D.drawImage(long(this.context.__getPointer()), image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-				}
-
-				if (global.isIOS) {
-					dirty = NSCCanvasRenderingContext2D.drawImage(this.context.__getPointer(), image, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-				}
-			}
-
-			if (dirty) {
-				this.context.__makeDirty();
-			}
-		};
-
 		let image = args[0];
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
 			image = (image as any).native;
 		} else if (image instanceof ImageAsset) {
 			image = image.native;
 		} else if (image instanceof ImageSource) {
-			if (global.isAndroid) {
-				drawNativeImage(args, image.android);
+			if (__ANDROID__) {
+				drawNativeImage(args, image.android, this);
 			}
-			if (global.isIOS) {
-				drawNativeImage(args, image.ios);
+			if (__IOS__) {
+				drawNativeImage(args, image.ios, this);
 			}
 			return;
-		} else if (global.isAndroid && image instanceof android.graphics.Bitmap) {
-			drawNativeImage(args, image);
+		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
+			drawNativeImage(args, image, this);
 			return;
-		} else if (global.isIOS && image instanceof UIImage) {
-			drawNativeImage(args, image);
+		} else if (__IOS__ && image instanceof UIImage) {
+			drawNativeImage(args, image, this);
 			return;
 		} else if (image instanceof Canvas) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource) {
-				if (global.isAndroid) {
-					drawNativeImage(args, image._imageSource.android);
+				if (__ANDROID__) {
+					drawNativeImage(args, image._imageSource.android, this);
 				}
-				if (global.isIOS) {
-					drawNativeImage(args, image._imageSource.ios);
+				if (__IOS__) {
+					drawNativeImage(args, image._imageSource.ios, this);
 				}
 				return;
-			} else if (global.isAndroid && image._image instanceof android.graphics.Bitmap) {
-				drawNativeImage(args, image._image);
+			} else if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
+				drawNativeImage(args, image._image, this);
 				return;
-			} else if (global.isAndroid && image._svg) {
+			} else if (__ANDROID__ && image._svg) {
 				const bitmap = image._svg?._svg?.getBitmap?.();
 				if (bitmap) {
-					drawNativeImage(args, bitmap);
+					drawNativeImage(args, bitmap, this);
 				}
 				return;
-			} else if (global.isIOS && image._image instanceof UIImage) {
-				drawNativeImage(args, image._image);
+			} else if (__IOS__ && image._image instanceof UIImage) {
+				drawNativeImage(args, image._image, this);
 				return;
 			} else if (image._asset instanceof ImageAsset) {
 				image = image._asset.native;
 			} else if (typeof image.src === 'string') {
 				image = ImageSource.fromFileSync(image.src).android;
-				if (global.isAndroid) {
-					drawNativeImage(args, image.android);
+				if (__ANDROID__) {
+					drawNativeImage(args, image.android, this);
 				}
-				if (global.isIOS) {
-					drawNativeImage(args, image.ios);
+				if (__IOS__) {
+					drawNativeImage(args, image.ios, this);
 				}
 				return;
 			}
@@ -656,35 +653,35 @@ export class CanvasRenderingContext2D {
 		} else if (image instanceof ImageAsset) {
 			image = image.native;
 		} else if (image instanceof ImageSource) {
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				isNativeSource = true;
 				image = image.android;
 			}
-			if (global.isIOS) {
+			if (__IOS__) {
 				isNativeSource = true;
 				image = image.ios;
 			}
-		} else if (global.isAndroid && image instanceof android.graphics.Bitmap) {
+		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
 			isNativeSource = true;
-		} else if (global.isIOS && image instanceof UIImage) {
+		} else if (__IOS__ && image instanceof UIImage) {
 			isNativeSource = true;
 		} else if (image instanceof Canvas) {
 			image = (image as any).native;
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					isNativeSource = true;
 					image = image._imageSource.android;
 				}
-				if (global.isIOS) {
+				if (__IOS__) {
 					isNativeSource = true;
 					image = image._imageSource.ios;
 				}
 				return;
-			} else if (global.isAndroid && image._image instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && image._image instanceof android.graphics.Bitmap) {
 				image = image._image;
 				isNativeSource = true;
-			} else if (global.isIOS && image._image instanceof UIImage) {
+			} else if (__IOS__ && image._image instanceof UIImage) {
 				image = image._image;
 				isNativeSource = true;
 			} else if (image._asset instanceof ImageAsset) {
@@ -700,11 +697,11 @@ export class CanvasRenderingContext2D {
 		}
 
 		if (isNativeSource) {
-			if (global.isIOS) {
+			if (__IOS__) {
 				return;
 			}
 
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				const x = Array.create('float', xform.length * 4);
 				let next = 0;
 				for (let i = 0; i < xform.length; i++) {

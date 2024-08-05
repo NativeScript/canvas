@@ -1,5 +1,5 @@
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUShaderModule {
@@ -11,7 +11,7 @@ impl Drop for CanvasGPUShaderModule {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(id => global.shader_module_drop(self.module));
+            gfx_select!(self.module => global.shader_module_drop(self.module));
         }
     }
 }

@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
-use canvas_2d::context::{Context};
+use canvas_2d::context::Context;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
@@ -70,21 +70,24 @@ fn to_data_url(context: &mut CanvasRenderingContext2D, format: &str, quality: u3
 #[cfg(feature = "gl")]
 pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     let alpha = context.alpha;
-    let gl = &context.gl_context;
     context.make_current();
     let context = &mut context.context;
     let density = context.get_surface_data().scale();
     let ppi = context.get_surface_data().ppi();
 
+    if width.floor() == context.get_surface_data().width().floor() && height.floor() == context.get_surface_data().height().floor() {
+        return;
+    }
+
     let mut fb = [0];
+
+    context.clear_rect(0., 0., width, height);
+    context.flush_and_render_to_surface();
 
     unsafe {
         gl_bindings::Viewport(0, 0, width as i32, height as i32);
-        gl_bindings::ClearColor(0., 0., 0., 0.);
-        gl_bindings::Clear(gl_bindings::COLOR_BUFFER_BIT);
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, fb.as_mut_ptr());
     }
-    gl.swap_buffers();
 
     Context::resize_gl(context, width, height, density, fb[0], 0, alpha, ppi)
 }
@@ -184,7 +187,7 @@ impl CanvasRenderingContext2D {
             self.context.flush_and_render_to_surface();
         }
 
-         #[cfg(target_os = "ios")]
+        #[cfg(target_os = "ios")]
         {
             if self.engine == Engine::GL {
                 self.gl_context.swap_buffers();
@@ -2325,7 +2328,7 @@ pub extern "C" fn canvas_native_context_get_image_data(
 pub extern "C" fn canvas_native_context_get_transform(
     context: *mut CanvasRenderingContext2D,
 ) -> *mut Matrix {
-    let context = unsafe { &*context };
+    let context = unsafe { &mut *context };
     let matrix = context.context.get_transform();
     Box::into_raw(Box::new(Matrix(matrix)))
 }

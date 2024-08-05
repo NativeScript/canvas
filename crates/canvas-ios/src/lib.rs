@@ -376,7 +376,7 @@ pub extern "C" fn canvas_native_create_2d_context(
         gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
     };
 
-    let mut ctx_2d = CanvasRenderingContext2D::new_gl(
+    let ctx_2d = CanvasRenderingContext2D::new_gl(
         canvas_2d::context::Context::new_gl(
             width as f32,
             height as f32,
@@ -392,10 +392,11 @@ pub extern "C" fn canvas_native_create_2d_context(
         alpha,
     );
 
-    {
-        let mut ctx = ctx_2d.get_context_mut();
-        ctx.clear_canvas();
-    }
+    // {
+    //     let mut ctx = ctx_2d.get_context_mut();
+    //     ctx.clear_canvas();
+    //     ctx.flush_and_render_to_surface()
+    // }
 
     Box::into_raw(Box::new(ctx_2d)) as i64
 }

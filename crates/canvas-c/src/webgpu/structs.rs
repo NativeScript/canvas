@@ -1,4 +1,4 @@
-use wgpu_types::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
+use wgt::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
 
 use crate::buffers::StringBuffer;
 
@@ -18,8 +18,8 @@ pub struct CanvasOrigin3d {
     pub z: u32,
 }
 
-impl From<wgpu_types::Origin3d> for CanvasOrigin3d {
-    fn from(value: wgpu_types::Origin3d) -> Self {
+impl From<wgt::Origin3d> for CanvasOrigin3d {
+    fn from(value: wgt::Origin3d) -> Self {
         Self {
             x: value.x,
             y: value.y,
@@ -28,9 +28,9 @@ impl From<wgpu_types::Origin3d> for CanvasOrigin3d {
     }
 }
 
-impl Into<wgpu_types::Origin3d> for CanvasOrigin3d {
-    fn into(self) -> wgpu_types::Origin3d {
-        wgpu_types::Origin3d {
+impl Into<wgt::Origin3d> for CanvasOrigin3d {
+    fn into(self) -> wgt::Origin3d {
+        wgt::Origin3d {
             x: self.x,
             y: self.y,
             z: self.z,
@@ -47,8 +47,8 @@ pub struct CanvasOrigin2d {
     pub y: u32,
 }
 
-impl From<wgpu_types::Origin2d> for CanvasOrigin2d {
-    fn from(value: wgpu_types::Origin2d) -> Self {
+impl From<wgt::Origin2d> for CanvasOrigin2d {
+    fn from(value: wgt::Origin2d) -> Self {
         Self {
             x: value.x,
             y: value.y,
@@ -56,9 +56,9 @@ impl From<wgpu_types::Origin2d> for CanvasOrigin2d {
     }
 }
 
-impl Into<wgpu_types::Origin2d> for CanvasOrigin2d {
-    fn into(self) -> wgpu_types::Origin2d {
-        wgpu_types::Origin2d {
+impl Into<wgt::Origin2d> for CanvasOrigin2d {
+    fn into(self) -> wgt::Origin2d {
+        wgt::Origin2d {
             x: self.x,
             y: self.y,
         }
@@ -76,9 +76,9 @@ pub struct CanvasExtent3d {
     pub depth_or_array_layers: u32,
 }
 
-impl Into<wgpu_types::Extent3d> for CanvasExtent3d {
-    fn into(self) -> wgpu_types::Extent3d {
-        wgpu_types::Extent3d {
+impl Into<wgt::Extent3d> for CanvasExtent3d {
+    fn into(self) -> wgt::Extent3d {
+        wgt::Extent3d {
             width: self.width,
             height: self.height,
             depth_or_array_layers: self.depth_or_array_layers,
@@ -86,8 +86,8 @@ impl Into<wgpu_types::Extent3d> for CanvasExtent3d {
     }
 }
 
-impl From<wgpu_types::Extent3d> for CanvasExtent3d {
-    fn from(value: wgpu_types::Extent3d) -> Self {
+impl From<wgt::Extent3d> for CanvasExtent3d {
+    fn from(value: wgt::Extent3d) -> Self {
         Self {
             width: value.width,
             height: value.height,
@@ -144,9 +144,9 @@ impl CanvasColor {
     };
 }
 
-impl Into<wgpu_types::Color> for CanvasColor {
-    fn into(self) -> wgpu_types::Color {
-        wgpu_types::Color {
+impl Into<wgt::Color> for CanvasColor {
+    fn into(self) -> wgt::Color {
+        wgt::Color {
             r: self.r,
             g: self.g,
             b: self.b,
@@ -155,8 +155,8 @@ impl Into<wgpu_types::Color> for CanvasColor {
     }
 }
 
-impl From<wgpu_types::Color> for CanvasColor {
-    fn from(value: wgpu_types::Color) -> Self {
+impl From<wgt::Color> for CanvasColor {
+    fn from(value: wgt::Color) -> Self {
         Self {
             r: value.r,
             g: value.g,
@@ -174,8 +174,8 @@ pub struct CanvasImageDataLayout {
     rows_per_image: i32,
 }
 
-impl From<wgpu_types::ImageDataLayout> for CanvasImageDataLayout {
-    fn from(value: wgpu_types::ImageDataLayout) -> Self {
+impl From<wgt::ImageDataLayout> for CanvasImageDataLayout {
+    fn from(value: wgt::ImageDataLayout) -> Self {
         Self {
             offset: value.offset,
             bytes_per_row: value.bytes_per_row.unwrap_or_default() as i32,
@@ -184,12 +184,12 @@ impl From<wgpu_types::ImageDataLayout> for CanvasImageDataLayout {
     }
 }
 
-impl Into<wgpu_types::ImageDataLayout> for CanvasImageDataLayout {
-    fn into(self) -> wgpu_types::ImageDataLayout {
+impl Into<wgt::ImageDataLayout> for CanvasImageDataLayout {
+    fn into(self) -> wgt::ImageDataLayout {
         let bytes_per_row: Option<u32> = self.bytes_per_row.try_into().ok();
         let rows_per_image: Option<u32> = self.rows_per_image.try_into().ok();
 
-        wgpu_types::ImageDataLayout {
+        wgt::ImageDataLayout {
             offset: self.offset,
             bytes_per_row,
             rows_per_image,
@@ -231,8 +231,8 @@ pub struct CanvasImageSubresourceRange {
     pub array_layer_count: i32,
 }
 
-impl From<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
-    fn from(value: wgpu_types::ImageSubresourceRange) -> Self {
+impl From<wgt::ImageSubresourceRange> for CanvasImageSubresourceRange {
+    fn from(value: wgt::ImageSubresourceRange) -> Self {
         Self {
             aspect: value.aspect.into(),
             base_mip_level: value.base_mip_level,
@@ -243,9 +243,9 @@ impl From<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
     }
 }
 
-impl Into<wgpu_types::ImageSubresourceRange> for CanvasImageSubresourceRange {
-    fn into(self) -> wgpu_types::ImageSubresourceRange {
-        wgpu_types::ImageSubresourceRange {
+impl Into<wgt::ImageSubresourceRange> for CanvasImageSubresourceRange {
+    fn into(self) -> wgt::ImageSubresourceRange {
+        wgt::ImageSubresourceRange {
             aspect: self.aspect.into(),
             base_mip_level: self.base_mip_level,
             mip_level_count: self.mip_level_count.try_into().ok(),
@@ -263,8 +263,8 @@ pub struct CanvasColorTargetState {
     pub write_mask: u32,
 }
 
-impl From<wgpu_types::ColorTargetState> for CanvasColorTargetState {
-    fn from(value: wgpu_types::ColorTargetState) -> Self {
+impl From<wgt::ColorTargetState> for CanvasColorTargetState {
+    fn from(value: wgt::ColorTargetState) -> Self {
         Self {
             format: value.format.into(),
             blend: value.blend.into(),
@@ -273,12 +273,12 @@ impl From<wgpu_types::ColorTargetState> for CanvasColorTargetState {
     }
 }
 
-impl Into<wgpu_types::ColorTargetState> for CanvasColorTargetState {
-    fn into(self) -> wgpu_types::ColorTargetState {
-        wgpu_types::ColorTargetState {
+impl Into<wgt::ColorTargetState> for CanvasColorTargetState {
+    fn into(self) -> wgt::ColorTargetState {
+        wgt::ColorTargetState {
             format: self.format.into(),
             blend: self.blend.into(),
-            write_mask: wgpu_types::ColorWrites::from_bits_truncate(self.write_mask),
+            write_mask: wgt::ColorWrites::from_bits_truncate(self.write_mask),
         }
     }
 }
@@ -290,18 +290,18 @@ pub enum CanvasOptionalBlendState {
     Some(CanvasBlendState),
 }
 
-impl From<wgpu_types::TextureFormat> for CanvasColorTargetState {
-    fn from(format: wgpu_types::TextureFormat) -> Self {
+impl From<wgt::TextureFormat> for CanvasColorTargetState {
+    fn from(format: wgt::TextureFormat) -> Self {
         Self {
             format: format.into(),
             blend: CanvasOptionalBlendState::None,
-            write_mask: wgpu_types::ColorWrites::ALL.bits(),
+            write_mask: wgt::ColorWrites::ALL.bits(),
         }
     }
 }
 
-impl From<wgpu_types::BlendState> for CanvasOptionalBlendState {
-    fn from(value: wgpu_types::BlendState) -> Self {
+impl From<wgt::BlendState> for CanvasOptionalBlendState {
+    fn from(value: wgt::BlendState) -> Self {
         Self::Some(CanvasBlendState {
             color: value.color.into(),
             alpha: value.alpha.into(),
@@ -309,8 +309,8 @@ impl From<wgpu_types::BlendState> for CanvasOptionalBlendState {
     }
 }
 
-impl From<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
-    fn from(value: Option<wgpu_types::BlendState>) -> Self {
+impl From<Option<wgt::BlendState>> for CanvasOptionalBlendState {
+    fn from(value: Option<wgt::BlendState>) -> Self {
         match value {
             Some(value) => Self::Some(value.into()),
             None => Self::None,
@@ -318,11 +318,11 @@ impl From<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
     }
 }
 
-impl Into<Option<wgpu_types::BlendState>> for CanvasOptionalBlendState {
-    fn into(self) -> Option<wgpu_types::BlendState> {
+impl Into<Option<wgt::BlendState>> for CanvasOptionalBlendState {
+    fn into(self) -> Option<wgt::BlendState> {
         match self {
             CanvasOptionalBlendState::None => None,
-            CanvasOptionalBlendState::Some(value) => Some(wgpu_types::BlendState {
+            CanvasOptionalBlendState::Some(value) => Some(wgt::BlendState {
                 color: value.color.into(),
                 alpha: value.alpha.into(),
             }),
@@ -335,7 +335,7 @@ impl From<CanvasGPUTextureFormat> for CanvasColorTargetState {
         Self {
             format,
             blend: CanvasOptionalBlendState::None,
-            write_mask: wgpu_types::ColorWrites::ALL.bits(),
+            write_mask: wgt::ColorWrites::ALL.bits(),
         }
     }
 }
@@ -373,8 +373,8 @@ impl CanvasBlendState {
     };
 }
 
-impl From<wgpu_types::BlendState> for CanvasBlendState {
-    fn from(value: wgpu_types::BlendState) -> Self {
+impl From<wgt::BlendState> for CanvasBlendState {
+    fn from(value: wgt::BlendState) -> Self {
         Self {
             color: value.color.into(),
             alpha: value.alpha.into(),
@@ -424,8 +424,8 @@ impl Default for CanvasBlendComponent {
     }
 }
 
-impl From<wgpu_types::BlendComponent> for CanvasBlendComponent {
-    fn from(value: wgpu_types::BlendComponent) -> Self {
+impl From<wgt::BlendComponent> for CanvasBlendComponent {
+    fn from(value: wgt::BlendComponent) -> Self {
         Self {
             src_factor: value.src_factor.into(),
             dst_factor: value.dst_factor.into(),
@@ -434,9 +434,9 @@ impl From<wgpu_types::BlendComponent> for CanvasBlendComponent {
     }
 }
 
-impl Into<wgpu_types::BlendComponent> for CanvasBlendComponent {
-    fn into(self) -> wgpu_types::BlendComponent {
-        wgpu_types::BlendComponent {
+impl Into<wgt::BlendComponent> for CanvasBlendComponent {
+    fn into(self) -> wgt::BlendComponent {
+        wgt::BlendComponent {
             src_factor: self.src_factor.into(),
             dst_factor: self.dst_factor.into(),
             operation: self.operation.into(),
@@ -498,50 +498,50 @@ impl CanvasBlendFactor {
     }
 }
 
-impl From<wgpu_types::BlendFactor> for CanvasBlendFactor {
-    fn from(value: wgpu_types::BlendFactor) -> Self {
+impl From<wgt::BlendFactor> for CanvasBlendFactor {
+    fn from(value: wgt::BlendFactor) -> Self {
         match value {
-            wgpu_types::BlendFactor::Zero => Self::Zero,
-            wgpu_types::BlendFactor::One => Self::One,
-            wgpu_types::BlendFactor::Src => Self::Src,
-            wgpu_types::BlendFactor::OneMinusSrc => Self::OneMinusSrc,
-            wgpu_types::BlendFactor::SrcAlpha => Self::SrcAlpha,
-            wgpu_types::BlendFactor::OneMinusSrcAlpha => Self::OneMinusSrcAlpha,
-            wgpu_types::BlendFactor::Dst => Self::Dst,
-            wgpu_types::BlendFactor::OneMinusDst => Self::OneMinusDst,
-            wgpu_types::BlendFactor::DstAlpha => Self::DstAlpha,
-            wgpu_types::BlendFactor::OneMinusDstAlpha => Self::OneMinusDstAlpha,
-            wgpu_types::BlendFactor::SrcAlphaSaturated => Self::SrcAlphaSaturated,
-            wgpu_types::BlendFactor::Constant => Self::Constant,
-            wgpu_types::BlendFactor::OneMinusConstant => Self::OneMinusConstant,
-            wgpu_types::BlendFactor::Src1 => Self::Src1,
-            wgpu_types::BlendFactor::OneMinusSrc1 => Self::OneMinusSrc1,
-            wgpu_types::BlendFactor::Src1Alpha => Self::Src1Alpha,
-            wgpu_types::BlendFactor::OneMinusSrc1Alpha => Self::OneMinusSrc1Alpha,
+            wgt::BlendFactor::Zero => Self::Zero,
+            wgt::BlendFactor::One => Self::One,
+            wgt::BlendFactor::Src => Self::Src,
+            wgt::BlendFactor::OneMinusSrc => Self::OneMinusSrc,
+            wgt::BlendFactor::SrcAlpha => Self::SrcAlpha,
+            wgt::BlendFactor::OneMinusSrcAlpha => Self::OneMinusSrcAlpha,
+            wgt::BlendFactor::Dst => Self::Dst,
+            wgt::BlendFactor::OneMinusDst => Self::OneMinusDst,
+            wgt::BlendFactor::DstAlpha => Self::DstAlpha,
+            wgt::BlendFactor::OneMinusDstAlpha => Self::OneMinusDstAlpha,
+            wgt::BlendFactor::SrcAlphaSaturated => Self::SrcAlphaSaturated,
+            wgt::BlendFactor::Constant => Self::Constant,
+            wgt::BlendFactor::OneMinusConstant => Self::OneMinusConstant,
+            wgt::BlendFactor::Src1 => Self::Src1,
+            wgt::BlendFactor::OneMinusSrc1 => Self::OneMinusSrc1,
+            wgt::BlendFactor::Src1Alpha => Self::Src1Alpha,
+            wgt::BlendFactor::OneMinusSrc1Alpha => Self::OneMinusSrc1Alpha,
         }
     }
 }
 
-impl Into<wgpu_types::BlendFactor> for CanvasBlendFactor {
-    fn into(self) -> wgpu_types::BlendFactor {
+impl Into<wgt::BlendFactor> for CanvasBlendFactor {
+    fn into(self) -> wgt::BlendFactor {
         match self {
-            Self::Zero => wgpu_types::BlendFactor::Zero,
-            Self::One => wgpu_types::BlendFactor::One,
-            Self::Src => wgpu_types::BlendFactor::Src,
-            Self::OneMinusSrc => wgpu_types::BlendFactor::OneMinusSrc,
-            Self::SrcAlpha => wgpu_types::BlendFactor::SrcAlpha,
-            Self::OneMinusSrcAlpha => wgpu_types::BlendFactor::OneMinusSrcAlpha,
-            Self::Dst => wgpu_types::BlendFactor::Dst,
-            Self::OneMinusDst => wgpu_types::BlendFactor::OneMinusDst,
-            Self::DstAlpha => wgpu_types::BlendFactor::DstAlpha,
-            Self::OneMinusDstAlpha => wgpu_types::BlendFactor::OneMinusDstAlpha,
-            Self::SrcAlphaSaturated => wgpu_types::BlendFactor::SrcAlphaSaturated,
-            Self::Constant => wgpu_types::BlendFactor::Constant,
-            Self::OneMinusConstant => wgpu_types::BlendFactor::OneMinusConstant,
-            Self::Src1 => wgpu_types::BlendFactor::Src1,
-            Self::OneMinusSrc1 => wgpu_types::BlendFactor::OneMinusSrc1,
-            Self::Src1Alpha => wgpu_types::BlendFactor::Src1Alpha,
-            Self::OneMinusSrc1Alpha => wgpu_types::BlendFactor::OneMinusSrc1Alpha,
+            Self::Zero => wgt::BlendFactor::Zero,
+            Self::One => wgt::BlendFactor::One,
+            Self::Src => wgt::BlendFactor::Src,
+            Self::OneMinusSrc => wgt::BlendFactor::OneMinusSrc,
+            Self::SrcAlpha => wgt::BlendFactor::SrcAlpha,
+            Self::OneMinusSrcAlpha => wgt::BlendFactor::OneMinusSrcAlpha,
+            Self::Dst => wgt::BlendFactor::Dst,
+            Self::OneMinusDst => wgt::BlendFactor::OneMinusDst,
+            Self::DstAlpha => wgt::BlendFactor::DstAlpha,
+            Self::OneMinusDstAlpha => wgt::BlendFactor::OneMinusDstAlpha,
+            Self::SrcAlphaSaturated => wgt::BlendFactor::SrcAlphaSaturated,
+            Self::Constant => wgt::BlendFactor::Constant,
+            Self::OneMinusConstant => wgt::BlendFactor::OneMinusConstant,
+            Self::Src1 => wgt::BlendFactor::Src1,
+            Self::OneMinusSrc1 => wgt::BlendFactor::OneMinusSrc1,
+            Self::Src1Alpha => wgt::BlendFactor::Src1Alpha,
+            Self::OneMinusSrc1Alpha => wgt::BlendFactor::OneMinusSrc1Alpha,
         }
     }
 }
@@ -561,26 +561,26 @@ pub enum CanvasBlendOperation {
     Max = 4,
 }
 
-impl From<wgpu_types::BlendOperation> for CanvasBlendOperation {
-    fn from(value: wgpu_types::BlendOperation) -> Self {
+impl From<wgt::BlendOperation> for CanvasBlendOperation {
+    fn from(value: wgt::BlendOperation) -> Self {
         match value {
-            wgpu_types::BlendOperation::Add => Self::Add,
-            wgpu_types::BlendOperation::Subtract => Self::Subtract,
-            wgpu_types::BlendOperation::ReverseSubtract => Self::ReverseSubtract,
-            wgpu_types::BlendOperation::Min => Self::Min,
-            wgpu_types::BlendOperation::Max => Self::Max,
+            wgt::BlendOperation::Add => Self::Add,
+            wgt::BlendOperation::Subtract => Self::Subtract,
+            wgt::BlendOperation::ReverseSubtract => Self::ReverseSubtract,
+            wgt::BlendOperation::Min => Self::Min,
+            wgt::BlendOperation::Max => Self::Max,
         }
     }
 }
 
-impl Into<wgpu_types::BlendOperation> for CanvasBlendOperation {
-    fn into(self) -> wgpu_types::BlendOperation {
+impl Into<wgt::BlendOperation> for CanvasBlendOperation {
+    fn into(self) -> wgt::BlendOperation {
         match self {
-            CanvasBlendOperation::Add => wgpu_types::BlendOperation::Add,
-            CanvasBlendOperation::Subtract => wgpu_types::BlendOperation::Subtract,
-            CanvasBlendOperation::ReverseSubtract => wgpu_types::BlendOperation::ReverseSubtract,
-            CanvasBlendOperation::Min => wgpu_types::BlendOperation::Min,
-            CanvasBlendOperation::Max => wgpu_types::BlendOperation::Max,
+            CanvasBlendOperation::Add => wgt::BlendOperation::Add,
+            CanvasBlendOperation::Subtract => wgt::BlendOperation::Subtract,
+            CanvasBlendOperation::ReverseSubtract => wgt::BlendOperation::ReverseSubtract,
+            CanvasBlendOperation::Min => wgt::BlendOperation::Min,
+            CanvasBlendOperation::Max => wgt::BlendOperation::Max,
         }
     }
 }
@@ -593,8 +593,8 @@ pub struct CanvasVertexAttribute {
     pub shader_location: u32,
 }
 
-impl From<wgpu_types::VertexAttribute> for CanvasVertexAttribute {
-    fn from(value: wgpu_types::VertexAttribute) -> Self {
+impl From<wgt::VertexAttribute> for CanvasVertexAttribute {
+    fn from(value: wgt::VertexAttribute) -> Self {
         Self {
             format: value.format.into(),
             offset: value.offset,
@@ -603,9 +603,9 @@ impl From<wgpu_types::VertexAttribute> for CanvasVertexAttribute {
     }
 }
 
-impl Into<wgpu_types::VertexAttribute> for CanvasVertexAttribute {
-    fn into(self) -> wgpu_types::VertexAttribute {
-        wgpu_types::VertexAttribute {
+impl Into<wgt::VertexAttribute> for CanvasVertexAttribute {
+    fn into(self) -> wgt::VertexAttribute {
+        wgt::VertexAttribute {
             format: self.format.into(),
             offset: self.offset,
             shader_location: self.shader_location,
@@ -631,8 +631,8 @@ impl Default for CanvasMultisampleState {
     }
 }
 
-impl From<wgpu_types::MultisampleState> for CanvasMultisampleState {
-    fn from(value: wgpu_types::MultisampleState) -> Self {
+impl From<wgt::MultisampleState> for CanvasMultisampleState {
+    fn from(value: wgt::MultisampleState) -> Self {
         Self {
             count: value.count,
             mask: value.mask,
@@ -641,9 +641,9 @@ impl From<wgpu_types::MultisampleState> for CanvasMultisampleState {
     }
 }
 
-impl Into<wgpu_types::MultisampleState> for CanvasMultisampleState {
-    fn into(self) -> wgpu_types::MultisampleState {
-        wgpu_types::MultisampleState {
+impl Into<wgt::MultisampleState> for CanvasMultisampleState {
+    fn into(self) -> wgt::MultisampleState {
+        wgt::MultisampleState {
             count: self.count,
             mask: self.mask,
             alpha_to_coverage_enabled: self.alpha_to_coverage_enabled,
@@ -668,8 +668,8 @@ pub struct CanvasPassChannelColor {
     pub read_only: bool,
 }
 
-impl From<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChannelColor {
-    fn from(value: wgpu_core::command::PassChannel<wgpu_types::Color>) -> Self {
+impl From<wgpu_core::command::PassChannel<wgt::Color>> for CanvasPassChannelColor {
+    fn from(value: wgpu_core::command::PassChannel<wgt::Color>) -> Self {
         Self {
             load_op: value.load_op.into(),
             store_op: value.store_op.into(),
@@ -679,8 +679,8 @@ impl From<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChan
     }
 }
 
-impl Into<wgpu_core::command::PassChannel<wgpu_types::Color>> for CanvasPassChannelColor {
-    fn into(self) -> wgpu_core::command::PassChannel<wgpu_types::Color> {
+impl Into<wgpu_core::command::PassChannel<wgt::Color>> for CanvasPassChannelColor {
+    fn into(self) -> wgpu_core::command::PassChannel<wgt::Color> {
         wgpu_core::command::PassChannel {
             load_op: self.load_op.into(),
             store_op: self.store_op.into(),
@@ -849,6 +849,7 @@ pub struct CanvasSurfaceCapabilities {
 
 impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
     fn from(value: SurfaceCapabilities) -> Self {
+
         let formats = Box::into_raw(Box::new(StringBuffer::from(
             value
                 .formats

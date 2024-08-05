@@ -482,6 +482,9 @@ fn main() -> @location(0) vec4f {
 				console.error('A WebGPU error was not captured:', event.error.message);
 			});
 
+			const devicePixelRatio = window.devicePixelRatio;
+			this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
+			this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
 
 			const capabilities = (context as any).getCapabilities(adapter);
@@ -580,11 +583,14 @@ fn main() -> @location(0) vec4f {
 		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
 		// fractualCube.run(this.canvas);
 
-		const wireframe = require('./webgpu/graphicsTechniques/wireframe');
-		wireframe.run(this.canvas);
+		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
+		// wireframe.run(this.canvas);
 
 		// const cameras = require('./webgpu/graphicsTechniques/cameras/cameras.ts');
 		// cameras.run(this.canvas);
+
+		// const pristineGrid = require('./webgpu/pristine-grid');
+		// pristineGrid.run(this.canvas);
 
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);
@@ -647,7 +653,7 @@ fn main() -> @location(0) vec4f {
 
 		*/
 		//this.pathIssue(this.canvas);
-		//lines(this.canvas);
+		//(this.canvas);
 		//this.clearIssue(this.canvas);
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
@@ -715,7 +721,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		// swarm(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -725,7 +731,7 @@ fn main() -> @location(0) vec4f {
 		//const ctx = canvas.getContext('2d');
 		//clearRect(this.canvas);
 		//fillRule(this.canvas);
-
+		//font(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -738,7 +744,7 @@ fn main() -> @location(0) vec4f {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		//circle_demo(this.canvas);
+		// circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);

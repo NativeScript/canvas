@@ -1599,7 +1599,7 @@ fn main() {
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
 
-                                 // webgpu_triangle(data, window);
+                                  webgpu_triangle(data, window);
                                 // unsafe {
                                 //     webgpu_blur(data, window);
                                 // }

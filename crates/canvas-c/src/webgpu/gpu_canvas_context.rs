@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
+//use wgpu_core::gfx_select;
 
 use crate::webgpu::enums::CanvasOptionalGPUTextureFormat;
 use crate::webgpu::error::handle_error_fatal;
@@ -17,10 +18,10 @@ use super::{
 
 #[derive(Copy, Clone)]
 struct TextureData {
-    usage: wgpu_types::TextureUsages,
-    dimension: wgpu_types::TextureDimension,
-    size: wgpu_types::Extent3d,
-    format: wgpu_types::TextureFormat,
+    usage: wgt::TextureUsages,
+    dimension: wgt::TextureDimension,
+    size: wgt::Extent3d,
+    format: wgt::TextureFormat,
     mip_level_count: u32,
     sample_count: u32,
 }
@@ -142,12 +143,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
     }
     Arc::increment_strong_count(instance);
     let instance = Arc::from_raw(instance);
+
     let global = instance.global();
 
     let display_handle = RawDisplayHandle::UiKit(raw_window_handle::UiKitDisplayHandle::new());
 
     let handle = raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
     let window_handle = RawWindowHandle::UiKit(handle);
+
 
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
@@ -218,30 +221,30 @@ pub enum CanvasGPUSurfaceAlphaMode {
     Inherit = 4,
 }
 
-impl From<wgpu_types::CompositeAlphaMode> for CanvasGPUSurfaceAlphaMode {
-    fn from(value: wgpu_types::CompositeAlphaMode) -> Self {
+impl From<wgt::CompositeAlphaMode> for CanvasGPUSurfaceAlphaMode {
+    fn from(value: wgt::CompositeAlphaMode) -> Self {
         match value {
-            wgpu_types::CompositeAlphaMode::Auto => Self::Auto,
-            wgpu_types::CompositeAlphaMode::Opaque => Self::Opaque,
-            wgpu_types::CompositeAlphaMode::PreMultiplied => Self::PreMultiplied,
-            wgpu_types::CompositeAlphaMode::PostMultiplied => Self::PostMultiplied,
-            wgpu_types::CompositeAlphaMode::Inherit => Self::Inherit,
+            wgt::CompositeAlphaMode::Auto => Self::Auto,
+            wgt::CompositeAlphaMode::Opaque => Self::Opaque,
+            wgt::CompositeAlphaMode::PreMultiplied => Self::PreMultiplied,
+            wgt::CompositeAlphaMode::PostMultiplied => Self::PostMultiplied,
+            wgt::CompositeAlphaMode::Inherit => Self::Inherit,
         }
     }
 }
 
-impl Into<wgpu_types::CompositeAlphaMode> for CanvasGPUSurfaceAlphaMode {
-    fn into(self) -> wgpu_types::CompositeAlphaMode {
+impl Into<wgt::CompositeAlphaMode> for CanvasGPUSurfaceAlphaMode {
+    fn into(self) -> wgt::CompositeAlphaMode {
         match self {
-            CanvasGPUSurfaceAlphaMode::Auto => wgpu_types::CompositeAlphaMode::Auto,
-            CanvasGPUSurfaceAlphaMode::Opaque => wgpu_types::CompositeAlphaMode::Opaque,
+            CanvasGPUSurfaceAlphaMode::Auto => wgt::CompositeAlphaMode::Auto,
+            CanvasGPUSurfaceAlphaMode::Opaque => wgt::CompositeAlphaMode::Opaque,
             CanvasGPUSurfaceAlphaMode::PreMultiplied => {
-                wgpu_types::CompositeAlphaMode::PreMultiplied
+                wgt::CompositeAlphaMode::PreMultiplied
             }
             CanvasGPUSurfaceAlphaMode::PostMultiplied => {
-                wgpu_types::CompositeAlphaMode::PostMultiplied
+                wgt::CompositeAlphaMode::PostMultiplied
             }
-            CanvasGPUSurfaceAlphaMode::Inherit => wgpu_types::CompositeAlphaMode::Inherit,
+            CanvasGPUSurfaceAlphaMode::Inherit => wgt::CompositeAlphaMode::Inherit,
         }
     }
 }
@@ -257,28 +260,28 @@ pub enum CanvasGPUPresentMode {
     Mailbox = 5,
 }
 
-impl Into<wgpu_types::PresentMode> for CanvasGPUPresentMode {
-    fn into(self) -> wgpu_types::PresentMode {
+impl Into<wgt::PresentMode> for CanvasGPUPresentMode {
+    fn into(self) -> wgt::PresentMode {
         match self {
-            CanvasGPUPresentMode::AutoVsync => wgpu_types::PresentMode::AutoVsync,
-            CanvasGPUPresentMode::AutoNoVsync => wgpu_types::PresentMode::AutoNoVsync,
-            CanvasGPUPresentMode::Fifo => wgpu_types::PresentMode::Fifo,
-            CanvasGPUPresentMode::FifoRelaxed => wgpu_types::PresentMode::FifoRelaxed,
-            CanvasGPUPresentMode::Immediate => wgpu_types::PresentMode::Immediate,
-            CanvasGPUPresentMode::Mailbox => wgpu_types::PresentMode::Mailbox,
+            CanvasGPUPresentMode::AutoVsync => wgt::PresentMode::AutoVsync,
+            CanvasGPUPresentMode::AutoNoVsync => wgt::PresentMode::AutoNoVsync,
+            CanvasGPUPresentMode::Fifo => wgt::PresentMode::Fifo,
+            CanvasGPUPresentMode::FifoRelaxed => wgt::PresentMode::FifoRelaxed,
+            CanvasGPUPresentMode::Immediate => wgt::PresentMode::Immediate,
+            CanvasGPUPresentMode::Mailbox => wgt::PresentMode::Mailbox,
         }
     }
 }
 
-impl From<wgpu_types::PresentMode> for CanvasGPUPresentMode {
-    fn from(value: wgpu_types::PresentMode) -> Self {
+impl From<wgt::PresentMode> for CanvasGPUPresentMode {
+    fn from(value: wgt::PresentMode) -> Self {
         match value {
-            wgpu_types::PresentMode::AutoVsync => Self::AutoVsync,
-            wgpu_types::PresentMode::AutoNoVsync => Self::AutoNoVsync,
-            wgpu_types::PresentMode::Fifo => Self::Fifo,
-            wgpu_types::PresentMode::FifoRelaxed => Self::FifoRelaxed,
-            wgpu_types::PresentMode::Immediate => Self::Immediate,
-            wgpu_types::PresentMode::Mailbox => Self::Mailbox,
+            wgt::PresentMode::AutoVsync => Self::AutoVsync,
+            wgt::PresentMode::AutoNoVsync => Self::AutoNoVsync,
+            wgt::PresentMode::Fifo => Self::Fifo,
+            wgt::PresentMode::FifoRelaxed => Self::FifoRelaxed,
+            wgt::PresentMode::Immediate => Self::Immediate,
+            wgt::PresentMode::Mailbox => Self::Mailbox,
         }
     }
 }
@@ -319,17 +322,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 .to_vec()
                 .into_iter()
                 .map(|v| v.into())
-                .collect::<Vec<wgpu_types::TextureFormat>>()
+                .collect::<Vec<wgt::TextureFormat>>()
         }
     } else {
         vec![]
     };
 
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    let mut format = wgpu_types::TextureFormat::Bgra8Unorm;
+    let mut format = wgt::TextureFormat::Bgra8Unorm;
 
     #[cfg(any(target_os = "android"))]
-    let mut format = wgpu_types::TextureFormat::Rgba8Unorm;
+    let mut format = wgt::TextureFormat::Rgba8Unorm;
 
     match config.format {
         CanvasOptionalGPUTextureFormat::None => {}
@@ -338,7 +341,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         }
     }
 
-    let usage = wgpu_types::TextureUsages::from_bits_truncate(config.usage);
+    let usage = wgt::TextureUsages::from_bits_truncate(config.usage);
 
     let view_data = if !config.size.is_null() {
         let size = &*config.size;
@@ -348,7 +351,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         (view_data.width, view_data.height)
     };
 
-    let config = wgpu_types::SurfaceConfiguration::<Vec<wgpu_types::TextureFormat>> {
+    let config = wgt::SurfaceConfiguration::<Vec<wgt::TextureFormat>> {
         desired_maximum_frame_latency: 2,
         usage,
         format,
@@ -372,8 +375,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
             error_sink: device.error_sink.clone(),
             texture_data: TextureData {
                 usage,
-                dimension: wgpu_types::TextureDimension::D2,
-                size: wgpu_types::Extent3d {
+                dimension: wgt::TextureDimension::D2,
+                size: wgt::Extent3d {
                     width: view_data.0,
                     height: view_data.1,
                     depth_or_array_layers: 1,
@@ -431,7 +434,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
 
     match result {
         Ok(texture) => match texture.status {
-            wgpu_types::SurfaceStatus::Good | wgpu_types::SurfaceStatus::Suboptimal => {
+            wgt::SurfaceStatus::Good | wgt::SurfaceStatus::Suboptimal => {
                 context
                     .has_surface_presented
                     .store(false, std::sync::atomic::Ordering::SeqCst);
@@ -481,7 +484,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     let surface_id = context.surface;
     let texture = unsafe { &*texture };
 
-    if let Err(cause) = gfx_select!(device => global.surface_present(surface_id)) {
+    if let Err(cause) = gfx_select!(surface_id => global.surface_present(surface_id)) {
         handle_error_fatal(
             global,
             cause,
@@ -512,14 +515,16 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
 
     let surface_id = context.surface;
 
-    if let Ok(capabilities) =
-        gfx_select!(surface_id => global.surface_get_capabilities(surface_id, adapter_id))
-    {
-        let cap: CanvasSurfaceCapabilities = capabilities.into();
-        return Box::into_raw(Box::new(cap));
+    match gfx_select!(surface_id => global.surface_get_capabilities(surface_id, adapter_id)) {
+        Ok(capabilities) => {
+            let cap: CanvasSurfaceCapabilities = capabilities.into();
+            return Box::into_raw(Box::new(cap));
+        }
+        Err(cause) => {
+            handle_error_fatal(global, cause, "canvas_native_webgpu_context_get_capabilities");
+            std::ptr::null_mut()
+        }
     }
-
-    std::ptr::null_mut()
 }
 
 #[no_mangle]

@@ -33,7 +33,14 @@ impl Context {
         let paint = self.state.paint.fill_paint().clone();
         let shadow_offset_x = self.state.shadow_offset.x;
         let shadow_offset_y = self.state.shadow_offset.y;
-        self.render_to_canvas(&paint, |canvas, paint| {
+
+        let direction = self.state.direction;
+        let word_spacing = self.state.word_spacing;
+        let letter_spacing = self.state.letter_spacing;
+        let text_baseline = self.state.text_baseline;
+        let text_align = self.state.text_align;
+
+        self.render_text_to_canvas(&paint, |canvas, paint, font| {
             if let Some(shadow_paint) = &shadow_paint {
                 canvas.save();
                 Context::apply_shadow_offset_matrix(
@@ -41,11 +48,11 @@ impl Context {
                     shadow_offset_x,
                     shadow_offset_y,
                 );
-                //  self.draw_text(Some(canvas), text.as_str(), x, y, width, None, shadow_paint);
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            //  self.draw_text(Some(canvas), text.as_str(), x, y, width, None, paint);
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
         });
     }
 
@@ -62,16 +69,13 @@ impl Context {
         let paint = self.state.paint.stroke_paint().clone();
         let shadow_offset_x = self.state.shadow_offset.x;
         let shadow_offset_y = self.state.shadow_offset.y;
-
-
-        let font_style = self.state.font_style.clone();
         let direction = self.state.direction;
         let word_spacing = self.state.word_spacing;
         let letter_spacing = self.state.letter_spacing;
         let text_baseline = self.state.text_baseline;
         let text_align = self.state.text_align;
 
-        self.render_to_canvas(&paint, move |canvas, paint| {
+        self.render_text_to_canvas(&paint, |canvas, paint, font| {
             if let Some(shadow_paint) = &shadow_paint {
                 canvas.save();
                 Context::apply_shadow_offset_matrix(
@@ -79,11 +83,11 @@ impl Context {
                     shadow_offset_x,
                     shadow_offset_y,
                 );
-                Context::draw_text(Some(canvas), font_style.clone(), direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            Context::draw_text(Some(canvas), font_style.clone(), direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, &paint);
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
         });
     }
 
@@ -100,7 +104,7 @@ impl Context {
 
     fn draw_text(
         canvas: Option<&Canvas>,
-        font_style: Font,
+        font_style: &Font,
         direction: TextDirection,
         word_spacing: f32,
         letter_spacing: f32,
@@ -333,7 +337,7 @@ impl Context {
 
         let paint = self.state.paint.fill_paint().clone();
 
-        Context::draw_text(None, self.state.font_style.clone(), self.state.direction, self.state.word_spacing, self.state.letter_spacing, self.state.text_baseline, self.state.text_align, text, 0., 0., -1., Some(&mut text_metrics), &paint);
+        Context::draw_text(None, &self.state.font_style, self.state.direction, self.state.word_spacing, self.state.letter_spacing, self.state.text_baseline, self.state.text_align, text, 0., 0., -1., Some(&mut text_metrics), &paint);
 
         text_metrics
     }

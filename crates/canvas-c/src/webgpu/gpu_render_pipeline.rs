@@ -1,5 +1,5 @@
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::handle_error;
 
 use super::{gpu::CanvasWebGPUInstance, gpu_bind_group_layout::CanvasGPUBindGroupLayout};
@@ -14,7 +14,7 @@ impl Drop for CanvasGPURenderPipeline {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.render_pipeline_drop(self.pipeline));
+            gfx_select!(self.pipeline => global.render_pipeline_drop(self.pipeline));
         }
     }
 }

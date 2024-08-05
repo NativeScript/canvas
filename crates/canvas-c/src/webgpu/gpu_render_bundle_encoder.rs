@@ -1,6 +1,6 @@
 use std::os::raw::c_char;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::enums::CanvasIndexFormat;
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
@@ -449,15 +449,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_finish(
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder.take() {
             let desc = if label.is_null() {
-                wgpu_types::RenderBundleDescriptor::default()
+                wgt::RenderBundleDescriptor::default()
             } else {
-                wgpu_types::RenderBundleDescriptor {
+                wgt::RenderBundleDescriptor {
                     label: ptr_into_label(label),
                 }
             };
 
             let (render_bundle_id, error) =
-                gfx_select!(bundle =>  global.render_bundle_encoder_finish(encoder, &desc, None));
+                gfx_select!(encoder.parent() =>  global.render_bundle_encoder_finish(encoder, &desc, None));
 
             if let Some(cause) = error {
                 handle_error_fatal(

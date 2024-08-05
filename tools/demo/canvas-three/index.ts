@@ -36,7 +36,7 @@ import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_
 import { ghost_card } from './examples/ghost_card';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { Canvas } from '@nativescript/canvas';
-import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
+//import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
 import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
@@ -76,7 +76,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//webgl_shadowmap_performance(this.canvas);
 		//webgl_shadowmap_pointlight(this.canvas);
 		//webgl_shadowmap_vsm(this.canvas);
-
 		//init(this.canvas);
 
 		//this.topDown(this.canvas);

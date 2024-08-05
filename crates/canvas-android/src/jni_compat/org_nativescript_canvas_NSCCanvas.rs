@@ -324,8 +324,6 @@ pub extern "system" fn nativeUpdate2DSurface(
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
 
-    context.make_current();
-
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let width = window.width() as f32;
@@ -759,7 +757,7 @@ pub extern "system" fn nativeWebGLC2DRender(
     _: JClass,
     gl_context: jlong,
     context: jlong,
-    internalFormat: jint,
+    internal_format: jint,
     format: jint,
 ) {
     if gl_context == 0 || context == 0 {
@@ -775,7 +773,7 @@ pub extern "system" fn nativeWebGLC2DRender(
 
     {
         let state = unsafe { &mut *state };
-        canvas_c::impl_test::draw_image_space_test(state, context, internalFormat, format);
+        canvas_c::impl_test::draw_image_space_test(state, context, internal_format, format);
         state.get_inner_mut().swap_buffers();
     }
 

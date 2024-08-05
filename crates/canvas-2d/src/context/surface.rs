@@ -2,7 +2,7 @@
 
 use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
 
-use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 
@@ -61,7 +61,7 @@ impl Context {
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            is_dirty: false,
+            surface_state: SurfaceState::None,
         }
     }
 
@@ -108,14 +108,14 @@ impl Context {
             )
         };
 
-        context.path = Path::default();
-        context.reset_state();
-
         if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
             context.surface_data.bounds = bounds;
             context.surface_data.scale = density;
             context.surface_data.ppi = ppi;
+            context.surface_state = SurfaceState::None;
+            context.path = Path::default();
+            context.reset_state();
         }
     }
 
@@ -124,7 +124,7 @@ impl Context {
             return;
         }
         let info = ImageInfo::new(
-            ISize::new(width as i32, height as i32),
+            ISize::new(width, height),
             ColorType::RGBA8888,
             AlphaType::Unknown,
             None,

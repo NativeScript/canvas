@@ -82,7 +82,13 @@ pub(crate) fn handle_error_fatal(
 
     let error = cause.to_string();
 
-    log::error!("Error in {operation}: {error}")
+    #[cfg(target_os = "android")]
+    log::error!("Error in {operation}: {error}");
+
+    #[cfg(not(target_os = "android"))]
+    println!("Error in {operation}: {error}");
+
+
 
     // log::error!("Error in {operation}: {f}",
     //     f = format_error(global, &cause))

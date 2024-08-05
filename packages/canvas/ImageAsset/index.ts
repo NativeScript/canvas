@@ -1,10 +1,11 @@
-import { File, knownFolders, path as filePath, Utils } from '@nativescript/core';
+import { File, knownFolders, path as filePath, Utils, Observable, EventData } from '@nativescript/core';
 import { Helpers } from '../helpers';
 
 let ctor;
 // store ref if loading
 const loaders = new Map<ImageAsset, number>();
-export class ImageAsset {
+
+export class ImageAsset extends Observable {
 	static {
 		Helpers.initialize();
 	}
@@ -15,6 +16,7 @@ export class ImageAsset {
 		return this._native;
 	}
 	constructor(native?) {
+		super();
 		this._native = native || new global.CanvasModule.ImageAsset();
 		if (__ANDROID__) {
 			const ref = long(this.native.__getRef());
@@ -55,19 +57,31 @@ export class ImageAsset {
 		}
 	}
 
+	private emitComplete(success: boolean, error) {
+		this.notify({ eventName: 'complete', object: this, complete: success, error });
+	}
+
 	fromUrl(url: string) {
 		return new Promise((resolve, reject) => {
 			if (__ANDROID__) {
 				const asset = this._android.getAsset();
+				const ref = new WeakRef(this);
 				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromUrlAsync(
 					asset,
 					url,
 					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-						onComplete(success) {
+						onComplete(success: boolean) {
+							const owner = ref.get();
 							if (!success) {
 								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								if (owner) {
+									owner.emitComplete(success, error);
+								}
 								reject(error);
 							} else {
+								if (owner) {
+									owner.emitComplete(success, undefined);
+								}
 								resolve(success);
 							}
 						},
@@ -78,6 +92,7 @@ export class ImageAsset {
 
 			this._incrementStrongRef();
 			this.native.fromUrlCb(url, (success, error) => {
+				this.emitComplete(success, error);
 				if (error) {
 					reject(error);
 				} else {
@@ -96,7 +111,9 @@ export class ImageAsset {
 			}
 		}
 
-		return this.native.fromFileSync(realPath);
+		const ret = this.native.fromFileSync(realPath);
+
+		return ret;
 	}
 
 	fromFile(path: string) {
@@ -109,15 +126,23 @@ export class ImageAsset {
 
 			if (__ANDROID__) {
 				const asset = this._android.getAsset();
+				const ref = new WeakRef(this);
 				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
 					asset,
 					path,
 					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
 						onComplete(success) {
+							const owner = ref.get();
 							if (!success) {
 								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								if (owner) {
+									owner.emitComplete(success, error);
+								}
 								reject(error);
 							} else {
+								if (owner) {
+									owner.emitComplete(success, undefined);
+								}
 								resolve(success);
 							}
 						},
@@ -129,6 +154,7 @@ export class ImageAsset {
 			this._incrementStrongRef();
 
 			this.native.fromFileCb(path, (success, error) => {
+				this.emitComplete(success, error);
 				if (error) {
 					reject(error);
 				} else {
@@ -171,16 +197,24 @@ export class ImageAsset {
 	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
 			if (__ANDROID__) {
+				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
 				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
 					asset,
 					bytes,
 					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
 						onComplete(success) {
+							const owner = ref.get();
 							if (!success) {
 								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+								if (owner) {
+									owner.emitComplete(success, error);
+								}
 								reject(error);
 							} else {
+								if (owner) {
+									owner.emitComplete(success, undefined);
+								}
 								resolve(success);
 							}
 						},
@@ -191,6 +225,7 @@ export class ImageAsset {
 
 			this._incrementStrongRef();
 			this.native.fromBytesCb(bytes, (success, error) => {
+				this.emitComplete(success, error);
 				if (error) {
 					reject(error);
 				} else {

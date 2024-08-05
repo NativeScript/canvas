@@ -10,56 +10,37 @@ pub mod fill_rule;
 
 impl Context {
     fn fill_or_stroke(&mut self, is_fill: bool, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-        let paint;
-        if is_fill {
-            paint = self.state.paint.fill_paint().clone();
+        let paint = if is_fill {
+            self.state.paint.fill_paint().clone()
         } else {
-            paint = self.state.paint.stroke_paint().clone();
-        }
+            self.state.paint.stroke_paint().clone()
+        };
 
-        if let Some(rule) = fill_rule {
-            let mut path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
-            path.0.set_fill_type(rule.to_fill_type());
-            let path = path.path();
+        let mut path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
+        let fill_rule = fill_rule.unwrap_or(FillRule::default());
+        path.0.set_fill_type(fill_rule.to_fill_type());
+        let path = path.path();
 
-            let shadow_paint = self.state.paint.fill_shadow_paint(
+        let shadow_paint = if is_fill {
+            self.state.paint.fill_shadow_paint(
                 self.state.shadow_offset,
                 self.state.shadow_color,
                 self.state.shadow_blur,
-            );
-
-            self.render_to_canvas(&paint, |canvas, paint| {
-                if let Some(paint) = &shadow_paint {
-                    canvas.draw_path(path, paint);
-                }
-
-                canvas.draw_path(path, paint);
-            });
+            )
         } else {
-            let mut path = path.map(|path| path.clone()).unwrap_or(self.path.clone());
-            path.0.set_fill_type(skia_safe::path::FillType::Winding);
-            let path = path.path();
+            self.state.paint.stroke_shadow_paint(
+                self.state.shadow_offset,
+                self.state.shadow_color,
+                self.state.shadow_blur,
+            )
+        };
 
-            let shadow_paint = if is_fill {
-                self.state.paint.fill_shadow_paint(
-                    self.state.shadow_offset,
-                    self.state.shadow_color,
-                    self.state.shadow_blur,
-                )
-            } else {
-                self.state.paint.stroke_shadow_paint(
-                    self.state.shadow_offset,
-                    self.state.shadow_color,
-                    self.state.shadow_blur,
-                )
-            };
-            self.render_to_canvas(&paint, |canvas, paint| {
-                if let Some(paint) = &shadow_paint {
-                    canvas.draw_path(path, paint);
-                }
+        self.render_to_canvas(&paint, |canvas, paint| {
+            if let Some(paint) = &shadow_paint {
                 canvas.draw_path(path, paint);
-            });
-        }
+            }
+            canvas.draw_path(path, paint);
+        });
     }
 
     pub fn fill(&mut self, path: Option<&mut Path>) {

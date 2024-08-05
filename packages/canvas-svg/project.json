@@ -1,56 +1,52 @@
 {
-  "name": "canvas-svg",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "library",
-  "sourceRoot": "packages/canvas-svg",
-  "targets": {
-    "build": {
-      "executor": "@nrwl/js:tsc",
-      "options": {
-        "outputPath": "dist/packages/canvas-svg",
-        "tsConfig": "packages/canvas-svg/tsconfig.json",
-        "packageJson": "packages/canvas-svg/package.json",
-        "main": "packages/canvas-svg/index.d.ts",
-        "assets": [
-          "packages/canvas-svg/*.md",
-          "packages/canvas-svg/index.d.ts",
-          "LICENSE",
-          {
-            "glob": "**/*",
-            "input": "packages/canvas-svg/platforms/",
-            "output": "./platforms/"
-          }
-        ],
-        "dependsOn": [
-          {
-            "target": "build.all",
-            "projects": "dependencies"
-          }
-        ]
-      }
-    },
-    "build.all": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "node tools/scripts/build-finish.ts canvas-svg"
-        ],
-        "parallel": false
-      },
-      "outputs": [
-        "dist/packages/canvas-svg"
-      ],
-      "dependsOn": [
-        {
-          "target": "build.all",
-          "projects": "dependencies"
-        },
-        {
-          "target": "build",
-          "projects": "self"
-        }
-      ]
-    },
+	"name": "canvas-svg",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"projectType": "library",
+	"sourceRoot": "packages/canvas-svg",
+	"tags": [],
+	"targets": {
+		"build": {
+			"executor": "@nx/js:tsc",
+			"options": {
+				"outputPath": "dist/packages/canvas-svg",
+				"tsConfig": "packages/canvas-svg/tsconfig.json",
+				"packageJson": "packages/canvas-svg/package.json",
+				"main": "packages/canvas-svg/index.d.ts",
+				"assets": [
+					"packages/canvas-svg/*.md",
+					"packages/canvas-svg/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-svg/platforms/",
+						"output": "./platforms/"
+					}
+				],
+				"dependsOn": [
+					{
+						"target": "build.all",
+						"projects": "dependencies"
+					}
+				]
+			}
+		},
+		"build.all": {
+			"executor": "nx:run-commands",
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts canvas-svg"],
+				"parallel": false
+			},
+			"outputs": ["{workspaceRoot}/dist/packages/canvas-svg"],
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"dependencies": true
+				},
+				{
+					"target": "build"
+				}
+			]
+		},
 		"build.native.ios.framework.release": {
 			"outputs": ["{workspaceRoot}/dist/packages"],
 			"options": {
@@ -69,23 +65,15 @@
 			},
 			"executor": "nx:run-commands"
 		},
-    "focus": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "nx g @nativescript/plugin-tools:focus-packages canvas-svg"
-        ],
-        "parallel": false
-      }
-    },
-    "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "options": {
-        "lintFilePatterns": [
-          "packages/canvas-svg/**/*.ts"
-        ]
-      }
-    }
-  },
-  "tags": []
+		"focus": {
+			"executor": "nx:run-commands",
+			"options": {
+				"commands": ["nx g @nativescript/plugin-tools:focus-packages canvas-svg"],
+				"parallel": false
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint"
+		}
+	}
 }

@@ -342,9 +342,9 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (NSMutableData * _Nonnull)getBytesFromUIImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)image :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)loadImageAssetWithContext:(int64_t)asset :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
@@ -374,12 +374,14 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
+enum CanvasFit : NSInteger;
 @class NSMutableDictionary;
 @class UIGestureRecognizer;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView
+@property (nonatomic) enum CanvasFit fit;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
@@ -388,14 +390,13 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, readonly) int64_t nativeGL;
 @property (nonatomic, readonly) int64_t nativeContext;
-@property (nonatomic, readonly) NSInteger drawingBufferWidth;
-@property (nonatomic, readonly) NSInteger drawingBufferHeight;
+@property (nonatomic, readonly) CGFloat drawingBufferWidth;
+@property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
 @property (nonatomic, readonly) float height;
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible SWIFT_METHOD_FAMILY(none);
 - (void)initWebGPUContext:(int64_t)instance SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
-- (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)render;
 - (void)context2DTest:(int64_t)context;
@@ -404,9 +405,20 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
+@property (nonatomic) NSInteger surfaceWidth;
+@property (nonatomic) NSInteger surfaceHeight;
+- (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, CanvasFit, "CanvasFit", open) {
+  CanvasFitNone = 0,
+  CanvasFitFill = 1,
+  CanvasFitFitX = 2,
+  CanvasFitFitY = 3,
+  CanvasFitScaleDown = 4,
+};
 
 
 SWIFT_PROTOCOL_NAMED("NSCCanvasListener")
@@ -424,9 +436,9 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext")
 SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 @interface NSCCanvasRenderingContext2D : NSCCanvasRenderingContext
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)src :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy :(float)dWidth :(float)dHeight;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(float)dx :(float)dy :(float)dWidth :(float)dHeight;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy :(float)dWidth :(float)dHeight SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(float)dx :(float)dy :(float)dWidth :(float)dHeight SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -827,9 +839,9 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (NSMutableData * _Nonnull)getBytesFromUIImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)image :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)loadImageAssetWithContext:(int64_t)asset :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
-+ (void)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
@@ -859,12 +871,14 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 - (void)snapshotWithData:(NSData * _Nonnull)data;
 @end
 
+enum CanvasFit : NSInteger;
 @class NSMutableDictionary;
 @class UIGestureRecognizer;
 @protocol NSCCanvasListener;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView
+@property (nonatomic) enum CanvasFit fit;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
@@ -873,14 +887,13 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, readonly) int64_t nativeGL;
 @property (nonatomic, readonly) int64_t nativeContext;
-@property (nonatomic, readonly) NSInteger drawingBufferWidth;
-@property (nonatomic, readonly) NSInteger drawingBufferHeight;
+@property (nonatomic, readonly) CGFloat drawingBufferWidth;
+@property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
 @property (nonatomic, readonly) float height;
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible SWIFT_METHOD_FAMILY(none);
 - (void)initWebGPUContext:(int64_t)instance SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
-- (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)render;
 - (void)context2DTest:(int64_t)context;
@@ -889,9 +902,20 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
+@property (nonatomic) NSInteger surfaceWidth;
+@property (nonatomic) NSInteger surfaceHeight;
+- (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, CanvasFit, "CanvasFit", open) {
+  CanvasFitNone = 0,
+  CanvasFitFill = 1,
+  CanvasFitFitX = 2,
+  CanvasFitFitY = 3,
+  CanvasFitScaleDown = 4,
+};
 
 
 SWIFT_PROTOCOL_NAMED("NSCCanvasListener")
@@ -909,9 +933,9 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext")
 SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 @interface NSCCanvasRenderingContext2D : NSCCanvasRenderingContext
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)src :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy :(float)dWidth :(float)dHeight;
-+ (void)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(float)dx :(float)dy :(float)dWidth :(float)dHeight;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)dx :(float)dy :(float)dWidth :(float)dHeight SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)drawImage:(int64_t)context :(UIImage * _Nonnull)image :(float)sx :(float)sy :(float)sWidth :(float)sHeight :(float)dx :(float)dy :(float)dWidth :(float)dHeight SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

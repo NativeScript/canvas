@@ -228,7 +228,7 @@ impl Gradient {
             tile_mode,
             None,
             None,
-            matrix,
+            Some(&rotated),
         )
     }
 

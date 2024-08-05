@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use super::enums::CanvasQueryType;
 use super::gpu::CanvasWebGPUInstance;
 
@@ -18,7 +18,7 @@ impl Drop for CanvasGPUQuerySet {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.query_set_drop(self.query));
+            gfx_select!(self.query => global.query_set_drop(self.query));
         }
     }
 }

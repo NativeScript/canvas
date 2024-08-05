@@ -180,7 +180,7 @@ void GPUImpl::__GetPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto isolate = args.GetIsolate();
 
-    auto pointer = (intptr_t *) ptr->GetGPUInstance();
-    auto ret = std::to_string((intptr_t) pointer);
+    auto pointer = canvas_native_webgpu_get_pointer_addr(ptr->GetGPUInstance());
+    auto ret = std::to_string(pointer);
     args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
 }

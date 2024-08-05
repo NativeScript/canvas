@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use std::{ffi::CString, os::raw::c_char};
 
-pub struct CanvasGPUAdapterInfo(wgpu_types::AdapterInfo);
+pub struct CanvasGPUAdapterInfo(wgt::AdapterInfo);
 
 impl CanvasGPUAdapterInfo {
-    pub fn new(types: wgpu_types::AdapterInfo) -> Self {
+    pub fn new(types: wgt::AdapterInfo) -> Self {
         Self(types)
     }
 }

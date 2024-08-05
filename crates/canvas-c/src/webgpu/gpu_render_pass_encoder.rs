@@ -483,7 +483,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_blend_cons
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        let color: wgpu_types::Color = (*color).into();
+        let color: wgt::Color = (*color).into();
 
         if let Err(cause) = pass.set_blend_constant(global, color) {
             handle_error(

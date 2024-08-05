@@ -55,7 +55,11 @@ pub fn draw_image_space_test(
     );
 
     if let Err(program) = program {
+        #[cfg(target_os = "android")]
         log::log!(target: "JS", log::Level::Trace, "Failed to compile program {:?}", program);
+
+        #[cfg(not(target_os = "android"))]
+        println!("Failed to compile program {:?}", program);
         return;
     }
 

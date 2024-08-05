@@ -53,7 +53,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
             },
             surface: surface_holder.unwrap(),
-            is_dirty: false,
+            surface_state: false,
             direct_context: Some(context),
             path: Path::default(),
             state,

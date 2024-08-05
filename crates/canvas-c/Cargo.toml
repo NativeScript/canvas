@@ -19,7 +19,7 @@ parking_lot.workspace = true
 ureq = { version = "2.9.6", features = ["gzip"] }
 bytes = "1.5.0"
 log = { version = "0.4.20" }
-wgpu-types.workspace = true
+wgt = { workspace = true, package = "wgpu-types" }
 futures = "0.3"
 raw-window-handle.workspace = true
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
@@ -27,7 +27,6 @@ wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal", "raw-wind
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal", "raw-window-handle"] }
-
 
 #[target.'cfg(target_os="macos")'.dependencies]
 #display-link = { git = "https://github.com/servo/display-link", branch = "no-transmute" }

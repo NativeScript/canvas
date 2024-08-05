@@ -1,25 +1,25 @@
 import * as wgpuMatrix from '../../wgpu-matrix/wgpu-matrix';
 
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from './meshes/cube';
-import { File, knownFolders } from '@nativescript/core';
+import { File, knownFolders, Screen } from '@nativescript/core';
 
 import { Canvas } from '@nativescript/canvas';
-import type { GPUDevice } from '@nativescript/canvas';
+import type { GPUDevice, GPUAdapter } from '@nativescript/canvas';
 
 export async function run(canvas: Canvas) {
-	const adapter = await navigator.gpu.requestAdapter();
+	const adapter: GPUAdapter = (await navigator.gpu.requestAdapter()) as never;
 	const device: GPUDevice = (await adapter.requestDevice()) as never;
+	const devicePixelRatio = Screen.mainScreen.scale;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 
 	const context = canvas.getContext('webgpu');
 
-	const devicePixelRatio = window.devicePixelRatio;
-	// canvas.width = canvas.clientWidth * devicePixelRatio;
-	// canvas.height = canvas.clientHeight * devicePixelRatio;
-
-	const capabilities = (context as any).getCapabilities(adapter);
+	//const capabilities = context.getCapabilities(adapter);
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
-	const alphaMode = capabilities.alphaModes[0];
-	const presentModes = capabilities.presentModes[0];
+	//console.log(capabilities);
+	// const alphaMode = capabilities.alphaModes[0];
+	// const presentModes = capabilities.presentModes[0];
 
 	const appPath = knownFolders.currentApp().path;
 	const basicVertWGSLFile = File.fromPath(appPath + '/webgpu/shaders/basic.vert.wgsl');
@@ -31,7 +31,7 @@ export async function run(canvas: Canvas) {
 
 	context.configure({
 		device,
-		format: presentationFormat
+		format: presentationFormat,
 	});
 	// Create a vertex buffer from the cube data.
 	const verticesBuffer = device.createBuffer({

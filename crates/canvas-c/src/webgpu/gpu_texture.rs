@@ -1,6 +1,6 @@
 use std::os::raw::c_char;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::ptr_into_label;
 
@@ -44,7 +44,7 @@ impl Drop for CanvasGPUTexture {
                     .load(std::sync::atomic::Ordering::SeqCst)
                 {
                     let global = self.instance.global();
-                    match gfx_select!(self.id => global.surface_texture_discard(surface_id)) {
+                    match gfx_select!(surface_id => global.surface_texture_discard(surface_id)) {
                         Ok(_) => (),
                         Err(cause) => handle_error_fatal(
                             global,
@@ -56,7 +56,7 @@ impl Drop for CanvasGPUTexture {
             }
             None => {
                 let context = self.instance.global();
-                gfx_select!(self.id => context.texture_drop(self.texture, false));
+                gfx_select!(self.texture => context.texture_drop(self.texture, false));
             }
         }
     }

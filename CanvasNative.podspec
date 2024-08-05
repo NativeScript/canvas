@@ -2,7 +2,7 @@ Pod::Spec.new do |s|
 
     s.name         = "CanvasNative"
 
-    s.version      = "1.0.0"
+    s.version      = "2.0.0"
 
     s.summary      = "A Canvas library"
 
@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
 
     s.pod_target_xcconfig = {
 			'FRAMEWORK_SEARCH_PATHS' => '$(inherited) "${PODS_ROOT}/dist"',
-			'ENABLE_BITCODE' => 'YES'
+			'ENABLE_BITCODE' => 'NO'
  }
     s.swift_versions = ['4.0','4.2', '5.0']
     s.vendored_frameworks = 'packages/canvas/src-native/canvas-ios/dist/CanvasNative.xcframework'

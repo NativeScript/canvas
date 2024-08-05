@@ -228,9 +228,10 @@ void GPURenderPassEncoderImpl::DrawIndexed(const v8::FunctionCallbackInfo<v8::Va
             firstInstance = firstInstanceVal.As<v8::Uint32>()->Value();
         }
 
+        auto indexCount = indexCountVal->Uint32Value(
+                                                     context).FromJust();
         canvas_native_webgpu_render_pass_encoder_draw_indexed(ptr->GetPass(),
-                                                              indexCountVal->Uint32Value(
-                                                                      context).FromJust(),
+                                                              indexCount,
                                                               instanceCount, firstIndex,
                                                               baseVertex,
                                                               firstInstance);

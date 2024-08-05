@@ -9,11 +9,12 @@ export async function run(canvas: Canvas) {
 	const adapter = (await navigator.gpu?.requestAdapter()) as never as GPUAdapter;
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
-	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
-
 	const devicePixelRatio = window.devicePixelRatio;
 	canvas.width = canvas.clientWidth * devicePixelRatio;
 	canvas.height = canvas.clientHeight * devicePixelRatio;
+
+	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
+
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const appPath = knownFolders.currentApp().path;

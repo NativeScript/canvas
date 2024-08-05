@@ -1,5 +1,5 @@
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUCommandBuffer {
@@ -13,7 +13,7 @@ impl Drop for CanvasGPUCommandBuffer {
         if self.open.load(std::sync::atomic::Ordering::SeqCst) && !std::thread::panicking() {
             let context = self.instance.global();
             let command_buffer = self.command_buffer;
-            gfx_select!(self.id => context.command_buffer_drop(command_buffer));
+            gfx_select!(command_buffer => context.command_buffer_drop(command_buffer));
             // let mut lock = self.command_buffer.lock();
             // if let Some(command_buffer) = lock.take() {
             //     gfx_select!(self.id => context.command_buffer_drop(command_buffer));

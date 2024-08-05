@@ -1,6 +1,6 @@
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 
 use super::{
@@ -104,19 +104,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let size = *size;
 
-    let size: wgpu_types::Extent3d = size.into();
+    let size: wgt::Extent3d = size.into();
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
     let bytesPerRow = source.source_size / (source.width as usize * source.height as usize);
 
-    let data_layout = wgpu_types::ImageDataLayout {
+    let data_layout = wgt::ImageDataLayout {
         offset: 0,
         bytes_per_row: Some(source.width * bytesPerRow as u32),
         rows_per_image: Some(source.height),
     };
 
-    let destination = wgpu_types::ImageCopyTexture {
+    let destination = wgt::ImageCopyTexture {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -286,7 +286,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     let destination_texture = &*destination.texture;
     let destination_texture_id = destination_texture.texture;
 
-    let destination = wgpu_types::ImageCopyTexture {
+    let destination = wgt::ImageCopyTexture {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -295,13 +295,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let data_layout = *data_layout;
 
-    let data_layout: wgpu_types::ImageDataLayout = data_layout.into();
+    let data_layout: wgt::ImageDataLayout = data_layout.into();
 
     let data = std::slice::from_raw_parts(buf, buf_size);
 
     let size = *size;
 
-    let size: wgpu_types::Extent3d = size.into();
+    let size: wgt::Extent3d = size.into();
 
     if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data, &data_layout, &size))
     {

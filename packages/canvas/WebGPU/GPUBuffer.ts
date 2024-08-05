@@ -39,11 +39,15 @@ export class GPUBuffer {
 	}
 
 	mapAsync(mode: number, offset?: number, size?: number): Promise<void> {
-		return this[native_].mapAsync(mode, offset, size);
+		return this[native_].mapAsync(mode, offset, size).then((value) => {
+			this[mapState_] = 'mapped';
+			return value;
+		});
 	}
 
 	unmap() {
 		this[native_].unmap();
+		this[mapState_] = 'unmapped';
 	}
 
 	static fromNative(buffer, mappedAtCreation: boolean = false) {

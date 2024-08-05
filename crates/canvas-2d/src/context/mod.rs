@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use std::ffi::c_uint;
 
 use base64::Engine;
@@ -135,6 +136,12 @@ pub enum SurfaceEngine {
     Metal,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum SurfaceState {
+    None,
+    Pending,
+    Invalidating,
+}
 
 #[derive(Debug, Copy, Clone)]
 pub struct SurfaceData {
@@ -165,7 +172,7 @@ impl SurfaceData {
 pub struct Context {
     pub(crate) surface_data: SurfaceData,
     pub(crate) surface: Surface,
-    pub(crate) is_dirty: bool,
+    pub(crate) surface_state: SurfaceState,
     #[cfg(feature = "vulkan")]
     pub(crate) ash_graphics: Option<surface_vulkan::AshGraphics>,
     #[cfg(feature = "vulkan")]
@@ -245,7 +252,7 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         f(self.surface.canvas());
-        self.is_dirty = true;
+        self.surface_state = SurfaceState::Pending;
     }
 
 
@@ -260,14 +267,15 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         f(self.surface.canvas());
-        self.is_dirty = true;
+        self.surface_state = SurfaceState::Pending;
     }
 
 
     pub fn flush(&mut self) {
-        if self.is_dirty {
+        if self.surface_state == SurfaceState::Pending {
+            self.surface_state = SurfaceState::Invalidating;
             self.flush_surface();
-            self.is_dirty = false;
+            self.surface_state = SurfaceState::None;
         }
     }
 
@@ -322,7 +330,7 @@ impl Context {
             return "data:,".to_string();
         }
 
-        self.flush();
+        //  self.flush();
 
         let image = self.surface.image_snapshot();
 
@@ -381,21 +389,65 @@ impl Context {
                 layer_paint.set_blend_mode(BlendMode::SrcOver);
                 let mut layer_recorder = skia_safe::PictureRecorder::new();
                 layer_recorder.begin_recording(self.surface_data.bounds, None);
+                let current_matrix = self.surface.canvas().local_to_device();
                 if let Some(layer) = layer_recorder.recording_canvas() {
+                    layer.set_matrix(&current_matrix);
                     f(layer, &layer_paint);
                 }
 
                 if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
                     let canvas = self.surface.canvas();
                     canvas.save();
-                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&layer_paint));
+                    let mut blend_paint = skia_safe::Paint::default();
+                    blend_paint.set_anti_alias(true);
+                    blend_paint.set_blend_mode(blend);
+                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
                     canvas.restore();
+                    self.surface_state = SurfaceState::Pending;
                 }
             }
             _ => {
                 self.with_canvas_dirty(|canvas| {
                     f(canvas, paint)
                 });
+            }
+        };
+    }
+
+    pub fn render_text_to_canvas<F>(&mut self, paint: &skia_safe::Paint, f: F)
+    where
+        F: Fn(&skia_safe::Canvas, &skia_safe::Paint, &Font),
+    {
+        let blend = self.state.global_composite_operation.get_blend_mode();
+        match blend {
+            BlendMode::SrcIn | BlendMode::SrcOut |
+            BlendMode::DstIn | BlendMode::DstOut |
+            BlendMode::DstATop | BlendMode::Src => {
+                let mut layer_paint = paint.clone();
+                layer_paint.set_anti_alias(true);
+                layer_paint.set_blend_mode(BlendMode::SrcOver);
+                let mut layer_recorder = skia_safe::PictureRecorder::new();
+                layer_recorder.begin_recording(self.surface_data.bounds, None);
+                let current_matrix = self.surface.canvas().local_to_device();
+                if let Some(layer) = layer_recorder.recording_canvas() {
+                    layer.set_matrix(&current_matrix);
+                    f(layer, &layer_paint, &self.state.font_style);
+                }
+
+                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
+                    let canvas = self.surface.canvas();
+                    canvas.save();
+                    let mut blend_paint = skia_safe::Paint::default();
+                    blend_paint.set_anti_alias(true);
+                    blend_paint.set_blend_mode(blend);
+                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
+                    canvas.restore();
+                    self.surface_state = SurfaceState::Pending;
+                }
+            }
+            _ => {
+                f(self.surface.canvas(), paint, &self.state.font_style);
+                self.surface_state = SurfaceState::Pending;
             }
         };
     }

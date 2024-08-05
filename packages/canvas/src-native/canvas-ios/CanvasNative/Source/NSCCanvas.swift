@@ -15,6 +15,61 @@ import MetalKit
 @objc(NSCCanvas)
 public class NSCCanvas: UIView {
     
+    enum Engine {
+        case None
+        case CPU
+        case GL
+        case Metal
+    }
+    
+    @objc(CanvasFit)
+    public enum CanvasFit: Int, RawRepresentable {
+        public typealias RawValue = UInt32
+        
+        case None
+        case Fill
+        case FitX
+        case FitY
+        case ScaleDown
+        
+        public var rawValue: RawValue {
+                switch self {
+                case .None:
+                    return 0
+                case .Fill:
+                    return 1
+                case .FitX:
+                    return 2
+                case .FitY:
+                    return 3
+                case .ScaleDown:
+                    return 4
+                }
+            }
+            
+            public init?(rawValue: RawValue) {
+                switch rawValue {
+                case 0:
+                    self = .None
+                case 1:
+                    self = .Fill
+                case 2:
+                    self = .FitX
+                case 3:
+                    self = .FitY
+                case 4:
+                    self = .ScaleDown
+                default:
+                    return nil
+                }
+            }
+    }
+    
+    public var fit = CanvasFit.Fill {
+        didSet {
+            scaleSurface()
+        }
+    }
     
     private static let shared_context_view = GLKView(frame: .init(x: 0, y: 0, width: 1, height: 1))
     
@@ -92,29 +147,49 @@ public class NSCCanvas: UIView {
     
     private(set) var native2DContext: Int64 = 0
     
-    internal var mtlView: MTKView
-    internal var glkView: CanvasGLKView
     internal var is2D = false
-    internal var isMetal = false
+    
+    private var engine = Engine.None
+    
+    internal var mtlView: MTKView
+    
+    internal var glkView: CanvasGLKView
     
     
-    public var drawingBufferWidth: Int {
-        if(isMetal){
-            return Int(mtlView.frame.size.width)
+    public var drawingBufferWidth: CGFloat {
+        if(engine == .Metal){
+            return mtlView.frame.size.width * UIScreen.main.nativeScale
         }
-        return Int(glkView.frame.size.width)
+        return glkView.frame.size.width * UIScreen.main.nativeScale
     }
-    public var drawingBufferHeight: Int {
-        if(isMetal){
-            return Int(mtlView.frame.size.height)
+    
+    public var drawingBufferHeight: CGFloat {
+        if(engine == .Metal){
+            return mtlView.frame.size.height * UIScreen.main.nativeScale
         }
-        return Int(glkView.frame.size.height)
+        return glkView.frame.size.height * UIScreen.main.nativeScale
     }
+    
+    var drawingBufferWidthRaw: CGFloat {
+        if(engine == .Metal){
+            return mtlView.frame.size.width
+        }
+        return glkView.frame.size.width
+    }
+    
+    var drawingBufferHeightRaw: CGFloat {
+        if(engine == .Metal){
+            return mtlView.frame.size.height
+        }
+        return glkView.frame.size.height
+    }
+    
     public var width: Float {
         get {
             return Float(frame.size.width)
         }
     }
+    
     public var height: Float {
         get {
             return Float(frame.size.height)
@@ -154,9 +229,9 @@ public class NSCCanvas: UIView {
             return
         }
         let viewPtr = Int64(Int(bitPattern: getMtlViewPtr()))
-        var density = Float(UIScreen.main.nativeScale)
-        nativeContext = CanvasHelpers.initWebGPUWithView(instance, viewPtr, UInt32(width * density) as UInt32, UInt32(height * density) as UInt32)
+        nativeContext = CanvasHelpers.initWebGPUWithView(instance, viewPtr, UInt32(surfaceWidth) as UInt32, UInt32(surfaceHeight) as UInt32)
         mtlView.isHidden = false
+        engine = .Metal
     }
     
     
@@ -199,74 +274,65 @@ public class NSCCanvas: UIView {
             return
         }
         
-        if(frame.size.width.isZero || frame.size.height.isZero){
-            let width = frame.size.width.isZero ? 1 : frame.size.width
-            let height = frame.size.height.isZero ? 1 : frame.size.height
-            frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
-            zeroSize = true
-            setNeedsLayout()
-            layoutIfNeeded()
+        var properties: [String: Any] = [:]
+        let useWebGL = !isCanvas
+        if(useWebGL && preserveDrawingBuffer){
+            properties[kEAGLDrawablePropertyRetainedBacking] = NSNumber(value: preserveDrawingBuffer)
         }
         
-    
-            var properties: [String: Any] = [:]
-            let useWebGL = !isCanvas
-            if(useWebGL && preserveDrawingBuffer){
-                properties[kEAGLDrawablePropertyRetainedBacking] = NSNumber(value: preserveDrawingBuffer)
-            }
-            
-            if(alpha){
-                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
-                isOpaque = false
-                glkView.isOpaque = false
-                (glkView.layer as! CAEAGLLayer).isOpaque = false
-            }else {
-                properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
-                isOpaque = true
-                (glkView.layer as! CAEAGLLayer).isOpaque = true
-                glkView.isOpaque = true
-            }
-            
-            
-            if(!properties.isEmpty){
-                let eaglLayer = self.glkView.layer as! CAEAGLLayer
-                eaglLayer.drawableProperties = properties
-            }
-            
-            if(useWebGL && depth){
-                glkView.drawableDepthFormat = .format24
-            }else {
-                glkView.drawableDepthFormat = .formatNone
-            }
-            
-            if(useWebGL && stencil){
-                glkView.drawableStencilFormat = .format8
-            }else if(isCanvas) {
-                glkView.drawableStencilFormat = .format8
-            }
-            
-            // antialias fails in 2D
-            if(useWebGL && antialias){
-                glkView.drawableMultisample = .multisample4X
-            }
-            
-            let viewPtr = Int64(Int(bitPattern: getViewPtr()))
-                            
-            
-            let shared_context = NSCCanvas.shared_context
-            
-            nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
-            
-            
-            if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
-                glkView.bindDrawable()
-            }
-                    
-            // get new fbo
-            
-            nativeContext = CanvasHelpers.getGLPointer(nativeGL)
+        if(alpha){
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            isOpaque = false
+            glkView.isOpaque = false
+            (glkView.layer as! CAEAGLLayer).isOpaque = false
+        }else {
+            properties[kEAGLDrawablePropertyColorFormat] = kEAGLColorFormatRGBA8
+            isOpaque = true
+            (glkView.layer as! CAEAGLLayer).isOpaque = true
+            glkView.isOpaque = true
+        }
         
-            glkView.isHidden = false
+        
+        if(!properties.isEmpty){
+            let eaglLayer = self.glkView.layer as! CAEAGLLayer
+            eaglLayer.drawableProperties = properties
+        }
+        
+        if(useWebGL && depth){
+            glkView.drawableDepthFormat = .format24
+        }else {
+            glkView.drawableDepthFormat = .formatNone
+        }
+        
+        if(useWebGL && stencil){
+            glkView.drawableStencilFormat = .format8
+        }else if(isCanvas) {
+            glkView.drawableStencilFormat = .format8
+        }
+        
+        // antialias fails in 2D
+        if(useWebGL && antialias){
+            glkView.drawableMultisample = .multisample4X
+        }
+        
+        let viewPtr = Int64(Int(bitPattern: getViewPtr()))
+        
+        
+        let shared_context = NSCCanvas.shared_context
+        
+        nativeGL = CanvasHelpers.initSharedGLWithView(viewPtr,alpha, antialias, depth, failIfMajorPerformanceCaveat, powerPreference, premultipliedAlpha, preserveDrawingBuffer, stencil, desynchronized, xrCompatible, Int32(version), isCanvas, shared_context)
+        
+        engine = .GL
+        
+        if(glkView.drawableWidth == 0 && glkView.drawableHeight == 0){
+            glkView.bindDrawable()
+        }
+        
+        // get new fbo
+        
+        nativeContext = CanvasHelpers.getGLPointer(nativeGL)
+        
+        glkView.isHidden = false
         
         
     }
@@ -306,10 +372,10 @@ public class NSCCanvas: UIView {
         // disable for now
         let samples: Int32 = antialias ? 0 : 0
         
+        
         glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
         
         var density = Float(UIScreen.main.nativeScale)
-        
         
         if (!autoScale) {
             density = 1
@@ -329,17 +395,6 @@ public class NSCCanvas: UIView {
         return native2DContext
     }
     
-    
-    
-    
-    public func forceLayout(_ width: CGFloat, _ height: CGFloat){
-        if(frame.size.equalTo(CGSize(width: width, height: height))){
-            return
-        }
-        frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: width, height: height)
-        setNeedsLayout()
-        layoutIfNeeded()
-    }
     
     
     public func snapshot(_ flip: Bool) -> UIImage?{
@@ -392,32 +447,37 @@ public class NSCCanvas: UIView {
     
     required init?(coder: NSCoder) {
         mtlView = MTKView(coder: coder)
+        glkView = CanvasGLKView(coder: coder)!
+        super.init(coder: coder)
+        initializeView()
+    }
+    
+    
+    public override init(frame: CGRect) {
+        glkView = CanvasGLKView(frame: frame)
+        mtlView = MTKView(frame: frame)
+        super.init(frame: frame)
+        initializeView()
+    }
+    
+    
+    
+    private func initializeView(){
         if #available(iOS 13.0, *) {
             if((mtlView.layer as? CAMetalLayer) != nil){
-                let layer = mtlView.layer as! CAMetalLayer
+               // let layer = mtlView.layer as! CAMetalLayer
                 // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
-              //  layer.presentsWithTransaction = false
-               // layer.framebufferOnly = true
+                //  layer.presentsWithTransaction = false
+                // layer.framebufferOnly = true
             }
         }
-     
-        
-        glkView = CanvasGLKView(coder: coder)!
-        glkView.translatesAutoresizingMaskIntoConstraints = false
-        mtlView.translatesAutoresizingMaskIntoConstraints = false
-        
+        let scale = UIScreen.main.nativeScale
         if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
-            glkView.contentScaleFactor = UIScreen.main.nativeScale
-            // nativeScale is real physical pixel scale
-            // https://tomisacat.xyz/tech/2017/06/17/scale-nativescale-contentsscale.html
-            mtlView.contentScaleFactor = UIScreen.main.nativeScale
+            glkView.contentScaleFactor = scale
+            mtlView.contentScaleFactor = scale
         }
         
-        super.init(coder: coder)
-        
         glkView.canvas = self
-        
-        
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
@@ -425,80 +485,23 @@ public class NSCCanvas: UIView {
         mtlView.isHidden = true
         addSubview(glkView)
         addSubview(mtlView)
+        // passing 300 px * 150 px
+        // by default it will use dpi but we want px
+        let unscaledWidth = 300 / scale
+        let unscaledHeight = 150 / scale
         
-        
-        NSLayoutConstraint.activate([
-            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            glkView.topAnchor.constraint(equalTo: topAnchor),
-            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-        
-        NSLayoutConstraint.activate([
-            mtlView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            mtlView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mtlView.topAnchor.constraint(equalTo: topAnchor),
-            mtlView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-        
+        glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+        mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+        glkView.setNeedsLayout()
+        mtlView.setNeedsLayout()
+        glkView.layoutIfNeeded()
+        mtlView.layoutIfNeeded()
+        scaleSurface()
         
         self.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
     }
     
-    public override init(frame: CGRect) {
-        glkView = CanvasGLKView(frame: frame)
-        mtlView = MTKView(frame: frame)
-        
-        if #available(iOS 13.0, *) {
-            if((mtlView.layer as? CAMetalLayer) != nil){
-                let layer = mtlView.layer as! CAMetalLayer
-                // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
-              //  layer.presentsWithTransaction = false
-               // layer.framebufferOnly = true
-            }
-        }
-        
-        
-        
-        glkView.translatesAutoresizingMaskIntoConstraints = false
-        mtlView.translatesAutoresizingMaskIntoConstraints = false
-        if(UIScreen.instancesRespond(to: #selector(getter: UIScreen.main.nativeScale))){
-            glkView.contentScaleFactor = UIScreen.main.nativeScale
-            
-            // nativeScale is real physical pixel scale
-            // https://tomisacat.xyz/tech/2017/06/17/scale-nativescale-contentsscale.html
-            mtlView.contentScaleFactor = UIScreen.main.nativeScale
-        }
-        super.init(frame: frame)
-        glkView.canvas = self
-        
-        handler = NSCTouchHandler(canvas: self)
-        backgroundColor = .clear
-        glkView.enableSetNeedsDisplay = false
-        glkView.isHidden = true
-        mtlView.isHidden = true
-        addSubview(glkView)
-        addSubview(mtlView)
-        
-        NSLayoutConstraint.activate([
-            glkView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glkView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            glkView.topAnchor.constraint(equalTo: topAnchor),
-            glkView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-        
-        NSLayoutConstraint.activate([
-            mtlView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            mtlView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            mtlView.topAnchor.constraint(equalTo: topAnchor),
-            mtlView.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-        
-        
-        self.isOpaque = false
-        addGestureRecognizer(handler!.gestureRecognizer!)
-    }
     
     var ignoreTouchEvents = false {
         didSet {
@@ -516,75 +519,149 @@ public class NSCCanvas: UIView {
         readyListener = listener
     }
     
-    
-    private var lastSize: CGRect = .null
     private var isLoaded: Bool = false
+    
+    public var surfaceWidth: Int = 300 {
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+            resize()
+        }
+    }
+    
+    
+    public var surfaceHeight: Int = 150 {
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+            resize()
+        }
+    }
     
     private func resize(){
         if(nativeGL == 0){return}
-        EAGLContext.setCurrent(glkView.context)
-       // glkView.deleteDrawable()
-       // glkView.bindDrawable()
-        if(is2D){
+        if(engine == .GL){
+            EAGLContext.setCurrent(glkView.context)
+        }
+        scaleSurface()
+        // glkView.deleteDrawable()
+        // glkView.bindDrawable()
+        if(nativeContext != 0 && is2D){
             glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
         }
     }
     
+    public func forceLayout(_ width: CGFloat, _ height: CGFloat){
+        var unscaledWidth = width
+        var unscaledHeight = height
+        let scale = UIScreen.main.nativeScale
+        if(unscaledWidth.isZero || unscaledWidth.isLess(than: .zero)){
+            unscaledWidth = 1 / scale
+        }else {
+            unscaledWidth = unscaledWidth / scale
+        }
+        
+        if(unscaledHeight.isZero || unscaledHeight.isLess(than: .zero)){
+            unscaledHeight = 1 / scale
+        }else {
+            unscaledHeight = unscaledHeight / scale
+        }
+        
+        
+        glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+        mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+        glkView.setNeedsLayout()
+        mtlView.setNeedsLayout()
+        glkView.layoutIfNeeded()
+        mtlView.layoutIfNeeded()
+        
+    }
     
-    private var viewSize = CGSize.zero
-    private var realViewSize = CGSize.zero
-    private var zeroSize = false
-    private var isReady = false
-    public override func layoutSubviews() {
-        if(viewSize.equalTo(frame.size)){
+    private func scaleSurface(){
+        /*if(surfaceWidth == 0 || surfaceHeight == 0){
             return
         }
         
-        if(!zeroSize){
-            realViewSize.width = frame.size.width
-            realViewSize.height = frame.size.height
+        var density = UIScreen.main.nativeScale
+        
+        if(!autoScale){
+            density = 1
         }
         
-        if(!isReady && nativeGL == 0 && !realViewSize.width.isZero && !realViewSize.height.isZero){
-            viewSize.width = frame.size.width
-            viewSize.height = frame.size.height
-            isReady = true
-            DispatchQueue.main.async { [self] in
-                readyListener?.contextReady()
-            }
+        let scaledInternalWidth = CGFloat(surfaceWidth) / density
+        let scaledInternalHeight = CGFloat(surfaceHeight) / density
+    
+        if(scaledInternalWidth.isZero || scaledInternalHeight.isZero){
+            return
         }
         
-        /*
-        if((!viewSize.width.isZero && !viewSize.height.isZero) && frame.width.isZero || frame.height.isZero){
-            let width = width.isZero ? 1 : width
-            let height = height.isZero ? 1 : height
-            frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: CGFloat(width), height: CGFloat(height))
+        if(frame.size.width.isZero || frame.size.width.isNaN || frame.size.height.isZero || frame.size.height.isNaN){return}
+        
+        let scaleX = frame.size.width / scaledInternalWidth
+        let scaleY = frame.size.height / scaledInternalHeight
+        
+        
+        if(scaleX.isZero || scaleX.isNaN ||  scaleY.isZero || scaleY.isNaN ){
+            return
         }
+        
+        var transform = CGAffineTransform.identity
+
+        switch(fit){
+        case .None:
+            // noop
+            break
+        case .Fill:
+        
+            transform = CGAffineTransform.identity.scaledBy(x: scaleX , y: scaleY)
+            
+        case .FitX:
+            transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX)
+            break
+        case .FitY:
+            transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY)
+            break
+        case .ScaleDown:
+            let scale =  min(min(scaleX, scaleY), 1)
+            
+            transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale)
+            break
+        }
+        
+        
+        // disable animation
+       
+        glkView.transform = transform
+        mtlView.transform = transform
         */
-        if(!frame.width.isZero && !frame.height.isZero){
-            viewSize = CGSize(width: frame.size.width, height: frame.size.height)
-        }
-        if(nativeGL != 0) {
-            resize()
-        }
-        
-        zeroSize = false
     }
     
     
+    public override func layoutSubviews() {
+        if(!isLoaded && drawingBufferWidth > 0 && drawingBufferHeight > 0){
+            self.isLoaded = true
+            scaleSurface()
+            let event = Timer(timeInterval: 0, repeats: false) { _ in
+                self.readyListener?.contextReady()
+            }
+            RunLoop.current.add(event, forMode: .common)
+        }else {
+            resize()
+        }
+    }
     
     deinit {
-        if(nativeContext != 0){
-            if(nativeGL != 0){
-                CanvasHelpers.releaseGLPointer(nativeContext)
+        if(engine == .GL){
+            if(nativeContext != 0){
+                if(nativeGL != 0){
+                    CanvasHelpers.releaseGLPointer(nativeContext)
+                }
+                
+                nativeContext = 0
             }
-            
-            nativeContext = 0
-        }
-        if(nativeGL != 0){
-            CanvasHelpers.releaseGL(nativeGL)
-            nativeGL = 0
+            if(nativeGL != 0){
+                CanvasHelpers.releaseGL(nativeGL)
+                nativeGL = 0
+            }
         }
         
         if(ptr != nil){

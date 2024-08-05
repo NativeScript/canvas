@@ -184,7 +184,7 @@ export class GPUDevice extends EventTarget {
 		return this.native.limits;
 	}
 
-	get features() {
+	get features(): Map<string, string> {
 		return this.native.features;
 	}
 
@@ -222,8 +222,6 @@ export class GPUDevice extends EventTarget {
 				}
 				return entry;
 			});
-
-			console.log(descriptor);
 		}
 
 		const group = this.native.createBindGroup(descriptor);
@@ -320,7 +318,7 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createQuerySet(descriptor: { count: number; label?: string; type: GPUQueryType }) {
-		return GPUQuerySet.fromNative(this.native.createPipelineLayout(descriptor));
+		return GPUQuerySet.fromNative(this.native.createQuerySet(descriptor));
 	}
 
 	createRenderBundleEncoder(descriptor: { colorFormats: (null | GPUTextureFormat)[]; depthReadOnly?: boolean; depthStencilFormat?: GPUTextureFormat; label?: string; sampleCount?: number; stencilReadOnly?: boolean }) {

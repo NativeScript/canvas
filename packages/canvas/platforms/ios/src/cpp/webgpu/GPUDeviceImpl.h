@@ -11,7 +11,7 @@
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 public:
-    GPUDeviceImpl(const CanvasGPUDevice *device);
+    explicit GPUDeviceImpl(const CanvasGPUDevice *device);
 
     ~GPUDeviceImpl() {
         canvas_native_webgpu_device_release(this->device_);

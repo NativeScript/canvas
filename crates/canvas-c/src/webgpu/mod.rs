@@ -1,8 +1,11 @@
 pub use wgpu_core;
-pub use wgpu_types;
+pub use wgt;
 
+
+// Using this as the wgpu-core returns empty ....
 #[macro_use]
-mod macros {
+pub mod macros {
+    #[macro_export]
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     macro_rules! gfx_select {
         ($id:expr => $p0:ident.$p1:tt.$method:ident $params:tt) => {
@@ -18,6 +21,7 @@ mod macros {
         };
       }
 
+    #[macro_export]
     #[cfg(any(target_os = "android"))]
     macro_rules! gfx_select {
         ($id:expr => $p0:ident.$p1:tt.$method:ident $params:tt) => {
@@ -33,6 +37,8 @@ mod macros {
         };
       }
 }
+
+
 
 pub mod enums;
 pub mod error;

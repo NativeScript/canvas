@@ -105,6 +105,7 @@ impl Paint {
         match style {
             PaintStyle::Color(color) => {
                 self.fill_paint.set_shader(None);
+                self.stroke_paint.set_shader(None);
                 if is_fill {
                     self.fill_paint.set_color(*color);
                 } else {

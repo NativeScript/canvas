@@ -48,3 +48,6 @@ rust-skia
 /target
 /**/*.rs.bk
 /Cargo.lock
+
+.nx/cache
+.nx/workspace-data

@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPURenderBundleImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPURenderBundle);
+        SetNativeType(bundle, NativeType::GPURenderBundle);
         object->SetAlignedPointerInInternalField(0, bundle);
         bundle->BindFinalizer(isolate, object);
         return scope.Escape(object);

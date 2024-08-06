@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUDeviceImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUDevice);
+        SetNativeType(device, NativeType::GPUDevice);
         object->SetAlignedPointerInInternalField(0, device);
         device->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -927,7 +927,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
         }
     }
 
-    auto type = GetNativeType(image);
+    auto type = ObjectWrapperImpl::GetNativeType(image);
 
     if (len == 1 || len == 2) {
         if (len == 2) {

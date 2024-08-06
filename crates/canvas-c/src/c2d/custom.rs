@@ -16,5 +16,5 @@ pub extern "C" fn canvas_native_image_filter_release(value: *const ImageFilter) 
     if value.is_null() {
         return;
     }
-    let _ = unsafe { Arc::increment_strong_count(value) };
+    let _ = unsafe { Arc::decrement_strong_count(value) };
 }

@@ -199,7 +199,7 @@ fn test(state: &mut WebGLState, gl_state: &mut WebGLState, ctx_2d: &mut CanvasRe
     // state.remove_if_current();
     gl_state.make_current();
 
-    let mut ctx = ctx_2d.get_context_mut();;
+    let mut ctx = ctx_2d.get_context_mut();
 
     ctx.set_font("30px Arial");
 

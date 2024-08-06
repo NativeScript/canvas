@@ -38,7 +38,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_texture_half_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::OES_texture_half_float);
+        SetNativeType( texture, NativeType::OES_texture_half_float);
         object->SetAlignedPointerInInternalField(0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);

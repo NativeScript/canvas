@@ -21,7 +21,7 @@ GENERATE_HEADERS:
 # PHONY keyword on make means this is not a file, just an identifier for a target
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -C panic=abort" cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target $@ --release -p canvas-svg
+	RUSTFLAGS="-Zlocation-detail=none -C panic=abort" cargo +nightly build -Z build-std='std,panic_abort'  -Z build-std-features=panic_immediate_abort --target $@ --release -p canvas-ios
 
 $(XCFRAMEWORK): $(ARCHS_IOS)
 

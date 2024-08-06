@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUComputePipelineImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUComputePipeline);
+        SetNativeType(pipeline, NativeType::GPUComputePipeline);
         object->SetAlignedPointerInInternalField(0, pipeline);
         pipeline->BindFinalizer(isolate, object);
         return scope.Escape(object);

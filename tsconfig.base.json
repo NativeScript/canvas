@@ -21,6 +21,7 @@
 		],
 		"paths": {
 			"@demo/shared": ["tools/demo/index.ts"],
+			"@nativescript/*": ["packages/*"],
 			"@nativescript/canvas": ["packages/canvas/index.ts"],
 			"@nativescript/canvas-babylon": ["packages/canvas-babylon/index.ts"],
 			"@nativescript/canvas-chartjs": ["packages/canvas-chartjs/index.d.ts"],
@@ -31,8 +32,7 @@
 			"@nativescript/canvas-polyfill": ["packages/canvas-polyfill/index.ts"],
 			"@nativescript/canvas-svg": ["packages/canvas-svg/index.d.ts"],
 			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
-			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"],
-			"@nativescript/*": ["packages/*"]
+			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

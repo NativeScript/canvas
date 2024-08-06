@@ -10,9 +10,9 @@
 #include "Common.h"
 #include "ObjectWrapperImpl.h"
 
-class WebGLShaderPrecisionFormatImpl: ObjectWrapperImpl {
+class WebGLShaderPrecisionFormatImpl : ObjectWrapperImpl {
 public:
-    WebGLShaderPrecisionFormatImpl(WebGLShaderPrecisionFormat* shader);
+    explicit WebGLShaderPrecisionFormatImpl(WebGLShaderPrecisionFormat *shader);
 
     ~WebGLShaderPrecisionFormatImpl() {
         canvas_native_webgl_shader_precision_format_destroy(this->GetShaderPrecisionFormat());
@@ -51,7 +51,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLShaderPrecisionFormatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLShaderPrecisionFormat);
+        SetNativeType(shaderPrecisionFormat, NativeType::WebGLShaderPrecisionFormat);
         object->SetAlignedPointerInInternalField(0, shaderPrecisionFormat);
         shaderPrecisionFormat->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -75,9 +75,9 @@ public:
     static void GetPrecision(v8::Local<v8::Name> property,
                              const v8::PropertyCallbackInfo<v8::Value> &info);
 
-    WebGLShaderPrecisionFormat* GetShaderPrecisionFormat();
+    WebGLShaderPrecisionFormat *GetShaderPrecisionFormat();
 
 private:
-    WebGLShaderPrecisionFormat* shader_;
+    WebGLShaderPrecisionFormat *shader_;
 };
 

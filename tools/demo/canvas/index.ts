@@ -562,9 +562,8 @@ fn main() -> @location(0) vec4f {
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
-		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
-		// texturedCube.run(this.canvas);
-
+		const texturedCube = require('./webgpu/basicGraphics/texturedCube');
+		texturedCube.run(this.canvas);
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
 
@@ -721,7 +720,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		// swarm(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13

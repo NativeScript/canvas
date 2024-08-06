@@ -30,10 +30,11 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = ImageBitmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::ImageBitmap);
 
         auto ptr = asset->Value();
         auto impl = static_cast<ObjectWrapperImpl *>(ptr);
+
+        SetNativeType(impl, NativeType::ImageBitmap);
 
 
         object->SetAlignedPointerInInternalField(0, ptr);

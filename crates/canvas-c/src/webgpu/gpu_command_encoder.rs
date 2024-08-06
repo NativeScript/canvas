@@ -1,5 +1,10 @@
-use std::sync::Arc;
 use std::{ffi::CStr, os::raw::c_char};
+use std::sync::Arc;
+
+use crate::webgpu::error::handle_error;
+use crate::webgpu::prelude::ptr_into_label;
+use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
+
 //use wgpu_core::gfx_select;
 use super::{
     enums::CanvasTextureAspect,
@@ -15,9 +20,6 @@ use super::{
         CanvasRenderPassDepthStencilAttachment,
     },
 };
-use crate::webgpu::error::handle_error;
-use crate::webgpu::prelude::ptr_into_label;
-use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
 
 pub struct CanvasGPUCommandEncoder {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,

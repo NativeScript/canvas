@@ -23,7 +23,7 @@ void GPURenderPipelineImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPipeline"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPipeline"), func).FromJust();
 }
 
 GPURenderPipelineImpl *GPURenderPipelineImpl::GetPointer(const v8::Local<v8::Object> &object) {

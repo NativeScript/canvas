@@ -38,7 +38,7 @@ void GPUDeviceImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUDevice"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUDevice"), func).FromJust();
 }
 
 GPUDeviceImpl *GPUDeviceImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -296,6 +296,11 @@ GPUDeviceImpl::GetQueue(v8::Local<v8::Name> name,
 }
 
 
+struct LostData {
+    int32_t reason;
+    char *message;
+};
+
 void
 GPUDeviceImpl::GetLost(v8::Local<v8::Name> name,
                        const v8::PropertyCallbackInfo<v8::Value> &info) {
@@ -304,64 +309,84 @@ GPUDeviceImpl::GetLost(v8::Local<v8::Name> name,
     auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
     info.GetReturnValue().Set(resolver->GetPromise());
     if (ptr != nullptr) {
-        v8::Global<v8::Promise::Resolver> promise(isolate, resolver);
         auto callback = new PromiseCallback{
                 isolate,
-                std::move(promise)
+                resolver,
+                [](bool done, void *data) {
+                    if (data != nullptr) {
+                        auto async_data = static_cast<PromiseCallback *>(data);
+                        auto func = async_data->inner_.get();
+                        if (func != nullptr && func->isolate_ != nullptr) {
+                            v8::Isolate *isolate = func->isolate_;
+                            v8::Locker locker(isolate);
+                            v8::Isolate::Scope isolate_scope(
+                                    isolate);
+                            v8::HandleScope handle_scope(
+                                    isolate);
+                            v8::Local<v8::Promise::Resolver> callback = func->callback_.Get(
+                                    isolate);
+                            v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                            v8::Context::Scope context_scope(
+                                    context);
+
+                            auto ret = v8::Object::New(
+                                    isolate);
+                            LostData *lostData = nullptr;
+                            if (func->data != nullptr) {
+                                lostData = static_cast<LostData *>(func->data);
+                            }
+
+                            if (lostData != nullptr) {
+
+                                if (lostData->message != nullptr) {
+                                    ret->Set(context,
+                                             ConvertToV8String(
+                                                     isolate,
+                                                     "message"),
+                                             ConvertToV8String(
+                                                     isolate,
+                                                     lostData->message));
+                                    canvas_native_string_destroy(
+                                            lostData->message);
+                                }
+
+                                ret->Set(context,
+                                         ConvertToV8String(
+                                                 isolate,
+                                                 "reason"),
+                                         v8::Int32::New(isolate,
+                                                        lostData->reason)).IsJust();
+                            } else {
+                                ret->Set(context,
+                                         ConvertToV8String(
+                                                 isolate,
+                                                 "message"),
+                                         v8::String::Empty(
+                                                 isolate));
+                            }
+
+                            callback->Resolve(context, ret);
+                            delete static_cast<PromiseCallback *>(data);
+                        }
+                    }
+                }
         };
+
+        callback->prepare();
 
         canvas_native_webgpu_device_set_lost_callback(ptr->GetGPUDevice(),
                                                       [](int32_t reason, char *message,
                                                          void *data) {
                                                           if (data != nullptr) {
-                                                              auto func = static_cast<PromiseCallback *>(data);
-                                                              if (func->isolate != nullptr) {
-                                                                  v8::Isolate *isolate = func->isolate;
-                                                                  v8::Locker locker(isolate);
-                                                                  v8::Isolate::Scope isolate_scope(
-                                                                          isolate);
-                                                                  v8::HandleScope handle_scope(
-                                                                          isolate);
-                                                                  v8::Local<v8::Promise::Resolver> callback = func->callback.Get(
-                                                                          isolate);
-                                                                  v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                                  v8::Context::Scope context_scope(
-                                                                          context);
-
-                                                                  auto ret = v8::Object::New(
-                                                                          isolate);
-                                                                  if (message == nullptr) {
-                                                                      ret->Set(context,
-                                                                               ConvertToV8String(
-                                                                                       isolate,
-                                                                                       "message"),
-                                                                               v8::String::Empty(
-                                                                                       isolate));
-                                                                  } else {
-                                                                      ret->Set(context,
-                                                                               ConvertToV8String(
-                                                                                       isolate,
-                                                                                       "message"),
-                                                                               ConvertToV8String(
-                                                                                       isolate,
-                                                                                       message));
-                                                                      canvas_native_string_destroy(
-                                                                              message);
-                                                                  }
-
-                                                                  ret->Set(context,
-                                                                           ConvertToV8String(
-                                                                                   isolate,
-                                                                                   "reason"),
-                                                                           v8::Int32::New(isolate,
-                                                                                          reason)).IsJust();
-
-
-                                                                  callback->Resolve(context, ret);
-                                                                  delete static_cast<PromiseCallback *>(data);
+                                                              auto async_data = static_cast<PromiseCallback *>(data);
+                                                              auto inner = async_data->inner_.get();
+                                                              if (inner != nullptr) {
+                                                                  inner->data = new LostData{
+                                                                          reason, message
+                                                                  };
+                                                                  async_data->execute(true);
                                                               }
                                                           }
-
                                                       }, callback);
     }
 }
@@ -469,8 +494,8 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
                                         v8::Local<v8::Value> offsetVal;
 
                                         resourceObj->Get(context,
-                                                       ConvertToV8String(isolate,
-                                                                         "offset")).ToLocal(
+                                                         ConvertToV8String(isolate,
+                                                                           "offset")).ToLocal(
                                                 &offsetVal);
                                         if (!offsetVal.IsEmpty() && offsetVal->IsNumber()) {
                                             offset = (int64_t) offsetVal->NumberValue(
@@ -481,7 +506,8 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
 
                                         v8::Local<v8::Value> sizeVal;
                                         resourceObj->Get(context,
-                                                       ConvertToV8String(isolate, "size")).ToLocal(
+                                                         ConvertToV8String(isolate,
+                                                                           "size")).ToLocal(
                                                 &sizeVal);
                                         if (!sizeVal.IsEmpty() && sizeVal->IsNumber()) {
                                             size = (int64_t) sizeVal->NumberValue(
@@ -1437,7 +1463,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 &depthBiasClampVal);
 
         if (!depthBiasClampVal.IsEmpty() && depthBiasClampVal->IsNumber()) {
-            stencil->depth_bias_clamp = (float)depthBiasClampVal->NumberValue(context).FromJust();
+            stencil->depth_bias_clamp = (float) depthBiasClampVal->NumberValue(context).FromJust();
         }
 
 
@@ -1446,7 +1472,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 &depthBiasSlopeScaleVal);
 
         if (!depthBiasSlopeScaleVal.IsEmpty() && depthBiasSlopeScaleVal->IsNumber()) {
-            stencil->depth_bias_slope_scale = (float)depthBiasSlopeScaleVal->NumberValue(
+            stencil->depth_bias_slope_scale = (float) depthBiasSlopeScaleVal->NumberValue(
                     context).FromJust();
         }
 
@@ -1897,7 +1923,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> cullModeValue;
 
         if (primitiveObj->Get(context, ConvertToV8String(isolate, "cullMode")).ToLocal(
-                                                                                       &cullModeValue)) {
+                &cullModeValue)) {
             if (cullModeValue->IsUint32()) {
                 auto cullMode = cullModeValue.As<v8::Uint32>()->Value();
 
@@ -1932,7 +1958,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> frontFaceValue;
 
         if (primitiveObj->Get(context, ConvertToV8String(isolate, "frontFace")).ToLocal(
-                                                                                        &frontFaceValue)) {
+                &frontFaceValue)) {
             if (frontFaceValue->IsUint32()) {
                 auto frontFace = frontFaceValue.As<v8::Uint32>()->Value();
                 switch (frontFace) {
@@ -1959,7 +1985,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> stripIndexFormatValue;
 
         if (primitiveObj->Get(context, ConvertToV8String(isolate, "stripIndexFormat")).ToLocal(
-                                                                                               &stripIndexFormatValue)) {
+                &stripIndexFormatValue)) {
             if (stripIndexFormatValue->IsUint32()) {
                 auto stripIndexFormat = stripIndexFormatValue.As<v8::Uint32>()->Value();
                 switch (stripIndexFormat) {
@@ -2000,7 +2026,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> topologyValue;
 
         if (primitiveObj->Get(context, ConvertToV8String(isolate, "topology")).ToLocal(
-                                                                                       &topologyValue)) {
+                &topologyValue)) {
 
             if (topologyValue->IsUint32()) {
                 auto topology = topologyValue.As<v8::Uint32>()->Value();
@@ -2262,7 +2288,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     }
 
-    if(descriptor.depth_stencil != nullptr){
+    if (descriptor.depth_stencil != nullptr) {
         delete descriptor.depth_stencil;
     }
 
@@ -2492,7 +2518,8 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
         v8::Local<v8::Value> codeVal;
 
         std::string code;
-        if (desc->Get(context, ConvertToV8String(isolate, "code")).ToLocal(&codeVal) && codeVal->IsString()) {
+        if (desc->Get(context, ConvertToV8String(isolate, "code")).ToLocal(&codeVal) &&
+            codeVal->IsString()) {
             code = ConvertFromV8String(isolate, codeVal);
         }
 
@@ -2541,15 +2568,15 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> depthOrArrayLayersVal;
 
         if (options->Get(context, ConvertToV8String(isolate, "depthOrArrayLayers")).ToLocal(
-                                                                                            &depthOrArrayLayersVal) && depthOrArrayLayersVal->IsUint32()) {
+                &depthOrArrayLayersVal) && depthOrArrayLayersVal->IsUint32()) {
             descriptor.depthOrArrayLayers = depthOrArrayLayersVal.As<v8::Uint32>()->Value();
         }
 
 
         v8::Local<v8::Value> widthVal;
 
-        if ( options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(
-                                                                                &widthVal) &&widthVal->IsUint32()) {
+        if (options->Get(context, ConvertToV8String(isolate, "width")).ToLocal(
+                &widthVal) && widthVal->IsUint32()) {
             descriptor.width = widthVal.As<v8::Uint32>()->Value();
         }
 
@@ -2557,7 +2584,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> heightVal;
 
         if (options->Get(context, ConvertToV8String(isolate, "height")).ToLocal(
-                                                                                &heightVal) && heightVal->IsUint32()) {
+                &heightVal) && heightVal->IsUint32()) {
             descriptor.height = heightVal.As<v8::Uint32>()->Value();
         }
 
@@ -2565,7 +2592,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> usageVal;
 
         if (options->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
-                                                                               &usageVal) && usageVal->IsUint32()) {
+                &usageVal) && usageVal->IsUint32()) {
             descriptor.usage = usageVal.As<v8::Uint32>()->Value();
         }
 
@@ -2610,7 +2637,7 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> formatVal;
 
         if (options->Get(context, ConvertToV8String(isolate, "format")).ToLocal(
-                                                                                &formatVal) && formatVal->IsString()) {
+                &formatVal) && formatVal->IsString()) {
             auto format = ConvertFromV8String(isolate, formatVal);
 
             // todo use enum

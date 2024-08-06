@@ -1,5 +1,6 @@
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
+
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 
@@ -216,6 +217,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
     if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids))
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
+    }
+
+    for id in command_buffer_ids.into_iter() {
+        gfx_select!(id => global.command_buffer_drop(id));
     }
 }
 

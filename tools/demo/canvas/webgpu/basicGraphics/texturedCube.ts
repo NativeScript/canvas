@@ -16,16 +16,14 @@ export async function run(canvas: Canvas) {
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
 
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-
 	const appPath = knownFolders.currentApp().path;
 	const basicVertWGSLFile = File.fromPath(appPath + '/webgpu/shaders/basic.vert.wgsl');
-
 	// readText async fails on android
-	const basicVertWGSL = basicVertWGSLFile.readTextSync();
+	const basicVertWGSL = await basicVertWGSLFile.readText();
 
 	const sampleTextureMixColorWGSLFile = File.fromPath(appPath + '/webgpu/shaders/sampleTextureMixColor.frag.wgsl');
 
-	const sampleTextureMixColorWGSL = sampleTextureMixColorWGSLFile.readTextSync();
+	const sampleTextureMixColorWGSL = await sampleTextureMixColorWGSLFile.readText();
 
 	context.configure({
 		device,
@@ -190,6 +188,10 @@ export async function run(canvas: Canvas) {
 		const transformationMatrix = getTransformationMatrix();
 		device.queue.writeBuffer(uniformBuffer, 0, transformationMatrix.buffer, transformationMatrix.byteOffset, transformationMatrix.byteLength);
 		const texture = context.getCurrentTexture();
+		if (!texture) {
+			requestAnimationFrame(frame);
+			return;
+		}
 		renderPassDescriptor.colorAttachments[0].view = texture.createView();
 
 		const commandEncoder = device.createCommandEncoder();

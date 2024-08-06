@@ -11,7 +11,7 @@
 
 class GPUTextureViewImpl : ObjectWrapperImpl {
 public:
-    GPUTextureViewImpl(const CanvasGPUTextureView *view);
+    explicit GPUTextureViewImpl(const CanvasGPUTextureView *view);
 
     ~GPUTextureViewImpl() {
         canvas_native_webgpu_texture_view_release(this->GetTextureView());
@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUTextureViewImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUTextureView);
+        SetNativeType(view, NativeType::GPUTextureView);
         object->SetAlignedPointerInInternalField(0, view);
         view->BindFinalizer(isolate, object);
         return scope.Escape(object);

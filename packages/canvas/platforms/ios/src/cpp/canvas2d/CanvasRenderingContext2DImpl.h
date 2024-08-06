@@ -171,7 +171,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::CanvasRenderingContext2D);
+        SetNativeType(renderingContext, NativeType::CanvasRenderingContext2D);
         object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -548,7 +548,8 @@ public:
                     canvas_native_context_clip(
                             ptr->GetContext(), path->GetPath(), CanvasFillRuleEvenOdd);
                     break;
-                default: break;
+                default:
+                    break;
             }
         }
 
@@ -909,7 +910,8 @@ public:
                             object->GetPath(),
                             CanvasFillRuleEvenOdd);
                     break;
-                default: break;
+                default:
+                    break;
             }
 
             ptr->UpdateInvalidateState();
@@ -948,7 +950,8 @@ public:
                 canvas_native_context_fill(
                         ptr->GetContext(), CanvasFillRuleEvenOdd);
                 break;
-            default: break;
+            default:
+                break;
         }
 
 
@@ -1023,7 +1026,8 @@ public:
         }
 
         return canvas_native_context_is_point_in_path(
-                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), CanvasFillRuleNonZero);
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y),
+                CanvasFillRuleNonZero);
     }
 
     static bool
@@ -1036,7 +1040,8 @@ public:
 
 
         return canvas_native_context_is_point_in_path(
-                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y),
+                rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
     }
 
     static bool
@@ -1061,15 +1066,16 @@ public:
 
                     ret = canvas_native_context_is_point_in_path_with_path(
                             ptr->GetContext(),
-                            path->GetPath(), (float)x,  (float)y, CanvasFillRuleNonZero);
+                            path->GetPath(), (float) x, (float) y, CanvasFillRuleNonZero);
                     break;
                 case 1:
 
                     ret = canvas_native_context_is_point_in_path_with_path(
                             ptr->GetContext(),
-                            path->GetPath(),  (float)x,  (float)y, CanvasFillRuleEvenOdd);
+                            path->GetPath(), (float) x, (float) y, CanvasFillRuleEvenOdd);
                     break;
-                default: break;
+                default:
+                    break;
             }
 
         }
@@ -1445,7 +1451,6 @@ public:
 
 
     static void StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args);
-
 
 
     static void StrokeOval(const v8::FunctionCallbackInfo<v8::Value> &args);

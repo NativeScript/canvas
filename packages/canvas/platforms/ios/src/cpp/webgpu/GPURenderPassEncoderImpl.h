@@ -32,7 +32,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPURenderPassEncoderImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPURenderPassEncoder);
+        SetNativeType(encoder, NativeType::GPURenderPassEncoder);
         object->SetAlignedPointerInInternalField(0, encoder);
         encoder->BindFinalizer(isolate, object);
         return scope.Escape(object);

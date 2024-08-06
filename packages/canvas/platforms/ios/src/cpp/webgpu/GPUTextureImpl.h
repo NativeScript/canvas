@@ -25,14 +25,14 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, GPUTextureImpl *queue) {
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, GPUTextureImpl *texture) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUTextureImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUTexture);
-        object->SetAlignedPointerInInternalField(0, queue);
-        queue->BindFinalizer(isolate, object);
+        SetNativeType(texture, NativeType::GPUTexture);
+        object->SetAlignedPointerInInternalField(0, texture);
+        texture->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

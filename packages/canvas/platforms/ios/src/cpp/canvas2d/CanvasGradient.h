@@ -3,21 +3,22 @@
 //
 
 #pragma once
+
 #include <vector>
 #include "Common.h"
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class CanvasGradient: ObjectWrapperImpl {
+class CanvasGradient : ObjectWrapperImpl {
 public:
-    explicit CanvasGradient(PaintStyle*style);
+    explicit CanvasGradient(PaintStyle *style);
 
-    ~CanvasGradient(){
+    ~CanvasGradient() {
         canvas_native_paint_style_release(this->GetPaintStyle());
         this->style_ = nullptr;
     }
 
-    PaintStyle * GetPaintStyle();
+    PaintStyle *GetPaintStyle();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -30,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasGradient::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::CanvasGradient);
+        SetNativeType(gradient, NativeType::CanvasGradient);
         object->SetAlignedPointerInInternalField(0, gradient);
         gradient->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -39,6 +40,6 @@ public:
     static void AddColorStop(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    PaintStyle* style_;
+    PaintStyle *style_;
 };
 

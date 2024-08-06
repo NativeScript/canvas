@@ -43,10 +43,10 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_element_index_uintImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::OES_element_index_uint);
+        SetNativeType( element, NativeType::OES_element_index_uint);
         object->SetAlignedPointerInInternalField(0, element);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
-                    ConvertToV8String(isolate, "OES_element_index_uint"));
+                    ConvertToV8String(isolate, "OES_element_index_uint")).FromJust();
         element->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

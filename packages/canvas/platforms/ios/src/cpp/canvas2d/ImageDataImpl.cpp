@@ -115,7 +115,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         object->BindFinalizer(isolate, ret);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(object, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -136,7 +136,7 @@ void ImageDataImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         ret->SetAlignedPointerInInternalField(0, object);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(object, NativeType::ImageData);
 
         object->BindFinalizer(isolate, ret);
 

@@ -158,6 +158,24 @@ void GPUAdapterImpl::RequestAdapterInfo(const v8::FunctionCallbackInfo<v8::Value
 
 }
 
+struct RequestData {
+    char *error_;
+    const CanvasGPUDevice *device_;
+    char **required_features_data_;
+
+    ~RequestData() {
+        if (required_features_data_ != nullptr) {
+            delete[] required_features_data_;
+            required_features_data_ = nullptr;
+        }
+
+        if (error_ != nullptr) {
+            canvas_native_string_destroy(error_);
+            error_ = nullptr;
+        }
+    }
+};
+
 void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &args) {
     GPUAdapterImpl *ptr = GetPointer(args.This());
     auto isolate = args.GetIsolate();
@@ -170,7 +188,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
         return;
     }
 
-    v8::Global<v8::Function> func(isolate, cb.As<v8::Function>());
+    auto func = cb.As<v8::Function>();
 
     std::string label;
 
@@ -210,7 +228,6 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
             }
         }
 
-
         v8::Local<v8::Value> limitsValue;
 
         options->Get(context, ConvertToV8String(isolate, "requiredLimits")).ToLocal(
@@ -235,68 +252,117 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
         }
     }
 
-
     auto callback = new AsyncCallback{
             isolate,
-            std::move(func),
-            static_cast<void *>(required_features_data)
+            func,
+            [](bool done, void *data) {
+                if (data != nullptr) {
+                    auto async_data = static_cast<AsyncCallback *>(data);
+                    auto func = async_data->inner_.get();
+                    if (func != nullptr && func->isolate_ != nullptr) {
+                        v8::Isolate *isolate = func->isolate_;
+                        v8::Locker locker(isolate);
+                        v8::Isolate::Scope isolate_scope(isolate);
+                        v8::HandleScope handle_scope(isolate);
+                        v8::Local<v8::Function> callback = func->callback_.Get(
+                                isolate);
+                        v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                        v8::Context::Scope context_scope(context);
+
+                        RequestData *requestData = nullptr;
+                        if (func->data != nullptr) {
+                            requestData = static_cast<RequestData *>(func->data);
+                        }
+
+                        if (requestData == nullptr) {
+                            // Should never happen
+                            v8::Local<v8::Value> args[1] = {
+                                    v8::Exception::Error(
+                                            ConvertToV8String(isolate, "Internal Error"))};
+
+                            callback->Call(context, context->Global(),
+                                           1,
+                                           args);  // ignore JS return value
+                            delete static_cast<AsyncCallback *>(data);
+
+                            return;
+                        }
+
+                        if (requestData->error_ != nullptr) {
+                            v8::Local<v8::Value> args[1] = {
+                                    v8::Exception::Error(
+                                            ConvertToV8String(isolate,
+                                                              requestData->error_))};
+
+                            callback->Call(context, context->Global(),
+                                           1,
+                                           args);  // ignore JS return value
+                            delete static_cast<AsyncCallback *>(data);
+                        } else {
+
+                            auto impl = new GPUDeviceImpl(requestData->device_);
+                            auto ret = GPUDeviceImpl::NewInstance(
+                                    isolate, impl);
+
+                            v8::Local<v8::Value> args[2] = {
+                                    v8::Null(isolate), ret};
+
+
+                            callback->Call(context, context->Global(),
+                                           2,
+                                           args);  // ignore JS return value
+
+                            delete static_cast<AsyncCallback *>(data);
+                        }
+
+                        if (requestData != nullptr) {
+                            delete requestData;
+                            requestData = nullptr;
+                        }
+                    }
+                }
+            }
     };
 
+    auto inner = callback->inner_.get();
+
+    if (required_features_data != nullptr) {
+        inner->data = new RequestData{
+                nullptr,
+                nullptr,
+                required_features_data
+        };
+    }
+
+    callback->prepare();
+
     canvas_native_webgpu_adapter_request_device(ptr->GetGPUAdapter(),
-                                        label.empty() ? nullptr : label.c_str(),
-                                        required_features_data, required_features_data_length,
-                                        limits,
-                                        [](char *error, const CanvasGPUDevice *device, void *data) {
-                                            if (data != nullptr) {
-                                                auto func = static_cast<AsyncCallback *>(data);
-                                                if (func->isolate != nullptr) {
-                                                    v8::Isolate *isolate = func->isolate;
-                                                    v8::Locker locker(isolate);
-                                                    v8::Isolate::Scope isolate_scope(isolate);
-                                                    v8::HandleScope handle_scope(isolate);
-                                                    v8::Local<v8::Function> callback = func->callback.Get(
-                                                            isolate);
-                                                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                    v8::Context::Scope context_scope(context);
+                                                label.empty() ? nullptr : label.c_str(),
+                                                required_features_data,
+                                                required_features_data_length,
+                                                limits,
+                                                [](char *error, const CanvasGPUDevice *device,
+                                                   void *data) {
+                                                    if (data != nullptr) {
+                                                        auto async_data = static_cast<AsyncCallback *>(data);
+                                                        auto inner = async_data->inner_.get();
+                                                        if (inner != nullptr) {
+                                                            if (inner->data == nullptr) {
+                                                                inner->data = new RequestData{
+                                                                        error,
+                                                                        device
+                                                                };
+                                                            } else {
+                                                                auto request_data = static_cast<RequestData *>(inner->data);
+                                                                request_data->error_ = error;
+                                                                request_data->device_ = device;
+                                                                delete request_data->required_features_data_;
+                                                                request_data->required_features_data_ = nullptr;
+                                                            }
 
-                                                    if (func->data != nullptr) {
-                                                        delete[] static_cast<char **>(func->data);
-                                                        func->data = nullptr;
+                                                            async_data->execute(true);
+                                                        }
                                                     }
-
-                                                    if (error != nullptr) {
-                                                        v8::Local<v8::Value> args[1] = {
-                                                                v8::Exception::Error(
-                                                                        ConvertToV8String(isolate,
-                                                                                          error))};
-
-                                                        canvas_native_string_destroy(error);
-
-                                                        callback->Call(context, context->Global(),
-                                                                       1,
-                                                                       args);  // ignore JS return value
-                                                        delete static_cast<AsyncCallback *>(data);
-                                                    } else {
-
-                                                        auto impl = new GPUDeviceImpl(device);
-                                                        auto ret = GPUDeviceImpl::NewInstance(
-                                                                isolate, impl);
-
-
-                                                        v8::Local<v8::Value> args[2] = {
-                                                                v8::Null(isolate), ret};
-
-
-                                                        callback->Call(context, context->Global(),
-                                                                       2,
-                                                                       args);  // ignore JS return value
-
-                                                        delete static_cast<AsyncCallback *>(data);
-
-                                                    }
-                                                }
-                                            }
-                                        }, callback);
-
+                                                }, callback);
 
 }

@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUComputePassEncoderImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUComputePass);
+        SetNativeType(pass, NativeType::GPUComputePass);
         object->SetAlignedPointerInInternalField(0, pass);
         pass->BindFinalizer(isolate, object);
         return scope.Escape(object);

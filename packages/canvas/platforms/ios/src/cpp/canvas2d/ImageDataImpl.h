@@ -8,7 +8,7 @@
 #include "Common.h"
 #include "ObjectWrapperImpl.h"
 
-class ImageDataImpl: ObjectWrapperImpl {
+class ImageDataImpl : public ObjectWrapperImpl {
 public:
     explicit ImageDataImpl(ImageData* imageData);
 

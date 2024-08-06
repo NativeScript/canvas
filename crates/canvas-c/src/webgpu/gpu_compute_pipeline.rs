@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::handle_error;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
@@ -10,6 +11,16 @@ pub struct CanvasGPUComputePipeline {
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
+impl Drop for CanvasGPUComputePipeline {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let global = self.instance.global();
+            gfx_select!(id => global.compute_pipeline_drop(self.pipeline));
+        }
+    }
+}
+
+
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(
     pipeline: *const CanvasGPUComputePipeline,
@@ -17,6 +28,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pipeline_reference(
     if pipeline.is_null() {
         return;
     }
+
     Arc::increment_strong_count(pipeline);
 }
 

@@ -8,16 +8,13 @@ on:
   workflow_dispatch:
 
 env:
-  CARGO_TERM_COLOR: always
-
-env:
   NPM_TAG: "pr"
   EMULATOR_NAME: "runtime-emu"
   NDK_VERSION: r23c
   ANDROID_API: 29
   ANDROID_ABI: x86_64
   NDK_ARCH: linux
-
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:

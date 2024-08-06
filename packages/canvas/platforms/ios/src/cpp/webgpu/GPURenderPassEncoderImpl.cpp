@@ -28,7 +28,7 @@ void GPURenderPassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isol
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
     canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPassEncoder"),
-                      func).FromJust();;
+                      func).FromJust();
 }
 
 GPURenderPassEncoderImpl *

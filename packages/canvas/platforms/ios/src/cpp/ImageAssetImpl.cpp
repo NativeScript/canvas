@@ -122,11 +122,11 @@ void ImageAssetImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType(ret, NativeType::ImageAsset);
-
     auto image_asset = canvas_native_image_asset_create();
 
     auto object = new ImageAssetImpl(image_asset);
+
+    SetNativeType(object, NativeType::ImageAsset);
 
     ret->SetAlignedPointerInInternalField(0, object);
 

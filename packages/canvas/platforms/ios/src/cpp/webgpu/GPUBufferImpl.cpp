@@ -21,7 +21,7 @@ void GPUBufferImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBuffer"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUBuffer"), func).FromJust();
 }
 
 GPUBufferImpl *GPUBufferImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -154,42 +154,56 @@ void GPUBufferImpl::MapAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
     args.GetReturnValue().Set(resolver->GetPromise());
 
-    v8::Global<v8::Promise::Resolver> promise(isolate, resolver);
     auto callback = new PromiseCallback{
             isolate,
-            std::move(promise)
+            resolver,
+            [](bool done, void *data){
+                auto async_data = static_cast<PromiseCallback *>(data);
+                auto func = async_data->inner_.get();
+                if (func != nullptr && func->isolate_ != nullptr) {
+                    v8::Isolate *isolate = func->isolate_;
+                    v8::Locker locker(isolate);
+                    v8::Isolate::Scope isolate_scope(
+                            isolate);
+                    v8::HandleScope handle_scope(
+                            isolate);
+                    v8::Local<v8::Promise::Resolver> callback = func->callback_.Get(
+                            isolate);
+                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                    v8::Context::Scope context_scope(
+                            context);
+
+
+                    if (func->data == nullptr) {
+                        callback->Resolve(context, v8::Undefined(isolate));
+                    } else {
+                        char* error = static_cast<char*>(func->data);
+                        callback->Reject(context,
+                                         v8::Exception::Error(
+                                                 ConvertToV8String(
+                                                         isolate,
+                                                         error)));
+                        canvas_native_string_destroy(
+                                error);
+                        func->data = nullptr;
+                    }
+                    delete static_cast<PromiseCallback *>(data);
+                }
+            }
     };
+    callback->prepare();
+
+
     canvas_native_webgpu_buffer_map_async(ptr->GetGPUBuffer(), (GPUMapMode) mode, offset, size,
                                           [](char *error, void *data) {
                                               if (data != nullptr) {
-                                                  auto func = static_cast<PromiseCallback *>(data);
-                                                  if (func->isolate != nullptr) {
-                                                      v8::Isolate *isolate = func->isolate;
-                                                      v8::Locker locker(isolate);
-                                                      v8::Isolate::Scope isolate_scope(
-                                                              isolate);
-                                                      v8::HandleScope handle_scope(
-                                                              isolate);
-                                                      v8::Local<v8::Promise::Resolver> callback = func->callback.Get(
-                                                              isolate);
-                                                      v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                      v8::Context::Scope context_scope(
-                                                              context);
-
-                                                      auto ret = v8::Object::New(
-                                                              isolate);
-                                                      if (error == nullptr) {
-                                                          callback->Resolve(context, ret);
-                                                      } else {
-                                                          callback->Reject(context,
-                                                                           v8::Exception::Error(
-                                                                                   ConvertToV8String(
-                                                                                           isolate,
-                                                                                           error)));
-                                                          canvas_native_string_destroy(
-                                                                  error);
+                                                  auto async_data = static_cast<PromiseCallback *>(data);
+                                                  auto inner = async_data->inner_.get();
+                                                  if (inner != nullptr) {
+                                                      if(error != nullptr){
+                                                          inner->data = error;
                                                       }
-                                                      delete static_cast<PromiseCallback *>(data);
+                                                      async_data->execute(true);
                                                   }
                                               }
                                           }, callback);

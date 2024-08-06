@@ -232,7 +232,6 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
     if (!descVal->IsNullOrUndefined() && descVal->IsObject()) {
         auto desc = descVal.As<v8::Object>();
 
-
         v8::Local<v8::Value> labelVal;
         desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
@@ -265,10 +264,10 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                                                             "view")).ToLocal(&viewVal);
 
             const CanvasGPUTextureView *view = nullptr;
-         
+
             auto viewPtr = GPUTextureViewImpl::GetPointer(viewVal.As<v8::Object>());
             view = viewPtr->GetTextureView();
-            
+
             const CanvasGPUTextureView *resolve_target = nullptr;
 
             v8::Local<v8::Value> resolve_target_val;
@@ -288,8 +287,8 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
             CanvasStoreOp store = CanvasStoreOp::CanvasStoreOpStore;
             v8::Local<v8::Value> loadVal;
 
-            if(colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                               "loadOp")).ToLocal(&loadVal)){
+            if (colorAttachment->Get(context, ConvertToV8String(isolate,
+                                                                "loadOp")).ToLocal(&loadVal)) {
                 if (loadVal->IsUint32()) {
                     load = (CanvasLoadOp) loadVal->Uint32Value(
                             context).ToChecked();
@@ -302,11 +301,11 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     }
                 }
             }
-    
-         
+
+
             v8::Local<v8::Value> storeVal;
-            if(colorAttachment->Get(context, ConvertToV8String(isolate,
-                                                               "storeOp")).ToLocal(&storeVal)){
+            if (colorAttachment->Get(context, ConvertToV8String(isolate,
+                                                                "storeOp")).ToLocal(&storeVal)) {
                 if (storeVal->IsUint32()) {
                     store = (CanvasStoreOp) storeVal->Uint32Value(
                             context).ToChecked();
@@ -381,20 +380,20 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     &depthLoadOp);
 
             depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
-                CanvasOptionalLoadOpNone
+                    CanvasOptionalLoadOpNone
             };
 
             if (!depthLoadOp.IsEmpty() && depthLoadOp->IsString()) {
                 auto value = ConvertFromV8String(isolate, depthLoadOp);
                 if (value == "load") {
                     depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
-                        CanvasOptionalLoadOpSome,
-                        CanvasLoadOpLoad
+                            CanvasOptionalLoadOpSome,
+                            CanvasLoadOpLoad
                     };
                 } else if (value == "clear") {
                     depthStencilAttachment->depth_load_op = CanvasOptionalLoadOp{
-                        CanvasOptionalLoadOpSome,
-                        CanvasLoadOpClear
+                            CanvasOptionalLoadOpSome,
+                            CanvasLoadOpClear
                     };
                 }
             }
@@ -406,20 +405,20 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     &depthStoreOp);
 
             depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
-                CanvasOptionalStoreOpNone
+                    CanvasOptionalStoreOpNone
             };
 
             if (!depthStoreOp.IsEmpty() && depthStoreOp->IsString()) {
                 auto value = ConvertFromV8String(isolate, depthStoreOp);
                 if (value == "store") {
                     depthStencilAttachment->depth_store_op = depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
-                        CanvasOptionalStoreOpSome,
-                        CanvasStoreOpStore
+                            CanvasOptionalStoreOpSome,
+                            CanvasStoreOpStore
                     };
                 } else if (value == "discard") {
                     depthStencilAttachment->depth_store_op = depthStencilAttachment->depth_store_op = CanvasOptionalStoreOp{
-                        CanvasOptionalStoreOpSome,
-                        CanvasStoreOpDiscard
+                            CanvasOptionalStoreOpSome,
+                            CanvasStoreOpDiscard
                     };
                 }
             }
@@ -455,20 +454,20 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     &stencilLoadOp);
 
             depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
-                CanvasOptionalLoadOpNone
+                    CanvasOptionalLoadOpNone
             };
 
             if (!stencilLoadOp.IsEmpty() && stencilLoadOp->IsString()) {
                 auto value = ConvertFromV8String(isolate, stencilLoadOp);
                 if (value == "load") {
                     depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
-                        CanvasOptionalLoadOpSome,
-                        CanvasLoadOpLoad
+                            CanvasOptionalLoadOpSome,
+                            CanvasLoadOpLoad
                     };
                 } else if (value == "clear") {
                     depthStencilAttachment->stencil_load_op = CanvasOptionalLoadOp{
-                        CanvasOptionalLoadOpSome,
-                        CanvasLoadOpClear
+                            CanvasOptionalLoadOpSome,
+                            CanvasLoadOpClear
                     };
                 }
             }
@@ -480,20 +479,20 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
                     &stencilStoreOp);
 
             depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
-                CanvasOptionalStoreOpNone
+                    CanvasOptionalStoreOpNone
             };
 
             if (!stencilStoreOp.IsEmpty() && stencilStoreOp->IsString()) {
                 auto value = ConvertFromV8String(isolate, stencilStoreOp);
                 if (value == "store") {
                     depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
-                        CanvasOptionalStoreOpSome,
-                        CanvasStoreOpStore
+                            CanvasOptionalStoreOpSome,
+                            CanvasStoreOpStore
                     };
                 } else if (value == "discard") {
                     depthStencilAttachment->stencil_store_op = CanvasOptionalStoreOp{
-                        CanvasOptionalStoreOpSome,
-                        CanvasStoreOpDiscard
+                            CanvasOptionalStoreOpSome,
+                            CanvasStoreOpDiscard
                     };
                 }
             }
@@ -518,7 +517,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
         desc->Get(context, ConvertToV8String(isolate, "occlusionQuerySet")).ToLocal(
                 &occlusionQuerySetVal);
 
-        
+
         if (GetNativeType(occlusionQuerySetVal) == NativeType::GPUQuerySet) {
             auto occlusionQuerySet = GPUQuerySetImpl::GetPointer(
                     occlusionQuerySetVal.As<v8::Object>());
@@ -585,6 +584,7 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
 
         if (depthStencilAttachment != nullptr) {
             delete depthStencilAttachment;
+            depthStencilAttachment = nullptr;
         }
 
 
@@ -1098,7 +1098,6 @@ void GPUCommandEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-
 
     auto descVal = args[0];
     std::string label;

@@ -23,8 +23,8 @@ export async function run(canvas: Canvas) {
 
 	const path = knownFolders.currentApp().path;
 
-	const solidColorLitWGSL = File.fromPath(path + '/webgpu/shaders/solidColorLit.wgsl').readTextSync();
-	const wireframeWGSL = File.fromPath(path + '/webgpu/shaders/wireframe.wgsl').readTextSync();
+	const solidColorLitWGSL = await File.fromPath(path + '/webgpu/shaders/solidColorLit.wgsl').readText();
+	const wireframeWGSL = await File.fromPath(path + '/webgpu/shaders/wireframe.wgsl').readText();
 
 	context.configure({
 		device,

@@ -49,7 +49,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_s3tcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_compressed_texture_s3tc);
+        SetNativeType( textureS3Tc, NativeType::WEBGL_compressed_texture_s3tc);
         object->SetAlignedPointerInInternalField(0, textureS3Tc);
         textureS3Tc->BindFinalizer(isolate, object);
         return scope.Escape(object);

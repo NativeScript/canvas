@@ -10,7 +10,7 @@
 
 class GPUSupportedLimitsImpl : public ObjectWrapperImpl {
 public:
-    GPUSupportedLimitsImpl(CanvasGPUSupportedLimits *limits);
+    explicit GPUSupportedLimitsImpl(CanvasGPUSupportedLimits *limits);
 
     ~GPUSupportedLimitsImpl() {
         canvas_native_webgpu_limits_release(this->limits_);
@@ -23,7 +23,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUSupportedLimitsImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUSupportedLimits);
+        SetNativeType(limits, NativeType::GPUSupportedLimits);
         object->SetAlignedPointerInInternalField(0, limits);
         limits->BindFinalizer(isolate, object);
         return scope.Escape(object);

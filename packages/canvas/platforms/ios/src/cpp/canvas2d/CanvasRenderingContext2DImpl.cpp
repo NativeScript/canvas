@@ -1609,7 +1609,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
             ret->SetAlignedPointerInInternalField(0, data);
 
-            SetNativeType(ret, NativeType::ImageData);
+            SetNativeType(data, NativeType::ImageData);
 
             args.GetReturnValue().Set(ret);
 
@@ -1629,7 +1629,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
         ret->SetAlignedPointerInInternalField(0, data);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(data, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
     }
@@ -2475,7 +2475,7 @@ CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Va
 
         ret->SetAlignedPointerInInternalField(0, data);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(data, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -2648,7 +2648,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
 
     data->BindFinalizer(isolate, ret);
 
-    SetNativeType(ret, NativeType::TextMetrics);
+    SetNativeType(data, NativeType::TextMetrics);
 
     args.GetReturnValue().Set(ret);
 
@@ -2957,7 +2957,7 @@ CanvasRenderingContext2DImpl::GetTransform(const v8::FunctionCallbackInfo<v8::Va
 
     ret->SetAlignedPointerInInternalField(0, object);
 
-    SetNativeType(ret, NativeType::Matrix);
+    SetNativeType(object, NativeType::Matrix);
 
     object->BindFinalizer(isolate, ret);
 

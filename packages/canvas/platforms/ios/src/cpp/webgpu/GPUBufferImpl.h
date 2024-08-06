@@ -24,14 +24,14 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, GPUBufferImpl *adapter) {
+    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, GPUBufferImpl *buffer) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUBufferImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUBuffer);
-        object->SetAlignedPointerInInternalField(0, adapter);
-        adapter->BindFinalizer(isolate, object);
+        SetNativeType(buffer, NativeType::GPUBuffer);
+        object->SetAlignedPointerInInternalField(0, buffer);
+        buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

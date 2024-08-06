@@ -17,7 +17,7 @@ void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func).FromJust();
 }
 
 v8::CFunction CanvasPattern::fast_set_transform_(

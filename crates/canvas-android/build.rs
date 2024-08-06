@@ -7,7 +7,7 @@ use std::path::Path;
 const DEFAULT_CLANG_VERSION: &str = "12.0.9";
 fn main() {
     setup_aarch64_android_workaround();
-    // setup_x86_64_android_workaround();
+    setup_x86_64_android_workaround();
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/mod.rs");
     println!("cargo:rerun-if-changed=src/jni_compat/org_nativescript_canvas_NSCCanvas.rs");
@@ -21,6 +21,8 @@ fn setup_x86_64_android_workaround() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS not set");
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").expect("CARGO_CFG_TARGET_ARCH not set");
     if target_arch == "x86_64" && target_os == "android" {
+        println!("cargo:rustc-link-arg=-Wl,-z,max-page-size=16384");
+        /*
         let android_ndk_home = if let Ok(android_ndk_home) = env::var("ANDROID_NDK") {
             android_ndk_home
         } else {
@@ -59,6 +61,8 @@ fn setup_x86_64_android_workaround() {
         } else {
             panic!("Path {linkpath} not exists");
         }
+
+        */
     }
 }
 
@@ -110,6 +114,8 @@ fn setup_aarch64_android_workaround() {
         let linux_aarch64_lib_dir_other = format!(
             "toolchains/llvm/prebuilt/{build_os}-x86_64/lib/clang/{clang_version}/lib/linux/"
         );
+
+        println!("cargo:rustc-link-arg=-Wl,-z,max-page-size=16384");
 
         let linkpath_other = format!("{android_ndk_home}/{linux_aarch64_lib_dir_other}");
         if Path::new(&linkpath).exists() {

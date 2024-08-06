@@ -216,9 +216,9 @@ target_link_libraries(canvasnativev8
 )
 
 ## API 35 support
-#if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
-#  target_link_options(canvasnativev8 PRIVATE "-Wl,-z,max-page-size=16384")
-#endif()
+if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
+  target_link_options(canvasnativev8 PRIVATE "-Wl,-z,max-page-size=16384")
+endif()
 
 
 add_custom_command(TARGET canvasnativev8

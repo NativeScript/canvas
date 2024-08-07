@@ -202,9 +202,8 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
     - name: Generate Version
-      working-directory: packages/canvas
       run: |
-          echo NPM_VERSION=$(node -e "console.log(require('./package.json').version);")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
+          echo NPM_VERSION=$(node -e "console.log(require('./packages/canvas/package.json').version);")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
 
     - name: Bump canvas
       working-directory: packages/canvas

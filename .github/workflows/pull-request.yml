@@ -72,11 +72,8 @@ jobs:
           rm -rf android-ndk-$NDK_VERSION-$NDK_ARCH.zip
           export ANDROID_NDK_HOME=`pwd`/android-ndk-$NDK_VERSION
           export ANDROID_NDK_ROOT=$ANDROID_NDK
+          export ANDROID_NDK=$ANDROID_NDK
           export NDK_PATH=$ANDROID_NDK
-          echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME} >> $GITHUB_ENV
-          echo ANDROID_NDK=${ANDROID_NDK_HOME} >> $GITHUB_ENV
-          echo ${ANDROID_NDK_HOME} >> $GITHUB_PATH
-          export PATH=$PATH:$ANDROID_NDK/toolchains/llvm/prebuilt/$NDK_ARCH-x86_64/bin
           export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
           export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++
           export AR_armv7_linux_androideabi=llvm-ar
@@ -93,6 +90,28 @@ jobs:
           export CXX_x86_64_linux_android=x86_64-linux-android21-clang++
           export AR_x86_64_linux_android=llvm-ar
           export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER=x86_64-linux-android21-clang
+          echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME} >> $GITHUB_ENV
+          echo ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT} >> $GITHUB_ENV
+          echo ANDROID_NDK=${ANDROID_NDK} >> $GITHUB_ENV
+          echo NDK_PATH=${NDK_PATH} >> $GITHUB_ENV
+          echo ${ANDROID_NDK_HOME} >> $GITHUB_PATH
+          echo $ANDROID_NDK/toolchains/llvm/prebuilt/$NDK_ARCH-x86_64/bin >> $GITHUB_PATH
+          echo NDK_PATH=${CC_armv7_linux_androideabi} >> $GITHUB_ENV
+          echo NDK_PATH=${CXX_armv7_linux_androideabi} >> $GITHUB_ENV
+          echo NDK_PATH=${AR_armv7_linux_androideabi} >> $GITHUB_ENV
+          echo NDK_PATH=${CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER} >> $GITHUB_ENV
+          echo NDK_PATH=${CC_aarch64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CXX_aarch64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${AR_aarch64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
+          echo NDK_PATH=${CC_i686_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CXX_i686_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${AR_i686_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CARGO_TARGET_I686_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
+          echo NDK_PATH=${CC_x86_64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CXX_x86_64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${AR_x86_64_linux_android} >> $GITHUB_ENV
+          echo NDK_PATH=${CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER} >> $GITHUB_ENV
     - name: Install Build Tools
       run: | 
         sudo apt-get install pkg-config libssl-dev -y

@@ -24,14 +24,11 @@ jobs:
       npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
       npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
     steps:
+    - uses: actions/checkout@v3
     - name: Install rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-    - uses: actions/checkout@v3
-      with:
-          fetch-depth: 0
-          submodules: true
     - uses: actions/setup-node@v3
       with:
           node-version: 20
@@ -54,4 +51,7 @@ jobs:
           echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME} >> $GITHUB_ENV
           echo ANDROID_NDK=${ANDROID_NDK_HOME} >> $GITHUB_ENV
           echo ${ANDROID_NDK_HOME} >> $GITHUB_PATH
+    - name: Build Canvas Native
+      run: |
+          make android
     

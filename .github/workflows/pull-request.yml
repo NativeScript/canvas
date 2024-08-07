@@ -29,6 +29,22 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    - name: 'Install Rust target i686-linux-android'
+      shell: bash
+      run: |
+        rustup target add i686-linux-android
+    - name: 'Install Rust target x86_64-linux-android'
+      shell: bash
+      run: |
+        rustup target add x86_64-linux-android
+    - name: 'Install Rust target armv7-linux-androideabi'
+      shell: bash
+      run: |
+        rustup target add armv7-linux-androideabi
+    - name: 'Install Rust target aarch64-linux-android'
+      shell: bash
+      run: |
+        rustup target add aarch64-linux-android       
     - uses: actions/setup-node@v3
       with:
           node-version: 20

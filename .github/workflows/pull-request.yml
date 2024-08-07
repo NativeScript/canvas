@@ -25,13 +25,16 @@ jobs:
       npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
     steps:
     - uses: actions/checkout@v4
-    - name: Install rust
+    - name: Install Rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-    - name: Use rust nightly
+    - name: Use Rust nightly
       run: |
         rustup default nightly
+    - name: Install Rust Component rust-src
+      run: |
+        rustup component add --toolchain nightly rust-src
     - name: 'Install Rust target i686-linux-android'
       shell: bash
       run: |

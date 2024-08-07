@@ -1,5 +1,4 @@
-import { View } from '@nativescript/core';
-import { Property } from '@nativescript/core/ui/core/view';
+import { View, Property } from '@nativescript/core';
 
 export class Source extends View {
 	public src: string;

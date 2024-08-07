@@ -1,8 +1,6 @@
-import { File, knownFolders, path } from '@nativescript/core';
+import { File, knownFolders, path, ApplicationSettings, Utils } from '@nativescript/core';
 import { FileManager } from '../file/file';
 import { fileNameFromPath, Headers, HttpDownloadRequestOptions, HttpError, HttpRequestOptions, isImageUrl, SaveImageStorageKey, TNSHttpSettings } from './http-request-common';
-import { ApplicationSettings } from '@nativescript/core';
-import { isString, isNullOrUndefined, isDefined, isObject, isNumber, getClass } from '@nativescript/core/utils/types';
 
 export type CancellablePromise = Promise<any> & { cancel: () => void };
 
@@ -144,7 +142,7 @@ const NSURLSessionTaskDelegateImpl = (NSObject as any).extend(
 				const isTextContentType = (contentType: string): boolean => {
 					let result = false;
 					for (let i = 0; i < textTypes.length; i++) {
-						if (contentType && isString(contentType) && contentType.toLowerCase().indexOf(textTypes[i]) >= 0) {
+						if (contentType && Utils.isString(contentType) && contentType.toLowerCase().indexOf(textTypes[i]) >= 0) {
 							result = true;
 							break;
 						}
@@ -177,7 +175,7 @@ const NSURLSessionTaskDelegateImpl = (NSObject as any).extend(
 					}
 
 					let returnType = 'text/plain';
-					if (!isNullOrUndefined(acceptHeader) && isString(acceptHeader)) {
+					if (!Utils.isNullOrUndefined(acceptHeader) && Utils.isString(acceptHeader)) {
 						let acceptValues = acceptHeader.split(',');
 						let quality = [];
 						let defaultQuality = [];
@@ -208,7 +206,7 @@ const NSURLSessionTaskDelegateImpl = (NSObject as any).extend(
 					if (this._data && isTextContentType(returnType)) {
 						responseText = NSDataToString(this._data);
 						content = responseText;
-					} else if (this._data && isString(returnType) && returnType.indexOf('application/json') > -1) {
+					} else if (this._data && Utils.isString(returnType) && returnType.indexOf('application/json') > -1) {
 						// @ts-ignore
 						try {
 							responseText = NSDataToString(this._data);
@@ -470,7 +468,7 @@ NSURLSessionTaskDelegateImpl.initWithDebuggerRequestResolveRejectCallbackHeaders
 //             const isTextContentType = (contentType: string): boolean => {
 //                 let result = false;
 //                 for (let i = 0; i < textTypes.length; i++) {
-//                     if (types.isString(contentType) && contentType.toLowerCase().indexOf(textTypes[i]) >= 0) {
+//                     if (Utils.isString(contentType) && contentType.toLowerCase().indexOf(textTypes[i]) >= 0) {
 //                         result = true;
 //                         break;
 //                     }
@@ -504,7 +502,7 @@ NSURLSessionTaskDelegateImpl.initWithDebuggerRequestResolveRejectCallbackHeaders
 //             }
 
 //             let returnType = 'text/plain';
-//             if (!types.isNullOrUndefined(acceptHeader) && types.isString(acceptHeader)) {
+//             if (!Utils.isNullOrUndefined(acceptHeader) && Utils.isString(acceptHeader)) {
 //                 let acceptValues = acceptHeader.split(',');
 //                 let quality = [];
 //                 let defaultQuality = [];
@@ -531,7 +529,7 @@ NSURLSessionTaskDelegateImpl.initWithDebuggerRequestResolveRejectCallbackHeaders
 //             if (this._data && isTextContentType(returnType)) {
 //                 responseText = NSDataToString(this._data);
 //                 content = responseText;
-//             } else if (this._data && types.isString(returnType) && returnType.indexOf('application/json') > -1) {
+//             } else if (this._data && Utils.isString(returnType) && returnType.indexOf('application/json') > -1) {
 //                 // @ts-ignore
 //                 try {
 //                     responseText = NSDataToString(this._data);
@@ -635,7 +633,7 @@ export class Http {
 					// make remote request
 					const urlRequest = NSMutableURLRequest.requestWithURL(NSURL.URLWithString(options.url));
 
-					urlRequest.HTTPMethod = isDefined(options.method) ? options.method : GET;
+					urlRequest.HTTPMethod = Utils.isDefined(options.method) ? options.method : GET;
 
 					urlRequest.setValueForHTTPHeaderField(USER_AGENT, USER_AGENT_HEADER);
 
@@ -651,13 +649,13 @@ export class Http {
 						}
 					}
 
-					if (isString(options.content)) {
+					if (Utils.isString(options.content)) {
 						urlRequest.HTTPBody = NSString.stringWithString(options.content.toString()).dataUsingEncoding(4);
-					} else if (isObject(options.content)) {
+					} else if (Utils.isObject(options.content)) {
 						urlRequest.HTTPBody = NSString.stringWithString(JSON.stringify(options.content)).dataUsingEncoding(4);
 					}
 
-					if (isNumber(options.timeout)) {
+					if (Utils.isNumber(options.timeout)) {
 						urlRequest.timeoutInterval = options.timeout / 1000;
 					}
 
@@ -762,12 +760,12 @@ export class Http {
 }
 
 function deserialize(nativeData) {
-	if (isNullOrUndefined(nativeData)) {
+	if (Utils.isNullOrUndefined(nativeData)) {
 		// some native values will already be js null values
-		// calling types.getClass below on null/undefined will cause crash
+		// calling Utils.getClass below on null/undefined will cause crash
 		return null;
 	} else {
-		switch (getClass(nativeData)) {
+		switch (Utils.getClass(nativeData)) {
 			case 'NSNull':
 				return null;
 			case 'NSMutableDictionary':

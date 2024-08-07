@@ -49,5 +49,8 @@ rust-skia
 /**/*.rs.bk
 /Cargo.lock
 
+**/canvas-native/target
+**/.fingerprint
+.build
 .nx/cache
 .nx/workspace-data

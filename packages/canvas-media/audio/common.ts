@@ -1,5 +1,4 @@
-import { AddChildFromBuilder, booleanConverter, ContentView } from '@nativescript/core';
-import { Property, CSSType } from '@nativescript/core/ui/core/view';
+import { AddChildFromBuilder, booleanConverter, ContentView, Property, CSSType } from '@nativescript/core';
 
 @CSSType('Audio')
 export abstract class AudioBase extends ContentView implements AddChildFromBuilder {

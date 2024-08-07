@@ -1,6 +1,4 @@
-import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, Utils } from '@nativescript/core';
-import { Property, CSSType } from '@nativescript/core/ui/core/view';
-import { PercentLength } from '@nativescript/core/ui/styling/style-properties';
+import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, Utils, Property, CSSType, PercentLength } from '@nativescript/core';
 
 @CSSType('Video')
 export abstract class VideoBase extends ContentView implements AddChildFromBuilder {
@@ -90,7 +88,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		}
 	}
 	_removeListener(type: string, listener: Function, listeners: any) {
-		if(!this._listeners){
+		if (!this._listeners) {
 			this._listeners = {};
 		}
 		if (typeof listener === 'function' && listeners && typeof listeners === 'object') {
@@ -130,7 +128,7 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		return has;
 	}
 	addEventListener(type: string, listener: Function, useCapture: boolean | any) {
-		if(!this._listeners){
+		if (!this._listeners) {
 			this._listeners = {};
 		}
 		let isCapture = false;

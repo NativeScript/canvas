@@ -1,5 +1,5 @@
-import { LayoutBase, Property, ShorthandProperty, Style, ViewBase } from '@nativescript/core';
-import { View, originXProperty, originYProperty } from '@nativescript/core/ui/core/view';
+import { LayoutBase, Property, ShorthandProperty, Style, View, ViewBase } from '@nativescript/core';
+import { originXProperty, originYProperty } from '@nativescript/core/ui/core/view';
 import { Image } from './Image';
 import { Paint } from './Paint';
 import { DOMMatrix } from '../Canvas2D/DOMMatrix';

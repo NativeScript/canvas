@@ -1,4 +1,4 @@
-import { Property } from '@nativescript/core/ui/core/view';
+import { Property } from '@nativescript/core';
 import { SVGItem } from './SVGItem';
 
 export const pointsProperty = new Property<Polyline, any>({

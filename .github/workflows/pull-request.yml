@@ -24,11 +24,14 @@ jobs:
       npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
       npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    - name: Use rust nightly
+      run: |
+        rustup default nightly
     - name: 'Install Rust target i686-linux-android'
       shell: bash
       run: |
@@ -45,11 +48,11 @@ jobs:
       shell: bash
       run: |
         rustup target add aarch64-linux-android       
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
-          node-version: 20
+          node-version: 22
           registry-url: "https://registry.npmjs.org"
-    - uses: actions/setup-java@v3
+    - uses: actions/setup-java@v4
       with:
           distribution: "temurin"
           java-version: "17"

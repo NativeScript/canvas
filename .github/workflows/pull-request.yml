@@ -15,6 +15,7 @@ env:
   ANDROID_ABI: x86_64
   NDK_ARCH: linux
   CARGO_TERM_COLOR: always
+  NDK_HOST: linux
 
 jobs:
   build:

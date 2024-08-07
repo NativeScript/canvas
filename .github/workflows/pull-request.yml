@@ -159,6 +159,9 @@ jobs:
       shell: bash
       run: |
         rustup target add aarch64-apple-ios-sim
+    - name: Install cbindgen
+      run: |
+        cargo install --force cbindgen
     - name: Install Python
       uses: actions/setup-python@v4
       with:
@@ -188,6 +191,7 @@ jobs:
   npm:
     name: Npm Build
     runs-on: ubuntu-22.04
+    needs: [android, ios]
     outputs:
       npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
       npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}

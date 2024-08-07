@@ -562,8 +562,8 @@ fn main() -> @location(0) vec4f {
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
-		const texturedCube = require('./webgpu/basicGraphics/texturedCube');
-		texturedCube.run(this.canvas);
+		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
+		// texturedCube.run(this.canvas);
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
 
@@ -738,7 +738,7 @@ fn main() -> @location(0) vec4f {
 		//clip2(this.canvas);
 		//clip3(this.canvas);
 		//fillStyle(this.canvas);
-		//font(this.canvas);
+		font(this.canvas);
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);

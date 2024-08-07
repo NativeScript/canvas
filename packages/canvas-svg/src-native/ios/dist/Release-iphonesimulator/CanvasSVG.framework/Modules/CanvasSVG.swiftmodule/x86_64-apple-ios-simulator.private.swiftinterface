@@ -30,6 +30,7 @@ import _SwiftConcurrencyShims
     @objc get
     @objc set
   }
+  @objc @_Concurrency.MainActor(unsafe) public func update()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)

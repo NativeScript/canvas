@@ -82,7 +82,6 @@ export class Svg extends SVGBase {
 		if (typeof value === 'string') {
 			if (value.indexOf('<svg') > -1) {
 				this._svg.src = value;
-				console.log(this._svg.src);
 			} else {
 				if (value.startsWith('~')) {
 					this._svg.srcPath = path.join(knownFolders.currentApp().path, value.replace('~', ''));

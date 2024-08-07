@@ -21,18 +21,18 @@ class MainActivity : AppCompatActivity() {
                 Log.d("com.test", "readFile error: $error")
             }
 
-            override fun onComplete(file: Any) {
-                Log.d("com.test", "readFile success: ")
-                val data = file as ByteArray
-                try {
-                    val string = String(data, Charset.forName("UTF-8"))
-                    println(string)
-                    val json = JSONObject(string)
-                    Log.d("com.test", "json: " + json.toString().contains("»"))
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            }
+					override fun onComplete(result: Any?) {
+						Log.d("com.test", "readFile success: ")
+						val data = result as ByteArray
+						try {
+							val string = String(data, Charset.forName("UTF-8"))
+							println(string)
+							val json = JSONObject(string)
+							Log.d("com.test", "json: " + json.toString().contains("»"))
+						} catch (e: JSONException) {
+							e.printStackTrace()
+						}
+					}
         })
 
         Async2.Base64.base64ToFile("iVBORw0KGgoAAAANSUhEUgAAAAQAAAABAQMAAADD8p2OAAAAA1BMVEX/AP804Oa6AAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==", filesDir.absolutePath,object: Async2.Base64.Callback {

@@ -14,7 +14,6 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		svg.setAttribute('width', '500');
 		svg.setAttribute('height', '500');
 
-
 		/*const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 		// text.setAttribute('x', '0');
 		// text.setAttribute('y', '0');
@@ -159,8 +158,8 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		const svgView: Svg = (<any>svg).nativeElement;
 		svgView.rowSpan = 2;
 		svgView.colSpan = 2;
-		 view.addChild(svgView);
-		svgView.src = 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg';
+		view.addChild(svgView);
+		// svgView.src = 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg';
 	}
 
 	testIt() {

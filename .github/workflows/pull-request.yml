@@ -221,6 +221,5 @@ jobs:
       run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ../../.npmrc
           echo "Publishing @nativescript/canvas@$NPM_VERSION to NPM with tag $NPM_TAG..."
-          npm run publish-packages -- --name $NPM_PACKAGES --verify true --version $NPM_VERSION
-          npm publish nativescript-canvas-$NPM_VERSION.tgz --tag $NPM_TAG 
+          npm run publish-packages --name $NPM_PACKAGES --verify true --version $NPM_VERSION
     

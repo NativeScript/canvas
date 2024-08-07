@@ -40,13 +40,8 @@ RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
 
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
-    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics -C target-cpu=native -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics"
 fi
-
-if [ "$TARGET" = "x86_64-linux-android" ]; then
-    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
-fi
-
 
 RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
 

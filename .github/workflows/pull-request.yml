@@ -200,16 +200,46 @@ jobs:
       with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
-    - name: Build Package
-      run: npm     
 
     - name: Generate Version
       working-directory: packages/canvas
       run: |
           echo NPM_VERSION=$(node -e "console.log(require('./package.json').version);")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
 
-    - name: Bump Version
+    - name: Bump canvas
       working-directory: packages/canvas
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-babylon
+      working-directory: packages/canvas-babylon
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-media
+      working-directory: packages/canvas-media
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-phaser
+      working-directory: packages/canvas-phaser
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-phaser-ce
+      working-directory: packages/canvas-phaser-ce
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-pixi
+      working-directory: packages/canvas-pixi
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-polyfill
+      working-directory: packages/canvas-polyfill
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-three
+      working-directory: packages/canvas-three
+      run: npm version $NPM_VERSION
+
+    - name: Bump canvas-svg
+      working-directory: packages/canvas-svg
       run: npm version $NPM_VERSION
 
     - name: Build all packages

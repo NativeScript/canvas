@@ -1,5 +1,4 @@
 name: Canvas Native
-
 on:
   push:
     branches:
@@ -16,14 +15,13 @@ env:
   NDK_ARCH: linux
   CARGO_TERM_COLOR: always
   NDK_HOST: linux
+  XCODE_VERSION: "^15.0"
+  NPM_PACKAGES: canvas,canvas-babylon,canvas-media,canvas-phaser,canvas-phaser-ce,canvas-pixi,canvas-polyfill,canvas-three,canvas-svg
 
 jobs:
-  build:
-    name: Build
+  android:
+    name: Android Build
     runs-on: ubuntu-22.04
-    outputs:
-      npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
-      npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
@@ -134,4 +132,91 @@ jobs:
     - name: Build Canvas Native
       run: |
           make android
+  ios:
+    name: iOS Build
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    - name: Use Rust nightly
+      run: |
+        rustup default nightly
+    - name: Install Rust Component rust-src
+      run: |
+        rustup component add --toolchain nightly rust-src
+    - name: 'Install Rust target x86_64-apple-ios'
+      shell: bash
+      run: |
+        rustup target add x86_64-apple-ios
+    - name: 'Install Rust target aarch64-apple-ios'
+      shell: bash
+      run: |
+        rustup target add aarch64-apple-ios
+    - name: 'Install Rust target aarch64-apple-ios-sim'
+      shell: bash
+      run: |
+        rustup target add aarch64-apple-ios-sim
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+          python-version: "3"    
+               
+    - uses: actions/setup-node@v4
+      with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+          xcode-version: ${{env.XCODE_VERSION}}
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+          python-version: "3"
+    - name: Install Dependencies
+      run: |
+          npm install
+          python3 -m pip install --upgrade pip six
+          brew install cmake
+          [ ! -f /usr/local/bin/cmake ] && ln -s /usr/local/bin/cmake $(which cmake) || true
+    - name: Build
+      run: | 
+        make ios
+        npm run build.canvas.ios.framework.release 
+  npm:
+    name: Npm Build
+    runs-on: ubuntu-22.04
+    outputs:
+      npm_version: ${{ steps.npm_version_output.outputs.NPM_VERSION }}
+      npm_tag: ${{ steps.npm_version_output.outputs.NPM_TAG }}
+    steps:
+    - uses: actions/setup-node@v4
+      with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+    - name: Build Package
+      run: npm     
+
+    - name: Generate Version
+      working-directory: packages/canvas
+      run: |
+          echo NPM_VERSION=$(node -e "console.log(require('./package.json').version);")-$NPM_TAG-$(date +"%m-%d-%Y")-$GITHUB_RUN_ID >> $GITHUB_ENV
+
+    - name: Bump Version
+      working-directory: packages/canvas
+      run: npm version $NPM_VERSION
+
+    - name: Build all packages
+      run: npx nx run canvas:build.all
+
+    - name: Publish @nativescript/core
+      env:
+          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+      run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ../../.npmrc
+          echo "Publishing @nativescript/canvas@$NPM_VERSION to NPM with tag $NPM_TAG..."
+          npm run publish-packages -- --name $NPM_PACKAGES --verify true --version $NPM_VERSION
+          npm publish nativescript-canvas-$NPM_VERSION.tgz --tag $NPM_TAG 
     

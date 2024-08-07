@@ -62,7 +62,7 @@ jobs:
           java-version: "17"
           cache: gradle
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
     - name: Setup NDK
       run: |
           echo "y" | sdkmanager "cmake;3.6.4111459"
@@ -71,8 +71,8 @@ jobs:
           unzip -q android-ndk-$NDK_VERSION-$NDK_ARCH.zip
           rm -rf android-ndk-$NDK_VERSION-$NDK_ARCH.zip
           export ANDROID_NDK_HOME=`pwd`/android-ndk-$NDK_VERSION
-          export ANDROID_NDK_ROOT=$ANDROID_NDK
-          export ANDROID_NDK=$ANDROID_NDK
+          export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME
+          export ANDROID_NDK=$ANDROID_NDK_HOME
           export NDK_PATH=$ANDROID_NDK
           export CC_armv7_linux_androideabi=armv7a-linux-androideabi21-clang
           export CXX_armv7_linux_androideabi=armv7a-linux-androideabi21-clang++

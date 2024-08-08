@@ -47,7 +47,6 @@ impl Drop for CanvasGPUBuffer {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            let id = self.buffer;
             gfx_select!(id => global.buffer_drop(self.buffer, false));
         }
     }

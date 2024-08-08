@@ -730,7 +730,7 @@ fn main() -> @location(0) vec4f {
 		//const ctx = canvas.getContext('2d');
 		//clearRect(this.canvas);
 		//fillRule(this.canvas);
-		//font(this.canvas);
+		font(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -738,7 +738,7 @@ fn main() -> @location(0) vec4f {
 		//clip2(this.canvas);
 		//clip3(this.canvas);
 		//fillStyle(this.canvas);
-		font(this.canvas);
+		//font(this.canvas);
 		//globalAlpha(this.canvas);
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);

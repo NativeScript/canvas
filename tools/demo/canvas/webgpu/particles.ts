@@ -5,8 +5,8 @@ import { File, knownFolders } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
 	const path = knownFolders.currentApp().path;
-	const particleWGSL = File.fromPath(path + '/webgpu/shaders/particle.wgsl').readTextSync();
-	const probabilityMapWGSL = File.fromPath(path + '/webgpu/shaders/probabilityMap.wgsl').readTextSync();
+	const particleWGSL = await File.fromPath(path + '/webgpu/shaders/particle.wgsl').readText();
+	const probabilityMapWGSL = await File.fromPath(path + '/webgpu/shaders/probabilityMap.wgsl').readText();
 
 	const numParticles = 50000;
 	const particlePositionOffset = 0;
@@ -27,15 +27,13 @@ export async function run(canvas: Canvas) {
 		console.log(event.error);
 	});
 
-	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
-
 	const devicePixelRatio = window.devicePixelRatio;
 	canvas.width = canvas.clientWidth * devicePixelRatio;
 	canvas.height = canvas.clientHeight * devicePixelRatio;
 
-	const capabilities = (context as any).getCapabilities(adapter);
+	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
+
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
-	const alphaMode = capabilities.alphaModes[0];
 
 	context.configure({
 		device,
@@ -198,7 +196,7 @@ export async function run(canvas: Canvas) {
 		//   const imageBitmap = await createImageBitmap(await response.blob());
 
 		const imageBitmap = new ImageAsset();
-		imageBitmap.fromFileSync('~/assets/file-assets/webgpu/webgpu.png');
+		await imageBitmap.fromFile('~/assets/file-assets/webgpu/webgpu.png');
 
 		// Calculate number of mip levels required to generate the probability map
 		while (textureWidth < imageBitmap.width || textureHeight < imageBitmap.height) {

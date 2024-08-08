@@ -19,7 +19,7 @@ import type { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragment
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
-import { GPUAdapter } from './GPUAdapter';
+import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
 // Doing so because :D
 export class EventTarget {
@@ -184,8 +184,8 @@ export class GPUDevice extends EventTarget {
 		return this.native.limits;
 	}
 
-	get features(): Map<string, string> {
-		return this.native.features;
+	get features(): GPUSupportedFeatures {
+		return new GPUSupportedFeatures(this.native.features);
 	}
 
 	destroy() {
@@ -318,7 +318,8 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createQuerySet(descriptor: { count: number; label?: string; type: GPUQueryType }) {
-		return GPUQuerySet.fromNative(this.native.createQuerySet(descriptor));
+		const query = this.native.createQuerySet(descriptor);
+		return GPUQuerySet.fromNative(query);
 	}
 
 	createRenderBundleEncoder(descriptor: { colorFormats: (null | GPUTextureFormat)[]; depthReadOnly?: boolean; depthStencilFormat?: GPUTextureFormat; label?: string; sampleCount?: number; stencilReadOnly?: boolean }) {

@@ -119,7 +119,6 @@ pub(crate) unsafe extern "C" fn default_device_lost_handler(
     println!("Handling webgpu device lost errors as fatal by default");
     #[cfg(not(target_os = "android"))]
     println!("webgpu device lost error:\n{message}\n");
-
 }
 pub const DEFAULT_DEVICE_LOST_HANDLER: DeviceLostCallback = DeviceLostCallback {
     callback: Some(default_device_lost_handler),
@@ -408,7 +407,8 @@ pub extern "C" fn canvas_native_webgpu_device_get_features(
         return std::ptr::null_mut();
     }
     let device = unsafe { &*device };
-    let features = build_features(device.features().unwrap_or_default());
+    let features = device.features().unwrap_or_default();
+    let features = build_features(features);
     let buffer = StringBuffer::from(features);
     Box::into_raw(Box::new(buffer))
 }

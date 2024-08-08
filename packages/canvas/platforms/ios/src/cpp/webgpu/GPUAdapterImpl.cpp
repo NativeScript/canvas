@@ -61,7 +61,6 @@ v8::Local<v8::FunctionTemplate> GPUAdapterImpl::GetCtor(v8::Isolate *isolate) {
             GetLimits
     );
 
-
     tmpl->Set(
             ConvertToV8String(isolate, "requestAdapterInfo"),
             v8::FunctionTemplate::New(isolate, &RequestAdapterInfo));
@@ -90,19 +89,19 @@ GPUAdapterImpl::GetFeatures(v8::Local<v8::Name> name,
 
         auto len = canvas_native_string_buffer_get_length(features);
 
-        auto map = v8::Map::New(isolate);
+        auto set = v8::Set::New(isolate);
         for (int i = 0; i < len; ++i) {
             auto item = canvas_native_string_buffer_get_value_at(features, i);
             if (item != nullptr) {
-                auto keyValue = ConvertToV8OneByteString(isolate, (char *) item);
-                map->Set(context, keyValue, keyValue);
+                auto keyValue = ConvertToV8String(isolate, (char *) item);
+                set->Add(context, keyValue);
                 canvas_native_string_destroy(item);
             }
 
         }
         canvas_native_string_buffer_release(features);
 
-        info.GetReturnValue().Set(map);
+        info.GetReturnValue().Set(set);
 
         return;
     }
@@ -162,11 +161,14 @@ struct RequestData {
     char *error_;
     const CanvasGPUDevice *device_;
     char **required_features_data_;
+    size_t required_features_data_size;
 
     ~RequestData() {
         if (required_features_data_ != nullptr) {
-            delete[] required_features_data_;
-            required_features_data_ = nullptr;
+            for (size_t i = 0; i < required_features_data_size; ++i) {
+                    delete[] required_features_data_[i];
+                }
+                delete[] required_features_data_;
         }
 
         if (error_ != nullptr) {
@@ -212,11 +214,9 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
                 &requiredFeaturesValue);
 
 
-        if (!requiredFeaturesValue.IsEmpty() && requiredFeaturesValue->IsSet()) {
-            v8::Local<v8::Set> requiredFeaturesSet = requiredFeaturesValue.As<v8::Set>();
-            v8::Local<v8::Array> requiredFeatures = requiredFeaturesSet->AsArray();
+        if (!requiredFeaturesValue.IsEmpty() && requiredFeaturesValue->IsArray()) {
+            v8::Local<v8::Array> requiredFeatures = requiredFeaturesValue.As<v8::Array>();
             auto len = requiredFeatures->Length();
-
             for (int i = 0; i < len; i++) {
                 auto item = requiredFeatures->Get(context, i);
                 if (!item.IsEmpty()) {
@@ -245,10 +245,12 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
     size_t required_features_data_length = required_features_buf.size();
 
     if (required_features_data_length > 0) {
-        required_features_data = new char *[required_features_data_length + 1];
+        required_features_data = new char *[required_features_data_length];
 
         for (size_t i = 0; i < required_features_data_length; ++i) {
-            std::strcpy(required_features_data[i], required_features_buf[i].c_str());
+            required_features_data[i] = new char[required_features_buf[i].size() + 1];
+            auto src = required_features_buf[i].c_str();
+            std::strcpy(required_features_data[i], src);
         }
     }
 
@@ -330,7 +332,8 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
         inner->data = new RequestData{
                 nullptr,
                 nullptr,
-                required_features_data
+                required_features_data,
+                required_features_data_length
         };
     }
 

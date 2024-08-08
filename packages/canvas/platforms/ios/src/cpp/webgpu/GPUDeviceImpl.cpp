@@ -244,19 +244,19 @@ GPUDeviceImpl::GetFeatures(v8::Local<v8::Name> name,
 
         auto len = canvas_native_string_buffer_get_length(features);
 
-        auto map = v8::Map::New(isolate);
+        auto set = v8::Set::New(isolate);
         for (int i = 0; i < len; ++i) {
             auto item = canvas_native_string_buffer_get_value_at(features, i);
             if (item != nullptr) {
                 auto keyValue = ConvertToV8String(isolate, (char *) item);
-                map->Set(context, keyValue, keyValue);
+                set->Add(context, keyValue);
                 canvas_native_string_destroy(item);
             }
 
         }
         canvas_native_string_buffer_release(features);
 
-        info.GetReturnValue().Set(map);
+        info.GetReturnValue().Set(set);
 
         return;
     }

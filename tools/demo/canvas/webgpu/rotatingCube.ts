@@ -4,10 +4,10 @@ import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cube
 import { File, knownFolders, Screen } from '@nativescript/core';
 
 import { Canvas } from '@nativescript/canvas';
-import type { GPUDevice, GPUAdapter } from '@nativescript/canvas';
+import type { GPUDevice, GPUAdapter, GPU } from '@nativescript/canvas';
 
 export async function run(canvas: Canvas) {
-	const adapter: GPUAdapter = (await navigator.gpu.requestAdapter()) as never;
+	const adapter: GPUAdapter = (await (navigator.gpu as never as GPU).requestAdapter()) as never;
 	const device: GPUDevice = (await adapter.requestDevice()) as never;
 	const devicePixelRatio = Screen.mainScreen.scale;
 	canvas.width = canvas.clientWidth * devicePixelRatio;
@@ -100,7 +100,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [(canvas.width as number) * devicePixelRatio, (canvas.height as number) * devicePixelRatio],
+		size: [canvas.width as number, canvas.height as number],
 		format: 'depth24plus',
 		usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
 	});

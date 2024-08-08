@@ -1,7 +1,6 @@
 import { ImageSource } from '@nativescript/core';
 import { Canvas, ImageAsset } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
-import { doesNotReject } from 'assert';
 export function fillStyle(canvas) {
 	const ctx = canvas.getContext('2d');
 	for (let i = 0; i < 6; i++) {
@@ -17,6 +16,8 @@ export function fillStyle(canvas) {
 
 export function createConicGradient(canvas) {
 	const ctx = canvas.getContext('2d');
+	canvas.width = canvas.clientWidth;
+	canvas.height = canvas.clientHeight;
 
 	// Create a conic gradient
 	// The start angle is 0
@@ -36,8 +37,14 @@ export function createConicGradient(canvas) {
 }
 
 export function font(canvas) {
+	// canvas.width = canvas.clientWidth;
+	// canvas.height = canvas.clientHeight;
+	// canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	// canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
+
 	const ctx = canvas.getContext('2d');
-	ctx.font = 'bold 50px serif';
+
+	ctx.font = 'bold 48px serif';
 	ctx.strokeText('Hello world', 50, 100);
 }
 
@@ -86,15 +93,21 @@ export function imageSmoothingEnabled(canvas) {
 }
 
 export function imageSmoothingQuality(canvas) {
+	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
 	const ctx = canvas.getContext('2d');
+	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	ImageSource.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvaspattern/settransform/canvas_createpattern.png').then(function (img) {
 		ctx.imageSmoothingQuality = 'low';
-		ctx.drawImage(img, 0, 0, 300, 150);
+		ctx.drawImage(img, 0, 0, 500, 500);
 	});
 }
 
 export function imageBlock(canvas) {
+	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
 	const ctx = canvas.getContext('2d');
+	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	ctx.save();
 	const asset = new global.ImageAsset();
 	asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
@@ -358,8 +371,10 @@ export function arcTo(canvas) {
 }
 
 export function arcToAnimation(canvas) {
+	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
 	const ctx = canvas.getContext('2d');
-	//ctx.scale(3, 3);
+	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	const mouse = { x: 0, y: 0 };
 
 	let r = 100; // Radius
@@ -503,6 +518,10 @@ export function clearRect(canvas) {
 }
 
 export function fillRule(canvas) {
+	//  1290 2401
+	canvas.width = 1290;
+	canvas.height = 2401;
+
 	const ctx = canvas.getContext('2d');
 
 	// Create path
@@ -546,22 +565,24 @@ export function pattern(canvas) {
 
 export function patternWithCanvas(canvas) {
 	const patternCanvas = Canvas.createCustomView();
-
-	const patternContext = patternCanvas.getContext('2d') as any;
+	patternCanvas.width = 50 * window.devicePixelRatio;
+	patternCanvas.height = 50 * window.devicePixelRatio;
 
 	// Give the pattern a width and height of 50
-	patternCanvas.width = 50;
-	patternCanvas.height = 50;
+	patternCanvas.width = 50 * window.devicePixelRatio;
+	patternCanvas.height = 50 * window.devicePixelRatio;
+	const patternContext = patternCanvas.getContext('2d') as any;
 
 	// Give the pattern a background color and draw an arc
 	patternContext.fillStyle = '#fec';
 	patternContext.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
-	patternContext.arc(0, 0, 50, 0, 0.5 * Math.PI);
+	patternContext.arc(0, 0, 50 * window.devicePixelRatio, 0, 0.5 * Math.PI);
 	patternContext.stroke();
 
 	//const url = patternCanvas.toDataURL('image/png', 92);
 	//console.log('toDataURL', url);
-
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const ctx = canvas.getContext('2d');
 
 	// Create our primary canvas and fill it with the pattern
@@ -579,7 +600,6 @@ export function clip(canvas) {
 
 	// Draw stuff that gets clipped
 	ctx.fillStyle = 'blue';
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = 'orange';
 	ctx.fillRect(0, 0, 100, 100);
@@ -665,11 +685,16 @@ export function isPointInStrokeTouch(canvas) {
 }
 
 export function march(canvas) {
+	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
 	const ctx = canvas.getContext('2d');
+	ctx.scale(Screen.mainScreen.scale);
+
+	console.log(ctx.canvas.width, ctx.canvas.height, canvas._canvas, canvas._canvas.subviews[0]);
 	var offset = 0;
 	function draw() {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.setLineDash([4 , 2]);
+		ctx.setLineDash([4, 2]);
 		ctx.lineDashOffset = -offset;
 		ctx.strokeRect(10, 10, 100, 100);
 	}

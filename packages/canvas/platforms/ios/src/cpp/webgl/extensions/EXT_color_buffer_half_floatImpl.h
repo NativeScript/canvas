@@ -18,7 +18,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_color_buffer_half_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_color_buffer_half_float);
+        SetNativeType( buffer, NativeType::EXT_color_buffer_half_float);
         object->SetAlignedPointerInInternalField(0, buffer);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_color_buffer_half_float"));

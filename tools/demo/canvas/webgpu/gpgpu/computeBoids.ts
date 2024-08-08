@@ -12,18 +12,14 @@ export async function run(canvas: Canvas) {
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
 	const devicePixelRatio = window.devicePixelRatio;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const path = knownFolders.currentApp().path;
 
-	const spriteWGSL = File.fromPath(path + '/webgpu/shaders/sprite.wgsl').readTextSync();
-	const updateSpritesWGSL = File.fromPath(path + '/webgpu/shaders/updateSprites.wgsl').readTextSync();
-
-	context.configure({
-		device,
-		format: presentationFormat,
-		alphaMode: 'postmultiplied',
-	});
+	const spriteWGSL = await File.fromPath(path + '/webgpu/shaders/sprite.wgsl').readText();
+	const updateSpritesWGSL = await File.fromPath(path + '/webgpu/shaders/updateSprites.wgsl').readText();
 
 	let perfText = hasTimestampQuery ? 'Collecting samples...' : 'timestamp-query not supported on this device';
 
@@ -243,6 +239,7 @@ export async function run(canvas: Canvas) {
 
 		const commandEncoder = device.createCommandEncoder();
 		{
+			console.log(computePassDescriptor);
 			const passEncoder = commandEncoder.beginComputePass(computePassDescriptor as never);
 			passEncoder.setPipeline(computePipeline);
 			passEncoder.setBindGroup(0, particleBindGroups[t % 2] as never);

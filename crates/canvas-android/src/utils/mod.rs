@@ -1,8 +1,7 @@
+use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
-use jni::JNIEnv;
-
-use canvas_2d::context::{Context, ContextWrapper};
+use canvas_2d::context;
 
 pub mod gl;
 pub mod image;
@@ -22,7 +21,7 @@ pub(crate) fn init_with_custom_surface(
     direction: jint,
 ) -> jlong {
     Box::into_raw(Box::new(canvas_c::CanvasRenderingContext2D::new(
-        ContextWrapper::new(Context::new(
+        context::Context::new(
             width,
             height,
             density,
@@ -30,8 +29,7 @@ pub(crate) fn init_with_custom_surface(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
-        )),
-        canvas_core::gl::GLContext::default(),
+        ),
         alpha == jni::sys::JNI_TRUE,
     ))) as jlong
 }
@@ -161,12 +159,10 @@ pub extern "system" fn nativeDataURL(
     if let Ok(format) = env.get_string(&format) {
         let format = format.to_string_lossy();
 
+
         return env
-            .new_string(canvas_2d::to_data_url_context(
-                &mut context.get_context_mut(),
-                format.as_ref(),
-                (quality * 100f32) as u32,
-            ))
+            .new_string(context.get_context_mut().as_data_url(format.as_ref(),
+                                                              (quality * 100f32) as u32))
             .unwrap()
             .into_raw();
     }

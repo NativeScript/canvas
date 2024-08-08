@@ -4,6 +4,8 @@ use std::sync::Arc;
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::ptr_into_label;
 use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
+
+//use wgpu_core::gfx_select;
 use super::{
     enums::CanvasTextureAspect,
     gpu::CanvasWebGPUInstance,
@@ -30,15 +32,14 @@ impl Drop for CanvasGPUCommandEncoder {
     fn drop(&mut self) {
         if self.open.load(std::sync::atomic::Ordering::SeqCst) && !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.command_encoder_drop(self.encoder));
+            gfx_select!(self.encoder => global.command_encoder_drop(self.encoder));
         }
     }
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
-    command_encoder: *const CanvasGPUCommandEncoder
+    command_encoder: *const CanvasGPUCommandEncoder,
 ) {
     if command_encoder.is_null() {
         return;
@@ -49,7 +50,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_release(
-    command_encoder: *const CanvasGPUCommandEncoder
+    command_encoder: *const CanvasGPUCommandEncoder,
 ) {
     if command_encoder.is_null() {
         return;
@@ -93,7 +94,6 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
             beginning_of_pass_write_index.try_into().ok();
 
         let end_of_pass_write_index: Option<u32> = end_of_pass_write_index.try_into().ok();
-
 
         Some(wgpu_core::command::PassTimestampWrites {
             query_set: query_set.query,
@@ -271,7 +271,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         );
     }
 
-
     let pass_encoder = CanvasGPURenderPassEncoder {
         label,
         instance: command_encoder.instance.clone(),
@@ -377,17 +376,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
 
     let global = command_encoder.instance.global();
 
-    let layout = wgpu_types::ImageDataLayout {
+    let layout = wgt::ImageDataLayout {
         offset: src.offset,
         bytes_per_row: src.bytes_per_row.try_into().ok(),
         rows_per_image: src.rows_per_image.try_into().ok(),
     };
-    let image_copy_buffer = wgpu_types::ImageCopyBuffer {
+    let image_copy_buffer = wgt::ImageCopyBuffer {
         buffer: src_buffer_id,
         layout,
     };
 
-    let image_copy_texture = wgpu_types::ImageCopyTexture {
+    let image_copy_texture = wgt::ImageCopyTexture {
         texture: dst_texture_id,
         mip_level: dst.mip_level,
         origin: dst.origin.into(),
@@ -395,7 +394,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
     };
 
     let copy_size = *copy_size;
-    let copy_size: wgpu_types::Extent3d = copy_size.into();
+    let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
     if let Err(cause) = gfx_select!(command_encoder_id => global.command_encoder_copy_buffer_to_texture(command_encoder_id, &image_copy_buffer, &image_copy_texture, &copy_size))
@@ -431,24 +430,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
     let src_texture_id = src_texture.texture;
     let dst = &*dst;
 
-
     let dst_buffer = &*dst.buffer;
 
     let dst_buffer_id = dst_buffer.buffer;
 
     let global = command_encoder.instance.global();
 
-    let layout = wgpu_types::ImageDataLayout {
+    let layout = wgt::ImageDataLayout {
         offset: dst.offset,
         bytes_per_row: dst.bytes_per_row.try_into().ok(),
         rows_per_image: dst.rows_per_image.try_into().ok(),
     };
-    let image_copy_buffer = wgpu_types::ImageCopyBuffer {
+    let image_copy_buffer = wgt::ImageCopyBuffer {
         buffer: dst_buffer_id,
         layout,
     };
 
-    let image_copy_texture = wgpu_types::ImageCopyTexture {
+    let image_copy_texture = wgt::ImageCopyTexture {
         texture: src_texture_id,
         mip_level: src.mip_level,
         origin: src.origin.into(),
@@ -456,7 +454,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
     };
 
     let copy_size = *copy_size;
-    let copy_size: wgpu_types::Extent3d = copy_size.into();
+    let copy_size: wgt::Extent3d = copy_size.into();
     let error_sink = command_encoder.error_sink.as_ref();
     if let Err(cause) = gfx_select!(command_encoder_id => global.command_encoder_copy_texture_to_buffer(command_encoder_id, &image_copy_texture, &image_copy_buffer, &copy_size))
     {
@@ -491,21 +489,20 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
     let src_texture_id = src_texture.texture;
     let dst = &*dst;
 
-
     let dst_texture = &*dst.texture;
 
     let dst_texture_id = dst_texture.texture;
 
     let global = command_encoder.instance.global();
 
-    let image_copy_texture_src = wgpu_types::ImageCopyTexture {
+    let image_copy_texture_src = wgt::ImageCopyTexture {
         texture: src_texture_id,
         mip_level: src.mip_level,
         origin: src.origin.into(),
         aspect: src.aspect.into(),
     };
 
-    let image_copy_texture_dst = wgpu_types::ImageCopyTexture {
+    let image_copy_texture_dst = wgt::ImageCopyTexture {
         texture: dst_texture_id,
         mip_level: dst.mip_level,
         origin: dst.origin.into(),
@@ -513,7 +510,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
     };
 
     let copy_size = *copy_size;
-    let copy_size: wgpu_types::Extent3d = copy_size.into();
+    let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
     if let Err(cause) = gfx_select!(command_encoder_id => global.command_encoder_copy_texture_to_texture(command_encoder_id, &image_copy_texture_src, &image_copy_texture_dst, &copy_size))
@@ -542,11 +539,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
 
-    command_encoder.open.store(false, std::sync::atomic::Ordering::SeqCst);
+    command_encoder
+        .open
+        .store(false, std::sync::atomic::Ordering::SeqCst);
 
     let label = ptr_into_label(label);
 
-    let desc = wgpu_types::CommandBufferDescriptor { label };
+    let desc = wgt::CommandBufferDescriptor { label };
 
     let (id, err) =
         gfx_select!(command_encoder_id => global.command_encoder_finish(command_encoder_id, &desc));
@@ -562,7 +561,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
             "canvas_native_webgpu_command_encoder_finish",
         );
     }
-
 
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
         instance: command_encoder.instance.clone(),

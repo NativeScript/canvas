@@ -1,7 +1,7 @@
 use jni::JNIEnv;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
-pub static SURFACE_TEXTURE: OnceCell<SurfaceTexture> = OnceCell::new();
+pub static SURFACE_TEXTURE: OnceLock<SurfaceTexture> = OnceLock::new();
 
 type FromSurfaceTexture<'a> = Option<
     libloading::Symbol<

@@ -1,5 +1,5 @@
 import { chain, Rule, Tree, SchematicContext, apply, url, move, mergeWith, template } from '@angular-devkit/schematics';
-import { stringUtils, addProjectToNxJsonInTree } from '@nrwl/workspace';
+import { stringUtils, addProjectToNxJsonInTree } from '@nx/workspace';
 import { updateWorkspaceJson, getJsonFromFile, npmScope, updateReadMe } from '../utils';
 import syncPackagesWithDemos from '../sync-packages-with-demos';
 import { Schema } from './schema';
@@ -32,8 +32,8 @@ function addPackageFiles(schema: Schema): Rule {
 
 		const templateSource = apply(url('./files'), [
 			template({
-        name,
-        npmScope,
+				name,
+				npmScope,
 				stringUtils,
 				tmpl: '',
 				dot: '.',
@@ -55,7 +55,7 @@ function updateWorkspaceConfig() {
 			schematics: {},
 			architect: {
 				build: {
-					builder: '@nrwl/node:package',
+					builder: '@nx/node:package',
 					options: {
 						outputPath: `dist/packages/${name}`,
 						tsConfig: `packages/${name}/tsconfig.json`,
@@ -74,7 +74,7 @@ function updateWorkspaceConfig() {
 					},
 				},
 				'build.all': {
-					builder: '@nrwl/workspace:run-commands',
+					builder: '@nx/workspace:run-commands',
 					outputs: ['dist/packages'],
 					options: {
 						commands: [`nx run ${name}:build`, `node tools/scripts/build-finish.ts ${name}`],
@@ -82,7 +82,7 @@ function updateWorkspaceConfig() {
 					},
 				},
 				focus: {
-					builder: '@nrwl/workspace:run-commands',
+					builder: '@nx/workspace:run-commands',
 					outputs: ['dist/packages'],
 					options: {
 						commands: [`nx workspace-schematic focus-packages ${name}`],

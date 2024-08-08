@@ -3,7 +3,6 @@ use std::ops::Range;
 use skia_safe::Rect;
 
 pub mod color;
-pub(crate) mod device;
 pub(crate) mod dimensions;
 pub(crate) mod geometry;
 pub mod gl;

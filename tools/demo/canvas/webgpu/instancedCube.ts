@@ -9,13 +9,17 @@ import { File, knownFolders } from '@nativescript/core';
 export async function run(canvas: Canvas) {
 	const path = knownFolders.currentApp().path;
 
-	const instancedVertWGSL = File.fromPath(path + '/webgpu/shaders/instanced.vert.wgsl').readTextSync();
-	const vertexPositionColorWGSL = File.fromPath(path + '/webgpu/shaders/vertexPositionColor.frag.wgsl').readTextSync();
+	const instancedVertWGSL = await File.fromPath(path + '/webgpu/shaders/instanced.vert.wgsl').readText();
+	const vertexPositionColorWGSL = await File.fromPath(path + '/webgpu/shaders/vertexPositionColor.frag.wgsl').readText();
 
 	const adapter = await navigator.gpu.requestAdapter();
 	const device: GPUDevice = (await adapter!.requestDevice()) as never;
 
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+
+	const devicePixelRatio = window.devicePixelRatio;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
@@ -90,7 +94,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [(canvas.width as number) * window.devicePixelRatio, (canvas.height as number) * window.devicePixelRatio],
+		size: [canvas.width as number, canvas.height as number],
 		format: 'depth24plus',
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});

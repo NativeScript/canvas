@@ -281,7 +281,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetAlignedPointerInInternalField(0, object);
 
-                SetNativeType(ret, NativeType::Matrix);
+                SetNativeType(object, NativeType::Matrix);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -307,7 +307,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetAlignedPointerInInternalField(0, object);
 
-                SetNativeType(ret, NativeType::Matrix);
+                SetNativeType(object, NativeType::Matrix);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -322,7 +322,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         ret->SetAlignedPointerInInternalField(0, object);
 
-        SetNativeType(ret, NativeType::Matrix);
+        SetNativeType(object, NativeType::Matrix);
 
         object->BindFinalizer(isolate, ret);
 
@@ -897,7 +897,7 @@ void MatrixImpl::Translate(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             ret->SetAlignedPointerInInternalField(0, object);
 
-            SetNativeType(ret, NativeType::Matrix);
+            SetNativeType(object, NativeType::Matrix);
 
             object->BindFinalizer(isolate, ret);
 
@@ -989,7 +989,7 @@ void MatrixImpl::ScaleNonUniform(const v8::FunctionCallbackInfo<v8::Value> &args
 
             ret->SetAlignedPointerInInternalField(0, object);
 
-            SetNativeType(ret, NativeType::Matrix);
+            SetNativeType(object, NativeType::Matrix);
 
             object->BindFinalizer(isolate, ret);
 
@@ -1048,7 +1048,7 @@ void MatrixImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             ret->SetAlignedPointerInInternalField(0, object);
 
-            SetNativeType(ret, NativeType::Matrix);
+            SetNativeType(object, NativeType::Matrix);
 
             object->BindFinalizer(isolate, ret);
 
@@ -1105,7 +1105,7 @@ void MatrixImpl::SkewX(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             ret->SetAlignedPointerInInternalField(0, object);
 
-            SetNativeType(ret, NativeType::Matrix);
+            SetNativeType(object, NativeType::Matrix);
 
             object->BindFinalizer(isolate, ret);
 
@@ -1144,7 +1144,7 @@ void MatrixImpl::SkewY(const v8::FunctionCallbackInfo<v8::Value> &args) {
         if (type == NativeType::Matrix) {
             auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
             auto matrix = canvas_native_matrix_skew_y(
-                    angle->NumberValue(context).ToChecked(),
+                    (float) angle->NumberValue(context).ToChecked(),
                     ptr->GetMatrix());
             if (matrix == nullptr) {
                 args.GetReturnValue().SetUndefined();
@@ -1158,7 +1158,7 @@ void MatrixImpl::SkewY(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
             ret->SetAlignedPointerInInternalField(0, object);
 
-            SetNativeType(ret, NativeType::Matrix);
+            SetNativeType(object, NativeType::Matrix);
 
             object->BindFinalizer(isolate, ret);
 
@@ -1198,7 +1198,7 @@ void MatrixImpl::Clone(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     ret->SetAlignedPointerInInternalField(0, object);
 
-    SetNativeType(ret, NativeType::Matrix);
+    SetNativeType(object, NativeType::Matrix);
 
     object->BindFinalizer(isolate, ret);
 

@@ -35,7 +35,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLSyncImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLSync);
+        SetNativeType( sync, NativeType::WebGLSync);
         object->SetAlignedPointerInInternalField(0, sync);
         sync->BindFinalizer(isolate, object);
         return scope.Escape(object);

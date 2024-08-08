@@ -11,7 +11,7 @@
 
 class GPUDeviceImpl : ObjectWrapperImpl {
 public:
-    GPUDeviceImpl(const CanvasGPUDevice *device);
+    explicit GPUDeviceImpl(const CanvasGPUDevice *device);
 
     ~GPUDeviceImpl() {
         canvas_native_webgpu_device_release(this->device_);
@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUDeviceImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUDevice);
+        SetNativeType(device, NativeType::GPUDevice);
         object->SetAlignedPointerInInternalField(0, device);
         device->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -22,7 +22,7 @@ void GPUCommandBufferImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandBuffer"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUCommandBuffer"), func).FromJust();
 }
 
 GPUCommandBufferImpl *GPUCommandBufferImpl::GetPointer(const v8::Local<v8::Object> &object) {

@@ -56,7 +56,14 @@ var Particle = function (x, y) {
 };
 
 function touchParticles(canvas, w?, h?, nativeCanvas?) {
+	width = w || canvas.clientWidth * window.devicePixelRatio;
+	height = h || canvas.clientHeight * window.devicePixelRatio;
+
 	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
+	canvas.width = width;
+	canvas.height = height;
+
+	context.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	// const ptr = context.canvas.nativeView.getNativeContext();
 	// console.log('context.canvas.nativeView.getNativeContext()', ptr);
@@ -71,8 +78,6 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	// Configuration, Play with these
 
 	// Colors
-	width = w || canvas.width;
-	height = h || canvas.height;
 
 	// Some Variables hanging out
 	var centerX = width / 2,
@@ -83,6 +88,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	// Draws the background for the canvas, because space
 	drawBg = function (ctx, color) {
 		ctx.fillStyle = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+		// ctx.clearRect(0, 0, width, height);
 		ctx.fillRect(0, 0, width, height);
 	};
 
@@ -143,8 +149,6 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 				initParticles(first.clientX, first.clientY);
 			}
 		});
-
-		
 
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
 		// 	var x = args.getX(),

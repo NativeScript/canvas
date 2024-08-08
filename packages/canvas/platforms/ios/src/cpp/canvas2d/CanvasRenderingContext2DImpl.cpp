@@ -255,7 +255,8 @@ void CanvasRenderingContext2DImpl::Init(v8::Local<v8::Object> canvasModule, v8::
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasRenderingContext2D"), func).FromJust();
+    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasRenderingContext2D"),
+                      func).FromJust();
 }
 
 CanvasRenderingContext2DImpl *
@@ -1206,10 +1207,6 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
             info.GetReturnValue().Set(style);
             break;
         }
-        case PaintStyleType::PaintStyleTypeNone: {
-            info.GetReturnValue().SetUndefined();
-            break;
-        }
     }
 
 }
@@ -1287,10 +1284,6 @@ void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> property
                     canvas_native_context_get_stroke_style(ptr->GetContext())));
 
             info.GetReturnValue().Set(style);
-            break;
-        }
-        case PaintStyleType::PaintStyleTypeNone: {
-            info.GetReturnValue().SetUndefined();
             break;
         }
     }
@@ -1540,13 +1533,13 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
     auto count = args.Length();
     if (count == 0) {
         canvas_native_context_clip_rule(
-                ptr->GetContext(), 0);
+                ptr->GetContext(), CanvasFillRuleNonZero);
     } else if (count == 1 && args[0]->IsUint32()) {
         uint32_t val = 0;
 
         if (args[0]->Uint32Value(context).To(&val)) {
             canvas_native_context_clip_rule(
-                    ptr->GetContext(), val);
+                    ptr->GetContext(), val == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
         }
     } else if (count == 1 && args[0]->IsObject()) {
         auto type = GetNativeType(args[0].As<v8::Object>());
@@ -1555,7 +1548,7 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
 
             if (object != nullptr) {
                 canvas_native_context_clip(
-                        ptr->GetContext(), object->GetPath(), 0);
+                        ptr->GetContext(), object->GetPath(), CanvasFillRuleNonZero);
             }
         }
     } else if (count >= 2 && args[0]->IsObject() && args[1]->IsUint32()) {
@@ -1566,7 +1559,8 @@ void CanvasRenderingContext2DImpl::Clip(const v8::FunctionCallbackInfo<v8::Value
 
             if (args[1]->Uint32Value(context).To(&rule)) {
                 canvas_native_context_clip(
-                        ptr->GetContext(), object->GetPath(), rule);
+                        ptr->GetContext(), object->GetPath(),
+                        rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
             }
         }
     }
@@ -1615,7 +1609,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
             ret->SetAlignedPointerInInternalField(0, data);
 
-            SetNativeType(ret, NativeType::ImageData);
+            SetNativeType(data, NativeType::ImageData);
 
             args.GetReturnValue().Set(ret);
 
@@ -1635,7 +1629,7 @@ CanvasRenderingContext2DImpl::CreateImageData(const v8::FunctionCallbackInfo<v8:
 
         ret->SetAlignedPointerInInternalField(0, data);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(data, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
     }
@@ -1661,18 +1655,36 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                 auto image_asset = ImageAssetImpl::GetPointer(value.As<v8::Object>());
                 if (image_asset != nullptr) {
                     auto rep = ConvertFromV8String(isolate, args[1]);
-                    auto pattern = canvas_native_context_create_pattern_asset(
-                            ptr->GetContext(),
-                            image_asset->GetImageAsset(), rep.c_str());
-                    auto style_type = canvas_native_context_get_style_type(pattern);
-                    if (style_type ==
-                        PaintStyleType::PaintStyleTypeNone) {
-                        args.GetReturnValue().SetUndefined();
-                        canvas_native_paint_style_destroy(pattern);
+
+                    PaintStyle *style = nullptr;
+                    if (rep == "no-repeat") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(), CanvasRepetitionNoRepeat);
+                    } else if (rep == "repeat") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(), CanvasRepetitionRepeat);
+                    } else if (rep == "repeat-x") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(), CanvasRepetitionRepeatX);
+                    } else if (rep == "repeat-y") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_asset->GetImageAsset(), CanvasRepetitionRepeatY);
                     } else {
-                        auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
-                        args.GetReturnValue().Set(data);
+                        // todo
+                        args.GetReturnValue().SetUndefined();
+                        return;
                     }
+                    if (style == nullptr) {
+                        args.GetReturnValue().SetNull();
+                        return;
+                    }
+
+                    auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(style));
+                    args.GetReturnValue().Set(data);
                 }
                 return;
             }
@@ -1680,18 +1692,37 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                 auto image_bitmap = ImageBitmapImpl::GetPointer(value.As<v8::Object>());
                 if (image_bitmap != nullptr) {
                     auto rep = ConvertFromV8String(isolate, args[1]);
-                    auto pattern = canvas_native_context_create_pattern_asset(
-                            ptr->GetContext(),
-                            image_bitmap->GetImageAsset(), rep.c_str());
-                    auto style_type = canvas_native_context_get_style_type(pattern);
-                    if (style_type ==
-                        PaintStyleType::PaintStyleTypeNone) {
-                        args.GetReturnValue().SetUndefined();
-                        canvas_native_paint_style_destroy(pattern);
+                    PaintStyle *style = nullptr;
+
+                    if (rep == "no-repeat") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(), CanvasRepetitionNoRepeat);
+                    } else if (rep == "repeat") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(), CanvasRepetitionRepeat);
+                    } else if (rep == "repeat-x") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(), CanvasRepetitionRepeatX);
+                    } else if (rep == "repeat-y") {
+                        style = canvas_native_context_create_pattern_asset(
+                                ptr->GetContext(),
+                                image_bitmap->GetImageAsset(), CanvasRepetitionRepeatY);
                     } else {
-                        auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
-                        args.GetReturnValue().Set(data);
+                        // todo
+                        args.GetReturnValue().SetUndefined();
+                        return;
                     }
+                    if (style == nullptr) {
+                        args.GetReturnValue().SetNull();
+                        return;
+                    }
+
+
+                    auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(style));
+                    args.GetReturnValue().Set(data);
                 }
                 return;
             }
@@ -1700,18 +1731,36 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                         value.As<v8::Object>());
                 if (canvas_2d != nullptr) {
                     auto rep = ConvertFromV8String(isolate, args[1]);
-                    auto pattern = canvas_native_context_create_pattern_canvas2d(
-                            canvas_2d->GetContext(),
-                            ptr->GetContext(), rep.c_str());
-                    auto style_type = canvas_native_context_get_style_type(pattern);
-                    if (style_type ==
-                        PaintStyleType::PaintStyleTypeNone) {
-                        args.GetReturnValue().SetUndefined();
-                        canvas_native_paint_style_destroy(pattern);
+                    PaintStyle *style = nullptr;
+
+                    if (rep == "no-repeat") {
+                        style = canvas_native_context_create_pattern_canvas2d(
+                                canvas_2d->GetContext(),
+                                ptr->GetContext(), CanvasRepetitionNoRepeat);
+                    } else if (rep == "repeat") {
+                        style = canvas_native_context_create_pattern_canvas2d(
+                                canvas_2d->GetContext(),
+                                ptr->GetContext(), CanvasRepetitionRepeat);
+                    } else if (rep == "repeat-x") {
+                        style = canvas_native_context_create_pattern_canvas2d(
+                                canvas_2d->GetContext(),
+                                ptr->GetContext(), CanvasRepetitionRepeatX);
+                    } else if (rep == "repeat-y") {
+                        style = canvas_native_context_create_pattern_canvas2d(
+                                canvas_2d->GetContext(),
+                                ptr->GetContext(), CanvasRepetitionRepeatY);
                     } else {
-                        auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
-                        args.GetReturnValue().Set(data);
+                        // todo
+                        args.GetReturnValue().SetUndefined();
+                        return;
                     }
+                    if (style == nullptr) {
+                        args.GetReturnValue().SetNull();
+                        return;
+                    }
+
+                    auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(style));
+                    args.GetReturnValue().Set(data);
                 }
                 return;
             }
@@ -1719,21 +1768,40 @@ CanvasRenderingContext2DImpl::CreatePattern(const v8::FunctionCallbackInfo<v8::V
                 auto webgl = WebGLRenderingContextBase::GetPointer(value.As<v8::Object>());
                 if (webgl != nullptr) {
                     auto rep = ConvertFromV8String(isolate, args[1]);
-                    auto pattern = canvas_native_context_create_pattern_webgl(
-                            webgl->GetState(),
-                            ptr->GetContext(), rep.c_str());
-                    auto type = canvas_native_context_get_style_type(pattern);
-                    if (type ==
-                        PaintStyleType::PaintStyleTypeNone) {
-                        args.GetReturnValue().SetNull();
-                        canvas_native_paint_style_destroy(pattern);
-                        return;
+
+                    PaintStyle *style = nullptr;
+
+                    if (rep == "no-repeat") {
+                        style = canvas_native_context_create_pattern_webgl(
+                                webgl->GetState(),
+                                ptr->GetContext(), CanvasRepetitionNoRepeat);
+                    } else if (rep == "repeat") {
+                        style = canvas_native_context_create_pattern_webgl(
+                                webgl->GetState(),
+                                ptr->GetContext(), CanvasRepetitionRepeat);
+                    } else if (rep == "repeat-x") {
+                        style = canvas_native_context_create_pattern_webgl(
+                                webgl->GetState(),
+                                ptr->GetContext(), CanvasRepetitionRepeatX);
+                    } else if (rep == "repeat-y") {
+                        style = canvas_native_context_create_pattern_webgl(
+                                webgl->GetState(),
+                                ptr->GetContext(), CanvasRepetitionRepeatY);
                     } else {
-                        auto ret = CanvasPattern::NewInstance(isolate, new CanvasPattern(
-                                pattern));
-                        args.GetReturnValue().Set(ret);
+                        // todo
+                        args.GetReturnValue().SetUndefined();
                         return;
                     }
+
+                    if (style == nullptr) {
+                        args.GetReturnValue().SetNull();
+                        return;
+                    }
+
+                    auto ret = CanvasPattern::NewInstance(isolate, new CanvasPattern(
+                            style));
+                    args.GetReturnValue().Set(ret);
+                    return;
                 }
                 return;
             }
@@ -1831,15 +1899,15 @@ CanvasRenderingContext2DImpl::__CreatePatternWithNative(
     auto pointer = args[0]->ToBigInt(context).ToLocalChecked();
 
     auto pattern = canvas_native_pattern_from_ptr(pointer->Int64Value());
-    auto type = canvas_native_context_get_style_type(pattern);
-    if (type == PaintStyleType::PaintStyleTypeNone) {
-        args.GetReturnValue().SetUndefined();
-        canvas_native_paint_style_destroy(pattern);
-    } else {
-        auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
 
-        args.GetReturnValue().Set(data);
+    if (pattern == nullptr) {
+        args.GetReturnValue().SetNull();
+        return;
     }
+
+    auto data = CanvasPattern::NewInstance(isolate, new CanvasPattern(pattern));
+
+    args.GetReturnValue().Set(data);
 
 }
 
@@ -2282,7 +2350,8 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
                 auto rule = args[1]->Uint32Value(context).ToChecked();
                 canvas_native_context_fill_with_path(
                         ptr->GetContext(),
-                        object->GetPath(), rule);
+                        object->GetPath(),
+                        rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
                 ptr->UpdateInvalidateState();
             }
         }
@@ -2291,7 +2360,7 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
             auto rule = value->Uint32Value(context).ToChecked();
             canvas_native_context_fill(
                     ptr->GetContext(),
-                    rule);
+                    rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
             ptr->UpdateInvalidateState();
         } else if (value->IsObject()) {
             auto type = GetNativeType(value.As<v8::Object>());
@@ -2300,13 +2369,13 @@ CanvasRenderingContext2DImpl::Fill(const v8::FunctionCallbackInfo<v8::Value> &ar
 
                 canvas_native_context_fill_with_path(
                         ptr->GetContext(),
-                        object->GetPath(), 0);
+                        object->GetPath(), CanvasFillRuleNonZero);
                 ptr->UpdateInvalidateState();
             }
         }
     } else {
         canvas_native_context_fill(
-                ptr->GetContext(), 0);
+                ptr->GetContext(), CanvasFillRuleNonZero);
         ptr->UpdateInvalidateState();
     }
 }
@@ -2406,7 +2475,7 @@ CanvasRenderingContext2DImpl::GetImageData(const v8::FunctionCallbackInfo<v8::Va
 
         ret->SetAlignedPointerInInternalField(0, data);
 
-        SetNativeType(ret, NativeType::ImageData);
+        SetNativeType(data, NativeType::ImageData);
 
         args.GetReturnValue().Set(ret);
         return;
@@ -2457,7 +2526,7 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
         auto x = static_cast<float>(args[0]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto ret = canvas_native_context_is_point_in_path(
-                ptr->GetContext(), x, y, 0);
+                ptr->GetContext(), x, y, CanvasFillRuleNonZero);
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 3 &&
@@ -2466,7 +2535,7 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
         auto y = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto rule = args[2]->Uint32Value(context).ToChecked();
         bool ret = canvas_native_context_is_point_in_path(
-                ptr->GetContext(), x, y, rule);
+                ptr->GetContext(), x, y, rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
         args.GetReturnValue().Set(ret);
         return;
     } else if (count == 4 &&
@@ -2486,7 +2555,8 @@ CanvasRenderingContext2DImpl::IsPointInPath(const v8::FunctionCallbackInfo<v8::V
 
                 bool ret = canvas_native_context_is_point_in_path_with_path(
                         ptr->GetContext(),
-                        path->GetPath(), x, y, rule);
+                        path->GetPath(), x, y,
+                        rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
 
                 args.GetReturnValue().Set(ret);
                 return;
@@ -2578,7 +2648,7 @@ CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Val
 
     data->BindFinalizer(isolate, ret);
 
-    SetNativeType(ret, NativeType::TextMetrics);
+    SetNativeType(data, NativeType::TextMetrics);
 
     args.GetReturnValue().Set(ret);
 
@@ -2887,7 +2957,7 @@ CanvasRenderingContext2DImpl::GetTransform(const v8::FunctionCallbackInfo<v8::Va
 
     ret->SetAlignedPointerInInternalField(0, object);
 
-    SetNativeType(ret, NativeType::Matrix);
+    SetNativeType(object, NativeType::Matrix);
 
     object->BindFinalizer(isolate, ret);
 
@@ -3061,7 +3131,7 @@ CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
         canvas_native_raf_stop(raf->GetRaf());
     }
 
-    canvas_native_context_destroy(this->GetContext());
+    canvas_native_context_release(this->GetContext());
     this->context_ = nullptr;
 }
 

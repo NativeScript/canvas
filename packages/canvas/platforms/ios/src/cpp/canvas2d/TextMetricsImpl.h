@@ -10,10 +10,10 @@
 
 class TextMetricsImpl: public ObjectWrapperImpl {
 public:
-    TextMetricsImpl(TextMetrics* metrics);
-    
+    explicit TextMetricsImpl(TextMetrics* metrics);
+
     ~TextMetricsImpl(){
-        canvas_native_text_metrics_destroy(this->GetTextMetrics());
+        canvas_native_text_metrics_release(this->GetTextMetrics());
         this->metrics_ = nullptr;
     }
 

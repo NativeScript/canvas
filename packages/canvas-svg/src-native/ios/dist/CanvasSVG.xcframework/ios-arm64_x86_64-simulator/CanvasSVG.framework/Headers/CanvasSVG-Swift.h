@@ -312,6 +312,7 @@ SWIFT_CLASS_NAMED("NSCSVG")
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
+- (void)update;
 - (void)layoutSubviews;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
@@ -648,6 +649,7 @@ SWIFT_CLASS_NAMED("NSCSVG")
 @property (nonatomic) BOOL autoScale;
 @property (nonatomic, copy) NSString * _Nullable src;
 @property (nonatomic, copy) NSString * _Nullable srcPath;
+- (void)update;
 - (void)layoutSubviews;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;

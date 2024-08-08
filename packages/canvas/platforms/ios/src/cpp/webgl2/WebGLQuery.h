@@ -35,7 +35,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLQuery::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLQuery);
+        SetNativeType( query, NativeType::WebGLQuery);
         object->SetAlignedPointerInInternalField(0, query);
         query->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -16,9 +16,11 @@ pub struct CanvasGPUComputePassEncoder {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     #[cfg(any(target_os = "android"))]
-    pub(crate) pass: parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Vulkan>>>,
+    pub(crate) pass:
+        parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Vulkan>>>,
     #[cfg(any(target_os = "ios", target_os = "macos"))]
-    pub(crate) pass: parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Metal>>>,
+    pub(crate) pass:
+        parking_lot::Mutex<Option<wgpu_core::command::ComputePass<wgpu_core::api::Metal>>>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
@@ -35,7 +37,7 @@ unsafe impl Sync for CanvasGPUComputePassEncoder {}
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_reference(
-    compute_pass: *const CanvasGPUComputePassEncoder
+    compute_pass: *const CanvasGPUComputePassEncoder,
 ) {
     if compute_pass.is_null() {
         return;
@@ -45,7 +47,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_reference(
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_release(
-    compute_pass: *const CanvasGPUComputePassEncoder
+    compute_pass: *const CanvasGPUComputePassEncoder,
 ) {
     if compute_pass.is_null() {
         return;
@@ -70,7 +72,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = compute_pass.dispatch_workgroups(global, workgroup_count_x, workgroup_count_y, workgroup_count_z) {
+        if let Err(cause) = compute_pass.dispatch_workgroups(
+            global,
+            workgroup_count_x,
+            workgroup_count_y,
+            workgroup_count_z,
+        ) {
             handle_error(
                 global,
                 error_sink,
@@ -82,7 +89,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
         }
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect(
@@ -102,7 +108,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
         let indirect_buffer = &*indirect_buffer;
         let indirect_buffer = indirect_buffer.buffer;
 
-        if let Err(cause) = compute_pass.dispatch_workgroups_indirect(global, indirect_buffer, indirect_offset as u64) {
+        if let Err(cause) = compute_pass.dispatch_workgroups_indirect(
+            global,
+            indirect_buffer,
+            indirect_offset as u64,
+        ) {
             handle_error(
                 global,
                 error_sink,
@@ -114,7 +124,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_dispatch_work
         }
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
@@ -146,10 +155,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_end(
         if let Some(pass) = lock.take() {
             drop(pass);
         }
-
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_marker(
@@ -169,8 +176,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = compute_pass.insert_debug_marker(global, label.as_ref(),
-                                                             0) {
+        if let Err(cause) = compute_pass.insert_debug_marker(global, label.as_ref(), 0) {
             handle_error(
                 global,
                 error_sink,
@@ -228,8 +234,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
         let label = CStr::from_ptr(label);
         let label = label.to_string_lossy();
 
-        if let Err(cause) = compute_pass.push_debug_group(global, label.as_ref(),
-                                                          0) {
+        if let Err(cause) = compute_pass.push_debug_group(global, label.as_ref(), 0) {
             handle_error(
                 global,
                 error_sink,
@@ -241,7 +246,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
         }
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_group(
@@ -278,9 +282,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
 
             let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-            if let Err(cause) = compute_pass.set_bind_group(global, index,
-                                                            bind_group_id,
-                                                            dynamic_offsets) {
+            if let Err(cause) =
+                compute_pass.set_bind_group(global, index, bind_group_id, dynamic_offsets)
+            {
                 handle_error(
                     global,
                     error_sink,
@@ -291,8 +295,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
                 );
             }
         } else {
-            if let Err(cause) = compute_pass.set_bind_group(global, index,
-                                                            bind_group_id, &[]) {
+            if let Err(cause) = compute_pass.set_bind_group(global, index, bind_group_id, &[]) {
                 handle_error(
                     global,
                     error_sink,
@@ -305,7 +308,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
         }
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_pipeline(

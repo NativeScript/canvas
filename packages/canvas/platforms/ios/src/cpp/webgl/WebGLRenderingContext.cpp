@@ -719,7 +719,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  canvas_native_f32_buffer_destroy(
+                                                                  canvas_native_f32_buffer_release(
                                                                           (F32Buffer *) deleter_data);
                                                               }
                                                           },
@@ -773,7 +773,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  canvas_native_i32_buffer_destroy(
+                                                                  canvas_native_i32_buffer_release(
                                                                           (I32Buffer *) deleter_data);
                                                               }
                                                           },
@@ -2348,7 +2348,7 @@ void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8
             }
             args.GetReturnValue().Set(array);
 
-            canvas_native_u32_buffer_destroy(info);
+            canvas_native_u32_buffer_release(info);
             return;
         }
     }
@@ -3126,7 +3126,7 @@ WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8:
 
     args.GetReturnValue().Set(array);
 
-    canvas_native_string_buffer_destroy(exts);
+    canvas_native_string_buffer_release(exts);
 }
 
 void
@@ -3291,7 +3291,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_f32_buffer_destroy(
+                                                                          canvas_native_f32_buffer_release(
                                                                                   (F32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3322,7 +3322,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_i32_buffer_destroy(
+                                                                          canvas_native_i32_buffer_release(
                                                                                   (I32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3353,7 +3353,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_u32_buffer_destroy(
+                                                                          canvas_native_u32_buffer_release(
                                                                                   (U32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3456,7 +3456,7 @@ WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value>
                                                       [](void *data, size_t length,
                                                          void *deleter_data) {
                                                           if (deleter_data != nullptr) {
-                                                              canvas_native_f32_buffer_destroy(
+                                                              canvas_native_f32_buffer_release(
                                                                       (F32Buffer *) deleter_data);
                                                           }
                                                       },

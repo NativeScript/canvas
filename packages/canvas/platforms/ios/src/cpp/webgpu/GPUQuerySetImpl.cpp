@@ -21,7 +21,7 @@ void GPUQuerySetImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isol
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQuerySet"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQuerySet"), func).FromJust();
 }
 
 GPUQuerySetImpl *GPUQuerySetImpl::GetPointer(const v8::Local<v8::Object> &object) {

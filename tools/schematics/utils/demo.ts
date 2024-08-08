@@ -2,7 +2,7 @@
  * Demo utilities
  */
 import { Tree, SchematicContext } from '@angular-devkit/schematics';
-import { serializeJson, stringUtils } from '@nrwl/workspace';
+import { serializeJson, stringUtils } from '@nx/workspace';
 import { checkPackages, getJsonFromFile, npmScope, getPackageNamesToUpdate, getAllPackages } from './workspace';
 const xml2js = require('xml2js');
 

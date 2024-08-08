@@ -5,26 +5,25 @@ import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cube
 import { knownFolders, File } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
-	try {
-		const adapter = await navigator.gpu?.requestAdapter();
+	const adapter = await navigator.gpu?.requestAdapter();
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
 
 	const devicePixelRatio = window.devicePixelRatio;
-	// canvas.width = canvas.clientWidth * devicePixelRatio;
-	// canvas.height = canvas.clientheight;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const appPath = knownFolders.currentApp().path;
 	const basicVertWGSLFile = File.fromPath(appPath + '/webgpu/shaders/basic.vert.wgsl');
 
 	// readText async fails on android
-	const basicVertWGSL = basicVertWGSLFile.readTextSync();
+	const basicVertWGSL = await basicVertWGSLFile.readText();
 
 	const sampleSelfWGSLFile = File.fromPath(appPath + '/webgpu/shaders/sampleSelf.frag.wgsl');
 
-	const sampleSelfWGSL = sampleSelfWGSLFile.readTextSync();
+	const sampleSelfWGSL = await sampleSelfWGSLFile.readText();
 
 	context.configure({
 		device,
@@ -99,9 +98,9 @@ export async function run(canvas: Canvas) {
 			format: 'depth24plus',
 		},
 	});
-	
+
 	const depthTexture = device.createTexture({
-		size: [width * devicePixelRatio, height * devicePixelRatio],
+		size: [width, height],
 		format: 'depth24plus',
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});
@@ -115,7 +114,7 @@ export async function run(canvas: Canvas) {
 	// We will copy the frame's rendering results into this texture and
 	// sample it on the next frame.
 	const cubeTexture = device.createTexture({
-		size: [width * devicePixelRatio, height * devicePixelRatio],
+		size: [width, height],
 		format: presentationFormat,
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 	});
@@ -204,7 +203,7 @@ export async function run(canvas: Canvas) {
 			{
 				texture: cubeTexture,
 			},
-			[width * devicePixelRatio, height * devicePixelRatio]
+			[width, height]
 		);
 
 		device.queue.submit([commandEncoder.finish()]);
@@ -214,8 +213,4 @@ export async function run(canvas: Canvas) {
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);
-	} catch (error) {
-		console.log('???/');
-		console.log(error);
-	}
 }

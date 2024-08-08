@@ -270,7 +270,7 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
             auto formats = v8::Array::New(isolate, (int) formats_len);
             for (int i = 0; i < formats_len; i++) {
                 auto format = canvas_native_string_buffer_get_value_at(cap->formats, i);
-                formats->Set(context, i, ConvertToV8String(isolate, format));
+                formats->Set(context, i, ConvertToV8String(isolate, format)).FromJust();
                 canvas_native_string_destroy(format);
             }
 
@@ -280,7 +280,7 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 
             for (int i = 0; i < present_modes_len; i++) {
                 auto mode = canvas_native_string_buffer_get_value_at(cap->present_modes, i);
-                present_modes->Set(context, i, ConvertToV8String(isolate, mode));
+                present_modes->Set(context, i, ConvertToV8String(isolate, mode)).FromJust();
                 canvas_native_string_destroy(mode);
             }
 
@@ -290,15 +290,15 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 
             for (int i = 0; i < alpha_modes_len; i++) {
                 auto mode = canvas_native_string_buffer_get_value_at(cap->alpha_modes, i);
-                alpha_modes->Set(context, i, ConvertToV8String(isolate, mode));
+                alpha_modes->Set(context, i, ConvertToV8String(isolate, mode)).FromJust();
                 canvas_native_string_destroy(mode);
             }
 
-            ret->Set(context, ConvertToV8String(isolate, "format"), formats);
-            ret->Set(context, ConvertToV8String(isolate, "presentModes"), present_modes);
-            ret->Set(context, ConvertToV8String(isolate, "alphaModes"), alpha_modes);
+            ret->Set(context, ConvertToV8String(isolate, "format"), formats).FromJust();
+            ret->Set(context, ConvertToV8String(isolate, "presentModes"), present_modes).FromJust();
+            ret->Set(context, ConvertToV8String(isolate, "alphaModes"), alpha_modes).FromJust();
             ret->Set(context, ConvertToV8String(isolate, "usages"),
-                     v8::Uint32::NewFromUnsigned(isolate, cap->usages));
+                     v8::Uint32::NewFromUnsigned(isolate, cap->usages)).FromJust();
 
             canvas_native_webgpu_struct_surface_capabilities_release(cap);
 
@@ -309,9 +309,9 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 
     }
 
-    ret->Set(context, ConvertToV8String(isolate, "format"), v8::Array::New(isolate));
-    ret->Set(context, ConvertToV8String(isolate, "presentModes"), v8::Array::New(isolate));
-    ret->Set(context, ConvertToV8String(isolate, "alphaModes"), v8::Array::New(isolate));
-    ret->Set(context, ConvertToV8String(isolate, "usages"), v8::Uint32::New(isolate, 0));
+    ret->Set(context, ConvertToV8String(isolate, "format"), v8::Array::New(isolate)).FromJust();
+    ret->Set(context, ConvertToV8String(isolate, "presentModes"), v8::Array::New(isolate)).FromJust();
+    ret->Set(context, ConvertToV8String(isolate, "alphaModes"), v8::Array::New(isolate)).FromJust();
+    ret->Set(context, ConvertToV8String(isolate, "usages"), v8::Uint32::New(isolate, 0)).FromJust();
     args.GetReturnValue().Set(ret);
 }

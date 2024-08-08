@@ -43,7 +43,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_depth_textureImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_depth_texture);
+        SetNativeType( depthTexture, NativeType::WEBGL_depth_texture);
         object->SetAlignedPointerInInternalField(0, depthTexture);
         depthTexture->BindFinalizer(isolate, object);
         return scope.Escape(object);

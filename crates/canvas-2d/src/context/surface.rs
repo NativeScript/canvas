@@ -2,7 +2,7 @@
 
 use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
 
-use crate::context::{Context, Device, State};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 
@@ -19,9 +19,8 @@ impl Context {
         ppi: f32,
         direction: TextDirection,
     ) -> Self {
-        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
-
-        let mut state = State::from_device(device, direction);
+        let mut state = State::default();
+        state.direction = direction;
 
         let color_type = if alpha {
             ColorType::RGBA8888
@@ -35,30 +34,34 @@ impl Context {
             AlphaType::Premul
         };
 
-        let info = if device.is_np {
-            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
-        } else {
-            ImageInfo::new(
-                ISize::new(width as i32, height as i32),
-                color_type,
-                alpha_type,
-                None,
-            )
-        };
+        let info = ImageInfo::new(
+            ISize::new(width as i32, height as i32),
+            color_type,
+            alpha_type,
+            None,
+        );
 
-        let mut surface = surfaces::raster(&info, None, None).unwrap();
-
-        if density > 1. {
-            surface.canvas().scale((density, density));
-        }
+        let surface = surfaces::raster(&info, None, None).unwrap();
+        let bounds = Rect::from_wh(width, height);
 
         Context {
+            direct_context: None,
+            #[cfg(feature = "vulkan")]
+            ash_graphics: None,
+            #[cfg(feature = "vulkan")]
+            vk_surface: None,
+            surface_data: SurfaceData {
+                bounds,
+                ppi,
+                scale: density,
+                engine: SurfaceEngine::CPU,
+            },
             surface,
             path: Path::default(),
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            device,
+            surface_state: SurfaceState::None,
         }
     }
 
@@ -70,8 +73,6 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let device = Device::new_non_gpu(width, height, density, alpha, ppi);
-
         let color_type = if alpha {
             ColorType::RGBA8888
         } else {
@@ -84,8 +85,20 @@ impl Context {
             AlphaType::Premul
         };
 
-        let info = if device.is_np {
-            ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
+        let bounds = Rect::from_wh(width, height);
+        let info = if bounds.is_empty() {
+            let mut width = width;
+            if width <= 0. {
+                width = 1.
+            }
+            let mut height = height;
+
+            if height <= 0. {
+                height = 1.
+            }
+
+
+            ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None)
         } else {
             ImageInfo::new(
                 ISize::new(width as i32, height as i32),
@@ -95,22 +108,19 @@ impl Context {
             )
         };
 
-        context.device = device;
-        context.path = Path::default();
-        context.reset_state();
-
-        if let Some(mut surface) = surfaces::raster(&info, None, None) {
-
-            if density > 1. {
-                surface.canvas().scale((density, density));
-            }
-            
+        if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
+            context.surface_data.bounds = bounds;
+            context.surface_data.scale = density;
+            context.surface_data.ppi = ppi;
+            context.surface_state = SurfaceState::None;
+            context.path = Path::default();
+            context.reset_state();
         }
     }
 
-    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, buffer: &mut [u8]) {
-        if context.device.is_np {
+    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, density: f32, buffer: &mut [u8]) {
+        if context.surface_data.bounds.is_empty() {
             return;
         }
         let info = ImageInfo::new(
@@ -120,15 +130,23 @@ impl Context {
             None,
         );
         let mut surface = surfaces::wrap_pixels(&info, buffer, None, None).unwrap();
-        let canvas = surface.canvas();
-        let mut paint = skia_safe::Paint::default();
-        paint.set_anti_alias(true);
-        paint.set_style(skia_safe::PaintStyle::Fill);
-        paint.set_blend_mode(skia_safe::BlendMode::Clear);
-        canvas.draw_rect(
-            Rect::from_xywh(0f32, 0f32, width as f32, height as f32),
-            &paint,
-        );
+        {
+            let canvas = surface.canvas();
+            let mut paint = skia_safe::Paint::default();
+            paint.set_anti_alias(true);
+            paint.set_style(skia_safe::PaintStyle::Fill);
+            paint.set_blend_mode(skia_safe::BlendMode::Clear);
+            canvas.draw_rect(
+                Rect::from_xywh(
+                    0f32,
+                    0f32,
+                    info.width() as f32,
+                    info.height() as f32,
+                ),
+                &paint,
+            );
+        }
+
         context.draw_on_surface(&mut surface);
     }
 }

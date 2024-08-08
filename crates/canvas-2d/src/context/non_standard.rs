@@ -9,7 +9,6 @@ use crate::context::compositing::composite_operation_type::CompositeOperationTyp
 use crate::context::Context;
 use crate::utils::color;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum PointMode {
     Points = 0,
@@ -151,61 +150,77 @@ impl Context {
             .chunks(4)
             .map(|value| skia_safe::Rect::from_xywh(value[0], value[1], value[2], value[3]))
             .collect();
-        self.surface.canvas().draw_atlas(
-            &image,
-            xform.as_slice(),
-            tex.as_slice(),
-            colors,
-            blend_mode.get_blend_mode(),
-            skia_safe::SamplingOptions::default(),
-            None,
-            None,
-        );
+
+        let paint = skia_safe::Paint::default();
+        self.render_to_canvas(&paint, |canvas, _paint| {
+            canvas.draw_atlas(
+                &image,
+                xform.as_slice(),
+                tex.as_slice(),
+                colors,
+                blend_mode.get_blend_mode(),
+                skia_safe::SamplingOptions::default(),
+                None,
+                None,
+            );
+        });
     }
 
     pub fn fill_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.surface.canvas().draw_oval(
-            skia_safe::Rect::from_xywh(x, y, width, height),
-            self.state.paint.fill_paint(),
-        );
+        let paint = self.state.paint.fill_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_oval(
+                skia_safe::Rect::from_xywh(x, y, width, height),
+                paint,
+            );
+        });
     }
 
     pub fn stroke_oval(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        self.surface.canvas().draw_oval(
-            skia_safe::Rect::from_xywh(x, y, width, height),
-            self.state.paint.stroke_paint(),
-        );
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_oval(
+                skia_safe::Rect::from_xywh(x, y, width, height),
+                paint,
+            );
+        });
     }
 
     pub fn draw_paint(&mut self, color: &str) {
         if let Some(color) = color::parse_color(color) {
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_color(color);
-            self.surface.canvas().draw_paint(&paint);
+            self.render_to_canvas(&paint, |canvas, paint| {
+                canvas.draw_paint(&paint);
+            });
         }
     }
 
     pub fn draw_point(&mut self, x: c_float, y: c_float) {
-        self.surface
-            .canvas()
-            .draw_point(skia_safe::Point::new(x, y), self.state.paint.stroke_paint());
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_point(skia_safe::Point::new(x, y), paint);
+        });
     }
 
     pub fn draw_points(&mut self, mode: PointMode, points: &[c_float]) {
-        let count = points.len();
-        if count % 2 == 0 {
-            let points: Vec<_> = points
-                .chunks(2)
-                .into_iter()
-                .map(|point| (point[0], point[1]).into())
-                .collect();
+        let paint = self.state.paint.stroke_paint().clone();
+        self.render_to_canvas(&paint, |canvas, paint| {
+            let count = points.len();
+            if count % 2 == 0 {
+                let points: Vec<_> = points
+                    .chunks(2)
+                    .into_iter()
+                    .map(|point| (point[0], point[1]).into())
+                    .collect();
 
-            self.surface.canvas().draw_points(
-                mode.into(),
-                points.as_slice(),
-                self.state.paint.stroke_paint(),
-            );
-        }
+                canvas.draw_points(
+                    mode.into(),
+                    points.as_slice(),
+                    paint,
+                );
+            }
+        });
     }
 
     pub fn draw_vertices_color(
@@ -249,35 +264,36 @@ impl Context {
         colors: &[Color],
         blend_mode: CompositeOperationType,
     ) {
-        let positions: Vec<_> = vertices
-            .chunks(2)
-            .into_iter()
-            .map(|point| (point[0], point[1]).into())
-            .collect();
+        let mut paint = Paint::default();
+        paint.set_anti_alias(true);
+        self.render_to_canvas(&paint, |canvas, paint| {
+            let positions: Vec<_> = vertices
+                .chunks(2)
+                .into_iter()
+                .map(|point| (point[0], point[1]).into())
+                .collect();
 
-        let texs: Vec<_> = textures
-            .chunks(2)
-            .into_iter()
-            .map(|point| (point[0], point[1]).into())
-            .collect();
+            let texs: Vec<_> = textures
+                .chunks(2)
+                .into_iter()
+                .map(|point| (point[0], point[1]).into())
+                .collect();
 
-        if vertices.len() % 2 == 0 && textures.len() % 2 == 0 {
-            let v = skia_safe::vertices::Vertices::new_copy(
-                mode,
-                &positions,
-                &texs,
-                &colors,
-                if indices.is_empty() {
-                    None
-                } else {
-                    Some(indices)
-                },
-            );
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true);
-            self.surface
-                .canvas()
-                .draw_vertices(&v, blend_mode.get_blend_mode(), &paint);
-        }
+            if vertices.len() % 2 == 0 && textures.len() % 2 == 0 {
+                let v = skia_safe::vertices::Vertices::new_copy(
+                    mode,
+                    &positions,
+                    &texs,
+                    &colors,
+                    if indices.is_empty() {
+                        None
+                    } else {
+                        Some(indices)
+                    },
+                );
+
+                canvas.draw_vertices(&v, blend_mode.get_blend_mode(), paint);
+            }
+        });
     }
 }

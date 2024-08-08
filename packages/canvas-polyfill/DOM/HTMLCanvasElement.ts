@@ -2,10 +2,10 @@ import { Canvas } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
 import setValue from 'set-value';
 import { DOMParser } from '@xmldom/xmldom';
+
 export class HTMLCanvasElement extends HTMLElement {
-	constructor() {
+	constructor(canvas?: Canvas) {
 		super('canvas');
-		let canvas = undefined;
 		if (arguments.length > 0) {
 			canvas = arguments[0];
 		}
@@ -23,6 +23,22 @@ export class HTMLCanvasElement extends HTMLElement {
 
 	get _canvas() {
 		return this.nativeElement;
+	}
+
+	get innerWidth() {
+		return this.clientWidth;
+	}
+
+	get innerHeight() {
+		return this.clientHeight;
+	}
+
+	get clientWidth() {
+		return this.nativeElement['clientWidth'] as never;
+	}
+
+	get clientHeight() {
+		return this.nativeElement['clientHeight'] as never;
 	}
 
 	set width(value) {
@@ -65,4 +81,12 @@ export class HTMLCanvasElement extends HTMLElement {
 	setPointerCapture(id: string) {}
 
 	releasePointerCapture(id: string) {}
+
+	getRootNode() {
+		return this;
+	}
 }
+
+(<any>Canvas.prototype).toHTMLCanvas = function () {
+	return new HTMLCanvasElement(this);
+};

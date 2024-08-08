@@ -1,6 +1,5 @@
 use skia_safe::path::FillType;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum FillRule {
     NonZero = 0,

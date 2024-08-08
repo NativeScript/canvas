@@ -2,7 +2,7 @@
  * Workspace utilities
  */
 import { Tree, SchematicContext } from '@angular-devkit/schematics';
-import { updateWorkspaceInTree, readJsonInTree, getWorkspacePath } from '@nrwl/workspace';
+import { updateWorkspaceInTree, readJsonInTree, getWorkspacePath } from '@nx/workspace';
 import * as stripJsonComments from 'strip-json-comments';
 
 export const npmScope = '@nativescript';

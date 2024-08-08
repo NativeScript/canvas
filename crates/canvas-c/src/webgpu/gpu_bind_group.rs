@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUBindGroup {
@@ -9,7 +9,6 @@ pub struct CanvasGPUBindGroup {
     pub(crate) group: wgpu_core::id::BindGroupId,
 }
 
-
 impl Drop for CanvasGPUBindGroup {
     fn drop(&mut self) {
         let global = self.instance.global();
@@ -17,7 +16,6 @@ impl Drop for CanvasGPUBindGroup {
         gfx_select!(group_id => global.bind_group_drop(group_id));
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_bind_group_reference(

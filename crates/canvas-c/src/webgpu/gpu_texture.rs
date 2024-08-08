@@ -1,13 +1,13 @@
 use std::os::raw::c_char;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::ptr_into_label;
 
 use super::{
     enums::{
-        CanvasGPUTextureFormat, CanvasOptionalTextureViewDimension,
-        CanvasOptionalGPUTextureFormat, CanvasTextureDimension,
+        CanvasGPUTextureFormat, CanvasOptionalGPUTextureFormat, CanvasOptionalTextureViewDimension,
+        CanvasTextureDimension,
     },
     gpu::CanvasWebGPUInstance,
     gpu_texture_view::CanvasGPUTextureView,
@@ -39,17 +39,24 @@ impl Drop for CanvasGPUTexture {
         }
         match self.surface_id {
             Some(surface_id) => {
-                if !self.has_surface_presented.load(std::sync::atomic::Ordering::SeqCst) {
+                if !self
+                    .has_surface_presented
+                    .load(std::sync::atomic::Ordering::SeqCst)
+                {
                     let global = self.instance.global();
-                    match gfx_select!(self.id => global.surface_texture_discard(surface_id)) {
+                    match gfx_select!(surface_id => global.surface_texture_discard(surface_id)) {
                         Ok(_) => (),
-                        Err(cause) => handle_error_fatal(global, cause, "canvas_native_webgpu_texture_release"),
+                        Err(cause) => handle_error_fatal(
+                            global,
+                            cause,
+                            "canvas_native_webgpu_texture_release",
+                        ),
                     }
                 }
             }
             None => {
                 let context = self.instance.global();
-                gfx_select!(self.id => context.texture_drop(self.texture, false));
+                gfx_select!(self.texture => context.texture_drop(self.texture, false));
             }
         }
     }
@@ -65,14 +72,17 @@ pub struct CanvasCreateTextureViewDescriptor {
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_texture_reference(texture: *const CanvasGPUTexture) {
-    if texture.is_null() { return; }
+    if texture.is_null() {
+        return;
+    }
     Arc::increment_strong_count(texture);
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_texture_release(texture: *const CanvasGPUTexture) {
-    if texture.is_null() { return; }
+    if texture.is_null() {
+        return;
+    }
     Arc::decrement_strong_count(texture);
 }
 
@@ -222,9 +232,7 @@ pub extern "C" fn canvas_native_webgpu_texture_get_sample_count(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_webgpu_texture_destroy(
-    texture: *const CanvasGPUTexture,
-) {
+pub extern "C" fn canvas_native_webgpu_texture_destroy(texture: *const CanvasGPUTexture) {
     if texture.is_null() {
         return;
     }

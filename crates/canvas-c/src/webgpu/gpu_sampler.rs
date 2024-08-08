@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUSampler {
@@ -9,20 +9,17 @@ pub struct CanvasGPUSampler {
     pub(crate) label: Option<Cow<'static, str>>,
 }
 
-
 impl Drop for CanvasGPUSampler {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.sampler_drop(self.sampler));
+            gfx_select!(self.sampler => global.sampler_drop(self.sampler));
         }
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(
-    sampler: *const CanvasGPUSampler
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(sampler: *const CanvasGPUSampler) {
     if sampler.is_null() {
         return;
     }
@@ -31,9 +28,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_sampler_reference(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_sampler_release(
-    sampler: *const CanvasGPUSampler
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_sampler_release(sampler: *const CanvasGPUSampler) {
     if sampler.is_null() {
         return;
     }

@@ -9,7 +9,6 @@ import { File, knownFolders } from '@nativescript/core';
 import { ArcballCamera, WASDCamera } from './camera';
 import { createInputHandler } from './input';
 
-
 export async function run(canvas: Canvas) {
 	const inputHandler = createInputHandler(canvas);
 
@@ -30,15 +29,18 @@ export async function run(canvas: Canvas) {
 	const adapter = await navigator.gpu?.requestAdapter();
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
+	const devicePixelRatio = window.devicePixelRatio;
+
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
+
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
-	const devicePixelRatio = window.devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const path = knownFolders.currentApp().path;
 
-	const cubeWGSL = File.fromPath(path + '/webgpu/shaders/cube.wgsl').readTextSync();
-
+	const cubeWGSL = await File.fromPath(path + '/webgpu/shaders/cube.wgsl').readText();
 
 	context.configure({
 		device,
@@ -107,7 +109,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [width * devicePixelRatio, height * devicePixelRatio],
+		size: [width, height],
 		format: 'depth24plus',
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});

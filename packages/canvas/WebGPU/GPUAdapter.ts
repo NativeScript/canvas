@@ -2,7 +2,7 @@ import { native_ } from './Constants';
 import { GPUAdapterInfo } from './GPUAdapterInfo';
 import { GPUDevice } from './GPUDevice';
 
-export class GPUSupportedFeatures extends Set {
+export class GPUSupportedFeatures extends Set<string> {
 	get [Symbol.toStringTag]() {
 		return 'GPUSupportedFeatures';
 	}
@@ -14,7 +14,7 @@ export class GPUAdapter {
 	_features: GPUSupportedFeatures;
 	get features() {
 		if (!this._features) {
-			this._features = new GPUSupportedFeatures(this[native_].features as any);
+			this._features = new GPUSupportedFeatures(this[native_].features);
 		}
 		return this._features;
 	}

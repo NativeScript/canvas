@@ -3,7 +3,7 @@
 // but, we want to reuse the model data in this repo
 // so we'll normalize it here
 
-import { vec3 } from 'wgpu-matrix';
+import { vec3 } from '../../wgpu-matrix/wgpu-matrix';
 import { mesh as teapot } from './meshes/teapot';
 import { createSphereMesh } from './meshes/sphere';
 

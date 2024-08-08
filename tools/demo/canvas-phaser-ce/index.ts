@@ -336,6 +336,7 @@ export class CustomGame {
 
 	constructor({canvas, gamePause, updateStats}) {
 		const TNSPhaser = require("@nativescript/canvas-phaser-ce");
+		console.log(TNSPhaser);
 		this.game = TNSPhaser.Game({canvas});
 		this.playable = new Playable({
 			game: this.game,

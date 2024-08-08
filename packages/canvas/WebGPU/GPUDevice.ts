@@ -19,7 +19,7 @@ import type { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragment
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
-import { GPUAdapter } from './GPUAdapter';
+import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
 // Doing so because :D
 export class EventTarget {
@@ -184,8 +184,8 @@ export class GPUDevice extends EventTarget {
 		return this.native.limits;
 	}
 
-	get features() {
-		return this.native.features;
+	get features(): GPUSupportedFeatures {
+		return new GPUSupportedFeatures(this.native.features);
 	}
 
 	destroy() {
@@ -210,7 +210,7 @@ export class GPUDevice extends EventTarget {
 	}) {
 		descriptor.layout = descriptor?.layout?.[native_];
 		if (Array.isArray(descriptor.entries)) {
-			for (const entry of descriptor.entries) {
+			descriptor.entries = descriptor.entries.map((entry) => {
 				if (entry.resource instanceof GPUTextureView) {
 					entry.resource = entry.resource[native_];
 				} else if (entry.resource instanceof GPUSampler) {
@@ -220,7 +220,8 @@ export class GPUDevice extends EventTarget {
 				} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
 					entry.resource.buffer = entry.resource.buffer[native_];
 				}
-			}
+				return entry;
+			});
 		}
 
 		const group = this.native.createBindGroup(descriptor);
@@ -317,7 +318,8 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createQuerySet(descriptor: { count: number; label?: string; type: GPUQueryType }) {
-		return GPUQuerySet.fromNative(this.native.createPipelineLayout(descriptor));
+		const query = this.native.createQuerySet(descriptor);
+		return GPUQuerySet.fromNative(query);
 	}
 
 	createRenderBundleEncoder(descriptor: { colorFormats: (null | GPUTextureFormat)[]; depthReadOnly?: boolean; depthStencilFormat?: GPUTextureFormat; label?: string; sampleCount?: number; stencilReadOnly?: boolean }) {

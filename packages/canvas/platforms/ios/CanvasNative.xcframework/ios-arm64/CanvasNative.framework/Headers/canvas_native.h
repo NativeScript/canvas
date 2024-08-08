@@ -253,6 +253,11 @@ typedef enum CanvasCullMode {
   CanvasCullModeBack,
 } CanvasCullMode;
 
+typedef enum CanvasFillRule {
+  CanvasFillRuleNonZero = 0,
+  CanvasFillRuleEvenOdd = 1,
+} CanvasFillRule;
+
 typedef enum CanvasFilterMode {
   CanvasFilterModeNearest = 0,
   /**
@@ -356,6 +361,13 @@ typedef enum CanvasQueryType {
   CanvasQueryTypeOcclusion,
   CanvasQueryTypeTimestamp,
 } CanvasQueryType;
+
+typedef enum CanvasRepetition {
+  CanvasRepetitionRepeat = 0,
+  CanvasRepetitionRepeatX = 1,
+  CanvasRepetitionRepeatY = 2,
+  CanvasRepetitionNoRepeat = 3,
+} CanvasRepetition;
 
 typedef enum CanvasSamplerBindingType {
   /**
@@ -577,7 +589,6 @@ typedef enum InvalidateState {
 } InvalidateState;
 
 typedef enum PaintStyleType {
-  PaintStyleTypeNone,
   PaintStyleTypeColor,
   PaintStyleTypeGradient,
   PaintStyleTypePattern,
@@ -795,174 +806,6 @@ typedef struct WebGLShaderPrecisionFormat WebGLShaderPrecisionFormat;
 typedef struct WebGLState WebGLState;
 
 typedef struct WebGLSync WebGLSync;
-
-typedef struct CanvasGPURequestAdapterOptions {
-  enum CanvasGPUPowerPreference power_preference;
-  bool force_fallback_adapter;
-} CanvasGPURequestAdapterOptions;
-
-typedef struct CanvasGPUSupportedLimits {
-  uint32_t max_texture_dimension_1d;
-  uint32_t max_texture_dimension_2d;
-  uint32_t max_texture_dimension_3d;
-  uint32_t max_texture_array_layers;
-  uint32_t max_bind_groups;
-  uint32_t max_bindings_per_bind_group;
-  uint32_t max_dynamic_uniform_buffers_per_pipeline_layout;
-  uint32_t max_dynamic_storage_buffers_per_pipeline_layout;
-  uint32_t max_sampled_textures_per_shader_stage;
-  uint32_t max_samplers_per_shader_stage;
-  uint32_t max_storage_buffers_per_shader_stage;
-  uint32_t max_storage_textures_per_shader_stage;
-  uint32_t max_uniform_buffers_per_shader_stage;
-  uint32_t max_uniform_buffer_binding_size;
-  uint32_t max_storage_buffer_binding_size;
-  uint32_t max_vertex_buffers;
-  uint64_t max_buffer_size;
-  uint32_t max_vertex_attributes;
-  uint32_t max_vertex_buffer_array_stride;
-  uint32_t min_uniform_buffer_offset_alignment;
-  uint32_t min_storage_buffer_offset_alignment;
-  uint32_t max_inter_stage_shader_components;
-  uint32_t max_color_attachments;
-  uint32_t max_color_attachment_bytes_per_sample;
-  uint32_t max_compute_workgroup_storage_size;
-  uint32_t max_compute_invocations_per_workgroup;
-  uint32_t max_compute_workgroup_size_x;
-  uint32_t max_compute_workgroup_size_y;
-  uint32_t max_compute_workgroup_size_z;
-  uint32_t max_compute_workgroups_per_dimension;
-  uint32_t min_subgroup_size;
-  uint32_t max_subgroup_size;
-  uint32_t max_push_constant_size;
-  uint32_t max_non_sampler_bindings;
-} CanvasGPUSupportedLimits;
-
-typedef struct CanvasColor {
-  double r;
-  double g;
-  double b;
-  double a;
-} CanvasColor;
-#define CanvasColor_TRANSPARENT (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 }
-#define CanvasColor_BLACK (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 }
-#define CanvasColor_WHITE (CanvasColor){ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }
-#define CanvasColor_RED (CanvasColor){ .r = 1.0, .g = 0.0, .b = 0.0, .a = 1.0 }
-#define CanvasColor_GREEN (CanvasColor){ .r = 0.0, .g = 1.0, .b = 0.0, .a = 1.0 }
-#define CanvasColor_BLUE (CanvasColor){ .r = 0.0, .g = 0.0, .b = 1.0, .a = 1.0 }
-
-typedef struct CanvasPassChannelColor {
-  enum CanvasLoadOp load_op;
-  enum CanvasStoreOp store_op;
-  struct CanvasColor clear_value;
-  bool read_only;
-} CanvasPassChannelColor;
-
-typedef struct CanvasRenderPassColorAttachment {
-  const struct CanvasGPUTextureView *view;
-  const struct CanvasGPUTextureView *resolve_target;
-  struct CanvasPassChannelColor channel;
-} CanvasRenderPassColorAttachment;
-
-typedef enum CanvasOptionalLoadOp_Tag {
-  CanvasOptionalLoadOpNone,
-  CanvasOptionalLoadOpSome,
-} CanvasOptionalLoadOp_Tag;
-
-typedef struct CanvasOptionalLoadOp {
-  CanvasOptionalLoadOp_Tag tag;
-  union {
-    struct {
-      enum CanvasLoadOp some;
-    };
-  };
-} CanvasOptionalLoadOp;
-
-typedef enum CanvasOptionalStoreOp_Tag {
-  CanvasOptionalStoreOpNone,
-  CanvasOptionalStoreOpSome,
-} CanvasOptionalStoreOp_Tag;
-
-typedef struct CanvasOptionalStoreOp {
-  CanvasOptionalStoreOp_Tag tag;
-  union {
-    struct {
-      enum CanvasStoreOp some;
-    };
-  };
-} CanvasOptionalStoreOp;
-
-typedef struct CanvasRenderPassDepthStencilAttachment {
-  const struct CanvasGPUTextureView *view;
-  float depth_clear_value;
-  struct CanvasOptionalLoadOp depth_load_op;
-  struct CanvasOptionalStoreOp depth_store_op;
-  bool depth_read_only;
-  uint32_t stencil_clear_value;
-  struct CanvasOptionalLoadOp stencil_load_op;
-  struct CanvasOptionalStoreOp stencil_store_op;
-  bool stencil_read_only;
-} CanvasRenderPassDepthStencilAttachment;
-
-typedef struct CanvasImageCopyBuffer {
-  const struct CanvasGPUBuffer *buffer;
-  uint64_t offset;
-  int32_t bytes_per_row;
-  int32_t rows_per_image;
-} CanvasImageCopyBuffer;
-
-typedef struct CanvasOrigin3d {
-  /**
-   * X position of the origin
-   */
-  uint32_t x;
-  /**
-   * Y position of the origin
-   */
-  uint32_t y;
-  /**
-   * Z position of the origin
-   */
-  uint32_t z;
-} CanvasOrigin3d;
-
-typedef struct CanvasImageCopyTexture {
-  const struct CanvasGPUTexture *texture;
-  uint32_t mip_level;
-  struct CanvasOrigin3d origin;
-  enum CanvasTextureAspect aspect;
-} CanvasImageCopyTexture;
-
-typedef struct CanvasExtent3d {
-  /**
-   * Width of the extent
-   */
-  uint32_t width;
-  /**
-   * Height of the extent
-   */
-  uint32_t height;
-  /**
-   * The depth of the extent or the number of array layers
-   */
-  uint32_t depth_or_array_layers;
-} CanvasExtent3d;
-
-typedef struct CanvasBufferBindingLayout {
-  enum CanvasBufferBindingType type_;
-  bool has_dynamic_offset;
-  int64_t min_binding_size;
-} CanvasBufferBindingLayout;
-
-typedef struct CanvasSamplerBindingLayout {
-  enum CanvasSamplerBindingType type_;
-} CanvasSamplerBindingLayout;
-
-typedef struct CanvasTextureBindingLayout {
-  enum CanvasTextureSampleType sample_type;
-  enum CanvasTextureViewDimension view_dimension;
-  bool multisampled;
-} CanvasTextureBindingLayout;
 
 typedef enum CanvasGPUTextureFormat_Tag {
   /**
@@ -1415,6 +1258,205 @@ typedef struct CanvasGPUTextureFormat {
   };
 } CanvasGPUTextureFormat;
 
+typedef enum CanvasOptionalGPUTextureFormat_Tag {
+  CanvasOptionalGPUTextureFormatNone,
+  CanvasOptionalGPUTextureFormatSome,
+} CanvasOptionalGPUTextureFormat_Tag;
+
+typedef struct CanvasOptionalGPUTextureFormat {
+  CanvasOptionalGPUTextureFormat_Tag tag;
+  union {
+    struct {
+      struct CanvasGPUTextureFormat some;
+    };
+  };
+} CanvasOptionalGPUTextureFormat;
+
+typedef struct CanvasGPURequestAdapterOptions {
+  enum CanvasGPUPowerPreference power_preference;
+  bool force_fallback_adapter;
+} CanvasGPURequestAdapterOptions;
+
+typedef struct CanvasGPUSupportedLimits {
+  uint32_t max_texture_dimension_1d;
+  uint32_t max_texture_dimension_2d;
+  uint32_t max_texture_dimension_3d;
+  uint32_t max_texture_array_layers;
+  uint32_t max_bind_groups;
+  uint32_t max_bindings_per_bind_group;
+  uint32_t max_dynamic_uniform_buffers_per_pipeline_layout;
+  uint32_t max_dynamic_storage_buffers_per_pipeline_layout;
+  uint32_t max_sampled_textures_per_shader_stage;
+  uint32_t max_samplers_per_shader_stage;
+  uint32_t max_storage_buffers_per_shader_stage;
+  uint32_t max_storage_textures_per_shader_stage;
+  uint32_t max_uniform_buffers_per_shader_stage;
+  uint32_t max_uniform_buffer_binding_size;
+  uint32_t max_storage_buffer_binding_size;
+  uint32_t max_vertex_buffers;
+  uint64_t max_buffer_size;
+  uint32_t max_vertex_attributes;
+  uint32_t max_vertex_buffer_array_stride;
+  uint32_t min_uniform_buffer_offset_alignment;
+  uint32_t min_storage_buffer_offset_alignment;
+  uint32_t max_inter_stage_shader_components;
+  uint32_t max_color_attachments;
+  uint32_t max_color_attachment_bytes_per_sample;
+  uint32_t max_compute_workgroup_storage_size;
+  uint32_t max_compute_invocations_per_workgroup;
+  uint32_t max_compute_workgroup_size_x;
+  uint32_t max_compute_workgroup_size_y;
+  uint32_t max_compute_workgroup_size_z;
+  uint32_t max_compute_workgroups_per_dimension;
+  uint32_t min_subgroup_size;
+  uint32_t max_subgroup_size;
+  uint32_t max_push_constant_size;
+  uint32_t max_non_sampler_bindings;
+} CanvasGPUSupportedLimits;
+
+typedef struct CanvasExtent3d {
+  /**
+   * Width of the extent
+   */
+  uint32_t width;
+  /**
+   * Height of the extent
+   */
+  uint32_t height;
+  /**
+   * The depth of the extent or the number of array layers
+   */
+  uint32_t depth_or_array_layers;
+} CanvasExtent3d;
+
+typedef struct CanvasGPUSurfaceConfiguration {
+  enum CanvasGPUSurfaceAlphaMode alphaMode;
+  uint32_t usage;
+  enum CanvasGPUPresentMode presentMode;
+  const struct CanvasGPUTextureFormat *view_formats;
+  uintptr_t view_formats_size;
+  const struct CanvasExtent3d *size;
+  struct CanvasOptionalGPUTextureFormat format;
+} CanvasGPUSurfaceConfiguration;
+
+typedef struct CanvasSurfaceCapabilities {
+  const struct StringBuffer *formats;
+  const struct StringBuffer *present_modes;
+  const struct StringBuffer *alpha_modes;
+  uint32_t usages;
+} CanvasSurfaceCapabilities;
+
+typedef struct CanvasColor {
+  double r;
+  double g;
+  double b;
+  double a;
+} CanvasColor;
+#define CanvasColor_TRANSPARENT (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 0.0 }
+#define CanvasColor_BLACK (CanvasColor){ .r = 0.0, .g = 0.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_WHITE (CanvasColor){ .r = 1.0, .g = 1.0, .b = 1.0, .a = 1.0 }
+#define CanvasColor_RED (CanvasColor){ .r = 1.0, .g = 0.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_GREEN (CanvasColor){ .r = 0.0, .g = 1.0, .b = 0.0, .a = 1.0 }
+#define CanvasColor_BLUE (CanvasColor){ .r = 0.0, .g = 0.0, .b = 1.0, .a = 1.0 }
+
+typedef struct CanvasPassChannelColor {
+  enum CanvasLoadOp load_op;
+  enum CanvasStoreOp store_op;
+  struct CanvasColor clear_value;
+  bool read_only;
+} CanvasPassChannelColor;
+
+typedef struct CanvasRenderPassColorAttachment {
+  const struct CanvasGPUTextureView *view;
+  const struct CanvasGPUTextureView *resolve_target;
+  struct CanvasPassChannelColor channel;
+} CanvasRenderPassColorAttachment;
+
+typedef enum CanvasOptionalLoadOp_Tag {
+  CanvasOptionalLoadOpNone,
+  CanvasOptionalLoadOpSome,
+} CanvasOptionalLoadOp_Tag;
+
+typedef struct CanvasOptionalLoadOp {
+  CanvasOptionalLoadOp_Tag tag;
+  union {
+    struct {
+      enum CanvasLoadOp some;
+    };
+  };
+} CanvasOptionalLoadOp;
+
+typedef enum CanvasOptionalStoreOp_Tag {
+  CanvasOptionalStoreOpNone,
+  CanvasOptionalStoreOpSome,
+} CanvasOptionalStoreOp_Tag;
+
+typedef struct CanvasOptionalStoreOp {
+  CanvasOptionalStoreOp_Tag tag;
+  union {
+    struct {
+      enum CanvasStoreOp some;
+    };
+  };
+} CanvasOptionalStoreOp;
+
+typedef struct CanvasRenderPassDepthStencilAttachment {
+  const struct CanvasGPUTextureView *view;
+  float depth_clear_value;
+  struct CanvasOptionalLoadOp depth_load_op;
+  struct CanvasOptionalStoreOp depth_store_op;
+  bool depth_read_only;
+  uint32_t stencil_clear_value;
+  struct CanvasOptionalLoadOp stencil_load_op;
+  struct CanvasOptionalStoreOp stencil_store_op;
+  bool stencil_read_only;
+} CanvasRenderPassDepthStencilAttachment;
+
+typedef struct CanvasImageCopyBuffer {
+  const struct CanvasGPUBuffer *buffer;
+  uint64_t offset;
+  int32_t bytes_per_row;
+  int32_t rows_per_image;
+} CanvasImageCopyBuffer;
+
+typedef struct CanvasOrigin3d {
+  /**
+   * X position of the origin
+   */
+  uint32_t x;
+  /**
+   * Y position of the origin
+   */
+  uint32_t y;
+  /**
+   * Z position of the origin
+   */
+  uint32_t z;
+} CanvasOrigin3d;
+
+typedef struct CanvasImageCopyTexture {
+  const struct CanvasGPUTexture *texture;
+  uint32_t mip_level;
+  struct CanvasOrigin3d origin;
+  enum CanvasTextureAspect aspect;
+} CanvasImageCopyTexture;
+
+typedef struct CanvasBufferBindingLayout {
+  enum CanvasBufferBindingType type_;
+  bool has_dynamic_offset;
+  int64_t min_binding_size;
+} CanvasBufferBindingLayout;
+
+typedef struct CanvasSamplerBindingLayout {
+  enum CanvasSamplerBindingType type_;
+} CanvasSamplerBindingLayout;
+
+typedef struct CanvasTextureBindingLayout {
+  enum CanvasTextureSampleType sample_type;
+  enum CanvasTextureViewDimension view_dimension;
+  bool multisampled;
+} CanvasTextureBindingLayout;
+
 typedef struct CanvasStorageTextureBindingLayout {
   enum CanvasStorageTextureAccess access;
   struct CanvasGPUTextureFormat format;
@@ -1506,20 +1548,6 @@ typedef struct CanvasProgrammableStage {
   const char *entry_point;
   const struct CanvasConstants *constants;
 } CanvasProgrammableStage;
-
-typedef enum CanvasOptionalGPUTextureFormat_Tag {
-  CanvasOptionalGPUTextureFormatNone,
-  CanvasOptionalGPUTextureFormatSome,
-} CanvasOptionalGPUTextureFormat_Tag;
-
-typedef struct CanvasOptionalGPUTextureFormat {
-  CanvasOptionalGPUTextureFormat_Tag tag;
-  union {
-    struct {
-      struct CanvasGPUTextureFormat some;
-    };
-  };
-} CanvasOptionalGPUTextureFormat;
 
 typedef struct CanvasCreateRenderBundleEncoderDescriptor {
   const char *label;
@@ -1764,23 +1792,6 @@ typedef struct CanvasImageDataLayout {
   int32_t rows_per_image;
 } CanvasImageDataLayout;
 
-typedef struct CanvasGPUSurfaceConfiguration {
-  enum CanvasGPUSurfaceAlphaMode alphaMode;
-  uint32_t usage;
-  enum CanvasGPUPresentMode presentMode;
-  const struct CanvasGPUTextureFormat *view_formats;
-  uintptr_t view_formats_size;
-  const struct CanvasExtent3d *size;
-  struct CanvasOptionalGPUTextureFormat format;
-} CanvasGPUSurfaceConfiguration;
-
-typedef struct CanvasSurfaceCapabilities {
-  const struct StringBuffer *formats;
-  const struct StringBuffer *present_modes;
-  const struct StringBuffer *alpha_modes;
-  uint32_t usages;
-} CanvasSurfaceCapabilities;
-
 typedef struct CanvasImageSubresourceRange {
   enum CanvasTextureAspect aspect;
   uint32_t base_mip_level;
@@ -1796,31 +1807,11 @@ typedef struct CanvasCreateTextureViewDescriptor {
   const struct CanvasImageSubresourceRange *range;
 } CanvasCreateTextureViewDescriptor;
 
-void canvas_native_image_filter_destroy(struct ImageFilter *value);
-
 void canvas_native_font_add_family(const char *alias,
                                    const char *const *filenames,
                                    uintptr_t length);
 
-void canvas_native_helper_destroy(struct FileHelper *value);
-
-struct FileHelper *canvas_native_helper_read_file(const char *path);
-
-bool canvas_native_helper_read_file_has_error(const struct FileHelper *file);
-
-struct U8Buffer *canvas_native_helper_read_file_get_data(struct FileHelper *file);
-
-const char *canvas_native_helper_read_file_get_error(const struct FileHelper *file);
-
-void canvas_native_text_encoder_destroy(struct TextEncoder *value);
-
-void canvas_native_text_decoder_destroy(struct TextDecoder *value);
-
-void canvas_native_context_destroy(struct CanvasRenderingContext2D *value);
-
-void canvas_native_paint_style_destroy(struct PaintStyle *value);
-
-void canvas_native_text_metrics_destroy(struct TextMetrics *value);
+void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
 struct Raf *canvas_native_raf_create(intptr_t callback, void (*on_frame_callback)(intptr_t callback,
@@ -1828,7 +1819,7 @@ struct Raf *canvas_native_raf_create(intptr_t callback, void (*on_frame_callback
 #endif
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
-void canvas_native_raf_destroy(struct Raf *value);
+void canvas_native_raf_release(struct Raf *value);
 #endif
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
@@ -1842,9 +1833,6 @@ void canvas_native_raf_stop(struct Raf *raf);
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
 bool canvas_native_raf_get_started(const struct Raf *raf);
 #endif
-
-struct CanvasRenderingContext2D *canvas_native_context_create_with_wrapper(int64_t context,
-                                                                           int64_t gl_context);
 
 void canvas_native_context_resize(struct CanvasRenderingContext2D *context,
                                   float width,
@@ -1896,7 +1884,7 @@ const char *canvas_native_context_get_word_spacing(const struct CanvasRenderingC
 void canvas_native_context_set_word_spacing(struct CanvasRenderingContext2D *context,
                                             const char *spacing);
 
-float canvas_native_context_get_global_alpha(const struct CanvasRenderingContext2D *context);
+float canvas_native_context_get_global_alpha(struct CanvasRenderingContext2D *context);
 
 void canvas_native_context_set_global_alpha(struct CanvasRenderingContext2D *context, float alpha);
 
@@ -2002,7 +1990,7 @@ const char *canvas_native_paint_style_get_color_string(const struct PaintStyle *
 
 const char *canvas_native_paint_style_get_current_stroke_color_string(const struct CanvasRenderingContext2D *context);
 
-struct U8Buffer *canvas_native_paint_style_get_current_stroke_color_buf(const struct CanvasRenderingContext2D *context);
+struct U8Buffer *canvas_native_paint_style_get_current_stroke_color_buf(struct CanvasRenderingContext2D *context);
 
 void canvas_native_paint_style_get_current_stroke_color_r_g_b_a(const struct CanvasRenderingContext2D *context,
                                                                 uint8_t *r,
@@ -2018,13 +2006,13 @@ void canvas_native_paint_style_get_current_fill_color_r_g_b_a(const struct Canva
 
 const char *canvas_native_paint_style_get_current_fill_color_string(const struct CanvasRenderingContext2D *context);
 
-struct U8Buffer *canvas_native_paint_style_get_current_fill_color_buf(struct CanvasRenderingContext2D *context);
+struct U8Buffer *canvas_native_paint_style_get_current_fill_color_buf(const struct CanvasRenderingContext2D *context);
 
 enum PaintStyleType canvas_native_context_get_style_type(const struct PaintStyle *style);
 
-enum PaintStyleType canvas_native_context_get_current_fill_style_type(struct CanvasRenderingContext2D *context);
+enum PaintStyleType canvas_native_context_get_current_fill_style_type(const struct CanvasRenderingContext2D *context);
 
-enum PaintStyleType canvas_native_context_get_current_stroke_style_type(struct CanvasRenderingContext2D *context);
+enum PaintStyleType canvas_native_context_get_current_stroke_style_type(const struct CanvasRenderingContext2D *context);
 
 struct PaintStyle *canvas_native_context_get_fill_style(const struct CanvasRenderingContext2D *context);
 
@@ -2082,18 +2070,12 @@ void canvas_native_context_clear_rect(struct CanvasRenderingContext2D *context,
                                       float width,
                                       float height);
 
-void canvas_native_context_clip_str(struct CanvasRenderingContext2D *context,
-                                    struct Path *path,
-                                    const char *rule);
-
-void canvas_native_context_clip_rule_str(struct CanvasRenderingContext2D *context,
-                                         const char *rule);
-
 void canvas_native_context_clip(struct CanvasRenderingContext2D *context,
                                 struct Path *path,
-                                uint32_t rule);
+                                enum CanvasFillRule rule);
 
-void canvas_native_context_clip_rule(struct CanvasRenderingContext2D *context, uint32_t rule);
+void canvas_native_context_clip_rule(struct CanvasRenderingContext2D *context,
+                                     enum CanvasFillRule rule);
 
 void canvas_native_context_close_path(struct CanvasRenderingContext2D *context);
 
@@ -2104,36 +2086,36 @@ struct ImageData *canvas_native_context_create_image_data_with_data(int32_t widt
                                                                     const uint8_t *data,
                                                                     uintptr_t size);
 
-struct PaintStyle *canvas_native_context_create_linear_gradient(struct CanvasRenderingContext2D *context,
+struct PaintStyle *canvas_native_context_create_linear_gradient(const struct CanvasRenderingContext2D *context,
                                                                 float x0,
                                                                 float y0,
                                                                 float x1,
                                                                 float y1);
 
-struct PaintStyle *canvas_native_context_create_conic_gradient(struct CanvasRenderingContext2D *context,
+struct PaintStyle *canvas_native_context_create_conic_gradient(const struct CanvasRenderingContext2D *context,
                                                                float start_angle,
                                                                float x,
                                                                float y);
 
-struct PaintStyle *canvas_native_context_create_pattern(struct CanvasRenderingContext2D *context,
+struct PaintStyle *canvas_native_context_create_pattern(const struct CanvasRenderingContext2D *context,
                                                         const uint8_t *data,
                                                         uintptr_t size,
                                                         int32_t width,
                                                         int32_t height,
-                                                        const char *repetition);
+                                                        enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_pattern_asset(struct CanvasRenderingContext2D *context,
                                                               struct ImageAsset *asset,
-                                                              const char *repetition);
+                                                              enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_pattern_encoded(struct CanvasRenderingContext2D *context,
                                                                 const uint8_t *data,
                                                                 uintptr_t size,
-                                                                const char *repetition);
+                                                                enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_pattern_canvas2d(struct CanvasRenderingContext2D *source,
                                                                  struct CanvasRenderingContext2D *context,
-                                                                 const char *repetition);
+                                                                 enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_radial_gradient(struct CanvasRenderingContext2D *context,
                                                                 float x0,
@@ -2211,7 +2193,7 @@ void canvas_native_context_draw_image_encoded(struct CanvasRenderingContext2D *c
                                               float d_height);
 
 void canvas_native_context_draw_image_dx_dy_asset(struct CanvasRenderingContext2D *context,
-                                                  struct ImageAsset *asset,
+                                                  const struct ImageAsset *asset,
                                                   float dx,
                                                   float dy);
 
@@ -2323,17 +2305,11 @@ void canvas_native_context_ellipse(struct CanvasRenderingContext2D *context,
                                    float end_angle,
                                    bool anticlockwise);
 
-void canvas_native_context_fill_str(struct CanvasRenderingContext2D *context, const char *rule);
-
-void canvas_native_context_fill_with_path_str(struct CanvasRenderingContext2D *context,
-                                              struct Path *path,
-                                              const char *rule);
-
-void canvas_native_context_fill(struct CanvasRenderingContext2D *context, uint32_t rule);
+void canvas_native_context_fill(struct CanvasRenderingContext2D *context, enum CanvasFillRule rule);
 
 void canvas_native_context_fill_with_path(struct CanvasRenderingContext2D *context,
                                           struct Path *path,
-                                          uint32_t rule);
+                                          enum CanvasFillRule rule);
 
 void canvas_native_context_fill_rect(struct CanvasRenderingContext2D *context,
                                      float x,
@@ -2369,24 +2345,24 @@ struct Matrix *canvas_native_context_get_transform(struct CanvasRenderingContext
 bool canvas_native_context_is_point_in_path_str(struct CanvasRenderingContext2D *context,
                                                 float x,
                                                 float y,
-                                                const char *rule);
+                                                enum CanvasFillRule rule);
 
 bool canvas_native_context_is_point_in_path_with_path_str(struct CanvasRenderingContext2D *context,
                                                           struct Path *path,
                                                           float x,
                                                           float y,
-                                                          const char *rule);
+                                                          enum CanvasFillRule rule);
 
 bool canvas_native_context_is_point_in_path(struct CanvasRenderingContext2D *context,
                                             float x,
                                             float y,
-                                            uint32_t rule);
+                                            enum CanvasFillRule rule);
 
 bool canvas_native_context_is_point_in_path_with_path(struct CanvasRenderingContext2D *context,
                                                       struct Path *path,
                                                       float x,
                                                       float y,
-                                                      uint32_t rule);
+                                                      enum CanvasFillRule rule);
 
 bool canvas_native_context_is_point_in_stroke(struct CanvasRenderingContext2D *context,
                                               float x,
@@ -2405,7 +2381,7 @@ struct TextMetrics *canvas_native_context_measure_text(struct CanvasRenderingCon
 void canvas_native_context_move_to(struct CanvasRenderingContext2D *context, float x, float y);
 
 void canvas_native_context_put_image_data(struct CanvasRenderingContext2D *context,
-                                          struct ImageData *image_data,
+                                          const struct ImageData *image_data,
                                           float dx,
                                           float dy,
                                           float dirty_x,
@@ -2462,7 +2438,7 @@ void canvas_native_context_set_transform(struct CanvasRenderingContext2D *contex
                                          float f);
 
 void canvas_native_context_set_transform_matrix(struct CanvasRenderingContext2D *context,
-                                                struct Matrix *matrix);
+                                                const struct Matrix *matrix);
 
 void canvas_native_context_stroke(struct CanvasRenderingContext2D *context);
 
@@ -2504,11 +2480,15 @@ void canvas_native_context_translate(struct CanvasRenderingContext2D *context, f
 
 void canvas_native_context_flush(struct CanvasRenderingContext2D *context);
 
-void canvas_native_context_render(const struct CanvasRenderingContext2D *context);
+void canvas_native_context_render(struct CanvasRenderingContext2D *context);
 
 const char *canvas_native_to_data_url(struct CanvasRenderingContext2D *context,
                                       const char *format,
                                       uint32_t quality);
+
+void canvas_native_image_filter_reference(const struct ImageFilter *value);
+
+void canvas_native_image_filter_release(const struct ImageFilter *value);
 
 struct ImageAsset *canvas_native_image_bitmap_create_from_asset(struct ImageAsset *asset,
                                                                 bool flip_y,
@@ -2575,6 +2555,160 @@ bool canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(c
                                                                                float resize_width,
                                                                                float resize_height,
                                                                                struct ImageAsset *output);
+
+struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
+
+int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);
+
+int32_t canvas_native_image_data_get_height(const struct ImageData *image_data);
+
+uintptr_t canvas_native_image_data_get_length(const struct ImageData *image_data);
+
+struct U8Buffer *canvas_native_image_data_get_data(const struct ImageData *image_data);
+
+void canvas_native_image_data_release(struct ImageData *value);
+
+struct Matrix *canvas_native_matrix_create(void);
+
+void canvas_native_matrix_update(struct Matrix *matrix, const float *slice, uintptr_t size);
+
+void canvas_native_matrix_update_3d(struct Matrix *matrix, const float *slice, uintptr_t size);
+
+float canvas_native_matrix_get_a(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_a(struct Matrix *matrix, float a);
+
+float canvas_native_matrix_get_b(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_b(struct Matrix *matrix, float b);
+
+float canvas_native_matrix_get_c(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_c(struct Matrix *matrix, float c);
+
+float canvas_native_matrix_get_d(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_d(struct Matrix *matrix, float d);
+
+float canvas_native_matrix_get_e(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_e(struct Matrix *matrix, float e);
+
+float canvas_native_matrix_get_f(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_f(struct Matrix *matrix, float f);
+
+float canvas_native_matrix_get_m11(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m11(struct Matrix *matrix, float m11);
+
+float canvas_native_matrix_get_m12(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m12(struct Matrix *matrix, float m12);
+
+float canvas_native_matrix_get_m13(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m13(struct Matrix *matrix, float m13);
+
+float canvas_native_matrix_get_m14(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m14(struct Matrix *matrix, float m14);
+
+float canvas_native_matrix_get_m21(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m21(struct Matrix *matrix, float m21);
+
+float canvas_native_matrix_get_m22(struct Matrix *matrix);
+
+void canvas_native_matrix_set_m22(struct Matrix *matrix, float m22);
+
+float canvas_native_matrix_get_m23(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m23(struct Matrix *matrix, float m23);
+
+float canvas_native_matrix_get_m24(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m24(struct Matrix *matrix, float m24);
+
+float canvas_native_matrix_get_m31(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m31(struct Matrix *matrix, float m31);
+
+float canvas_native_matrix_get_m32(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m32(struct Matrix *matrix, float m32);
+
+float canvas_native_matrix_get_m33(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m33(struct Matrix *matrix, float m33);
+
+float canvas_native_matrix_get_m34(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m34(struct Matrix *matrix, float m34);
+
+float canvas_native_matrix_get_m41(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m41(struct Matrix *matrix, float m41);
+
+float canvas_native_matrix_get_m42(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m42(struct Matrix *matrix, float m42);
+
+float canvas_native_matrix_get_m43(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m43(struct Matrix *matrix, float m43);
+
+float canvas_native_matrix_get_m44(const struct Matrix *matrix);
+
+void canvas_native_matrix_set_m44(struct Matrix *matrix, float m44);
+
+struct Matrix *canvas_native_matrix_translate(float x, float y, const struct Matrix *matrix);
+
+void canvas_native_matrix_translate_self(struct Matrix *matrix, float x, float y);
+
+void canvas_native_matrix_multiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+void canvas_native_matrix_premultiply_self(struct Matrix *matrix, const struct Matrix *value);
+
+struct Matrix *canvas_native_matrix_scale_non_uniform(float sx,
+                                                      float sy,
+                                                      const struct Matrix *matrix);
+
+void canvas_native_matrix_scale_non_uniform_self(struct Matrix *matrix, float sx, float sy);
+
+struct Matrix *canvas_native_matrix_rotate(float angle,
+                                           float cx,
+                                           float cy,
+                                           const struct Matrix *matrix);
+
+void canvas_native_matrix_rotate_self(struct Matrix *matrix, float angle, float cx, float cy);
+
+struct Matrix *canvas_native_matrix_skew_x(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_x_self(struct Matrix *matrix, float angle);
+
+struct Matrix *canvas_native_matrix_skew_y(float angle, const struct Matrix *matrix);
+
+void canvas_native_matrix_skew_y_self(struct Matrix *matrix, float angle);
+
+struct Matrix *canvas_native_matrix_clone(const struct Matrix *matrix);
+
+void canvas_native_matrix_release(struct Matrix *value);
+
+void canvas_native_paint_style_release(struct PaintStyle *value);
+
+struct PaintStyle *canvas_native_paint_style_from_bytes(const struct CanvasRenderingContext2D *context,
+                                                        int32_t repetition,
+                                                        int32_t width,
+                                                        int32_t height,
+                                                        const uint8_t *bytes,
+                                                        uintptr_t size);
+
+struct PaintStyle *canvas_native_pattern_from_ptr(int64_t ptr);
+
+void canvas_native_gradient_add_color_stop(struct PaintStyle *style, float stop, const char *color);
+
+void canvas_native_pattern_set_transform(struct PaintStyle *pattern, const struct Matrix *matrix);
 
 void canvas_native_path_trim(struct Path *path, float start, float end);
 
@@ -2653,168 +2787,17 @@ void canvas_native_path_round_rect_tl_tr_br_bl(struct Path *path,
 
 const char *canvas_native_path_to_string(const struct Path *path);
 
-struct Matrix *canvas_native_matrix_create(void);
+void canvas_native_path_release(struct Path *value);
 
-void canvas_native_matrix_update(struct Matrix *matrix, const float *slice, uintptr_t size);
+void canvas_native_string_destroy(char *value);
 
-void canvas_native_matrix_update_3d(struct Matrix *matrix, const float *slice, uintptr_t size);
+void canvas_native_ccow_release(struct CCow *cow);
 
-float canvas_native_matrix_get_a(const struct Matrix *matrix);
+const uint8_t *canvas_native_ccow_get_bytes(const struct CCow *cow);
 
-void canvas_native_matrix_set_a(struct Matrix *matrix, float a);
+uintptr_t canvas_native_ccow_get_length(const struct CCow *cow);
 
-float canvas_native_matrix_get_b(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_b(struct Matrix *matrix, float b);
-
-float canvas_native_matrix_get_c(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_c(struct Matrix *matrix, float c);
-
-float canvas_native_matrix_get_d(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_d(struct Matrix *matrix, float d);
-
-float canvas_native_matrix_get_e(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_e(struct Matrix *matrix, float e);
-
-float canvas_native_matrix_get_f(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_f(struct Matrix *matrix, float f);
-
-float canvas_native_matrix_get_m11(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m11(struct Matrix *matrix, float m11);
-
-float canvas_native_matrix_get_m12(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m12(struct Matrix *matrix, float m12);
-
-float canvas_native_matrix_get_m13(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m13(struct Matrix *matrix, float m13);
-
-float canvas_native_matrix_get_m14(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m14(struct Matrix *matrix, float m14);
-
-float canvas_native_matrix_get_m21(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m21(struct Matrix *matrix, float m21);
-
-float canvas_native_matrix_get_m22(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m22(struct Matrix *matrix, float m22);
-
-float canvas_native_matrix_get_m23(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m23(struct Matrix *matrix, float m23);
-
-float canvas_native_matrix_get_m24(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m24(struct Matrix *matrix, float m24);
-
-float canvas_native_matrix_get_m31(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m31(struct Matrix *matrix, float m31);
-
-float canvas_native_matrix_get_m32(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m32(struct Matrix *matrix, float m32);
-
-float canvas_native_matrix_get_m33(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m33(struct Matrix *matrix, float m33);
-
-float canvas_native_matrix_get_m34(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m34(struct Matrix *matrix, float m34);
-
-float canvas_native_matrix_get_m41(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m41(struct Matrix *matrix, float m41);
-
-float canvas_native_matrix_get_m42(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m42(struct Matrix *matrix, float m42);
-
-float canvas_native_matrix_get_m43(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m43(struct Matrix *matrix, float m43);
-
-float canvas_native_matrix_get_m44(const struct Matrix *matrix);
-
-void canvas_native_matrix_set_m44(struct Matrix *matrix, float m44);
-
-struct Matrix *canvas_native_matrix_translate(float x, float y, const struct Matrix *matrix);
-
-void canvas_native_matrix_translate_self(struct Matrix *matrix, float x, float y);
-
-void canvas_native_matrix_multiply_self(struct Matrix *matrix, const struct Matrix *value);
-
-void canvas_native_matrix_premultiply_self(struct Matrix *matrix, const struct Matrix *value);
-
-struct Matrix *canvas_native_matrix_scale_non_uniform(float sx,
-                                                      float sy,
-                                                      const struct Matrix *matrix);
-
-void canvas_native_matrix_scale_non_uniform_self(struct Matrix *matrix, float sx, float sy);
-
-struct Matrix *canvas_native_matrix_rotate(float angle,
-                                           float cx,
-                                           float cy,
-                                           const struct Matrix *matrix);
-
-void canvas_native_matrix_rotate_self(struct Matrix *matrix, float angle, float cx, float cy);
-
-struct Matrix *canvas_native_matrix_skew_x(float angle, const struct Matrix *matrix);
-
-void canvas_native_matrix_skew_x_self(struct Matrix *matrix, float angle);
-
-struct Matrix *canvas_native_matrix_skew_y(float angle, const struct Matrix *matrix);
-
-void canvas_native_matrix_skew_y_self(struct Matrix *matrix, float angle);
-
-struct Matrix *canvas_native_matrix_clone(const struct Matrix *matrix);
-
-struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
-
-int32_t canvas_native_image_data_get_width(const struct ImageData *image_data);
-
-int32_t canvas_native_image_data_get_height(const struct ImageData *image_data);
-
-struct U8Buffer *canvas_native_image_data_get_data(struct ImageData *image_data);
-
-struct ImageData *canvas_native_image_data_get_shared_instance(struct ImageData *image_data);
-
-int64_t canvas_native_image_asset_get_addr(struct ImageAsset *asset);
-
-struct ImageAsset *canvas_native_image_asset_create(void);
-
-struct ImageAsset *canvas_native_image_asset_shared_clone(struct ImageAsset *asset);
-
-bool canvas_native_image_asset_load_from_fd(struct ImageAsset *asset, int fd);
-
-bool canvas_native_image_asset_load_from_path(struct ImageAsset *asset, const char *path);
-
-bool canvas_native_image_asset_load_from_raw(struct ImageAsset *asset,
-                                             const uint8_t *array,
-                                             uintptr_t size);
-
-bool canvas_native_image_asset_load_from_url(struct ImageAsset *asset, const char *url);
-
-int64_t canvas_native_image_asset_addr(struct ImageAsset *asset);
-
-uint32_t canvas_native_image_asset_width(struct ImageAsset *asset);
-
-uint32_t canvas_native_image_asset_height(struct ImageAsset *asset);
-
-const char *canvas_native_image_asset_get_error(struct ImageAsset *asset);
-
-bool canvas_native_image_asset_has_error(struct ImageAsset *asset);
-
-struct U8Buffer *canvas_native_image_asset_get_data(struct ImageAsset *asset);
+void canvas_native_text_metrics_release(struct TextMetrics *value);
 
 float canvas_native_text_metrics_get_width(const struct TextMetrics *metrics);
 
@@ -2840,32 +2823,703 @@ float canvas_native_text_metrics_get_alphabetic_baseline(const struct TextMetric
 
 float canvas_native_text_metrics_get_ideographic_baseline(const struct TextMetrics *metrics);
 
-struct PaintStyle *canvas_native_paint_style_from_bytes(const struct CanvasRenderingContext2D *context,
-                                                        int32_t repetition,
-                                                        int32_t width,
-                                                        int32_t height,
-                                                        const uint8_t *bytes,
-                                                        uintptr_t size);
+char *canvas_native_webgpu_enum_gpu_texture_to_string(struct CanvasGPUTextureFormat value);
 
-struct PaintStyle *canvas_native_pattern_from_ptr(int64_t ptr);
+struct CanvasOptionalGPUTextureFormat canvas_native_webgpu_enum_string_to_gpu_texture(const char *format);
 
-struct PaintStyle *canvas_native_paint_style_empty(void);
+enum CanvasGPUErrorType canvas_native_webgpu_error_get_type(const struct CanvasGPUError *error);
 
-void canvas_native_gradient_add_color_stop(struct PaintStyle *style, float stop, const char *color);
+char *canvas_native_webgpu_error_get_message(const struct CanvasGPUError *error);
 
-void canvas_native_pattern_set_transform(struct PaintStyle *pattern, const struct Matrix *matrix);
+const struct CanvasWebGPUInstance *canvas_native_webgpu_instance_create(void);
+
+void canvas_native_webgpu_instance_release(const struct CanvasWebGPUInstance *instance);
+
+int64_t canvas_native_webgpu_get_pointer_addr(const struct CanvasWebGPUInstance *instance);
+
+void canvas_native_webgpu_request_adapter(const struct CanvasWebGPUInstance *instance,
+                                          const struct CanvasGPURequestAdapterOptions *options,
+                                          void (*callback)(const struct CanvasGPUAdapter*, void*),
+                                          void *callback_data);
+
+void canvas_native_webgpu_adapter_reference(const struct CanvasGPUAdapter *adapter);
+
+void canvas_native_webgpu_adapter_release(const struct CanvasGPUAdapter *adapter);
+
+struct StringBuffer *canvas_native_webgpu_adapter_get_features(const struct CanvasGPUAdapter *adapter);
+
+bool canvas_native_webgpu_adapter_is_fallback_adapter(const struct CanvasGPUAdapter *adapter);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_adapter_get_limits(const struct CanvasGPUAdapter *adapter);
+
+const struct CanvasGPUAdapterInfo *canvas_native_webgpu_adapter_request_adapter_info(const struct CanvasGPUAdapter *adapter);
+
+void canvas_native_webgpu_adapter_request_device(const struct CanvasGPUAdapter *adapter,
+                                                 const char *label,
+                                                 const char *const *required_features,
+                                                 uintptr_t required_features_length,
+                                                 const struct CanvasGPUSupportedLimits *required_limits,
+                                                 void (*callback)(char*,
+                                                                  const struct CanvasGPUDevice*,
+                                                                  void*),
+                                                 void *callback_data);
+
+char *canvas_native_webgpu_adapter_info_vendor(const struct CanvasGPUAdapterInfo *info);
+
+char *canvas_native_webgpu_adapter_info_architecture(const struct CanvasGPUAdapterInfo *_info);
+
+char *canvas_native_webgpu_adapter_info_device(const struct CanvasGPUAdapterInfo *info);
+
+char *canvas_native_webgpu_adapter_info_description(const struct CanvasGPUAdapterInfo *info);
+
+void canvas_native_webgpu_adapter_info_reference(const struct CanvasGPUAdapterInfo *info);
+
+void canvas_native_webgpu_adapter_info_release(const struct CanvasGPUAdapterInfo *info);
+
+void canvas_native_webgpu_bind_group_reference(const struct CanvasGPUBindGroup *bind_group);
+
+void canvas_native_webgpu_bind_group_release(const struct CanvasGPUBindGroup *bind_group);
+
+void canvas_native_webgpu_bind_group_layout_reference(const struct CanvasGPUBindGroupLayout *bind_group_layout);
+
+void canvas_native_webgpu_bind_group_layout_release(const struct CanvasGPUBindGroupLayout *bind_group_layout);
+
+void canvas_native_webgpu_buffer_reference(const struct CanvasGPUBuffer *buffer);
+
+void canvas_native_webgpu_buffer_release(const struct CanvasGPUBuffer *buffer);
+
+uint32_t canvas_native_webgpu_buffer_usage(const struct CanvasGPUBuffer *buffer);
+
+uint64_t canvas_native_webgpu_buffer_size(const struct CanvasGPUBuffer *buffer);
+
+void *canvas_native_webgpu_buffer_get_mapped_range(const struct CanvasGPUBuffer *buffer,
+                                                   int64_t offset,
+                                                   int64_t size);
+
+void canvas_native_webgpu_buffer_destroy(const struct CanvasGPUBuffer *buffer);
+
+void canvas_native_webgpu_buffer_unmap(const struct CanvasGPUBuffer *buffer);
+
+void canvas_native_webgpu_buffer_map_async(const struct CanvasGPUBuffer *buffer,
+                                           enum GPUMapMode mode,
+                                           int64_t offset,
+                                           int64_t size,
+                                           void (*callback)(char*, void*),
+                                           void *callback_data);
+
+#if defined(TARGET_OS_ANDROID)
+const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct CanvasWebGPUInstance *instance,
+                                                                         void *window,
+                                                                         uint32_t width,
+                                                                         uint32_t height);
+#endif
+
+#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
+const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
+                                                                         void *view,
+                                                                         uint32_t width,
+                                                                         uint32_t height);
+#endif
+
+#if defined(TARGET_OS_IOS)
+const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(const struct CanvasWebGPUInstance *instance,
+                                                                                void *view,
+                                                                                uint32_t width,
+                                                                                uint32_t height);
+#endif
+
+#if defined(TARGET_OS_MACOS)
+const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_nsview(const struct CanvasWebGPUInstance *instance,
+                                                                                void *view,
+                                                                                uint32_t width,
+                                                                                uint32_t height);
+#endif
+
+void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext *context,
+                                            const struct CanvasGPUDevice *device,
+                                            const struct CanvasGPUSurfaceConfiguration *config);
+
+void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context,
+                                              struct CanvasGPUDevice *device,
+                                              const struct CanvasGPUSurfaceConfiguration *config);
+
+const struct CanvasGPUTexture *canvas_native_webgpu_context_get_current_texture(const struct CanvasGPUCanvasContext *context);
+
+void canvas_native_webgpu_context_present_surface(const struct CanvasGPUCanvasContext *context,
+                                                  const struct CanvasGPUTexture *texture);
+
+struct CanvasSurfaceCapabilities *canvas_native_webgpu_context_get_capabilities(const struct CanvasGPUCanvasContext *context,
+                                                                                const struct CanvasGPUAdapter *adapter);
+
+void canvas_native_webgpu_context_reference(const struct CanvasGPUCanvasContext *context);
+
+void canvas_native_webgpu_context_release(const struct CanvasGPUCanvasContext *context);
+
+void canvas_native_webgpu_command_buffer_reference(const struct CanvasGPUCommandBuffer *command_buffer);
+
+void canvas_native_webgpu_command_buffer_release(const struct CanvasGPUCommandBuffer *command_buffer);
+
+void canvas_native_webgpu_command_encoder_reference(const struct CanvasGPUCommandEncoder *command_encoder);
+
+void canvas_native_webgpu_command_encoder_release(const struct CanvasGPUCommandEncoder *command_encoder);
+
+const struct CanvasGPUComputePassEncoder *canvas_native_webgpu_command_encoder_begin_compute_pass(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                                  const struct CanvasGPUQuerySet *query_set,
+                                                                                                  const char *label,
+                                                                                                  int32_t beginning_of_pass_write_index,
+                                                                                                  int32_t end_of_pass_write_index);
+
+const struct CanvasGPURenderPassEncoder *canvas_native_webgpu_command_encoder_begin_render_pass(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                                const char *label,
+                                                                                                const struct CanvasRenderPassColorAttachment *color_attachments,
+                                                                                                uintptr_t color_attachments_size,
+                                                                                                const struct CanvasRenderPassDepthStencilAttachment *depth_stencil_attachment,
+                                                                                                const struct CanvasGPUQuerySet *occlusion_query_set,
+                                                                                                const struct CanvasGPUQuerySet *query_set,
+                                                                                                int32_t beginning_of_pass_write_index,
+                                                                                                int32_t end_of_pass_write_index);
+
+void canvas_native_webgpu_command_encoder_clear_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                       const struct CanvasGPUBuffer *buffer,
+                                                       int64_t offset,
+                                                       int64_t size);
+
+void canvas_native_webgpu_command_encoder_copy_buffer_to_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                const struct CanvasGPUBuffer *src,
+                                                                int64_t src_offset,
+                                                                const struct CanvasGPUBuffer *dst,
+                                                                int64_t dst_offset,
+                                                                uint64_t size);
+
+void canvas_native_webgpu_command_encoder_copy_buffer_to_texture(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                 const struct CanvasImageCopyBuffer *src,
+                                                                 const struct CanvasImageCopyTexture *dst,
+                                                                 const struct CanvasExtent3d *copy_size);
+
+void canvas_native_webgpu_command_encoder_copy_texture_to_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                 const struct CanvasImageCopyTexture *src,
+                                                                 const struct CanvasImageCopyBuffer *dst,
+                                                                 const struct CanvasExtent3d *copy_size);
+
+void canvas_native_webgpu_command_encoder_copy_texture_to_texture(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                  const struct CanvasImageCopyTexture *src,
+                                                                  const struct CanvasImageCopyTexture *dst,
+                                                                  const struct CanvasExtent3d *copy_size);
+
+const struct CanvasGPUCommandBuffer *canvas_native_webgpu_command_encoder_finish(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                                                 const char *label);
+
+void canvas_native_webgpu_command_encoder_insert_debug_marker(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                              const char *label);
+
+void canvas_native_webgpu_command_encoder_pop_debug_group(const struct CanvasGPUCommandEncoder *command_encoder);
+
+void canvas_native_webgpu_command_encoder_push_debug_group(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                           const char *label);
+
+void canvas_native_webgpu_command_encoder_resolve_query_set(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                            const struct CanvasGPUQuerySet *query_set,
+                                                            uint32_t first_query,
+                                                            uint32_t query_count,
+                                                            const struct CanvasGPUBuffer *dst,
+                                                            uint64_t dst_offset);
+
+void canvas_native_webgpu_command_encoder_write_timestamp(const struct CanvasGPUCommandEncoder *command_encoder,
+                                                          const struct CanvasGPUQuerySet *query_set,
+                                                          uint32_t query_index);
+
+void canvas_native_webgpu_compute_pass_encoder_reference(const struct CanvasGPUComputePassEncoder *compute_pass);
+
+void canvas_native_webgpu_compute_pass_encoder_release(const struct CanvasGPUComputePassEncoder *compute_pass);
+
+void canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                                   uint32_t workgroup_count_x,
+                                                                   uint32_t workgroup_count_y,
+                                                                   uint32_t workgroup_count_z);
+
+void canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                                            const struct CanvasGPUBuffer *indirect_buffer,
+                                                                            uintptr_t indirect_offset);
+
+void canvas_native_webgpu_compute_pass_encoder_end(const struct CanvasGPUComputePassEncoder *compute_pass);
+
+void canvas_native_webgpu_compute_pass_encoder_insert_debug_marker(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                                   const char *label);
+
+void canvas_native_webgpu_compute_pass_encoder_pop_debug_group(const struct CanvasGPUComputePassEncoder *compute_pass);
+
+void canvas_native_webgpu_compute_pass_encoder_push_debug_group(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                                const char *label);
+
+void canvas_native_webgpu_compute_pass_encoder_set_bind_group(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                              uint32_t index,
+                                                              const struct CanvasGPUBindGroup *bind_group,
+                                                              const uint32_t *dynamic_offsets,
+                                                              uintptr_t dynamic_offsets_size,
+                                                              uintptr_t dynamic_offsets_start,
+                                                              uintptr_t dynamic_offsets_length);
+
+void canvas_native_webgpu_compute_pass_encoder_set_pipeline(const struct CanvasGPUComputePassEncoder *compute_pass,
+                                                            const struct CanvasGPUComputePipeline *pipeline);
+
+void canvas_native_webgpu_compute_pipeline_reference(const struct CanvasGPUComputePipeline *pipeline);
+
+void canvas_native_webgpu_compute_pipeline_release(const struct CanvasGPUComputePipeline *pipeline);
+
+const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_compute_pipeline_get_bind_group_layout(const struct CanvasGPUComputePipeline *pipeline,
+                                                                                                   uint32_t index);
+
+struct StringBuffer *canvas_native_webgpu_device_get_features(const struct CanvasGPUDevice *device);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_device_get_limits(const struct CanvasGPUDevice *device);
+
+const struct CanvasGPUQueue *canvas_native_webgpu_device_get_queue(const struct CanvasGPUDevice *device);
+
+void canvas_native_webgpu_device_set_lost_callback(const struct CanvasGPUDevice *device,
+                                                   void (*callback)(int32_t, char*, void*),
+                                                   void *userdata);
+
+void canvas_native_webgpu_device_pop_error_scope(const struct CanvasGPUDevice *device,
+                                                 void (*callback)(enum CanvasGPUErrorType,
+                                                                  char*,
+                                                                  void*),
+                                                 void *userdata);
+
+void canvas_native_webgpu_device_push_error_scope(const struct CanvasGPUDevice *device,
+                                                  enum CanvasGPUErrorFilter filter);
+
+void canvas_native_webgpu_device_set_uncaptured_error_callback(const struct CanvasGPUDevice *device,
+                                                               void (*callback)(enum CanvasGPUErrorType,
+                                                                                char*,
+                                                                                void*),
+                                                               void *userdata);
+
+void canvas_native_webgpu_device_destroy(const struct CanvasGPUDevice *device);
+
+void canvas_native_webgpu_device_reference(const struct CanvasGPUDevice *device);
+
+void canvas_native_webgpu_device_release(const struct CanvasGPUDevice *device);
+
+const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_device_create_bind_group_layout(const struct CanvasGPUDevice *device,
+                                                                                            const char *label,
+                                                                                            const struct CanvasBindGroupLayoutEntry *entries,
+                                                                                            uintptr_t size);
+
+const struct CanvasGPUBindGroup *canvas_native_webgpu_device_create_bind_group(const struct CanvasGPUDevice *device,
+                                                                               const char *label,
+                                                                               const struct CanvasGPUBindGroupLayout *layout,
+                                                                               const struct CanvasBindGroupEntry *entries,
+                                                                               uintptr_t size);
+
+const struct CanvasGPUCommandEncoder *canvas_native_webgpu_device_create_command_encoder(const struct CanvasGPUDevice *device,
+                                                                                         const char *label);
+
+const struct CanvasGPUComputePipeline *canvas_native_webgpu_device_create_compute_pipeline(const struct CanvasGPUDevice *device,
+                                                                                           const char *label,
+                                                                                           struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout,
+                                                                                           const struct CanvasProgrammableStage *compute);
+
+void canvas_native_webgpu_device_create_compute_pipeline_async(const struct CanvasGPUDevice *device,
+                                                               const char *label,
+                                                               struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout,
+                                                               const struct CanvasProgrammableStage *compute,
+                                                               void (*callback)(const struct CanvasGPUComputePipeline*,
+                                                                                enum CanvasGPUErrorType,
+                                                                                char*,
+                                                                                void*),
+                                                               void *callback_data);
+
+const struct CanvasGPUPipelineLayout *canvas_native_webgpu_device_create_pipeline_layout(const struct CanvasGPUDevice *device,
+                                                                                         const char *label,
+                                                                                         const struct CanvasGPUBindGroupLayout *const *group_layouts,
+                                                                                         uintptr_t size);
+
+const struct CanvasGPUQuerySet *canvas_native_webgpu_device_create_query_set(const struct CanvasGPUDevice *device,
+                                                                             const char *label,
+                                                                             enum CanvasQueryType type_,
+                                                                             uint32_t count);
+
+const struct CanvasGPURenderBundleEncoder *canvas_native_webgpu_device_create_render_bundle_encoder(const struct CanvasGPUDevice *device,
+                                                                                                    const struct CanvasCreateRenderBundleEncoderDescriptor *descriptor);
+
+const struct CanvasGPUShaderModule *canvas_native_webgpu_device_create_shader_module(const struct CanvasGPUDevice *device,
+                                                                                     const char *label,
+                                                                                     const char *source);
+
+const struct CanvasGPUBuffer *canvas_native_webgpu_device_create_buffer(const struct CanvasGPUDevice *device,
+                                                                        const char *label,
+                                                                        uint64_t size,
+                                                                        uint32_t usage,
+                                                                        bool mapped_at_creation);
+
+struct CanvasConstants *canvas_native_webgpu_constants_create(void);
+
+void canvas_native_webgpu_constants_insert(struct CanvasConstants *constants,
+                                           const char *key,
+                                           double value);
+
+void canvas_native_webgpu_constants_destroy(struct CanvasConstants *constants);
+
+const struct CanvasGPURenderPipeline *canvas_native_webgpu_device_create_render_pipeline(const struct CanvasGPUDevice *device,
+                                                                                         const struct CanvasCreateRenderPipelineDescriptor *descriptor);
+
+void canvas_native_webgpu_device_create_render_pipeline_async(const struct CanvasGPUDevice *device,
+                                                              const struct CanvasCreateRenderPipelineDescriptor *descriptor,
+                                                              void (*callback)(const struct CanvasGPURenderPipeline*,
+                                                                               enum CanvasGPUErrorType,
+                                                                               char*,
+                                                                               void*),
+                                                              void *callback_data);
+
+const struct CanvasGPUTexture *canvas_native_webgpu_device_create_texture(const struct CanvasGPUDevice *device,
+                                                                          const struct CanvasCreateTextureDescriptor *descriptor);
+
+const struct CanvasGPUSampler *canvas_native_webgpu_device_create_sampler(const struct CanvasGPUDevice *device,
+                                                                          const struct CanvasCreateSamplerDescriptor *descriptor);
+
+void canvas_native_webgpu_pipeline_layout_reference(const struct CanvasGPUPipelineLayout *pipeline_layout);
+
+void canvas_native_webgpu_pipeline_layout_release(const struct CanvasGPUPipelineLayout *pipeline_layout);
+
+char *canvas_native_webgpu_query_set_get_label(const struct CanvasGPUQuerySet *query_set);
+
+uint32_t canvas_native_webgpu_query_set_get_count(const struct CanvasGPUQuerySet *query_set);
+
+enum CanvasQueryType canvas_native_webgpu_query_set_get_type(const struct CanvasGPUQuerySet *query_set);
+
+void canvas_native_webgpu_query_set_destroy(const struct CanvasGPUQuerySet *query_set);
+
+void canvas_native_webgpu_query_set_reference(const struct CanvasGPUQuerySet *query_set);
+
+void canvas_native_webgpu_query_set_release(const struct CanvasGPUQuerySet *query_set);
+
+void canvas_native_webgpu_queue_reference(const struct CanvasGPUQueue *queue);
+
+void canvas_native_webgpu_queue_release(const struct CanvasGPUQueue *queue);
+
+void canvas_native_webgpu_queue_copy_external_image_to_texture(const struct CanvasGPUQueue *queue,
+                                                               const struct CanvasImageCopyExternalImage *source,
+                                                               const struct CanvasImageCopyTexture *destination,
+                                                               const struct CanvasExtent3d *size);
+
+void canvas_native_webgpu_queue_on_submitted_work_done(const struct CanvasGPUQueue *queue,
+                                                       void (*callback)(char*, void*),
+                                                       void *callback_data);
+
+void canvas_native_webgpu_queue_submit(const struct CanvasGPUQueue *queue,
+                                       const struct CanvasGPUCommandBuffer *const *command_buffers,
+                                       uintptr_t command_buffers_size);
+
+void canvas_native_webgpu_queue_write_buffer(const struct CanvasGPUQueue *queue,
+                                             const struct CanvasGPUBuffer *buffer,
+                                             uint64_t buffer_offset,
+                                             const uint8_t *data,
+                                             uintptr_t data_size,
+                                             uintptr_t data_offset,
+                                             intptr_t size);
+
+void canvas_native_webgpu_queue_write_texture(const struct CanvasGPUQueue *queue,
+                                              const struct CanvasImageCopyTexture *destination,
+                                              const struct CanvasImageDataLayout *data_layout,
+                                              const struct CanvasExtent3d *size,
+                                              const uint8_t *buf,
+                                              uintptr_t buf_size);
+
+void canvas_native_webgpu_render_bundle_reference(const struct CanvasGPURenderBundle *bundle);
+
+void canvas_native_webgpu_render_bundle_release(const struct CanvasGPURenderBundle *bundle);
+
+void canvas_native_webgpu_render_bundle_encoder_draw(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                     uint32_t vertex_count,
+                                                     uint32_t instance_count,
+                                                     uint32_t first_vertex,
+                                                     uint32_t first_instance);
+
+void canvas_native_webgpu_render_bundle_encoder_draw_indexed(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                             uint32_t index_count,
+                                                             uint32_t instance_count,
+                                                             uint32_t first_index,
+                                                             int32_t base_vertex,
+                                                             uint32_t first_instance);
+
+void canvas_native_webgpu_render_bundle_encoder_draw_indexed_indirect(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                      const struct CanvasGPUBuffer *indirect_buffer,
+                                                                      uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_bundle_encoder_draw_indirect(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                              const struct CanvasGPUBuffer *indirect_buffer,
+                                                              uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_bundle_encoder_insert_debug_marker(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                    const char *label);
+
+void canvas_native_webgpu_render_bundle_encoder_pop_debug_group(const struct CanvasGPURenderBundleEncoder *render_bundle);
+
+void canvas_native_webgpu_render_bundle_encoder_push_debug_group(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                 const char *label);
+
+void canvas_native_webgpu_render_bundle_encoder_set_bind_group(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                               uint32_t index,
+                                                               const struct CanvasGPUBindGroup *bind_group,
+                                                               const uint32_t *dynamic_offsets,
+                                                               uintptr_t dynamic_offsets_size,
+                                                               uintptr_t dynamic_offsets_start,
+                                                               uintptr_t dynamic_offsets_length);
+
+void canvas_native_webgpu_render_bundle_encoder_set_index_buffer(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                 const struct CanvasGPUBuffer *buffer,
+                                                                 enum CanvasIndexFormat index_format,
+                                                                 int64_t offset,
+                                                                 int64_t size);
+
+void canvas_native_webgpu_render_bundle_encoder_set_pipeline(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                             const struct CanvasGPURenderPipeline *pipeline);
+
+void canvas_native_webgpu_render_bundle_encoder_set_vertex_buffer(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                  uint32_t slot,
+                                                                  const struct CanvasGPUBuffer *buffer,
+                                                                  int64_t offset,
+                                                                  int64_t size);
+
+const struct CanvasGPURenderBundle *canvas_native_webgpu_render_bundle_encoder_finish(const struct CanvasGPURenderBundleEncoder *render_bundle,
+                                                                                      const char *label);
+
+void canvas_native_webgpu_render_bundle_encoder_reference(const struct CanvasGPURenderBundleEncoder *render_bundle);
+
+void canvas_native_webgpu_render_bundle_encoder_release(const struct CanvasGPURenderBundleEncoder *render_bundle);
+
+void canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                    uint32_t query_index);
+
+void canvas_native_webgpu_render_pass_encoder_draw(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                   uint32_t vertex_count,
+                                                   uint32_t instance_count,
+                                                   uint32_t first_vertex,
+                                                   uint32_t first_instance);
+
+void canvas_native_webgpu_render_pass_encoder_draw_indexed(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                           uint32_t index_count,
+                                                           uint32_t instance_count,
+                                                           uint32_t first_index,
+                                                           int32_t base_vertex,
+                                                           uint32_t first_instance);
+
+void canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                    const struct CanvasGPUBuffer *indirect_buffer,
+                                                                    uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_pass_encoder_draw_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                            const struct CanvasGPUBuffer *indirect_buffer,
+                                                            uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_pass_encoder_end(const struct CanvasGPURenderPassEncoder *render_pass);
+
+void canvas_native_webgpu_render_pass_encoder_end_occlusion_query(const struct CanvasGPURenderPassEncoder *render_pass);
+
+void canvas_native_webgpu_render_pass_encoder_execute_bundles(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                              const struct CanvasGPURenderBundle *const *bundles,
+                                                              uintptr_t bundles_size);
+
+void canvas_native_webgpu_render_pass_encoder_insert_debug_marker(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                  const char *marker_label);
+
+void canvas_native_webgpu_render_pass_encoder_pop_debug_group(const struct CanvasGPURenderPassEncoder *render_pass);
+
+void canvas_native_webgpu_render_pass_encoder_push_debug_group(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                               const char *group_label);
+
+void canvas_native_webgpu_render_pass_encoder_set_bind_group(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                             uint32_t index,
+                                                             const struct CanvasGPUBindGroup *bind_group,
+                                                             const uint32_t *dynamic_offsets,
+                                                             uintptr_t dynamic_offsets_size,
+                                                             uintptr_t dynamic_offsets_start,
+                                                             uintptr_t dynamic_offsets_length);
+
+void canvas_native_webgpu_render_pass_encoder_set_blend_constant(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                 const struct CanvasColor *color);
+
+void canvas_native_webgpu_render_pass_encoder_set_index_buffer(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                               const struct CanvasGPUBuffer *buffer,
+                                                               enum CanvasIndexFormat index_format,
+                                                               int64_t offset,
+                                                               int64_t size);
+
+void canvas_native_webgpu_render_pass_encoder_set_pipeline(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                           const struct CanvasGPURenderPipeline *pipeline);
+
+void canvas_native_webgpu_render_pass_encoder_set_scissor_rect(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                               uint32_t x,
+                                                               uint32_t y,
+                                                               uint32_t width,
+                                                               uint32_t height);
+
+void canvas_native_webgpu_render_pass_encoder_set_stencil_reference(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                    uint32_t reference);
+
+void canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                uint32_t slot,
+                                                                const struct CanvasGPUBuffer *buffer,
+                                                                int64_t offset,
+                                                                int64_t size);
+
+void canvas_native_webgpu_render_pass_encoder_set_viewport(const struct CanvasGPURenderPassEncoder *pass,
+                                                           float x,
+                                                           float y,
+                                                           float width,
+                                                           float height,
+                                                           float depth_min,
+                                                           float depth_max);
+
+void canvas_native_webgpu_render_pass_encoder_reference(const struct CanvasGPURenderPassEncoder *render_pass);
+
+void canvas_native_webgpu_render_pass_encoder_release(const struct CanvasGPURenderPassEncoder *render_pass);
+
+void canvas_native_webgpu_render_pipeline_reference(const struct CanvasGPURenderPipeline *pipeline);
+
+void canvas_native_webgpu_render_pipeline_release(const struct CanvasGPURenderPipeline *pipeline);
+
+const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_render_pipeline_get_bind_group_layout(const struct CanvasGPURenderPipeline *pipeline,
+                                                                                                  uint32_t index);
+
+void canvas_native_webgpu_sampler_reference(const struct CanvasGPUSampler *sampler);
+
+void canvas_native_webgpu_sampler_release(const struct CanvasGPUSampler *sampler);
+
+void canvas_native_webgpu_shader_module_reference(const struct CanvasGPUShaderModule *shader_module);
+
+void canvas_native_webgpu_shader_module_release(const struct CanvasGPUShaderModule *shader_module);
+
+struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
+
+void canvas_native_webgpu_limits_release(struct CanvasGPUSupportedLimits *limits);
+
+void canvas_native_webgpu_texture_reference(const struct CanvasGPUTexture *texture);
+
+void canvas_native_webgpu_texture_release(const struct CanvasGPUTexture *texture);
+
+const struct CanvasGPUTextureView *canvas_native_webgpu_texture_create_texture_view(const struct CanvasGPUTexture *texture,
+                                                                                    const struct CanvasCreateTextureViewDescriptor *descriptor);
+
+uint32_t canvas_native_webgpu_texture_get_depth_or_array_layers(const struct CanvasGPUTexture *texture);
+
+uint32_t canvas_native_webgpu_texture_get_width(const struct CanvasGPUTexture *texture);
+
+uint32_t canvas_native_webgpu_texture_get_height(const struct CanvasGPUTexture *texture);
+
+enum CanvasTextureDimension canvas_native_webgpu_texture_get_dimension(const struct CanvasGPUTexture *texture);
+
+struct CanvasGPUTextureFormat canvas_native_webgpu_texture_get_format(const struct CanvasGPUTexture *texture);
+
+uint32_t canvas_native_webgpu_texture_get_usage(const struct CanvasGPUTexture *texture);
+
+char *canvas_native_webgpu_texture_get_label(const struct CanvasGPUTexture *_texture);
+
+uint32_t canvas_native_webgpu_texture_get_mip_level_count(const struct CanvasGPUTexture *texture);
+
+uint32_t canvas_native_webgpu_texture_get_sample_count(const struct CanvasGPUTexture *texture);
+
+void canvas_native_webgpu_texture_destroy(const struct CanvasGPUTexture *texture);
+
+void canvas_native_webgpu_texture_view_reference(const struct CanvasGPUTextureView *texture_view);
+
+void canvas_native_webgpu_texture_view_release(const struct CanvasGPUTextureView *texture_view);
+
+void canvas_native_webgpu_struct_surface_capabilities_release(struct CanvasSurfaceCapabilities *cap);
+
+const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
+
+uint8_t *canvas_native_u8_buffer_get_bytes_mut(struct U8Buffer *buffer);
+
+void canvas_native_u8_buffer_release(struct U8Buffer *buffer);
+
+uintptr_t canvas_native_u8_buffer_get_length(const struct U8Buffer *buffer);
+
+const uint16_t *canvas_native_u16_buffer_get_bytes(const struct U16Buffer *buffer);
+
+uint16_t *canvas_native_u16_buffer_get_bytes_mut(struct U16Buffer *buffer);
+
+void canvas_native_u16_buffer_release(struct U16Buffer *buffer);
+
+uintptr_t canvas_native_u16_buffer_get_length(const struct U16Buffer *buffer);
+
+const uint32_t *canvas_native_u32_buffer_get_bytes(const struct U32Buffer *buffer);
+
+uint32_t *canvas_native_u32_buffer_get_bytes_mut(struct U32Buffer *buffer);
+
+void canvas_native_u32_buffer_release(struct U32Buffer *buffer);
+
+uintptr_t canvas_native_u32_buffer_get_length(const struct U32Buffer *buffer);
+
+const int32_t *canvas_native_i32_buffer_get_bytes(const struct I32Buffer *buffer);
+
+int32_t *canvas_native_i32_buffer_get_bytes_mut(struct I32Buffer *buffer);
+
+void canvas_native_i32_buffer_release(struct I32Buffer *buffer);
+
+uintptr_t canvas_native_i32_buffer_get_length(const struct I32Buffer *buffer);
+
+const float *canvas_native_f32_buffer_get_bytes(const struct F32Buffer *buffer);
+
+float *canvas_native_f32_buffer_get_bytes_mut(struct F32Buffer *buffer);
+
+void canvas_native_f32_buffer_release(struct F32Buffer *buffer);
+
+uintptr_t canvas_native_f32_buffer_get_length(const struct F32Buffer *buffer);
+
+uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buffer);
+
+char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
+
+void canvas_native_string_buffer_release(struct StringBuffer *buffer);
+
+void canvas_native_helper_release(struct FileHelper *value);
+
+struct FileHelper *canvas_native_helper_read_file(const char *path);
+
+bool canvas_native_helper_read_file_has_error(const struct FileHelper *file);
+
+struct U8Buffer *canvas_native_helper_read_file_get_data(struct FileHelper *file);
+
+const char *canvas_native_helper_read_file_get_error(const struct FileHelper *file);
+
+int64_t canvas_native_image_asset_get_addr(struct ImageAsset *asset);
+
+struct ImageAsset *canvas_native_image_asset_create(void);
+
+struct ImageAsset *canvas_native_image_asset_reference(struct ImageAsset *asset);
+
+void canvas_native_image_asset_release(struct ImageAsset *asset);
+
+bool canvas_native_image_asset_load_from_fd(const struct ImageAsset *asset, int fd);
+
+bool canvas_native_image_asset_load_from_path(const struct ImageAsset *asset, const char *path);
+
+bool canvas_native_image_asset_load_from_raw(const struct ImageAsset *asset,
+                                             const uint8_t *array,
+                                             uintptr_t size);
+
+bool canvas_native_image_asset_load_from_url(const struct ImageAsset *asset, const char *url);
+
+int64_t canvas_native_image_asset_addr(const struct ImageAsset *asset);
+
+uint32_t canvas_native_image_asset_width(const struct ImageAsset *asset);
+
+uint32_t canvas_native_image_asset_height(const struct ImageAsset *asset);
+
+const char *canvas_native_image_asset_get_error(const struct ImageAsset *asset);
+
+bool canvas_native_image_asset_has_error(const struct ImageAsset *asset);
+
+struct U8Buffer *canvas_native_image_asset_get_data(const struct ImageAsset *asset);
+
+void canvas_native_text_decoder_release(struct TextDecoder *value);
 
 struct TextDecoder *canvas_native_text_decoder_create(const char *decoding);
 
 const char *canvas_native_text_decoder_decode(const struct TextDecoder *decoder,
                                               const uint8_t *data,
                                               uintptr_t size);
-
-void canvas_native_ccow_destroy(struct CCow *cow);
-
-const uint8_t *canvas_native_ccow_get_bytes(const struct CCow *cow);
-
-uintptr_t canvas_native_ccow_get_length(const struct CCow *cow);
 
 struct CCow *canvas_native_text_decoder_decode_as_cow(const struct TextDecoder *decoder,
                                                       const uint8_t *data,
@@ -2880,6 +3534,8 @@ const char *canvas_native_text_decoder_decode_c_string(const struct TextDecoder 
 
 const char *canvas_native_text_decoder_get_encoding(const struct TextDecoder *decoder);
 
+void canvas_native_text_encoder_release(struct TextEncoder *value);
+
 struct TextEncoder *canvas_native_text_encoder_create(const char *encoding);
 
 struct U8Buffer *canvas_native_text_encoder_encode(const struct TextEncoder *encoder,
@@ -2893,7 +3549,7 @@ bool canvas_native_context_gl_swap_buffers(const struct CanvasRenderingContext2D
 
 struct PaintStyle *canvas_native_context_create_pattern_webgl(struct WebGLState *source,
                                                               struct CanvasRenderingContext2D *context,
-                                                              const char *repetition);
+                                                              enum CanvasRepetition repetition);
 
 bool canvas_native_webgl_make_current(struct WebGLState *state);
 
@@ -4429,673 +5085,5 @@ void canvas_native_webgl2_vertex_attrib_i4uiv(uint32_t index,
                                               const uint32_t *value,
                                               uintptr_t size,
                                               struct WebGLState *state);
-
-void canvas_native_image_asset_destroy(struct ImageAsset *asset);
-
-void canvas_native_string_destroy(char *value);
-
-void canvas_native_image_data_destroy(struct ImageData *value);
-
-void canvas_native_matrix_destroy(struct Matrix *value);
-
-void canvas_native_path_destroy(struct Path *value);
-
-const struct CanvasWebGPUInstance *canvas_native_webgpu_instance_create(void);
-
-void canvas_native_webgpu_instance_release(const struct CanvasWebGPUInstance *instance);
-
-void canvas_native_webgpu_request_adapter(const struct CanvasWebGPUInstance *instance,
-                                          const struct CanvasGPURequestAdapterOptions *options,
-                                          void (*callback)(const struct CanvasGPUAdapter*, void*),
-                                          void *callback_data);
-
-char *canvas_native_webgpu_adapter_info_vendor(const struct CanvasGPUAdapterInfo *info);
-
-char *canvas_native_webgpu_adapter_info_architecture(const struct CanvasGPUAdapterInfo *_info);
-
-char *canvas_native_webgpu_adapter_info_device(const struct CanvasGPUAdapterInfo *info);
-
-char *canvas_native_webgpu_adapter_info_description(const struct CanvasGPUAdapterInfo *info);
-
-void canvas_native_webgpu_adapter_info_reference(const struct CanvasGPUAdapterInfo *info);
-
-void canvas_native_webgpu_adapter_info_release(const struct CanvasGPUAdapterInfo *info);
-
-void canvas_native_webgpu_adapter_reference(const struct CanvasGPUAdapter *adapter);
-
-void canvas_native_webgpu_adapter_release(const struct CanvasGPUAdapter *adapter);
-
-struct StringBuffer *canvas_native_webgpu_adapter_get_features(const struct CanvasGPUAdapter *adapter);
-
-bool canvas_native_webgpu_adapter_is_fallback_adapter(const struct CanvasGPUAdapter *adapter);
-
-struct CanvasGPUSupportedLimits *canvas_native_webgpu_adapter_get_limits(const struct CanvasGPUAdapter *adapter);
-
-const struct CanvasGPUAdapterInfo *canvas_native_webgpu_adapter_request_adapter_info(const struct CanvasGPUAdapter *adapter);
-
-void canvas_native_webgpu_adapter_request_device(const struct CanvasGPUAdapter *adapter,
-                                                 const char *label,
-                                                 const char *const *required_features,
-                                                 uintptr_t required_features_length,
-                                                 const struct CanvasGPUSupportedLimits *required_limits,
-                                                 void (*callback)(char*,
-                                                                  const struct CanvasGPUDevice*,
-                                                                  void*),
-                                                 void *callback_data);
-
-void canvas_native_webgpu_buffer_reference(const struct CanvasGPUBuffer *buffer);
-
-void canvas_native_webgpu_buffer_release(const struct CanvasGPUBuffer *buffer);
-
-uint32_t canvas_native_webgpu_buffer_usage(const struct CanvasGPUBuffer *buffer);
-
-uint64_t canvas_native_webgpu_buffer_size(const struct CanvasGPUBuffer *buffer);
-
-void *canvas_native_webgpu_buffer_get_mapped_range(const struct CanvasGPUBuffer *buffer,
-                                                   int64_t offset,
-                                                   int64_t size);
-
-void canvas_native_webgpu_buffer_destroy(const struct CanvasGPUBuffer *buffer);
-
-void canvas_native_webgpu_buffer_unmap(const struct CanvasGPUBuffer *buffer);
-
-void canvas_native_webgpu_buffer_map_async(const struct CanvasGPUBuffer *buffer,
-                                           enum GPUMapMode mode,
-                                           int64_t offset,
-                                           int64_t size,
-                                           void (*callback)(char*, void*),
-                                           void *callback_data);
-
-void canvas_native_webgpu_command_encoder_reference(const struct CanvasGPUCommandEncoder *command_encoder);
-
-void canvas_native_webgpu_command_encoder_release(const struct CanvasGPUCommandEncoder *command_encoder);
-
-const struct CanvasGPUComputePassEncoder *canvas_native_webgpu_command_encoder_begin_compute_pass(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                                                  const struct CanvasGPUQuerySet *query_set,
-                                                                                                  const char *label,
-                                                                                                  int32_t beginning_of_pass_write_index,
-                                                                                                  int32_t end_of_pass_write_index);
-
-const struct CanvasGPURenderPassEncoder *canvas_native_webgpu_command_encoder_begin_render_pass(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                                                const char *label,
-                                                                                                const struct CanvasRenderPassColorAttachment *color_attachments,
-                                                                                                uintptr_t color_attachments_size,
-                                                                                                const struct CanvasRenderPassDepthStencilAttachment *depth_stencil_attachment,
-                                                                                                const struct CanvasGPUQuerySet *occlusion_query_set,
-                                                                                                const struct CanvasGPUQuerySet *query_set,
-                                                                                                int32_t beginning_of_pass_write_index,
-                                                                                                int32_t end_of_pass_write_index);
-
-void canvas_native_webgpu_command_encoder_clear_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                       const struct CanvasGPUBuffer *buffer,
-                                                       int64_t offset,
-                                                       int64_t size);
-
-void canvas_native_webgpu_command_encoder_copy_buffer_to_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                const struct CanvasGPUBuffer *src,
-                                                                int64_t src_offset,
-                                                                const struct CanvasGPUBuffer *dst,
-                                                                int64_t dst_offset,
-                                                                uint64_t size);
-
-void canvas_native_webgpu_command_encoder_copy_buffer_to_texture(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                 const struct CanvasImageCopyBuffer *src,
-                                                                 const struct CanvasImageCopyTexture *dst,
-                                                                 const struct CanvasExtent3d *copy_size);
-
-void canvas_native_webgpu_command_encoder_copy_texture_to_buffer(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                 const struct CanvasImageCopyTexture *src,
-                                                                 const struct CanvasImageCopyBuffer *dst,
-                                                                 const struct CanvasExtent3d *copy_size);
-
-void canvas_native_webgpu_command_encoder_copy_texture_to_texture(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                  const struct CanvasImageCopyTexture *src,
-                                                                  const struct CanvasImageCopyTexture *dst,
-                                                                  const struct CanvasExtent3d *copy_size);
-
-const struct CanvasGPUCommandBuffer *canvas_native_webgpu_command_encoder_finish(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                                                 const char *label);
-
-void canvas_native_webgpu_command_encoder_insert_debug_marker(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                              const char *label);
-
-void canvas_native_webgpu_command_encoder_pop_debug_group(const struct CanvasGPUCommandEncoder *command_encoder);
-
-void canvas_native_webgpu_command_encoder_push_debug_group(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                           const char *label);
-
-void canvas_native_webgpu_command_encoder_resolve_query_set(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                            const struct CanvasGPUQuerySet *query_set,
-                                                            uint32_t first_query,
-                                                            uint32_t query_count,
-                                                            const struct CanvasGPUBuffer *dst,
-                                                            uint64_t dst_offset);
-
-void canvas_native_webgpu_command_encoder_write_timestamp(const struct CanvasGPUCommandEncoder *command_encoder,
-                                                          const struct CanvasGPUQuerySet *query_set,
-                                                          uint32_t query_index);
-
-void canvas_native_webgpu_compute_pass_encoder_reference(const struct CanvasGPUComputePassEncoder *compute_pass);
-
-void canvas_native_webgpu_compute_pass_encoder_release(const struct CanvasGPUComputePassEncoder *compute_pass);
-
-void canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                                   uint32_t workgroup_count_x,
-                                                                   uint32_t workgroup_count_y,
-                                                                   uint32_t workgroup_count_z);
-
-void canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_indirect(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                                            const struct CanvasGPUBuffer *indirect_buffer,
-                                                                            uintptr_t indirect_offset);
-
-void canvas_native_webgpu_compute_pass_encoder_end(const struct CanvasGPUComputePassEncoder *compute_pass);
-
-void canvas_native_webgpu_compute_pass_encoder_insert_debug_marker(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                                   const char *label);
-
-void canvas_native_webgpu_compute_pass_encoder_pop_debug_group(const struct CanvasGPUComputePassEncoder *compute_pass);
-
-void canvas_native_webgpu_compute_pass_encoder_push_debug_group(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                                const char *label);
-
-void canvas_native_webgpu_compute_pass_encoder_set_bind_group(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                              uint32_t index,
-                                                              const struct CanvasGPUBindGroup *bind_group,
-                                                              const uint32_t *dynamic_offsets,
-                                                              uintptr_t dynamic_offsets_size,
-                                                              uintptr_t dynamic_offsets_start,
-                                                              uintptr_t dynamic_offsets_length);
-
-void canvas_native_webgpu_compute_pass_encoder_set_pipeline(const struct CanvasGPUComputePassEncoder *compute_pass,
-                                                            const struct CanvasGPUComputePipeline *pipeline);
-
-struct StringBuffer *canvas_native_webgpu_device_get_features(const struct CanvasGPUDevice *device);
-
-struct CanvasGPUSupportedLimits *canvas_native_webgpu_device_get_limits(const struct CanvasGPUDevice *device);
-
-const struct CanvasGPUQueue *canvas_native_webgpu_device_get_queue(const struct CanvasGPUDevice *device);
-
-void canvas_native_webgpu_device_set_lost_callback(const struct CanvasGPUDevice *device,
-                                                   void (*callback)(int32_t, char*, void*),
-                                                   void *userdata);
-
-void canvas_native_webgpu_device_pop_error_scope(const struct CanvasGPUDevice *device,
-                                                 void (*callback)(enum CanvasGPUErrorType,
-                                                                  char*,
-                                                                  void*),
-                                                 void *userdata);
-
-void canvas_native_webgpu_device_push_error_scope(const struct CanvasGPUDevice *device,
-                                                  enum CanvasGPUErrorFilter filter);
-
-void canvas_native_webgpu_device_set_uncaptured_error_callback(const struct CanvasGPUDevice *device,
-                                                               void (*callback)(enum CanvasGPUErrorType,
-                                                                                char*,
-                                                                                void*),
-                                                               void *userdata);
-
-void canvas_native_webgpu_device_destroy(const struct CanvasGPUDevice *device);
-
-void canvas_native_webgpu_device_reference(const struct CanvasGPUDevice *device);
-
-void canvas_native_webgpu_device_release(const struct CanvasGPUDevice *device);
-
-const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_device_create_bind_group_layout(const struct CanvasGPUDevice *device,
-                                                                                            const char *label,
-                                                                                            const struct CanvasBindGroupLayoutEntry *entries,
-                                                                                            uintptr_t size);
-
-const struct CanvasGPUBindGroup *canvas_native_webgpu_device_create_bind_group(const struct CanvasGPUDevice *device,
-                                                                               const char *label,
-                                                                               const struct CanvasGPUBindGroupLayout *layout,
-                                                                               const struct CanvasBindGroupEntry *entries,
-                                                                               uintptr_t size);
-
-const struct CanvasGPUCommandEncoder *canvas_native_webgpu_device_create_command_encoder(const struct CanvasGPUDevice *device,
-                                                                                         const char *label);
-
-const struct CanvasGPUComputePipeline *canvas_native_webgpu_device_create_compute_pipeline(const struct CanvasGPUDevice *device,
-                                                                                           const char *label,
-                                                                                           struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout,
-                                                                                           const struct CanvasProgrammableStage *compute);
-
-void canvas_native_webgpu_device_create_compute_pipeline_async(const struct CanvasGPUDevice *device,
-                                                               const char *label,
-                                                               struct CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout,
-                                                               const struct CanvasProgrammableStage *compute,
-                                                               void (*callback)(const struct CanvasGPUComputePipeline*,
-                                                                                enum CanvasGPUErrorType,
-                                                                                char*,
-                                                                                void*),
-                                                               void *callback_data);
-
-const struct CanvasGPUPipelineLayout *canvas_native_webgpu_device_create_pipeline_layout(const struct CanvasGPUDevice *device,
-                                                                                         const char *label,
-                                                                                         const struct CanvasGPUBindGroupLayout *const *group_layouts,
-                                                                                         uintptr_t size);
-
-const struct CanvasGPUQuerySet *canvas_native_webgpu_device_create_query_set(const struct CanvasGPUDevice *device,
-                                                                             const char *label,
-                                                                             enum CanvasQueryType type_,
-                                                                             uint32_t count);
-
-const struct CanvasGPURenderBundleEncoder *canvas_native_webgpu_device_create_render_bundle_encoder(const struct CanvasGPUDevice *device,
-                                                                                                    const struct CanvasCreateRenderBundleEncoderDescriptor *descriptor);
-
-const struct CanvasGPUShaderModule *canvas_native_webgpu_device_create_shader_module(const struct CanvasGPUDevice *device,
-                                                                                     const char *label,
-                                                                                     const char *source);
-
-const struct CanvasGPUBuffer *canvas_native_webgpu_device_create_buffer(const struct CanvasGPUDevice *device,
-                                                                        const char *label,
-                                                                        uint64_t size,
-                                                                        uint32_t usage,
-                                                                        bool mapped_at_creation);
-
-struct CanvasConstants *canvas_native_webgpu_constants_create(void);
-
-void canvas_native_webgpu_constants_insert(struct CanvasConstants *constants,
-                                           const char *key,
-                                           double value);
-
-void canvas_native_webgpu_constants_destroy(struct CanvasConstants *constants);
-
-const struct CanvasGPURenderPipeline *canvas_native_webgpu_device_create_render_pipeline(const struct CanvasGPUDevice *device,
-                                                                                         const struct CanvasCreateRenderPipelineDescriptor *descriptor);
-
-void canvas_native_webgpu_device_create_render_pipeline_async(const struct CanvasGPUDevice *device,
-                                                              const struct CanvasCreateRenderPipelineDescriptor *descriptor,
-                                                              void (*callback)(const struct CanvasGPURenderPipeline*,
-                                                                               enum CanvasGPUErrorType,
-                                                                               char*,
-                                                                               void*),
-                                                              void *callback_data);
-
-const struct CanvasGPUTexture *canvas_native_webgpu_device_create_texture(const struct CanvasGPUDevice *device,
-                                                                          const struct CanvasCreateTextureDescriptor *descriptor);
-
-const struct CanvasGPUSampler *canvas_native_webgpu_device_create_sampler(const struct CanvasGPUDevice *device,
-                                                                          const struct CanvasCreateSamplerDescriptor *descriptor);
-
-char *canvas_native_webgpu_query_set_get_label(const struct CanvasGPUQuerySet *query_set);
-
-uint32_t canvas_native_webgpu_query_set_get_count(const struct CanvasGPUQuerySet *query_set);
-
-enum CanvasQueryType canvas_native_webgpu_query_set_get_type(const struct CanvasGPUQuerySet *query_set);
-
-void canvas_native_webgpu_query_set_destroy(const struct CanvasGPUQuerySet *query_set);
-
-void canvas_native_webgpu_query_set_reference(const struct CanvasGPUQuerySet *query_set);
-
-void canvas_native_webgpu_query_set_release(const struct CanvasGPUQuerySet *query_set);
-
-void canvas_native_webgpu_queue_reference(const struct CanvasGPUQueue *queue);
-
-void canvas_native_webgpu_queue_release(const struct CanvasGPUQueue *queue);
-
-void canvas_native_webgpu_queue_copy_external_image_to_texture(const struct CanvasGPUQueue *queue,
-                                                               const struct CanvasImageCopyExternalImage *source,
-                                                               const struct CanvasImageCopyTexture *destination,
-                                                               const struct CanvasExtent3d *size);
-
-void canvas_native_webgpu_queue_on_submitted_work_done(const struct CanvasGPUQueue *queue,
-                                                       void (*callback)(char*, void*),
-                                                       void *callback_data);
-
-void canvas_native_webgpu_queue_submit(const struct CanvasGPUQueue *queue,
-                                       const struct CanvasGPUCommandBuffer *const *command_buffers,
-                                       uintptr_t command_buffers_size);
-
-void canvas_native_webgpu_queue_write_buffer(const struct CanvasGPUQueue *queue,
-                                             const struct CanvasGPUBuffer *buffer,
-                                             uint64_t buffer_offset,
-                                             const uint8_t *data,
-                                             uintptr_t data_size,
-                                             uintptr_t data_offset,
-                                             intptr_t size);
-
-void canvas_native_webgpu_queue_write_texture(const struct CanvasGPUQueue *queue,
-                                              const struct CanvasImageCopyTexture *destination,
-                                              const struct CanvasImageDataLayout *data_layout,
-                                              const struct CanvasExtent3d *size,
-                                              const uint8_t *buf,
-                                              uintptr_t buf_size);
-
-struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
-
-void canvas_native_webgpu_limits_release(struct CanvasGPUSupportedLimits *limits);
-
-void canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                    uint32_t query_index);
-
-void canvas_native_webgpu_render_pass_encoder_draw(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                   uint32_t vertex_count,
-                                                   uint32_t instance_count,
-                                                   uint32_t first_vertex,
-                                                   uint32_t first_instance);
-
-void canvas_native_webgpu_render_pass_encoder_draw_indexed(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                           uint32_t index_count,
-                                                           uint32_t instance_count,
-                                                           uint32_t first_index,
-                                                           int32_t base_vertex,
-                                                           uint32_t first_instance);
-
-void canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                    const struct CanvasGPUBuffer *indirect_buffer,
-                                                                    uint64_t indirect_offset);
-
-void canvas_native_webgpu_render_pass_encoder_draw_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                            const struct CanvasGPUBuffer *indirect_buffer,
-                                                            uint64_t indirect_offset);
-
-void canvas_native_webgpu_render_pass_encoder_end(const struct CanvasGPURenderPassEncoder *render_pass);
-
-void canvas_native_webgpu_render_pass_encoder_end_occlusion_query(const struct CanvasGPURenderPassEncoder *render_pass);
-
-void canvas_native_webgpu_render_pass_encoder_execute_bundles(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                              const struct CanvasGPURenderBundle *const *bundles,
-                                                              uintptr_t bundles_size);
-
-void canvas_native_webgpu_render_pass_encoder_insert_debug_marker(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                  const char *marker_label);
-
-void canvas_native_webgpu_render_pass_encoder_pop_debug_group(const struct CanvasGPURenderPassEncoder *render_pass);
-
-void canvas_native_webgpu_render_pass_encoder_push_debug_group(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                               const char *group_label);
-
-void canvas_native_webgpu_render_pass_encoder_set_bind_group(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                             uint32_t index,
-                                                             const struct CanvasGPUBindGroup *bind_group,
-                                                             const uint32_t *dynamic_offsets,
-                                                             uintptr_t dynamic_offsets_size,
-                                                             uintptr_t dynamic_offsets_start,
-                                                             uintptr_t dynamic_offsets_length);
-
-void canvas_native_webgpu_render_pass_encoder_set_blend_constant(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                 const struct CanvasColor *color);
-
-void canvas_native_webgpu_render_pass_encoder_set_index_buffer(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                               const struct CanvasGPUBuffer *buffer,
-                                                               enum CanvasIndexFormat index_format,
-                                                               int64_t offset,
-                                                               int64_t size);
-
-void canvas_native_webgpu_render_pass_encoder_set_pipeline(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                           const struct CanvasGPURenderPipeline *pipeline);
-
-void canvas_native_webgpu_render_pass_encoder_set_scissor_rect(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                               uint32_t x,
-                                                               uint32_t y,
-                                                               uint32_t width,
-                                                               uint32_t height);
-
-void canvas_native_webgpu_render_pass_encoder_set_stencil_reference(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                    uint32_t reference);
-
-void canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(const struct CanvasGPURenderPassEncoder *render_pass,
-                                                                uint32_t slot,
-                                                                const struct CanvasGPUBuffer *buffer,
-                                                                int64_t offset,
-                                                                int64_t size);
-
-void canvas_native_webgpu_render_pass_encoder_set_viewport(const struct CanvasGPURenderPassEncoder *pass,
-                                                           float x,
-                                                           float y,
-                                                           float width,
-                                                           float height,
-                                                           float depth_min,
-                                                           float depth_max);
-
-void canvas_native_webgpu_render_pass_encoder_reference(const struct CanvasGPURenderPassEncoder *render_pass);
-
-void canvas_native_webgpu_render_pass_encoder_release(const struct CanvasGPURenderPassEncoder *render_pass);
-
-void canvas_native_webgpu_shader_module_reference(const struct CanvasGPUShaderModule *shader_module);
-
-void canvas_native_webgpu_shader_module_release(const struct CanvasGPUShaderModule *shader_module);
-
-#if defined(TARGET_OS_ANDROID)
-const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct CanvasWebGPUInstance *instance,
-                                                                         void *window,
-                                                                         uint32_t width,
-                                                                         uint32_t height);
-#endif
-
-#if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
-const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
-                                                                         void *view,
-                                                                         uint32_t width,
-                                                                         uint32_t height);
-#endif
-
-#if defined(TARGET_OS_IOS)
-const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(const struct CanvasWebGPUInstance *instance,
-                                                                                void *view,
-                                                                                uint32_t width,
-                                                                                uint32_t height);
-#endif
-
-#if defined(TARGET_OS_MACOS)
-const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_nsview(const struct CanvasWebGPUInstance *instance,
-                                                                                void *view,
-                                                                                uint32_t width,
-                                                                                uint32_t height);
-#endif
-
-void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext *context,
-                                            const struct CanvasGPUDevice *device,
-                                            const struct CanvasGPUSurfaceConfiguration *config);
-
-void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context,
-                                              struct CanvasGPUDevice *device,
-                                              const struct CanvasGPUSurfaceConfiguration *config);
-
-const struct CanvasGPUTexture *canvas_native_webgpu_context_get_current_texture(const struct CanvasGPUCanvasContext *context);
-
-void canvas_native_webgpu_context_present_surface(const struct CanvasGPUCanvasContext *context,
-                                                  const struct CanvasGPUTexture *texture);
-
-struct CanvasSurfaceCapabilities *canvas_native_webgpu_context_get_capabilities(const struct CanvasGPUCanvasContext *context,
-                                                                                const struct CanvasGPUAdapter *adapter);
-
-void canvas_native_webgpu_context_reference(const struct CanvasGPUCanvasContext *context);
-
-void canvas_native_webgpu_context_release(const struct CanvasGPUCanvasContext *context);
-
-char *canvas_native_webgpu_enum_gpu_texture_to_string(struct CanvasGPUTextureFormat value);
-
-struct CanvasOptionalGPUTextureFormat canvas_native_webgpu_enum_string_to_gpu_texture(const char *format);
-
-void canvas_native_webgpu_texture_reference(const struct CanvasGPUTexture *texture);
-
-void canvas_native_webgpu_texture_release(const struct CanvasGPUTexture *texture);
-
-const struct CanvasGPUTextureView *canvas_native_webgpu_texture_create_texture_view(const struct CanvasGPUTexture *texture,
-                                                                                    const struct CanvasCreateTextureViewDescriptor *descriptor);
-
-uint32_t canvas_native_webgpu_texture_get_depth_or_array_layers(const struct CanvasGPUTexture *texture);
-
-uint32_t canvas_native_webgpu_texture_get_width(const struct CanvasGPUTexture *texture);
-
-uint32_t canvas_native_webgpu_texture_get_height(const struct CanvasGPUTexture *texture);
-
-enum CanvasTextureDimension canvas_native_webgpu_texture_get_dimension(const struct CanvasGPUTexture *texture);
-
-struct CanvasGPUTextureFormat canvas_native_webgpu_texture_get_format(const struct CanvasGPUTexture *texture);
-
-uint32_t canvas_native_webgpu_texture_get_usage(const struct CanvasGPUTexture *texture);
-
-char *canvas_native_webgpu_texture_get_label(const struct CanvasGPUTexture *_texture);
-
-uint32_t canvas_native_webgpu_texture_get_mip_level_count(const struct CanvasGPUTexture *texture);
-
-uint32_t canvas_native_webgpu_texture_get_sample_count(const struct CanvasGPUTexture *texture);
-
-void canvas_native_webgpu_texture_destroy(const struct CanvasGPUTexture *texture);
-
-void canvas_native_webgpu_texture_view_reference(const struct CanvasGPUTextureView *texture_view);
-
-void canvas_native_webgpu_texture_view_release(const struct CanvasGPUTextureView *texture_view);
-
-void canvas_native_webgpu_bind_group_reference(const struct CanvasGPUBindGroup *bind_group);
-
-void canvas_native_webgpu_bind_group_release(const struct CanvasGPUBindGroup *bind_group);
-
-void canvas_native_webgpu_bind_group_layout_reference(const struct CanvasGPUBindGroupLayout *bind_group_layout);
-
-void canvas_native_webgpu_bind_group_layout_release(const struct CanvasGPUBindGroupLayout *bind_group_layout);
-
-void canvas_native_webgpu_command_buffer_reference(const struct CanvasGPUCommandBuffer *command_buffer);
-
-void canvas_native_webgpu_command_buffer_release(const struct CanvasGPUCommandBuffer *command_buffer);
-
-void canvas_native_webgpu_struct_surface_capabilities_release(struct CanvasSurfaceCapabilities *cap);
-
-void canvas_native_webgpu_render_bundle_reference(const struct CanvasGPURenderBundle *bundle);
-
-void canvas_native_webgpu_render_bundle_release(const struct CanvasGPURenderBundle *bundle);
-
-void canvas_native_webgpu_render_pipeline_reference(const struct CanvasGPURenderPipeline *pipeline);
-
-void canvas_native_webgpu_render_pipeline_release(const struct CanvasGPURenderPipeline *pipeline);
-
-const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_render_pipeline_get_bind_group_layout(const struct CanvasGPURenderPipeline *pipeline,
-                                                                                                  uint32_t index);
-
-void canvas_native_webgpu_pipeline_layout_reference(const struct CanvasGPUPipelineLayout *pipeline_layout);
-
-void canvas_native_webgpu_pipeline_layout_release(const struct CanvasGPUPipelineLayout *pipeline_layout);
-
-enum CanvasGPUErrorType canvas_native_webgpu_error_get_type(const struct CanvasGPUError *error);
-
-char *canvas_native_webgpu_error_get_message(const struct CanvasGPUError *error);
-
-void canvas_native_webgpu_compute_pipeline_reference(const struct CanvasGPUComputePipeline *pipeline);
-
-void canvas_native_webgpu_compute_pipeline_release(const struct CanvasGPUComputePipeline *pipeline);
-
-const struct CanvasGPUBindGroupLayout *canvas_native_webgpu_compute_pipeline_get_bind_group_layout(const struct CanvasGPUComputePipeline *pipeline,
-                                                                                                   uint32_t index);
-
-void canvas_native_webgpu_sampler_reference(const struct CanvasGPUSampler *sampler);
-
-void canvas_native_webgpu_sampler_release(const struct CanvasGPUSampler *sampler);
-
-void canvas_native_webgpu_render_bundle_encoder_draw(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                     uint32_t vertex_count,
-                                                     uint32_t instance_count,
-                                                     uint32_t first_vertex,
-                                                     uint32_t first_instance);
-
-void canvas_native_webgpu_render_bundle_encoder_draw_indexed(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                             uint32_t index_count,
-                                                             uint32_t instance_count,
-                                                             uint32_t first_index,
-                                                             int32_t base_vertex,
-                                                             uint32_t first_instance);
-
-void canvas_native_webgpu_render_bundle_encoder_draw_indexed_indirect(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                      const struct CanvasGPUBuffer *indirect_buffer,
-                                                                      uint64_t indirect_offset);
-
-void canvas_native_webgpu_render_bundle_encoder_draw_indirect(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                              const struct CanvasGPUBuffer *indirect_buffer,
-                                                              uint64_t indirect_offset);
-
-void canvas_native_webgpu_render_bundle_encoder_insert_debug_marker(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                    const char *label);
-
-void canvas_native_webgpu_render_bundle_encoder_pop_debug_group(const struct CanvasGPURenderBundleEncoder *render_bundle);
-
-void canvas_native_webgpu_render_bundle_encoder_push_debug_group(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                 const char *label);
-
-void canvas_native_webgpu_render_bundle_encoder_set_bind_group(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                               uint32_t index,
-                                                               const struct CanvasGPUBindGroup *bind_group,
-                                                               const uint32_t *dynamic_offsets,
-                                                               uintptr_t dynamic_offsets_size,
-                                                               uintptr_t dynamic_offsets_start,
-                                                               uintptr_t dynamic_offsets_length);
-
-void canvas_native_webgpu_render_bundle_encoder_set_index_buffer(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                 const struct CanvasGPUBuffer *buffer,
-                                                                 enum CanvasIndexFormat index_format,
-                                                                 int64_t offset,
-                                                                 int64_t size);
-
-void canvas_native_webgpu_render_bundle_encoder_set_pipeline(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                             const struct CanvasGPURenderPipeline *pipeline);
-
-void canvas_native_webgpu_render_bundle_encoder_set_vertex_buffer(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                  uint32_t slot,
-                                                                  const struct CanvasGPUBuffer *buffer,
-                                                                  int64_t offset,
-                                                                  int64_t size);
-
-const struct CanvasGPURenderBundle *canvas_native_webgpu_render_bundle_encoder_finish(const struct CanvasGPURenderBundleEncoder *render_bundle,
-                                                                                      const char *label);
-
-void canvas_native_webgpu_render_bundle_encoder_reference(const struct CanvasGPURenderBundleEncoder *render_bundle);
-
-void canvas_native_webgpu_render_bundle_encoder_release(const struct CanvasGPURenderBundleEncoder *render_bundle);
-
-const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
-
-uint8_t *canvas_native_u8_buffer_get_bytes_mut(struct U8Buffer *buffer);
-
-void canvas_native_u8_buffer_destroy(struct U8Buffer *buffer);
-
-uintptr_t canvas_native_u8_buffer_mut_get_length(const struct U8Buffer *buffer);
-
-uintptr_t canvas_native_u8_buffer_get_length(const struct U8Buffer *buffer);
-
-const uint16_t *canvas_native_u16_buffer_get_bytes(const struct U16Buffer *buffer);
-
-uint16_t *canvas_native_u16_buffer_get_bytes_mut(struct U16Buffer *buffer);
-
-void canvas_native_u16_buffer_destroy(struct U16Buffer *buffer);
-
-uintptr_t canvas_native_u16_buffer_mut_get_length(const struct U16Buffer *buffer);
-
-uintptr_t canvas_native_u16_buffer_get_length(const struct U16Buffer *buffer);
-
-const uint32_t *canvas_native_u32_buffer_get_bytes(const struct U32Buffer *buffer);
-
-uint32_t *canvas_native_u32_buffer_get_bytes_mut(struct U32Buffer *buffer);
-
-void canvas_native_u32_buffer_destroy(struct U32Buffer *buffer);
-
-uintptr_t canvas_native_u32_buffer_mut_get_length(const struct U32Buffer *buffer);
-
-uintptr_t canvas_native_u32_buffer_get_length(const struct U32Buffer *buffer);
-
-const int32_t *canvas_native_i32_buffer_get_bytes(const struct I32Buffer *buffer);
-
-int32_t *canvas_native_i32_buffer_get_bytes_mut(struct I32Buffer *buffer);
-
-void canvas_native_i32_buffer_destroy(struct I32Buffer *buffer);
-
-uintptr_t canvas_native_i32_buffer_mut_get_length(const struct I32Buffer *buffer);
-
-uintptr_t canvas_native_i32_buffer_get_length(const struct I32Buffer *buffer);
-
-const float *canvas_native_f32_buffer_get_bytes(const struct F32Buffer *buffer);
-
-float *canvas_native_f32_buffer_get_bytes_mut(struct F32Buffer *buffer);
-
-void canvas_native_f32_buffer_destroy(struct F32Buffer *buffer);
-
-uintptr_t canvas_native_f32_buffer_mut_get_length(const struct F32Buffer *buffer);
-
-uintptr_t canvas_native_f32_buffer_get_length(const struct F32Buffer *buffer);
-
-uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buffer);
-
-char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
-
-void canvas_native_string_buffer_destroy(struct StringBuffer *buffer);
 
 #endif /* CANVAS_C_H */

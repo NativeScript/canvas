@@ -1,9 +1,9 @@
+use skia_safe::{AlphaType, Color, ColorType, gpu, ImageInfo, ISize, PixelGeometry, surfaces};
 use skia_safe::gpu::gl::Interface;
-use skia_safe::{gpu, surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, PixelGeometry};
 
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, Device, State};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -21,26 +21,39 @@ impl Context {
         ppi: f32,
         direction: TextDirection,
     ) -> Self {
-        let device = Device::new(width, height, density, samples as usize, alpha, ppi);
-        let surface = if device.is_np {
+        let bounds = skia_safe::Rect::from_wh(width, height);
+        let mut direct_context = None;
+        let mut engine = SurfaceEngine::GL;
+        let surface = if bounds.is_empty() {
             let color_type = if alpha {
                 ColorType::RGBA8888
             } else {
                 ColorType::RGB565
             };
-
             let alpha_type = if alpha {
                 AlphaType::Unpremul
             } else {
                 AlphaType::Premul
             };
 
-            let info = ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None);
+            let mut width = width;
+            if width <= 0. {
+                width = 1.
+            }
+            let mut height = height;
+
+            if height <= 0. {
+                height = 1.
+            }
+
+            engine = SurfaceEngine::CPU;
+
+            let info = ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None);
 
             surfaces::raster(&info, None, None).unwrap()
         } else {
             let interface = Interface::new_native();
-            let mut ctx = gpu::DirectContext::new_gl(interface.unwrap(), None).unwrap();
+            let mut ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None).unwrap();
 
             ctx.reset(None);
 
@@ -65,7 +78,7 @@ impl Context {
             if !alpha {
                 color_type = ColorType::RGB565;
             }
-            let mut surface = gpu::surfaces::wrap_backend_render_target(
+            let surface = gpu::surfaces::wrap_backend_render_target(
                 &mut ctx,
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
@@ -73,24 +86,33 @@ impl Context {
                 None,
                 Some(&surface_props),
             )
-            .unwrap();
-            
-            if density > 1. {
-                surface.canvas().scale((density, density));
-            }
-            
+                .unwrap();
+
+            direct_context = Some(ctx);
             surface
         };
 
-        let mut state = State::from_device(device, direction);
+        let mut state = State::default();
+        state.direction = direction;
 
         Context {
+            direct_context,
+            #[cfg(feature = "vulkan")]
+            ash_graphics: None,
+            #[cfg(feature = "vulkan")]
+            vk_surface: None,
+            surface_data: SurfaceData {
+                bounds,
+                scale: density,
+                ppi,
+                engine,
+            },
             surface,
             path: Path::default(),
             state,
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
-            device,
+            surface_state: SurfaceState::None,
         }
     }
 
@@ -104,9 +126,10 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
-        let device = Device::new(width, height, density, samples as usize, alpha, ppi);
-
-        let surface = if device.is_np {
+        let bounds = skia_safe::Rect::from_wh(width, height);
+        let mut direct_context = None;
+        let mut engine = SurfaceEngine::GL;
+        let surface = if bounds.is_empty() {
             let color_type = if alpha {
                 ColorType::RGBA8888
             } else {
@@ -119,26 +142,28 @@ impl Context {
                 AlphaType::Premul
             };
 
-            let info = if device.is_np {
-                ImageInfo::new(ISize::new(1, 1), color_type, alpha_type, None)
-            } else {
-                ImageInfo::new(
-                    ISize::new(width as i32, height as i32),
-                    color_type,
-                    alpha_type,
-                    None,
-                )
-            };
+            let mut width = width;
+            if width <= 0. {
+                width = 1.
+            }
+            let mut height = height;
+
+            if height <= 0. {
+                height = 1.
+            }
+
+            engine = SurfaceEngine::CPU;
+
+            let info = ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None);
 
             surfaces::raster(&info, None, None)
         } else {
             let interface = Interface::new_native();
-            let ctx = gpu::DirectContext::new_gl(interface.unwrap(), None);
+            let ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None);
             if ctx.is_none() {
                 return;
             }
             let mut ctx = ctx.unwrap();
-            ctx.reset(None);
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 
@@ -154,6 +179,7 @@ impl Context {
                 0,
                 frame_buffer,
             );
+
             let surface_props = skia_safe::SurfaceProps::new(
                 skia_safe::SurfacePropsFlags::default(),
                 PixelGeometry::Unknown,
@@ -164,7 +190,7 @@ impl Context {
                 color_type = ColorType::RGB565;
             }
 
-           let mut surface = gpu::surfaces::wrap_backend_render_target(
+            let surface = gpu::surfaces::wrap_backend_render_target(
                 &mut ctx,
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
@@ -173,18 +199,17 @@ impl Context {
                 Some(&surface_props),
             );
 
-
-            if density > 1. {
-                if let Some(mut surface) = surface.as_mut() {
-                    surface.canvas().scale((density, density));
-                }
-            }
-            
+            direct_context = Some(ctx);
             surface
         };
 
         if let Some(surface) = surface {
-            context.device = device;
+            context.direct_context = direct_context;
+            context.surface_state = SurfaceState::None;
+            context.surface_data.engine = engine;
+            context.surface_data.bounds = bounds;
+            context.surface_data.scale = density;
+            context.surface_data.ppi = ppi;
             context.path = Path::default();
             context.reset_state();
             context.surface = surface;

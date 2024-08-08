@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
 //					Color.BLACK
 //				)
 //
-				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d)
+				val bm =	BitmapFactory.decodeResource(resources, R.drawable.di_3d)
 //
 //				val scale = resources.displayMetrics.density
 //
@@ -166,29 +166,35 @@ class MainActivity : AppCompatActivity() {
 //
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
-
-
-
 				val ctx = canvas!!.create2DContext(
-					true,
-					true,
-					true,
-					true,
-					0,
-					true,
-					true,
-					true,
-					true,
-					true,
-					Color.BLACK
+					alpha = true,
+					antialias = true,
+					depth = true,
+					failIfMajorPerformanceCaveat = true,
+					powerPreference = 0,
+					premultipliedAlpha = true,
+					preserveDrawingBuffer = true,
+					stencil = true,
+					desynchronized = true,
+					xrCompatible = true,
+					fontColor = Color.BLACK
 				)
 
+				canvas!!.surfaceWidth = resources.displayMetrics.widthPixels
+				canvas!!.surfaceHeight = resources.displayMetrics.heightPixels
 
-//				val scale = resources.displayMetrics.density
-//				val maxW = resources.displayMetrics.widthPixels / scale
-//				val maxH = resources.displayMetrics.heightPixels / scale
-				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F,0F, 300f, 300f)
 
+//
+				//	NSCCanvas.context2DImageTest(context)
+			//	NSCCanvas.context2DPathTest(ctx)
+
+
+				// val scale = resources.displayMetrics.density
+				val maxW = resources.displayMetrics.widthPixels
+				val maxH = resources.displayMetrics.heightPixels
+
+				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F, 0F, maxW.toFloat() ,maxH.toFloat())
+////
 				NSCCanvas.context2DRender(ctx)
 
 			}

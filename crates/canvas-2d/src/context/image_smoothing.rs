@@ -3,7 +3,6 @@ use skia_safe::SamplingOptions;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::Context;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum ImageSmoothingQuality {
     Low = 0,

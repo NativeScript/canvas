@@ -20,7 +20,7 @@ void GPUImpl::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate *isola
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPU"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPU"), func).FromJust();
 }
 
 
@@ -69,7 +69,7 @@ void GPUImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     ret->SetAlignedPointerInInternalField(0, object);
 
-    SetNativeType(ret, NativeType::GPUInstance);
+    SetNativeType(object, NativeType::GPUInstance);
 
     object->BindFinalizer(isolate, ret);
 
@@ -122,49 +122,62 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
         }
     }
 
-    v8::Global<v8::Function> func(isolate, args[1].As<v8::Function>());
+
     auto callback = new AsyncCallback{
             isolate,
-            std::move(func)
+            args[1].As<v8::Function>(),
+            [](bool done, void *data) {
+                if (data != nullptr) {
+                    auto async_data = static_cast<AsyncCallback *>(data);
+                    auto func = async_data->inner_.get();
+                    if (func != nullptr && func->isolate_ != nullptr) {
+                        v8::Isolate *isolate = func->isolate_;
+                        v8::Locker locker(isolate);
+                        v8::Isolate::Scope isolate_scope(isolate);
+                        v8::HandleScope handle_scope(isolate);
+                        v8::Local<v8::Function> callback = func->callback_.Get(
+                                isolate);
+                        v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                        v8::Context::Scope context_scope(context);
+
+                        if (func->data != nullptr) {
+                            auto impl = new GPUAdapterImpl(
+                                    static_cast<const CanvasGPUAdapter *>(func->data));
+                            auto ret = GPUAdapterImpl::NewInstance(
+                                    isolate, impl);
+
+
+                            v8::Local<v8::Value> args[2] = {
+                                    v8::Null(isolate), ret};
+
+
+                            callback->Call(context, context->Global(),
+                                           2,
+                                           args);  // ignore JS return value
+
+                            delete static_cast<AsyncCallback *>(data);
+                        } else {
+                            v8::Local<v8::Value> args[1] = {
+                                    v8::Null(isolate)};
+
+                            callback->Call(context, context->Global(),
+                                           1,
+                                           args);  // ignore JS return value
+                            delete static_cast<AsyncCallback *>(data);
+                        }
+                    }
+                }
+            }
     };
+    callback->prepare();
     canvas_native_webgpu_request_adapter(ptr->GetGPUInstance(), &opts,
                                          [](const CanvasGPUAdapter *adapter, void *data) {
                                              if (data != nullptr) {
-                                                 auto func = static_cast<AsyncCallback *>(data);
-                                                 if (func->isolate != nullptr) {
-                                                     v8::Isolate *isolate = func->isolate;
-                                                     v8::Locker locker(isolate);
-                                                     v8::Isolate::Scope isolate_scope(isolate);
-                                                     v8::HandleScope handle_scope(isolate);
-                                                     v8::Local<v8::Function> callback = func->callback.Get(
-                                                             isolate);
-                                                     v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                     v8::Context::Scope context_scope(context);
-
-                                                     if (adapter != nullptr) {
-                                                         auto impl = new GPUAdapterImpl(adapter);
-                                                         auto ret = GPUAdapterImpl::NewInstance(
-                                                                 isolate, impl);
-
-
-                                                         v8::Local<v8::Value> args[2] = {
-                                                                 v8::Null(isolate), ret};
-
-
-                                                         callback->Call(context, context->Global(),
-                                                                        2,
-                                                                        args);  // ignore JS return value
-
-                                                         delete static_cast<AsyncCallback *>(data);
-                                                     } else {
-                                                         v8::Local<v8::Value> args[1] = {
-                                                                 v8::Null(isolate)};
-
-                                                         callback->Call(context, context->Global(),
-                                                                        1,
-                                                                        args);  // ignore JS return value
-                                                         delete static_cast<AsyncCallback *>(data);
-                                                     }
+                                                 auto async_data = static_cast<AsyncCallback *>(data);
+                                                 auto inner = async_data->inner_.get();
+                                                 if (inner != nullptr) {
+                                                     inner->data = (void *) adapter;
+                                                     async_data->execute(true);
                                                  }
                                              }
                                          }, callback);
@@ -180,7 +193,7 @@ void GPUImpl::__GetPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto isolate = args.GetIsolate();
 
-    auto pointer = (intptr_t *) ptr->GetGPUInstance();
-    auto ret = std::to_string((intptr_t) pointer);
+    auto pointer = canvas_native_webgpu_get_pointer_addr(ptr->GetGPUInstance());
+    auto ret = std::to_string(pointer);
     args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
 }

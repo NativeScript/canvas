@@ -24,7 +24,7 @@ void GPUComputePipelineImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolat
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUComputePipeline"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUComputePipeline"), func).FromJust();
 }
 
 GPUComputePipelineImpl *GPUComputePipelineImpl::GetPointer(const v8::Local<v8::Object> &object) {

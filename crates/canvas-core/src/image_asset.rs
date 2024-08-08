@@ -5,13 +5,11 @@ use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null;
 use std::sync::Arc;
 
-use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
-use parking_lot::RawRwLock;
 use stb_image::image::LoadResult;
 
 struct ImageAssetInner {
     image: Option<stb_image::image::Image<u8>>,
-    error: String,
+    error: Cow<'static, str>,
     has_alpha: bool,
     #[cfg(feature = "2d")]
     skia_image: Option<skia_safe::Image>,
@@ -19,7 +17,7 @@ struct ImageAssetInner {
 
 unsafe impl Send for ImageAssetInner {}
 
-pub struct ImageAsset(Arc<parking_lot::RwLock<ImageAssetInner>>);
+pub struct ImageAsset(Arc<parking_lot::Mutex<ImageAssetInner>>);
 
 impl Clone for ImageAsset {
     fn clone(&self) -> Self {
@@ -43,12 +41,6 @@ pub enum PixelType {
     RGBA = 1,
 }
 
-enum ByteType {
-    Default,
-    RGBA,
-    RGB,
-}
-
 impl ImageAsset {
     pub fn from_raw_bytes(width: usize, height: usize, depth: usize, data: Vec<u8>) -> Self {
         let image = stb_image::image::Image::new(width, height, depth, data);
@@ -70,16 +62,16 @@ impl ImageAsset {
         let has_alpha = image.depth == 4;
         let inner = ImageAssetInner {
             image: Some(image),
-            error: String::new(),
+            error: Cow::default(),
             has_alpha,
             #[cfg(feature = "2d")]
             skia_image,
         };
 
-        Self(Arc::new(parking_lot::RwLock::new(inner)))
+        Self(Arc::new(parking_lot::Mutex::new(inner)))
     }
     pub fn copy(asset: &ImageAsset) -> Option<ImageAsset> {
-        let asset = asset.0.write();
+        let asset = asset.0.lock();
         let mut has_alpha = false;
         let image = asset.image.as_ref().map(|image| {
             has_alpha = image.depth == 4;
@@ -87,18 +79,18 @@ impl ImageAsset {
         });
         let inner = ImageAssetInner {
             image,
-            error: String::new(),
+            error: Cow::default(),
             has_alpha,
             #[cfg(feature = "2d")]
             skia_image: asset.skia_image.as_ref().cloned(),
         };
-        Some(Self(Arc::new(parking_lot::RwLock::new(inner))))
+        Some(Self(Arc::new(parking_lot::Mutex::new(inner))))
     }
 
     pub fn new() -> Self {
-        Self(Arc::new(parking_lot::RwLock::new(ImageAssetInner {
+        Self(Arc::new(parking_lot::Mutex::new(ImageAssetInner {
             image: None,
-            error: String::new(),
+            error: Cow::default(),
             has_alpha: false,
             #[cfg(feature = "2d")]
             skia_image: None,
@@ -107,49 +99,38 @@ impl ImageAsset {
 
     #[cfg(feature = "2d")]
     pub fn skia_image(&self) -> Option<skia_safe::Image> {
-        self.read().skia_image.as_ref().map(skia_safe::Image::from)
+        let lock = self.0.lock();
+        lock.skia_image.as_ref().map(skia_safe::Image::from)
     }
 
-    fn read(&self) -> RwLockReadGuard<'_, RawRwLock, ImageAssetInner> {
-        self.0.read()
-    }
-
-    fn write(&self) -> RwLockWriteGuard<'_, RawRwLock, ImageAssetInner> {
-        self.0.write()
-    }
-
-    fn get_lock(&self) -> RwLockWriteGuard<'_, RawRwLock, ImageAssetInner> {
-        self.0.write()
-    }
-
-    pub fn error(&self) -> Cow<str> {
-        self.0.read().error.clone().into()
+    pub fn error(&self) -> Cow<'static, str> {
+        self.0.lock().error.clone()
     }
 
     pub fn error_string(&self) -> String {
-        self.0.read().error.clone()
+        self.0.lock().error.to_string()
     }
 
     pub fn set_error(&self, error: &str) {
-        let mut lock = self.0.write();
-        lock.error.clear();
-        lock.error.push_str(error);
+        let mut lock = self.0.lock();
+        lock.error = Cow::Owned(error.to_string());
     }
 
     pub fn error_cstr(&self) -> *const c_char {
-        let lock = self.read();
+        let lock = self.0.lock();
         if lock.error.is_empty() {
             return null();
         }
-        CString::new(lock.error.as_str()).unwrap().into_raw()
+        CString::new(lock.error.as_ref()).unwrap().into_raw()
     }
 
     pub fn has_alpha(&self) -> bool {
-        self.read().has_alpha
+        self.0.lock().has_alpha
     }
 
     pub fn is_valid(&self) -> bool {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|v| v.width > 0 && v.height > 0)
@@ -157,7 +138,8 @@ impl ImageAsset {
     }
 
     pub fn width(&self) -> c_uint {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|v| v.width as c_uint)
@@ -165,7 +147,8 @@ impl ImageAsset {
     }
 
     pub fn height(&self) -> c_uint {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|v| v.height as c_uint)
@@ -173,20 +156,21 @@ impl ImageAsset {
     }
 
     pub fn dimensions(&self) -> (c_uint, c_uint) {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|v| (v.width as c_uint, v.height as c_uint))
             .unwrap_or_default()
     }
 
-    #[cfg(any(unix))]
-    pub fn load_from_fd(&mut self, fd: c_int) -> bool {
+    #[cfg(unix)]
+    pub fn load_from_fd(&self, fd: c_int) -> bool {
         if fd == 0 {
-            let mut lock = self.get_lock();
+            let mut lock = self.0.lock();
 
             if !lock.error.is_empty() {
-                lock.error.clear()
+                lock.error = Cow::default();
             }
             lock.image = None;
             return false;
@@ -198,16 +182,15 @@ impl ImageAsset {
         match reader.read_to_end(&mut buf) {
             Ok(_) => self.load_from_bytes(buf.as_slice()),
             Err(e) => {
-                let mut lock = self.get_lock();
+                let mut lock = self.0.lock();
                 let error = e.to_string();
-                lock.error.clear();
-                lock.error.push_str(error.as_str());
+                lock.error = Cow::Owned(error);
                 false
             }
         }
     }
 
-    pub fn load_from_path(&mut self, path: &str) -> bool {
+    pub fn load_from_path(&self, path: &str) -> bool {
         let file = std::fs::File::open(path);
         match file {
             Ok(file) => {
@@ -215,19 +198,16 @@ impl ImageAsset {
                 self.load_from_reader(&mut reader)
             }
             Err(e) => {
-                let mut lock = self.get_lock();
-                if !lock.error.is_empty() {
-                    lock.error.clear()
-                }
+                let mut lock = self.0.lock();
                 lock.image = None;
                 let error = e.to_string();
-                lock.error.push_str(error.as_str());
+                lock.error = Cow::Owned(error);
                 false
             }
         }
     }
 
-    pub fn load_from_reader<R>(&mut self, reader: &mut R) -> bool
+    pub fn load_from_reader<R>(&self, reader: &mut R) -> bool
     where
         R: Read + Seek + BufRead,
     {
@@ -235,32 +215,29 @@ impl ImageAsset {
         match reader.read_to_end(&mut buf) {
             Ok(_) => self.load_from_bytes(buf.as_slice()),
             Err(e) => {
-                let mut lock = self.get_lock();
-                if !lock.error.is_empty() {
-                    lock.error.clear()
-                }
+                let mut lock = self.0.lock();
                 lock.image = None;
                 let error = e.to_string();
-                lock.error.push_str(error.as_str());
+                lock.error = Cow::Owned(error);
                 false
             }
         }
     }
 
-    pub unsafe fn load_from_path_raw(&mut self, path: *const c_char) -> bool {
+    pub unsafe fn load_from_path_raw(&self, path: *const c_char) -> bool {
         let real_path = CStr::from_ptr(path);
         self.load_from_path(real_path.to_string_lossy().as_ref())
     }
 
-    pub unsafe fn load_from_raw(&mut self, buffer: *const u8, size: usize) -> bool {
+    pub unsafe fn load_from_raw(&self, buffer: *const u8, size: usize) -> bool {
         self.load_from_bytes(std::slice::from_raw_parts(buffer, size))
     }
 
-    pub fn load_from_bytes(&mut self, buf: &[u8]) -> bool {
+    pub fn load_from_bytes(&self, buf: &[u8]) -> bool {
         {
-            let mut lock = self.get_lock();
+            let mut lock = self.0.lock();
             if !lock.error.is_empty() {
-                lock.error.clear()
+                lock.error = Cow::default();
             }
             lock.image = None;
         }
@@ -272,13 +249,13 @@ impl ImageAsset {
 
         match stb_image::image::load_from_memory_with_depth(buf, 4, true) {
             LoadResult::Error(e) => {
-                let mut lock = self.get_lock();
+                let mut lock = self.0.lock();
                 let error = e.to_string();
-                lock.error.push_str(error.as_str());
+                lock.error = Cow::Owned(error);
                 false
             }
             LoadResult::ImageU8(image) => {
-                let mut lock = self.get_lock();
+                let mut lock = self.0.lock();
                 let width = image.width as i32;
                 let height = image.height as i32;
 
@@ -303,7 +280,7 @@ impl ImageAsset {
                 true
             }
             LoadResult::ImageF32(_) => {
-                let mut lock = self.get_lock();
+                let mut lock = self.0.lock();
                 lock.image = None;
                 false
             }
@@ -338,8 +315,8 @@ impl ImageAsset {
             )
         };
 
-        let mut lock = self.get_lock();
-        lock.error.clear();
+        let mut lock = self.0.lock();
+        lock.error = Cow::default();
         lock.image = Some(image);
         lock.has_alpha = depth > 3;
         lock.skia_image = skia_image;
@@ -347,6 +324,7 @@ impl ImageAsset {
         true
     }
 
+    #[allow(unused)]
     fn byte_swap(data: &mut [u8]) {
         let length = data.len();
         for i in (0..length).step_by(4) {
@@ -354,6 +332,7 @@ impl ImageAsset {
         }
     }
 
+    #[allow(unused)]
     fn byte_swap_and_premultiply(data: &mut [u8]) {
         let length = data.len();
         for i in (0..length).step_by(4) {
@@ -368,7 +347,7 @@ impl ImageAsset {
     }
 
     pub fn get_rgb_bytes(&self) -> Option<Vec<u8>> {
-        self.read().image.as_ref().map(|image| {
+        self.0.lock().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
             let width = image.width;
             let height = image.height;
@@ -377,7 +356,7 @@ impl ImageAsset {
     }
 
     pub fn get_luminance_bytes(&self) -> Option<Vec<u8>> {
-        self.read().image.as_ref().map(|image| {
+        self.0.lock().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
             let width = image.width;
             let height = image.height;
@@ -386,7 +365,7 @@ impl ImageAsset {
     }
 
     pub fn get_luminance_alpha_bytes(&self) -> Option<Vec<u8>> {
-        self.read().image.as_ref().map(|image| {
+        self.0.lock().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
             let width = image.width;
             let height = image.height;
@@ -395,7 +374,7 @@ impl ImageAsset {
     }
 
     pub fn get_alpha_bytes(&self) -> Option<Vec<u8>> {
-        self.read().image.as_ref().map(|image| {
+        self.0.lock().image.as_ref().map(|image| {
             let slice = image.data.as_slice();
             let width = image.width;
             let height = image.height;
@@ -404,21 +383,24 @@ impl ImageAsset {
     }
 
     pub fn get_bytes(&self) -> Option<&[u8]> {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|d| unsafe { std::slice::from_raw_parts(d.data.as_ptr(), d.data.len()) })
     }
 
     pub fn get_bytes_mut(&self) -> Option<&mut [u8]> {
-        self.write()
+        self.0
+            .lock()
             .image
             .as_mut()
             .map(|d| unsafe { std::slice::from_raw_parts_mut(d.data.as_mut_ptr(), d.data.len()) })
     }
 
     pub fn len(&self) -> usize {
-        self.read()
+        self.0
+            .lock()
             .image
             .as_ref()
             .map(|d| d.data.len())
@@ -426,7 +408,7 @@ impl ImageAsset {
     }
 
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
-        self.read().image.as_ref().map(|d| d.data.clone())
+        self.0.lock().image.as_ref().map(|d| d.data.clone())
     }
 
     pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {

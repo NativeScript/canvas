@@ -1,6 +1,5 @@
 use skia_safe::paint::Join;
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum LineJoin {
     JoinRound = 0,

@@ -1,8 +1,10 @@
 {
-  "main": "app.js",
-  "android": {
-    "v8Flags": "--expose_gc",
-    "requireModules": ["@nativescript/imagepicker"],
-    "markingMode": "none"
-  }
+	"main": "app.js",
+	"android": {
+		"v8Flags": "--expose_gc",
+		"requireModules": [
+			"@nativescript/imagepicker"
+		],
+		"markingMode": "none"
+	}
 }

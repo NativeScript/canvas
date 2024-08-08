@@ -129,11 +129,11 @@ public class NSCSVG: UIView {
     }
     
     
-    func update(){
+    public func update(){
         let size = layer.frame.size
         let width = Float(size.width) * deviceScale()
         let height = Float(size.height) * deviceScale()
-        if !(CGFloat(width) != data_size.width && CGFloat(height) != data_size.height) || forceResize {
+        if (CGFloat(width) != data_size.width && CGFloat(height) != data_size.height) || forceResize {
             data?.deallocate()
             data = calloc(Int(width * height), 4)
             buf_size = UInt(width * height * 4)

@@ -1,6 +1,7 @@
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
 
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 
 use super::{
@@ -33,11 +34,8 @@ pub struct CanvasGPUQueue {
 
 unsafe impl Send for CanvasGPUQueue {}
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(
-    queue: *const CanvasGPUQueue
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(queue: *const CanvasGPUQueue) {
     if queue.is_null() {
         return;
     }
@@ -45,18 +43,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(
     Arc::increment_strong_count(queue);
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_release(
-    queue: *const CanvasGPUQueue
-) {
+pub unsafe extern "C" fn canvas_native_webgpu_queue_release(queue: *const CanvasGPUQueue) {
     if queue.is_null() {
         return;
     }
 
     Arc::decrement_strong_count(queue);
 }
-
 
 fn get_offset_image(
     buffer: &[u8],
@@ -105,28 +99,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let destination = &*destination;
 
-
     let destination_texture = &*destination.texture;
 
     let destination_texture_id = destination_texture.texture;
 
     let size = *size;
 
-    let size: wgpu_types::Extent3d = size.into();
+    let size: wgt::Extent3d = size.into();
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
     let bytesPerRow = source.source_size / (source.width as usize * source.height as usize);
 
-    let data_layout = wgpu_types::ImageDataLayout {
+    let data_layout = wgt::ImageDataLayout {
         offset: 0,
         bytes_per_row: Some(source.width * bytesPerRow as u32),
         rows_per_image: Some(source.height),
     };
 
-
-
-    let destination = wgpu_types::ImageCopyTexture {
+    let destination = wgt::ImageCopyTexture {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -188,7 +179,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
 
     if let Err(cause) = gfx_select!(queue_id => global.queue_on_submitted_work_done(queue_id, done))
     {
-        handle_error_fatal(global, cause, "canvas_native_webgpu_queue_on_submitted_work_done");
+        handle_error_fatal(
+            global,
+            cause,
+            "canvas_native_webgpu_queue_on_submitted_work_done",
+        );
     }
 }
 
@@ -210,15 +205,22 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         .iter()
         .map(|buffer| {
             let buffer = &**buffer;
-            buffer.open.store(false, std::sync::atomic::Ordering::SeqCst);
+            buffer
+                .open
+                .store(false, std::sync::atomic::Ordering::SeqCst);
             // let mut id = buffer.command_buffer.lock();
             // id.take()
             buffer.command_buffer
         })
         .collect::<Vec<_>>();
 
-    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids)) {
+    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids))
+    {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
+    }
+
+    for id in command_buffer_ids.into_iter() {
+        gfx_select!(id => global.command_buffer_drop(id));
     }
 }
 
@@ -255,7 +257,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
 
     if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data))
     {
-        handle_error(global, queue.error_sink.as_ref(), cause, "", None, "canvas_native_webgpu_queue_write_buffer");
+        handle_error(
+            global,
+            queue.error_sink.as_ref(),
+            cause,
+            "",
+            None,
+            "canvas_native_webgpu_queue_write_buffer",
+        );
     }
 }
 
@@ -282,7 +291,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     let destination_texture = &*destination.texture;
     let destination_texture_id = destination_texture.texture;
 
-    let destination = wgpu_types::ImageCopyTexture {
+    let destination = wgt::ImageCopyTexture {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -291,13 +300,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let data_layout = *data_layout;
 
-    let data_layout: wgpu_types::ImageDataLayout = data_layout.into();
+    let data_layout: wgt::ImageDataLayout = data_layout.into();
 
     let data = std::slice::from_raw_parts(buf, buf_size);
 
     let size = *size;
 
-    let size: wgpu_types::Extent3d = size.into();
+    let size: wgt::Extent3d = size.into();
 
     if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data, &data_layout, &size))
     {

@@ -15,8 +15,8 @@ export function colorRain(canvas) {
 		occupation = w / total,
 		repaintColor = 'black';
 	var colors: number[] = [],
-		dots = [],
-		dotsVel = [],
+		dots = new Array(total),
+		dotsVel = new Array(total),
 		parsedColors = [];
 
 	//setting the colors' hue

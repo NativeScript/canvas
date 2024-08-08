@@ -29,7 +29,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUQuerySetImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUQuerySet);
+        SetNativeType(querySet, NativeType::GPUQuerySet);
         object->SetAlignedPointerInInternalField(0, querySet);
         querySet->BindFinalizer(isolate, object);
         return scope.Escape(object);

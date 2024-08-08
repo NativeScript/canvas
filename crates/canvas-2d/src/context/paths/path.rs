@@ -8,9 +8,7 @@ use crate::context::matrix::Matrix;
 use crate::utils::geometry::{almost_equal, to_degrees};
 
 #[derive(Clone)]
-pub struct Path {
-    pub(crate) path: skia_safe::Path,
-}
+pub struct Path(pub(crate) skia_safe::Path);
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum PathFillType {
@@ -49,55 +47,46 @@ impl Default for Path {
 
 impl Path {
     pub fn path(&self) -> &skia_safe::Path {
-        &self.path
+        &self.0
     }
 
     pub fn path_fill_type(&self) -> PathFillType {
-        self.path.fill_type().into()
+        self.0.fill_type().into()
     }
 
     pub fn set_path_fill_type(&mut self, value: PathFillType) {
-        self.path.set_fill_type(value.into());
+        self.0.set_fill_type(value.into());
     }
 
     pub fn make_scale(&mut self, (sx, sy): (f32, f32)) -> Self {
-        Self {
-            path: self.path.make_scale((sx, sy)),
-        }
+        Self(self.0.make_scale((sx, sy)))
     }
 
     pub fn with_transform(&self, matrix: &skia_safe::Matrix) -> Path {
-        Self {
-            path: self.path.with_transform(matrix),
-        }
+        Self(self.0.with_transform(matrix))
     }
 
     pub fn new() -> Self {
-        Self {
-            path: skia_safe::Path::default(),
-        }
+        Self(skia_safe::Path::default())
     }
 
     pub fn from_str(val: &str) -> Self {
-        Self {
-            path: skia_safe::Path::from_svg(val).unwrap_or(skia_safe::Path::default()),
-        }
+        Self(skia_safe::Path::from_svg(val).unwrap_or(skia_safe::Path::default()))
     }
 
     pub fn from_path(path: &skia_safe::Path) -> Self {
-        Self { path: path.clone() }
+        Self(path.clone())
     }
 
     fn scoot(&mut self, x: f32, y: f32) {
-        if self.path.is_empty() {
-            self.path.move_to(Point::new(x, y));
+        if self.0.is_empty() {
+            self.0.move_to(Point::new(x, y));
         }
     }
 
     pub fn set_fill_type(&mut self, fill_type: FillRule) {
-        self.path.set_fill_type(fill_type.to_fill_type());
+        self.0.set_fill_type(fill_type.to_fill_type());
     }
-
 
     pub(crate) fn add_ellipse(
         &mut self,
@@ -148,7 +137,7 @@ impl Path {
             .pre_translate((-x, -y));
         let unrotated = rotated.invert().unwrap();
 
-        self.path.transform(&unrotated);
+        self.0.transform(&unrotated);
 
         // draw in 2 180 degree segments because trying to draw all 360 degrees at once
         // draws nothing.
@@ -156,20 +145,20 @@ impl Path {
         let start_deg = to_degrees(start_angle);
         if almost_equal(sweep_deg.abs(), 360.0) {
             let half_sweep = sweep_deg / 2.0;
-            self.path.arc_to(oval, start_deg, half_sweep, false);
-            self.path
+            self.0.arc_to(oval, start_deg, half_sweep, false);
+            self.0
                 .arc_to(oval, start_deg + half_sweep, half_sweep, false);
         } else {
-            self.path.arc_to(oval, start_deg, sweep_deg, false);
+            self.0.arc_to(oval, start_deg, sweep_deg, false);
         }
 
-        self.path.transform(&rotated);
+        self.0.transform(&rotated);
     }
 
     pub fn add_path(&mut self, path: &Path, matrix: Option<&Matrix>) {
         match matrix {
             None => {
-                self.path.add_path_matrix(
+                self.0.add_path_matrix(
                     path.path(),
                     &skia_safe::Matrix::new_identity(),
                     skia_safe::path::AddPathMode::Append,
@@ -177,7 +166,7 @@ impl Path {
             }
             Some(matrix) => {
                 let matrix_2d = matrix.to_m33();
-                self.path.add_path_matrix(
+                self.0.add_path_matrix(
                     path.path(),
                     &matrix_2d,
                     skia_safe::path::AddPathMode::Append,
@@ -206,30 +195,30 @@ impl Path {
     }
 
     pub fn arc_to(&mut self, x1: c_float, y1: c_float, x2: c_float, y2: c_float, radius: c_float) {
-        self.path
+        self.0
             .arc_to_tangent(Point::new(x1, y1), Point::new(x2, y2), radius);
     }
 
     pub fn begin_path(&mut self) {
         let mut new_path = skia_safe::Path::default();
-        self.path.swap(&mut new_path);
+        self.0.swap(&mut new_path);
     }
 
     pub fn move_to(&mut self, x: c_float, y: c_float) {
-        self.path.move_to(Point::new(x, y));
+        self.0.move_to(Point::new(x, y));
     }
 
     pub fn line_to(&mut self, x: c_float, y: c_float) {
         // web impl
         let point = Point::new(x, y);
-        if self.path.is_empty() {
-            self.path.move_to(point);
+        if self.0.is_empty() {
+            self.0.move_to(point);
         }
-        self.path.line_to(point);
+        self.0.line_to(point);
     }
 
     pub fn close_path(&mut self) {
-        self.path.close();
+        self.0.close();
     }
 
     pub fn bezier_curve_to(
@@ -241,7 +230,7 @@ impl Path {
         x: c_float,
         y: c_float,
     ) {
-        self.path.cubic_to(
+        self.0.cubic_to(
             Point::new(cp1x, cp1y),
             Point::new(cp2x, cp2y),
             Point::new(x, y),
@@ -249,7 +238,7 @@ impl Path {
     }
 
     pub fn quadratic_curve_to(&mut self, cpx: c_float, cpy: c_float, x: c_float, y: c_float) {
-        self.path.quad_to(Point::new(cpx, cpy), Point::new(x, y));
+        self.0.quad_to(Point::new(cpx, cpy), Point::new(x, y));
     }
 
     pub fn ellipse(
@@ -280,7 +269,7 @@ impl Path {
         } else {
             skia_safe::PathDirection::CCW
         };
-        self.path.add_rect(&rect, Some((direction, 0)));
+        self.0.add_rect(&rect, Some((direction, 0)));
     }
 
     pub fn round_rect(
@@ -300,7 +289,7 @@ impl Path {
             } else {
                 skia_safe::PathDirection::CCW
             };
-            self.path.add_rrect(rrect, Some((direction, 0)));
+            self.0.add_rrect(rrect, Some((direction, 0)));
         }
     }
 
@@ -308,11 +297,11 @@ impl Path {
         if start != 0. && end != 1. {
             if let Some(effect) = PathEffect::trim(start, end, None) {
                 if let Some((mut path, _)) = effect.filter_path(
-                    &self.path,
+                    &self.0,
                     &skia_safe::StrokeRec::new_hairline(),
                     Rect::default(),
                 ) {
-                    self.path.swap(&mut path);
+                    self.0.swap(&mut path);
                 }
             }
         }

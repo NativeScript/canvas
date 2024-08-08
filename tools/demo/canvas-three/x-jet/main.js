@@ -29,14 +29,17 @@ let height = 0;
 const root = '~/assets/x-jet/';
 let context;
 export function init(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio; //context.drawingBufferWidth;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio; //context.drawingBufferHeight
 	context = canvas.getContext('webgl2');
-	width = canvas.width;//context.drawingBufferWidth;
-	height = canvas.height;//context.drawingBufferHeight;
+	width = canvas.width;
+	height = canvas.height;
+
 	renderer = new THREE.WebGLRenderer({ context, antialias: false });
-	renderer.setPixelRatio(window.devicePixelRatio); // reduce this value for better quality 1 is original too heavy and not needed for mobile
-	renderer.setSize(width, height);
+	renderer.setPixelRatio(1); // reduce this value for better quality 1 is original too heavy and not needed for mobile
+	renderer.setSize(height, height);
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	renderer.outputEncoding = THREE.sRGBEncoding;
+	//	renderer.outputEncoding = THREE.sRGBEncoding;
 	//document.body.appendChild(renderer.domElement);
 
 	scene = new THREE.Scene();
@@ -123,7 +126,7 @@ export function init(canvas) {
 
 	updateSun();
 
-	controls = new OrbitControls(camera, canvas);
+	controls = new OrbitControls(camera, canvas.toHTMLCanvas());
 	controls.enableDamping = true;
 	controls.maxPolarAngle = Math.PI * 0.495;
 	controls.minDistance = 40.0;

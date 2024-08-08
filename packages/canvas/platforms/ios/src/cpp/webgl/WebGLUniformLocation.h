@@ -9,7 +9,7 @@
 #include "Caches.h"
 #include "ObjectWrapperImpl.h"
 
-class WebGLUniformLocation: ObjectWrapperImpl {
+class WebGLUniformLocation : ObjectWrapperImpl {
 public:
     WebGLUniformLocation(int32_t
                          uniformLocation) :
@@ -41,7 +41,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLUniformLocation::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLUniformLocation);
+        SetNativeType(uniformLocation, NativeType::WebGLUniformLocation);
         object->SetAlignedPointerInInternalField(0, uniformLocation);
         uniformLocation->BindFinalizer(isolate, object);
         return scope.Escape(object);

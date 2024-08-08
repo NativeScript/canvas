@@ -75,8 +75,6 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     auto ret = args.This();
 
-    SetNativeType(ret, NativeType::Path2D);
-
     if (count > 0) {
         if (value->IsString()) {
             auto d = ConvertFromV8String(isolate, value);
@@ -86,6 +84,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
             ret->SetAlignedPointerInInternalField(0, object);
 
             object->BindFinalizer(isolate, ret);
+
+            SetNativeType(object, NativeType::Path2D);
 
             args.GetReturnValue().Set(ret);
 
@@ -102,6 +102,8 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 object->BindFinalizer(isolate, ret);
 
+                SetNativeType(object, NativeType::Path2D);
+
                 args.GetReturnValue().Set(ret);
                 return;
             }
@@ -109,10 +111,11 @@ void Path2D::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
     } else {
         auto path = new Path2D(canvas_native_path_create());
 
-
         ret->SetAlignedPointerInInternalField(0, path);
 
         path->BindFinalizer(isolate, ret);
+
+        SetNativeType(path, NativeType::Path2D);
 
         args.GetReturnValue().Set(ret);
         return;

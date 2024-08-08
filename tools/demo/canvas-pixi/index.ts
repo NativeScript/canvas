@@ -105,7 +105,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		this.dynamicGraphics(canvas);
+		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -119,7 +119,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.transparent(canvas);
 		//this.textureRotate(canvas);
 		//this.simplePlane(canvas);
-		//this.animatedJet(canvas);
+		this.animatedJet(canvas);
 		//this.viewPort(canvas);
 		//this.svg(canvas);
 	}
@@ -967,7 +967,10 @@ void main()
 
 	dynamicGraphics(canvas) {
 		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, antialias: false }) as any;
+
+		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb }) as any;
+
+		//const app = new PIXI.Application({ view: canvas.toHTMLCanvas(), antialias: false }) as any;
 
 		//	const app = new PIXI.Application({ antialias: true, resizeTo: window });
 
@@ -1876,10 +1879,6 @@ void main()
 		graphics.endFill();
 
 		app.stage.addChild(graphics);
-
-		requestAnimationFrame(() => {
-			console.log(context.canvas.toDataURL());
-		});
 	}
 
 	advance(canvas) {

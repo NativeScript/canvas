@@ -1,18 +1,16 @@
 [workspace]
-
 resolver = "2"
 
 members = [
-	"crates/gl-bindings",
-	"crates/canvas-core",
-	"crates/canvas-2d",
-	"crates/canvas-webgl",
-	"crates/canvas-android",
-	"crates/canvas-ios",
-	"crates/playground",
-	"crates/canvas-cxx",
-	"crates/canvas-c",
-	"crates/canvas-svg"]
+    "crates/gl-bindings",
+    "crates/canvas-core",
+    "crates/canvas-2d",
+    "crates/canvas-webgl",
+    "crates/canvas-android",
+    "crates/canvas-ios",
+    "crates/playground",
+    "crates/canvas-c",
+    "crates/canvas-svg"]
 
 [profile.release]
 panic = "abort"
@@ -26,4 +24,17 @@ strip = true
 
 [workspace.dependencies.wgt]
 package = "wgpu-types"
-version = "0.20.0"
+version = "22.0.0"
+
+[workspace.dependencies]
+wgpu-types = "22.0.0"
+parking_lot = "0.12.3"
+raw-window-handle = "0.6.2"
+canvas-2d = { path = "./crates/canvas-2d"}
+canvas-core = { path = "./crates/canvas-core" }
+canvas-webgl = { path = "./crates/canvas-webgl" }
+gl-bindings = { path = "./crates/gl-bindings" }
+canvas-c = { path = "./crates/canvas-c" }
+skia-safe = { version = "0.73.0", features = ["textlayout"] }
+itertools = "0.13.0"
+wgpu-core = { version = "22.1.0", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }

@@ -1,7 +1,7 @@
 use std::io::{Read, Seek, SeekFrom};
 
-use skia_safe::FontMgr;
 use skia_safe::svg::Dom;
+use skia_safe::FontMgr;
 
 #[cfg(target_os = "android")]
 pub mod android;

@@ -84,6 +84,12 @@ export class Canvas extends CanvasBase {
 				this.native.__stopRaf();
 			};
 
+			// default canvas size
+			this._canvas.surfaceWidth = 300;
+			this._canvas.surfaceHeight = 150;
+
+			(global as any).__canvasLoaded = true;
+
 			this._canvas.becomeActiveListener = () => {
 				if (!this.native) {
 					return;
@@ -95,7 +101,6 @@ export class Canvas extends CanvasBase {
 				this._handleEvents(event);
 			};
 		}
-		this._canvas.autoScale = false;
 	}
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
@@ -108,37 +113,61 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.width;
+		return this.getMeasuredWidth() / Screen.mainScreen.scale;
 	}
 
 	get clientHeight() {
-		return this.height;
+		return this.getMeasuredHeight() / Screen.mainScreen.scale;
 	}
 
-	//@ts-ignore
-	get width() {
-		return this._logicalSize.width;
-	}
-
-	set width(value) {
-		if (value !== null || value !== undefined) {
-			this.style.width = value;
-			this._didLayout = false;
-			this._layoutNative(true);
+	get drawingBufferHeight() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
 		}
+		return this._canvas.drawingBufferHeight;
 	}
 
-	//@ts-ignore
-	get height() {
-		return this._logicalSize.height;
-	}
-
-	set height(value) {
-		if (value !== null || value !== undefined) {
-			this.style.height = value;
-			this._didLayout = false;
-			this._layoutNative(true);
+	get drawingBufferWidth() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
 		}
+		return this._canvas.drawingBufferWidth;
+	}
+
+	// @ts-ignore
+	get width(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.surfaceWidth;
+	}
+
+	set width(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.surfaceWidth = value;
+	}
+
+	// @ts-ignore
+	get height(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.surfaceHeight;
+	}
+
+	set height(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.surfaceHeight = value;
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -161,12 +190,9 @@ export class Canvas extends CanvasBase {
 
 	static createCustomView() {
 		const canvas = new Canvas();
-		canvas._isBatch = true;
 		canvas._isCustom = true;
 		canvas.style.width = 300;
 		canvas.style.height = 150;
-		canvas._isBatch = false;
-		canvas._layoutNative();
 		return canvas;
 	}
 
@@ -251,43 +277,52 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	_layoutNative(force: boolean = false) {
-		if (this._isBatch) {
-			return;
-		}
+	_setNativeViewFrame(nativeView: any, frame: CGRect): void {
+		const styleWidth = this.style.width;
+		const styleHeight = this.style.height;
+		if (typeof styleWidth === 'object' && typeof styleHeight === 'object') {
+			if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
+				// const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
+				//const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
+				nativeView.fit = 1;
+				// nativeView.frame = frame;
+			} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
+				const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
+				const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
 
-		if (!this._isCustom && !force) {
-			return;
-		}
+				if (frame.size.width > width || frame.size.height > height) {
+					nativeView.fit = 4;
+				} else {
+					nativeView.fit = 1;
+				}
 
-		if (this._didLayout && !force) {
-			return;
-		}
-
-		if (!this.parent || force) {
-			if (!force || (typeof this.style.width === 'string' && this.style.width.indexOf('%')) || (typeof this.style.height === 'string' && this.style.height.indexOf('%'))) {
-				return;
+				// nativeView.frame = frame;
+			} else {
+				nativeView.fit = 1;
+				//	nativeView.frame = frame;
 			}
-
-			if (this._canvas === undefined || this._canvas === null) {
-				return;
+		} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
+			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') {
+				nativeView.fit = 2;
+				//	nativeView.frame = frame;
 			}
-
-			const size = this._logicalSize;
-
-			this._canvas.forceLayout(size.width, size.height);
-
-			if (this._is2D) {
-				this._2dContext?.native?.__resize?.(size.width, size.height);
+		} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
+			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip') {
+				nativeView.fit = 3;
+				//	nativeView.frame = frame;
 			}
-
-			this._didLayout = true;
+		} else if (styleWidth === 'auto' && styleHeight === 'auto') {
+			// when auto/auto is set force the frame size to be the same as the canvas
+			const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
+			const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
+			const newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
+			nativeView.fit = 0;
+			//nativeView.frame = newFrame;
+			frame = newFrame;
+		} else {
+			//	nativeView.frame = frame;
 		}
-	}
-
-	_setNativeViewFrame(nativeView: any, frame: any): void {
-		nativeView.frame = frame;
-		this._canvas.forceLayout(frame.size.width, frame.size.height);
+		super._setNativeViewFrame(nativeView, frame);
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
@@ -301,8 +336,6 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					//this._layoutNative(true);
-
 					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
@@ -324,7 +357,6 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					this._layoutNative(true);
 					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
@@ -341,7 +373,6 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._webgl2Context) {
-					this._layoutNative(true);
 					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
@@ -358,7 +389,6 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._gpuContext) {
-					this._layoutNative(true);
 					const ptr = navigator.gpu.native.__getPointer();
 					const number = NSNumber.numberWithLong(Number(ptr));
 					this._canvas.initWebGPUContext(number);

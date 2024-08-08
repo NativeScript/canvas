@@ -2,7 +2,6 @@ import { fileNameFromPath, Headers, HttpDownloadRequestOptions, HttpError, HttpR
 import { NetworkAgent } from '@nativescript/core/debugger';
 import { File, Folder, knownFolders, path, Utils, Application, ApplicationSettings } from '@nativescript/core';
 import { FileManager } from '../file/file';
-import { isString, isObject, isNullOrUndefined } from '@nativescript/core/utils/types';
 
 export type CancellablePromise = Promise<any> & { cancel: () => void };
 
@@ -85,7 +84,7 @@ export class Http {
 	constructor() {}
 
 	private static buildJavaOptions(options: HttpRequestOptions) {
-		if (!isString(options.url)) {
+		if (!Utils.isString(options.url)) {
 			throw new Error('Http request must provide a valid url.');
 		}
 
@@ -94,14 +93,14 @@ export class Http {
 		javaOptions.url = options.url;
 
 		let method;
-		if (isString(typeof options.method)) {
+		if (Utils.isString(typeof options.method)) {
 			javaOptions.method = options.method;
 			method = options.method.toLowerCase();
 		}
 		if ((method && method === 'post') || method === 'put') {
-			if (isString(options.content)) {
+			if (Utils.isString(options.content)) {
 				javaOptions.content = new java.lang.String(options.content);
-			} else if (isObject(options.content)) {
+			} else if (Utils.isObject(options.content)) {
 				javaOptions.content = serialize(options.content);
 			}
 		}
@@ -129,7 +128,7 @@ export class Http {
 	}
 
 	private static buildJavaDownloadOptions(options: HttpDownloadRequestOptions) {
-		if (!isString(options.url)) {
+		if (!Utils.isString(options.url)) {
 			throw new Error('Http request must provide a valid url.');
 		}
 
@@ -217,7 +216,7 @@ export class Http {
 							// send response data (for requestId) to network debugger
 
 							let contentType = headers['Content-Type'];
-							const hasContentType = !isNullOrUndefined(contentType);
+							const hasContentType = !Utils.isNullOrUndefined(contentType);
 							if (!hasContentType) {
 								contentType = headers['content-type'];
 							}
@@ -225,7 +224,7 @@ export class Http {
 							let acceptHeader;
 							if (!hasContentType) {
 								acceptHeader = headers['Accept'];
-								if (isNullOrUndefined(acceptHeader)) {
+								if (Utils.isNullOrUndefined(acceptHeader)) {
 									acceptHeader = headers['accept'];
 								}
 							} else {
@@ -233,7 +232,7 @@ export class Http {
 							}
 
 							let returnType = 'text/plain';
-							if (!isNullOrUndefined(acceptHeader) && isString(acceptHeader)) {
+							if (!Utils.isNullOrUndefined(acceptHeader) && Utils.isString(acceptHeader)) {
 								let acceptValues = acceptHeader.split(',');
 								let quality = [];
 								let defaultQuality = [];
@@ -271,7 +270,7 @@ export class Http {
 											url: result.url,
 											statusCode,
 											headers,
-											responseAsString: isString ? (result.contentText ? result.contentText : result.content.toString()) : null,
+											responseAsString: Utils.isString(result.contentText) ? result.contentText : result.content?.toString() || '',
 											responseAsImage: null, // TODO needs base64 Image
 										} as any,
 										headers
@@ -279,7 +278,7 @@ export class Http {
 								}
 							}
 
-							if (isTextContentType(returnType) && isNullOrUndefined(responseText)) {
+							if (isTextContentType(returnType) && Utils.isNullOrUndefined(responseText)) {
 								responseText = result.contentText;
 							}
 
@@ -459,7 +458,7 @@ export class Http {
 							// send response data (for requestId) to network debugger
 
 							let contentType = headers['Content-Type'];
-							const hasContentType = !isNullOrUndefined(contentType);
+							const hasContentType = !Utils.isNullOrUndefined(contentType);
 							if (!hasContentType) {
 								contentType = headers['content-type'];
 							}
@@ -467,7 +466,7 @@ export class Http {
 
 							if (!hasContentType) {
 								acceptHeader = headers['Accept'];
-								if (isNullOrUndefined(acceptHeader)) {
+								if (Utils.isNullOrUndefined(acceptHeader)) {
 									acceptHeader = headers['accept'];
 								}
 							} else {
@@ -475,7 +474,7 @@ export class Http {
 							}
 
 							let returnType = 'text/plain';
-							if (!isNullOrUndefined(acceptHeader) && isString(acceptHeader)) {
+							if (!Utils.isNullOrUndefined(acceptHeader) && Utils.isString(acceptHeader)) {
 								let acceptValues = acceptHeader.split(',');
 								let quality = [];
 								let defaultQuality = [];
@@ -513,7 +512,7 @@ export class Http {
 											url: result.url,
 											statusCode,
 											headers,
-											responseAsString: isString ? (result.contentText ? result.contentText : result.content.toString()) : null,
+											responseAsString: Utils.isString(result.contentText) ? result.contentText : result.content?.toString() || '',
 											responseAsImage: null, // TODO needs base64 Image
 										} as any,
 										headers
@@ -616,7 +615,7 @@ function serialize(data: any): any {
 }
 
 function deserialize(data): any {
-	if (isNullOrUndefined(data)) {
+	if (Utils.isNullOrUndefined(data)) {
 		return null;
 	}
 	if (typeof data !== 'object') {

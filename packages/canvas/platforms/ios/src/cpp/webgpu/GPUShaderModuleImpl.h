@@ -11,7 +11,7 @@
 
 class GPUShaderModuleImpl : ObjectWrapperImpl {
 public:
-    GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule);
+    explicit GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule);
 
     ~GPUShaderModuleImpl() {
         canvas_native_webgpu_shader_module_release(this->GetShaderModule());
@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUShaderModuleImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUShaderModule);
+        SetNativeType(shaderModule, NativeType::GPUShaderModule);
         object->SetAlignedPointerInInternalField(0, shaderModule);
         shaderModule->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -1,8 +1,7 @@
 import { CancellablePromise, Http } from '../http/http';
 import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
 import { FileManager } from '../file/file';
-import { isNullOrUndefined, isObject, isFunction } from '@nativescript/core/utils/types';
-import { knownFolders, path as filePath, File as fsFile } from '@nativescript/core';
+import { knownFolders, path as filePath, File as fsFile, Utils } from '@nativescript/core';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -270,13 +269,13 @@ export class TNSXMLHttpRequest {
 	private _addToStringOnResponse() {
 		// Add toString() method to ease debugging and
 		// make Angular2 response.text() method work properly.
-		if (isNullOrUndefined(this.response)) {
+		if (Utils.isNullOrUndefined(this.response)) {
 			return;
 		}
 		if (this.response instanceof ArrayBuffer) {
 			return;
 		}
-		if (isObject(this.response)) {
+		if (Utils.isObject(this.response)) {
 			Object.defineProperty(this._response, 'toString', {
 				configurable: true,
 				enumerable: false,
@@ -1206,7 +1205,7 @@ export class FileReader {
 	}
 
 	private emitEvent(eventName: string, ...args: Array<any>) {
-		if (isFunction(this['on' + eventName])) {
+		if (Utils.isFunction(this['on' + eventName])) {
 			this['on' + eventName](...args);
 		}
 

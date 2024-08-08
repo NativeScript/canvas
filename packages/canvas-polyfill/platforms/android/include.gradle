@@ -1,15 +1,14 @@
 android {
     compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+        sourceCompatibility 17
+        targetCompatibility 17
     }
 }
 
 
 dependencies {
-    def androidxVersion =  project.hasProperty("androidxVersion") ? project.androidxVersion : "1.0.0"
-    implementation 'com.squareup.okio:okio:2.4.2'
+    implementation 'com.squareup.okio:okio:2.10.0'
     implementation 'com.squareup.okhttp3:okhttp:3.14.9'
-    implementation "androidx.annotation:annotation:$androidxVersion"
+    implementation "androidx.annotation:annotation:1.8.1"
 	implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
 }

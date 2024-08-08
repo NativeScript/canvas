@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use skia_safe::font_arguments::variation_position::Coordinate;
 use skia_safe::font_arguments::VariationPosition;
 use skia_safe::font_style::Slant;
 use skia_safe::textlayout::{FontCollection, TextStyle, TypefaceFontProvider};
 use skia_safe::{FontArguments, FontMgr, Typeface};
+use std::sync::LazyLock;
 
 #[derive(PartialEq, Eq, Hash)]
 struct CollectionKey {
@@ -33,7 +33,7 @@ impl CollectionKey {
 // Font collection management
 //
 
-pub static FONT_LIBRARY: Lazy<Mutex<FontLibrary>> = Lazy::new(|| FontLibrary::shared());
+pub static FONT_LIBRARY: LazyLock<Mutex<FontLibrary>> = LazyLock::new(|| FontLibrary::shared());
 
 pub struct FontLibrary {
     pub fonts: Vec<(Typeface, Option<String>)>,

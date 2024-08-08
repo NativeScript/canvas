@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
-import android.graphics.PixelFormat
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
@@ -12,7 +11,6 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.ViewCompat
@@ -22,9 +20,10 @@ import dalvik.annotation.optimization.FastNative
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.floor
+import kotlin.math.min
 
 
 /**
@@ -32,6 +31,39 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class NSCCanvas : FrameLayout {
 
+	enum class Engine {
+		None,
+		CPU,
+		GL,
+		Vulkan
+	}
+
+	var fit = CanvasFit.Fill
+		set(value) {
+			field = value
+			scaleSurface()
+		}
+
+	private var engine = Engine.None
+	var surfaceWidth: Int = 300
+		set(value) {
+			field = value
+			if (!internalSet) {
+				layoutSurface(value, surfaceHeight, this)
+				resize()
+			}
+		}
+
+	var surfaceHeight: Int = 150
+		set(value) {
+			field = value
+			if (!internalSet) {
+				layoutSurface(surfaceWidth, value, this)
+				resize()
+			}
+		}
+
+	private var internalSet = false
 	var nativeGL: Long = 0
 		private set
 
@@ -85,19 +117,26 @@ class NSCCanvas : FrameLayout {
 	}
 
 	private fun init(context: Context, attrs: AttributeSet?, type: SurfaceType) {
+		clipChildren = false
 		textureView = GLView(context, attrs)
 		textureView.canvas = this
 		surfaceView = GLViewSV(context, attrs)
 		surfaceView.canvas = this
 		surfaceType = type
 		setBackgroundColor(Color.TRANSPARENT)
+		val internalWidth = 300
+		val internalHeight = 150
+
+		internalSet = true
+		surfaceWidth = internalWidth
+		surfaceHeight = internalHeight
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
 					textureView,
 					LayoutParams(
-						ViewGroup.LayoutParams.MATCH_PARENT,
-						ViewGroup.LayoutParams.MATCH_PARENT
+						internalWidth,
+						internalHeight
 					)
 				)
 			}
@@ -106,14 +145,14 @@ class NSCCanvas : FrameLayout {
 				addView(
 					surfaceView,
 					LayoutParams(
-						ViewGroup.LayoutParams.MATCH_PARENT,
-						ViewGroup.LayoutParams.MATCH_PARENT
+						internalWidth,
+						internalHeight
 					)
 				)
 			}
 		}
+		internalSet = false
 	}
-
 
 	val drawingBufferWidth: Int
 		get() {
@@ -144,19 +183,24 @@ class NSCCanvas : FrameLayout {
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		if (nativeContext != 0L) {
-			nativeReleaseGLPointer(nativeContext)
-			nativeContext = 0
-		}
-		if (nativeGL != 0L) {
-			nativeReleaseGL(nativeGL)
-			nativeGL = 0
+		if (engine == Engine.GL) {
+			if (nativeContext != 0L) {
+				nativeReleaseGLPointer(nativeContext)
+				nativeContext = 0
+			}
+			if (nativeGL != 0L) {
+				nativeReleaseGL(nativeGL)
+				nativeGL = 0
+			}
 		}
 
 		textureView.surfaceTexture?.release()
 	}
 
 	fun initWebGPUContext(instance: Long) {
+		if (engine != Engine.None) {
+			return
+		}
 		val surface = if (surfaceType == SurfaceType.Surface) {
 //			if (alpha) {
 //				surfaceView.setZOrderOnTop(true)
@@ -165,12 +209,15 @@ class NSCCanvas : FrameLayout {
 //			}
 			surfaceView.holder.surface
 		} else {
-//			textureView.isOpaque = !alpha
+			textureView.isOpaque = false
 			textureView.surface
 		}
 
 		surface?.let {
-			nativeContext = nativeInitWebGPU(instance, it, width, height)
+			nativeContext = nativeInitWebGPU(instance, it, surfaceWidth, surfaceHeight)
+		}
+		if (nativeContext != 0L) {
+			engine = Engine.Vulkan
 		}
 
 	}
@@ -351,11 +398,6 @@ class NSCCanvas : FrameLayout {
 			textureView.surface
 		}
 
-		if (version > 0 && drawingBufferWidth == 0 || drawingBufferHeight == 0) {
-			// force
-			layoutSurface(drawingBufferWidth, drawingBufferHeight, this)
-		}
-
 		surface?.let {
 			nativeGL = nativeInitGL(
 				it,
@@ -375,10 +417,20 @@ class NSCCanvas : FrameLayout {
 			nativeContext = nativeGetGLPointer(nativeGL)
 
 		} ?: run {
-			if (drawingBufferWidth == 0 || drawingBufferHeight == 0) {
+			if (surfaceWidth == 0 || surfaceHeight == 0) {
+				var width = surfaceWidth
+				var height = surfaceHeight
+
+				if (width == 0) {
+					width = 1
+				}
+
+				if (height == 0) {
+					height = 1
+				}
 				nativeGL = nativeInitGLNoSurface(
-					1,
-					1,
+					width,
+					height,
 					alpha,
 					antialias,
 					depth,
@@ -410,15 +462,15 @@ class NSCCanvas : FrameLayout {
 					is2D
 				)
 			}
-
-
 			nativeContext = nativeGetGLPointer(nativeGL)
 		}
+
+		engine = Engine.GL
 
 		this.isAlpha = alpha
 	}
 
-	internal var is2D = false
+	private var is2D = false
 
 	fun create2DContext(
 		alpha: Boolean,
@@ -464,8 +516,8 @@ class NSCCanvas : FrameLayout {
 
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
-			this.drawingBufferWidth,
-			this.drawingBufferHeight,
+			drawingBufferWidth,
+			drawingBufferHeight,
 			alpha,
 			density,
 			samples,
@@ -491,10 +543,75 @@ class NSCCanvas : FrameLayout {
 		isAttachedToWindow = true
 	}
 
-
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
+		resize()
 		listener?.surfaceResize(w, h)
+	}
+
+
+	private fun scaleSurface() {
+		val frameWidth: Int = width
+		val frameHeight: Int = height
+
+		var scaleX: Float = frameWidth.toFloat() / drawingBufferWidth.toFloat()
+		var scaleY: Float = frameHeight.toFloat() / drawingBufferHeight.toFloat()
+
+		var newWidth = 0
+		var newHeight = 0
+
+		val dx = 0F
+		val dy = 0F
+
+		when (fit) {
+			CanvasFit.None -> {
+				newWidth = drawingBufferWidth
+				newHeight = drawingBufferHeight
+				scaleX = 1.0f
+				scaleY = 1.0f
+			}
+
+			CanvasFit.Fill -> {
+				newWidth = frameWidth
+				newHeight = frameHeight
+			}
+
+			CanvasFit.FitX -> {
+				newWidth = frameWidth
+				newHeight = (drawingBufferHeight * scaleX).toInt()
+				scaleY = scaleX
+			}
+
+			CanvasFit.FitY -> {
+				newWidth = (drawingBufferWidth * scaleY).toInt()
+				newHeight = frameHeight
+				scaleX = scaleY
+			}
+
+			CanvasFit.ScaleDown -> {
+				val scale = min(min(scaleX, scaleY), 1.0f)
+				newWidth = (drawingBufferWidth * scale).toInt()
+				newHeight = (drawingBufferHeight * scale).toInt()
+				scaleX = scale
+				scaleY = scale
+			}
+		}
+
+
+
+		if (surfaceType == SurfaceType.Surface) {
+			val layoutParams = surfaceView.layoutParams
+			layoutParams.width = newWidth
+			layoutParams.height = newHeight
+			surfaceView.layoutParams = layoutParams
+			surfaceView.translationX = dx
+			surfaceView.translationY = dy
+		} else {
+			val matrix = Matrix()
+			matrix.preScale(scaleX, scaleY)
+			matrix.postTranslate(dx, dy)
+			textureView.setTransform(matrix)
+		}
 	}
 
 	internal fun resize() {
@@ -505,26 +622,28 @@ class NSCCanvas : FrameLayout {
 				textureView.surface
 			}
 
+			scaleSurface()
+
 			surface?.let {
-				nativeUpdateGLSurface(it, nativeGL)
+				// todo test with surface-view
+				// nativeUpdateGLSurface(it, nativeGL)
 				if (is2D) {
 					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 					nativeUpdate2DSurface(it, native2DContext)
 				}
 			} ?: run {
-				nativeUpdateGLNoSurface(this.drawingBufferWidth, this.drawingBufferHeight, nativeGL)
+				nativeUpdateGLNoSurface(drawingBufferWidth, drawingBufferHeight, nativeGL)
 				if (is2D) {
-
 					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
-
 					nativeUpdate2DSurfaceNoSurface(
-						this.drawingBufferWidth,
-						this.drawingBufferHeight,
+						drawingBufferWidth,
+						drawingBufferHeight,
 						native2DContext
 					)
 				}
 			}
-
+		} else {
+			scaleSurface()
 		}
 	}
 
@@ -539,7 +658,6 @@ class NSCCanvas : FrameLayout {
 
 	var listener: Listener? = null
 
-
 	private val defaultMatrix = Matrix()
 	private val invertMatrix = Matrix()
 	private val invertFlipMatrix = Matrix()
@@ -550,19 +668,17 @@ class NSCCanvas : FrameLayout {
 		invertFlipMatrix.postScale(-1f, -1f)
 	}
 
-
 	fun makeContextCurrent() {
 		nativeMakeGLCurrent(nativeGL)
 	}
 
-
 	@JvmOverloads
-	fun snapshot(flip: Boolean = false): Bitmap? {
+	fun snapshot(flip: Boolean = false): Bitmap {
 		var bitmap: Bitmap? = null
 		var needsToFlip = false
 		if (is2D) {
 			bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-			nativeCustomWithBitmapFlush(native2DContext, bitmap!!)
+			nativeCustomWithBitmapFlush(native2DContext, bitmap)
 			return bitmap
 		} else {
 			if (surfaceType == SurfaceType.Surface) {
@@ -577,7 +693,7 @@ class NSCCanvas : FrameLayout {
 			if (bitmap == null) {
 				needsToFlip = true
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-				nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap!!)
+				nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap)
 			}
 		}
 
@@ -651,9 +767,12 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		fun loadLib() {
 			if (!isLibraryLoaded) {
-				System.loadLibrary("canvasnative")
-				System.loadLibrary("canvasnativev8")
-				isLibraryLoaded = true
+				try {
+					System.loadLibrary("canvasnative")
+					System.loadLibrary("canvasnativev8")
+					isLibraryLoaded = true
+				} catch (_: Exception) {
+				}
 			}
 		}
 
@@ -689,7 +808,6 @@ class NSCCanvas : FrameLayout {
 			canvas.layout(0, 0, width, height)
 		}
 
-
 		@JvmStatic
 		fun layoutSurface(width: Float, height: Float, canvas: NSCCanvas) {
 			layoutSurface(width.toInt(), height.toInt(), canvas)
@@ -712,11 +830,11 @@ class NSCCanvas : FrameLayout {
 			rootParams.height = height
 
 
-			if (rootParams.width == 0) {
+			if (rootParams.width <= 0) {
 				rootParams.width = 1
 			}
 
-			if (rootParams.height == 0) {
+			if (rootParams.height <= 0) {
 				rootParams.height = 1
 			}
 
@@ -967,44 +1085,10 @@ class NSCCanvas : FrameLayout {
 		val direction: Int
 			get() {
 				var direction = 0
-				if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+				if (TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_RTL) {
 					direction = 1
 				}
 				return direction
 			}
 	}
-}
-
-fun View.getBoundingClientRect(buffer: FloatBuffer) {
-	val density = context.resources.displayMetrics.density
-	val densityInverse = 1.0f / density
-	buffer.put(0, top * densityInverse)
-	buffer.put(1, right * densityInverse)
-	buffer.put(2, bottom * densityInverse)
-	buffer.put(3, left * densityInverse)
-	buffer.put(4, width * densityInverse)
-	buffer.put(5, height * densityInverse)
-	buffer.put(6, x * densityInverse)
-	buffer.put(7, y * densityInverse)
-}
-
-fun View.getBoundingClientRectJSON(): String {
-	val density = context.resources.displayMetrics.density
-
-	val sb = StringBuilder()
-	sb.append("{")
-	val densityInverse = 1.0f / density
-
-	NSCCanvas.append("top", top * densityInverse, sb)
-	NSCCanvas.append("right", right * densityInverse, sb)
-	NSCCanvas.append("bottom", bottom * densityInverse, sb)
-	NSCCanvas.append("left", left * densityInverse, sb)
-	NSCCanvas.append("width", width * densityInverse, sb)
-	NSCCanvas.append("height", height * densityInverse, sb)
-	NSCCanvas.append("x", x * densityInverse, sb)
-	NSCCanvas.append("y", y * densityInverse, sb, true)
-
-	sb.append("}")
-
-	return sb.toString()
 }

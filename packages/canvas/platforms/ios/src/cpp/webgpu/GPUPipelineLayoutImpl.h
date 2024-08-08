@@ -26,14 +26,15 @@ public:
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);
 
-    static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, GPUPipelineLayoutImpl *device) {
+    static v8::Local<v8::Object>
+    NewInstance(v8::Isolate *isolate, GPUPipelineLayoutImpl *pipeline) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUPipelineLayoutImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUPipelineLayout);
-        object->SetAlignedPointerInInternalField(0, device);
-        device->BindFinalizer(isolate, object);
+        SetNativeType(pipeline, NativeType::GPUPipelineLayout);
+        object->SetAlignedPointerInInternalField(0, pipeline);
+        pipeline->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

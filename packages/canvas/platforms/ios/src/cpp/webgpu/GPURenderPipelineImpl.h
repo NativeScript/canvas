@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPURenderPipelineImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPURenderPipeline);
+        SetNativeType(pipeline, NativeType::GPURenderPipeline);
         object->SetAlignedPointerInInternalField(0, pipeline);
         pipeline->BindFinalizer(isolate, object);
         return scope.Escape(object);

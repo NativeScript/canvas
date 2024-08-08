@@ -1,20 +1,18 @@
-#![allow(dead_code)]
 #![allow(non_upper_case_globals)]
 
 use std::os::raw::c_float;
 
 use csscolorparser::parse;
-use skia_safe::paint::{Cap, Style};
-pub use skia_safe::Color;
 use skia_safe::{BlendMode, Point};
+pub use skia_safe::Color;
+use skia_safe::paint::{Cap, Style};
 
+use crate::context::Context;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
-use crate::context::Context;
 use crate::utils::color::to_parsed_color;
-use crate::ContextWrapper;
 
 #[derive(Clone)]
 pub enum PaintStyle {
@@ -97,7 +95,6 @@ impl Paint {
         self.image_smoothing_quality = image_smoothing_quality
     }
 
-
     fn update_paint_style(&mut self, is_fill: bool) {
         let style;
         if is_fill {
@@ -108,6 +105,7 @@ impl Paint {
         match style {
             PaintStyle::Color(color) => {
                 self.fill_paint.set_shader(None);
+                self.stroke_paint.set_shader(None);
                 if is_fill {
                     self.fill_paint.set_color(*color);
                 } else {
@@ -116,12 +114,12 @@ impl Paint {
             }
             PaintStyle::Pattern(pattern) => {
                 if is_fill {
-                    self.fill_paint.set_shader(Pattern::to_pattern_shader(
+                    self.fill_paint.set_shader(Pattern::pattern_shader(
                         pattern,
                         self.image_smoothing_quality,
                     ));
                 } else {
-                    self.stroke_paint.set_shader(Pattern::to_pattern_shader(
+                    self.stroke_paint.set_shader(Pattern::pattern_shader(
                         pattern,
                         self.image_smoothing_quality,
                     ));
@@ -129,14 +127,13 @@ impl Paint {
             }
             PaintStyle::Gradient(gradient) => {
                 if is_fill {
-                    self.fill_paint.set_shader(Gradient::to_shader(gradient));
+                    self.fill_paint.set_shader(Gradient::shader(gradient));
                 } else {
-                    self.stroke_paint.set_shader(Gradient::to_shader(gradient));
+                    self.stroke_paint.set_shader(Gradient::shader(gradient));
                 }
             }
         }
     }
-
 
     pub fn set_style(&mut self, is_fill: bool, style: PaintStyle) {
         if is_fill {
@@ -146,7 +143,6 @@ impl Paint {
         }
         self.update_paint_style(is_fill);
     }
-
 
     pub fn style(&self, is_fill: bool) -> &PaintStyle {
         if is_fill {
@@ -263,9 +259,7 @@ impl Default for Paint {
     }
 }
 
-
-pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: bool, color: &str) {
-    let mut context = context.get_context_mut();
+pub fn paint_style_set_color_with_string(context: &mut Context, is_fill: bool, color: &str) {
     if let Ok(color) = color.parse::<csscolorparser::Color>() {
         let color = color.rgba_u8();
         let style = PaintStyle::Color(Color::from_argb(color.3, color.0, color.1, color.2));
@@ -277,16 +271,14 @@ pub fn paint_style_set_color_with_string(context: &mut ContextWrapper, is_fill: 
     }
 }
 
-
 pub fn paint_style_set_color_with_rgba(
-    context: &mut ContextWrapper,
+    context: &mut Context,
     is_fill: bool,
     r: u8,
     g: u8,
     b: u8,
     a: u8,
 ) {
-    let mut context = context.get_context_mut();
     let style = PaintStyle::Color(Color::from_argb(a, r, g, b));
     if is_fill {
         context.set_fill_style(style);

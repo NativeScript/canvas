@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUBindGroupImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUBindGroup);
+        SetNativeType(groupLayout, NativeType::GPUBindGroup);
         object->SetAlignedPointerInInternalField(0, groupLayout);
         groupLayout->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUAdapterInfoImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUAdapterInfo);
+        SetNativeType(info, NativeType::GPUAdapterInfo);
         object->SetAlignedPointerInInternalField(0, info);
         info->BindFinalizer(isolate, object);
         return scope.Escape(object);

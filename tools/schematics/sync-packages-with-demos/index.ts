@@ -1,5 +1,5 @@
 import { chain, Rule, Tree, SchematicContext, SchematicsException, apply, url, move, mergeWith, template, noop } from '@angular-devkit/schematics';
-import { stringUtils, formatFiles } from '@nrwl/workspace';
+import { stringUtils, formatFiles } from '@nx/workspace';
 import { sanitizeCollectionArgs, setPackageNamesToUpdate, setDemoTypes, SupportedDemoTypes, SupportedDemoType, getDemoTypes, getPackageNamesToUpdate, getDemoAppRoot, addDependencyToDemoApp, checkPackages, getDemoIndexButtonForType, getDemoIndexPathForType, resetAngularIndex, getPluginDemoPath, resetAngularRoutes, npmScope, updateDemoSharedIndex, getAllPackages } from '../utils';
 import { Schema } from './schema';
 

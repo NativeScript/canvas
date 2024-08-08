@@ -17,11 +17,11 @@ export enum GPUMapMode {
 }
 
 export enum GPUTextureUsage {
-	COPY_SRC = 1,
-	COPY_DST = 2,
-	RENDER_ATTACHMENT = 16,
-	STORAGE_BINDING = 8,
-	TEXTURE_BINDING = 4,
+	COPY_SRC = 0x01,
+	COPY_DST = 0x02,
+	RENDER_ATTACHMENT = 0x10,
+	STORAGE_BINDING = 0x08,
+	TEXTURE_BINDING = 0x04,
 }
 
 export enum GPUShaderStage {

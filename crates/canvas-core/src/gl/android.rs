@@ -1,40 +1,38 @@
 use std::ffi::CString;
+use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
-#[cfg(any(target_os = "android"))]
 use glutin::api::egl::{
-    config::Config, context::PossiblyCurrentContext, display::Display, surface::Surface,
+    context::PossiblyCurrentContext, display::Display, surface::Surface,
 };
+
 use glutin::config::{
-    Api, AsRawConfig, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder,
-    GetGlConfig,
+    Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder
 };
-use glutin::context::{AsRawContext, ContextApi, GlContext, RawContext, Version};
-use glutin::display::{AsRawDisplay, DisplayApiPreference};
+use glutin::context::{ContextApi, Version};
+use glutin::display::AsRawDisplay;
 use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
 use crate::context_attributes::ContextAttributes;
 
-use once_cell::sync::OnceCell;
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
+pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
-pub static IS_GL_SYMBOLS_LOADED: OnceCell<bool> = OnceCell::new();
-
-#[derive(Debug)]
 pub(crate) enum SurfaceHelper {
     Window(Surface<WindowSurface>),
     Pbuffer(Surface<PbufferSurface>),
     Pixmap(Surface<PixmapSurface>),
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct GLContextInner {
     surface: Option<SurfaceHelper>,
     context: Option<PossiblyCurrentContext>,
@@ -46,35 +44,38 @@ unsafe impl Sync for GLContextInner {}
 
 unsafe impl Send for GLContextInner {}
 
-#[derive(Debug, Default)]
-pub struct GLContext {
-    inner: Arc<RwLock<GLContextInner>>,
+#[derive(Default)]
+pub struct GLContext(Arc<RwLock<GLContextInner>>);
+
+impl Debug for GLContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // todo
+        f.debug_struct("GLContext")
+            .finish()
+    }
 }
 
 impl GLContext {
     // pointer has to
     pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.inner))
+        Arc::into_raw(Arc::clone(&self.0))
     }
 
     pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
-        Self {
-            inner: unsafe { Arc::from_raw(raw) },
-        }
+        Self(unsafe { Arc::from_raw(raw) })
     }
 
     pub fn get_strong_count(&self) -> usize {
-        Arc::strong_count(&self.inner)
+        Arc::strong_count(&self.0)
     }
 
     pub fn increment_strong_count(self) {
-        let ptr = Arc::into_raw(self.inner);
+        let ptr = Arc::into_raw(self.0);
         unsafe { Arc::increment_strong_count(ptr) }
-        let _ = unsafe { Arc::from_raw(ptr) };
     }
 
     pub fn decrement_strong_count(self) {
-        let ptr = Arc::into_raw(self.inner);
+        let ptr = Arc::into_raw(self.0);
         unsafe { Arc::decrement_strong_count(ptr) }
         let _ = unsafe { Arc::from_raw(ptr) };
     }
@@ -82,9 +83,7 @@ impl GLContext {
 
 impl Clone for GLContext {
     fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-        }
+        Self(Arc::clone(&self.0))
     }
 }
 
@@ -92,9 +91,9 @@ impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
         let mut builder = ConfigTemplateBuilder::new()
             .with_api(if self.get_is_canvas() {
-                glutin::config::Api::GLES2
+                Api::GLES2
             } else {
-                glutin::config::Api::GLES3
+                Api::GLES3
             })
             .prefer_hardware_accelerated(Some(true))
             .with_alpha_size(if self.get_alpha() { 8 } else { 0 })
@@ -222,7 +221,7 @@ impl GLContext {
         let multi_sample = context_attrs.get_antialias();
         let cfg = context_attrs.clone().into();
 
-        let mut inner = self.inner.write();
+        let mut inner = self.0.write();
         unsafe {
             if let Some(display) = inner.display.as_ref() {
                 let mut config = display
@@ -386,7 +385,7 @@ impl GLContext {
         window: RawWindowHandle,
         shared_context: Option<&GLContext>,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -525,7 +524,7 @@ impl GLContext {
                             )));
 
                         if let Some(inner) = shared_context {
-                            let inner = inner.inner.read();
+                            let inner = inner.0.read();
                             if let Some(context) = inner.context.as_ref() {
                                 context_attrs = context_attrs.with_sharing(context);
                             }
@@ -546,9 +545,7 @@ impl GLContext {
                             transfer_surface_info: Default::default(),
                         };
 
-                        let ret = GLContext {
-                            inner: Arc::new(RwLock::new(gl_context)),
-                        };
+                        let ret = GLContext(Arc::new(RwLock::new(gl_context)));
 
                         Some(ret)
                     }
@@ -567,7 +564,7 @@ impl GLContext {
         window: RawWindowHandle,
     ) {
         unsafe {
-            let mut inner = self.inner.write();
+            let mut inner = self.0.write();
             if let Some(display) = inner.display.as_ref() {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -688,6 +685,7 @@ impl GLContext {
                             NonZeroU32::try_from(height as u32).unwrap(),
                         );
 
+
                     let surface = display
                         .create_window_surface(&config, &surface_attr)
                         .map(SurfaceHelper::Window)
@@ -706,7 +704,7 @@ impl GLContext {
         height: i32,
     ) {
         unsafe {
-            let mut inner = self.inner.write();
+            let mut inner = self.0.write();
             if let Some(display) = inner.display.as_ref() {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -719,7 +717,7 @@ impl GLContext {
 
                 let is_2d = context_attrs.get_is_canvas();
                 let multi_sample = context_attrs.get_antialias();
-                let mut cfg: ConfigTemplateBuilder = context_attrs.into();
+                let cfg: ConfigTemplateBuilder = context_attrs.into();
 
                 let cfg = cfg
                     .with_surface_type(ConfigSurfaceTypes::PBUFFER)
@@ -729,7 +727,7 @@ impl GLContext {
                     )
                     .build();
 
-                let mut config = display
+                let config = display
                     .find_configs(cfg)
                     .map(|c| {
                         c.reduce(|accum, cconfig| {
@@ -785,7 +783,7 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<GLContext> {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
@@ -946,14 +944,12 @@ impl GLContext {
                             .map(|v| v.treat_as_possibly_current())
                             .ok();
 
-                        Some(GLContext {
-                            inner: Arc::new(RwLock::new(GLContextInner {
-                                surface,
-                                context,
-                                display: Some(display),
-                                transfer_surface_info: Default::default(),
-                            })),
-                        })
+                        Some(GLContext(Arc::new(RwLock::new(GLContextInner {
+                            surface,
+                            context,
+                            display: Some(display),
+                            transfer_surface_info: Default::default(),
+                        }))))
                     }
                     None => None,
                 }
@@ -967,7 +963,7 @@ impl GLContext {
     }
 
     pub fn has_gl2support() -> bool {
-        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::empty())) } {
+        match unsafe { Display::new(RawDisplayHandle::Android(AndroidDisplayHandle::new())) } {
             Ok(display) => unsafe {
                 display
                     .find_configs(
@@ -989,9 +985,8 @@ impl GLContext {
         GLContext::create_pbuffer(config, width, height)
     }
 
-
     pub fn set_vsync(&self, sync: bool) -> bool {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         let vsync = if sync {
             SwapInterval::Wait(NonZeroU32::new(1).unwrap())
         } else {
@@ -1007,9 +1002,8 @@ impl GLContext {
         }
     }
 
-
     pub fn make_current(&self) -> bool {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => {
                 if context.is_current() {
@@ -1026,9 +1020,8 @@ impl GLContext {
         }
     }
 
-
     pub fn remove_if_current(&self) {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => {
                 if !context.is_current() {
@@ -1067,9 +1060,8 @@ impl GLContext {
         }
     }
 
-
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         match (inner.context.as_ref(), inner.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
@@ -1080,9 +1072,8 @@ impl GLContext {
         }
     }
 
-
     pub fn get_surface_width(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1094,9 +1085,8 @@ impl GLContext {
             .unwrap_or_default()
     }
 
-
     pub fn get_surface_height(&self) -> i32 {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1108,9 +1098,8 @@ impl GLContext {
             .unwrap_or_default()
     }
 
-
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        let inner = self.inner.read();
+        let inner = self.0.read();
         inner
             .surface
             .as_ref()
@@ -1132,12 +1121,12 @@ impl GLContext {
     }
 
     pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.inner.read(), |v| &v.transfer_surface_info)
+        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
     }
 
     pub fn get_transfer_surface_info_mut(
         &self,
     ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.inner.write(), |v| &mut v.transfer_surface_info)
+        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
     }
 }

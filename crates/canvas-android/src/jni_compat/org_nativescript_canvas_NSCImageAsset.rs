@@ -1,6 +1,6 @@
-use jni::JNIEnv;
 use jni::objects::{JByteArray, JByteBuffer, JClass, JIntArray, JObject, JString, ReleaseMode};
-use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE, jobject};
+use jni::sys::{jboolean, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 use ndk::bitmap::BitmapFormat;
 
 use canvas_c::ImageAsset;
@@ -47,6 +47,7 @@ pub extern "system" fn nativeLoadFromBitmap(
                     canvas_core::image_asset::ImageAsset::rgb565_to_rgba8888(image_data.as_slice());
                 asset.load_from_raw_bytes(info.width(), info.height(), 4, image)
             }
+            #[allow(deprecated)]
             BitmapFormat::RGBA_4444 => false,
             BitmapFormat::A_8 => false,
             BitmapFormat::RGBA_F16 => false,
@@ -87,7 +88,6 @@ pub extern "system" fn nativeLoadFromPath(
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "system" fn nativeLoadFromUrl(
@@ -141,13 +141,13 @@ pub unsafe extern "system" fn nativeLoadFromBytes(
             }
             JNI_FALSE
         }
-        Err(_) => JNI_FALSE
+        Err(_) => JNI_FALSE,
     }
 }
 
 #[no_mangle]
 pub extern "system" fn nativeLoadFromBuffer(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _: JClass,
     asset: jlong,
     buffer: JByteBuffer,
@@ -171,10 +171,9 @@ pub extern "system" fn nativeLoadFromBuffer(
     JNI_FALSE
 }
 
-
 #[no_mangle]
 pub extern "system" fn nativeGetDimensions(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _: JClass,
     asset: jlong,
     dimensions: JIntArray,

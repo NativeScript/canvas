@@ -71,7 +71,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_vertex_array_objectImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::OES_vertex_array_object);
+        SetNativeType(vertexArrayObject, NativeType::OES_vertex_array_object);
         object->SetAlignedPointerInInternalField(0, vertexArrayObject);
         vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);

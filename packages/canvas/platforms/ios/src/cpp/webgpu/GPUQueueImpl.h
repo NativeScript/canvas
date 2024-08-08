@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUQueueImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUQueue);
+        SetNativeType(queue, NativeType::GPUQueue);
         object->SetAlignedPointerInInternalField(0, queue);
         queue->BindFinalizer(isolate, object);
         return scope.Escape(object);

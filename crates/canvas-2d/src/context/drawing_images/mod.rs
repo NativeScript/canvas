@@ -1,11 +1,9 @@
-use log::log;
 use skia_safe::{Image, Rect};
 use skia_safe::canvas::SrcRectConstraint;
 
 use canvas_core::image_asset::ImageAsset;
 
 use crate::context::Context;
-use crate::prelude::ScaleUtils;
 
 impl Context {
     pub fn draw_image_asset_src_xywh_dst_xywh(
@@ -74,11 +72,7 @@ impl Context {
                     width as i32,
                     height as i32,
                 ) {
-                    self.draw_image_dx_dy(
-                        &image,
-                        x,
-                        y,
-                    )
+                    self.draw_image_dx_dy(&image, x, y)
                 }
             }
         }
@@ -100,9 +94,7 @@ impl Context {
                 if let Some(image) =
                     crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
                 {
-                    self.draw_image_dx_dy_dw_dh(
-                        &image,  x, y, width, height,
-                    )
+                    self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
                 }
             }
         }
@@ -144,53 +136,30 @@ impl Context {
         )
     }
 
-
-
-    pub fn draw_image_dx_dy(
-        &mut self,
-        image: &Image,
-        x: f32,
-        y: f32
-    ) {
-        
+    pub fn draw_image_dx_dy(&mut self, image: &Image, x: f32, y: f32) {
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
 
-        let paint = self.state.paint.image_paint();
-
-        self.surface.canvas().draw_image_with_sampling_options(
-            image,
-            skia_safe::Point::new(
-                x,
-                y
-            ),
-            self.state.image_smoothing_quality,
-            Some(paint)
-        );
+        let paint = self.state.paint.image_paint().clone();
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_image_with_sampling_options(
+                image,
+                skia_safe::Point::new(x, y),
+                quality,
+                Some(paint),
+            );
+        });
     }
 
-
-    pub fn draw_image_dx_dy_dw_dh(
-        &mut self,
-        image: &Image,
-        dx: f32,
-        dy: f32,
-        dw: f32,
-        dh: f32,
-    ) {
-       self.draw_image_with_rect(image, Rect::from_xywh(dx, dy, dw, dh))
+    pub fn draw_image_dx_dy_dw_dh(&mut self, image: &Image, dx: f32, dy: f32, dw: f32, dh: f32) {
+        self.draw_image_with_rect(image, Rect::from_xywh(dx, dy, dw, dh))
     }
 
-    fn draw_image(
-        &mut self,
-        image: &Image,
-        src_rect: impl Into<Rect>,
-        dst_rect: impl Into<Rect>,
-    ) {
+    fn draw_image(&mut self, image: &Image, src_rect: impl Into<Rect>, dst_rect: impl Into<Rect>) {
         let src_rect = src_rect.into();
         let dst_rect = dst_rect.into();
-        
 
         let dimensions = image.dimensions();
         let (src, dst) = crate::utils::fit_bounds(
@@ -204,26 +173,24 @@ impl Context {
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
 
-        let paint = self.state.paint.image_paint();
-
-        self.surface.canvas().draw_image_rect_with_sampling_options(
-            image,
-            Some((&src, SrcRectConstraint::Strict)),
-            dst,
-            self.state.image_smoothing_quality,
-            paint,
-        );
+        let paint = self.state.paint.image_paint().clone();
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_image_rect_with_sampling_options(
+                image,
+                Some((&src, SrcRectConstraint::Strict)),
+                dst,
+                quality,
+                paint,
+            );
+        });
     }
 
-
-
     fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
-
         let dimensions = image.dimensions();
 
         let src_rect = Rect::from_xywh(0., 0., dimensions.width as f32, dimensions.height as f32);
         let dst_rect = dst_rect.into();
-        
 
         let (src, dst) = crate::utils::fit_bounds(
             dimensions.width as f32,
@@ -232,20 +199,22 @@ impl Context {
             dst_rect,
         );
 
-        
         self.state
             .paint
             .image_smoothing_quality_set(self.state.image_filter_quality());
-        let paint = self.state.paint.image_paint();
-        self.surface.canvas().draw_image_rect_with_sampling_options(
-            image,
-            Some((&src, SrcRectConstraint::Strict)),
-            dst,
-            self.state.image_smoothing_quality,
-            paint,
-        );
-    }
+        let paint = self.state.paint.image_paint().clone();
 
+        let quality = self.state.image_smoothing_quality;
+        self.render_to_canvas(&paint, |canvas, paint| {
+            canvas.draw_image_rect_with_sampling_options(
+                image,
+                Some((&src, SrcRectConstraint::Strict)),
+                dst,
+                quality,
+                paint,
+            );
+        });
+    }
 
     pub(crate) fn draw_image_with_points(&mut self, image: &Image, x: f32, y: f32) {
         self.draw_image_with_rect(

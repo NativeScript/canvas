@@ -40,7 +40,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_standard_derivativesImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::OES_standard_derivatives);
+        SetNativeType( derivatives, NativeType::OES_standard_derivatives);
         object->SetAlignedPointerInInternalField(0, derivatives);
         derivatives->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -10,9 +10,9 @@
 
 class MatrixImpl: public ObjectWrapperImpl {
 public:
-    MatrixImpl(Matrix* matrix);
+    explicit MatrixImpl(Matrix* matrix);
     ~MatrixImpl(){
-        canvas_native_matrix_destroy(this->GetMatrix());
+        canvas_native_matrix_release(this->GetMatrix());
         this->matrix_ = nullptr;
     }
 

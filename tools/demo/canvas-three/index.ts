@@ -36,7 +36,7 @@ import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_
 import { ghost_card } from './examples/ghost_card';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { Canvas } from '@nativescript/canvas';
-import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
+//import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
 import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
@@ -68,7 +68,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		this.webgpu_cube(this.canvas);
+		//this.webgpu_cube(this.canvas);
 
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
@@ -76,7 +76,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//webgl_shadowmap_performance(this.canvas);
 		//webgl_shadowmap_pointlight(this.canvas);
 		//webgl_shadowmap_vsm(this.canvas);
-
 		//init(this.canvas);
 
 		//this.topDown(this.canvas);
@@ -94,9 +93,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//canvas.height = 1000;
 		//this.threeOcean(this.canvas);
 
-		//this.skinningAndMorphing(this.canvas);
+		this.skinningAndMorphing(this.canvas);
 
-		//this.geoColors(canvas);
+		//this.geoColors(this.canvas);
 		// setTimeout(()=>{
 		// 	console.log(canvas.toDataURL());
 		// 	const view = canvas._canvas._canvas.subviews.objectAtIndex(0);
@@ -3171,7 +3170,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	skinningAndMorphing(canvas) {
 		const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
 
-		const { width, height } = canvas;
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+
+		const { clientWidth: width, clientHeight: height } = canvas;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;
 		var camera, scene, renderer, model, face;
 
@@ -3233,14 +3235,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			);
 
 			renderer = new THREE.WebGLRenderer({ context, antialias: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
+			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
 			//renderer.outputEncoding = THREE.sRGBEncoding;
 			//container.appendChild( renderer.domElement );
 
 			window.addEventListener('resize', onWindowResize, false);
 
-			const controls = new OrbitControls(camera, canvas);
+			const controls = new OrbitControls(camera, canvas.toHTMLCanvas());
 			controls.update();
 
 			// stats
@@ -3391,8 +3393,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let camera, scene, renderer;
 		let controls, water, sun, mesh;
 
-		let width = canvas.width;
-		let height = canvas.height;
+		let width = canvas.clientWidth;
+		let height = canvas.clientHeight;
 
 		init(this.root);
 		animate();
@@ -3400,7 +3402,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		function init(root) {
 			//
 
+			const dom = new (<any>HTMLCanvasElement)(canvas);
+
 			renderer = new THREE.WebGLRenderer({ context, antialias: false });
+
 			renderer.setPixelRatio(window.devicePixelRatio);
 			//renderer.setSize(canvas.width, canvas.height);
 			renderer.setSize(width, height);
@@ -3490,7 +3495,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			controls = new OrbitControls(camera, canvas);
+			controls = new OrbitControls(camera, dom);
 			controls.maxPolarAngle = Math.PI * 0.495;
 			controls.target.set(0, 10, 0);
 			controls.minDistance = 40.0;

@@ -31,7 +31,7 @@ export function particlesLarge(canvas) {
         //frames per second
         this.fps = 60;
         //number of particles
-        this.numParticles = 75;
+        this.numParticles = 500;
         //required canvas variables
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');

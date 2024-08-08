@@ -9,8 +9,11 @@ let camera, scene, renderer, clock; //stats;
 let dirLight, spotLight;
 let torusKnot, dirGroup;
 let context;
-let width , height = 0;
+let width,
+	height = 0;
 function init(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio; //context.drawingBufferWidth;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio; //context.drawingBufferHeight
 	context = canvas.getContext('webgl2') as WebGLRenderingContext;
 	width = canvas.width;
 	height = canvas.height;
@@ -167,13 +170,13 @@ function initMisc() {
 	const { drawingBufferWidth, drawingBufferHeight } = context;
 
 	renderer = new THREE.WebGLRenderer({ context, antialias: true });
-	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setPixelRatio(1);
 	renderer.setSize(width, height);
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.VSMShadowMap;
 
 	// Mouse control
-	const controls = new OrbitControls(camera, context.canvas);
+	const controls = new OrbitControls(camera, context.canvas.toHTMLCanvas());
 	controls.target.set(0, 2, 0);
 	controls.update();
 

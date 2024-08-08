@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use core::convert::{From, Into};
+use std::sync::Arc;
 
 use skia_safe::{surfaces, EncodedImageFormat};
 
@@ -126,10 +127,10 @@ pub fn create_from_image_data_raw(
     resize_height: f32,
 ) -> i64 {
     unsafe {
-        let data: *mut ImageData = image_data as _;
-        let data = &mut *data;
+        let data: *const ImageData = image_data as _;
+        let data = &*data;
 
-        Box::into_raw(Box::new(create_from_image_data(
+        Arc::into_raw(Arc::new(create_from_image_data(
             data,
             rect,
             flip_y,
@@ -143,7 +144,7 @@ pub fn create_from_image_data_raw(
 }
 
 pub fn create_from_image_data(
-    image_data: &mut ImageData,
+    image_data: &ImageData,
     rect: Option<(f32, f32, f32, f32)>,
     flip_y: bool,
     premultiply_alpha: i32,
@@ -179,7 +180,7 @@ pub(crate) fn create_image_bitmap_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Box::into_raw(Box::new(create_image_bitmap(
+    Arc::into_raw(Arc::new(create_image_bitmap(
         image,
         rect,
         flip_y,
@@ -346,7 +347,7 @@ pub fn create_image_asset_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Box::into_raw(Box::new(create_image_asset(
+    Arc::into_raw(Arc::new(create_image_asset(
         buf,
         image_width,
         image_height,
@@ -424,9 +425,9 @@ pub fn create_from_image_asset_src_rect_raw(
     resize_height: f32,
 ) -> i64 {
     unsafe {
-        let asset: *mut ImageAsset = image_asset as _;
-        let asset = &mut *asset;
-        return Box::into_raw(Box::new(create_from_image_asset_src_rect(
+        let asset: *const ImageAsset = image_asset as _;
+        let asset = &*asset;
+        return Arc::into_raw(Arc::new(create_from_image_asset_src_rect(
             asset,
             rect,
             flip_y,
@@ -440,7 +441,7 @@ pub fn create_from_image_asset_src_rect_raw(
 }
 
 pub fn create_from_image_asset_src_rect(
-    image_asset: &mut ImageAsset,
+    image_asset: &ImageAsset,
     rect: Option<(f32, f32, f32, f32)>,
     flip_y: bool,
     premultiply_alpha: i32,
@@ -449,25 +450,23 @@ pub fn create_from_image_asset_src_rect(
     resize_width: f32,
     resize_height: f32,
 ) -> ImageAsset {
-    unsafe {
-        if let Some(bytes) = image_asset.get_bytes() {
-            let width = image_asset.width() as f32;
-            let height = image_asset.height() as f32;
-            return create_image_asset(
-                bytes,
-                width,
-                height,
-                rect,
-                flip_y,
-                premultiply_alpha,
-                color_space_conversion,
-                resize_quality,
-                resize_width,
-                resize_height,
-            );
-        }
-        ImageAsset::new()
+    if let Some(bytes) = image_asset.get_bytes() {
+        let width = image_asset.width() as f32;
+        let height = image_asset.height() as f32;
+        return create_image_asset(
+            bytes,
+            width,
+            height,
+            rect,
+            flip_y,
+            premultiply_alpha,
+            color_space_conversion,
+            resize_quality,
+            resize_width,
+            resize_height,
+        );
     }
+    ImageAsset::new()
 }
 
 pub fn create_image_asset_encoded(
@@ -505,7 +504,7 @@ pub fn create_image_asset_encoded_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Box::into_raw(Box::new(create_image_asset_encoded(
+    Arc::into_raw(Arc::new(create_image_asset_encoded(
         buf,
         rect,
         flip_y,

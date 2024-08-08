@@ -1,4 +1,3 @@
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum TextAlign {
     START = 0,

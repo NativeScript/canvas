@@ -30,7 +30,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUSamplerImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUSampler);
+        SetNativeType(sampler, NativeType::GPUSampler);
         object->SetAlignedPointerInInternalField(0, sampler);
         sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);

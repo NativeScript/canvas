@@ -1,14 +1,17 @@
 use std::ffi::{c_char, CString};
+use std::sync::Arc;
 
 use bytes::BytesMut;
-
-use crate::ImageAsset;
+use parking_lot::Mutex;
+use crate::c2d::ImageData;
+use crate::image_asset::ImageAsset;
 
 #[derive(Clone)]
 enum U8BufferInner {
     BytesMut(BytesMut),
-    Vec(Vec<u8>),
+    Vec(Arc<Mutex<Vec<u8>>>),
     ImageAsset(ImageAsset),
+    ImageData(ImageData),
 }
 
 #[derive(Clone)]
@@ -16,15 +19,19 @@ pub struct U8Buffer(U8BufferInner);
 
 impl U8Buffer {
     pub fn new_with_vec(value: Vec<u8>) -> Self {
-        Self(U8BufferInner::Vec(value))
+        Self(U8BufferInner::Vec(Arc::new(Mutex::new(value))))
     }
 
     pub fn get_buffer(&self) -> &[u8] {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value,
-            U8BufferInner::Vec(value) => value.as_slice(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.get_bytes().unwrap_or(&[])
+            U8BufferInner::Vec(value) => {
+                let lock = value.lock();
+                unsafe { std::slice::from_raw_parts(lock.as_ptr(), lock.len()) }
+            }
+            U8BufferInner::ImageAsset(value) => value.0.get_bytes().unwrap_or(&[]),
+            U8BufferInner::ImageData(value) => {
+                value.0.data()
             }
         }
     }
@@ -32,9 +39,13 @@ impl U8Buffer {
     pub fn get_buffer_mut(&mut self) -> &mut [u8] {
         match &mut self.0 {
             U8BufferInner::BytesMut(value) => value,
-            U8BufferInner::Vec(value) => value.as_mut_slice(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.get_bytes_mut().unwrap_or(&mut [])
+            U8BufferInner::Vec(value) => {
+                let mut lock = value.lock();
+                unsafe { std::slice::from_raw_parts_mut(lock.as_mut_ptr(), lock.len()) }
+            }
+            U8BufferInner::ImageAsset(value) => value.0.get_bytes_mut().unwrap_or(&mut []),
+            U8BufferInner::ImageData(value) => {
+                value.0.data_mut()
             }
         }
     }
@@ -42,10 +53,12 @@ impl U8Buffer {
     pub fn length(&self) -> usize {
         match &self.0 {
             U8BufferInner::BytesMut(value) => value.len(),
-            U8BufferInner::Vec(value) => value.len(),
-            U8BufferInner::ImageAsset(value) => {
-                value.0.len()
+            U8BufferInner::Vec(value) => {
+                let lock = value.lock();
+                lock.len()
             }
+            U8BufferInner::ImageAsset(value) => value.0.len(),
+            U8BufferInner::ImageData(value) => value.0.data_len()
         }
     }
 }
@@ -58,7 +71,7 @@ impl Default for U8Buffer {
 
 impl From<Vec<u8>> for U8Buffer {
     fn from(value: Vec<u8>) -> Self {
-        U8Buffer(U8BufferInner::Vec(value))
+        U8Buffer(U8BufferInner::Vec(Arc::new(Mutex::new(value))))
     }
 }
 
@@ -71,6 +84,13 @@ impl From<BytesMut> for U8Buffer {
 impl From<ImageAsset> for U8Buffer {
     fn from(value: ImageAsset) -> Self {
         U8Buffer(U8BufferInner::ImageAsset(value.clone()))
+    }
+}
+
+
+impl From<ImageData> for U8Buffer {
+    fn from(value: ImageData) -> Self {
+        U8Buffer(U8BufferInner::ImageData(value.clone()))
     }
 }
 
@@ -251,20 +271,13 @@ pub extern "C" fn canvas_native_u8_buffer_get_bytes_mut(buffer: *mut U8Buffer) -
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_destroy(buffer: *mut U8Buffer) {
+pub extern "C" fn canvas_native_u8_buffer_release(buffer: *mut U8Buffer) {
     if buffer.is_null() {
         return;
     }
     unsafe {
         let _ = Box::from_raw(buffer);
     }
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u8_buffer_mut_get_length(buffer: *const U8Buffer) -> usize {
-    assert!(!buffer.is_null());
-    let buffer = unsafe { &*buffer };
-    buffer.length()
 }
 
 #[no_mangle]
@@ -288,20 +301,13 @@ pub extern "C" fn canvas_native_u16_buffer_get_bytes_mut(buffer: *mut U16Buffer)
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_u16_buffer_destroy(buffer: *mut U16Buffer) {
+pub extern "C" fn canvas_native_u16_buffer_release(buffer: *mut U16Buffer) {
     if buffer.is_null() {
         return;
     }
     unsafe {
         let _ = Box::from_raw(buffer);
     }
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u16_buffer_mut_get_length(buffer: *const U16Buffer) -> usize {
-    assert!(!buffer.is_null());
-    let buffer = unsafe { &*buffer };
-    buffer.length()
 }
 
 #[no_mangle]
@@ -325,20 +331,13 @@ pub extern "C" fn canvas_native_u32_buffer_get_bytes_mut(buffer: *mut U32Buffer)
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_u32_buffer_destroy(buffer: *mut U32Buffer) {
+pub extern "C" fn canvas_native_u32_buffer_release(buffer: *mut U32Buffer) {
     if buffer.is_null() {
         return;
     }
     unsafe {
         let _ = Box::from_raw(buffer);
     }
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_u32_buffer_mut_get_length(buffer: *const U32Buffer) -> usize {
-    assert!(!buffer.is_null());
-    let buffer = unsafe { &*buffer };
-    buffer.length()
 }
 
 #[no_mangle]
@@ -362,7 +361,7 @@ pub extern "C" fn canvas_native_i32_buffer_get_bytes_mut(buffer: *mut I32Buffer)
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_i32_buffer_destroy(buffer: *mut I32Buffer) {
+pub extern "C" fn canvas_native_i32_buffer_release(buffer: *mut I32Buffer) {
     if buffer.is_null() {
         return;
     }
@@ -371,12 +370,6 @@ pub extern "C" fn canvas_native_i32_buffer_destroy(buffer: *mut I32Buffer) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn canvas_native_i32_buffer_mut_get_length(buffer: *const I32Buffer) -> usize {
-    assert!(!buffer.is_null());
-    let buffer = unsafe { &*buffer };
-    buffer.length()
-}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_i32_buffer_get_length(buffer: *const I32Buffer) -> usize {
@@ -399,7 +392,7 @@ pub extern "C" fn canvas_native_f32_buffer_get_bytes_mut(buffer: *mut F32Buffer)
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_f32_buffer_destroy(buffer: *mut F32Buffer) {
+pub extern "C" fn canvas_native_f32_buffer_release(buffer: *mut F32Buffer) {
     if buffer.is_null() {
         return;
     }
@@ -408,12 +401,6 @@ pub extern "C" fn canvas_native_f32_buffer_destroy(buffer: *mut F32Buffer) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn canvas_native_f32_buffer_mut_get_length(buffer: *const F32Buffer) -> usize {
-    assert!(!buffer.is_null());
-    let buffer = unsafe { &*buffer };
-    buffer.length()
-}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_f32_buffer_get_length(buffer: *const F32Buffer) -> usize {
@@ -443,7 +430,7 @@ pub extern "C" fn canvas_native_string_buffer_get_value_at(
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_string_buffer_destroy(buffer: *mut StringBuffer) {
+pub extern "C" fn canvas_native_string_buffer_release(buffer: *mut StringBuffer) {
     if buffer.is_null() {
         return;
     }

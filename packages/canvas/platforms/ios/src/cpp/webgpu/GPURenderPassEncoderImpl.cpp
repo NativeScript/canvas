@@ -28,7 +28,7 @@ void GPURenderPassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isol
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
     canvasModule->Set(context, ConvertToV8String(isolate, "GPURenderPassEncoder"),
-                      func).FromJust();;
+                      func).FromJust();
 }
 
 GPURenderPassEncoderImpl *
@@ -228,9 +228,10 @@ void GPURenderPassEncoderImpl::DrawIndexed(const v8::FunctionCallbackInfo<v8::Va
             firstInstance = firstInstanceVal.As<v8::Uint32>()->Value();
         }
 
+        auto indexCount = indexCountVal->Uint32Value(
+                                                     context).FromJust();
         canvas_native_webgpu_render_pass_encoder_draw_indexed(ptr->GetPass(),
-                                                              indexCountVal->Uint32Value(
-                                                                      context).FromJust(),
+                                                              indexCount,
                                                               instanceCount, firstIndex,
                                                               baseVertex,
                                                               firstInstance);

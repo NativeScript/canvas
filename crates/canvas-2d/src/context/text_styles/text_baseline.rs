@@ -1,4 +1,3 @@
-#[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum TextBaseLine {
     TOP = 0,

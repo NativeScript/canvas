@@ -9,7 +9,7 @@ ImageBitmapImpl::ImageBitmapImpl(ImageAsset* asset)
         : bitmap_(asset) {}
 
 ImageBitmapImpl::~ImageBitmapImpl(){
-    canvas_native_image_asset_destroy(bitmap_);
+    canvas_native_image_asset_release(bitmap_);
     this->bitmap_ = nullptr;
 }
 

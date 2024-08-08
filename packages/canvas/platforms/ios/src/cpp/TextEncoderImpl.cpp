@@ -122,7 +122,7 @@ void TextEncoderImpl::Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
                                                   [](void *data, size_t length,
                                                      void *deleter_data) {
                                                       if (deleter_data != nullptr) {
-                                                          canvas_native_u8_buffer_destroy((U8Buffer *)deleter_data);
+                                                          canvas_native_u8_buffer_release((U8Buffer *)deleter_data);
                                                       }
                                                   },
                                                   encoded);

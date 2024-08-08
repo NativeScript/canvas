@@ -10,19 +10,23 @@ export async function run(canvas: Canvas) {
 	const adapter = await navigator.gpu?.requestAdapter();
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
+	const devicePixelRatio = window.devicePixelRatio;
+
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
+
 	const context = canvas.getContext('webgpu') as never as GPUCanvasContext;
 
-	const devicePixelRatio = window.devicePixelRatio;
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const path = knownFolders.currentApp().path;
 
-	const basicVertWGSL = File.fromPath(path + '/webgpu/shaders/basic.vert.wgsl').readTextSync();
-	const sampleCubemapWGSL = File.fromPath(path + '/webgpu/shaders/sampleCubemap.frag.wgsl').readTextSync();
+	const basicVertWGSL = await File.fromPath(path + '/webgpu/shaders/basic.vert.wgsl').readText();
+	const sampleCubemapWGSL = await File.fromPath(path + '/webgpu/shaders/sampleCubemap.frag.wgsl').readText();
 
 	context.configure({
 		device,
-		format: presentationFormat
+		format: presentationFormat,
 	});
 
 	// Create a vertex buffer from the cube data.
@@ -92,7 +96,7 @@ export async function run(canvas: Canvas) {
 	});
 
 	const depthTexture = device.createTexture({
-		size: [(canvas.width as number) * devicePixelRatio, (canvas.height as number) * devicePixelRatio],
+		size: [canvas.width as number, canvas.height as number],
 		format: 'depth24plus',
 		usage: GPUTextureUsage.RENDER_ATTACHMENT,
 	});
@@ -210,7 +214,7 @@ export async function run(canvas: Canvas) {
 			requestAnimationFrame(frame);
 			return;
 		}
-		
+
 		updateTransformationMatrix();
 		device.queue.writeBuffer(uniformBuffer, 0, modelViewProjectionMatrix.buffer, modelViewProjectionMatrix.byteOffset, modelViewProjectionMatrix.byteLength);
 

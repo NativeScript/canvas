@@ -45,7 +45,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_sRGBImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_sRGB);
+        SetNativeType( extSrgb, NativeType::EXT_sRGB);
         object->SetAlignedPointerInInternalField(0, extSrgb);
         extSrgb->BindFinalizer(isolate, object);
         return scope.Escape(object);

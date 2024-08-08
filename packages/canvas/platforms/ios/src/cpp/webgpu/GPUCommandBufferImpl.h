@@ -31,7 +31,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = GPUCommandBufferImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::GPUCommandBuffer);
+        SetNativeType(commandBuffer, NativeType::GPUCommandBuffer);
         object->SetAlignedPointerInInternalField(0, commandBuffer);
         commandBuffer->BindFinalizer(isolate, object);
         return scope.Escape(object);

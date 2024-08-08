@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils, widthProperty } from '@nativescript/core';
+import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -35,6 +35,45 @@ enum ContextType {
 	WebGPU,
 }
 
+function updateFit(canvas) {
+	const styleWidth = canvas.style.width;
+	const styleHeight = canvas.style.height;
+	if (typeof styleWidth === 'object' && typeof styleHeight === 'object') {
+		if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
+			canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
+		} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
+			const width = Math.floor(canvas._canvas.getSurfaceWidth() / Screen.mainScreen.scale);
+			const height = Math.floor(canvas._canvas.getSurfaceHeight() / Screen.mainScreen.scale);
+			const viewWidth = canvas._canvas.getMeasuredWidth();
+			const viewHeight = canvas._canvas.getMeasuredHeight();
+			if (viewWidth > width || viewHeight > height) {
+				canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.ScaleDown);
+			} else {
+				canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
+			}
+		} else {
+			canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
+		}
+	} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
+		if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip' || styleWidth?.unit === '%') {
+			canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.FitX);
+		}
+	} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
+		if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip' || styleHeight?.unit === '%') {
+			canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.FitY);
+		}
+	} else if (styleWidth === 'auto' && styleHeight === 'auto') {
+		// // when auto/auto is set force the frame size to be the same as the canvas
+		// const width = Math.floor(canvas._canvas.surfaceWidth / Screen.mainScreen.scale);
+		// const height = Math.floor(canvas._canvas.surfaceHeight / Screen.mainScreen.scale);
+		// const newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
+		// canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.None);
+		// canvas._canvas.getMeasuredHeight()
+	} else {
+		canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
+	}
+}
+
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -63,11 +102,12 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			const textureView = this._canvas.getChildAt(0) as android.view.TextureView;
+			// const view = this._canvas.getChildAt(0) as android.view.TextureView;
+			// view.setOpaque(true);
 
-			const matrix = new android.graphics.Matrix();
-			matrix.setScale(Screen.mainScreen.scale, Screen.mainScreen.scale);
-			//textureView.setTransform(matrix);
+			// default canvas size
+			this._canvas.setSurfaceWidth(300);
+			this._canvas.setSurfaceHeight(150);
 
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
@@ -95,39 +135,69 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.width;
+		return this.getMeasuredWidth() / Screen.mainScreen.scale;
 	}
 
 	get clientHeight() {
-		return this.height;
+		return this.getMeasuredHeight() / Screen.mainScreen.scale;
 	}
 
 	get drawingBufferHeight() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
 		return this._canvas.getDrawingBufferHeight();
 	}
 
 	get drawingBufferWidth() {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
 		return this._canvas.getDrawingBufferWidth();
 	}
 
 	// @ts-ignore
-	get width(): any {
-		return this._logicalSize.width;
+	get width(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.getSurfaceWidth();
 	}
 
-	set width(value) {
-		this._didLayout = false;
-		this._layoutNative();
+	set width(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.setSurfaceWidth(value);
 	}
 
 	// @ts-ignore
-	get height(): any {
-		return this._logicalSize.height;
+	get height(): number {
+		if (this._canvas === undefined || this._canvas === null) {
+			return 0;
+		}
+		return this._canvas.getSurfaceHeight();
 	}
 
-	set height(value) {
-		this._didLayout = false;
-		this._layoutNative();
+	set height(value: number) {
+		if (this._canvas === undefined || this._canvas === null) {
+			return;
+		}
+		if (typeof value !== 'number') {
+			return;
+		}
+		this._canvas.setSurfaceHeight(value);
+	}
+
+	[widthProperty.setNative](value) {
+		updateFit(this);
+	}
+
+	[heightProperty.setNative](value) {
+		updateFit(this);
 	}
 
 	static createCustomView() {
@@ -137,7 +207,6 @@ export class Canvas extends CanvasBase {
 		canvas.style.width = 300;
 		canvas.style.height = 150;
 		canvas._isBatch = false;
-		canvas._layoutNative();
 		return canvas;
 	}
 
@@ -228,31 +297,6 @@ export class Canvas extends CanvasBase {
 		return null;
 	}
 
-	_layoutNative() {
-		if (!this._isCustom) {
-			return;
-		}
-		if (this._isBatch) {
-			return;
-		}
-		if (this._didLayout) {
-			return;
-		}
-
-		if (this._canvas === undefined || this._canvas === null) {
-			return;
-		}
-
-		const size = this._physicalSize;
-		org.nativescript.canvas.NSCCanvas.layoutView(size.width || 0, size.height || 0, this._canvas);
-
-		if (this._is2D) {
-			this._2dContext.native.__resize(size.width, size.height);
-		}
-
-		this._didLayout = true;
-	}
-
 	get __native__context() {
 		switch (this._contextType) {
 			case ContextType.Canvas:
@@ -282,13 +326,7 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 
-				this._isBatch = true;
-				this.width = 500;
-				this.height = 500;
-				this._isBatch = false;
-
 				if (!this._2dContext) {
-					this._layoutNative();
 					const opts = {
 						...defaultOpts,
 						...this._handleContextOptions(type, contextAttributes),
@@ -309,7 +347,6 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					this._layoutNative();
 					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
@@ -324,10 +361,10 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webgl2Context) {
-					this._layoutNative();
 					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
+
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';
 					this._contextType = ContextType.WebGL2;
@@ -339,7 +376,6 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._gpuContext) {
-					this._layoutNative();
 					const ptr = navigator.gpu.native.__getPointer();
 					this._canvas.initWebGPUContext(long(ptr));
 
@@ -347,7 +383,6 @@ export class Canvas extends CanvasBase {
 
 					(this._gpuContext as any)._canvas = this;
 				}
-
 				return this._gpuContext;
 			}
 		}

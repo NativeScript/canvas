@@ -43,7 +43,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_texture_filter_anisotropicImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_texture_filter_anisotropic);
+        SetNativeType( filterAnisotropic, NativeType::EXT_texture_filter_anisotropic);
         object->SetAlignedPointerInInternalField(0, filterAnisotropic);
         filterAnisotropic->BindFinalizer(isolate, object);
         return scope.Escape(object);

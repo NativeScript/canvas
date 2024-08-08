@@ -30,7 +30,7 @@ void GPUQueueImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQueue"), func).FromJust();;
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUQueue"), func).FromJust();
 }
 
 GPUQueueImpl *GPUQueueImpl::GetPointer(const v8::Local<v8::Object> &object) {
@@ -306,33 +306,48 @@ void GPUQueueImpl::SubmitWorkDone(const v8::FunctionCallbackInfo<v8::Value> &arg
     }
 
     auto isolate = args.GetIsolate();
+    auto cb = args[0].As<v8::Function>();
+    auto callback = new AsyncCallback(isolate, cb, [](bool done, void *data) {
+        if (data != nullptr) {
+            auto async_data = static_cast<AsyncCallback *>(data);
+            auto func = async_data->inner_.get();
+            if (func != nullptr && func->isolate_ != nullptr) {
+                v8::Isolate *isolate = func->isolate_;
+                v8::Locker locker(isolate);
+                v8::Isolate::Scope isolate_scope(
+                        isolate);
+                v8::HandleScope handle_scope(
+                        isolate);
+                v8::Local<v8::Function> callback = func->callback_.Get(
+                        isolate);
+                v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                v8::Context::Scope context_scope(
+                        context);
 
-    auto cb = args[0];
-    auto callback = new JSICallback(isolate, cb.As<v8::Function>());
+                if (func->data != nullptr) {
+                    // todo handle error
+                    canvas_native_string_destroy(static_cast<char *>(func->data));
+                    func->data = nullptr;
+                }
+
+                callback->Call(context,
+                               context->Global(),
+                               0, nullptr);
+
+                delete static_cast<AsyncCallback *>(data);
+            }
+
+        }
+    });
+
+    callback->prepare();
 
     canvas_native_webgpu_queue_on_submitted_work_done(ptr->GetGPUQueue(),
                                                       [](char *error, void *data) {
-                                                          auto cb = static_cast<JSICallback *>(data);
-
-                                                          v8::Isolate *isolate = cb->isolate_;
-                                                          v8::Locker locker(isolate);
-                                                          v8::Isolate::Scope isolate_scope(
-                                                                  isolate);
-                                                          v8::HandleScope handle_scope(
-                                                                  isolate);
-                                                          v8::Local<v8::Function> callback = cb->callback_->Get(
-                                                                  isolate);
-                                                          v8::Local<v8::Context> context = callback->GetCreationContextChecked();
-                                                          v8::Context::Scope context_scope(
-                                                                  context);
-
-
-                                                          callback->Call(context,
-                                                                         context->Global(),
-                                                                         0, nullptr);
-
-
-                                                          delete static_cast<JSICallback *>(data);
+                                                          if (data != nullptr) {
+                                                              auto async_data = static_cast<AsyncCallback *>(data);
+                                                              async_data->execute(true);
+                                                          }
                                                       },
                                                       callback);
 

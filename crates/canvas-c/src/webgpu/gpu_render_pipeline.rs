@@ -1,5 +1,5 @@
 use std::sync::Arc;
-
+//use wgpu_core::gfx_select;
 use crate::webgpu::error::handle_error;
 
 use super::{gpu::CanvasWebGPUInstance, gpu_bind_group_layout::CanvasGPUBindGroupLayout};
@@ -10,19 +10,19 @@ pub struct CanvasGPURenderPipeline {
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
-
 impl Drop for CanvasGPURenderPipeline {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.render_pipeline_drop(self.pipeline));
+            gfx_select!(self.pipeline => global.render_pipeline_drop(self.pipeline));
         }
     }
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_reference(pipeline: *const CanvasGPURenderPipeline) {
+pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_reference(
+    pipeline: *const CanvasGPURenderPipeline,
+) {
     if pipeline.is_null() {
         return;
     }
@@ -30,14 +30,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_reference(pipeline
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_release(pipeline: *const CanvasGPURenderPipeline) {
+pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_release(
+    pipeline: *const CanvasGPURenderPipeline,
+) {
     if pipeline.is_null() {
         return;
     }
 
     Arc::decrement_strong_count(pipeline);
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_get_bind_group_layout(

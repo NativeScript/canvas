@@ -11,6 +11,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.io.*
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer

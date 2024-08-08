@@ -6,8 +6,8 @@ use skia_safe::Color;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_c::PaintStyle;
-use canvas_c::{CanvasRenderingContext2D, ImageAsset};
+use canvas_c::{CanvasRenderingContext2D,PaintStyle};
+use canvas_c::{ImageAsset};
 
 #[no_mangle]
 pub extern "system" fn nativeCreatePattern(
@@ -36,20 +36,19 @@ pub extern "system" fn nativeCreatePattern(
     if let Some(bytes) = bm.data() {
         let info = info.unwrap();
         if let Some(image) = from_image_slice(bytes, info.width() as i32, info.height() as i32) {
-            return Box::into_raw(Box::new(PaintStyle::new(Some(
+            return Box::into_raw(Box::new(PaintStyle::new(
                 canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                     context.get_context().create_pattern(
                         image,
                         Repetition::try_from(rep.as_ref()).unwrap_or(Repetition::NoRepeat),
                     ),
                 ),
-            )))) as jlong;
+            ))) as jlong;
         }
     }
 
     0
 }
-
 
 fn draw_image_dx_dy(
     context: jlong,
@@ -69,16 +68,12 @@ fn draw_image_dx_dy(
 
     if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
         context.make_current();
-        let mut context = context.get_context_mut();
-        context.draw_image_dx_dy(
-            &image, dx, dy
-        );
+        let context = context.get_context_mut();
+        context.draw_image_dx_dy(&image, dx, dy);
         return JNI_TRUE;
     }
     JNI_FALSE
 }
-
-
 
 fn draw_image_dx_dy_dw_dh(
     context: jlong,
@@ -100,10 +95,8 @@ fn draw_image_dx_dy_dw_dh(
 
     if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
         context.make_current();
-        let mut context = context.get_context_mut();
-        context.draw_image_dx_dy_dw_dh(
-            &image, dx, dy, d_width, d_height
-        );
+        let context = context.get_context_mut();
+        context.draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
         return JNI_TRUE;
     }
     JNI_FALSE
@@ -133,7 +126,7 @@ fn draw_image(
 
     if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
         context.make_current();
-        let mut context = context.get_context_mut();
+        let context = context.get_context_mut();
         context.draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         );
@@ -155,14 +148,7 @@ pub extern "system" fn nativeDrawImageDxDyWithBitmap(
 ) -> jboolean {
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
     if let Some((bytes, _)) = bytes {
-        return draw_image_dx_dy(
-            context,
-            bytes.as_slice(),
-            width,
-            height,
-            dx,
-            dy
-        );
+        return draw_image_dx_dy(context, bytes.as_slice(), width, height, dx, dy);
     }
     JNI_FALSE
 }
@@ -273,7 +259,7 @@ pub extern "system" fn nativeDrawAtlasWithBitmap(
                 from_image_slice(bytes.as_slice(), info.width() as i32, info.height() as i32)
             {
                 context.make_current();
-                let mut context = context.get_context_mut();
+                let context = context.get_context_mut();
 
                 let colors_value: Option<Vec<Color>> = if colors_len > 0 {
                     let mut colors_buf: Vec<i32> = Vec::with_capacity(colors_len as usize);

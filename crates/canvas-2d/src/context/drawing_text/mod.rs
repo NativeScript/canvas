@@ -3,12 +3,13 @@ use std::os::raw::c_float;
 
 use skia_safe::{Canvas, Paint};
 
+use crate::context::Context;
 use crate::context::drawing_text::global_fonts::FONT_LIBRARY;
 use crate::context::drawing_text::text_metrics::TextMetrics;
+use crate::context::drawing_text::typography::Font;
 use crate::context::text_styles::text_align::TextAlign;
 use crate::context::text_styles::text_baseline::TextBaseLine;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::Context;
 
 pub(crate) const MAX_TEXT_WIDTH: f32 = 100_000.0;
 
@@ -29,19 +30,30 @@ impl Context {
 
         let text = text.replace('\n', " ");
 
-        if let Some(shadow_paint) = shadow_paint {
-            self.surface.canvas().save();
-            Context::apply_shadow_offset_matrix(
-                self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
-            );
-            self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
-            self.surface.canvas().restore();
-        }
-
         let paint = self.state.paint.fill_paint().clone();
-        self.draw_text(text.as_str(), x, y, width, None, &paint);
+        let shadow_offset_x = self.state.shadow_offset.x;
+        let shadow_offset_y = self.state.shadow_offset.y;
+
+        let direction = self.state.direction;
+        let word_spacing = self.state.word_spacing;
+        let letter_spacing = self.state.letter_spacing;
+        let text_baseline = self.state.text_baseline;
+        let text_align = self.state.text_align;
+
+        self.render_text_to_canvas(&paint, |canvas, paint, font| {
+            if let Some(shadow_paint) = &shadow_paint {
+                canvas.save();
+                Context::apply_shadow_offset_matrix(
+                    canvas,
+                    shadow_offset_x,
+                    shadow_offset_y,
+                );
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
+                canvas.restore();
+            }
+
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
+        });
     }
 
     pub fn stroke_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
@@ -54,19 +66,29 @@ impl Context {
 
         let text = text.replace('\n', " ");
 
-        if let Some(shadow_paint) = shadow_paint {
-            self.surface.canvas().save();
-            Context::apply_shadow_offset_matrix(
-                self.surface.canvas(),
-                self.state.shadow_offset.x,
-                self.state.shadow_offset.y,
-            );
-            self.draw_text(text.as_str(), x, y, width, None, &shadow_paint);
-            self.surface.canvas().restore();
-        }
-
         let paint = self.state.paint.stroke_paint().clone();
-        self.draw_text(text.as_str(), x, y, width, None, &paint);
+        let shadow_offset_x = self.state.shadow_offset.x;
+        let shadow_offset_y = self.state.shadow_offset.y;
+        let direction = self.state.direction;
+        let word_spacing = self.state.word_spacing;
+        let letter_spacing = self.state.letter_spacing;
+        let text_baseline = self.state.text_baseline;
+        let text_align = self.state.text_align;
+
+        self.render_text_to_canvas(&paint, |canvas, paint, font| {
+            if let Some(shadow_paint) = &shadow_paint {
+                canvas.save();
+                Context::apply_shadow_offset_matrix(
+                    canvas,
+                    shadow_offset_x,
+                    shadow_offset_y,
+                );
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
+                canvas.restore();
+            }
+
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
+        });
     }
 
     fn apply_shadow_offset_matrix(canvas: &Canvas, shadow_offset_x: f32, shadow_offset_y: f32) {
@@ -81,7 +103,13 @@ impl Context {
     }
 
     fn draw_text(
-        &mut self,
+        canvas: Option<&Canvas>,
+        font_style: &Font,
+        direction: TextDirection,
+        word_spacing: f32,
+        letter_spacing: f32,
+        text_baseline: TextBaseLine,
+        text_align: TextAlign,
         text: &str,
         x: c_float,
         y: c_float,
@@ -90,18 +118,19 @@ impl Context {
         paint: &Paint,
     ) {
         let font_collection = &FONT_LIBRARY.lock().collection;
-        let weight = skia_safe::font_style::Weight::from(self.state.font_style.weight as i32);
-        let stretch = self.state.font_style.stretch;
-        let slant = self.state.font_style.style;
+        let weight = skia_safe::font_style::Weight::from(font_style.weight as i32);
+        let stretch = font_style.stretch;
+        let slant = font_style.style;
+        let families: Vec<_> = font_style.family.split(',').collect();
+        let font_size = font_style.size;
         let font_style = skia_safe::FontStyle::new(weight, stretch.into(), slant.into());
-        let text_direction = self.state.direction;
-        let mut families: Vec<_> = self.state.font_style.family.split(',').collect();
+        let text_direction = direction;
 
         let mut text_style = skia_safe::textlayout::TextStyle::new();
         text_style.set_font_families(families.as_slice());
-        text_style.set_font_size(self.state.font_style.size);
-        text_style.set_word_spacing(self.state.word_spacing);
-        text_style.set_letter_spacing(self.state.letter_spacing);
+        text_style.set_font_size(font_size);
+        text_style.set_word_spacing(word_spacing);
+        text_style.set_letter_spacing(letter_spacing);
         text_style.set_height(1.);
         text_style.set_font_style(font_style);
         text_style.set_foreground_paint(paint);
@@ -182,7 +211,7 @@ impl Context {
         }
         let alphabetic_baseline = paragraph.alphabetic_baseline();
 
-        let css_baseline = self.state.text_baseline;
+        let css_baseline = text_baseline;
         let mut baseline_offset = 0.;
 
         match css_baseline {
@@ -221,7 +250,7 @@ impl Context {
         let paint_x;
         let mut offset_x = 0.0;
 
-        match self.state.text_align {
+        match text_align {
             TextAlign::START => {
                 if text_direction == TextDirection::LTR {
                     paint_x = x;
@@ -251,26 +280,25 @@ impl Context {
             }
         }
 
-        match metrics {
-            None => {
+        match (metrics, canvas) {
+            (None, Some(canvas)) => {
                 let need_scale = line_width > max_width;
                 let ratio = if need_scale {
                     max_width / line_width
                 } else {
                     1.0
                 };
-                self.surface.canvas().save();
+
+                canvas.save();
                 if need_scale {
-                    let matrix = skia_safe::Matrix::scale((ratio, 1.0));
-                    self.surface.canvas().concat(&matrix);
-                    // self.surface.canvas().scale((ratio, 1.0));
+                    canvas.scale((ratio, 1.0));
                 }
                 let paint_y = y + baseline_offset;
 
                 text_style.set_foreground_paint(paint);
 
                 paragraph.paint(
-                    self.surface.canvas(),
+                    canvas,
                     (
                         if need_scale {
                             (paint_x + (1. - ratio) * offset_x) / ratio
@@ -281,9 +309,9 @@ impl Context {
                     ),
                 );
 
-                self.surface.canvas().restore();
+                canvas.restore();
             }
-            Some(text_metrics) => {
+            (Some(text_metrics), _) => {
                 let offset = -baseline_offset - alphabetic_baseline;
                 text_metrics.actual_bounding_box_ascent = -ascent + offset;
                 text_metrics.actual_bounding_box_descent = descent - offset;
@@ -296,24 +324,12 @@ impl Context {
                 text_metrics.font_bounding_box_descent = font_metrics.descent - offset;
                 text_metrics.alphabetic_baseline = -font_metrics.ascent + offset;
             }
+            _ => {}
         }
     }
 
-    pub fn measure_text(&mut self, text: &str) -> TextMetrics {
-        let mut text_metrics = TextMetrics {
-            width: 0.0,
-            actual_bounding_box_left: 0.0,
-            actual_bounding_box_right: 0.0,
-            font_bounding_box_ascent: 0.0,
-            font_bounding_box_descent: 0.0,
-            actual_bounding_box_ascent: 0.0,
-            actual_bounding_box_descent: 0.0,
-            em_height_ascent: 0.0,
-            em_height_descent: 0.0,
-            hanging_baseline: 0.0,
-            alphabetic_baseline: 0.0,
-            ideographic_baseline: 0.0,
-        };
+    pub fn measure_text(&self, text: &str) -> TextMetrics {
+        let mut text_metrics = TextMetrics::default();
 
         if text.is_empty() {
             return text_metrics;
@@ -321,7 +337,7 @@ impl Context {
 
         let paint = self.state.paint.fill_paint().clone();
 
-        self.draw_text(text, 0., 0., -1., Some(&mut text_metrics), &paint);
+        Context::draw_text(None, &self.state.font_style, self.state.direction, self.state.word_spacing, self.state.letter_spacing, self.state.text_baseline, self.state.text_align, text, 0., 0., -1., Some(&mut text_metrics), &paint);
 
         text_metrics
     }

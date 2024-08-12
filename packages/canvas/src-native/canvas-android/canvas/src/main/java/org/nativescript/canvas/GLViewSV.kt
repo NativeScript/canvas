@@ -6,10 +6,11 @@ import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 
-internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
+class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	private var isCreated = false
 	private var isCreatedWithZeroSized = false
 	internal var canvas: NSCCanvas? = null
+	private var wasDestroyed = false
 
 	internal var isReady = false
 
@@ -32,6 +33,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 			isCreatedWithZeroSized = true
 			isCreated = true
 		}
+		wasDestroyed = false
 	}
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -48,7 +50,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	override fun surfaceDestroyed(holder: SurfaceHolder) {
-		isCreated = false
-		isCreatedWithZeroSized = false
+		wasDestroyed = true
+		canvas?.surfaceDestroyed()
 	}
 }

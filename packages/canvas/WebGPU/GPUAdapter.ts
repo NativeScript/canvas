@@ -1,6 +1,8 @@
 import { native_ } from './Constants';
 import { GPUAdapterInfo } from './GPUAdapterInfo';
 import { GPUDevice } from './GPUDevice';
+import { GPUQueue } from './GPUQueue';
+import { GPUDeviceDescriptor } from './Interfaces';
 
 export class GPUSupportedFeatures extends Set<string> {
 	get [Symbol.toStringTag]() {
@@ -47,7 +49,7 @@ export class GPUAdapter {
 		});
 	}
 
-	requestDevice(desc?): Promise<GPUDevice> {
+	requestDevice(desc?: GPUDeviceDescriptor): Promise<GPUDevice> {
 		return new Promise((resolve, reject) => {
 			const options = desc ?? {};
 			this[native_].requestDevice(options, (error, device) => {

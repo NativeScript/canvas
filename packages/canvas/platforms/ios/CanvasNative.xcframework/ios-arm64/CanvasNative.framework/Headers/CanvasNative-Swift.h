@@ -474,6 +474,11 @@ SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+
+@interface UIView (SWIFT_EXTENSION(CanvasNative))
+- (void)getBoundingClientRect:(void * _Nonnull)buffer;
+@end
+
 @class AVPlayer;
 @class AVPlayerItemVideoOutput;
 

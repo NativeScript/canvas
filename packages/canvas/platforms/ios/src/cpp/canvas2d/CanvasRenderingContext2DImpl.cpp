@@ -630,7 +630,7 @@ void CanvasRenderingContext2DImpl::DrawPoints(const v8::FunctionCallbackInfo<v8:
         }
 
         canvas_native_context_draw_points(
-                ptr->GetContext(), pointMode,
+                ptr->GetContext(), (int32_t)pointMode,
                 store.data(), store.size());
 
 

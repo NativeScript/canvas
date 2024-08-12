@@ -11,7 +11,7 @@
 
 class GPUBindGroupImpl : ObjectWrapperImpl {
 public:
-    GPUBindGroupImpl(const CanvasGPUBindGroup *group);
+    explicit GPUBindGroupImpl(const CanvasGPUBindGroup *group);
 
     ~GPUBindGroupImpl() {
         canvas_native_webgpu_bind_group_release(this->GetBindGroup());

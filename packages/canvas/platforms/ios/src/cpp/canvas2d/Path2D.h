@@ -199,7 +199,7 @@ public:
                             double rotation,
                             double start_angle,
                             double end_angle,
-                            double anticlockwise) {
+                            bool anticlockwise) {
 
         canvas_native_path_ellipse(
                 receiver_obj,
@@ -222,7 +222,7 @@ public:
                             double rotation,
                             double start_angle,
                             double end_angle,
-                            double anticlockwise) {
+                            bool anticlockwise) {
         Path2D *ptr = GetPointer(receiver_obj);
         if (ptr == nullptr) {
             return;
@@ -362,9 +362,9 @@ public:
 
                 canvas_native_path_round_rect(
                         ptr->GetPath(),
-                        x, y,
-                        width,
-                        height, buf.data(),
+                        (float)x, (float)y,
+                        (float)width,
+                        (float)height, buf.data(),
                         buf.size());
 
             }

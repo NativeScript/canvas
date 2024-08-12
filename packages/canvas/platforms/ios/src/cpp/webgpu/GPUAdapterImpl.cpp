@@ -299,7 +299,6 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
                             callback->Call(context, context->Global(),
                                            1,
                                            args);  // ignore JS return value
-                            delete static_cast<AsyncCallback *>(data);
                         } else {
 
                             auto impl = new GPUDeviceImpl(requestData->device_);
@@ -313,14 +312,14 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
                             callback->Call(context, context->Global(),
                                            2,
                                            args);  // ignore JS return value
-
-                            delete static_cast<AsyncCallback *>(data);
                         }
 
                         if (requestData != nullptr) {
                             delete requestData;
                             requestData = nullptr;
                         }
+
+                        delete static_cast<AsyncCallback *>(data);
                     }
                 }
             }

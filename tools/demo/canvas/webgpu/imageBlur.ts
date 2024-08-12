@@ -4,8 +4,8 @@ import { knownFolders, File } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
 	const appPath = knownFolders.currentApp().path;
-	const blurWGSL = File.fromPath(appPath + '/webgpu/shaders/blur.wgsl').readTextSync();
-	const fullscreenTexturedQuadWGSL = File.fromPath(appPath + '/webgpu/shaders/fullscreenTexturedQuad.wgsl').readTextSync();
+	const blurWGSL = await File.fromPath(appPath + '/webgpu/shaders/blur.wgsl').readText();
+	const fullscreenTexturedQuadWGSL = await File.fromPath(appPath + '/webgpu/shaders/fullscreenTexturedQuad.wgsl').readText();
 
 	// Contants from the blur.wgsl shader.
 	const tileDim = 128;
@@ -13,11 +13,11 @@ export async function run(canvas: Canvas) {
 	const adapter = await navigator.gpu?.requestAdapter();
 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
 
+	const context = canvas.getContext('webgpu');
+
 	const devicePixelRatio = window.devicePixelRatio;
 	canvas.width = canvas.clientWidth * devicePixelRatio;
 	canvas.height = canvas.clientHeight * devicePixelRatio;
-
-	const context = canvas.getContext('webgpu');
 
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 

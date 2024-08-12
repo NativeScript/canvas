@@ -16,8 +16,6 @@ class NSCPIXIApplication extends Pixii.Application {
 			view = context.canvas.toHTMLCanvas();
 		}
 
-		console.log(view.width, view.height);
-
 		if (view) {
 			clientWidth = view.clientWidth;
 			clientHeight = view.clientHeight;

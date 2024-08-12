@@ -1,10 +1,13 @@
+use std::borrow::Cow;
 use std::sync::Arc;
+
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::handle_error;
 
 use super::{gpu::CanvasWebGPUInstance, gpu_bind_group_layout::CanvasGPUBindGroupLayout};
 
 pub struct CanvasGPURenderPipeline {
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) pipeline: wgpu_core::id::RenderPipelineId,
     pub(crate) error_sink: super::gpu_device::ErrorSink,

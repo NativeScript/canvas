@@ -10,7 +10,7 @@
 
 class GPUQuerySetImpl : ObjectWrapperImpl {
 public:
-    GPUQuerySetImpl(const CanvasGPUQuerySet *querySet);
+    explicit GPUQuerySetImpl(const CanvasGPUQuerySet *querySet);
 
     ~GPUQuerySetImpl() {
         canvas_native_webgpu_query_set_release(this->GetQuerySet());

@@ -239,7 +239,6 @@ export async function run(canvas: Canvas) {
 
 		const commandEncoder = device.createCommandEncoder();
 		{
-			console.log(computePassDescriptor);
 			const passEncoder = commandEncoder.beginComputePass(computePassDescriptor as never);
 			passEncoder.setPipeline(computePipeline);
 			passEncoder.setBindGroup(0, particleBindGroups[t % 2] as never);

@@ -31,6 +31,8 @@ enum ContextType {
 	WebGL2,
 }
 
+const viewRect_ = Symbol('[[viewRect]]');
+
 export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
 	private _webglContext: WebGLRenderingContext;
@@ -219,32 +221,21 @@ export class Canvas extends CanvasBase {
 		if (typeof (<any>this.parent).getBoundingClientRect !== 'function') {
 			(<any>this.parent).getBoundingClientRect = function () {
 				const view = this;
-				const nativeView = view.nativeView ?? view.ios;
-				if (!nativeView) {
-					return {
-						bottom: 0,
-						height: 0,
-						left: 0,
-						right: 0,
-						top: 0,
-						width: 0,
-						x: 0,
-						y: 0,
-					};
+				if (!view) {
+					return new DOMRect(0, 0, 0, 0);
 				}
-				const frame = nativeView.frame as CGRect;
-				const width = view.width;
-				const height = view.height;
-				return {
-					bottom: height,
-					height: height,
-					left: frame.origin.x,
-					right: width,
-					top: frame.origin.y,
-					width: width,
-					x: frame.origin.x,
-					y: frame.origin.y,
-				};
+				const nativeView = view?.nativeView;
+				if (!view[viewRect_]) {
+					view[viewRect_] = new Float32Array(8);
+				}
+
+				if (!nativeView) {
+					return new DOMRect(0, 0, 0, 0);
+				}
+
+				nativeView.getBoundingClientRect(view[viewRect_]);
+
+				return new DOMRect(view[viewRect_][6], view[viewRect_][7], view[viewRect_][4], view[viewRect_][5], view[viewRect_][0], view[viewRect_][1], view[viewRect_][2], view[viewRect_][3]);
 			};
 		}
 
@@ -457,11 +448,11 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		if (!this._canvas) {
+		if (!this._canvas || !this.parent) {
 			return new DOMRect(0, 0, 0, 0);
 		}
 
-		NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
+		this._canvas.getBoundingClientRect(this._boundingClientRect);
 
 		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}

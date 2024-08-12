@@ -12,7 +12,7 @@
 
 class GPUPipelineLayoutImpl : ObjectWrapperImpl {
 public:
-    GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
+    explicit GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
 
     ~GPUPipelineLayoutImpl() {
         canvas_native_webgpu_pipeline_layout_release(this->GetPipeline());

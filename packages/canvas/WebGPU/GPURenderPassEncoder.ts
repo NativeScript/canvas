@@ -82,8 +82,8 @@ export class GPURenderPassEncoder {
 		}
 	}
 
-	setIndexBuffer(buffer: GPUBindGroup, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
-		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset ?? -1, size ?? -1);
+	setIndexBuffer(buffer: GPUBuffer, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
+		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	setPipeline(renderPipeline: GPURenderPipeline) {
@@ -99,7 +99,7 @@ export class GPURenderPassEncoder {
 	}
 
 	setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number) {
-		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? 0, size ?? -1);
+		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	setViewport(x, y, width, height, minDepth, maxDepth) {

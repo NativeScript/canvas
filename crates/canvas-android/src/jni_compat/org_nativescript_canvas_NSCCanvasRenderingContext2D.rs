@@ -1,13 +1,13 @@
+use jni::JNIEnv;
 use jni::objects::{JClass, JFloatArray, JIntArray, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE};
-use jni::JNIEnv;
 use skia_safe::Color;
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_c::{CanvasRenderingContext2D,PaintStyle};
-use canvas_c::{ImageAsset};
+use canvas_c::{CanvasRenderingContext2D, PaintStyle};
+use canvas_c::ImageAsset;
 
 #[no_mangle]
 pub extern "system" fn nativeCreatePattern(
@@ -385,4 +385,24 @@ pub extern "system" fn nativeDrawImageWithAsset(
     );
 
     JNI_TRUE
+}
+
+
+#[no_mangle]
+pub extern "system" fn nativeScale(
+    _env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    x: jfloat,
+    y: jfloat,
+) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+
+    canvas_c::canvas_native_context_scale(
+        context, x, y,
+    );
 }

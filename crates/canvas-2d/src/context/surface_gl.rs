@@ -55,8 +55,6 @@ impl Context {
             let interface = Interface::new_native();
             let mut ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None).unwrap();
 
-            ctx.reset(None);
-
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
             if alpha {
                 frame_buffer.format = GR_GL_RGBA8;
@@ -164,6 +162,7 @@ impl Context {
                 return;
             }
             let mut ctx = ctx.unwrap();
+           // ctx.reset(None);
 
             let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id as u32);
 

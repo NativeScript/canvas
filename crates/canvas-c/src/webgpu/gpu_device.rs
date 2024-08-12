@@ -11,6 +11,8 @@ use std::sync::Arc;
 use wgpu_core::binding_model::BufferBinding;
 use wgpu_core::command::RenderBundleEncoder;
 use wgpu_core::device::DeviceError;
+use wgpu_core::id::PipelineLayoutId;
+use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
 //use wgpu_core::gfx_select;
 use wgpu_core::resource::CreateBufferError;
 use wgt::Features;
@@ -399,6 +401,8 @@ impl CanvasGPUDevice {
     }
 }
 
+unsafe impl Send for CanvasGPUDevice {}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_device_get_features(
     device: *const CanvasGPUDevice,
@@ -666,23 +670,16 @@ pub struct CanvasProgrammableStage {
     pub constants: *const CanvasConstants,
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
-    device: *const CanvasGPUDevice,
-    label: *const c_char,
-    layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
-    compute: *const CanvasProgrammableStage,
-) -> *const CanvasGPUComputePipeline {
-    if device.is_null() || compute.is_null() {
-        return std::ptr::null();
-    }
+struct ProgrammableStage {
+    pub module: CanvasGPUShaderModule,
+    pub entry_point: Option<Cow<'static, str>>,
+    pub constants: CanvasConstants,
+}
 
-    let device = &*device;
-    let device_id = device.device;
-
-    let global = device.instance.global();
-
-    let label = ptr_into_label(label);
+unsafe fn parse_compute_pipeline_descriptor(label: *const c_char,
+                                            layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
+                                            compute: *const CanvasProgrammableStage) -> (Option<Cow<'static, str>>, Option<PipelineLayoutId>, ProgrammableStage) {
+    let label = ptr_into_string(label);
 
     let pipeline_layout = match layout {
         CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(layout) => {
@@ -693,40 +690,72 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
     };
 
     let compute = &*compute;
-
-    let entry_point = if compute.entry_point.is_null() {
-        None
-    } else {
-        Some(CStr::from_ptr(compute.entry_point).to_string_lossy())
-    };
-
-    let constants = if compute.constants.is_null() {
-        let constants = HashMap::default();
-        Cow::Owned(constants)
-    } else {
-        let constants = &*compute.constants;
-        Cow::Borrowed(&constants.0)
-    };
-
     let module = &*compute.module;
-    let shader_module = module.module;
 
-    let desc = wgpu_core::pipeline::ComputePipelineDescriptor {
-        label,
-        layout: pipeline_layout,
+    let stage = ProgrammableStage {
+        module: CanvasGPUShaderModule { instance: Arc::clone(&module.instance), module: module.module },
+        entry_point: ptr_into_string(compute.entry_point),
+        constants: if !compute.constants.is_null() {
+            let constants = &*compute.constants;
+            constants.clone()
+        } else {
+            CanvasConstants::default()
+        },
+    };
+
+    (label, pipeline_layout, stage)
+}
+
+unsafe fn create_compute_pipeline(
+    device: *const CanvasGPUDevice,
+    descriptor: wgpu_core::pipeline::ComputePipelineDescriptor,
+) -> (CanvasGPUComputePipeline, Option<wgpu_core::pipeline::CreateComputePipelineError>) {
+    assert!(!device.is_null());
+
+    let device = &*device;
+    let device_id = device.device;
+
+    let global = device.instance.global();
+
+    let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &descriptor, None, None));
+
+    let pipeline = CanvasGPUComputePipeline {
+        instance: device.instance.clone(),
+        pipeline,
+        error_sink: device.error_sink.clone(),
+    };
+
+    (pipeline, error)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
+    device: *const CanvasGPUDevice,
+    label: *const c_char,
+    layout: CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
+    compute: *const CanvasProgrammableStage,
+) -> *const CanvasGPUComputePipeline {
+    assert!(!compute.is_null());
+    let (label, layout, stage) = parse_compute_pipeline_descriptor(label, layout, compute);
+
+    let descriptor = wgpu_core::pipeline::ComputePipelineDescriptor {
+        label: label.clone(),
+        layout,
         stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
-            module: shader_module,
-            entry_point,
-            constants,
+            module: stage.module.module,
+            entry_point: stage.entry_point,
+            constants: Cow::Borrowed(&stage.constants.0),
             zero_initialize_workgroup_memory: true,
             vertex_pulling_transform: false,
         },
         cache: None,
     };
 
-    let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, None));
+    let (pipeline, error) = create_compute_pipeline(device, descriptor);
 
-    let error_sink = device.error_sink.as_ref();
+
+    let global = pipeline.instance.global();
+    let error_sink = pipeline.error_sink.as_ref();
 
     if let Some(cause) = error {
         if let wgpu_core::pipeline::CreateComputePipelineError::Internal(ref error) = cause {
@@ -755,18 +784,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
             error_sink,
             cause,
             "label",
-            desc.label,
+            label,
             "canvas_native_webgpu_device_create_compute_pipeline",
         );
     }
 
-    Arc::into_raw(Arc::new(CanvasGPUComputePipeline {
-        instance: device.instance.clone(),
-        pipeline,
-        error_sink: device.error_sink.clone(),
-    }))
+    Arc::into_raw(Arc::new(pipeline))
 }
 
+// todo replace with create_compute_pipeline_async once implemented in wgpu-core
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_async(
     device: *const CanvasGPUDevice,
@@ -775,7 +801,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
     compute: *const CanvasProgrammableStage,
     callback: unsafe extern "C" fn(
         *const CanvasGPUComputePipeline,
-        super::error::CanvasGPUErrorType,
+        CanvasGPUErrorType,
         *mut c_char,
         *mut c_void,
     ),
@@ -792,108 +818,73 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
         return;
     }
 
-    let device = &*device;
-    let device_id = device.device;
-
-    let global = device.instance.global();
-
-    let label = ptr_into_label(label);
-
-    let pipeline_layout = match layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(layout) => {
-            let layout = &*layout;
-            Some(layout.layout)
-        }
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => None,
-    };
-
-    let compute = &*compute;
-
-    let entry_point = if compute.entry_point.is_null() {
-        None
-    } else {
-        Some(CStr::from_ptr(compute.entry_point).to_string_lossy())
-    };
-
-    let constants = if compute.constants.is_null() {
-        let constants = HashMap::default();
-        Cow::Owned(constants)
-    } else {
-        let constants = &*compute.constants;
-        Cow::Borrowed(&constants.0)
-    };
-
-    let module = &*compute.module;
-    let shader_module = module.module;
-
-    let desc = wgpu_core::pipeline::ComputePipelineDescriptor {
-        label,
-        layout: pipeline_layout,
-        stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
-            module: shader_module,
-            entry_point,
-            constants,
-            zero_initialize_workgroup_memory: true,
-            vertex_pulling_transform: false,
-        },
-        cache: None,
-    };
-
-    let callback = callback as i64;
     let callback_data = callback_data as i64;
+    let device = device as i64;
+    let (label, layout, stage) = parse_compute_pipeline_descriptor(label, layout, compute);
 
-    let instance = device.instance.clone();
-    let error_sink = device.error_sink.clone();
+    std::thread::scope(|s| {
+        s.spawn(move || {
+            let device = device as *const CanvasGPUDevice;
 
-    std::thread::spawn(move || {
-        let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &desc, None, None));
-
-        let callback = unsafe {
-            std::mem::transmute::<
-                *const i64,
-                extern "C" fn(
-                    *const CanvasGPUComputePipeline,
-                    super::error::CanvasGPUErrorType,
-                    *mut c_char,
-                    *mut c_void,
-                ),
-            >(callback as _)
-        };
-
-        let callback_data = callback_data as *mut c_void;
-
-        if let Some(error) = error {
-            let error: CanvasGPUError = error.into();
-            let error_type = match &error {
-                CanvasGPUError::Lost => super::error::CanvasGPUErrorType::Lost,
-                CanvasGPUError::OutOfMemory => super::error::CanvasGPUErrorType::OutOfMemory,
-                CanvasGPUError::Validation(_) => super::error::CanvasGPUErrorType::Validation,
-                CanvasGPUError::Internal => super::error::CanvasGPUErrorType::Internal,
-                CanvasGPUError::None => CanvasGPUErrorType::None,
+            let descriptor = wgpu_core::pipeline::ComputePipelineDescriptor {
+                label: label.clone(),
+                layout,
+                stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
+                    module: stage.module.module,
+                    entry_point: stage.entry_point,
+                    constants: Cow::Borrowed(&stage.constants.0),
+                    zero_initialize_workgroup_memory: true,
+                    vertex_pulling_transform: false,
+                },
+                cache: None,
             };
 
-            let error_value = match error {
-                CanvasGPUError::Lost => std::ptr::null_mut(),
-                CanvasGPUError::OutOfMemory => std::ptr::null_mut(),
-                CanvasGPUError::Validation(value) => CString::new(value).unwrap().into_raw(),
-                CanvasGPUError::Internal => std::ptr::null_mut(),
-                CanvasGPUError::None => std::ptr::null_mut(),
-            };
-            callback(std::ptr::null(), error_type, error_value, callback_data);
-        } else {
-            let ret = Arc::into_raw(Arc::new(CanvasGPUComputePipeline {
-                instance,
-                pipeline,
-                error_sink,
-            }));
 
-            callback(
-                ret,
-                CanvasGPUErrorType::None,
-                std::ptr::null_mut(),
-                callback_data,
-            );
-        }
+            let (pipeline, error) = create_compute_pipeline(device, descriptor);
+
+            let callback = unsafe {
+                std::mem::transmute::<
+                    *const i64,
+                    extern "C" fn(
+                        *const CanvasGPUComputePipeline,
+                        CanvasGPUErrorType,
+                        *mut c_char,
+                        *mut c_void,
+                    ),
+                >(callback as _)
+            };
+
+            let callback_data = callback_data as *mut c_void;
+
+            if let Some(error) = error {
+                let error: CanvasGPUError = error.into();
+                let error_type = match &error {
+                    CanvasGPUError::Lost => super::error::CanvasGPUErrorType::Lost,
+                    CanvasGPUError::OutOfMemory => super::error::CanvasGPUErrorType::OutOfMemory,
+                    CanvasGPUError::Validation(_) => super::error::CanvasGPUErrorType::Validation,
+                    CanvasGPUError::Internal => super::error::CanvasGPUErrorType::Internal,
+                    CanvasGPUError::None => CanvasGPUErrorType::None,
+                };
+
+                let error_value = match error {
+                    CanvasGPUError::Lost => std::ptr::null_mut(),
+                    CanvasGPUError::OutOfMemory => std::ptr::null_mut(),
+                    CanvasGPUError::Validation(value) => CString::new(value).unwrap().into_raw(),
+                    CanvasGPUError::Internal => std::ptr::null_mut(),
+                    CanvasGPUError::None => std::ptr::null_mut(),
+                };
+                callback(std::ptr::null(), error_type, error_value, callback_data);
+            } else {
+                let ret = Arc::into_raw(Arc::new(pipeline));
+
+                callback(
+                    ret,
+                    CanvasGPUErrorType::None,
+                    std::ptr::null_mut(),
+                    callback_data,
+                );
+            }
+        });
     });
 }
 
@@ -1144,6 +1135,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_buffer(
     device.create_buffer(label, size, usage, mapped_at_creation)
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct CanvasConstants(HashMap<String, f64>);
 
 #[no_mangle]
@@ -1314,21 +1306,9 @@ pub struct CanvasCreateRenderPipelineDescriptor {
     pub fragment: *const CanvasFragmentState,
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
-    device: *const CanvasGPUDevice,
-    descriptor: *const CanvasCreateRenderPipelineDescriptor,
-) -> *const CanvasGPURenderPipeline {
-    if device.is_null() || descriptor.is_null() {
-        return std::ptr::null_mut();
-    }
-
-    let device = unsafe { &*device };
-
-    let device_id = device.device;
-
-    let global = device.instance.global();
-
+unsafe fn parse_render_pipeline_descriptor<'a>(
+    descriptor: *const CanvasCreateRenderPipelineDescriptor
+) -> RenderPipelineDescriptor<'a> {
     let descriptor = &*descriptor;
 
     let label = ptr_into_label(descriptor.label);
@@ -1448,11 +1428,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         vec![]
     };
 
-    let entry_point = if vertex.entry_point.is_null() {
-        None
-    } else {
-        Some(CStr::from_ptr(vertex.entry_point).to_string_lossy())
-    };
+    let entry_point = ptr_into_label(vertex.entry_point);
 
     let constants = if !vertex.constants.is_null() {
         let constants = &*vertex.constants;
@@ -1473,8 +1449,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         buffers: Cow::Owned(vertex_buffers),
     };
 
-    let desc = wgpu_core::pipeline::RenderPipelineDescriptor {
-        label,
+    RenderPipelineDescriptor {
+        label: label.clone(),
         layout,
         vertex,
         primitive,
@@ -1483,11 +1459,34 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
         fragment,
         multiview: None,
         cache: None,
-    };
+    }
+}
+
+unsafe fn create_render_pipeline(
+    global: Arc<CanvasWebGPUInstance>,
+    device_id: wgpu_core::id::DeviceId,
+    descriptor: RenderPipelineDescriptor,
+) -> (wgpu_core::id::RenderPipelineId, Option<CreateRenderPipelineError>) {
+    let global = global.global();
+    gfx_select!(device_id => global.device_create_render_pipeline(device_id, &descriptor,None, None))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
+    device: *const CanvasGPUDevice,
+    descriptor: *const CanvasCreateRenderPipelineDescriptor,
+) -> *const CanvasGPURenderPipeline {
+    assert!(!device.is_null() && !descriptor.is_null());
+    let descriptor = parse_render_pipeline_descriptor(descriptor);
+
+    let label = descriptor.label.clone();
+
+    let device = &*device;
+
+    let (pipeline, error) = create_render_pipeline(device.instance.clone(), device.device, descriptor);
 
     let error_sink = device.error_sink.as_ref();
-    let (pipeline, error) =
-        gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, None));
+    let global = device.instance.global();
 
     if let Some(cause) = error {
         if let wgpu_core::pipeline::CreateRenderPipelineError::Internal { stage, ref error } = cause
@@ -1507,18 +1506,22 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
             error_sink,
             cause,
             "label",
-            desc.label,
+            label.clone(),
             "canvas_native_webgpu_device_create_render_pipeline",
         );
     }
 
     Arc::into_raw(Arc::new(CanvasGPURenderPipeline {
+        label,
         instance: device.instance.clone(),
         pipeline,
         error_sink: device.error_sink.clone(),
-    }))
+    }
+    ))
 }
 
+
+// todo replace with create_render_pipeline_async once implemented in wgpu-core
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_async(
     device: *const CanvasGPUDevice,
@@ -1542,177 +1545,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
         return;
     }
 
-    let device = unsafe { &*device };
-
-    let device_id = device.device;
-
-    let global = device.instance.global();
-
-    let descriptor = &*descriptor;
-
-    let label = ptr_into_label(descriptor.label);
-
-    let layout = match descriptor.layout {
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(value) => {
-            if value.is_null() {
-                None
-            } else {
-                let value = &*value;
-                Some(value.layout)
-            }
-        }
-        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto) => None,
-    };
-
-    let vertex = &*descriptor.vertex;
-
-    let vertex_shader_module = &*vertex.module;
-
-    let vertex_shader_module_id = vertex_shader_module.module;
-
-    let fragment = if !descriptor.fragment.is_null() {
-        let frag = &*descriptor.fragment;
-        let module = &*frag.module;
-        let module_id = module.module;
-
-        let entry_point = if frag.entry_point.is_null() {
-            None
-        } else {
-            Some(CStr::from_ptr(frag.entry_point).to_string_lossy())
-        };
-
-        let targets = if !frag.targets.is_null() {
-            std::slice::from_raw_parts(frag.targets, frag.targets_size)
-                .iter()
-                .map(|target| Some((*target).into()))
-                .collect::<Vec<Option<wgt::ColorTargetState>>>()
-        } else {
-            vec![]
-        };
-
-        if frag.constants.is_null() {
-            let constants = HashMap::default();
-            Some(wgpu_core::pipeline::FragmentState {
-                stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
-                    module: module_id,
-                    entry_point,
-                    constants: Cow::Owned(constants),
-                    // Required to be true for WebGPU
-                    zero_initialize_workgroup_memory: true,
-                    vertex_pulling_transform: false,
-                },
-                targets: Cow::Owned(targets),
-            })
-        } else {
-            let constants = &*frag.constants;
-            let constants = Cow::Borrowed(&constants.0);
-            Some(wgpu_core::pipeline::FragmentState {
-                stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
-                    module: module_id,
-                    entry_point,
-                    constants,
-                    // Required to be true for WebGPU
-                    zero_initialize_workgroup_memory: true,
-                    vertex_pulling_transform: false,
-                },
-                targets: Cow::Owned(targets),
-            })
-        }
-    } else {
-        None
-    };
-
-    let primitive: wgt::PrimitiveState = if !descriptor.primitive.is_null() {
-        let primitive = *descriptor.primitive;
-        primitive.into()
-    } else {
-        wgt::PrimitiveState::default()
-    };
-
-    let depth_stencil = if !descriptor.depth_stencil.is_null() {
-        let depth_stencil = *descriptor.depth_stencil;
-        let depth_stencil: wgt::DepthStencilState = depth_stencil.into();
-        Some(depth_stencil)
-    } else {
-        None
-    };
-
-    let multisample: wgt::MultisampleState = if !descriptor.multisample.is_null() {
-        let multisample = *descriptor.multisample;
-        multisample.into()
-    } else {
-        wgt::MultisampleState::default()
-    };
-
-    let vertex_buffers = if !vertex.buffers.is_null() {
-        let buffers = std::slice::from_raw_parts(vertex.buffers, vertex.buffers_size);
-        buffers
-            .iter()
-            .map(|layout| {
-                let attributes = if !layout.attributes.is_null() {
-                    std::slice::from_raw_parts(layout.attributes, layout.attributes_size)
-                        .iter()
-                        .map(|attr| (*attr).into())
-                        .collect::<Vec<wgt::VertexAttribute>>()
-                } else {
-                    vec![]
-                };
-                wgpu_core::pipeline::VertexBufferLayout {
-                    array_stride: layout.array_stride,
-                    attributes: Cow::Owned(attributes),
-                    step_mode: layout.step_mode.into(),
-                }
-            })
-            .collect::<Vec<wgpu_core::pipeline::VertexBufferLayout>>()
-    } else {
-        vec![]
-    };
-
-    let entry_point = if vertex.entry_point.is_null() {
-        None
-    } else {
-        Some(CStr::from_ptr(vertex.entry_point).to_string_lossy())
-    };
-
-    let constants = if !vertex.constants.is_null() {
-        let constants = &*vertex.constants;
-        Cow::Borrowed(&constants.0)
-    } else {
-        Cow::Owned(HashMap::default())
-    };
-
-    let vertex = wgpu_core::pipeline::VertexState {
-        stage: wgpu_core::pipeline::ProgrammableStageDescriptor {
-            module: vertex_shader_module_id,
-            entry_point,
-            constants,
-            // Required to be true for WebGPU
-            zero_initialize_workgroup_memory: true,
-            vertex_pulling_transform: false,
-        },
-        buffers: Cow::Owned(vertex_buffers),
-    };
-
-    let desc = wgpu_core::pipeline::RenderPipelineDescriptor {
-        label,
-        layout,
-        vertex,
-        primitive,
-        depth_stencil,
-        multisample,
-        fragment,
-        multiview: None,
-        cache: None,
-    };
-
-    let callback = callback as i64;
     let callback_data = callback_data as i64;
-
-    let instance = device.instance.clone();
-    let error_sink = device.error_sink.clone();
-
+    let descriptor = parse_render_pipeline_descriptor(descriptor);
+    let device = &*device;
+    let device_id = device.device;
+    let instance = Arc::clone(&device.instance);
+    let error_sink = Arc::clone(&device.error_sink);
+    let label = descriptor.label.as_ref().map(|value|{
+        Cow::Owned(value.to_string())
+    });
     std::thread::spawn(move || {
-        let (pipeline, error) = gfx_select!(device_id => global.device_create_render_pipeline(device_id, &desc,None, None));
+        let (pipeline, error) = create_render_pipeline(instance.clone(), device_id, descriptor);
 
         let callback = unsafe {
             std::mem::transmute::<
@@ -1747,12 +1590,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
             };
             callback(std::ptr::null(), error_type, error_value, callback_data);
         } else {
-            let ret = Arc::into_raw(Arc::new(CanvasGPURenderPipeline {
+            let pipeline = CanvasGPURenderPipeline {
+                label,
                 instance,
                 pipeline,
                 error_sink,
-            }));
-
+            };
+            let ret = Arc::into_raw(Arc::new(pipeline));
             callback(
                 ret,
                 CanvasGPUErrorType::None,

@@ -21,6 +21,19 @@ import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
 import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
+function fixup_shader_code(code: string) {
+	if (!code.includes('#storage')) {
+		if (code.includes('atomic_storage')) code = '#storage atomic_storage array<atomic<i32>>\n\n' + code;
+		if (code.includes('float_storage')) code = '#storage float_storage array<vec4<f32>>\n\n' + code;
+	}
+	code = code.replace(/@stage\(compute\)/g, '@compute');
+	code = code.replace(/^type /gm, 'alias ');
+	code = code.replace(/^let /gm, 'const ');
+	code = code.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
+	code = code.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
+	return code;
+}
+
 // Doing so because :D
 export class EventTarget {
 	_emitter?: WeakRef<Observable>;
@@ -219,6 +232,8 @@ export class GPUDevice extends EventTarget {
 					entry.resource = entry.resource[native_];
 				} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
 					entry.resource.buffer = entry.resource.buffer[native_];
+					entry.resource.offset ??= 0;
+					entry.resource.size ??= entry.resource.buffer.size - entry.resource.offset;
 				}
 				return entry;
 			});
@@ -298,7 +313,7 @@ export class GPUDevice extends EventTarget {
 
 			this.native.createComputePipelineAsync(descriptor, (error, pipeline) => {
 				if (error) {
-					reject(error);
+					reject(error.error);
 				} else {
 					resolve(GPUComputePipeline.fromNative(pipeline));
 				}
@@ -365,7 +380,7 @@ export class GPUDevice extends EventTarget {
 			if (Array.isArray(buffers)) {
 				vertex.buffers = buffers.map((buffer) => {
 					buffer.attributes = buffer.attributes.map((attr) => {
-						attr['format'] = parseVertexFormat(attr['format']) as never;
+						attr.format = parseVertexFormat(attr.format) as never;
 						return attr;
 					});
 
@@ -384,9 +399,9 @@ export class GPUDevice extends EventTarget {
 				descriptor.layout = descriptor.layout[native_];
 			}
 
-			this[native_].createRenderPipeline(descriptor, (error, pipeline) => {
+			this[native_].createRenderPipelineAsync(descriptor, (error, pipeline) => {
 				if (error) {
-					reject(error);
+					reject(error.error);
 				} else {
 					resolve(GPURenderPipeline.fromNative(pipeline));
 				}
@@ -399,6 +414,8 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createShaderModule(desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
+		desc.code = fixup_shader_code(desc.code);
+
 		const module = this.native.createShaderModule(desc);
 		if (module) {
 			return GPUShaderModule.fromNative(module);

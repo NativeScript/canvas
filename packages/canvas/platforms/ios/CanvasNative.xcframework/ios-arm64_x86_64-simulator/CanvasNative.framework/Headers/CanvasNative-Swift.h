@@ -474,6 +474,11 @@ SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+
+@interface UIView (SWIFT_EXTENSION(CanvasNative))
+- (void)getBoundingClientRect:(void * _Nonnull)buffer;
+@end
+
 @class AVPlayer;
 @class AVPlayerItemVideoOutput;
 
@@ -969,6 +974,11 @@ SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 + (void)texImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
 + (void)texSubImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+
+@interface UIView (SWIFT_EXTENSION(CanvasNative))
+- (void)getBoundingClientRect:(void * _Nonnull)buffer;
 @end
 
 @class AVPlayer;

@@ -542,10 +542,11 @@ public class NSCCanvas: UIView {
             EAGLContext.setCurrent(glkView.context)
         }
         scaleSurface()
-        // glkView.deleteDrawable()
-        // glkView.bindDrawable()
+        if(engine == .GL){
+            glkView.deleteDrawable()
+            glkView.bindDrawable()
+        }
         if(nativeContext != 0 && is2D){
-            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
         }
     }
@@ -683,11 +684,18 @@ public class NSCCanvas: UIView {
     }
     
     @objc public static func getBoundingClientRect(_ view: UIView, _ buffer: UnsafeMutableRawPointer) {
+        view.getBoundingClientRect(buffer)
+    }
+    
+}
+
+extension UIView {
+    @objc public func getBoundingClientRect(_ buffer: UnsafeMutableRawPointer){
         let bytes = buffer.assumingMemoryBound(to: Float.self)
-        let x = Float(view.frame.origin.x)
-        let y = Float(view.frame.origin.y)
-        let width = Float(view.frame.size.width)
-        let height = Float(view.frame.size.height)
+        let x = Float(self.frame.origin.x)
+        let y = Float(self.frame.origin.y)
+        let width = Float(self.frame.size.width)
+        let height = Float(self.frame.size.height)
         bytes.pointee = y
         (bytes + 1).pointee = x + width
         (bytes + 2).pointee = y + height
@@ -697,7 +705,6 @@ public class NSCCanvas: UIView {
         (bytes + 6).pointee = x
         (bytes + 7).pointee = y
     }
-    
 }
 
 extension String {

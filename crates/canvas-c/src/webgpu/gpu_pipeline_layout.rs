@@ -7,6 +7,8 @@ pub struct CanvasGPUPipelineLayout {
     pub(crate) layout: wgpu_core::id::PipelineLayoutId,
 }
 
+unsafe impl Send for CanvasGPUPipelineLayout {}
+
 impl Drop for CanvasGPUPipelineLayout {
     fn drop(&mut self) {
         if !std::thread::panicking() {

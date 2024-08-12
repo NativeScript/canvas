@@ -368,7 +368,6 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
     if (bufferValue->IsObject()) {
         auto buffer = GPUBufferImpl::GetPointer(bufferValue.As<v8::Object>());
 
-
         auto bufferOffset = (uint64_t) args[1].As<v8::Number>()->Value();
 
         auto dataValue = args[2].As<v8::TypedArray>();

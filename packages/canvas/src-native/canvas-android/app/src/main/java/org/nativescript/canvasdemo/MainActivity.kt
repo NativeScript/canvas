@@ -154,7 +154,9 @@ class MainActivity : AppCompatActivity() {
 //					Color.BLACK
 //				)
 //
-				val bm =	BitmapFactory.decodeResource(resources, R.drawable.di_3d)
+				val opts = BitmapFactory.Options()
+				opts.inScaled = false
+				val bm =	BitmapFactory.decodeResource(resources, R.drawable.di_3d, opts)
 //
 //				val scale = resources.displayMetrics.density
 //
@@ -166,36 +168,34 @@ class MainActivity : AppCompatActivity() {
 //
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
-				val ctx = canvas!!.create2DContext(
-					alpha = true,
-					antialias = true,
-					depth = true,
-					failIfMajorPerformanceCaveat = true,
-					powerPreference = 0,
-					premultipliedAlpha = true,
-					preserveDrawingBuffer = true,
-					stencil = true,
-					desynchronized = true,
-					xrCompatible = true,
-					fontColor = Color.BLACK
-				)
+				canvas?.let { canvas ->
 
-				canvas!!.surfaceWidth = resources.displayMetrics.widthPixels
-				canvas!!.surfaceHeight = resources.displayMetrics.heightPixels
+					val ctx = canvas.create2DContext(
+						alpha = true,
+						antialias = true,
+						depth = true,
+						failIfMajorPerformanceCaveat = true,
+						powerPreference = 0,
+						premultipliedAlpha = true,
+						preserveDrawingBuffer = true,
+						stencil = true,
+						desynchronized = true,
+						xrCompatible = true,
+						fontColor = Color.BLACK
+					)
+					canvas.fit = CanvasFit.FitX
+					canvas.surfaceHeight = (canvas.height / resources.displayMetrics.density).toInt()
+					canvas.surfaceWidth = (canvas.width / resources.displayMetrics.density).toInt()
 
 
 //
-				//	NSCCanvas.context2DImageTest(context)
-			//	NSCCanvas.context2DPathTest(ctx)
+					//	NSCCanvas.context2DImageTest(context)
+				//		NSCCanvas.context2DPathTest(ctx)
 
-
-				// val scale = resources.displayMetrics.density
-				val maxW = resources.displayMetrics.widthPixels
-				val maxH = resources.displayMetrics.heightPixels
-
-				NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F, 0F, maxW.toFloat() ,maxH.toFloat())
-////
-				NSCCanvas.context2DRender(ctx)
+				//	NSCCanvasRenderingContext2D.scale(ctx, resources.displayMetrics.density,  resources.displayMetrics.density)
+					NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+					NSCCanvas.context2DRender(ctx)
+				}
 
 			}
 
@@ -589,12 +589,10 @@ class MainActivity : AppCompatActivity() {
 
 				""".trimIndent())
 				*/
-
-
 	}
 
-	override fun onResume() {
-		super.onResume()
+	override fun onPostResume() {
+		super.onPostResume()
 		if (canvas?.native2DContext != 0L) {
 			NSCCanvas.context2DPathTest(canvas!!.native2DContext)
 		}

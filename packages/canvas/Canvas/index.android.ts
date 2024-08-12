@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
+import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -75,6 +75,17 @@ function updateFit(canvas) {
 }
 
 const viewRect_ = Symbol('[[viewRect]]');
+
+function valueToNumber(value) {
+	switch (typeof value) {
+		case 'string':
+			return parseFloat(value);
+		case 'number':
+			return value;
+		default:
+			return NaN;
+	}
+}
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -169,10 +180,10 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.setSurfaceWidth(value);
 		}
-		this._canvas.setSurfaceWidth(value);
 	}
 
 	// @ts-ignore
@@ -187,10 +198,10 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.setSurfaceHeight(value);
 		}
-		this._canvas.setSurfaceHeight(value);
 	}
 
 	[widthProperty.setNative](value) {

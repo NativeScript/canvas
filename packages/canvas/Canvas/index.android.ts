@@ -114,12 +114,9 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			// const view = this._canvas.getChildAt(0) as android.view.TextureView;
-			// view.setOpaque(true);
-
-			// default canvas size
-			this._canvas.setSurfaceWidth(300);
-			this._canvas.setSurfaceHeight(150);
+			// // default canvas size
+			// this._canvas.setSurfaceWidth(300);
+			// this._canvas.setSurfaceHeight(150);
 
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);

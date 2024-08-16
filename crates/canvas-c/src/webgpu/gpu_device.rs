@@ -311,7 +311,6 @@ impl CanvasGPUDevice {
             .iter()
             .map(|entry| (*entry).into())
             .collect::<Vec<_>>();
-
         let desc = wgpu_core::binding_model::BindGroupLayoutDescriptor {
             label: label.clone(),
             entries: Cow::from(entries),

@@ -31,7 +31,6 @@ const imageProperty = new Property<Image, string | ImageAsset>({
 
 		if (typeof newValue === 'string') {
 			if (newValue.startsWith('http')) {
-				console.log('??', newValue);
 				target._loader.fromUrl(newValue);
 			}
 		}

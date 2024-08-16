@@ -224,9 +224,14 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
     auto texture = canvas_native_webgpu_context_get_current_texture(ctx);
 
     if (texture != nullptr) {
-        auto textureImpl = new GPUTextureImpl(texture);
-        auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
-        args.GetReturnValue().Set(ret);
+        if(canvas_native_webgpu_texture_get_status(texture) == SurfaceGetCurrentTextureStatusSuccess){
+            auto textureImpl = new GPUTextureImpl(texture);
+            auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
+            args.GetReturnValue().Set(ret);
+        }else {
+            canvas_native_webgpu_texture_release(texture);
+            args.GetReturnValue().SetNull();
+        }
         return;
     }
 

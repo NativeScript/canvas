@@ -125,3 +125,5 @@ export type GPUVertexFormat = 'uint8x2' | 'uint8x4' | 'sint8x2' | 'sint8x4' | 'u
 export type GPUCanvasAlphaMode = 'opaque' | 'premultiplied' | 'postmultiplied' | 'inherit';
 
 export type GPUCanvasPresentMode = 'autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox';
+
+export type GPUFeatureName = 'depth-clip-control' | 'depth32float-stencil8' | 'texture-compression-bc' | 'texture-compression-etc2' | 'texture-compression-astc' | 'timestamp-query' | 'indirect-first-instance' | 'shader-f16' | 'rg11b10ufloat-renderable' | 'bgra8unorm-storage' | 'float32-filterable';

@@ -8,7 +8,7 @@ import { CanvasPattern } from '../CanvasPattern';
 import { Canvas } from '../../Canvas';
 
 import { Helpers } from '../../helpers';
-
+import { DOMMatrix } from '../DOMMatrix';
 let ctor;
 declare const NSCCanvasRenderingContext2D;
 

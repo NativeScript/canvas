@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
+import androidx.core.view.postDelayed
 
 /**
  * Created by triniwiz on 6/9/20
@@ -42,7 +43,7 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-		//	Log.d("JS", "onSurfaceTextureAvailable $surface $width $height")
+//			Log.d("JS", "onSurfaceTextureAvailable $surface $width $height")
 		if (isReady) {
 			return
 		}
@@ -67,8 +68,9 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		//	Log.d("JS", "onSurfaceTextureSizeChanged $surface $width $height")
-		if (isReady || surface == this.surface) {
+//			Log.d("JS", "onSurfaceTextureSizeChanged $surface $width $height")
+		if (isReady) {
+			resize()
 			return
 		}
 		if (!isCreatedWithZeroSized) {
@@ -92,12 +94,15 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-		//Log.d("JS", "onSurfaceTextureDestroyed $surface")
+//		Log.d("JS", "onSurfaceTextureDestroyed $surface")
+		this.surface?.release()
 		isCreated = false
 		return false
 	}
 
 
-	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
+	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+//		Log.d("JS", "onSurfaceTextureUpdated $surface")
+	}
 
 }

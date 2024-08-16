@@ -1,17 +1,19 @@
 use std::borrow::Cow;
-use std::ffi::CString;
 use std::os::raw::c_char;
 use std::sync::Arc;
+
+use crate::webgpu::prelude::label_to_ptr;
+
 //use wgpu_core::gfx_select;
 use super::enums::CanvasQueryType;
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUQuerySet {
+    pub(super) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) query: wgpu_core::id::QuerySetId,
     pub(crate) type_: CanvasQueryType,
     pub(super) count: u32,
-    pub(super) label: Option<Cow<'static, str>>,
 }
 
 impl Drop for CanvasGPUQuerySet {
@@ -32,10 +34,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_query_set_get_label(
     }
 
     let query_set = &*query_set;
-    match query_set.label.as_ref() {
-        None => std::ptr::null_mut(),
-        Some(label) => CString::new(label.to_string()).unwrap().into_raw(),
-    }
+    label_to_ptr(query_set.label.clone())
 }
 
 #[no_mangle]

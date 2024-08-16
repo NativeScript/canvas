@@ -5,33 +5,20 @@ extern crate core;
 extern crate log;
 
 use std::os::raw::c_void;
+use std::sync::OnceLock;
 
 use ::jni::signature::JavaType;
 use ::jni::sys::jint;
 use ::jni::JavaVM;
 use android_logger::Config;
 use itertools::izip;
+use jni::NativeMethod;
 use jni::sys::jlong;
 use jni::{ NativeMethod};
 use log::LevelFilter;
-use std::sync::OnceLock;
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{
-    nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender,
-    nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext,
-    nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGLPointerRefCount,
-    nativeGLPointerRefCountNormal, nativeGetGLPointer, nativeGetGLPointerNormal, nativeInitGL,
-    nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal,
-    nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal,
-    nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal,
-    nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface,
-    nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap,
-};
-use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{
-    nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset,
-    nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap,
-    nativeDrawImageWithAsset, nativeDrawImageWithBitmap,
-};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer, nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL, nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
     nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
     nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath,
@@ -40,8 +27,6 @@ use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
 use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{
     nativeTexImage2D, nativeTexSubImage2D,
 };
-use crate::utils::gl::st::{SurfaceTexture, SURFACE_TEXTURE};
-use crate::utils::gl::texture_render::nativeDrawFrame;
 use crate::utils::{
     nativeInitContextWithCustomSurface, nativeInitContextWithCustomSurfaceNormal,
     nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
@@ -128,7 +113,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)V",
                     "(JJII)V",
-                    "(JLandroid/view/Surface;II)J",
+                    "(JLandroid/view/Surface;II)J"
                 ]
             } else {
                 [
@@ -152,7 +137,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)V",
                     "!(JJII)V",
-                    "!(JLandroid/view/Surface;II)J",
+                    "!(JLandroid/view/Surface;II)J"
                 ]
             };
 
@@ -249,6 +234,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeDrawImageDxDyWithAsset",
                 "nativeDrawImageDxDyDwDhWithAsset",
                 "nativeDrawImageWithAsset",
+                "nativeScale"
             ];
 
             let canvas_rendering_context_2d_signatures = if ret >= ANDROID_O {
@@ -261,6 +247,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JJFF)Z",
                     "(JJFFFF)Z",
                     "(JJFFFFFFFF)Z",
+                    "(JFF)V",
                 ]
             } else {
                 [
@@ -272,6 +259,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JJFF)Z",
                     "!(JJFFFF)Z",
                     "!(JJFFFFFFFF)Z",
+                    "!(JFF)V",
                 ]
             };
 
@@ -284,6 +272,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 nativeDrawImageDxDyWithAsset as *mut c_void,
                 nativeDrawImageDxDyDwDhWithAsset as *mut c_void,
                 nativeDrawImageWithAsset as *mut c_void,
+                nativeScale as *mut c_void,
             ];
 
             let canvas_rendering_context_2d_native_methods: Vec<NativeMethod> = izip!(

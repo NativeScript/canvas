@@ -80,7 +80,6 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     }
 
     let mut fb = [0];
-
     context.clear_rect(0., 0., width, height);
     context.flush_and_render_to_surface();
 
@@ -110,6 +109,11 @@ pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     #[cfg(feature = "gl")]
     {
         if context.engine == Engine::GL {
+            // #[cfg(target_os = "android")]
+            // {
+            //     context.make_current();
+            //     context.gl_context.resize_window_surface(width.floor() as i32, height.floor() as i32);
+            // }
             resize_gl(context, width, height);
             return;
         }
@@ -181,7 +185,9 @@ impl CanvasRenderingContext2D {
     }
 
     pub fn render(&mut self) {
-        self.gl_context.make_current();
+        if self.engine == Engine::GL {
+            self.gl_context.make_current();
+        }
 
         {
             self.context.flush_and_render_to_surface();

@@ -136,6 +136,15 @@ class NSCCanvasRenderingContext2D {
 		}
 
 		@JvmStatic
+		fun scale(
+			context: Long,
+			x: Float,
+			y: Float,
+		) {
+			nativeScale(context, x, y)
+		}
+
+		@JvmStatic
 		@FastNative
 		private external fun nativeCreatePattern(
 			context: Long,
@@ -231,6 +240,15 @@ class NSCCanvasRenderingContext2D {
 			tex: FloatArray,
 			colors: IntArray,
 			blendMode: Int
+		)
+
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeScale(
+			context: Long,
+			x: Float,
+			y: Float
 		)
 	}
 

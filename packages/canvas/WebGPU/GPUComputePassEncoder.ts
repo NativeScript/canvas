@@ -6,6 +6,10 @@ import { GPUComputePipeline } from './GPUComputePipeline';
 export class GPUComputePassEncoder {
 	[native_];
 
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	dispatchWorkgroups(workgroupCountX: number, workgroupCountY: number = 1, workgroupCountZ: number = 1) {
 		this[native_].dispatchWorkgroups(workgroupCountX, workgroupCountY ?? 1, workgroupCountZ ?? 1);
 	}

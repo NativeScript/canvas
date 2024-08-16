@@ -446,16 +446,29 @@ public class NSCCanvas: UIView {
     public var touchEventListener: ((String, UIGestureRecognizer) -> Void)?
     
     required init?(coder: NSCoder) {
-        mtlView = MTKView(coder: coder)
-        glkView = CanvasGLKView(coder: coder)!
+        let scale = UIScreen.main.nativeScale
+        // passing 300 px * 150 px
+        // by default it will use dpi but we want px
+        let unscaledWidth = 300 / scale
+        let unscaledHeight = 150 / scale
+        
+        let frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+        mtlView = MTKView(frame: frame)
+        glkView = CanvasGLKView(frame: frame)
         super.init(coder: coder)
         initializeView()
     }
     
     
     public override init(frame: CGRect) {
-        glkView = CanvasGLKView(frame: frame)
-        mtlView = MTKView(frame: frame)
+        let scale = UIScreen.main.nativeScale
+        // passing 300 px * 150 px
+        // by default it will use dpi but we want px
+        let unscaledWidth = 300 / scale
+        let unscaledHeight = 150 / scale
+        
+        mtlView = MTKView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
+        glkView = CanvasGLKView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
         super.init(frame: frame)
         initializeView()
     }
@@ -485,17 +498,6 @@ public class NSCCanvas: UIView {
         mtlView.isHidden = true
         addSubview(glkView)
         addSubview(mtlView)
-        // passing 300 px * 150 px
-        // by default it will use dpi but we want px
-        let unscaledWidth = 300 / scale
-        let unscaledHeight = 150 / scale
-        
-        glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
-        mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
-        glkView.setNeedsLayout()
-        mtlView.setNeedsLayout()
-        glkView.layoutIfNeeded()
-        mtlView.layoutIfNeeded()
         scaleSurface()
         
         self.isOpaque = false
@@ -522,16 +524,16 @@ public class NSCCanvas: UIView {
     private var isLoaded: Bool = false
     
     public var surfaceWidth: Int = 300 {
-        didSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+        willSet {
+            forceLayout(CGFloat(newValue), CGFloat(surfaceHeight))
             resize()
         }
     }
     
     
     public var surfaceHeight: Int = 150 {
-        didSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+        willSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(newValue))
             resize()
         }
     }
@@ -542,10 +544,11 @@ public class NSCCanvas: UIView {
             EAGLContext.setCurrent(glkView.context)
         }
         scaleSurface()
-        // glkView.deleteDrawable()
-        // glkView.bindDrawable()
+        if(engine == .GL){
+            glkView.deleteDrawable()
+            glkView.bindDrawable()
+        }
         if(nativeContext != 0 && is2D){
-            glViewport(0, 0, GLsizei(drawingBufferWidth), GLsizei(drawingBufferHeight))
             CanvasHelpers.resize2DContext(native2DContext, Float(drawingBufferWidth), Float(drawingBufferHeight))
         }
     }
@@ -577,10 +580,10 @@ public class NSCCanvas: UIView {
     }
     
     private func scaleSurface(){
-        /*if(surfaceWidth == 0 || surfaceHeight == 0){
+        if(surfaceWidth == 0 || surfaceHeight == 0){
             return
         }
-        
+     /*
         var density = UIScreen.main.nativeScale
         
         if(!autoScale){
@@ -611,14 +614,23 @@ public class NSCCanvas: UIView {
             // noop
             break
         case .Fill:
-        
             transform = CGAffineTransform.identity.scaledBy(x: scaleX , y: scaleY)
             
         case .FitX:
-            transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX)
+            let dx = (frame.size.width - scaledInternalWidth) / 2
+            let  dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
+            
+            
+            transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX).translatedBy(x: dx, y: dy)
             break
         case .FitY:
-            transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY)
+            
+           
+            let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
+            let dy = (frame.size.height - scaledInternalHeight) / 2
+            
+            
+            transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY).translatedBy(x: dx, y: dy)
             break
         case .ScaleDown:
             let scale =  min(min(scaleX, scaleY), 1)
@@ -632,12 +644,15 @@ public class NSCCanvas: UIView {
        
         glkView.transform = transform
         mtlView.transform = transform
+        
         */
+        
+        
     }
     
     
     public override func layoutSubviews() {
-        if(!isLoaded && drawingBufferWidth > 0 && drawingBufferHeight > 0){
+        if(!isLoaded && surfaceWidth > 0 && surfaceHeight > 0){
             self.isLoaded = true
             scaleSurface()
             let event = Timer(timeInterval: 0, repeats: false) { _ in
@@ -683,11 +698,18 @@ public class NSCCanvas: UIView {
     }
     
     @objc public static func getBoundingClientRect(_ view: UIView, _ buffer: UnsafeMutableRawPointer) {
+        view.getBoundingClientRect(buffer)
+    }
+    
+}
+
+extension UIView {
+    @objc public func getBoundingClientRect(_ buffer: UnsafeMutableRawPointer){
         let bytes = buffer.assumingMemoryBound(to: Float.self)
-        let x = Float(view.frame.origin.x)
-        let y = Float(view.frame.origin.y)
-        let width = Float(view.frame.size.width)
-        let height = Float(view.frame.size.height)
+        let x = Float(self.frame.origin.x)
+        let y = Float(self.frame.origin.y)
+        let width = Float(self.frame.size.width)
+        let height = Float(self.frame.size.height)
         bytes.pointee = y
         (bytes + 1).pointee = x + width
         (bytes + 2).pointee = y + height
@@ -697,7 +719,6 @@ public class NSCCanvas: UIView {
         (bytes + 6).pointee = x
         (bytes + 7).pointee = y
     }
-    
 }
 
 extension String {

@@ -3,14 +3,14 @@ import type { GPUQuerySet } from './GPUQuerySet';
 import type { GPUShaderModule } from './GPUShaderModule';
 import type { GPUTexture } from './GPUTexture';
 import type { GPUTextureView } from './GPUTextureView';
-import type { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode } from './Types';
+import type { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFeatureName, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode } from './Types';
 export interface GPUExternalTextureBindingLayout {}
 
 export interface GPUProgrammableStage {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 }
 
@@ -55,7 +55,7 @@ export interface GPUFragmentState {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 	targets: (null | GPUColorTargetState)[];
 }
@@ -91,7 +91,7 @@ export interface GPUVertexState {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 }
 
@@ -173,4 +173,15 @@ export interface GPUTextureViewDescriptor {
 	format?: GPUTextureFormat;
 	label?: string;
 	mipLevelCount?: number;
+}
+
+export interface GPUDeviceDescriptor {
+	defaultQueue?: {
+		label?: string;
+	};
+	label?: string;
+	requiredFeatures?: GPUFeatureName[];
+	requiredLimits?: {
+		[name: string]: number;
+	};
 }

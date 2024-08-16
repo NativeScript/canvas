@@ -9,7 +9,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class GPUSamplerImpl: ObjectWrapperImpl {
+class GPUSamplerImpl : ObjectWrapperImpl {
 public:
     explicit GPUSamplerImpl(const CanvasGPUSampler *sampler);
 
@@ -35,6 +35,9 @@ public:
         sampler->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
+
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
 private:

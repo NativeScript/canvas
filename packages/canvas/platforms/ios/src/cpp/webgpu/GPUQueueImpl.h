@@ -37,6 +37,9 @@ public:
         return scope.Escape(object);
     }
 
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
     static void CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Submit(const v8::FunctionCallbackInfo<v8::Value> &args);

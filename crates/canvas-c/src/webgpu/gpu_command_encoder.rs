@@ -1,8 +1,9 @@
 use std::{ffi::CStr, os::raw::c_char};
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use crate::webgpu::error::handle_error;
-use crate::webgpu::prelude::ptr_into_label;
+use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
 use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
 
 //use wgpu_core::gfx_select;
@@ -22,6 +23,7 @@ use super::{
 };
 
 pub struct CanvasGPUCommandEncoder {
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) encoder: wgpu_core::id::CommandEncoderId,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
@@ -36,6 +38,18 @@ impl Drop for CanvasGPUCommandEncoder {
         }
     }
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_get_label(
+    command_encoder: *const CanvasGPUCommandEncoder,
+) -> *mut c_char {
+    if command_encoder.is_null() {
+        return std::ptr::null_mut();
+    }
+    let command_encoder = &*command_encoder;
+    label_to_ptr(command_encoder.label.clone())
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
@@ -545,7 +559,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
 
     let label = ptr_into_label(label);
 
-    let desc = wgt::CommandBufferDescriptor { label };
+    let desc = wgt::CommandBufferDescriptor { label: label.clone() };
 
     let (id, err) =
         gfx_select!(command_encoder_id => global.command_encoder_finish(command_encoder_id, &desc));
@@ -563,6 +577,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     }
 
     Arc::into_raw(Arc::new(CanvasGPUCommandBuffer {
+        label,
         instance: command_encoder.instance.clone(),
         command_buffer: id,
         open: std::sync::atomic::AtomicBool::new(true),
@@ -582,9 +597,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_insert_debug_marke
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
 
-    let label = CStr::from_ptr(label).to_string_lossy();
+    let label = CStr::from_ptr(label);
+    let label = label.to_str().unwrap();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = gfx_select!(command_encoder_id =>  global.command_encoder_insert_debug_marker(command_encoder_id, label.as_ref()))
+    if let Err(cause) = gfx_select!(command_encoder_id =>  global.command_encoder_insert_debug_marker(command_encoder_id, label))
     {
         handle_error(
             global,
@@ -635,9 +651,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_push_debug_group(
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
 
-    let label = CStr::from_ptr(label).to_string_lossy();
+    let label = CStr::from_ptr(label);
+    let label = label.to_str().unwrap();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = gfx_select!(command_encoder_id => global.command_encoder_push_debug_group(command_encoder_id, label.as_ref()))
+    if let Err(cause) = gfx_select!(command_encoder_id => global.command_encoder_push_debug_group(command_encoder_id, label))
     {
         handle_error(
             global,

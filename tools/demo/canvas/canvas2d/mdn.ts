@@ -36,13 +36,10 @@ export function createConicGradient(canvas) {
 	ctx.fillRect(20, 20, 200, 200);
 }
 
-export function font(canvas) {
-	// canvas.width = canvas.clientWidth;
-	// canvas.height = canvas.clientHeight;
-	// canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
-	// canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
-
+export function font(canvas: Canvas) {
 	const ctx = canvas.getContext('2d');
+	canvas.width = canvas.clientWidth;
+	canvas.height = canvas.clientHeight;
 
 	ctx.font = 'bold 48px serif';
 	ctx.strokeText('Hello world', 50, 100);

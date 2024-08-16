@@ -48,6 +48,10 @@ v8::Local<v8::FunctionTemplate> GPURenderPipelineImpl::GetCtor(v8::Isolate *isol
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
 
     tmpl->Set(
             ConvertToV8String(isolate, "getBindGroupLayout"),
@@ -80,5 +84,26 @@ void GPURenderPipelineImpl::GetBindGroupLayout(const v8::FunctionCallbackInfo<v8
     }
 
     args.GetReturnValue().SetUndefined();
+}
+
+
+void
+GPURenderPipelineImpl::GetLabel(v8::Local<v8::Name> name,
+                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_render_pipeline_get_label(ptr->pipeline_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }
 

@@ -13,6 +13,19 @@ use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
 
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug,Eq, PartialEq)]
+pub enum SurfaceGetCurrentTextureStatus {
+    Success = 0x00000000,
+    Timeout = 0x00000001,
+    Outdated = 0x00000002,
+    Lost = 0x00000003,
+    OutOfMemory = 0x00000004,
+    DeviceLost = 0x00000005,
+    Force32 = 0x7FFFFFFF
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasTextureDimension {

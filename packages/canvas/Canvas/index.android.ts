@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, profile, Device, Screen, knownFolders, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
+import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 
 export function createSVGMatrix(): DOMMatrix {
@@ -42,8 +42,8 @@ function updateFit(canvas) {
 		if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
 			canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
 		} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
-			const width = Math.floor(canvas._canvas.getSurfaceWidth() / Screen.mainScreen.scale);
-			const height = Math.floor(canvas._canvas.getSurfaceHeight() / Screen.mainScreen.scale);
+			const width = canvas._canvas.getSurfaceWidth();
+			const height = canvas._canvas.getSurfaceHeight();
 			const viewWidth = canvas._canvas.getMeasuredWidth();
 			const viewHeight = canvas._canvas.getMeasuredHeight();
 			if (viewWidth > width || viewHeight > height) {
@@ -74,6 +74,18 @@ function updateFit(canvas) {
 	}
 }
 
+const viewRect_ = Symbol('[[viewRect]]');
+
+function valueToNumber(value) {
+	switch (typeof value) {
+		case 'string':
+			return parseFloat(value);
+		case 'number':
+			return value;
+		default:
+			return NaN;
+	}
+}
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -102,12 +114,9 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			// const view = this._canvas.getChildAt(0) as android.view.TextureView;
-			// view.setOpaque(true);
-
-			// default canvas size
-			this._canvas.setSurfaceWidth(300);
-			this._canvas.setSurfaceHeight(150);
+			// // default canvas size
+			// this._canvas.setSurfaceWidth(300);
+			// this._canvas.setSurfaceHeight(150);
 
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
@@ -168,10 +177,10 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.setSurfaceWidth(value);
 		}
-		this._canvas.setSurfaceWidth(value);
 	}
 
 	// @ts-ignore
@@ -186,10 +195,10 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.setSurfaceHeight(value);
 		}
-		this._canvas.setSurfaceHeight(value);
 	}
 
 	[widthProperty.setNative](value) {
@@ -202,11 +211,12 @@ export class Canvas extends CanvasBase {
 
 	static createCustomView() {
 		const canvas = new Canvas();
-		canvas._isBatch = true;
 		canvas._isCustom = true;
-		canvas.style.width = 300;
-		canvas.style.height = 150;
-		canvas._isBatch = false;
+		canvas.style.width = {
+			unit: '%',
+			value: 1,
+		};
+		canvas.style.height = 'auto';
 		return canvas;
 	}
 
@@ -235,20 +245,20 @@ export class Canvas extends CanvasBase {
 			if (parent && typeof parent.getBoundingClientRect !== 'function') {
 				parent.getBoundingClientRect = function () {
 					const view = this;
-					const nativeView = view.android;
-					const width = this.width;
-					const height = this.height;
-					const scale = Screen.mainScreen.scale;
-					return {
-						bottom: nativeView.getBottom() / scale,
-						height: height,
-						left: nativeView.getLeft() / scale,
-						right: nativeView.getRight() / scale,
-						top: nativeView.getTop() / scale,
-						width: width,
-						x: nativeView.getX() / scale,
-						y: nativeView.getY() / scale,
-					};
+					if (!view) {
+						return new DOMRect(0, 0, 0, 0);
+					}
+					const nativeView = view.nativeView;
+					if (!view[viewRect_]) {
+						view[viewRect_] = new Float32Array(8);
+					}
+
+					if (!nativeView) {
+						return new DOMRect(0, 0, 0, 0);
+					}
+
+					nativeView.getBoundingClientRect(view[viewRect_]);
+					return new DOMRect(view[viewRect_][6], view[viewRect_][7], view[viewRect_][4], view[viewRect_][5], view[viewRect_][0], view[viewRect_][1], view[viewRect_][2], view[viewRect_][3]);
 				};
 			}
 
@@ -313,8 +323,6 @@ export class Canvas extends CanvasBase {
 	get native() {
 		return this.__native__context;
 	}
-
-	_didLayout = false;
 
 	getContext(type: string, contextAttributes?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
 		if (!this._canvas) {
@@ -409,7 +417,7 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		if (!this._canvas) {
+		if (!this._canvas || !this.parent) {
 			return new DOMRect(0, 0, 0, 0);
 		}
 		org.nativescript.canvas.NSCCanvas.getBoundingClientRect(this._canvas);

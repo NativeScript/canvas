@@ -204,6 +204,7 @@ export async function run(canvas: Canvas) {
 			textureHeight *= 2;
 			numMipLevels++;
 		}
+
 		texture = device.createTexture({
 			size: [imageBitmap.width, imageBitmap.height, 1],
 			mipLevelCount: numMipLevels,
@@ -434,7 +435,7 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([commandEncoder.finish()]);
 
-		(<any>context).presentSurface(swapChainTexture);
+		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

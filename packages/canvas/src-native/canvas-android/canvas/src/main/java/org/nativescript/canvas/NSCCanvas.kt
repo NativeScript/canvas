@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
+import android.opengl.EGL14
 import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
@@ -22,6 +23,8 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import javax.microedition.khronos.egl.EGL
+import javax.microedition.khronos.egl.EGL10
 import kotlin.math.floor
 import kotlin.math.min
 
@@ -48,22 +51,17 @@ class NSCCanvas : FrameLayout {
 	var surfaceWidth: Int = 300
 		set(value) {
 			field = value
-			if (!internalSet) {
-				layoutSurface(value, surfaceHeight, this)
-				resize()
-			}
+			layoutSurface(value, surfaceHeight, this)
+			resize()
 		}
 
 	var surfaceHeight: Int = 150
 		set(value) {
 			field = value
-			if (!internalSet) {
-				layoutSurface(surfaceWidth, value, this)
-				resize()
-			}
+			layoutSurface(surfaceWidth, value, this)
+			resize()
 		}
 
-	private var internalSet = false
 	var nativeGL: Long = 0
 		private set
 
@@ -100,7 +98,7 @@ class NSCCanvas : FrameLayout {
 
 	private var surfaceType = SurfaceType.Texture
 	lateinit var textureView: GLView
-	private lateinit var surfaceView: GLViewSV
+	lateinit var surfaceView: GLViewSV
 
 	private var isAlpha = false
 
@@ -126,32 +124,22 @@ class NSCCanvas : FrameLayout {
 		setBackgroundColor(Color.TRANSPARENT)
 		val internalWidth = 300
 		val internalHeight = 150
-
-		internalSet = true
-		surfaceWidth = internalWidth
-		surfaceHeight = internalHeight
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
-					textureView,
-					LayoutParams(
-						internalWidth,
-						internalHeight
-					)
+					textureView, internalWidth,
+					internalHeight
 				)
 			}
 
 			SurfaceType.Surface -> {
 				addView(
 					surfaceView,
-					LayoutParams(
-						internalWidth,
-						internalHeight
-					)
+					internalWidth,
+					internalHeight
 				)
 			}
 		}
-		internalSet = false
 	}
 
 	val drawingBufferWidth: Int
@@ -179,6 +167,19 @@ class NSCCanvas : FrameLayout {
 				}
 			}
 		}
+
+	internal fun surfaceDestroyed() {
+		if (engine == Engine.GL && nativeGL != 0L) {
+			makeContextCurrent()
+			val display = EGL14.eglGetCurrentDisplay()
+			EGL14.eglMakeCurrent(
+				display,
+				EGL14.EGL_NO_SURFACE,
+				EGL14.EGL_NO_SURFACE,
+				EGL14.EGL_NO_CONTEXT
+			)
+		}
+	}
 
 	@Synchronized
 	@Throws(Throwable::class)
@@ -446,8 +447,8 @@ class NSCCanvas : FrameLayout {
 				)
 			} else {
 				nativeGL = nativeInitGLNoSurface(
-					this.drawingBufferWidth,
-					this.drawingBufferHeight,
+					surfaceWidth,
+					surfaceHeight,
 					alpha,
 					antialias,
 					depth,
@@ -512,23 +513,23 @@ class NSCCanvas : FrameLayout {
 			0
 		}
 
-		GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
-
+		GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
 		native2DContext = nativeCreate2DContext(
 			nativeGL,
-			drawingBufferWidth,
-			drawingBufferHeight,
+			surfaceWidth,
+			surfaceHeight,
 			alpha,
 			density,
 			samples,
 			fontColor,
-			(resources.displayMetrics.densityDpi * 160).toFloat(),
+			resources.displayMetrics.densityDpi.toFloat(),
 			direction
 		)
 		return native2DContext
 	}
 
 	internal var isPaused = false
+
 	internal var isAttachedToWindow = false
 
 	override fun onDetachedFromWindow() {
@@ -543,30 +544,23 @@ class NSCCanvas : FrameLayout {
 		isAttachedToWindow = true
 	}
 
-	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-		super.onSizeChanged(w, h, oldw, oldh)
-		resize()
-		listener?.surfaceResize(w, h)
-	}
-
-
 	private fun scaleSurface() {
 		val frameWidth: Int = width
 		val frameHeight: Int = height
 
-		var scaleX: Float = frameWidth.toFloat() / drawingBufferWidth.toFloat()
-		var scaleY: Float = frameHeight.toFloat() / drawingBufferHeight.toFloat()
+		var scaleX: Float = frameWidth.toFloat() / surfaceWidth.toFloat()
+		var scaleY: Float = frameHeight.toFloat() / surfaceHeight.toFloat()
 
 		var newWidth = 0
 		var newHeight = 0
 
-		val dx = 0F
-		val dy = 0F
+		var dx = 0F
+		var dy = 0F
 
 		when (fit) {
 			CanvasFit.None -> {
-				newWidth = drawingBufferWidth
-				newHeight = drawingBufferHeight
+				newWidth = surfaceWidth
+				newHeight = surfaceHeight
 				scaleX = 1.0f
 				scaleY = 1.0f
 			}
@@ -578,32 +572,30 @@ class NSCCanvas : FrameLayout {
 
 			CanvasFit.FitX -> {
 				newWidth = frameWidth
-				newHeight = (drawingBufferHeight * scaleX).toInt()
+				newHeight = (surfaceHeight * scaleX).toInt()
 				scaleY = scaleX
 			}
 
 			CanvasFit.FitY -> {
-				newWidth = (drawingBufferWidth * scaleY).toInt()
+				newWidth = (surfaceWidth * scaleY).toInt()
 				newHeight = frameHeight
 				scaleX = scaleY
 			}
 
 			CanvasFit.ScaleDown -> {
 				val scale = min(min(scaleX, scaleY), 1.0f)
-				newWidth = (drawingBufferWidth * scale).toInt()
-				newHeight = (drawingBufferHeight * scale).toInt()
+				newWidth = (surfaceWidth * scale).toInt()
+				newHeight = (surfaceHeight * scale).toInt()
 				scaleX = scale
 				scaleY = scale
 			}
 		}
 
-
-
 		if (surfaceType == SurfaceType.Surface) {
-			val layoutParams = surfaceView.layoutParams
-			layoutParams.width = newWidth
-			layoutParams.height = newHeight
-			surfaceView.layoutParams = layoutParams
+			dx = (newWidth - surfaceWidth) / 2f
+			dy = (newHeight - surfaceHeight) / 2f
+			surfaceView.scaleX = scaleX
+			surfaceView.scaleY = scaleY
 			surfaceView.translationX = dx
 			surfaceView.translationY = dy
 		} else {
@@ -625,19 +617,17 @@ class NSCCanvas : FrameLayout {
 			scaleSurface()
 
 			surface?.let {
-				// todo test with surface-view
-				// nativeUpdateGLSurface(it, nativeGL)
+				nativeUpdateGLSurface(it, nativeGL)
 				if (is2D) {
-					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
 					nativeUpdate2DSurface(it, native2DContext)
 				}
 			} ?: run {
-				nativeUpdateGLNoSurface(drawingBufferWidth, drawingBufferHeight, nativeGL)
+				nativeUpdateGLNoSurface(surfaceWidth, surfaceHeight, nativeGL)
 				if (is2D) {
-					GLES20.glViewport(0, 0, drawingBufferWidth, drawingBufferHeight)
+					GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
 					nativeUpdate2DSurfaceNoSurface(
-						drawingBufferWidth,
-						drawingBufferHeight,
+						surfaceWidth,
+						surfaceHeight,
 						native2DContext
 					)
 				}
@@ -645,6 +635,7 @@ class NSCCanvas : FrameLayout {
 		} else {
 			scaleSurface()
 		}
+		listener?.surfaceResize(surfaceWidth, surfaceHeight)
 	}
 
 	fun forceResize() {
@@ -780,35 +771,6 @@ class NSCCanvas : FrameLayout {
 		var enableDebug = false
 
 		@JvmStatic
-		fun layoutView(width: Float, height: Float, canvas: NSCCanvas) {
-			layoutView(width.toInt(), height.toInt(), canvas)
-		}
-
-		@JvmStatic
-		fun layoutView(width: Int, height: Int, canvas: NSCCanvas) {
-			var rootParams = canvas.layoutParams
-
-
-			if (rootParams == null) {
-				rootParams = LayoutParams(0, 0)
-			}
-
-			if (width == rootParams.width && height == rootParams.height) {
-				return
-			}
-
-			rootParams.width = width
-			rootParams.height = height
-
-			canvas.layoutParams = rootParams
-
-			val w = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
-			val h = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
-			canvas.measure(w, h)
-			canvas.layout(0, 0, width, height)
-		}
-
-		@JvmStatic
 		fun layoutSurface(width: Float, height: Float, canvas: NSCCanvas) {
 			layoutSurface(width.toInt(), height.toInt(), canvas)
 		}
@@ -826,9 +788,12 @@ class NSCCanvas : FrameLayout {
 				rootParams = LayoutParams(0, 0)
 			}
 
+			if (width == rootParams.width && height == rootParams.height) {
+				return
+			}
+
 			rootParams.width = width
 			rootParams.height = height
-
 
 			if (rootParams.width <= 0) {
 				rootParams.width = 1
@@ -838,8 +803,9 @@ class NSCCanvas : FrameLayout {
 				rootParams.height = 1
 			}
 
-			val w = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
-			val h = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+			val w = MeasureSpec.makeMeasureSpec(rootParams.width, MeasureSpec.EXACTLY)
+			val h = MeasureSpec.makeMeasureSpec(rootParams.height, MeasureSpec.EXACTLY)
+
 			view.measure(w, h)
 			view.layout(0, 0, width, height)
 		}
@@ -978,7 +944,6 @@ class NSCCanvas : FrameLayout {
 			context: Long
 		)
 
-
 		@JvmStatic
 		@CriticalNative
 		external fun nativeReleaseGL(
@@ -1074,7 +1039,6 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeWebGLC2DRender(context: Long, c2d: Long, internalFormat: Int, format: Int)
-
 
 		@JvmStatic
 		fun WebGLContextRender(gl: Long, context: Long, internalFormat: Int, format: Int) {

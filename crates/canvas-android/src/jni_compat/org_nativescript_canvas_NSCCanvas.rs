@@ -298,13 +298,13 @@ pub extern "system" fn nativeUpdateGLSurface(
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let handle = to_raw_window_handler(&window);
-
             context.gl_context.set_window_surface(
                 &mut context.contextAttributes,
                 window.width(),
                 window.height(),
                 handle,
             );
+            context.gl_context.make_current();
             context.android_window = Some(window);
             drop(env);
         }

@@ -288,10 +288,11 @@ impl Context {
                 } else {
                     1.0
                 };
-
+                let current = canvas.local_to_device_as_3x3();
+                let current_y = current.scale_y();
                 canvas.save();
                 if need_scale {
-                    canvas.scale((ratio, 1.0));
+                    canvas.scale((ratio, current_y));
                 }
                 let paint_y = y + baseline_offset;
 

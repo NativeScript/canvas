@@ -208,7 +208,7 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([commandEncoder.finish()]);
 
-		context.presentSurface(swapChainTexture);
+		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

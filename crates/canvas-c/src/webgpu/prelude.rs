@@ -1,15 +1,51 @@
 use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
+use std::ffi::CString;
 
 #[inline]
 pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Label<'a> {
     unsafe { ptr.as_ref() }.and_then(|ptr| {
         unsafe { CStr::from_ptr(ptr) }
             .to_str()
+            .map(|value| value.to_string())
             .ok()
-            .map(Cow::Borrowed)
+            .map(Cow::Owned)
     })
 }
+
+#[inline]
+pub(crate) fn ptr_into_cstring(ptr: *const std::ffi::c_char) -> Option<CString> {
+    unsafe {
+        if ptr.is_null() {
+            return None;
+        }
+        CStr::from_ptr(ptr).to_str()
+            .map(|value| {
+                CString::new(value.to_string()).ok()
+            }).ok().flatten()
+    }
+}
+
+#[inline]
+pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'static, str>> {
+    unsafe {
+        if ptr.is_null() {
+            return None;
+        }
+        CStr::from_ptr(ptr).to_str()
+            .map(|v| v.into())
+            .map(Cow::Owned)
+            .ok()
+    }
+}
+
+#[inline]
+pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
+    label.map(|label| {
+        CString::new(label.to_string()).map(|label| label.into_raw()).unwrap_or(std::ptr::null_mut())
+    }).unwrap_or(std::ptr::null_mut())
+}
+
 
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];

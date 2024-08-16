@@ -239,7 +239,6 @@ export async function run(canvas: Canvas) {
 
 		const commandEncoder = device.createCommandEncoder();
 		{
-			console.log(computePassDescriptor);
 			const passEncoder = commandEncoder.beginComputePass(computePassDescriptor as never);
 			passEncoder.setPipeline(computePipeline);
 			passEncoder.setBindGroup(0, particleBindGroups[t % 2] as never);
@@ -269,7 +268,7 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([commandEncoder.finish()]);
 
-		context.presentSurface(framebuffer);
+		context.presentSurface();
 
 		if (hasTimestampQuery) {
 			resultBuffer!.mapAsync(GPUMapMode.READ).then(() => {

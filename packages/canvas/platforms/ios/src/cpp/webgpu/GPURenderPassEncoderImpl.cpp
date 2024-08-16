@@ -54,6 +54,11 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
     tmpl->Set(
             ConvertToV8String(isolate, "beginOcclusionQuery"),
             v8::FunctionTemplate::New(isolate, &BeginOcclusionQuery));
@@ -133,6 +138,27 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
     cache->GPURenderPassEncoderTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+
+void
+GPURenderPassEncoderImpl::GetLabel(v8::Local<v8::Name> name,
+                                   const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_render_pass_encoder_get_label(ptr->pass_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }
 
 
@@ -229,7 +255,7 @@ void GPURenderPassEncoderImpl::DrawIndexed(const v8::FunctionCallbackInfo<v8::Va
         }
 
         auto indexCount = indexCountVal->Uint32Value(
-                                                     context).FromJust();
+                context).FromJust();
         canvas_native_webgpu_render_pass_encoder_draw_indexed(ptr->GetPass(),
                                                               indexCount,
                                                               instanceCount, firstIndex,
@@ -328,7 +354,7 @@ void GPURenderPassEncoderImpl::ExecuteBundles(const v8::FunctionCallbackInfo<v8:
         std::vector<const CanvasGPURenderBundle *> bundles;
         for (int i = 0; i < len; i++) {
             v8::Local<v8::Value> bundleVal;
-            bundlesArray->Get(context, i).ToLocal(&bundlesVal);
+            bundlesArray->Get(context, i).ToLocal(&bundleVal);
             auto type = GetNativeType(bundleVal);
             if (type == NativeType::GPURenderBundle) {
                 auto bundle = GPURenderBundleImpl::GetPointer(bundleVal.As<v8::Object>());
@@ -408,7 +434,7 @@ void GPURenderPassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::V
         auto index = indexVal->Uint32Value(context).FromJust();
         auto bindgroup = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
 
-        if (dynamicOffsets->IsUint8Array()) {
+        if (dynamicOffsets->IsUint32Array()) {
             auto buf = dynamicOffsets.As<v8::Uint32Array>();
             auto buffer = buf->Buffer();
             auto store = buffer->GetBackingStore();
@@ -446,7 +472,7 @@ void GPURenderPassEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v8:
 
     auto type = GetNativeType(bufferVal);
 
-    if (type == NativeType::GPURenderBundleEncoder) {
+    if (type == NativeType::GPUBuffer) {
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
         auto indexFormat = ConvertFromV8String(isolate, indexFormatVal);
         if (offsetVal->IsNumber()) {
@@ -502,7 +528,7 @@ void GPURenderPassEncoderImpl::SetPipeline(const v8::FunctionCallbackInfo<v8::Va
     }
 
     auto pipelineVal = args[0];
-    if(GetNativeType(pipelineVal) == NativeType::GPURenderPipeline){
+    if (GetNativeType(pipelineVal) == NativeType::GPURenderPipeline) {
         auto pipeline = GPURenderPipelineImpl::GetPointer(pipelineVal.As<v8::Object>());
         canvas_native_webgpu_render_pass_encoder_set_pipeline(ptr->GetPass(),
                                                               pipeline->GetGPUPipeline());

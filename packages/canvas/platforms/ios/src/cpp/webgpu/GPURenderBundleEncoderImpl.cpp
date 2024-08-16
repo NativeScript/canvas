@@ -54,6 +54,11 @@ v8::Local<v8::FunctionTemplate> GPURenderBundleEncoderImpl::GetCtor(v8::Isolate 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
     tmpl->Set(
             ConvertToV8String(isolate, "draw"),
             v8::FunctionTemplate::New(isolate, &Draw));
@@ -109,6 +114,28 @@ v8::Local<v8::FunctionTemplate> GPURenderBundleEncoderImpl::GetCtor(v8::Isolate 
     return ctorTmpl;
 }
 
+
+void
+GPURenderBundleEncoderImpl::GetLabel(v8::Local<v8::Name> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_render_bundle_encoder_get_label(ptr->encoder_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
+}
+
+
 void GPURenderBundleEncoderImpl::Draw(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -163,12 +190,16 @@ void GPURenderBundleEncoderImpl::DrawIndexed(const v8::FunctionCallbackInfo<v8::
 
 
     auto indexCountVal = args[0];
-    auto firstIndexVal = args[1];
-    auto baseVertexVal = args[2];
-    auto firstInstanceVal = args[3];
+    auto instanceCountVal = args[1];
+    auto firstIndexVal = args[2];
+    auto baseVertexVal = args[3];
+    auto firstInstanceVal = args[4];
 
     if (indexCountVal->IsUint32()) {
 
+        if (instanceCountVal->IsUint32()) {
+            instanceCount = instanceCountVal.As<v8::Uint32>()->Value();
+        }
 
         if (firstIndexVal->IsUint32()) {
             firstIndex = firstIndexVal.As<v8::Uint32>()->Value();
@@ -256,7 +287,7 @@ void GPURenderBundleEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    char *label = nullptr;
+    std::string label;
     v8::Local<v8::Value> labelVal;
 
     auto optionsVal = args[0];
@@ -265,13 +296,11 @@ void GPURenderBundleEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value
         auto options = optionsVal.As<v8::Object>();
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
+        label = ConvertFromV8String(isolate, labelVal);
     }
 
 
-    auto bundle = canvas_native_webgpu_render_bundle_encoder_finish(ptr->GetEncoder(), label);
+    auto bundle = canvas_native_webgpu_render_bundle_encoder_finish(ptr->GetEncoder(), label.c_str());
 
     if (bundle != nullptr) {
         auto ret = GPURenderBundleImpl::NewInstance(isolate, new GPURenderBundleImpl(bundle));
@@ -345,7 +374,7 @@ void GPURenderBundleEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8:
         auto index = indexVal->Uint32Value(context).FromJust();
         auto bindGroup = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
 
-        if (dynamicOffsets->IsUint8Array()) {
+        if (dynamicOffsets->IsUint32Array()) {
             auto buf = dynamicOffsets.As<v8::Uint32Array>();
             auto buffer = buf->Buffer();
             auto store = buffer->GetBackingStore();
@@ -374,7 +403,6 @@ void GPURenderBundleEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v
     }
 
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
 
     auto bufferVal = args[0];
     auto indexFormatVal = args[1];
@@ -385,7 +413,7 @@ void GPURenderBundleEncoderImpl::SetIndexBuffer(const v8::FunctionCallbackInfo<v
 
     auto type = GetNativeType(bufferVal);
 
-    if (type == NativeType::GPURenderBundleEncoder) {
+    if (type == NativeType::GPUBuffer) {
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
         auto indexFormat = ConvertFromV8String(isolate, indexFormatVal);
         if (offsetVal->IsNumber()) {
@@ -421,7 +449,7 @@ void GPURenderBundleEncoderImpl::SetPipeline(const v8::FunctionCallbackInfo<v8::
     }
 
     auto pipelineVal = args[0];
-    if (pipelineVal->IsObject()) {
+    if(GetNativeType(pipelineVal) == NativeType::GPURenderPipeline){
         auto pipeline = GPURenderPipelineImpl::GetPointer(pipelineVal.As<v8::Object>());
         if (pipeline != nullptr) {
             canvas_native_webgpu_render_bundle_encoder_set_pipeline(ptr->GetEncoder(),
@@ -445,11 +473,11 @@ void GPURenderBundleEncoderImpl::SetVertexBuffer(const v8::FunctionCallbackInfo<
 
     if (slotVal->IsUint32() && bufferVal->IsObject()) {
         auto slot = slotVal.As<v8::Uint32>()->Value();
-        auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
-        if (buffer == nullptr) {
+        if (GetNativeType(bufferVal) != NativeType::GPUBuffer) {
             // todo throw ??
             return;
         }
+        auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
 
         if (offsetVal->IsNumber()) {
             offset = (int64_t) offsetVal.As<v8::Number>()->Value();

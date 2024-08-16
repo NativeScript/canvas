@@ -12,7 +12,7 @@
 
 class GPUPipelineLayoutImpl : ObjectWrapperImpl {
 public:
-    GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
+    explicit GPUPipelineLayoutImpl(const CanvasGPUPipelineLayout *pipeline);
 
     ~GPUPipelineLayoutImpl() {
         canvas_native_webgpu_pipeline_layout_release(this->GetPipeline());
@@ -38,6 +38,8 @@ public:
         return scope.Escape(object);
     }
 
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     const CanvasGPUPipelineLayout *pipeline_;

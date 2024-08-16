@@ -12,7 +12,7 @@
 
 class GPUImpl : ObjectWrapperImpl {
 public:
-    GPUImpl(const CanvasWebGPUInstance *instance);
+    explicit GPUImpl(const CanvasWebGPUInstance *instance);
 
     ~GPUImpl() {
         if (this->instance_ != nullptr) {

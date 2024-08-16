@@ -11,7 +11,7 @@
 
 class GPUBindGroupImpl : ObjectWrapperImpl {
 public:
-    GPUBindGroupImpl(const CanvasGPUBindGroup *group);
+    explicit GPUBindGroupImpl(const CanvasGPUBindGroup *group);
 
     ~GPUBindGroupImpl() {
         canvas_native_webgpu_bind_group_release(this->GetBindGroup());
@@ -36,6 +36,9 @@ public:
         groupLayout->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
+
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 private:
     const CanvasGPUBindGroup *group_;

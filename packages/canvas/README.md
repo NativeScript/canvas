@@ -103,12 +103,10 @@ export async function canvasReady(args) {
 
 
 	/// rendering logic
-	// to render to your screen you will need to get the current texture from the WebGPU context.
+	// to render to your screen you will need to call presentSurfacefrom the WebGPU context.
 	// Add the followig to the end of your render loop to ensure it gets displayed.
 
-	const texture = context.getCurrentTexture();
-
-	context.presentSurface(texture);
+	context.presentSurface();
 }
 ```
 

@@ -5,7 +5,8 @@
 #include "GPUCommandBufferImpl.h"
 #include "Caches.h"
 
-GPUCommandBufferImpl::GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer) : commandBuffer_(
+GPUCommandBufferImpl::GPUCommandBufferImpl(const CanvasGPUCommandBuffer *commandBuffer)
+        : commandBuffer_(
         commandBuffer) {}
 
 const CanvasGPUCommandBuffer *GPUCommandBufferImpl::GetGPUCommandBuffer() {
@@ -47,8 +48,34 @@ v8::Local<v8::FunctionTemplate> GPUCommandBufferImpl::GetCtor(v8::Isolate *isola
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
 
     cache->GPUCommandBufferTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+
+void
+GPUCommandBufferImpl::GetLabel(v8::Local<v8::Name> name,
+                               const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_command_buffer_get_label(ptr->commandBuffer_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }

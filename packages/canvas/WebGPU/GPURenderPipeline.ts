@@ -4,6 +4,10 @@ import { GPUBindGroupLayout } from './GPUBindGroupLayout';
 export class GPURenderPipeline {
 	[native_];
 
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	getBindGroupLayout(index: number) {
 		return GPUBindGroupLayout.fromNative(this[native_].getBindGroupLayout(index));
 	}

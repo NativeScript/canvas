@@ -170,7 +170,7 @@ loaded="{{ rectLoaded }}"
   <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/>" -->
 
   <GridLayout verticalAlignment="top" rowSpan="2" colSpan="2" height="100%" width="100%">
-   <canvas:Canvas ready="{{ canvasLoaded }}" style="width:100%; height:auto;"/>
+   <canvas:Canvas ready="{{ canvasLoaded }}" style="width:100%; height:100%;"/>
   </GridLayout>
 		
     <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->

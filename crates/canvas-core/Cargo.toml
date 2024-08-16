@@ -22,5 +22,5 @@ objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 egl = "0.2.7"
-glutin = { version = "0.32.0", features = ["egl"] }
 android_log = "0.1.3"
+glutin = { version = "0.32.0", features = ["egl"] }

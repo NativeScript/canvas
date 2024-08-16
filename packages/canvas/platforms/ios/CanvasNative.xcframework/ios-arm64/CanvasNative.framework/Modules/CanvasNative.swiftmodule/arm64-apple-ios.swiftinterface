@@ -115,6 +115,9 @@ import _SwiftConcurrencyShims
   @objc deinit
   @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ view: UIKit.UIView, _ buffer: Swift.UnsafeMutableRawPointer)
 }
+extension UIKit.UIView {
+  @objc @_Concurrency.MainActor(unsafe) dynamic public func getBoundingClientRect(_ buffer: Swift.UnsafeMutableRawPointer)
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public func texImage2D(_ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ source: CanvasNative.NSCCanvas, _ dest: CanvasNative.NSCCanvas, _ flipYWebGL: Swift.Bool)

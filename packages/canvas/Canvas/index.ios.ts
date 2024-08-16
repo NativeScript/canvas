@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { ImageSource, Utils, profile, Screen, PercentLength } from '@nativescript/core';
+import { ImageSource, Utils, Screen } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 declare var NSCCanvas, NSCCanvasListener;
 
@@ -29,6 +29,19 @@ enum ContextType {
 	Canvas,
 	WebGL,
 	WebGL2,
+}
+
+const viewRect_ = Symbol('[[viewRect]]');
+
+function valueToNumber(value) {
+	switch (typeof value) {
+		case 'string':
+			return parseFloat(value);
+		case 'number':
+			return value;
+		default:
+			return NaN;
+	}
 }
 
 export class Canvas extends CanvasBase {
@@ -146,10 +159,11 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.surfaceWidth = value;
 		}
-		this._canvas.surfaceWidth = value;
 	}
 
 	// @ts-ignore
@@ -164,10 +178,11 @@ export class Canvas extends CanvasBase {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		if (typeof value !== 'number') {
-			return;
+
+		value = valueToNumber(value);
+		if (!Number.isNaN(value)) {
+			this._canvas.surfaceHeight = value;
 		}
-		this._canvas.surfaceHeight = value;
 	}
 
 	private _iosOverflowSafeArea = false;
@@ -191,8 +206,11 @@ export class Canvas extends CanvasBase {
 	static createCustomView() {
 		const canvas = new Canvas();
 		canvas._isCustom = true;
-		canvas.style.width = 300;
-		canvas.style.height = 150;
+		canvas.style.width = {
+			unit: '%',
+			value: 1,
+		};
+		canvas.style.height = 'auto';
 		return canvas;
 	}
 
@@ -219,32 +237,21 @@ export class Canvas extends CanvasBase {
 		if (typeof (<any>this.parent).getBoundingClientRect !== 'function') {
 			(<any>this.parent).getBoundingClientRect = function () {
 				const view = this;
-				const nativeView = view.nativeView ?? view.ios;
-				if (!nativeView) {
-					return {
-						bottom: 0,
-						height: 0,
-						left: 0,
-						right: 0,
-						top: 0,
-						width: 0,
-						x: 0,
-						y: 0,
-					};
+				if (!view) {
+					return new DOMRect(0, 0, 0, 0);
 				}
-				const frame = nativeView.frame as CGRect;
-				const width = view.width;
-				const height = view.height;
-				return {
-					bottom: height,
-					height: height,
-					left: frame.origin.x,
-					right: width,
-					top: frame.origin.y,
-					width: width,
-					x: frame.origin.x,
-					y: frame.origin.y,
-				};
+				const nativeView = view?.nativeView;
+				if (!view[viewRect_]) {
+					view[viewRect_] = new Float32Array(8);
+				}
+
+				if (!nativeView) {
+					return new DOMRect(0, 0, 0, 0);
+				}
+
+				nativeView.getBoundingClientRect(view[viewRect_]);
+
+				return new DOMRect(view[viewRect_][6], view[viewRect_][7], view[viewRect_][4], view[viewRect_][5], view[viewRect_][0], view[viewRect_][1], view[viewRect_][2], view[viewRect_][3]);
 			};
 		}
 
@@ -302,12 +309,12 @@ export class Canvas extends CanvasBase {
 				//	nativeView.frame = frame;
 			}
 		} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
-			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') {
+			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip' || styleWidth?.unit === '%') {
 				nativeView.fit = 2;
 				//	nativeView.frame = frame;
 			}
 		} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
-			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip') {
+			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip' || styleHeight?.unit === '%') {
 				nativeView.fit = 3;
 				//	nativeView.frame = frame;
 			}
@@ -322,6 +329,7 @@ export class Canvas extends CanvasBase {
 		} else {
 			//	nativeView.frame = frame;
 		}
+
 		super._setNativeViewFrame(nativeView, frame);
 	}
 
@@ -457,11 +465,11 @@ export class Canvas extends CanvasBase {
 		bottom: number;
 		left: number;
 	} {
-		if (!this._canvas) {
+		if (!this._canvas || !this.parent) {
 			return new DOMRect(0, 0, 0, 0);
 		}
 
-		NSCCanvas.getBoundingClientRect(this._canvas, this._boundingClientRect);
+		this._canvas.getBoundingClientRect(this._boundingClientRect);
 
 		return new DOMRect(this._boundingClientRect[6], this._boundingClientRect[7], this._boundingClientRect[4], this._boundingClientRect[5], this._boundingClientRect[0], this._boundingClientRect[1], this._boundingClientRect[2], this._boundingClientRect[3]);
 	}

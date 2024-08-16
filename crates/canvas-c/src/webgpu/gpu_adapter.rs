@@ -4,8 +4,6 @@ use std::{
 };
 use std::sync::Arc;
 
-//use wgpu_core::gfx_select;
-
 use crate::buffers::StringBuffer;
 use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
 use crate::webgpu::gpu_queue::QueueId;
@@ -14,6 +12,8 @@ use super::{
     gpu::CanvasWebGPUInstance, gpu_adapter_info::CanvasGPUAdapterInfo, gpu_device::CanvasGPUDevice,
     gpu_queue::CanvasGPUQueue, gpu_supported_limits::CanvasGPUSupportedLimits, prelude::*,
 };
+
+//use wgpu_core::gfx_select;
 
 pub struct CanvasGPUAdapter {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -134,7 +134,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let instance = Arc::clone(&adapter.instance);
     std::thread::spawn(move || {
         let descriptor = wgt::DeviceDescriptor {
-            label,
+            label: label.clone(),
             required_features: features,
             required_limits: limits,
             memory_hints: Default::default(),
@@ -169,6 +169,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             )));
 
             let queue = Arc::new(CanvasGPUQueue {
+                label: descriptor.label,
                 queue: Arc::new(QueueId {
                     id: queue,
                     instance: Arc::clone(&instance_copy),
@@ -177,6 +178,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             });
 
             let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
+                label,
                 device,
                 queue,
                 user_data: std::ptr::null_mut(),

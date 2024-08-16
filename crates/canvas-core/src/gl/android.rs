@@ -5,17 +5,16 @@ use std::sync::Arc;
 use std::sync::OnceLock;
 
 use glutin::api::egl::{
-    context::PossiblyCurrentContext, display::Display, surface::Surface,
+    context::{NotCurrentContext, PossiblyCurrentContext}, display::Display, surface::Surface,
 };
-
 use glutin::config::{
-    Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder
+    Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder,
 };
 use glutin::context::{ContextApi, Version};
-use glutin::display::AsRawDisplay;
 use glutin::display::{GetGlDisplay, RawDisplay};
-use glutin::prelude::GlSurface;
+use glutin::display::AsRawDisplay;
 use glutin::prelude::*;
+use glutin::prelude::GlSurface;
 use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
 use parking_lot::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
@@ -208,7 +207,7 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
 //     }
 // }
 
-//#[cfg(target_os = "android")]
+#[cfg(target_os = "android")]
 impl GLContext {
     pub fn set_surface(
         &mut self,
@@ -565,134 +564,160 @@ impl GLContext {
     ) {
         unsafe {
             let mut inner = self.0.write();
-            if let Some(display) = inner.display.as_ref() {
-                let dsply = display.clone();
-                IS_GL_SYMBOLS_LOADED.get_or_init(move || {
-                    gl_bindings::load_with(|symbol| {
-                        let symbol = CString::new(symbol).unwrap();
-                        dsply.get_proc_address(symbol.as_c_str()).cast()
-                    });
-                    true
-                });
 
-                let is_2d = context_attrs.get_is_canvas();
-                let multi_sample = context_attrs.get_antialias();
-                let cfg = context_attrs.clone().into();
-                let mut config = display
-                    .find_configs(cfg)
-                    .map(|c| {
-                        c.reduce(|accum, cconfig| {
-                            if is_2d {
-                                let transparency_check =
-                                    cconfig.supports_transparency().unwrap_or(false)
-                                        & !accum.supports_transparency().unwrap_or(false);
-                                return if transparency_check
-                                    || cconfig.num_samples() < accum.num_samples()
-                                {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
+            // remove current surface
+            let context = inner.context.take();
+            let surface = inner.surface.take();
+            match context {
+                Some(context) => {
+                    let context = context.make_not_current().ok();
+                    // only drop the surface only after
+
+                    drop(surface);
+
+                    if let Some(display) = inner.display.as_ref() {
+                        let dsply = display.clone();
+                        IS_GL_SYMBOLS_LOADED.get_or_init(move || {
+                            gl_bindings::load_with(|symbol| {
+                                let symbol = CString::new(symbol).unwrap();
+                                dsply.get_proc_address(symbol.as_c_str()).cast()
+                            });
+                            true
+                        });
+
+                        let is_2d = context_attrs.get_is_canvas();
+                        let multi_sample = context_attrs.get_antialias();
+                        let cfg = context_attrs.clone().into();
+                        let mut config = display
+                            .find_configs(cfg)
+                            .map(|c| {
+                                c.reduce(|accum, cconfig| {
+                                    if is_2d {
+                                        let transparency_check =
+                                            cconfig.supports_transparency().unwrap_or(false)
+                                                & !accum.supports_transparency().unwrap_or(false);
+                                        return if transparency_check
+                                            || cconfig.num_samples() < accum.num_samples()
+                                        {
+                                            cconfig
+                                        } else {
+                                            accum
+                                        };
+                                    }
+
+                                    return if cconfig.num_samples() > accum.num_samples() {
+                                        cconfig
+                                    } else {
+                                        accum
+                                    };
+                                })
+                            })
+                            .ok()
+                            .flatten();
+
+                        if config.is_none() {
+                            let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
+
+                            cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+
+                            let cfg = cfg.build();
+
+                            config = display
+                                .find_configs(cfg)
+                                .map(|c| {
+                                    c.reduce(|accum, cconfig| {
+                                        if is_2d {
+                                            let transparency_check =
+                                                cconfig.supports_transparency().unwrap_or(false)
+                                                    & !accum.supports_transparency().unwrap_or(false);
+                                            return if transparency_check
+                                                || cconfig.num_samples() < accum.num_samples()
+                                            {
+                                                cconfig
+                                            } else {
+                                                accum
+                                            };
+                                        }
+
+                                        return if cconfig.num_samples() > accum.num_samples() {
+                                            cconfig
+                                        } else {
+                                            accum
+                                        };
+                                    })
+                                })
+                                .ok()
+                                .flatten();
+                        }
+
+                        if config.is_none() && multi_sample {
+                            context_attrs.set_antialias(false);
+                            let cfg = context_attrs.into();
+                            config = display
+                                .find_configs(cfg)
+                                .map(|c| {
+                                    c.reduce(|accum, cconfig| {
+                                        if is_2d {
+                                            let transparency_check =
+                                                cconfig.supports_transparency().unwrap_or(false)
+                                                    & !accum.supports_transparency().unwrap_or(false);
+                                            return if transparency_check
+                                                || cconfig.num_samples() < accum.num_samples()
+                                            {
+                                                cconfig
+                                            } else {
+                                                accum
+                                            };
+                                        }
+
+                                        return if cconfig.num_samples() > accum.num_samples() {
+                                            cconfig
+                                        } else {
+                                            accum
+                                        };
+                                    })
+                                })
+                                .ok()
+                                .flatten();
+                        }
+
+                        if let Some(config) = config {
+                            if context_attrs.get_antialias() && config.num_samples() == 0 {
+                                context_attrs.set_antialias(false);
                             }
 
-                            return if cconfig.num_samples() > accum.num_samples() {
-                                cconfig
-                            } else {
-                                accum
+                            context_attrs.set_samples(config.num_samples());
+
+                            let surface_attr =
+                                glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
+                                    window,
+                                    NonZeroU32::try_from(width as u32).unwrap(),
+                                    NonZeroU32::try_from(height as u32).unwrap(),
+                                );
+
+
+                            let surface = display
+                                .create_window_surface(&config, &surface_attr)
+                                .map(SurfaceHelper::Window)
+                                .ok();
+
+                            inner.surface = surface;
+                            inner.context = match (context, inner.surface.as_ref()) {
+                                (Some(context), Some(surface)) => {
+                                    match surface {
+                                        SurfaceHelper::Window(window) => {
+                                            context.make_current(window).ok()
+                                        }
+                                        SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).ok(),
+                                        SurfaceHelper::Pixmap(map) => context.make_current(map).ok(),
+                                    }
+                                }
+                                _ => None
                             };
-                        })
-                    })
-                    .ok()
-                    .flatten();
-
-                if config.is_none() {
-                    let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
-
-                    cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
-
-                    let cfg = cfg.build();
-
-                    config = display
-                        .find_configs(cfg)
-                        .map(|c| {
-                            c.reduce(|accum, cconfig| {
-                                if is_2d {
-                                    let transparency_check =
-                                        cconfig.supports_transparency().unwrap_or(false)
-                                            & !accum.supports_transparency().unwrap_or(false);
-                                    return if transparency_check
-                                        || cconfig.num_samples() < accum.num_samples()
-                                    {
-                                        cconfig
-                                    } else {
-                                        accum
-                                    };
-                                }
-
-                                return if cconfig.num_samples() > accum.num_samples() {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
-                            })
-                        })
-                        .ok()
-                        .flatten();
-                }
-
-                if config.is_none() && multi_sample {
-                    context_attrs.set_antialias(false);
-                    let cfg = context_attrs.into();
-                    config = display
-                        .find_configs(cfg)
-                        .map(|c| {
-                            c.reduce(|accum, cconfig| {
-                                if is_2d {
-                                    let transparency_check =
-                                        cconfig.supports_transparency().unwrap_or(false)
-                                            & !accum.supports_transparency().unwrap_or(false);
-                                    return if transparency_check
-                                        || cconfig.num_samples() < accum.num_samples()
-                                    {
-                                        cconfig
-                                    } else {
-                                        accum
-                                    };
-                                }
-
-                                return if cconfig.num_samples() > accum.num_samples() {
-                                    cconfig
-                                } else {
-                                    accum
-                                };
-                            })
-                        })
-                        .ok()
-                        .flatten();
-                }
-
-                if let Some(config) = config {
-                    if context_attrs.get_antialias() && config.num_samples() == 0 {
-                        context_attrs.set_antialias(false);
+                        }
                     }
-
-                    context_attrs.set_samples(config.num_samples());
-
-                    let surface_attr =
-                        glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
-                            window,
-                            NonZeroU32::try_from(width as u32).unwrap(),
-                            NonZeroU32::try_from(height as u32).unwrap(),
-                        );
-
-
-                    let surface = display
-                        .create_window_surface(&config, &surface_attr)
-                        .map(SurfaceHelper::Window)
-                        .ok();
-
-                    inner.surface = surface;
                 }
+                _ => {}
             }
         }
     }
@@ -773,6 +798,7 @@ impl GLContext {
                         .ok();
 
                     inner.surface = surface;
+                    drop(inner);
                 }
             }
         }

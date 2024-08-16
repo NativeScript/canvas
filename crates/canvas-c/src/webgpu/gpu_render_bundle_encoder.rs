@@ -1,5 +1,7 @@
+use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::sync::Arc;
+
 //use wgpu_core::gfx_select;
 use crate::webgpu::enums::CanvasIndexFormat;
 use crate::webgpu::error::handle_error_fatal;
@@ -8,26 +10,41 @@ use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_render_bundle::CanvasGPURenderBundle;
 use crate::webgpu::gpu_render_pipeline::CanvasGPURenderPipeline;
-use crate::webgpu::prelude::ptr_into_label;
+use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
 
 pub struct CanvasGPURenderBundleEncoder {
+    pub(super) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) encoder: *mut Option<wgpu_core::command::RenderBundleEncoder>,
+    pub(crate) encoder: *mut Option<*mut wgpu_core::command::RenderBundleEncoder>,
 }
 
 impl Drop for CanvasGPURenderBundleEncoder {
     fn drop(&mut self) {
         if !std::thread::panicking() {
-            if self.encoder.is_null() {
-                return;
+            let encoder = unsafe { Box::from_raw(self.encoder) };
+            if let Some(encoder) = *encoder {
+                drop(unsafe { Box::from_raw(encoder) });
             }
-            drop(unsafe { Box::from_raw(self.encoder) });
         }
     }
 }
 // RenderBundleEncoder is thread-unsafe
 unsafe impl Send for CanvasGPURenderBundleEncoder {}
 unsafe impl Sync for CanvasGPURenderBundleEncoder {}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_get_label(
+    render_bundle: *const CanvasGPURenderBundleEncoder
+) -> *mut c_char {
+    if render_bundle.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let render_bundle = &*render_bundle;
+    label_to_ptr(render_bundle.label.clone())
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_draw(
@@ -47,15 +64,18 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_draw(
         return;
     }
 
+
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw(
-                encoder,
-                vertex_count,
-                instance_count,
-                first_vertex,
-                first_instance,
-            );
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw(
+                    encoder,
+                    vertex_count,
+                    instance_count,
+                    first_vertex,
+                    first_instance,
+                );
+            }
         }
     }
 }
@@ -81,14 +101,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_draw_indexed
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indexed(
-                encoder,
-                index_count,
-                instance_count,
-                first_index,
-                base_vertex,
-                first_instance,
-            );
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indexed(
+                    encoder,
+                    index_count,
+                    instance_count,
+                    first_index,
+                    base_vertex,
+                    first_instance,
+                );
+            }
         }
     }
 }
@@ -115,11 +137,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_draw_indexed
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indexed_indirect(
-                encoder,
-                buffer_id,
-                indirect_offset,
-            );
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indexed_indirect(
+                    encoder,
+                    buffer_id,
+                    indirect_offset,
+                );
+            }
         }
     }
 }
@@ -146,11 +170,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_draw_indirec
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indirect(
-                encoder,
-                buffer_id,
-                indirect_offset,
-            );
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_draw_indirect(
+                    encoder,
+                    buffer_id,
+                    indirect_offset,
+                );
+            }
         }
     }
 }
@@ -172,7 +198,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_insert_debug
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_insert_debug_marker(encoder, label);
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_insert_debug_marker(encoder, label);
+            }
         }
     }
 }
@@ -193,7 +221,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_pop_debug_gr
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_pop_debug_group(encoder);
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_pop_debug_group(encoder);
+            }
         }
     }
 }
@@ -215,7 +245,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_push_debug_g
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_push_debug_group(encoder, label);
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_push_debug_group(encoder, label);
+            }
         }
     }
 }
@@ -257,25 +289,29 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_bind_gro
 
         if let Some(encoder) = render_bundle.encoder.as_mut() {
             if let Some(encoder) = encoder {
-                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
-                    encoder,
-                    index,
-                    bind_group_id,
-                    dynamic_offsets.as_ptr(),
-                    dynamic_offsets.len(),
-                );
+                if let Some(encoder) = encoder.as_mut() {
+                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
+                        encoder,
+                        index,
+                        bind_group_id,
+                        dynamic_offsets.as_ptr(),
+                        dynamic_offsets.len(),
+                    );
+                }
             }
         }
     } else {
         if let Some(encoder) = render_bundle.encoder.as_mut() {
             if let Some(encoder) = encoder {
-                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
-                    encoder,
-                    index,
-                    bind_group_id,
-                    std::ptr::null(),
-                    0,
-                );
+                if let Some(encoder) = encoder.as_mut() {
+                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
+                        encoder,
+                        index,
+                        bind_group_id,
+                        std::ptr::null(),
+                        0,
+                    );
+                }
             }
         }
     }
@@ -316,13 +352,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_index_bu
         if let Some(size) = sizeValue {
             if let Some(encoder) = render_bundle.encoder.as_mut() {
                 if let Some(encoder) = encoder {
-                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
-                        encoder,
-                        buffer_id,
-                        index_format.into(),
-                        offset,
-                        Some(size),
-                    );
+                    if let Some(encoder) = encoder.as_mut() {
+                        wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
+                            encoder,
+                            buffer_id,
+                            index_format.into(),
+                            offset,
+                            Some(size),
+                        );
+                    }
                 }
             }
         } else {
@@ -331,13 +369,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_index_bu
     } else {
         if let Some(encoder) = render_bundle.encoder.as_mut() {
             if let Some(encoder) = encoder {
-                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
-                    encoder,
-                    buffer_id,
-                    index_format.into(),
-                    offset,
-                    None,
-                );
+                if let Some(encoder) = encoder.as_mut() {
+                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
+                        encoder,
+                        buffer_id,
+                        index_format.into(),
+                        offset,
+                        None,
+                    );
+                }
             }
         }
     }
@@ -363,7 +403,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_pipeline
 
     if let Some(encoder) = render_bundle.encoder.as_mut() {
         if let Some(encoder) = encoder {
-            wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_pipeline(encoder, pipeline_id);
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_pipeline(encoder, pipeline_id);
+            }
         }
     }
 }
@@ -403,13 +445,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
         if let Some(size) = sizeValue {
             if let Some(encoder) = render_bundle.encoder.as_mut() {
                 if let Some(encoder) = encoder {
-                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-                        encoder,
-                        slot,
-                        buffer_id,
-                        offset.try_into().unwrap_or_default(),
-                        Some(size),
-                    );
+                    if let Some(encoder) = encoder.as_mut() {
+                        wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
+                            encoder,
+                            slot,
+                            buffer_id,
+                            offset.try_into().unwrap_or_default(),
+                            Some(size),
+                        );
+                    }
                 }
             }
         } else {
@@ -418,13 +462,15 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
     } else {
         if let Some(encoder) = render_bundle.encoder.as_mut() {
             if let Some(encoder) = encoder {
-                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-                    encoder,
-                    slot,
-                    buffer_id,
-                    offset.try_into().unwrap_or_default(),
-                    None,
-                );
+                if let Some(encoder) = encoder.as_mut() {
+                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
+                        encoder,
+                        slot,
+                        buffer_id,
+                        offset.try_into().unwrap_or_default(),
+                        None,
+                    );
+                }
             }
         }
     }
@@ -446,35 +492,45 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_finish(
         return std::ptr::null();
     }
 
-    if let Some(encoder) = render_bundle.encoder.as_mut() {
-        if let Some(encoder) = encoder.take() {
-            let desc = if label.is_null() {
-                wgt::RenderBundleDescriptor::default()
-            } else {
-                wgt::RenderBundleDescriptor {
-                    label: ptr_into_label(label),
-                }
-            };
+    let encoder = render_bundle.encoder.as_mut().unwrap();
+    if encoder.is_none() {
+        return std::ptr::null();
+    }
+    let encoder = encoder.take();
 
-            let (render_bundle_id, error) =
-                gfx_select!(encoder.parent() =>  global.render_bundle_encoder_finish(encoder, &desc, None));
-
-            if let Some(cause) = error {
-                handle_error_fatal(
-                    global,
-                    cause,
-                    "canvas_native_webgpu_render_bundle_encoder_finish",
-                );
-            }
-
-            return Arc::into_raw(Arc::new(CanvasGPURenderBundle {
-                instance: render_bundle.instance.clone(),
-                bundle: render_bundle_id,
-            }));
-        }
+    // assert ??
+    if encoder.is_none() {
+        return std::ptr::null();
     }
 
-    std::ptr::null()
+    let encoder = encoder.unwrap();
+
+    let encoder = Box::from_raw(encoder);
+
+    let desc = if label.is_null() {
+        wgt::RenderBundleDescriptor::default()
+    } else {
+        wgt::RenderBundleDescriptor {
+            label: ptr_into_label(label),
+        }
+    };
+
+    let (render_bundle_id, error) =
+        gfx_select!(encoder.parent() =>  global.render_bundle_encoder_finish(*encoder, &desc, None));
+
+    if let Some(cause) = error {
+        handle_error_fatal(
+            global,
+            cause,
+            "canvas_native_webgpu_render_bundle_encoder_finish",
+        );
+    }
+
+    return Arc::into_raw(Arc::new(CanvasGPURenderBundle {
+        label: desc.label,
+        instance: render_bundle.instance.clone(),
+        bundle: render_bundle_id,
+    }));
 }
 
 #[no_mangle]

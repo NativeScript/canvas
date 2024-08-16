@@ -171,7 +171,7 @@ export async function run(canvas: Canvas) {
 		passEncoder.draw(cubeVertexCount);
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
-		(<any>context).presentSurface(framebuffer);
+		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

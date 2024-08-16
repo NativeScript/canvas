@@ -75,6 +75,11 @@ v8::Local<v8::FunctionTemplate> GPUBufferImpl::GetCtor(v8::Isolate *isolate) {
             ConvertToV8String(isolate, "getMappedRange"),
             v8::FunctionTemplate::New(isolate, &GetMappedRange));
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
 
     cache->GPUBufferTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -127,12 +132,17 @@ void GPUBufferImpl::UnMap(const v8::FunctionCallbackInfo<v8::Value> &args) {
     canvas_native_webgpu_buffer_unmap(ptr->GetGPUBuffer());
 }
 
+struct MapAsyncData {
+    enum CanvasGPUErrorType type;
+    char* error;
+};
 
 void GPUBufferImpl::MapAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
     GPUBufferImpl *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
     }
+
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto mode = args[0]->Int32Value(context).ToChecked();
@@ -177,31 +187,34 @@ void GPUBufferImpl::MapAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
                     if (func->data == nullptr) {
                         callback->Resolve(context, v8::Undefined(isolate));
                     } else {
-                        char* error = static_cast<char*>(func->data);
+                        auto errorData = static_cast<MapAsyncData*>(func->data);
                         callback->Reject(context,
                                          v8::Exception::Error(
                                                  ConvertToV8String(
                                                          isolate,
-                                                         error)));
+                                                         errorData->error)));
                         canvas_native_string_destroy(
-                                error);
+                                errorData->error);
+                        delete errorData;
                         func->data = nullptr;
                     }
-                    delete static_cast<PromiseCallback *>(data);
                 }
+                delete static_cast<PromiseCallback *>(data);
             }
     };
     callback->prepare();
 
 
-    canvas_native_webgpu_buffer_map_async(ptr->GetGPUBuffer(), (GPUMapMode) mode, offset, size,
-                                          [](char *error, void *data) {
+    canvas_native_webgpu_buffer_map_async(ptr->GetGPUBuffer(), mode == 1 ? GPUMapMode::GPUMapModeRead : GPUMapMode::GPUMapModeWrite, offset, size,
+                                          [](enum CanvasGPUErrorType type, char *error, void *data) {
                                               if (data != nullptr) {
                                                   auto async_data = static_cast<PromiseCallback *>(data);
                                                   auto inner = async_data->inner_.get();
                                                   if (inner != nullptr) {
                                                       if(error != nullptr){
-                                                          inner->data = error;
+                                                          inner->data = new MapAsyncData {
+                                                              type, error
+                                                          };
                                                       }
                                                       async_data->execute(true);
                                                   }
@@ -240,4 +253,25 @@ void GPUBufferImpl::GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &ar
         auto ab = v8::ArrayBuffer::New(isolate, std::move(store));
         args.GetReturnValue().Set(ab);
     }
+}
+
+
+void
+GPUBufferImpl::GetLabel(v8::Local<v8::Name> name,
+                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_buffer_get_label(ptr->buffer_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }

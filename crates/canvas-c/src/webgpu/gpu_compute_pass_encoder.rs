@@ -9,6 +9,7 @@ use crate::webgpu::error::handle_error;
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline;
+use crate::webgpu::prelude::label_to_ptr;
 
 use super::gpu::CanvasWebGPUInstance;
 
@@ -34,6 +35,17 @@ pub struct CanvasGPUComputePassEncoder {
 // CanvasGPUComputePassEncoder is thread-unsafe
 unsafe impl Send for CanvasGPUComputePassEncoder {}
 unsafe impl Sync for CanvasGPUComputePassEncoder {}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_get_label(
+    compute_pass: *const CanvasGPUComputePassEncoder,
+) -> *mut c_char {
+    if compute_pass.is_null() {
+        return std::ptr::null_mut();
+    }
+    let compute_pass = &*compute_pass;
+    label_to_ptr(compute_pass.label.clone())
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_reference(
@@ -172,11 +184,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_insert_debug_
     let error_sink = compute_pass.error_sink.as_ref();
 
     let label = CStr::from_ptr(label);
-    let label = label.to_string_lossy();
+    let label = label.to_str().unwrap();
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        if let Err(cause) = compute_pass.insert_debug_marker(global, label.as_ref(), 0) {
+        if let Err(cause) = compute_pass.insert_debug_marker(global, label, 0) {
             handle_error(
                 global,
                 error_sink,
@@ -232,9 +244,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_push_debug_gr
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
         let label = CStr::from_ptr(label);
-        let label = label.to_string_lossy();
+        let label = label.to_str().unwrap();
 
-        if let Err(cause) = compute_pass.push_debug_group(global, label.as_ref(), 0) {
+        if let Err(cause) = compute_pass.push_debug_group(global, label, 0) {
             handle_error(
                 global,
                 error_sink,

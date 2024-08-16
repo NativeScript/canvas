@@ -36,6 +36,9 @@ public:
         return scope.Escape(object);
     }
 
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
+
     static void DispatchWorkgroups(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void DispatchWorkgroupsIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);

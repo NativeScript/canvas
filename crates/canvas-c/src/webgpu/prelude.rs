@@ -7,8 +7,9 @@ pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Lab
     unsafe { ptr.as_ref() }.and_then(|ptr| {
         unsafe { CStr::from_ptr(ptr) }
             .to_str()
+            .map(|value| value.to_string())
             .ok()
-            .map(Cow::Borrowed)
+            .map(Cow::Owned)
     })
 }
 
@@ -37,6 +38,14 @@ pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'stati
             .ok()
     }
 }
+
+#[inline]
+pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
+    label.map(|label| {
+        CString::new(label.to_string()).map(|label| label.into_raw()).unwrap_or(std::ptr::null_mut())
+    }).unwrap_or(std::ptr::null_mut())
+}
+
 
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];

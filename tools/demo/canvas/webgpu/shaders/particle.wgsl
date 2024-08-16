@@ -102,18 +102,19 @@ fn simulate(@builtin(global_invocation_id) global_invocation_id : vec3<u32>) {
   // If the lifetime has gone negative, then the particle is dead and should be respawned.
   if (particle.lifetime < 0.0) {
     // Use the probability map to find where the particle should be spawned. Starting with the 1x1 mip level.
-    var coord = vec2<i32>(0);
-    for (var level = textureNumLevels(texture) - 1; level > 0; level--) {
+    var coord : vec2i;
+    for (var level = u32(textureNumLevels(texture) - 1); level > 0; level--) {
       // Load the probability value from the mip-level
-      // Generate a random number and using the probabilty values, pick the next texel in the next largest mip level:
+      // Generate a random number and using the probabilty values, pick the
+      // next texel in the next largest mip level:
       //
       // 0.0    probabilites.r    probabilites.g    probabilites.b   1.0
       //  |              |              |              |              |
       //  |   TOP-LEFT   |  TOP-RIGHT   | BOTTOM-LEFT  | BOTTOM_RIGHT |
       //
       let probabilites = textureLoad(texture, coord, i32(level));
-      let value = vec4<f32>(rand());
-      let mask = (value >= vec4<f32>(0.0, probabilites.xyz)) & (value < probabilites);
+      let value = vec4f(rand());
+      let mask = (value >= vec4f(0.0, probabilites.xyz)) & (value < probabilites);
       coord = coord * 2;
       coord.x = coord.x + select(0, 1, any(mask.yw)); // x  y
       coord.y = coord.y + select(0, 1, any(mask.zw)); // z  w

@@ -187,12 +187,10 @@ export async function run(canvas: Canvas) {
 	};
 
 	function frame() {
-		const framebuffer = context.getCurrentTexture();
-
 		updateTransformationMatrix();
 		device.queue.writeBuffer(uniformBuffer, 0, mvpMatricesData.buffer, mvpMatricesData.byteOffset, mvpMatricesData.byteLength);
 
-		renderPassDescriptor.colorAttachments[0].view = framebuffer.createView();
+		renderPassDescriptor.colorAttachments[0].view = context.getCurrentTexture().createView();
 
 		const commandEncoder = device.createCommandEncoder();
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor as never);
@@ -203,7 +201,7 @@ export async function run(canvas: Canvas) {
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
 
-		context.presentSurface(framebuffer);
+		context.presentSurface();
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);

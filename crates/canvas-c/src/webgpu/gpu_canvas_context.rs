@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
-//use wgpu_core::gfx_select;
+use wgt::SurfaceStatus;
 
-use crate::webgpu::enums::CanvasOptionalGPUTextureFormat;
+use crate::webgpu::enums::{CanvasOptionalGPUTextureFormat, SurfaceGetCurrentTextureStatus};
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
@@ -15,6 +15,8 @@ use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
     gpu_texture::CanvasGPUTexture,
 };
+
+//use wgpu_core::gfx_select;
 
 #[derive(Copy, Clone)]
 struct TextureData {
@@ -433,31 +435,43 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
     let result = gfx_select!(surface_id => global.surface_get_current_texture(surface_id, None));
 
     match result {
-        Ok(texture) => match texture.status {
-            wgt::SurfaceStatus::Good | wgt::SurfaceStatus::Suboptimal => {
-                context
-                    .has_surface_presented
-                    .store(false, std::sync::atomic::Ordering::SeqCst);
+        Ok(texture) => {
+            let mut suboptimal = false;
+            let status = match texture.status {
+                SurfaceStatus::Good => SurfaceGetCurrentTextureStatus::Success,
+                SurfaceStatus::Suboptimal => {
+                    suboptimal = true;
+                    SurfaceGetCurrentTextureStatus::Success
+                }
+                SurfaceStatus::Timeout => SurfaceGetCurrentTextureStatus::Timeout,
+                SurfaceStatus::Outdated => SurfaceGetCurrentTextureStatus::Outdated,
+                SurfaceStatus::Lost => SurfaceGetCurrentTextureStatus::Lost,
+            };
 
-                Arc::into_raw(Arc::new(CanvasGPUTexture {
-                    instance: context.instance.clone(),
-                    texture: texture.texture_id.unwrap(),
-                    surface_id: Some(surface_id),
-                    owned: false,
-                    depth_or_array_layers: 1,
-                    dimension: super::enums::CanvasTextureDimension::D2,
-                    format: surface_data.texture_data.format.into(),
-                    mipLevelCount: 1,
-                    sampleCount: 1,
-                    width: surface_data.texture_data.size.width,
-                    height: surface_data.texture_data.size.height,
-                    usage: surface_data.texture_data.usage.bits(),
-                    error_sink: surface_data.error_sink.clone(),
-                    has_surface_presented: context.has_surface_presented.clone(),
-                }))
-            }
-            _ => std::ptr::null_mut(),
-        },
+            context
+                .has_surface_presented
+                .store(false, std::sync::atomic::Ordering::SeqCst);
+
+            Arc::into_raw(Arc::new(CanvasGPUTexture {
+                label: None,
+                instance: context.instance.clone(),
+                texture: texture.texture_id.unwrap(),
+                surface_id: Some(surface_id),
+                owned: false,
+                depth_or_array_layers: 1,
+                dimension: super::enums::CanvasTextureDimension::D2,
+                format: surface_data.texture_data.format.into(),
+                mipLevelCount: 1,
+                sampleCount: 1,
+                width: surface_data.texture_data.size.width,
+                height: surface_data.texture_data.size.height,
+                usage: surface_data.texture_data.usage.bits(),
+                error_sink: surface_data.error_sink.clone(),
+                suboptimal,
+                status,
+                has_surface_presented: context.has_surface_presented.clone(),
+            }))
+        }
         Err(cause) => {
             handle_error_fatal(
                 global,

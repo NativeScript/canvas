@@ -47,6 +47,10 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
 
     tmpl->Set(
             ConvertToV8String(isolate, "destroy"),
@@ -105,6 +109,27 @@ v8::Local<v8::FunctionTemplate> GPUTextureImpl::GetCtor(v8::Isolate *isolate) {
     cache->GPUTextureTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+
+void
+GPUTextureImpl::GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_texture_get_label(ptr->texture_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }
 
 void
@@ -249,6 +274,7 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
             aspect, 0, -1, 0, -1
     };
 
+    std::string label;
 
     if (descVal->IsObject()) {
         descriptor = new CanvasCreateTextureViewDescriptor{};
@@ -267,7 +293,6 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
                 aspect = CanvasTextureAspectDepthOnly;
             }
         }
-
 
 
         v8::Local<v8::Value> arrayLayerCountVal;
@@ -297,16 +322,15 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
         descriptor->range = &range;
 
 
-
         v8::Local<v8::Value> formatVal;
         descObj->Get(context, ConvertToV8String(isolate, "format")).ToLocal(&formatVal);
         auto formatStr = ConvertFromV8String(isolate, formatVal);
 
-        descriptor->format = CanvasOptionalGPUTextureFormat {
-           CanvasOptionalGPUTextureFormatNone
+        descriptor->format = CanvasOptionalGPUTextureFormat{
+                CanvasOptionalGPUTextureFormatNone
         };
 
-        if (!formatStr.empty()){
+        if (!formatStr.empty()) {
             auto format = canvas_native_webgpu_enum_string_to_gpu_texture(formatStr.c_str());
             descriptor->format = format;
         }
@@ -317,9 +341,9 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
         v8::Local<v8::Value> labelVal;
         descObj->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            descriptor->label = *v8::String::Utf8Value(isolate, labelVal);
-        }
+        label = ConvertFromV8String(isolate, labelVal);
+
+        descriptor->label = label.c_str();
 
         v8::Local<v8::Value> dimensionVal;
         if (descObj->Get(context, ConvertToV8String(isolate, "dimension")).ToLocal(&dimensionVal)) {
@@ -347,6 +371,7 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     if (descriptor != nullptr) {
         delete descriptor;
+        descriptor = nullptr;
     }
 
     if (view != nullptr) {

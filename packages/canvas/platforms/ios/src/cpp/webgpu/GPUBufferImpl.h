@@ -8,6 +8,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
+
 class GPUBufferImpl : ObjectWrapperImpl {
 public:
     explicit GPUBufferImpl(const CanvasGPUBuffer *buffer);
@@ -49,6 +50,9 @@ public:
     static void MapAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void GetMappedRange(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
 
 private:

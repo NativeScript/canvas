@@ -8,6 +8,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 #include "GPUUtils.h"
+
 class GPUCommandEncoderImpl : ObjectWrapperImpl {
 public:
     explicit GPUCommandEncoderImpl(const CanvasGPUCommandEncoder *encoder);
@@ -34,6 +35,9 @@ public:
         encoder->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
+
+    static void GetLabel(v8::Local<v8::Name> name,
+                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void BeginComputePass(const v8::FunctionCallbackInfo<v8::Value> &args);
 

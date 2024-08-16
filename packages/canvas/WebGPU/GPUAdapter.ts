@@ -14,6 +14,11 @@ export class GPUAdapter {
 	[native_];
 
 	_features: GPUSupportedFeatures;
+
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	get features() {
 		if (!this._features) {
 			this._features = new GPUSupportedFeatures(this[native_].features);

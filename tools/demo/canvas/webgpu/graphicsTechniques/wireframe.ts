@@ -2,8 +2,6 @@ import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUTexture, GPUTex
 
 import { mat4, mat3 } from '../../../wgpu-matrix/wgpu-matrix';
 
-import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../meshes/cube';
-
 import { File, knownFolders } from '@nativescript/core';
 
 import { modelData } from '../models';
@@ -39,15 +37,16 @@ export async function run(canvas: Canvas) {
 		lines: true,
 		depthBias: 1,
 		depthBiasSlopeScale: 0.5,
-		models: false,
+		models: true,
 	};
 
 	type TypedArrayView = Float32Array | Uint32Array;
 
-	function createBufferWithData(device: GPUDevice, data: TypedArrayView, usage: number) {
+	function createBufferWithData(device: GPUDevice, data: TypedArrayView, usage: number, label?: string) {
 		const buffer = device.createBuffer({
 			size: data.byteLength,
 			usage,
+			label,
 		});
 		device.queue.writeBuffer(buffer, 0, data);
 		return buffer;
@@ -60,9 +59,9 @@ export async function run(canvas: Canvas) {
 		vertexCount: number;
 	};
 
-	function createVertexAndIndexBuffer(device: GPUDevice, { vertices, indices }: { vertices: Float32Array; indices: Uint32Array }): Model {
-		const vertexBuffer = createBufferWithData(device, vertices, global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.STORAGE | global.GPUBufferUsage.COPY_DST);
-		const indexBuffer = createBufferWithData(device, indices, global.GPUBufferUsage.INDEX | global.GPUBufferUsage.STORAGE | global.GPUBufferUsage.COPY_DST);
+	function createVertexAndIndexBuffer(device: GPUDevice, { vertices, indices }: { vertices: Float32Array; indices: Uint32Array }, label: string): Model {
+		const vertexBuffer = createBufferWithData(device, vertices, GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, label);
+		const indexBuffer = createBufferWithData(device, indices, GPUBufferUsage.INDEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, label);
 		return {
 			vertexBuffer,
 			indexBuffer,
@@ -73,7 +72,10 @@ export async function run(canvas: Canvas) {
 
 	const depthFormat = 'depth24plus';
 
-	const models = Object.values(modelData).map((data) => createVertexAndIndexBuffer(device, data));
+	const models = Object.keys(modelData).map((key) => {
+		const data = modelData[key];
+		return createVertexAndIndexBuffer(device, data, key);
+	});
 
 	const litModule = device.createShaderModule({
 		code: solidColorLitWGSL,
@@ -94,7 +96,7 @@ export async function run(canvas: Canvas) {
 		],
 	});
 
-	let litPipeline;
+	let litPipeline: GPURenderPipeline;
 	function rebuildLitPipeline() {
 		litPipeline = device.createRenderPipeline({
 			label: 'lit pipeline',
@@ -122,12 +124,10 @@ export async function run(canvas: Canvas) {
 						],
 					},
 				],
-				entryPoint: 'vs',
 			},
 			fragment: {
 				module: litModule,
 				targets: [{ format: presentationFormat }],
-				entryPoint: 'fs',
 			},
 			primitive: {
 				cullMode: 'back',
@@ -240,6 +240,7 @@ export async function run(canvas: Canvas) {
 
 		// Make a bind group for this uniform
 		const litBindGroup = device.createBindGroup({
+			label: `litBindGroup ${i}`,
 			layout: litBindGroupLayout,
 			entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
 		});
@@ -366,7 +367,8 @@ export async function run(canvas: Canvas) {
 
 		// make a render pass encoder to encode render specific commands
 		const pass = encoder.beginRenderPass(renderPassDescriptor as never);
-		pass.setPipeline(litPipeline);
+
+		pass.setPipeline(litPipeline as never);
 
 		objectInfos.forEach(({ uniformBuffer, uniformValues, worldViewProjectionMatrixValue, worldMatrixValue, litBindGroup, model: { vertexBuffer, indexBuffer, indexFormat, vertexCount } }, i) => {
 			const world = mat4.identity();
@@ -405,9 +407,10 @@ export async function run(canvas: Canvas) {
 		pass.end();
 
 		const commandBuffer = encoder.finish();
+
 		device.queue.submit([commandBuffer]);
 
-		context.presentSurface(canvasTexture);
+		context.presentSurface();
 
 		requestAnimationFrame(render);
 	}

@@ -1,8 +1,10 @@
+use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
 
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
+use crate::webgpu::prelude::label_to_ptr;
 
 use super::{
     gpu::CanvasWebGPUInstance,
@@ -28,11 +30,22 @@ impl Drop for QueueId {
 
 #[derive(Clone)]
 pub struct CanvasGPUQueue {
+    pub(super) label: Option<Cow<'static, str>>,
     pub(crate) queue: Arc<QueueId>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
 unsafe impl Send for CanvasGPUQueue {}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_get_label(queue: *const CanvasGPUQueue) -> *mut c_char {
+    if queue.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let queue = &*queue;
+    label_to_ptr(queue.label.clone())
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_reference(queue: *const CanvasGPUQueue) {

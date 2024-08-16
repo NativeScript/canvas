@@ -78,7 +78,6 @@ void
 GPUQuerySetImpl::GetCount(v8::Local<v8::Name> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
-    auto isolate = info.GetIsolate();
     if (ptr != nullptr) {
         info.GetReturnValue().Set(canvas_native_webgpu_query_set_get_count(ptr->GetQuerySet()));
         return;
@@ -132,6 +131,6 @@ void GPUQuerySetImpl::Destroy(const v8::FunctionCallbackInfo<v8::Value> &args) {
     if (ptr == nullptr) {
         return;
     }
-    // todo
+    canvas_native_webgpu_query_set_destroy(ptr->querySet_);
 
 }

@@ -1,10 +1,11 @@
+use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
 use std::sync::Arc;
-use std::{ffi::CStr, os::raw::c_char};
 
 use wgpu_core::command::DynRenderPass;
 
 use crate::webgpu::error::handle_error;
+use crate::webgpu::prelude::label_to_ptr;
 
 use super::{
     enums::CanvasIndexFormat, gpu::CanvasWebGPUInstance, gpu_bind_group::CanvasGPUBindGroup,
@@ -38,6 +39,20 @@ pub struct CanvasGPURenderPassEncoder {
 // CanvasGPURenderPassEncoder is thread-unsafe
 unsafe impl Send for CanvasGPURenderPassEncoder {}
 unsafe impl Sync for CanvasGPURenderPassEncoder {}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_get_label(
+    render_pass: *const CanvasGPURenderPassEncoder
+) -> *mut c_char {
+    if render_pass.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let render_pass = &*render_pass;
+    let render_pass = &*render_pass;
+    label_to_ptr(render_pass.label.clone())
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_begin_occlusion_query(
@@ -299,7 +314,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_execute_bundle
         let bundles = std::slice::from_raw_parts(bundles, bundles_size)
             .iter()
             .map(|value| (&**value).bundle)
-            .collect::<Vec<wgpu_core::id::RenderBundleId>>();
+            .collect::<Vec<_>>();
 
         if let Err(cause) = pass.execute_bundles(global, bundles.as_slice()) {
             handle_error(
@@ -331,9 +346,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_insert_debug_m
 
     if let Some(pass) = pass.as_mut() {
         let marker_label = CStr::from_ptr(marker_label);
-        let marker_label = marker_label.to_string_lossy();
+        let marker_label = marker_label.to_str().unwrap();
 
-        if let Err(cause) = pass.insert_debug_marker(global, marker_label.as_ref(), 0) {
+        if let Err(cause) = pass.insert_debug_marker(global, marker_label, 0) {
             handle_error(
                 global,
                 error_sink,
@@ -391,9 +406,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_push_debug_gro
 
     if let Some(pass) = pass.as_mut() {
         let group_label = CStr::from_ptr(group_label);
-        let group_label = group_label.to_string_lossy();
+        let group_label = group_label.to_str().unwrap();
 
-        if let Err(cause) = pass.push_debug_group(global, group_label.as_ref(), 0) {
+        if let Err(cause) = pass.push_debug_group(global, group_label, 0) {
             handle_error(
                 global,
                 error_sink,

@@ -18,11 +18,7 @@ use wgpu_core::resource::CreateBufferError;
 use wgt::Features;
 
 use crate::buffers::StringBuffer;
-use crate::webgpu::enums::{
-    CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource,
-    CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction,
-    CanvasOptionalGPUTextureFormat, CanvasQueryType,
-};
+use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasQueryType, SurfaceGetCurrentTextureStatus};
 use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error, handle_error_fatal};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
@@ -216,6 +212,7 @@ impl ErrorSinkRaw {
 }
 
 pub struct CanvasGPUDevice {
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) device: wgpu_core::id::DeviceId,
     pub(crate) queue: Arc<CanvasGPUQueue>,
@@ -224,6 +221,9 @@ pub struct CanvasGPUDevice {
 }
 
 impl CanvasGPUDevice {
+    pub fn label(&self) -> Option<Cow<'static, str>> {
+        self.label.clone()
+    }
     pub fn features(&self) -> Result<Features, DeviceError> {
         let device_id = self.device;
         let global = self.instance.global();
@@ -311,6 +311,7 @@ impl CanvasGPUDevice {
             .iter()
             .map(|entry| (*entry).into())
             .collect::<Vec<_>>();
+
         let desc = wgpu_core::binding_model::BindGroupLayoutDescriptor {
             label: label.clone(),
             entries: Cow::from(entries),
@@ -331,6 +332,7 @@ impl CanvasGPUDevice {
             );
         }
         Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
+            label,
             instance: self.instance.clone(),
             group_layout: group_layout_id,
         }))
@@ -374,7 +376,7 @@ impl CanvasGPUDevice {
 
                 Arc::into_raw(Arc::new(CanvasGPUBuffer {
                     instance: self.instance.clone(),
-                    label: label.unwrap_or_default(),
+                    label,
                     buffer,
                     usage: usage.bits(),
                     size,
@@ -402,6 +404,19 @@ impl CanvasGPUDevice {
 }
 
 unsafe impl Send for CanvasGPUDevice {}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_device_get_label(
+    device: *const CanvasGPUDevice,
+) -> *mut c_char {
+    if device.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let device = &*device;
+    label_to_ptr(device.label.clone())
+}
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_device_get_features(
@@ -634,7 +649,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     let label = ptr_into_label(label);
 
     let device = unsafe { &*device };
-    let desc = wgt::CommandEncoderDescriptor { label };
+    let desc = wgt::CommandEncoderDescriptor { label: label.clone() };
 
     let device_id = device.device;
     let global = &device.instance.global();
@@ -654,6 +669,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     }
 
     let encoder = CanvasGPUCommandEncoder {
+        label,
         instance: device.instance.clone(),
         encoder,
         error_sink: device.error_sink.clone(),
@@ -693,7 +709,7 @@ unsafe fn parse_compute_pipeline_descriptor(label: *const c_char,
     let module = &*compute.module;
 
     let stage = ProgrammableStage {
-        module: CanvasGPUShaderModule { instance: Arc::clone(&module.instance), module: module.module },
+        module: CanvasGPUShaderModule { label: label.clone(), instance: Arc::clone(&module.instance), module: module.module },
         entry_point: ptr_into_string(compute.entry_point),
         constants: if !compute.constants.is_null() {
             let constants = &*compute.constants;
@@ -720,6 +736,7 @@ unsafe fn create_compute_pipeline(
     let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &descriptor, None, None));
 
     let pipeline = CanvasGPUComputePipeline {
+        label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
         instance: device.instance.clone(),
         pipeline,
         error_sink: device.error_sink.clone(),
@@ -746,7 +763,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
             entry_point: stage.entry_point,
             constants: Cow::Borrowed(&stage.constants.0),
             zero_initialize_workgroup_memory: true,
-            vertex_pulling_transform: false,
         },
         cache: None,
     };
@@ -834,7 +850,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline_asy
                     entry_point: stage.entry_point,
                     constants: Cow::Borrowed(&stage.constants.0),
                     zero_initialize_workgroup_memory: true,
-                    vertex_pulling_transform: false,
                 },
                 cache: None,
             };
@@ -932,12 +947,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
             error_sink,
             cause,
             "label",
-            desc.label,
+            desc.label.clone(),
             "canvas_native_webgpu_device_create_pipeline_layout",
         );
     }
 
     Arc::into_raw(Arc::new(CanvasGPUPipelineLayout {
+        label: desc.label,
         instance: device.instance.clone(),
         layout: pipeline_layout,
     }))
@@ -1056,10 +1072,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
     let bundle = RenderBundleEncoder::new(&desc, device_id, None);
 
     match bundle {
-        Ok(bundle) => Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
-            instance: device.instance.clone(),
-            encoder: Box::into_raw(Box::new(Some(bundle))),
-        })),
+        Ok(bundle) => {
+            Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
+                label: desc.label,
+                instance: device.instance.clone(),
+                encoder: Box::into_raw(Box::new(Some(Box::into_raw(Box::new(bundle))))),
+            }))
+        }
         Err(cause) => {
             handle_error_fatal(
                 global,
@@ -1067,8 +1086,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
                 "canvas_native_webgpu_device_create_render_bundle_encoder",
             );
             Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
+                label: desc.label,
                 instance: device.instance.clone(),
-                encoder: Box::into_raw(Box::new(Some(RenderBundleEncoder::dummy(device_id)))),
+                encoder: Box::into_raw(Box::new(Some(Box::into_raw(Box::new(RenderBundleEncoder::dummy(device_id)))))),
             }))
         }
     }
@@ -1086,7 +1106,8 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let label = ptr_into_label(label);
 
     let src = unsafe { CStr::from_ptr(source) };
-    let src = Cow::Borrowed(src.to_str().unwrap());
+    let src = src.to_str().unwrap();
+    let src = Cow::Owned(src.to_string());
     let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(src);
 
     let device = unsafe { &*device };
@@ -1106,12 +1127,13 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
             device.error_sink.as_ref(),
             cause,
             "label",
-            desc.label,
+            desc.label.clone(),
             "canvas_native_webgpu_device_create_shader_module",
         );
     }
 
     let shader = CanvasGPUShaderModule {
+        label: desc.label,
         module,
         instance: device.instance.clone(),
     };
@@ -1155,7 +1177,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_insert(
 
     let constants = &mut *constants;
     let key = CStr::from_ptr(key);
-    let key = key.to_string_lossy();
+    let key = key.to_str().unwrap();
     let key = key.to_string();
     constants.0.insert(key, value);
 }
@@ -1339,7 +1361,7 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
         let entry_point = if frag.entry_point.is_null() {
             None
         } else {
-            Some(CStr::from_ptr(frag.entry_point).to_string_lossy())
+            ptr_into_label(frag.entry_point)
         };
 
         let targets = if !frag.targets.is_null() {
@@ -1360,7 +1382,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                     constants: Cow::Owned(constants),
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
-                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1374,7 +1395,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                     constants,
                     // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
-                    vertex_pulling_transform: false,
                 },
                 targets: Cow::Owned(targets),
             })
@@ -1444,7 +1464,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
             constants,
             // Required to be true for WebGPU
             zero_initialize_workgroup_memory: true,
-            vertex_pulling_transform: false,
         },
         buffers: Cow::Owned(vertex_buffers),
     };
@@ -1551,7 +1570,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
     let device_id = device.device;
     let instance = Arc::clone(&device.instance);
     let error_sink = Arc::clone(&device.error_sink);
-    let label = descriptor.label.as_ref().map(|value|{
+    let label = descriptor.label.as_ref().map(|value| {
         Cow::Owned(value.to_string())
     });
     std::thread::spawn(move || {
@@ -1675,12 +1694,13 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
             device.error_sink.as_ref(),
             cause,
             "",
-            desc.label,
+            desc.label.clone(),
             "canvas_native_webgpu_device_create_texture",
         );
     }
 
     Arc::into_raw(Arc::new(CanvasGPUTexture {
+        label: desc.label,
         instance: device.instance.clone(),
         texture: texture_id,
         surface_id: None,
@@ -1694,6 +1714,8 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         height: descriptor.height,
         usage: descriptor.usage,
         error_sink: device.error_sink.clone(),
+        suboptimal: true,
+        status: SurfaceGetCurrentTextureStatus::Success,
         has_surface_presented: Arc::default(),
     }))
 }

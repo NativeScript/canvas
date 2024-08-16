@@ -114,7 +114,7 @@ export class TinyWebGpuDemo {
 
 			this.device.queue.writeBuffer(this.frameUniformBuffer, 0, this.#frameArrayBuffer);
 
-			this.context.presentSurface(texture);
+			this.context.presentSurface();
 
 			this.onFrame(this.device, this.context, t);
 

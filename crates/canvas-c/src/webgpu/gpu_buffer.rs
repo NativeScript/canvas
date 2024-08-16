@@ -1,12 +1,13 @@
-use std::sync::Arc;
 use std::{
     borrow::Cow,
     ffi::CString,
     os::raw::{c_char, c_void},
 };
-//use wgpu_core::gfx_select;
-use crate::webgpu::error::{handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
+use std::sync::Arc;
 
+//use wgpu_core::gfx_select;
+use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error_fatal};
+use crate::webgpu::prelude::label_to_ptr;
 use super::gpu::CanvasWebGPUInstance;
 
 #[repr(C)]
@@ -36,7 +37,7 @@ impl From<wgpu_core::device::HostMap> for GPUMapMode {
 
 pub struct CanvasGPUBuffer {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) label: Cow<'static, str>,
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) buffer: wgpu_core::id::BufferId,
     pub(crate) size: u64,
     pub(crate) usage: u32,
@@ -47,12 +48,15 @@ impl Drop for CanvasGPUBuffer {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(id => global.buffer_drop(self.buffer, false));
+            gfx_select!(id => global.buffer_drop(self.buffer));
         }
     }
 }
 
 impl CanvasGPUBuffer {
+    pub fn label(&self) -> Option<Cow<'static, str>> {
+        return self.label.clone();
+    }
     pub fn size(&self) -> u64 {
         self.size
     }
@@ -72,6 +76,16 @@ impl CanvasGPUBuffer {
         let global = self.instance.global();
         let _ = gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
     }
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_label(buffer: *const CanvasGPUBuffer) -> *mut c_char {
+    if buffer.is_null() {
+        return std::ptr::null_mut();
+    }
+    let buffer = &*buffer;
+    label_to_ptr(buffer.label.clone())
 }
 
 #[no_mangle]
@@ -161,7 +175,7 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
     mode: GPUMapMode,
     offset: i64,
     size: i64,
-    callback: extern "C" fn(*mut c_char, *mut c_void),
+    callback: extern "C" fn(CanvasGPUErrorType, *mut c_char, *mut c_void),
     callback_data: *mut c_void,
 ) {
     if buffer.is_null() {

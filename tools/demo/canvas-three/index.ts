@@ -1,4 +1,70 @@
 import { DemoSharedBase } from '../utils';
+
+import 'three/examples/jsm/nodes/math/MathNode';
+
+import NodeBuilder from 'three/examples/jsm/nodes/core/NodeBuilder.js';
+import ParameterNode from 'three/examples/jsm/nodes/core/ParameterNode.js';
+
+// See DEV.md
+// Original code is commented out
+
+//@ts-ignore
+// NodeBuilder.prototype.flowShaderNode = function( shaderNode ) {
+
+// 	const layout = shaderNode.layout;
+// 	console.log('11');
+
+// 	let inputs;
+
+// 	// if ( shaderNode.isArrayInput ) {
+
+// 	inputs = [];
+
+// 	for ( const input of layout.inputs ) {
+
+// 	  inputs.push( new ParameterNode( input.type, input.name ) );
+
+// 	}
+
+// 	// } else {
+// 	//
+// 	// inputs = {};
+
+// 	for ( const input of layout.inputs ) {
+
+// 	  inputs[ input.name ] = new ParameterNode( input.type, input.name );
+
+// 	}
+
+// 	// }
+
+// 	//
+
+// 	console.log('?');
+
+// 	shaderNode.layout = null;
+
+// 	const callNode = shaderNode.call( inputs );
+// 	const flowData = this.flowStagesNode( callNode, layout.type );
+
+// 	shaderNode.layout = layout;
+
+// 	return flowData;
+
+//   }
+
+import ConstNode from 'three/examples/jsm/nodes/core/ConstNode';
+
+ConstNode.prototype.generate = function (builder, output) {
+	const type = this.getNodeType(builder);
+
+	if (type === 'float' && output === 'int') {
+		return `${Math.round(parseFloat(this.generateConst(builder)))}`;
+	}
+
+	return builder.format(this.generateConst(builder), type, output);
+};
+
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader';
@@ -38,9 +104,11 @@ import { tiny_poly_world } from './games/tiny_poly_world';
 import { Canvas } from '@nativescript/canvas';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
-import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
+//import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
-import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If, color, toneMapping, viewportSharedTexture, viewportTopLeft, checker, uv, timerLocal, oscSine, output, MeshStandardNodeMaterial } from 'three/examples/jsm/nodes/Nodes';
+//import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If, color, toneMapping, viewportSharedTexture, viewportTopLeft, checker, uv, timerLocal, oscSine, output, MeshStandardNodeMaterial } from 'three/examples/jsm/nodes/Nodes';
+
+import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer';
 
 class IconMesh extends THREE.Mesh {
 	constructor() {
@@ -68,7 +136,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		//this.webgpu_cube(this.canvas);
+		this.webgpu_cube(this.canvas);
 
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
@@ -93,7 +161,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//canvas.height = 1000;
 		//this.threeOcean(this.canvas);
 
-		this.skinningAndMorphing(this.canvas);
+		//this.skinningAndMorphing(this.canvas);
 
 		//this.geoColors(this.canvas);
 		// setTimeout(()=>{
@@ -128,11 +196,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		const adapter = await navigator.gpu?.requestAdapter();
 		const device: GPUDevice = (await adapter?.requestDevice()) as never;
 		const context = canvas.getContext('webgpu');
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 		var camera, scene, renderer;
 		var geometry, material, mesh;
 
-		function init() {
+		async function init() {
 			const { width, height } = canvas;
 
 			const innerWidth = width as number; //* window.devicePixelRatio;
@@ -149,42 +219,29 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
 
-			const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
-
-			renderer = new WebGPURenderer({ antialias: false, context, device, canvas });
-
-			console.log('??');
-
+			renderer = new WebGPURenderer({ antialias: true, context, device, canvas: canvas as any });
+			await renderer.init();
 			renderer.setPixelRatio(window.devicePixelRatio);
-			console.log('1');
-			//	renderer.setSize(innerWidth, innerHeight);
-			console.log('2');
-			// renderer.setAnimationLoop(animate);
+			renderer.setSize(innerWidth, innerHeight);
+			renderer.setAnimationLoop(animate);
 		}
 
 		init();
 
-		async function animate() {
-			console.log('help', Date.now());
+		function animate() {
 			mesh.rotation.x += 0.01;
 			mesh.rotation.y += 0.02;
 
-			try {
-				renderer.render(scene, camera);
+			renderer.render(scene, camera);
 
-				context.presentSurface(context.getCurrentTexture());
-
-				requestAnimationFrame(animate);
-			} catch (error) {
-				console.log('error', error);
-			}
+			context.presentSurface();
 		}
 
-		animate();
+		//animate();
 	}
 
 	async webgpu_backdrop(canvas: Canvas) {
-		const adapter = await navigator.gpu?.requestAdapter();
+		/*const adapter = await navigator.gpu?.requestAdapter();
 		const device: GPUDevice = (await adapter?.requestDevice()) as never;
 		const context = canvas.getContext('webgpu');
 
@@ -310,10 +367,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			renderer.render(scene, camera);
 		}
+		*/
 	}
 
 	async webgpu_1m_particles(canvas: Canvas) {
-		const adapter = await navigator.gpu?.requestAdapter();
+		/*const adapter = await navigator.gpu?.requestAdapter();
 		const device: GPUDevice = (await adapter?.requestDevice()) as never;
 		const context = canvas.getContext('webgpu');
 
@@ -554,6 +612,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// 	timestamps.innerHTML = 'Timestamp queries not supported';
 			// }
 		}
+
+		*/
 	}
 
 	topDown(canvas) {
@@ -3170,8 +3230,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	skinningAndMorphing(canvas) {
 		const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;
 
-		canvas.width = canvas.clientWidth;
-		canvas.height = canvas.clientHeight;
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 		const { clientWidth: width, clientHeight: height } = canvas;
 		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;

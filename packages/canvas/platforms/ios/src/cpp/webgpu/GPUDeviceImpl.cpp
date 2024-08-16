@@ -64,6 +64,11 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->SetInternalFieldCount(2);
 
     tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
+
+    tmpl->SetLazyDataProperty(
             ConvertToV8String(isolate, "features"),
             GetFeatures
     );
@@ -160,6 +165,26 @@ v8::Local<v8::FunctionTemplate> GPUDeviceImpl::GetCtor(v8::Isolate *isolate) {
     cache->GPUDeviceTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
+}
+
+void
+GPUDeviceImpl::GetLabel(v8::Local<v8::Name> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_device_get_label(ptr->device_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
 }
 
 void
@@ -407,7 +432,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    char *label = nullptr;
+    std::string label;
 
     auto optionsVal = args[0];
 
@@ -418,9 +443,8 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
+
+        label = ConvertFromV8String(isolate, labelVal);
 
         const CanvasGPUBindGroupLayout *layout = nullptr;
 
@@ -439,108 +463,10 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
         v8::Local<v8::Value> entriesVal;
         options->Get(context, ConvertToV8String(isolate, "entries")).ToLocal(&entriesVal);
 
-        if (!entriesVal.IsEmpty() && entriesVal->IsArray()) {
-            auto entriesArray = entriesVal.As<v8::Array>();
-            auto len = entriesArray->Length();
-            for (int i = 0; i < len; i++) {
-                v8::Local<v8::Value> entryVal;
-                entriesArray->Get(context, i).ToLocal(&entryVal);
-                if (!entryVal.IsEmpty() && entryVal->IsObject()) {
-                    auto entryObj = entryVal.As<v8::Object>();
-                    auto binding = entryObj->Get(context, ConvertToV8String(isolate,
-                                                                            "binding")).ToLocalChecked()->Uint32Value(
-                            context).FromJust();
-                    v8::Local<v8::Value> resourceVal;
-                    entryObj->Get(context, ConvertToV8String(isolate, "resource")).ToLocal(
-                            &resourceVal);
+        entries = ParseBindGroupEntries(isolate, entriesVal);
 
-                    auto resourceType = GetNativeType(resourceVal);
-                    switch (resourceType) {
-                        case NativeType::GPUSampler: {
-                            auto sampler = GPUSamplerImpl::GetPointer(resourceVal.As<v8::Object>());
-                            if (sampler != nullptr) {
-                                auto resource = CanvasBindGroupEntryResource{
-                                        CanvasBindGroupEntryResourceSampler,
-                                };
-                                resource.sampler = sampler->GetSampler();
-                                CanvasBindGroupEntry entry{binding, resource};
-                                entries.push_back(entry);
-                            }
-
-                        }
-                            break;
-                        case NativeType::GPUTextureView: {
-                            auto textureView = GPUTextureViewImpl::GetPointer(
-                                    resourceVal.As<v8::Object>());
-                            if (textureView != nullptr) {
-                                auto resource = CanvasBindGroupEntryResource{
-                                        CanvasBindGroupEntryResourceTextureView,
-                                };
-                                resource.texture_view = textureView->GetTextureView();
-                                CanvasBindGroupEntry entry{binding, resource};
-                                entries.push_back(entry);
-                            }
-                        }
-                            break;
-                        default: {
-                            if (!resourceVal.IsEmpty() && resourceVal->IsObject()) {
-                                auto resourceObj = resourceVal.As<v8::Object>();
-                                v8::Local<v8::Value> bufferVal;
-                                resourceObj->Get(context,
-                                                 ConvertToV8String(isolate, "buffer")).ToLocal(
-                                        &bufferVal);
-                                if (GetNativeType(bufferVal) == NativeType::GPUBuffer) {
-                                    auto bufferObj = bufferVal.As<v8::Object>();
-                                    auto buffer = GPUBufferImpl::GetPointer(bufferObj);
-                                    if (buffer != nullptr) {
-                                        auto resource = CanvasBindGroupEntryResource{
-                                                CanvasBindGroupEntryResourceBuffer,
-                                        };
-                                        int64_t offset = -1;
-
-                                        v8::Local<v8::Value> offsetVal;
-
-                                        resourceObj->Get(context,
-                                                         ConvertToV8String(isolate,
-                                                                           "offset")).ToLocal(
-                                                &offsetVal);
-                                        if (!offsetVal.IsEmpty() && offsetVal->IsNumber()) {
-                                            offset = (int64_t) offsetVal->NumberValue(
-                                                    context).ToChecked();
-                                        }
-
-                                        int64_t size = -1;
-
-                                        v8::Local<v8::Value> sizeVal;
-                                        resourceObj->Get(context,
-                                                         ConvertToV8String(isolate,
-                                                                           "size")).ToLocal(
-                                                &sizeVal);
-                                        if (!sizeVal.IsEmpty() && sizeVal->IsNumber()) {
-                                            size = (int64_t) sizeVal->NumberValue(
-                                                    context).ToChecked();
-                                        }
-
-                                        resource.buffer = CanvasBufferBinding{
-                                                buffer->GetGPUBuffer(), offset, size
-                                        };
-
-                                        CanvasBindGroupEntry entry{binding, resource};
-                                        entries.push_back(entry);
-                                    }
-                                }
-                            }
-
-                        }
-                            break;
-                    }
-
-                }
-            }
-        }
-
-
-        auto bind_group = canvas_native_webgpu_device_create_bind_group(ptr->GetGPUDevice(), label,
+        auto bind_group = canvas_native_webgpu_device_create_bind_group(ptr->GetGPUDevice(),
+                                                                        label.c_str(),
                                                                         layout, entries.data(),
                                                                         entries.size());
 
@@ -561,7 +487,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    char *label = nullptr;
+    std::string label;
 
     auto optionsVal = args[0];
 
@@ -570,381 +496,16 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
-
-
-        std::vector<CanvasBindGroupLayoutEntry> entries;
+        label = std::string(ConvertFromV8String(isolate, labelVal));
 
         v8::Local<v8::Value> entriesVal;
         options->Get(context, ConvertToV8String(isolate, "entries")).ToLocal(&entriesVal);
 
-        if (!entriesVal.IsEmpty() && entriesVal->IsArray()) {
-            auto entriesArray = entriesVal.As<v8::Array>();
-            auto len = entriesArray->Length();
-            for (int i = 0; i < len; i++) {
-                v8::Local<v8::Value> entryVal;
-                entriesArray->Get(context, i).ToLocal(&entryVal);
-                if (!entryVal.IsEmpty() && entryVal->IsObject()) {
-                    auto entryObj = entryVal.As<v8::Object>();
-                    auto binding = entryObj->Get(context, ConvertToV8String(isolate,
-                                                                            "binding")).ToLocalChecked()->Uint32Value(
-                            context).FromJust();
-                    v8::Local<v8::Value> resourceVal;
-                    entryObj->Get(context, ConvertToV8String(isolate, "resource")).ToLocal(
-                            &resourceVal);
-
-
-                    auto visibility = entryObj->Get(context, ConvertToV8String(isolate,
-                                                                               "visibility")).ToLocalChecked()->Uint32Value(
-                            context).FromJust();
-
-
-                    v8::Local<v8::Value> bufferVal;
-
-                    entryObj->Get(context, ConvertToV8String(isolate, "buffer")).ToLocal(
-                            &bufferVal);
-
-
-                    if (!bufferVal.IsEmpty() && bufferVal->IsObject()) {
-                        auto bufferObj = bufferVal.As<v8::Object>();
-                        v8::Local<v8::Value> bufferType;
-                        bufferObj->Get(context, ConvertToV8String(isolate, "type")).ToLocal(
-                                &bufferType);
-
-                        CanvasBufferBindingType type = CanvasBufferBindingTypeUniform;
-
-                        if (!bufferType.IsEmpty() && bufferType->IsString()) {
-                            auto typeStr = ConvertFromV8String(isolate, bufferType);
-                            if (typeStr == "read-only-storage") {
-                                type = CanvasBufferBindingTypeReadOnlyStorage;
-                            } else if (typeStr == "storage") {
-                                type = CanvasBufferBindingTypeStorage;
-                            } else if (typeStr == "uniform") {
-                                type = CanvasBufferBindingTypeUniform;
-                            }
-                        }
-
-                        bool has_dynamic_offset = false;
-
-                        v8::Local<v8::Value> hasDynamicOffsetVal;
-                        bufferObj->Get(context,
-                                       ConvertToV8String(isolate, "hasDynamicOffset")).ToLocal(
-                                &hasDynamicOffsetVal);
-
-
-                        if (!hasDynamicOffsetVal.IsEmpty() && hasDynamicOffsetVal->IsBoolean()) {
-                            has_dynamic_offset = hasDynamicOffsetVal->BooleanValue(isolate);
-                        }
-
-                        int64_t min_binding_size = -1;
-
-                        v8::Local<v8::Value> minBindingSizeVal;
-                        bufferObj->Get(context,
-                                       ConvertToV8String(isolate, "minBindingSize")).ToLocal(
-                                &minBindingSizeVal);
-
-
-                        if (!minBindingSizeVal.IsEmpty() && minBindingSizeVal->IsNumber()) {
-                            min_binding_size = (int64_t) minBindingSizeVal->NumberValue(
-                                    context).ToChecked();
-                        }
-
-                        CanvasBindingType buffer{
-                                CanvasBindingTypeBuffer
-                        };
-
-                        buffer.buffer = CanvasBufferBindingLayout{
-                                type, has_dynamic_offset, min_binding_size
-                        };
-
-
-                        CanvasBindGroupLayoutEntry entry{
-                                binding,
-                                visibility,
-                                buffer
-                        };
-
-                        entries.push_back(entry);
-
-                        continue;
-                    }
-
-
-                    v8::Local<v8::Value> externalTextureVal;
-
-                    entryObj->Get(context, ConvertToV8String(isolate, "externalTexture")).ToLocal(
-                            &externalTextureVal);
-
-                    if (!externalTextureVal.IsEmpty() && externalTextureVal->IsObject()) {
-                        // todo
-//                        CanvasBindingType buffer{
-//                                CanvasBindingTypeTexture
-//                        };
-//
-//                        buffer.buffer = CanvasBufferBindingLayout{
-//                                type, has_dynamic_offset, min_binding_size
-//                        };
-//
-//
-//                        CanvasBindGroupLayoutEntry entry{
-//                                binding,
-//                                visibility,
-//                                buffer
-//                        };
-
-                        continue;
-                    }
-
-
-                    v8::Local<v8::Value> samplerVal;
-
-                    entryObj->Get(context, ConvertToV8String(isolate, "sampler")).ToLocal(
-                            &samplerVal);
-
-                    if (!samplerVal.IsEmpty() && samplerVal->IsObject()) {
-                        auto samplerObj = samplerVal.As<v8::Object>();
-                        v8::Local<v8::Value> samplerType;
-                        samplerObj->Get(context, ConvertToV8String(isolate, "type")).ToLocal(
-                                &samplerType);
-
-                        CanvasSamplerBindingType type = CanvasSamplerBindingTypeFiltering;
-
-                        if (!samplerType.IsEmpty() && samplerType->IsString()) {
-                            auto typeStr = ConvertFromV8String(isolate, samplerType);
-                            if (typeStr == "comparison") {
-                                type = CanvasSamplerBindingTypeComparison;
-                            } else if (typeStr == "non-filtering") {
-                                type = CanvasSamplerBindingTypeNonFiltering;
-                            } else if (typeStr == "filtering") {
-                                type = CanvasSamplerBindingTypeFiltering;
-                            }
-                        }
-
-
-                        CanvasBindingType sampler{
-                                CanvasBindingTypeSampler
-                        };
-
-                        sampler.sampler = CanvasSamplerBindingLayout{
-                                type
-                        };
-
-
-                        CanvasBindGroupLayoutEntry entry{
-                                binding,
-                                visibility,
-                                sampler
-                        };
-
-                        entries.push_back(entry);
-
-                        continue;
-
-                    }
-
-
-                    v8::Local<v8::Value> storageTextureVal;
-
-                    entryObj->Get(context, ConvertToV8String(isolate, "storageTexture")).ToLocal(
-                            &storageTextureVal);
-
-                    if (!storageTextureVal.IsEmpty() && storageTextureVal->IsObject()) {
-                        auto storageTextureObj = storageTextureVal.As<v8::Object>();
-
-                        CanvasBindingType storage{
-                                CanvasBindingTypeStorageTexture
-                        };
-
-                        CanvasStorageTextureAccess access = CanvasStorageTextureAccessWriteOnly;
-
-                        v8::Local<v8::Value> accessVal;
-
-                        storageTextureObj->Get(context,
-                                               ConvertToV8String(isolate, "access")).ToLocal(
-                                &accessVal);
-
-
-                        if (!accessVal.IsEmpty() && accessVal->IsString()) {
-                            auto accessStr = ConvertFromV8String(isolate, accessVal);
-
-                            if (accessStr == "write-only") {
-                                access = CanvasStorageTextureAccessWriteOnly;
-                            } else if (accessStr == "read-only") {
-                                access = CanvasStorageTextureAccessReadOnly;
-                            } else if (accessStr == "read-write") {
-                                access = CanvasStorageTextureAccessReadWrite;
-                            }
-                        }
-
-
-                        CanvasTextureViewDimension view_dimension = CanvasTextureViewDimensionD2;
-
-
-                        v8::Local<v8::Value> viewDimensionVal;
-
-                        storageTextureObj->Get(context,
-                                               ConvertToV8String(isolate, "viewDimension")).ToLocal(
-                                &viewDimensionVal);
-
-
-                        if (!viewDimensionVal.IsEmpty() && viewDimensionVal->IsString()) {
-                            auto viewDimensionStr = ConvertFromV8String(isolate, viewDimensionVal);
-                            if (viewDimensionStr == "1d") {
-                                view_dimension = CanvasTextureViewDimensionD1;
-                            } else if (viewDimensionStr == "2d") {
-                                view_dimension = CanvasTextureViewDimensionD2;
-                            } else if (viewDimensionStr == "2d-array") {
-                                view_dimension = CanvasTextureViewDimensionD2Array;
-                            } else if (viewDimensionStr == "cube") {
-                                view_dimension = CanvasTextureViewDimensionCube;
-                            } else if (viewDimensionStr == "cube-array") {
-                                view_dimension = CanvasTextureViewDimensionCubeArray;
-                            } else if (viewDimensionStr == "3d") {
-                                view_dimension = CanvasTextureViewDimensionD3;
-                            }
-                        }
-
-
-                        v8::Local<v8::Value> formatVal;
-
-                        storageTextureObj->Get(context,
-                                               ConvertToV8String(isolate, "format")).ToLocal(
-                                &formatVal);
-
-
-                        if (!formatVal.IsEmpty() && formatVal->IsString()) {
-                            auto formatStr = ConvertFromV8String(isolate, formatVal);
-                            auto textureFormat = canvas_native_webgpu_enum_string_to_gpu_texture(
-                                    formatStr.c_str());
-                            if (textureFormat.tag == CanvasOptionalGPUTextureFormatSome) {
-                                storage.storage_texture = CanvasStorageTextureBindingLayout{
-                                        access,
-                                        textureFormat.some,
-                                        view_dimension
-                                };
-
-                                CanvasBindGroupLayoutEntry entry{
-                                        binding,
-                                        visibility,
-                                        storage
-                                };
-
-                                entries.push_back(entry);
-
-                                continue;
-
-                            } else {
-                                // todo throw ??
-                                continue;
-                            }
-                        }
-
-
-                    }
-
-
-                    v8::Local<v8::Value> textureVal;
-
-                    entryObj->Get(context, ConvertToV8String(isolate, "texture")).ToLocal(
-                            &textureVal);
-
-                    if (!textureVal.IsEmpty() && textureVal->IsObject()) {
-                        auto textureObj = textureVal.As<v8::Object>();
-                        bool multisampled = false;
-
-                        v8::Local<v8::Value> multisampledVal;
-
-                        textureObj->Get(context,
-                                        ConvertToV8String(isolate, "multisampled")).ToLocal(
-                                &multisampledVal);
-
-                        if (!multisampledVal.IsEmpty() && multisampledVal->IsBoolean()) {
-                            multisampled = multisampledVal->BooleanValue(isolate);
-                        }
-
-
-                        v8::Local<v8::Value> sampleTypeVal;
-                        textureObj->Get(context, ConvertToV8String(isolate, "sampleType")).ToLocal(
-                                &sampleTypeVal);
-
-                        CanvasTextureSampleType type = CanvasTextureSampleTypeFloat;
-
-                        if (!sampleTypeVal.IsEmpty() && sampleTypeVal->IsString()) {
-                            auto typeStr = ConvertFromV8String(isolate, sampleTypeVal);
-                            if (typeStr == "depth") {
-                                type = CanvasTextureSampleTypeDepth;
-                            } else if (typeStr == "float") {
-                                type = CanvasTextureSampleTypeFloat;
-                            } else if (typeStr == "sint") {
-                                type = CanvasTextureSampleTypeSint;
-                            } else if (typeStr == "uint") {
-                                type = CanvasTextureSampleTypeUint;
-                            } else if (typeStr == "unfilterable-float") {
-                                type = CanvasTextureSampleTypeUnfilterableFloat;
-                            }
-                        }
-
-
-                        CanvasTextureViewDimension view_dimension = CanvasTextureViewDimensionD2;
-
-
-                        v8::Local<v8::Value> viewDimensionVal;
-
-                        textureObj->Get(context,
-                                        ConvertToV8String(isolate, "viewDimension")).ToLocal(
-                                &viewDimensionVal);
-
-
-                        if (!viewDimensionVal.IsEmpty() && viewDimensionVal->IsString()) {
-                            auto viewDimensionStr = ConvertFromV8String(isolate, viewDimensionVal);
-                            if (viewDimensionStr == "1d") {
-                                view_dimension = CanvasTextureViewDimensionD1;
-                            } else if (viewDimensionStr == "2d") {
-                                view_dimension = CanvasTextureViewDimensionD2;
-                            } else if (viewDimensionStr == "2d-array") {
-                                view_dimension = CanvasTextureViewDimensionD2Array;
-                            } else if (viewDimensionStr == "cube") {
-                                view_dimension = CanvasTextureViewDimensionCube;
-                            } else if (viewDimensionStr == "cube-array") {
-                                view_dimension = CanvasTextureViewDimensionCubeArray;
-                            } else if (viewDimensionStr == "3d") {
-                                view_dimension = CanvasTextureViewDimensionD3;
-                            }
-                        }
-
-
-                        CanvasBindingType texture{
-                                CanvasBindingTypeTexture
-                        };
-
-                        texture.texture = CanvasTextureBindingLayout{
-                                type,
-                                view_dimension,
-                                multisampled
-                        };
-
-
-                        CanvasBindGroupLayoutEntry entry{
-                                binding,
-                                visibility,
-                                texture
-                        };
-
-                        entries.push_back(entry);
-
-                        continue;
-
-                    }
-
-                }
-            }
-        }
-
+        std::vector<CanvasBindGroupLayoutEntry> entries = ParseBindGroupLayoutEntries(isolate,
+                                                                                      entriesVal);
 
         auto bind_group = canvas_native_webgpu_device_create_bind_group_layout(ptr->GetGPUDevice(),
-                                                                               label,
+                                                                               label.c_str(),
                                                                                entries.data(),
                                                                                entries.size());
 
@@ -966,7 +527,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    char *label = nullptr;
+    std::string label;
     bool mappedAtCreation = false;
     uint64_t size = 0;
     uint32_t usage = 0;
@@ -978,10 +539,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
-
+        label = ConvertFromV8String(isolate, labelVal);
         v8::Local<v8::Value> mappedAtCreationVal;
 
         options->Get(context, ConvertToV8String(isolate, "mappedAtCreation")).ToLocal(
@@ -1007,7 +565,8 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         }
     }
 
-    auto buffer = canvas_native_webgpu_device_create_buffer(ptr->GetGPUDevice(), label, size, usage,
+    auto buffer = canvas_native_webgpu_device_create_buffer(ptr->GetGPUDevice(), label.c_str(),
+                                                            size, usage,
                                                             mappedAtCreation);
 
     if (buffer != nullptr) {
@@ -1028,15 +587,14 @@ void GPUDeviceImpl::CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Valu
     }
     auto isolate = args.GetIsolate();
 
-    char *label = nullptr;
+    std::string label;
 
     auto labelVal = args[0];
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
+    label = ConvertFromV8String(isolate, labelVal);
 
-    auto encoder = canvas_native_webgpu_device_create_command_encoder(ptr->GetGPUDevice(), label);
+    auto encoder = canvas_native_webgpu_device_create_command_encoder(ptr->GetGPUDevice(),
+                                                                      label.c_str());
 
     if (encoder != nullptr) {
         auto instance = new GPUCommandEncoderImpl(encoder);
@@ -1068,11 +626,9 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    char *label = nullptr;
+    std::string label;
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
+    label = ConvertFromV8String(isolate, labelVal);
 
     CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout{
             CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
@@ -1158,7 +714,8 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
         };
 
         auto pipeline = canvas_native_webgpu_device_create_compute_pipeline(ptr->GetGPUDevice(),
-                                                                            label, layout, &stage);
+                                                                            label.c_str(), layout,
+                                                                            &stage);
 
         if (entry_point != nullptr) {
             free(entry_point);
@@ -1228,19 +785,18 @@ void GPUDeviceImpl::CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    char *label = nullptr;
+    std::string label;
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
+    label = ConvertFromV8String(isolate, labelVal);
 
     CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout{
             CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
     };
 
     v8::Local<v8::Value> layoutVal;
-    
-    if (options->Get(context, ConvertToV8String(isolate, "layout")).ToLocal(&layoutVal) && layoutVal->IsObject()) {
+
+    if (options->Get(context, ConvertToV8String(isolate, "layout")).ToLocal(&layoutVal) &&
+        layoutVal->IsObject()) {
         auto layoutImpl = GPUPipelineLayoutImpl::GetPointer(layoutVal.As<v8::Object>());
         if (layoutImpl != nullptr) {
             layout.tag = CanvasGPUPipelineLayoutOrGPUAutoLayoutModeLayout;
@@ -1439,7 +995,7 @@ void GPUDeviceImpl::CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8
         };
         async_callback->prepare();
         canvas_native_webgpu_device_create_compute_pipeline_async(ptr->GetGPUDevice(),
-                                                                  label, layout, &stage,
+                                                                  label.c_str(), layout, &stage,
                                                                   [](const struct CanvasGPUComputePipeline *pipeline,
                                                                      enum CanvasGPUErrorType type,
                                                                      char *message,
@@ -1483,11 +1039,9 @@ void GPUDeviceImpl::CreatePipelineLayout(const v8::FunctionCallbackInfo<v8::Valu
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    char *label = nullptr;
+    std::string label;
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
+    label = ConvertFromV8String(isolate, labelVal);
 
 
     std::vector<const CanvasGPUBindGroupLayout *> group_layouts;
@@ -1509,7 +1063,8 @@ void GPUDeviceImpl::CreatePipelineLayout(const v8::FunctionCallbackInfo<v8::Valu
             }
         }
 
-        auto layout = canvas_native_webgpu_device_create_pipeline_layout(ptr->GetGPUDevice(), label,
+        auto layout = canvas_native_webgpu_device_create_pipeline_layout(ptr->GetGPUDevice(),
+                                                                         label.c_str(),
                                                                          group_layouts.data(),
                                                                          group_layouts.size());
 
@@ -1544,29 +1099,26 @@ void GPUDeviceImpl::CreateQuerySet(const v8::FunctionCallbackInfo<v8::Value> &ar
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    char *label = nullptr;
+    std::string label;
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
-
+    label = ConvertFromV8String(isolate, labelVal);
     v8::Local<v8::Value> typeVal;
-    options->Get(context, ConvertToV8String(isolate, "type")).ToLocal(&labelVal);
+    options->Get(context, ConvertToV8String(isolate, "type")).ToLocal(&typeVal);
 
 
     v8::Local<v8::Value> countVal;
-    options->Get(context, ConvertToV8String(isolate, "count")).ToLocal(&labelVal);
+    options->Get(context, ConvertToV8String(isolate, "count")).ToLocal(&countVal);
 
     auto typeStr = ConvertFromV8String(isolate, typeVal);
 
     const CanvasGPUQuerySet *query_set = nullptr;
     if (typeStr == "occlusion") {
-        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label,
+        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label.c_str(),
                                                                  CanvasQueryTypeOcclusion,
                                                                  countVal->Uint32Value(
                                                                          context).FromJust());
     } else if (typeStr == "timestamp") {
-        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label,
+        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label.c_str(),
                                                                  CanvasQueryTypeTimestamp,
                                                                  countVal->Uint32Value(
                                                                          context).FromJust());
@@ -1604,12 +1156,9 @@ void GPUDeviceImpl::CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8:
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    char *label = nullptr;
+    std::string label;
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        label = *v8::String::Utf8Value(isolate, labelVal);
-    }
-
+    label = ConvertFromV8String(isolate, labelVal);
 
     std::vector<CanvasGPUTextureFormat> colorFormats;
 
@@ -1655,7 +1204,7 @@ void GPUDeviceImpl::CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8:
     bool stencilReadOnly = false;
 
     CanvasCreateRenderBundleEncoderDescriptor descriptor{
-            label,
+            label.c_str(),
             colorFormats.data(),
             colorFormats.size(),
             depthStencilFormat,
@@ -1758,6 +1307,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     }
     auto options = optionsVal.As<v8::Object>();
 
+    std::string label;
 
     v8::Local<v8::Value> stencilValue;
     options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
@@ -2170,8 +1720,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             &labelVal);
 
 
+    label = ConvertFromV8String(isolate, labelVal);
+
     if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        descriptor.label = *v8::String::Utf8Value(isolate, labelVal);
+        descriptor.label = label.c_str();
     }
 
 
@@ -2675,7 +2227,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
         return;
     }
     auto options = optionsVal.As<v8::Object>();
-
+    std::string label;
 
     v8::Local<v8::Value> stencilValue;
     options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
@@ -3087,9 +2639,11 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(
             &labelVal);
 
+    label = ConvertFromV8String(isolate, labelVal);
+
 
     if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        descriptor.label = *v8::String::Utf8Value(isolate, labelVal);
+        descriptor.label = label.c_str();
     }
 
 
@@ -3714,11 +3268,9 @@ void GPUDeviceImpl::CreateSampler(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        char *label = nullptr;
+        std::string label;
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
+        label = ConvertFromV8String(isolate, labelVal);
 
         auto addressModeU = CanvasAddressModeClampToEdge;
 
@@ -3853,7 +3405,7 @@ void GPUDeviceImpl::CreateSampler(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
         CanvasCreateSamplerDescriptor descriptor{
-                label,
+                label.c_str(),
                 addressModeU,
                 addressModeV,
                 addressModeW,
@@ -3904,11 +3456,9 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
         v8::Local<v8::Value> labelVal;
         desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        char *label = nullptr;
+        std::string label;
 
-        if (!labelVal.IsEmpty() && labelVal->IsString()) {
-            label = *v8::String::Utf8Value(isolate, labelVal);
-        }
+        label = ConvertFromV8String(isolate, labelVal);
 
         v8::Local<v8::Value> codeVal;
 
@@ -3918,7 +3468,8 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
             code = ConvertFromV8String(isolate, codeVal);
         }
 
-        auto module = canvas_native_webgpu_device_create_shader_module(ptr->GetGPUDevice(), label,
+        auto module = canvas_native_webgpu_device_create_shader_module(ptr->GetGPUDevice(),
+                                                                       label.c_str(),
                                                                        code.c_str());
 
         if (module != nullptr) {

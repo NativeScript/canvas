@@ -1,8 +1,11 @@
+use std::borrow::Cow;
+use std::os::raw::c_char;
 use std::sync::Arc;
-
+use crate::webgpu::prelude::label_to_ptr;
 use super::gpu::CanvasWebGPUInstance;
 
 pub struct CanvasGPUPipelineLayout {
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) layout: wgpu_core::id::PipelineLayoutId,
 }
@@ -16,6 +19,17 @@ impl Drop for CanvasGPUPipelineLayout {
             gfx_select!(layout => global.pipeline_layout_drop(self.layout));
         }
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_pipeline_layout_get_label(
+    pipeline_layout: *const CanvasGPUPipelineLayout,
+) -> *mut c_char {
+    if pipeline_layout.is_null() {
+        return std::ptr::null_mut();
+    }
+    let pipeline_layout = &*pipeline_layout;
+    label_to_ptr(pipeline_layout.label.clone())
 }
 
 #[no_mangle]

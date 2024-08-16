@@ -17,7 +17,7 @@ const CanvasGPUComputePassEncoder *GPUComputePassEncoderImpl::GetComputePass() {
 }
 
 
-void GPUComputePassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate) {
+void GPUComputePassEncoderImpl::Init(v8::Local <v8::Object> canvasModule, v8::Isolate *isolate) {
     v8::Locker locker(isolate);
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
@@ -26,11 +26,12 @@ void GPUComputePassEncoderImpl::Init(v8::Local<v8::Object> canvasModule, v8::Iso
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "GPUComputePassEncoder"), func).FromJust();
+    canvasModule->Set(context, ConvertToV8String(isolate, "GPUComputePassEncoder"),
+                      func).FromJust();
 }
 
 GPUComputePassEncoderImpl *
-GPUComputePassEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
+GPUComputePassEncoderImpl::GetPointer(const v8::Local <v8::Object> &object) {
     auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
         return nullptr;
@@ -38,19 +39,24 @@ GPUComputePassEncoderImpl::GetPointer(const v8::Local<v8::Object> &object) {
     return static_cast<GPUComputePassEncoderImpl *>(ptr);
 }
 
-v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *isolate) {
+v8::Local <v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *isolate) {
     auto cache = Caches::Get(isolate);
     auto ctor = cache->GPUComputePassEncoderTmpl.get();
     if (ctor != nullptr) {
         return ctor->Get(isolate);
     }
 
-    v8::Local<v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
+    v8::Local <v8::FunctionTemplate> ctorTmpl = v8::FunctionTemplate::New(isolate);
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "GPUComputePassEncoder"));
 
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
+
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
 
     tmpl->Set(
             ConvertToV8String(isolate, "dispatchWorkgroups"),
@@ -86,12 +92,34 @@ v8::Local<v8::FunctionTemplate> GPUComputePassEncoderImpl::GetCtor(v8::Isolate *
 
 
     cache->GPUComputePassEncoderTmpl =
-            std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
+            std::make_unique<v8::Persistent < v8::FunctionTemplate>>
+    (isolate, ctorTmpl);
     return ctorTmpl;
 }
 
 void
-GPUComputePassEncoderImpl::DispatchWorkgroups(const v8::FunctionCallbackInfo<v8::Value> &args) {
+GPUComputePassEncoderImpl::GetLabel(v8::Local <v8::Name> name,
+                                    const v8::PropertyCallbackInfo <v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_compute_pass_encoder_get_label(ptr->computePass_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
+}
+
+
+void
+GPUComputePassEncoderImpl::DispatchWorkgroups(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -126,7 +154,7 @@ GPUComputePassEncoderImpl::DispatchWorkgroups(const v8::FunctionCallbackInfo<v8:
 }
 
 void GPUComputePassEncoderImpl::DispatchWorkgroupsIndirect(
-        const v8::FunctionCallbackInfo<v8::Value> &args) {
+        const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -150,7 +178,7 @@ void GPUComputePassEncoderImpl::DispatchWorkgroupsIndirect(
 }
 
 
-void GPUComputePassEncoderImpl::End(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUComputePassEncoderImpl::End(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -160,7 +188,7 @@ void GPUComputePassEncoderImpl::End(const v8::FunctionCallbackInfo<v8::Value> &a
 }
 
 void
-GPUComputePassEncoderImpl::InsertDebugMarker(const v8::FunctionCallbackInfo<v8::Value> &args) {
+GPUComputePassEncoderImpl::InsertDebugMarker(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -176,7 +204,7 @@ GPUComputePassEncoderImpl::InsertDebugMarker(const v8::FunctionCallbackInfo<v8::
     }
 }
 
-void GPUComputePassEncoderImpl::PopDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUComputePassEncoderImpl::PopDebugGroup(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -185,7 +213,7 @@ void GPUComputePassEncoderImpl::PopDebugGroup(const v8::FunctionCallbackInfo<v8:
     canvas_native_webgpu_compute_pass_encoder_pop_debug_group(ptr->GetComputePass());
 }
 
-void GPUComputePassEncoderImpl::PushDebugGroup(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUComputePassEncoderImpl::PushDebugGroup(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -201,7 +229,7 @@ void GPUComputePassEncoderImpl::PushDebugGroup(const v8::FunctionCallbackInfo<v8
     }
 }
 
-void GPUComputePassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUComputePassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
@@ -243,7 +271,7 @@ void GPUComputePassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::
     }
 }
 
-void GPUComputePassEncoderImpl::SetPipeline(const v8::FunctionCallbackInfo<v8::Value> &args) {
+void GPUComputePassEncoderImpl::SetPipeline(const v8::FunctionCallbackInfo <v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;

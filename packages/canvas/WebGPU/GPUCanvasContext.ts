@@ -77,21 +77,22 @@ export class GPUCanvasContext {
 			return this._currentTexture;
 		}
 		const texture = this[native_].getCurrentTexture();
-		// if (texture) {
-		// 	this._currentTexture = GPUTexture.fromNative(texture);
-		// } else {
-		// 	this._currentTexture = null;
-		// }
-
-		// return this._currentTexture;
-		return GPUTexture.fromNative(texture);
-	}
-
-	presentSurface(texture: GPUTexture) {
-		if (this._currentTexture === texture) {
+		if (texture) {
+			this._currentTexture = GPUTexture.fromNative(texture);
+		} else {
 			this._currentTexture = null;
 		}
-		this[native_].presentSurface(texture?.[native_]);
+
+		return this._currentTexture;
+	}
+
+	presentSurface() {
+		if (this._currentTexture) {
+			this[native_].presentSurface(this._currentTexture?.[native_]);
+			this._currentTexture = null;
+		} else {
+			console.warn('call getCurrentTexture: before presentSurface');
+		}
 	}
 
 	getCapabilities(adapter: GPUAdapter): {

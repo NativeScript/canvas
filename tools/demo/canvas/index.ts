@@ -546,7 +546,7 @@ fn main() -> @location(0) vec4f {
 				passEncoder.end();
 
 				device.queue.submit([commandEncoder.finish()]);
-				(<any>context).presentSurface(framebuffer);
+				(<any>context).presentSurface();
 				requestAnimationFrame(frame);
 			}
 			requestAnimationFrame(frame);
@@ -559,11 +559,18 @@ fn main() -> @location(0) vec4f {
 		// const rc = require('./webgpu/rotatingCube');
 		// rc.run(this.canvas);
 
+		const renderBundles = require('./webgpu/renderBundles');
+		renderBundles.run(this.canvas);
+
+		// const occlusionQuery = require('./webgpu/occlusionQuery');
+		// occlusionQuery.run(this.canvas);
+
 		// const particles = require('./webgpu/particles');
 		// particles.run(this.canvas);
 
 		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
 		// texturedCube.run(this.canvas);
+
 		// const imageBlur = require('./webgpu/imageBlur');
 		// imageBlur.run(this.canvas);
 
@@ -730,7 +737,7 @@ fn main() -> @location(0) vec4f {
 		//const ctx = canvas.getContext('2d');
 		//clearRect(this.canvas);
 		//fillRule(this.canvas);
-		font(this.canvas);
+		//font(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());

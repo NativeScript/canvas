@@ -1,10 +1,16 @@
 import { native_ } from './Constants';
 import { GPUBindGroup } from './GPUBindGroup';
 import { GPUBuffer } from './GPUBuffer';
+import { GPURenderBundle } from './GPURenderBundle';
 import { GPURenderPipeline } from './GPURenderPipeline';
 
 export class GPURenderBundleEncoder {
 	[native_];
+
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	draw(vertexCount: number, instanceCount: number = 1, firstVertex: number = 0, firstInstance: number = 0) {
 		this[native_].draw(vertexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0);
 	}
@@ -22,7 +28,7 @@ export class GPURenderBundleEncoder {
 	}
 
 	finish() {
-		this[native_].finish();
+		return GPURenderBundle.fromNative(this[native_].finish());
 	}
 
 	insertDebugMarker(markerLabel: string) {
@@ -52,8 +58,8 @@ export class GPURenderBundleEncoder {
 		}
 	}
 
-	setIndexBuffer(buffer: GPUBindGroup, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
-		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset, size);
+	setIndexBuffer(buffer: GPUBuffer, indexFormat: 'uint16' | 'uint32', offset?: number, size?: number) {
+		this[native_].setIndexBuffer(buffer[native_], indexFormat, offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	setPipeline(renderPipeline: GPURenderPipeline) {
@@ -61,7 +67,7 @@ export class GPURenderBundleEncoder {
 	}
 
 	setVertexBuffer(slot: number, buffer: GPUBuffer, offset?: number, size?: number) {
-		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? -1, size ?? -1);
+		this[native_].setVertexBuffer(slot, buffer[native_], offset ?? 0, size ?? buffer.size - (offset ?? 0));
 	}
 
 	static fromNative(encoder) {

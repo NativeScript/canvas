@@ -10,6 +10,10 @@ import { GPUExtent3D } from './Types';
 export class GPUCommandEncoder {
 	[native_];
 
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	static fromNative(encoder) {
 		if (encoder) {
 			const ret = new GPUCommandEncoder();

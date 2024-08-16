@@ -5,8 +5,9 @@ export class GPUBuffer {
 	[mapState_]: 'unmapped' | 'mapped' | 'pending' = 'unmapped';
 
 	get label() {
-		return this[native_].label;
+		return this[native_]?.label ?? '';
 	}
+
 	get size() {
 		return this[native_]?.size ?? 0;
 	}

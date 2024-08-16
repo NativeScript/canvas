@@ -1,8 +1,11 @@
 import { native_ } from './Constants';
 
 export class GPUShaderModule {
-	label = '';
 	[native_];
+
+	get label() {
+		return this[native_]?.label ?? '';
+	}
 
 	static fromNative(module) {
 		if (module) {

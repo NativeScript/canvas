@@ -5,6 +5,10 @@ import type { GPUTextureViewDescriptor } from './Interfaces';
 export class GPUTexture {
 	[native_];
 
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	get depthOrArrayLayers() {
 		return this[native_].depthOrArrayLayers;
 	}

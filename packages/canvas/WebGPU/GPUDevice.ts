@@ -107,7 +107,6 @@ type GPUExtent3D = [number, number, number] | [number, number] | GPUExtent3DDict
 
 export class GPUDevice extends EventTarget {
 	[native_];
-	label = '';
 	_lostPromise: Promise<GPUDeviceLostInfo>;
 	_observerable: Observable;
 	constructor() {
@@ -170,6 +169,10 @@ export class GPUDevice extends EventTarget {
 			return ret;
 		}
 		return null;
+	}
+
+	get label() {
+		return this[native_]?.label ?? '';
 	}
 
 	get lost() {

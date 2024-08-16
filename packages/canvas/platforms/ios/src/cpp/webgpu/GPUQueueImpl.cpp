@@ -55,6 +55,10 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
     auto tmpl = ctorTmpl->InstanceTemplate();
     tmpl->SetInternalFieldCount(2);
 
+    tmpl->SetLazyDataProperty(
+            ConvertToV8String(isolate, "label"),
+            GetLabel
+    );
 
     tmpl->Set(
             ConvertToV8String(isolate, "copyExternalImageToTexture"),
@@ -83,6 +87,28 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
 }
+
+
+void
+GPUQueueImpl::GetLabel(v8::Local<v8::Name> name,
+                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto label = canvas_native_webgpu_queue_get_label(ptr->queue_);
+        if (label == nullptr) {
+            info.GetReturnValue().SetEmptyString();
+            return;
+        }
+        info.GetReturnValue().Set(
+                ConvertToV8String(info.GetIsolate(), label)
+        );
+        canvas_native_string_destroy(label);
+        return;
+    }
+
+    info.GetReturnValue().SetEmptyString();
+}
+
 
 void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
@@ -378,7 +404,7 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
         auto data = static_cast<uint8_t *>(store->Data()) + offset;
 
-        auto data_size = store->ByteLength();
+        auto data_size = store->ByteLength() - offset;
 
         auto dataOffset = (uint64_t) args[3].As<v8::Number>()->Value();
 

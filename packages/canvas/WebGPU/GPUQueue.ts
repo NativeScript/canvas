@@ -7,6 +7,10 @@ import { GPUExtent3D } from './Types';
 export class GPUQueue {
 	[native_];
 
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	static fromNative(value) {
 		if (value) {
 			const ret = new GPUQueue();
@@ -37,6 +41,13 @@ export class GPUQueue {
 				width: copySize[0],
 				height: copySize[1] ?? 1,
 				depthOrArrayLayers: copySize[2] ?? 1,
+			};
+		} else {
+			copySize = {
+				width: 0,
+				height: 1,
+				depthOrArrayLayers: 1,
+				...copySize,
 			};
 		}
 

@@ -10,7 +10,7 @@ export interface GPUProgrammableStage {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 }
 
@@ -55,7 +55,7 @@ export interface GPUFragmentState {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 	targets: (null | GPUColorTargetState)[];
 }
@@ -91,7 +91,7 @@ export interface GPUVertexState {
 	constants?: {
 		[name: string]: number;
 	};
-	entryPoint: string | Uint32Array;
+	entryPoint?: string | Uint32Array;
 	module: GPUShaderModule;
 }
 

@@ -7,6 +7,11 @@ import { GPUColor } from './Types';
 
 export class GPURenderPassEncoder {
 	[native_];
+
+	get label() {
+		return this[native_]?.label ?? '';
+	}
+
 	beginOcclusionQuery(queryIndex: number) {
 		this[native_].beginOcclusionQuery(queryIndex);
 	}

@@ -1,8 +1,11 @@
+use std::borrow::Cow;
 use std::os::raw::c_char;
 use std::sync::Arc;
+
+use crate::webgpu::enums::SurfaceGetCurrentTextureStatus;
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
-use crate::webgpu::prelude::ptr_into_label;
+use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
 
 use super::{
     enums::{
@@ -16,6 +19,7 @@ use super::{
 
 #[derive(Clone)]
 pub struct CanvasGPUTexture {
+    pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) texture: wgpu_core::id::TextureId,
     pub(crate) surface_id: Option<wgpu_core::id::SurfaceId>,
@@ -29,6 +33,8 @@ pub struct CanvasGPUTexture {
     pub(crate) height: u32,
     pub(crate) usage: u32,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
+    pub(crate) suboptimal: bool,
+    pub(crate) status: SurfaceGetCurrentTextureStatus,
     pub(crate) has_surface_presented: Arc<std::sync::atomic::AtomicBool>,
 }
 
@@ -56,7 +62,7 @@ impl Drop for CanvasGPUTexture {
             }
             None => {
                 let context = self.instance.global();
-                gfx_select!(self.texture => context.texture_drop(self.texture, false));
+                gfx_select!(self.texture => context.texture_drop(self.texture));
             }
         }
     }
@@ -68,6 +74,30 @@ pub struct CanvasCreateTextureViewDescriptor {
     format: CanvasOptionalGPUTextureFormat,
     dimension: CanvasOptionalTextureViewDimension,
     range: *const CanvasImageSubresourceRange,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_status(texture: *const CanvasGPUTexture) -> SurfaceGetCurrentTextureStatus {
+    assert!(!texture.is_null());
+    let texture = &*texture;
+    texture.status
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_suboptimal(texture: *const CanvasGPUTexture) -> bool {
+    assert!(!texture.is_null());
+    let texture = &*texture;
+    texture.suboptimal
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_label(texture: *const CanvasGPUTexture) -> *mut c_char {
+    if texture.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let texture = &*texture;
+    label_to_ptr(texture.label.clone())
 }
 
 #[no_mangle]
@@ -132,6 +162,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     }
 
     Arc::into_raw(Arc::new(CanvasGPUTextureView {
+        label: desc.label,
         instance: texture.instance.clone(),
         texture_view,
     }))
@@ -199,14 +230,6 @@ pub extern "C" fn canvas_native_webgpu_texture_get_usage(texture: *const CanvasG
     }
     let texture = unsafe { &*texture };
     texture.usage
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_webgpu_texture_get_label(
-    _texture: *const CanvasGPUTexture,
-) -> *mut c_char {
-    // todo
-    std::ptr::null_mut()
 }
 
 #[no_mangle]

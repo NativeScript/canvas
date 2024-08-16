@@ -35,7 +35,7 @@ export async function run(canvas: Canvas) {
 		usage: GPUBufferUsage.VERTEX,
 		mappedAtCreation: true,
 	});
-	console.log(cubeVertexArray.byteLength);
+
 	new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
 	verticesBuffer.unmap();
 
@@ -113,9 +113,8 @@ export async function run(canvas: Canvas) {
 			// const response = await fetch(src);
 			// return createImageBitmap(await response.blob());
 			const asset = new ImageAsset();
-			return asset.fromFile(src).then((done) => {
-				return asset;
-			});
+			await asset.fromFile(src);
+			return asset;
 		});
 		imageBitmaps = await Promise.all(promises);
 
@@ -229,7 +228,7 @@ export async function run(canvas: Canvas) {
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
 
-		(<any>context).presentSurface(texture);
+		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

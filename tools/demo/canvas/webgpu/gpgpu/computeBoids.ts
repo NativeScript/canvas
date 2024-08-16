@@ -268,7 +268,7 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([commandEncoder.finish()]);
 
-		context.presentSurface(framebuffer);
+		context.presentSurface();
 
 		if (hasTimestampQuery) {
 			resultBuffer!.mapAsync(GPUMapMode.READ).then(() => {

@@ -63,6 +63,29 @@ export class GPUAdapter {
 				options.requiredFeatures = ['texture-adapter-specific-format-features' as never];
 			}
 
+			if (!options.requiredLimits) {
+				if (__ANDROID__) {
+					options.requiredLimits = new global.CanvasModule.GPUSupportedLimits();
+					const limits = this[native_].limits;
+					if (limits.maxSampledTexturesPerShaderStage >= 128) {
+						options.requiredLimits.maxSampledTexturesPerShaderStage = 128;
+					}
+
+					if (limits.maxSamplersPerShaderStage >= 128) {
+						options.requiredLimits.maxSamplersPerShaderStage = 128;
+					}
+				}
+			} else {
+				if (options.requiredLimits && typeof options.requiredLimits === 'object' && options.requiredLimits?.constructor?.name !== 'GPUSupportedLimits') {
+					const requiredLimits = new global.CanvasModule.GPUSupportedLimits();
+					const keys = Object.keys(options.requiredLimits);
+					for (const key of keys) {
+						requiredLimits[key] = options.requiredLimits[key];
+					}
+					options.requiredLimits = requiredLimits;
+				}
+			}
+
 			this[native_].requestDevice(options, (error, device) => {
 				if (error) {
 					reject(error);

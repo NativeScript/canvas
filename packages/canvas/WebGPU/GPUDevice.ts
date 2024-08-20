@@ -155,10 +155,10 @@ export class GPUDevice extends EventTarget {
 					error,
 				});
 			} else {
-				//	console.error(error);
+				console.error(error);
 			}
 		} else {
-			//console.error(error);
+			console.error(error);
 		}
 	}
 
@@ -430,29 +430,6 @@ export class GPUDevice extends EventTarget {
 
 	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
 		const sizeIsArray = Array.isArray(descriptor.size);
-
-		function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: string) {
-			// falls back to platform supported format ... maybe this can be removed once frameworks use the getPreferredCanvasFormat
-			if (__ANDROID__) {
-				let hasBrga = false;
-				fragment.targets = fragment.targets.map((target) => {
-					switch (target.format) {
-						case 'bgra8unorm':
-							target.format = 'rgba8unorm';
-							hasBrga = true;
-							break;
-						case 'bgra8unorm-srgb':
-							target.format = 'rgba8unorm-srgb';
-							hasBrga = true;
-							break;
-					}
-					return target;
-				});
-				if (hasBrga) {
-					console.warn(`GPUDevice:${method} using unsupported brga format falling back to rgba counterpart.`);
-				}
-			}
-		}
 
 		const opts = {
 			label: descriptor?.label,

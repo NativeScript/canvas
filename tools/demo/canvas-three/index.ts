@@ -1,5 +1,5 @@
 import { DemoSharedBase } from '../utils';
-
+/*
 require('three/examples/jsm/nodes/math/MathNode');
 
 const NodeBuilder = require('three/examples/jsm/nodes/core/NodeBuilder').default;
@@ -58,6 +58,8 @@ ConstNode.prototype.generate = function (builder, output) {
 
 	return builder.format(this.generateConst(builder), type, output);
 };
+
+*/
 
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';

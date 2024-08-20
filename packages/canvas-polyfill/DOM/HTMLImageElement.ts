@@ -4,12 +4,12 @@ import { ImageAsset } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
 
 declare const NSSCanvasHelpers;
-declare var NSUUID, java, NSData, android;
+// declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
 	R: 'gif',
-	//	U: 'webp',
+	U: 'webp',
 };
 
 function b64WithoutPrefix(b64) {
@@ -23,6 +23,10 @@ function getMIMEforBase64String(b64) {
 	}
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
+	// todo support webp on ios
+	if (__IOS__ && mime === 'webp') {
+		throw new Error('Unknown Base64 MIME type: ' + b64);
+	}
 	if (!mime) {
 		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
@@ -123,7 +127,7 @@ export class HTMLImageElement extends HTMLElement {
 		}
 	}
 
-	_load() {
+	async _load() {
 		if (this.src) {
 			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
@@ -235,18 +239,33 @@ export class HTMLImageElement extends HTMLElement {
 							this._onerror?.();
 						}
 					} else {
-						this._asset
-							.fromFile(src)
-							.then((done) => {
-								this.width = this._asset.width;
-								this.height = this._asset.height;
-								this.complete = true;
-								this._onload?.();
-							})
-							.catch((e) => {
-								this.dispatchEvent({ type: 'error', target: this, e });
-								this._onerror?.();
-							});
+						if (src && src.indexOf('.webp') > -1) {
+							const bm = android.graphics.BitmapFactory.decodeFile(this.src);
+							const newPath = src.replace('.webp', '.png');
+							const bos = new java.io.BufferedOutputStream(new java.io.FileOutputStream(newPath));
+							bm.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bos);
+							bos.flush();
+
+							await this._asset.fromFile(newPath);
+
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+							this._onload?.();
+						} else {
+							this._asset
+								.fromFile(src)
+								.then((done) => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = true;
+									this._onload?.();
+								})
+								.catch((e) => {
+									this.dispatchEvent({ type: 'error', target: this, e });
+									this._onerror?.();
+								});
+						}
 					}
 				}
 			}

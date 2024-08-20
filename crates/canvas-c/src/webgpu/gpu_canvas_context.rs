@@ -2,7 +2,7 @@ use std::os::raw::c_void;
 use std::sync::Arc;
 
 use parking_lot::lock_api::Mutex;
-use raw_window_handle::{RawDisplayHandle, RawWindowHandle};
+use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 use wgt::SurfaceStatus;
 
 use crate::webgpu::enums::{CanvasOptionalGPUTextureFormat, SurfaceGetCurrentTextureStatus};
@@ -32,6 +32,7 @@ pub struct SurfaceData {
     device_id: wgpu_core::id::DeviceId,
     error_sink: ErrorSink,
     texture_data: TextureData,
+    previous_configuration: wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -42,7 +43,7 @@ pub struct ViewData {
 
 pub struct CanvasGPUCanvasContext {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    pub(crate) surface: wgpu_core::id::SurfaceId,
+    pub(crate) surface: parking_lot::Mutex<wgpu_core::id::SurfaceId>,
     pub(crate) has_surface_presented: Arc<std::sync::atomic::AtomicBool>,
     pub(crate) data: parking_lot::Mutex<Option<SurfaceData>>,
     pub(crate) view_data: parking_lot::Mutex<ViewData>,
@@ -52,7 +53,8 @@ impl Drop for CanvasGPUCanvasContext {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            global.surface_drop(self.surface);
+            let surface = self.surface.lock();
+            global.surface_drop(*surface);
         }
     }
 }
@@ -83,7 +85,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
-                surface: surface_id,
+                surface: Mutex::new(surface_id),
                 has_surface_presented: Arc::default(),
                 data: Default::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -94,6 +96,67 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
         Err(cause) => {
             handle_error_fatal(global, cause, "canvas_native_webgpu_context_create");
             std::ptr::null_mut()
+        }
+    }
+}
+
+
+// #[cfg(any(target_os = "android"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
+    context: *mut CanvasGPUCanvasContext,
+    window: *mut c_void,
+    width: u32,
+    height: u32,
+) {
+    if context.is_null() {
+        return;
+    }
+
+    let context = &*context;
+
+    let mut surface_data_lock = context.data.lock();
+
+    let global = context.instance.global();
+
+    let display_handle = RawDisplayHandle::Android(raw_window_handle::AndroidDisplayHandle::new());
+
+    let handle =
+        raw_window_handle::AndroidNdkWindowHandle::new(std::ptr::NonNull::new_unchecked(window));
+    let window_handle = RawWindowHandle::AndroidNdk(handle);
+
+    let mut surface = context.surface.lock();
+
+    global.surface_drop(*surface);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            *surface = surface_id;
+            context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
+            let mut view_data = context.view_data.lock();
+            view_data.width = width;
+            view_data.height = height;
+
+            if let Some(surface_data) = surface_data_lock.as_mut() {
+                surface_data.texture_data.size.width = width;
+                surface_data.texture_data.size.height = height;
+
+
+                let mut new_config = surface_data.previous_configuration.clone();
+                new_config.width = width;
+                new_config.height = height;
+
+                if let Some(cause) =
+                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
+                } else {
+                    surface_data.previous_configuration = new_config;
+                }
+            }
+        }
+        Err(cause) => {
+            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
         }
     }
 }
@@ -117,7 +180,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
-                surface: surface_id,
+                surface: Mutex::new(surface_id),
                 data: Mutex::default(),
                 has_surface_presented: Arc::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -158,7 +221,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
-                surface: surface_id,
+                surface: Mutex::new(surface_id),
                 has_surface_presented: Arc::default(),
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -172,6 +235,62 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
         }
     }
 }
+
+#[cfg(any(target_os = "ios"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
+    context: *const CanvasGPUCanvasContext,
+    view: *mut c_void,
+    width: u32,
+    height: u32,
+) {
+    if context.is_null() {
+        return;
+    }
+    let context = &*context;
+
+    let mut surface_data_lock = context.data.lock();
+
+    let global = context.instance.global();
+
+    let display_handle = RawDisplayHandle::UiKit(raw_window_handle::UiKitDisplayHandle::new());
+
+    let handle = raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
+
+    let window_handle = RawWindowHandle::UiKit(handle);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            *context.surface.lock() = surface_id;
+            context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
+            let mut view_data = context.view_data.lock();
+            view_data.width = width;
+            view_data.height = height;
+
+            if let Some(surface_data) = surface_data_lock.as_mut() {
+                surface_data.texture_data.size.width = width;
+                surface_data.texture_data.size.height = height;
+
+
+                let mut new_config = surface_data.previous_configuration.clone();
+                new_config.width = width;
+                new_config.height = height;
+
+                if let Some(cause) =
+                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
+                } else {
+                    surface_data.previous_configuration = new_config;
+                }
+            }
+        }
+        Err(cause) => {
+            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
+        }
+    }
+}
+
 
 #[cfg(any(target_os = "macos"))]
 #[no_mangle]
@@ -198,7 +317,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
-                surface: surface_id,
+                surface: Mutex::new(surface_id),
                 has_surface_presented: Arc::default(),
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -212,6 +331,63 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
         }
     }
 }
+
+
+
+#[cfg(any(target_os = "macos"))]
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
+    context: *const CanvasGPUCanvasContext,
+    view: *mut c_void,
+    width: u32,
+    height: u32,
+) {
+    if context.is_null() {
+        return;
+    }
+    let context = &*context;
+
+    let mut surface_data_lock = context.data.lock();
+
+    let global = context.instance.global();
+
+    let display_handle = RawDisplayHandle::AppKit(AppKitDisplayHandle::new());
+
+    let handle = raw_window_handle::AppKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
+    let window_handle = RawWindowHandle::AppKit(handle);
+
+    match global.instance_create_surface(display_handle, window_handle, None) {
+        Ok(surface_id) => {
+            *context.surface.lock() = surface_id;
+            context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
+            let mut view_data = context.view_data.lock();
+            view_data.width = width;
+            view_data.height = height;
+
+            if let Some(surface_data) = surface_data_lock.as_mut() {
+                surface_data.texture_data.size.width = width;
+                surface_data.texture_data.size.height = height;
+
+
+                let mut new_config = surface_data.previous_configuration.clone();
+                new_config.width = width;
+                new_config.height = height;
+
+                if let Some(cause) =
+                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+                } else {
+                    surface_data.previous_configuration = new_config;
+                }
+            }
+        }
+        Err(cause) => {
+            handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
+        }
+    }
+}
+
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -311,7 +487,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     }
     Arc::increment_strong_count(context);
     let context = Arc::from_raw(context);
-    let surface_id = context.surface;
+    let surface_id = context.surface.lock();
     let global = context.instance.global();
     let device = unsafe { &*device };
     let device_id = device.device;
@@ -365,7 +541,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     if let Some(cause) =
-        gfx_select!(surface_id => global.surface_configure(surface_id, device_id, &config))
+        gfx_select!(surface_id => global.surface_configure(*surface_id, device_id, &config))
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_context_configure");
         let mut lock = context.data.lock();
@@ -387,6 +563,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 mip_level_count: 1,
                 sample_count: 1,
             },
+            previous_configuration: config,
         });
         context
             .has_surface_presented
@@ -421,18 +598,9 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
     let context = unsafe { &*context };
     let global = context.instance.global();
 
-    let data_guard = context.data.lock();
+    let surface_id = context.surface.lock();
 
-    let surface_data = match data_guard.as_ref() {
-        Some(surface_data) => surface_data,
-        None => {
-            return std::ptr::null();
-        }
-    };
-
-    let surface_id = context.surface;
-
-    let result = gfx_select!(surface_id => global.surface_get_current_texture(surface_id, None));
+    let result = gfx_select!(surface_id => global.surface_get_current_texture(*surface_id, None));
 
     match result {
         Ok(texture) => {
@@ -452,11 +620,20 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
                 .has_surface_presented
                 .store(false, std::sync::atomic::Ordering::SeqCst);
 
+            let data_guard = context.data.lock();
+
+            let surface_data = match data_guard.as_ref() {
+                Some(surface_data) => surface_data,
+                None => {
+                    return std::ptr::null();
+                }
+            };
+
             Arc::into_raw(Arc::new(CanvasGPUTexture {
                 label: None,
                 instance: context.instance.clone(),
                 texture: texture.texture_id.unwrap(),
-                surface_id: Some(surface_id),
+                surface_id: Some(*surface_id),
                 owned: false,
                 depth_or_array_layers: 1,
                 dimension: super::enums::CanvasTextureDimension::D2,
@@ -495,10 +672,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     let context = unsafe { &*context };
     let global = context.instance.global();
 
-    let surface_id = context.surface;
+    let surface_id = context.surface.lock();
     let texture = unsafe { &*texture };
 
-    if let Err(cause) = gfx_select!(surface_id => global.surface_present(surface_id)) {
+    if let Err(cause) = gfx_select!(surface_id => global.surface_present(*surface_id)) {
         handle_error_fatal(
             global,
             cause,
@@ -527,9 +704,9 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     let context = unsafe { &*context };
     let global = context.instance.global();
 
-    let surface_id = context.surface;
+    let surface_id = context.surface.lock();
 
-    match gfx_select!(surface_id => global.surface_get_capabilities(surface_id, adapter_id)) {
+    match gfx_select!(surface_id => global.surface_get_capabilities(*surface_id, adapter_id)) {
         Ok(capabilities) => {
             let cap: CanvasSurfaceCapabilities = capabilities.into();
             return Box::into_raw(Box::new(cap));

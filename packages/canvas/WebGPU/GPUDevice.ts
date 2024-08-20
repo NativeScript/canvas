@@ -31,12 +31,14 @@ function fixup_shader_code(code: string) {
 	code = code.replace(/^let /gm, 'const ');
 	code = code.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
 	code = code.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
+	// patch switch issue
+	code = code.replace(/case\s+(\d+)\s*:\s*{/g, 'case $1u: {');
 	return code;
 }
 
 // Doing so because :D
 export class EventTarget {
-	_emitter?: WeakRef<Observable>;
+	protected _emitter?: WeakRef<Observable>;
 
 	addEventListener(event: string, handler: any, options: AddEventListenerOptions = {}) {
 		const { capture, once } = options;
@@ -107,8 +109,8 @@ type GPUExtent3D = [number, number, number] | [number, number] | GPUExtent3DDict
 
 export class GPUDevice extends EventTarget {
 	[native_];
-	_lostPromise: Promise<GPUDeviceLostInfo>;
-	_observerable: Observable;
+	private _lost: Promise<GPUDeviceLostInfo>;
+	private _observerable: Observable;
 	constructor() {
 		super();
 		this._observerable = fromObject({});
@@ -153,10 +155,10 @@ export class GPUDevice extends EventTarget {
 					error,
 				});
 			} else {
-				console.error(error);
+				//	console.error(error);
 			}
 		} else {
-			console.error(error);
+			//console.error(error);
 		}
 	}
 
@@ -166,6 +168,17 @@ export class GPUDevice extends EventTarget {
 			device.setuncapturederror(ret._uncapturederror.bind(this));
 			ret[native_] = device;
 			ret[adapter_] = adapter;
+			ret._lost = new Promise((resolve, reject) => {
+				ret[native_].lost
+					.then((info) => {
+						const ret = new GPUDeviceLostInfo();
+						ret[native_] = info;
+						resolve(ret);
+					})
+					.catch((error) => {
+						reject(error);
+					});
+			});
 			return ret;
 		}
 		return null;
@@ -176,21 +189,7 @@ export class GPUDevice extends EventTarget {
 	}
 
 	get lost() {
-		if (!this._lostPromise) {
-			this._lostPromise = new Promise((resolve, reject) => {
-				this[native_].lost
-					.then((info) => {
-						const ret = new GPUDeviceLostInfo();
-						ret[native_] = info;
-						resolve(ret);
-					})
-					.reject((error) => {
-						reject(error);
-					});
-			});
-		}
-
-		return this._lostPromise;
+		return this._lost;
 	}
 
 	get native() {
@@ -362,6 +361,7 @@ export class GPUDevice extends EventTarget {
 
 		const fragment = descriptor.fragment;
 		if (fragment) {
+			handleUnsupportedPlatformFormat(fragment, 'createRenderPipeline');
 			fragment.module = fragment.module[native_];
 		}
 
@@ -393,6 +393,7 @@ export class GPUDevice extends EventTarget {
 
 			const fragment = descriptor.fragment;
 			if (fragment) {
+				handleUnsupportedPlatformFormat(fragment, 'createRenderPipelineAsync');
 				fragment.module = fragment.module[native_];
 			}
 
@@ -430,6 +431,29 @@ export class GPUDevice extends EventTarget {
 	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
 		const sizeIsArray = Array.isArray(descriptor.size);
 
+		function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: string) {
+			// falls back to platform supported format ... maybe this can be removed once frameworks use the getPreferredCanvasFormat
+			if (__ANDROID__) {
+				let hasBrga = false;
+				fragment.targets = fragment.targets.map((target) => {
+					switch (target.format) {
+						case 'bgra8unorm':
+							target.format = 'rgba8unorm';
+							hasBrga = true;
+							break;
+						case 'bgra8unorm-srgb':
+							target.format = 'rgba8unorm-srgb';
+							hasBrga = true;
+							break;
+					}
+					return target;
+				});
+				if (hasBrga) {
+					console.warn(`GPUDevice:${method} using unsupported brga format falling back to rgba counterpart.`);
+				}
+			}
+		}
+
 		const opts = {
 			label: descriptor?.label,
 			mipLevelCount: descriptor?.mipLevelCount ?? 1,
@@ -442,6 +466,24 @@ export class GPUDevice extends EventTarget {
 			height: sizeIsArray ? descriptor.size[1] ?? 1 : (<GPUExtent3DDict>descriptor.size)?.height ?? 1,
 			depthOrArrayLayers: sizeIsArray ? descriptor.size[2] ?? 1 : (<GPUExtent3DDict>descriptor.size)?.depthOrArrayLayers ?? 1,
 		};
+
+		let hasBrga = false;
+		if (__ANDROID__) {
+			switch (opts.format) {
+				case 'bgra8unorm':
+					opts.format = 'rgba8unorm';
+					hasBrga = true;
+					break;
+				case 'bgra8unorm-srgb':
+					opts.format = 'rgba8unorm-srgb';
+					hasBrga = true;
+					break;
+			}
+
+			if (hasBrga) {
+				console.warn(`GPUDevice:createTexture using unsupported brga format falling back to rgba counterpart.`);
+			}
+		}
 
 		return GPUTexture.fromNative(this.native.createTexture(opts));
 	}
@@ -482,5 +524,28 @@ export class GPUDevice extends EventTarget {
 			this._queue = GPUQueue.fromNative(this[native_].queue);
 		}
 		return this._queue;
+	}
+}
+
+function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: string) {
+	// falls back to platform supported format ... maybe this can be removed once frameworks use the getPreferredCanvasFormat
+	if (__ANDROID__) {
+		let hasBrga = false;
+		fragment.targets = fragment.targets.map((target) => {
+			switch (target.format) {
+				case 'bgra8unorm':
+					target.format = 'rgba8unorm';
+					hasBrga = true;
+					break;
+				case 'bgra8unorm-srgb':
+					target.format = 'rgba8unorm-srgb';
+					hasBrga = true;
+					break;
+			}
+			return target;
+		});
+		if (hasBrga) {
+			console.warn(`GPUDevice:${method} using unsupported brga format falling back to rgba counterpart.`);
+		}
 	}
 }

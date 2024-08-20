@@ -90,7 +90,7 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
-		fun loadImageFromUrlBuffer(asset: Long, buffer: ByteBuffer, callback: Callback) {
+		fun loadImageFromBufferAsync(asset: Long, buffer: ByteBuffer, callback: Callback) {
 			executorService.execute {
 				val done: Boolean = if (buffer.isDirect) {
 					nativeLoadFromBuffer(asset, buffer)
@@ -102,7 +102,7 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
-		fun loadImageFromUrlBytes(asset: Long, bytes: ByteArray, callback: Callback) {
+		fun loadImageFromBytes(asset: Long, bytes: ByteArray, callback: Callback) {
 			executorService.execute {
 				val done = nativeLoadFromBytes(asset, bytes)
 				callback.onComplete(done)

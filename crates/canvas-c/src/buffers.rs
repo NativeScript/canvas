@@ -10,7 +10,6 @@ use crate::image_asset::ImageAsset;
 enum U8BufferInner {
     BytesMut(BytesMut),
     Vec(Arc<Mutex<Vec<u8>>>),
-    ImageAsset(ImageAsset),
     ImageData(ImageData),
 }
 
@@ -29,7 +28,6 @@ impl U8Buffer {
                 let lock = value.lock();
                 unsafe { std::slice::from_raw_parts(lock.as_ptr(), lock.len()) }
             }
-            U8BufferInner::ImageAsset(value) => value.0.get_bytes().unwrap_or(&[]),
             U8BufferInner::ImageData(value) => {
                 value.0.data()
             }
@@ -43,7 +41,6 @@ impl U8Buffer {
                 let mut lock = value.lock();
                 unsafe { std::slice::from_raw_parts_mut(lock.as_mut_ptr(), lock.len()) }
             }
-            U8BufferInner::ImageAsset(value) => value.0.get_bytes_mut().unwrap_or(&mut []),
             U8BufferInner::ImageData(value) => {
                 value.0.data_mut()
             }
@@ -57,7 +54,6 @@ impl U8Buffer {
                 let lock = value.lock();
                 lock.len()
             }
-            U8BufferInner::ImageAsset(value) => value.0.len(),
             U8BufferInner::ImageData(value) => value.0.data_len()
         }
     }
@@ -78,12 +74,6 @@ impl From<Vec<u8>> for U8Buffer {
 impl From<BytesMut> for U8Buffer {
     fn from(value: BytesMut) -> Self {
         U8Buffer(U8BufferInner::BytesMut(value))
-    }
-}
-
-impl From<ImageAsset> for U8Buffer {
-    fn from(value: ImageAsset) -> Self {
-        U8Buffer(U8BufferInner::ImageAsset(value.clone()))
     }
 }
 

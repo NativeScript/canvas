@@ -11,7 +11,7 @@
 #include "Helpers.h"
 #include "Common.h"
 
-ImageAssetImpl::ImageAssetImpl(ImageAsset *asset) : asset_(asset) {
+ImageAssetImpl::ImageAssetImpl(const ImageAsset *asset) : asset_(asset) {
 }
 
 ImageAssetImpl::~ImageAssetImpl() {
@@ -240,7 +240,7 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
@@ -268,8 +268,6 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
                       delete static_cast<JSICallback *>(data);
                       return 0;
                   }, jsi_callback);
-
-    ALooper_wake(jsi_callback->looper_);
 
 
     std::thread thread(
@@ -412,11 +410,9 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     auto path = ConvertFromV8String(isolate, args[0]);
 
-    auto asset = canvas_native_image_asset_reference(
-            ptr->GetImageAsset());
+    auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
 
     auto callback = args[1].As<v8::Function>();
-
 
     auto jsi_callback = new JSICallback(isolate, callback);
 
@@ -424,7 +420,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
@@ -443,7 +439,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
 
                       v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, done)};
 
-                      // v8::TryCatch tc(isolate);
+                       v8::TryCatch tc(isolate);
 
                       callback->Call(context, context->Global(), 1,
                                      args);  // ignore JS return value
@@ -452,22 +448,22 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
                       return 0;
                   }, jsi_callback);
 
-    ALooper_wake(jsi_callback->looper_);
-
 
     std::thread thread(
             [jsi_callback, asset](
-                    const std::string &path) {
+                    const std::string path) {
 
                 auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
-
-                canvas_native_image_asset_release(asset);
 
                 write(jsi_callback->fd_[1],
                       &done,
                       sizeof(bool));
 
+                canvas_native_image_asset_release(asset);
+
             }, std::move(path));
+
+    thread.detach();
 
 #endif
 
@@ -481,7 +477,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto task = [jsi_callback, current_queue, queue, asset, path]() {
 
         auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
-
+        
         canvas_native_image_asset_release(asset);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
@@ -514,6 +510,8 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     };
 
     queue->addOperation(task);
+    
+
 #endif
 }
 
@@ -572,7 +570,7 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
@@ -599,9 +597,6 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
                       delete static_cast<JSICallback *>(data);
                       return 0;
                   }, jsi_callback);
-
-    ALooper_wake(jsi_callback->looper_);
-
 
     std::thread thread(
             [jsi_callback, asset, data, size]() {
@@ -713,7 +708,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
@@ -740,9 +735,6 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
                       delete static_cast<JSICallback *>(data);
                       return 0;
                   }, jsi_callback);
-
-    ALooper_wake(jsi_callback->looper_);
-
 
     std::thread thread(
             [jsi_callback, asset, format](
@@ -813,7 +805,7 @@ void ImageAssetImpl::SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args) {
 }
 */
 
-ImageAsset *ImageAssetImpl::GetImageAsset() {
+const ImageAsset *ImageAssetImpl::GetImageAsset() {
     return this->asset_;
 }
 

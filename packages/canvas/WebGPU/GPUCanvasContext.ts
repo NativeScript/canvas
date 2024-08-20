@@ -42,6 +42,10 @@ export class GPUCanvasContext {
 		return this[native_];
 	}
 
+	get canvas() {
+		return this._canvas;
+	}
+
 	configure(options: { device: GPUDevice; format: GPUTextureFormat; usage?: number; viewFormats?: GPUTextureFormat[]; colorSpace?: 'display-p3' | 'srgb'; alphaMode?: GPUCanvasAlphaMode; presentMode?: GPUCanvasPresentMode; size?: GPUExtent3D }) {
 		const opts = {
 			usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -60,6 +64,21 @@ export class GPUCanvasContext {
 
 			if (!options.alphaMode) {
 				opts.alphaMode = capabilities.alphaModes[0];
+			} else {
+				if (!capabilities.alphaModes.includes(options.alphaMode) && (options.alphaMode === 'opaque' || options.alphaMode === 'premultiplied')) {
+					opts.alphaMode = capabilities.alphaModes[0];
+					console.warn(`GPUCanvasContext: configure alphaMode ${options.alphaMode} unsupported falling back to ${capabilities.alphaModes[0]}`);
+				}
+			}
+
+			if (__ANDROID__ && !capabilities.format.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
+				opts.format = capabilities.format[0];
+				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${capabilities.format[0]}`);
+			}
+
+			if (__IOS__ && opts.usage > capabilities.usages) {
+				opts.usage = capabilities.usages;
+				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
 			}
 		}
 

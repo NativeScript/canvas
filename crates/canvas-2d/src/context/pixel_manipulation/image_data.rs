@@ -75,6 +75,13 @@ impl ImageData {
         (self.0.height as f32 / self.0.scale) as i32
     }
 
+    pub fn dimensions(&self) -> (i32, i32){
+        (
+            (self.0.width as f32 / self.0.scale) as i32,
+            (self.0.height as f32 / self.0.scale) as i32
+        )
+    }
+
     pub fn data(&self) -> &[u8] {
         unsafe { (&*self.0.data).as_ref() }
     }

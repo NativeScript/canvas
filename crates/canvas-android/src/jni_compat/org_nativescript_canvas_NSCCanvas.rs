@@ -11,6 +11,7 @@ use skia_safe::{AlphaType, ColorType, ImageInfo, ISize, Rect};
 
 use canvas_2d::context::paths::path::Path;
 use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
+use canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext;
 use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
 
@@ -53,6 +54,29 @@ pub extern "system" fn nativeInitWebGPU(
     0
 }
 
+#[no_mangle]
+pub extern "system" fn nativeResizeWebGPU(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    surface: jobject,
+    width: jint,
+    height: jint,
+) {
+    unsafe {
+        let interface = env.get_native_interface();
+        if let Some(window) = NativeWindow::from_surface(interface, surface) {
+            let ptr = window.ptr().as_ptr();
+            let context: *mut CanvasGPUCanvasContext = context as _;
+            canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize(
+                context,
+                ptr as *mut c_void,
+                width as u32,
+                height as u32,
+            );
+        }
+    }
+}
 
 /*
 #[no_mangle]

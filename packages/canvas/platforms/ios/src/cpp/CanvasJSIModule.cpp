@@ -285,7 +285,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
     if (image->IsNullOrUndefined()) {
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate, "Failed to load image"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
         return;
@@ -295,7 +295,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate,
                                                          "Failed to execute 'createImageBitmap' : The crop rect width is 0"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
 
@@ -304,7 +304,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
     if (len >= 5 && (sh->IsNumber() && sh->IsNumber() == 0)) {
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate,
                                                          "Failed to execute 'createImageBitmap' : The crop rect height is 0"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
         return;
@@ -338,15 +338,17 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 #ifdef __ANDROID__
                 ALooper_addFd(jsi_callback->looper_,
                               jsi_callback->fd_[0],
-                              ALOOPER_POLL_CALLBACK,
+                              0,
                               ALOOPER_EVENT_INPUT,
                               [](int fd, int events,
                                  void *data) {
+                                    if(data == nullptr){
+                                        return 1;
+                                    }
                                   auto cb = static_cast<JSICallback *>(data);
                                   bool done;
                                   read(fd, &done,
                                        sizeof(bool));
-
 
                                   v8::Isolate *isolate = cb->isolate_;
                                   v8::Locker locker(isolate);
@@ -372,23 +374,23 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                       args[1] = v8::Null(isolate);
                                   }
 
-
                                   callback->Call(context, context->Global(), 2, args);
 
                                   delete static_cast<JSICallback *>(data);
                                   return 0;
                               }, jsi_callback);
 
-                ALooper_wake(jsi_callback->looper_);
-
                 if (isArrayBuffer) {
+                    // converting to Uint8Array
                     auto arrayBuffer = imageObject.As<v8::ArrayBuffer>();
-                    auto store = arrayBuffer->GetBackingStore();
+                    auto size = arrayBuffer->ByteLength();
+                    imageObject = v8::Uint8Array::New(arrayBuffer, 0, size);
+                /*  auto store = arrayBuffer->GetBackingStore();
                     auto dataBuffer = (uint8_t *) store->Data();
-                    v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
+
                     std::thread thread(
-                            [&dataBuffer, jsi_callback, &options, store, shared_asset](
-                                    v8::Global<v8::ArrayBuffer> ab, size_t size) {
+                            [&dataBuffer, jsi_callback, &options, store, shared_asset, size](
+                                    v8::Global<v8::ArrayBuffer> ab) {
 
 
                                 auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -401,22 +403,23 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_release(shared_asset);
-
                                 write(jsi_callback->fd_[1],
                                       &done,
                                       sizeof(bool));
 
+                                //  canvas_native_image_asset_release(shared_asset);
 
-                            }, std::move(ab), arrayBuffer->ByteLength());
+
+                            });
 
                     thread.detach();
                     return;
+
+                    */
                 }
 
 
                 auto ta = imageObject.As<v8::ArrayBufferView>();
-
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
@@ -440,11 +443,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_release(shared_asset);
-
                             write(jsi_callback->fd_[1],
                                   &done,
                                   sizeof(bool));
+
+                            //  canvas_native_image_asset_release(shared_asset);
 
 
                         }, std::move(ab));
@@ -464,9 +467,74 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     auto dataBuffer = (uint8_t *) store->Data();
                     v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
 
+                    auto size = arrayBuffer->ByteLength();
+
+
+                    auto thread_queue = new NSOperationQueueWrapper(false);
+
+
+                    thread_queue->addOperation([&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue, &ab, size]() {
+
+                        auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                                                                                     dataBuffer, size,
+                                                                                                     options.flipY,
+                                                                                                     options.premultiplyAlpha,
+                                                                                                     options.colorSpaceConversion,
+                                                                                                     options.resizeQuality,
+                                                                                                     options.resizeWidth,
+                                                                                                     options.resizeHeight,
+                                                                                                     shared_asset);
+
+
+
+                        auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
+
+                            v8::Isolate *isolate = jsi_callback->isolate_;
+                            v8::Locker locker(isolate);
+                            v8::Isolate::Scope isolate_scope(isolate);
+                            v8::HandleScope handle_scope(isolate);
+                            v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                            v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                                                                      isolate).As<v8::External>();
+                            v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                            v8::Context::Scope context_scope(context);
+
+                            auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
+
+                            v8::Local<v8::Value> args[2];
+
+                            if (done) {
+                                args[0] = v8::Null(isolate);
+                                args[1] = ret;
+
+                            } else {
+                                args[0] = v8::Exception::Error(
+                                                               ConvertToV8String(isolate, "Failed to load image"));
+                                args[1] = v8::Null(isolate);
+                            }
+
+
+                            callback->Call(context, context->Global(), 2, args);
+
+                            delete jsi_callback;
+                            delete current_queue;
+
+                            canvas_native_image_asset_release(shared_asset);
+
+                        };
+                        current_queue->addOperation(main_task);
+
+                    });
+
+
+
+
+
+
+                    /*
                     std::thread thread(
-                            [&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue](
-                                    v8::Global<v8::ArrayBuffer> ab, size_t size
+                            [&dataBuffer, jsi_callback, &options, store, &shared_asset, current_queue, size](
+                                    v8::Global<v8::ArrayBuffer> ab
                             ) {
 
                                 auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -479,10 +547,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_release(shared_asset);
-
-
-                                auto main_task = [jsi_callback, current_queue, done]() {
+                                auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                     v8::Isolate *isolate = jsi_callback->isolate_;
@@ -516,12 +581,17 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     delete jsi_callback;
                                     delete current_queue;
 
+                                    canvas_native_image_asset_release(shared_asset);
+
                                 };
                                 current_queue->addOperation(main_task);
 
-                            }, std::move(ab), arrayBuffer->ByteLength());
+                            }, std::move(ab));
 
-                    thread.detach();
+                   thread.detach();
+
+
+                    */
 
                     return;
                 }
@@ -553,9 +623,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_release(shared_asset);
 
-                            auto main_task = [jsi_callback, current_queue, done]() {
+                            auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                 v8::Isolate *isolate = jsi_callback->isolate_;
@@ -587,6 +656,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                 delete jsi_callback;
                                 delete current_queue;
 
+                                canvas_native_image_asset_release(shared_asset);
+
                             };
                             current_queue->addOperation(main_task);
 
@@ -617,7 +688,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 #ifdef __ANDROID__
                 ALooper_addFd(jsi_callback->looper_,
                               jsi_callback->fd_[0],
-                              ALOOPER_POLL_CALLBACK,
+                              0,
                               ALOOPER_EVENT_INPUT,
                               [](int fd, int events,
                                  void *data) {
@@ -655,11 +726,13 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                   return 0;
                               }, jsi_callback);
 
-                ALooper_wake(jsi_callback->looper_);
-
                 auto bufferValue = args[0];
 
                 if (isArrayBuffer) {
+                    auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
+                    auto size = arrayBuffer->ByteLength();
+                    imageObject = v8::Uint8Array::New(arrayBuffer, 0, size);
+                    /*
                     auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
                     auto dataBuffer = (uint8_t *) arrayBuffer->GetBackingStore()->Data();
                     v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
@@ -686,12 +759,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_release(shared_asset);
-
-
                                 write(jsi_callback->fd_[1],
                                       &done,
                                       sizeof(bool));
+
+                                canvas_native_image_asset_release(shared_asset);
 
                             },
                             (float) sx_or_options->NumberValue(context).ToChecked(),
@@ -703,6 +775,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     thread.detach();
 
                     return;
+                    */
                 }
 
                 auto ta = bufferValue.As<v8::ArrayBufferView>();
@@ -736,12 +809,12 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_release(shared_asset);
-
 
                             write(jsi_callback->fd_[1],
                                   &done,
                                   sizeof(bool));
+
+                            canvas_native_image_asset_release(shared_asset);
 
                         },
                         (float) sx_or_options->NumberValue(context).ToChecked(),
@@ -786,10 +859,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_release(shared_asset);
 
-
-                                auto main_task = [jsi_callback, current_queue, done]() {
+                                auto main_task = [jsi_callback, current_queue, done,shared_asset]() {
 
 
                                     v8::Isolate *isolate = jsi_callback->isolate_;
@@ -822,6 +893,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                                     delete jsi_callback;
                                     delete current_queue;
+
+                                    canvas_native_image_asset_release(shared_asset);
 
                                 };
                                 current_queue->addOperation(main_task);
@@ -871,9 +944,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_release(shared_asset);
 
-                            auto main_task = [jsi_callback, current_queue, done]() {
+                            auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                 v8::Isolate *isolate = jsi_callback->isolate_;
@@ -904,6 +976,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                                 delete jsi_callback;
                                 delete current_queue;
+
+                                canvas_native_image_asset_release(shared_asset);
 
                             };
                             current_queue->addOperation(main_task);
@@ -1080,7 +1154,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 #ifdef __ANDROID__
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
@@ -1164,8 +1238,6 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                       }
                       return 0;
                   }, jsi_callback);
-
-    ALooper_wake(jsi_callback->looper_);
 
     std::thread thread(
             [jsi_callback](const std::string &file) {

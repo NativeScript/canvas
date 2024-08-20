@@ -1,4 +1,4 @@
-import { CSSType, View, Property, booleanConverter } from '@nativescript/core';
+import { CSSType, View, Property, booleanConverter, widthProperty, heightProperty } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
 
 export interface ICanvasBase {
@@ -397,10 +397,21 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	protected constructor() {
 		super();
 		this._classList = new Set();
+		this.style.width = { unit: '%', value: 1 };
+		this.style.height = 'auto';
 	}
 
 	get ownerDocument() {
 		return window?.document ?? doc;
+	}
+
+	emit() {
+		console.log('emit');
+	}
+
+	dispatchEvent(event) {
+		console.log('dispatchEvent', event);
+		return true;
 	}
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
@@ -1019,7 +1030,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'webgpu', contextOpts?) {
+	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextOpts?) {
 		if (!contextOpts) {
 			if (type === '2d') {
 				return { ...default2DOptions, powerPreference: 0 };
@@ -1096,6 +1107,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (attrib === 'tabindex') {
 			this['tabindex'] = arguments[1];
 		}
+
+		this['data-engine'] = arguments[1];
 	}
 
 	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;

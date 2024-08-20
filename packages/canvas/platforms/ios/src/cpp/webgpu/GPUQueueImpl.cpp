@@ -136,16 +136,13 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
         U8Buffer *buffer = nullptr;
         uint32_t width = 0;
         uint32_t height = 0;
+        const ImageAsset* imageAsset = nullptr;
         if (sourceType == NativeType::ImageBitmap) {
-            auto imageAsset = ImageBitmapImpl::GetPointer(sourceSourceValue.As<v8::Object>());
-            buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
-            width = canvas_native_image_asset_width(imageAsset->GetImageAsset());
-            height = canvas_native_image_asset_height(imageAsset->GetImageAsset());
+            auto bitmap = ImageBitmapImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            imageAsset = bitmap->GetImageAsset();
         } else if (sourceType == NativeType::ImageAsset) {
-            auto imageAsset = ImageAssetImpl::GetPointer(sourceSourceValue.As<v8::Object>());
-            buffer = canvas_native_image_asset_get_data(imageAsset->GetImageAsset());
-            width = canvas_native_image_asset_width(imageAsset->GetImageAsset());
-            height = canvas_native_image_asset_height(imageAsset->GetImageAsset());
+            auto asset = ImageAssetImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            imageAsset = asset->GetImageAsset();
         } else if (sourceType == NativeType::ImageData) {
             auto imageData = ImageDataImpl::GetPointer(sourceSourceValue.As<v8::Object>());
             buffer = canvas_native_image_data_get_data(imageData->GetImageData());
@@ -157,7 +154,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
             auto webgl = WebGLRenderingContextBase::GetPointer(sourceSourceValue.As<v8::Object>());
         }
 
-        if (buffer == nullptr) {
+        if (buffer == nullptr && imageAsset == nullptr) {
             // todo error ??
             return;
         }
@@ -262,9 +259,26 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
 
         CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
+        
+        if (imageAsset != nullptr){
+            CanvasImageCopyImageAsset source{
+                    imageAsset,
+                    sourceOrigin,
+                    flipY,
+            };
+
+
+            canvas_native_webgpu_queue_copy_image_asset_to_texture(ptr->GetGPUQueue(), &source,
+                                                                      &destination,
+                                                                      &extent3D);
+            return;
+        }
+        
 
         auto data = canvas_native_u8_buffer_get_bytes(buffer);
         auto size = canvas_native_u8_buffer_get_length(buffer);
+
+
 
         if (data == nullptr || size == 0) {
             // todo error

@@ -97,6 +97,7 @@ public class NSCCanvas: UIView {
             let viewPtr = Int64(Int(bitPattern: ptr))
             
             
+            
             _shared_context = CanvasHelpers.initGLWithView(viewPtr, true, true, true, false, 0, true, false, false, false, false, 2, false)
             
             
@@ -522,23 +523,31 @@ public class NSCCanvas: UIView {
     }
     
     private var isLoaded: Bool = false
+
     
     public var surfaceWidth: Int = 300 {
-        willSet {
-            forceLayout(CGFloat(newValue), CGFloat(surfaceHeight))
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
             resize()
         }
     }
     
     
     public var surfaceHeight: Int = 150 {
-        willSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(newValue))
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
             resize()
         }
     }
     
     private func resize(){
+        if(engine == .Metal && nativeContext != 0){
+            let viewPtr = Int64(Int(bitPattern: getMtlViewPtr()))
+            var width = UInt32(surfaceWidth)
+            var height =  UInt32(surfaceHeight)
+            CanvasHelpers.resizeWebGPUWithView(nativeContext, viewPtr, width, height)
+            return
+        }
         if(nativeGL == 0){return}
         if(engine == .GL){
             EAGLContext.setCurrent(glkView.context)

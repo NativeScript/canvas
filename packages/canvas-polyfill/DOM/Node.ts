@@ -1,3 +1,4 @@
+import { View } from '@nativescript/core';
 import { EventTarget } from './EventTarget';
 import setValue from 'set-value';
 
@@ -23,16 +24,13 @@ export class Node extends EventTarget {
 		this.nodeName = nodeName;
 	}
 
-	append(view) {
-		
-	}
+	append(view) {}
 
 	appendChild(view) {
 		if (view instanceof Document) {
 			return;
 		}
-		if(view instanceof Element){
-			
+		if (view instanceof Element) {
 		}
 	}
 
@@ -47,5 +45,12 @@ export class Node extends EventTarget {
 		}
 
 		return DOCUMENT_POSITION_DISCONNECTED;
+	}
+
+	contains(otherNode: Node) {
+		if (this.nodeName === 'BODY') {
+			return !!(otherNode as any)?.nativeElement?.parent;
+		}
+		return false;
 	}
 }

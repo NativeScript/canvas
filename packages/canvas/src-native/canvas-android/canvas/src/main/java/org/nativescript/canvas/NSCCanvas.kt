@@ -633,6 +633,16 @@ class NSCCanvas : FrameLayout {
 				}
 			}
 		} else {
+			if (nativeContext != 0L && engine == Engine.Vulkan) {
+				val surface = if (surfaceType == SurfaceType.Surface) {
+					surfaceView.holder.surface
+				} else {
+					textureView.surface
+				}
+				surface?.let {
+					nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
+				}
+			}
 			scaleSurface()
 		}
 		listener?.surfaceResize(surfaceWidth, surfaceHeight)
@@ -860,6 +870,15 @@ class NSCCanvas : FrameLayout {
 			width: Int,
 			height: Int
 		): Long
+
+		@JvmStatic
+		@FastNative
+		external fun nativeResizeWebGPU(
+			context: Long,
+			surface: Surface,
+			width: Int,
+			height: Int
+		)
 
 		@JvmStatic
 		@FastNative

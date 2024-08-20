@@ -5,7 +5,7 @@ use std::sync::Arc;
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
-
+use crate::webgpu::structs::CanvasImageCopyImageAsset;
 use super::{
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -88,6 +88,36 @@ fn get_offset_image(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyImageAsset,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if source.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    if source.source.is_null() {
+        return;
+    }
+    let image_asset = &*source.source;
+    image_asset.with_bytes_dimension(|bytes, dimension|{
+        let ext_source = CanvasImageCopyExternalImage{
+            source: bytes.as_ptr(),
+            source_size: bytes.len(),
+            origin: source.origin,
+            flip_y: source.flip_y,
+            width: dimension.0,
+            height: dimension.1,
+        };
+
+        canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+    });
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_texture(
     queue: *const CanvasGPUQueue,
     source: *const CanvasImageCopyExternalImage,
@@ -107,7 +137,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     if source.source.is_null() || source.source_size == 0 || source.width == 0 || source.height == 0
     {
-        return;
+       return;
     }
 
     let destination = &*destination;

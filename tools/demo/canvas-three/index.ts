@@ -1,59 +1,53 @@
 import { DemoSharedBase } from '../utils';
 
-import 'three/examples/jsm/nodes/math/MathNode';
+require('three/examples/jsm/nodes/math/MathNode');
 
-import NodeBuilder from 'three/examples/jsm/nodes/core/NodeBuilder.js';
-import ParameterNode from 'three/examples/jsm/nodes/core/ParameterNode.js';
+const NodeBuilder = require('three/examples/jsm/nodes/core/NodeBuilder').default;
+const ParameterNode = require('three/examples/jsm/nodes/core/ParameterNode').default;
 
 // See DEV.md
 // Original code is commented out
 
-//@ts-ignore
-// NodeBuilder.prototype.flowShaderNode = function( shaderNode ) {
+NodeBuilder.prototype.flowShaderNode = function (shaderNode) {
+	console.log('11');
 
-// 	const layout = shaderNode.layout;
-// 	console.log('11');
+	const layout = shaderNode.layout;
 
-// 	let inputs;
+	let inputs;
 
-// 	// if ( shaderNode.isArrayInput ) {
+	// if ( shaderNode.isArrayInput ) {
 
-// 	inputs = [];
+	inputs = [];
 
-// 	for ( const input of layout.inputs ) {
+	for (const input of layout.inputs) {
+		inputs.push(new ParameterNode(input.type, input.name));
+	}
 
-// 	  inputs.push( new ParameterNode( input.type, input.name ) );
+	// } else {
+	//
+	// inputs = {};
 
-// 	}
+	for (const input of layout.inputs) {
+		inputs[input.name] = new ParameterNode(input.type, input.name);
+	}
 
-// 	// } else {
-// 	//
-// 	// inputs = {};
+	// }
 
-// 	for ( const input of layout.inputs ) {
+	//
 
-// 	  inputs[ input.name ] = new ParameterNode( input.type, input.name );
+	console.log('?');
 
-// 	}
+	shaderNode.layout = null;
 
-// 	// }
+	const callNode = shaderNode.call(inputs);
+	const flowData = this.flowStagesNode(callNode, layout.type);
 
-// 	//
+	shaderNode.layout = layout;
 
-// 	console.log('?');
+	return flowData;
+};
 
-// 	shaderNode.layout = null;
-
-// 	const callNode = shaderNode.call( inputs );
-// 	const flowData = this.flowStagesNode( callNode, layout.type );
-
-// 	shaderNode.layout = layout;
-
-// 	return flowData;
-
-//   }
-
-import ConstNode from 'three/examples/jsm/nodes/core/ConstNode';
+const ConstNode = require('three/examples/jsm/nodes/core/ConstNode').default;
 
 ConstNode.prototype.generate = function (builder, output) {
 	const type = this.getNodeType(builder);
@@ -195,9 +189,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	async webgpu_cube(canvas: Canvas) {
 		const adapter = await navigator.gpu?.requestAdapter();
 		const device: GPUDevice = (await adapter?.requestDevice()) as never;
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
 		const context = canvas.getContext('webgpu');
-		canvas.width = canvas.clientWidth * window.devicePixelRatio;
-		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 		var camera, scene, renderer;
 		var geometry, material, mesh;
@@ -219,10 +213,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
 
-			renderer = new WebGPURenderer({ antialias: true, context, device, canvas: canvas as any });
-			await renderer.init();
+			renderer = new WebGPURenderer(<any>{ antialias: false, context, device, canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(innerWidth, innerHeight);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+			await renderer.init();
 			renderer.setAnimationLoop(animate);
 		}
 
@@ -233,6 +227,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh.rotation.y += 0.02;
 
 			renderer.render(scene, camera);
+
+			console.log('ANIMATE');
 
 			context.presentSurface();
 		}

@@ -19,11 +19,11 @@
 class ImageAssetImpl : ObjectWrapperImpl {
 public:
 
-    explicit ImageAssetImpl(ImageAsset *asset);
+    explicit ImageAssetImpl(const ImageAsset *asset);
 
     ~ImageAssetImpl();
 
-    ImageAsset *GetImageAsset();
+    const ImageAsset *GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -67,5 +67,5 @@ public:
 
 
 private:
-    ImageAsset *asset_;
+    const ImageAsset *asset_;
 };

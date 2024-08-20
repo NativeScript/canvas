@@ -29,11 +29,7 @@ use canvas_c::webgpu::gpu_device::{
 };
 use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
-use canvas_c::webgpu::structs::{
-    CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyExternalImage,
-    CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor,
-    CanvasRenderPassColorAttachment, CanvasStoreOp,
-};
+use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageCopyImageAsset, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
 use canvas_core::gl::get_shader_info_log;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
@@ -887,18 +883,13 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let RENDER_ATTACHMENT = 1 << 4 as u32;
 
-    let size = CanvasExtent3d {
-        width: data.width,
-        height: data.height,
-        depth_or_array_layers: 1,
-    };
     let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration {
         alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied,
         usage: RENDER_ATTACHMENT,
         presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
         view_formats: ptr::null(),
         view_formats_size: 0,
-        size: &size,
+        size: ptr::null_mut(),
         format: CanvasOptionalGPUTextureFormat::None,
     };
 
@@ -1001,7 +992,9 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     );
 
     let image_bitmap = canvas_c::canvas_native_image_asset_create();
-    canvas_c::canvas_native_image_asset_load_from_raw(image_bitmap, di_3d.as_ptr(), di_3d.len());
+    {
+        canvas_c::canvas_native_image_asset_load_from_raw(image_bitmap, di_3d.as_ptr(), di_3d.len());
+    }
 
     let srcWidth = canvas_c::canvas_native_image_asset_width(image_bitmap);
     let srcHeight = canvas_c::canvas_native_image_asset_height(image_bitmap);
@@ -1034,19 +1027,10 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let queue = canvas_native_webgpu_device_get_queue(device);
 
-    let source_buffer = canvas_c::canvas_native_image_asset_get_data(image_bitmap);
-
-    let source_bytes = canvas_c::canvas_native_u8_buffer_get_bytes(source_buffer);
-
-    let source_size = canvas_c::canvas_native_u8_buffer_get_length(source_buffer);
-
-    let source = CanvasImageCopyExternalImage {
-        source: source_bytes,
-        source_size,
+    let source = CanvasImageCopyImageAsset {
+        source: image_bitmap,
         origin: CanvasOrigin2d { x: 0, y: 0 },
         flip_y: false,
-        width: srcWidth,
-        height: srcHeight,
     };
 
     let destination = CanvasImageCopyTexture {
@@ -1062,7 +1046,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         depth_or_array_layers: 1,
     };
 
-    canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_external_image_to_texture(
+    canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
         queue,
         &source,
         &destination,
@@ -1599,7 +1583,7 @@ fn main() {
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
 
-                                  //webgpu_triangle(data, window);
+                                //  webgpu_triangle(data, window);
                                 unsafe {
                                     webgpu_blur(data, window);
                                 }

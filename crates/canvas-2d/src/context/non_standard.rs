@@ -71,20 +71,21 @@ impl Context {
         colors: Option<&[&CStr]>,
         blend_mode: CompositeOperationType,
     ) {
-        let image = image.skia_image();
-        if let Some(image) = image {
-            let colors: Option<Vec<Color>> = colors.map(|color| {
-                color
-                    .iter()
-                    .map(|color| {
-                        let color = color.to_string_lossy();
-                        color::parse_color(color.as_ref())
-                    })
-                    .flatten()
-                    .collect()
-            });
-            self.draw_atlas(&image, xform, tex, colors.as_deref(), blend_mode)
-        }
+        image.with_skia_image(|image| {
+            if let Some(image) = image {
+                let colors: Option<Vec<Color>> = colors.map(|color| {
+                    color
+                        .iter()
+                        .map(|color| {
+                            let color = color.to_string_lossy();
+                            color::parse_color(color.as_ref())
+                        })
+                        .flatten()
+                        .collect()
+                });
+                self.draw_atlas(&image, xform, tex, colors.as_deref(), blend_mode)
+            }
+        });
     }
     pub fn draw_atlas_asset(
         &mut self,
@@ -94,10 +95,11 @@ impl Context {
         colors: Option<&[Color]>,
         blend_mode: CompositeOperationType,
     ) {
-        let image = image.skia_image();
-        if let Some(image) = image {
-            self.draw_atlas(&image, xform, tex, colors, blend_mode)
-        }
+        image.with_skia_image(|image| {
+            if let Some(image) = image {
+                self.draw_atlas(&image, xform, tex, colors, blend_mode)
+            }
+        });
     }
 
     pub fn draw_atlas_color(

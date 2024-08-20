@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 //                    canvas.requestLayout()
 
 
+
 					executor.execute {
 						try {
 							//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -168,6 +169,8 @@ class MainActivity : AppCompatActivity() {
 //
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
+
+				val asset = NSCImageAsset.createImageAsset()
 				canvas?.let { canvas ->
 
 					val ctx = canvas.create2DContext(

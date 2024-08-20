@@ -21,7 +21,7 @@ struct Options {
 
 class ImageBitmapImpl : public ObjectWrapperImpl {
 public:
-    explicit ImageBitmapImpl(ImageAsset *asset);
+    explicit ImageBitmapImpl(const ImageAsset *asset);
 
     ~ImageBitmapImpl();
 
@@ -46,7 +46,7 @@ public:
 
     static Options HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> &options);
 
-    ImageAsset *GetImageAsset();
+    const ImageAsset *GetImageAsset();
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
@@ -60,9 +60,12 @@ public:
     static void GetHeight(v8::Local<v8::String> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
+    static void GetAddr(v8::Local<v8::String> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info);
+
     static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
-    ImageAsset *bitmap_;
+    const ImageAsset *bitmap_;
     bool closed_ = false;
 };

@@ -4,6 +4,7 @@ import setValue from 'set-value';
 import { DOMParser } from '@xmldom/xmldom';
 
 export class HTMLCanvasElement extends HTMLElement {
+	private _htmlCanvas = true;
 	constructor(canvas?: Canvas) {
 		super('canvas');
 		if (arguments.length > 0) {
@@ -19,6 +20,10 @@ export class HTMLCanvasElement extends HTMLElement {
 		if (!this.nativeElement.__domElement) {
 			this.nativeElement.__domElement = new DOMParser().parseFromString('<canvas></canvas>', 'text/html').documentElement as never;
 		}
+	}
+
+	static [Symbol.hasInstance](obj) {
+		return obj?._htmlCanvas || obj instanceof Canvas;
 	}
 
 	get _canvas() {

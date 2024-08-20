@@ -350,7 +350,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				return this._2dContext;
-			} else if (type === 'webgl') {
+			} else if (type === 'webgl' || type === 'experimental-webgl') {
 				if (this._2dContext || this._webgl2Context) {
 					return null;
 				}
@@ -364,7 +364,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				return this._webglContext;
-			} else if (type === 'webgl2') {
+			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
@@ -390,6 +390,8 @@ export class Canvas extends CanvasBase {
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
 
 					(this._gpuContext as any)._canvas = this;
+					(this._gpuContext as any)._type = 'webgpu';
+					this._contextType = ContextType.WebGPU;
 				}
 				return this._gpuContext;
 			}

@@ -1770,6 +1770,29 @@ typedef struct CanvasOrigin2d {
   uint32_t y;
 } CanvasOrigin2d;
 
+typedef struct CanvasImageCopyImageAsset {
+  /**
+   * The texture to be copied from. The copy source data is captured at the moment
+   * the copy is issued.
+   */
+  const struct ImageAsset *source;
+  /**
+   * The base texel used for copying from the external image. Together
+   * with the `copy_size` argument to copy functions, defines the
+   * sub-region of the image to copy.
+   *
+   * Relative to the top left of the image.
+   *
+   * Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+   */
+  struct CanvasOrigin2d origin;
+  /**
+   * If the Y coordinate of the image should be flipped. Even if this is
+   * true, `origin` is still relative to the top left.
+   */
+  bool flip_y;
+} CanvasImageCopyImageAsset;
+
 typedef struct CanvasImageCopyExternalImage {
   /**
    * The texture to be copied from. The copy source data is captured at the moment
@@ -2115,7 +2138,7 @@ struct PaintStyle *canvas_native_context_create_pattern(const struct CanvasRende
                                                         enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_pattern_asset(struct CanvasRenderingContext2D *context,
-                                                              struct ImageAsset *asset,
+                                                              const struct ImageAsset *asset,
                                                               enum CanvasRepetition repetition);
 
 struct PaintStyle *canvas_native_context_create_pattern_encoded(struct CanvasRenderingContext2D *context,
@@ -2208,14 +2231,14 @@ void canvas_native_context_draw_image_dx_dy_asset(struct CanvasRenderingContext2
                                                   float dy);
 
 void canvas_native_context_draw_image_dx_dy_dw_dh_asset(struct CanvasRenderingContext2D *context,
-                                                        struct ImageAsset *asset,
+                                                        const struct ImageAsset *asset,
                                                         float dx,
                                                         float dy,
                                                         float d_width,
                                                         float d_height);
 
 void canvas_native_context_draw_image_asset(struct CanvasRenderingContext2D *context,
-                                            struct ImageAsset *asset,
+                                            const struct ImageAsset *asset,
                                             float sx,
                                             float sy,
                                             float s_width,
@@ -2296,7 +2319,7 @@ void canvas_native_context_draw_atlas_encoded(struct CanvasRenderingContext2D *c
                                               int32_t blend_mode);
 
 void canvas_native_context_draw_atlas_asset(struct CanvasRenderingContext2D *context,
-                                            struct ImageAsset *asset,
+                                            const struct ImageAsset *asset,
                                             const float *xform,
                                             uintptr_t xform_size,
                                             const float *tex,
@@ -2500,34 +2523,34 @@ void canvas_native_image_filter_reference(const struct ImageFilter *value);
 
 void canvas_native_image_filter_release(const struct ImageFilter *value);
 
-struct ImageAsset *canvas_native_image_bitmap_create_from_asset(struct ImageAsset *asset,
-                                                                bool flip_y,
-                                                                enum ImageBitmapPremultiplyAlpha premultiply_alpha,
-                                                                enum ImageBitmapColorSpaceConversion color_space_conversion,
-                                                                enum ImageBitmapResizeQuality resize_quality,
-                                                                float resize_width,
-                                                                float resize_height);
+const struct ImageAsset *canvas_native_image_bitmap_create_from_asset(const struct ImageAsset *asset,
+                                                                      bool flip_y,
+                                                                      enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                      enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                      enum ImageBitmapResizeQuality resize_quality,
+                                                                      float resize_width,
+                                                                      float resize_height);
 
-struct ImageAsset *canvas_native_image_bitmap_create_from_asset_src_rect(struct ImageAsset *asset,
-                                                                         float sx,
-                                                                         float sy,
-                                                                         float s_width,
-                                                                         float s_height,
-                                                                         bool flip_y,
-                                                                         enum ImageBitmapPremultiplyAlpha premultiply_alpha,
-                                                                         enum ImageBitmapColorSpaceConversion color_space_conversion,
-                                                                         enum ImageBitmapResizeQuality resize_quality,
-                                                                         float resize_width,
-                                                                         float resize_height);
+const struct ImageAsset *canvas_native_image_bitmap_create_from_asset_src_rect(const struct ImageAsset *asset,
+                                                                               float sx,
+                                                                               float sy,
+                                                                               float s_width,
+                                                                               float s_height,
+                                                                               bool flip_y,
+                                                                               enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                               enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                               enum ImageBitmapResizeQuality resize_quality,
+                                                                               float resize_width,
+                                                                               float resize_height);
 
-struct ImageAsset *canvas_native_image_bitmap_create_from_encoded_bytes(const uint8_t *bytes,
-                                                                        uintptr_t size,
-                                                                        bool flip_y,
-                                                                        enum ImageBitmapPremultiplyAlpha premultiply_alpha,
-                                                                        enum ImageBitmapColorSpaceConversion color_space_conversion,
-                                                                        enum ImageBitmapResizeQuality resize_quality,
-                                                                        float resize_width,
-                                                                        float resize_height);
+const struct ImageAsset *canvas_native_image_bitmap_create_from_encoded_bytes(const uint8_t *bytes,
+                                                                              uintptr_t size,
+                                                                              bool flip_y,
+                                                                              enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                              enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                              enum ImageBitmapResizeQuality resize_quality,
+                                                                              float resize_width,
+                                                                              float resize_height);
 
 bool canvas_native_image_bitmap_create_from_encoded_bytes_with_output(const uint8_t *bytes,
                                                                       uintptr_t size,
@@ -2537,20 +2560,20 @@ bool canvas_native_image_bitmap_create_from_encoded_bytes_with_output(const uint
                                                                       enum ImageBitmapResizeQuality resize_quality,
                                                                       float resize_width,
                                                                       float resize_height,
-                                                                      struct ImageAsset *output);
+                                                                      const struct ImageAsset *output);
 
-struct ImageAsset *canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(const uint8_t *bytes,
-                                                                                 uintptr_t size,
-                                                                                 float sx,
-                                                                                 float sy,
-                                                                                 float s_width,
-                                                                                 float s_height,
-                                                                                 bool flip_y,
-                                                                                 enum ImageBitmapPremultiplyAlpha premultiply_alpha,
-                                                                                 enum ImageBitmapColorSpaceConversion color_space_conversion,
-                                                                                 enum ImageBitmapResizeQuality resize_quality,
-                                                                                 float resize_width,
-                                                                                 float resize_height);
+const struct ImageAsset *canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(const uint8_t *bytes,
+                                                                                       uintptr_t size,
+                                                                                       float sx,
+                                                                                       float sy,
+                                                                                       float s_width,
+                                                                                       float s_height,
+                                                                                       bool flip_y,
+                                                                                       enum ImageBitmapPremultiplyAlpha premultiply_alpha,
+                                                                                       enum ImageBitmapColorSpaceConversion color_space_conversion,
+                                                                                       enum ImageBitmapResizeQuality resize_quality,
+                                                                                       float resize_width,
+                                                                                       float resize_height);
 
 bool canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(const uint8_t *bytes,
                                                                                uintptr_t size,
@@ -2564,7 +2587,7 @@ bool canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(c
                                                                                enum ImageBitmapResizeQuality resize_quality,
                                                                                float resize_width,
                                                                                float resize_height,
-                                                                               struct ImageAsset *output);
+                                                                               const struct ImageAsset *output);
 
 struct ImageData *canvas_native_image_data_create(int32_t width, int32_t height);
 
@@ -2930,6 +2953,11 @@ const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct 
                                                                          uint32_t height);
 #endif
 
+void canvas_native_webgpu_context_resize(struct CanvasGPUCanvasContext *context,
+                                         void *window,
+                                         uint32_t width,
+                                         uint32_t height);
+
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
                                                                          void *view,
@@ -2944,11 +2972,25 @@ const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_uiview(
                                                                                 uint32_t height);
 #endif
 
+#if defined(TARGET_OS_IOS)
+void canvas_native_webgpu_context_resize_uiview(const struct CanvasGPUCanvasContext *context,
+                                                void *view,
+                                                uint32_t width,
+                                                uint32_t height);
+#endif
+
 #if defined(TARGET_OS_MACOS)
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create_nsview(const struct CanvasWebGPUInstance *instance,
                                                                                 void *view,
                                                                                 uint32_t width,
                                                                                 uint32_t height);
+#endif
+
+#if defined(TARGET_OS_MACOS)
+void canvas_native_webgpu_context_resize_nsview(const struct CanvasGPUCanvasContext *context,
+                                                void *view,
+                                                uint32_t width,
+                                                uint32_t height);
 #endif
 
 void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext *context,
@@ -3226,6 +3268,11 @@ char *canvas_native_webgpu_queue_get_label(const struct CanvasGPUQueue *queue);
 void canvas_native_webgpu_queue_reference(const struct CanvasGPUQueue *queue);
 
 void canvas_native_webgpu_queue_release(const struct CanvasGPUQueue *queue);
+
+void canvas_native_webgpu_queue_copy_image_asset_to_texture(const struct CanvasGPUQueue *queue,
+                                                            const struct CanvasImageCopyImageAsset *source,
+                                                            const struct CanvasImageCopyTexture *destination,
+                                                            const struct CanvasExtent3d *size);
 
 void canvas_native_webgpu_queue_copy_external_image_to_texture(const struct CanvasGPUQueue *queue,
                                                                const struct CanvasImageCopyExternalImage *source,
@@ -3531,13 +3578,15 @@ struct U8Buffer *canvas_native_helper_read_file_get_data(struct FileHelper *file
 
 const char *canvas_native_helper_read_file_get_error(const struct FileHelper *file);
 
-int64_t canvas_native_image_asset_get_addr(struct ImageAsset *asset);
+int64_t canvas_native_image_asset_get_addr(const struct ImageAsset *asset);
 
-struct ImageAsset *canvas_native_image_asset_create(void);
+void canvas_native_image_asset_close(const struct ImageAsset *asset);
 
-struct ImageAsset *canvas_native_image_asset_reference(struct ImageAsset *asset);
+const struct ImageAsset *canvas_native_image_asset_create(void);
 
-void canvas_native_image_asset_release(struct ImageAsset *asset);
+const struct ImageAsset *canvas_native_image_asset_reference(const struct ImageAsset *asset);
+
+void canvas_native_image_asset_release(const struct ImageAsset *asset);
 
 bool canvas_native_image_asset_load_from_fd(const struct ImageAsset *asset, int fd);
 
@@ -3558,8 +3607,6 @@ uint32_t canvas_native_image_asset_height(const struct ImageAsset *asset);
 const char *canvas_native_image_asset_get_error(const struct ImageAsset *asset);
 
 bool canvas_native_image_asset_has_error(const struct ImageAsset *asset);
-
-struct U8Buffer *canvas_native_image_asset_get_data(const struct ImageAsset *asset);
 
 void canvas_native_text_decoder_release(struct TextDecoder *value);
 
@@ -4374,7 +4421,7 @@ void canvas_native_webgl_tex_image2d_image_asset(int32_t target,
                                                  int32_t internalformat,
                                                  int32_t format,
                                                  int32_t image_type,
-                                                 struct ImageAsset *image_asset,
+                                                 const struct ImageAsset *image_asset,
                                                  struct WebGLState *state);
 
 void canvas_native_webgl_tex_parameterf(uint32_t target,
@@ -4393,7 +4440,7 @@ void canvas_native_webgl_tex_sub_image2d_asset(uint32_t target,
                                                int32_t yoffset,
                                                uint32_t format,
                                                int32_t image_type,
-                                               struct ImageAsset *asset,
+                                               const struct ImageAsset *asset,
                                                struct WebGLState *state);
 
 void canvas_native_webgl_tex_sub_image2d_canvas2d(uint32_t target,
@@ -5133,5 +5180,73 @@ void canvas_native_webgl2_vertex_attrib_i4uiv(uint32_t index,
                                               const uint32_t *value,
                                               uintptr_t size,
                                               struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_image_asset(int32_t target,
+                                                  int32_t level,
+                                                  int32_t internalformat,
+                                                  uint32_t width,
+                                                  uint32_t height,
+                                                  int32_t border,
+                                                  int32_t format,
+                                                  int32_t type_,
+                                                  const struct ImageAsset *image_asset,
+                                                  struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_src_data_offset(int32_t target,
+                                                      int32_t level,
+                                                      int32_t internalformat,
+                                                      uint32_t width,
+                                                      uint32_t height,
+                                                      int32_t border,
+                                                      int32_t format,
+                                                      int32_t type_,
+                                                      const uint8_t *src_data,
+                                                      uintptr_t src_data_size,
+                                                      uint64_t offset,
+                                                      struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_offset(int32_t target,
+                                             int32_t level,
+                                             int32_t internalformat,
+                                             uint32_t width,
+                                             uint32_t height,
+                                             int32_t border,
+                                             int32_t format,
+                                             int32_t type_,
+                                             uint64_t offset,
+                                             struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_webgl(int32_t target,
+                                            int32_t level,
+                                            int32_t internalformat,
+                                            uint32_t width,
+                                            uint32_t height,
+                                            int32_t border,
+                                            int32_t format,
+                                            int32_t type_,
+                                            struct WebGLState *webgl,
+                                            struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_canvas2d(int32_t target,
+                                               int32_t level,
+                                               int32_t internalformat,
+                                               uint32_t width,
+                                               uint32_t height,
+                                               int32_t border,
+                                               int32_t format,
+                                               int32_t type_,
+                                               struct CanvasRenderingContext2D *canvas,
+                                               struct WebGLState *state);
+
+void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
+                                                 int32_t level,
+                                                 int32_t internalformat,
+                                                 uint32_t width,
+                                                 uint32_t height,
+                                                 int32_t border,
+                                                 int32_t format,
+                                                 int32_t type_,
+                                                 const struct ImageData *image_data,
+                                                 struct WebGLState *state);
 
 #endif /* CANVAS_C_H */

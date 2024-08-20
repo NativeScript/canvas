@@ -18,25 +18,27 @@ impl Context {
         dst_width: f32,
         dst_height: f32,
     ) {
-        if let Some(image) = image.skia_image() {
-            self.draw_image_src_xywh_dst_xywh(
-                &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width, dst_height,
-            )
-        } else {
-            if let Some(bytes) = image.get_bytes() {
-                let (width, height) = image.dimensions();
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                    bytes,
-                    width as i32,
-                    height as i32,
-                ) {
-                    self.draw_image_src_xywh_dst_xywh(
-                        &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width,
-                        dst_height,
-                    )
+        image.with_skia_image_bytes(|image, bytes| {
+            if let Some(image) = image {
+                self.draw_image_src_xywh_dst_xywh(
+                    &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width, dst_height,
+                )
+            } else {
+                if let Some((dimensions, bytes)) = bytes {
+                    let (width, height) = dimensions;
+                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                        bytes,
+                        width as i32,
+                        height as i32,
+                    ) {
+                        self.draw_image_src_xywh_dst_xywh(
+                            &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width,
+                            dst_height,
+                        )
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn draw_image_asset(
@@ -45,37 +47,41 @@ impl Context {
         src_rect: impl Into<Rect>,
         dst_rect: impl Into<Rect>,
     ) {
-        if let Some(image) = image.skia_image() {
-            self.draw_image(&image, src_rect, dst_rect)
-        } else {
-            if let Some(bytes) = image.get_bytes() {
-                let (width, height) = image.dimensions();
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                    bytes,
-                    width as i32,
-                    height as i32,
-                ) {
-                    self.draw_image(&image, src_rect, dst_rect)
+        image.with_skia_image_bytes(|image, bytes| {
+            if let Some(image) = image {
+                self.draw_image(&image, src_rect, dst_rect)
+            } else {
+                if let Some((dimensions, bytes)) = bytes {
+                    let (width, height) = dimensions;
+                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                        bytes,
+                        width as i32,
+                        height as i32,
+                    ) {
+                        self.draw_image(&image, src_rect, dst_rect)
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn draw_image_asset_dx_dy(&mut self, image: &ImageAsset, x: f32, y: f32) {
-        if let Some(image) = image.skia_image() {
-            self.draw_image_dx_dy(&image, x, y)
-        } else {
-            if let Some(bytes) = image.get_bytes() {
-                let (width, height) = image.dimensions();
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                    bytes,
-                    width as i32,
-                    height as i32,
-                ) {
-                    self.draw_image_dx_dy(&image, x, y)
+        image.with_skia_image_bytes(|image, bytes| {
+            if let Some(image) = image {
+                self.draw_image_dx_dy(&image, x, y)
+            } else {
+                if let Some((dimensions, bytes)) = bytes {
+                    let (width, height) = dimensions;
+                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                        bytes,
+                        width as i32,
+                        height as i32,
+                    ) {
+                        self.draw_image_dx_dy(&image, x, y)
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn draw_image_asset_dx_dy_dw_dh(
@@ -86,35 +92,39 @@ impl Context {
         width: f32,
         height: f32,
     ) {
-        if let Some(image) = image.skia_image() {
-            self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
-        } else {
-            if let Some(bytes) = image.get_bytes() {
-                let (w, h) = image.dimensions();
-                if let Some(image) =
-                    crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
-                {
-                    self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
+        image.with_skia_image_bytes(|image, bytes| {
+            if let Some(image) = image {
+                self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
+            } else {
+                if let Some((dimensions, bytes)) = bytes {
+                    let (w, h) = dimensions;
+                    if let Some(image) =
+                        crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
+                    {
+                        self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn draw_image_asset_with_rect(&mut self, image: &ImageAsset, dst_rect: impl Into<Rect>) {
-        if let Some(image) = image.skia_image() {
-            self.draw_image_with_rect(&image, dst_rect)
-        } else {
-            if let Some(bytes) = image.get_bytes() {
-                let (width, height) = image.dimensions();
-                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                    bytes,
-                    width as i32,
-                    height as i32,
-                ) {
-                    self.draw_image_with_rect(&image, dst_rect)
+        image.with_skia_image_bytes(|image, bytes| {
+            if let Some(image) = image {
+                self.draw_image_with_rect(&image, dst_rect)
+            } else {
+                if let Some((dimensions, bytes)) = bytes {
+                    let (width, height) = dimensions;
+                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                        bytes,
+                        width as i32,
+                        height as i32,
+                    ) {
+                        self.draw_image_with_rect(&image, dst_rect)
+                    }
                 }
             }
-        }
+        });
     }
 
     pub fn draw_image_src_xywh_dst_xywh(

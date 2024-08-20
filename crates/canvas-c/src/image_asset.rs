@@ -2,8 +2,7 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::io::Read;
 use std::os::raw::{c_char, c_int, c_uint};
-
-use crate::buffers::U8Buffer;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
@@ -11,6 +10,14 @@ pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
 impl ImageAsset {
     pub fn new(asset: canvas_core::image_asset::ImageAsset) -> Self {
         Self(asset)
+    }
+
+    pub fn strong_count(&self) -> usize {
+        self.0.strong_count()
+    }
+
+    pub fn close(&self) {
+        self.0.close()
     }
 }
 
@@ -46,8 +53,22 @@ impl ImageAsset {
         self.0.load_from_fd(fd)
     }
 
+    #[cfg(feature = "2d")]
     pub fn load_from_raw_bytes(
-        &mut self,
+        &self,
+        width: u32,
+        height: u32,
+        depth: u32,
+        data: Vec<u8>,
+    ) -> bool {
+        self.0
+            .load_from_raw_bytes_rgba(width, height, data)
+    }
+
+
+    #[cfg(not(feature = "2d"))]
+    pub fn load_from_raw_bytes(
+        &self,
         width: u32,
         height: u32,
         depth: u32,
@@ -56,6 +77,7 @@ impl ImageAsset {
         self.0
             .load_from_raw_bytes(width as usize, height as usize, depth as usize, data)
     }
+
 
     pub fn load_from_reader<R>(&self, reader: &mut R) -> bool
     where
@@ -72,14 +94,43 @@ impl ImageAsset {
         self.0.load_from_bytes(buf)
     }
 
-    pub fn get_bytes(&self) -> Option<&[u8]> {
-        self.0.get_bytes()
+    pub fn with_bytes_dimension<F>(&self, f: F)
+    where
+        F: FnOnce(&[u8], (u32, u32)),
+    {
+        self.0.with_bytes_dimension(f)
+    }
+
+    pub fn with_bytes<F>(&self, f: F)
+    where
+        F: FnOnce(&[u8]),
+    {
+        self.0.with_bytes(f)
+    }
+
+    pub fn with_bytes_mut_dimension<F>(&self, f: F)
+    where
+        F: FnOnce(&mut [u8], (u32, u32)),
+    {
+        self.0.with_bytes_mut_dimension(f)
+    }
+
+    pub fn with_bytes_mut<F>(&self, f: F)
+    where
+        F: FnOnce(&mut [u8]),
+    {
+        self.0.with_bytes_mut_dimension(|bytes, _| {
+            f(bytes)
+        })
     }
 
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
         self.0.copy_bytes()
     }
 
+    pub fn has_alpha(&self) -> bool {
+        self.0.has_alpha()
+    }
     pub fn get_channels(&self) -> i32 {
         //self.0.get_channels()
         // always rgba
@@ -96,35 +147,46 @@ impl ImageAsset {
 }
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_get_addr(asset: *mut ImageAsset) -> i64 {
+pub extern "C" fn canvas_native_image_asset_get_addr(asset: *const ImageAsset) -> i64 {
     if asset.is_null() {
         return 0;
     }
     asset as i64
 }
 
-#[no_mangle]
-pub extern "C" fn canvas_native_image_asset_create() -> *mut ImageAsset {
-    Box::into_raw(Box::new(ImageAsset::default()))
-}
 
 #[no_mangle]
-pub extern "C" fn canvas_native_image_asset_reference(asset: *mut ImageAsset) -> *mut ImageAsset {
-    if asset.is_null() {
-        return std::ptr::null_mut();
-    }
-    let asset = unsafe { &mut *asset };
-
-    Box::into_raw(Box::new(asset.clone()))
-}
-
-
-#[no_mangle]
-pub extern "C" fn canvas_native_image_asset_release(asset: *mut ImageAsset) {
+pub extern "C" fn canvas_native_image_asset_close(asset: *const ImageAsset) {
     if asset.is_null() {
         return;
     }
-    let _ = unsafe { Box::from_raw(asset) };
+
+    let asset = unsafe { &*asset };
+    asset.close();
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_create() -> *const ImageAsset {
+    Arc::into_raw(Arc::new(ImageAsset::default()))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_reference(asset: *const ImageAsset) -> *const ImageAsset {
+    if asset.is_null() {
+        return std::ptr::null_mut();
+    }
+    unsafe { Arc::increment_strong_count(asset) };
+    asset
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_release(asset: *const ImageAsset) {
+    if asset.is_null() {
+        return;
+    }
+    let _ = unsafe { Arc::from_raw(asset) };
 }
 
 
@@ -263,13 +325,4 @@ pub extern "C" fn canvas_native_image_asset_has_error(asset: *const ImageAsset) 
         return false;
     }
     true
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_image_asset_get_data(asset: *const ImageAsset) -> *mut U8Buffer {
-    if asset.is_null() {
-        return std::ptr::null_mut();
-    }
-    let asset = unsafe { &*asset };
-    Box::into_raw(Box::new(U8Buffer::from(asset.clone())))
 }

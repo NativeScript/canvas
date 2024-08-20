@@ -41,7 +41,7 @@ export class ImageBitmap {
 		return new Promise(function (resolve, reject) {
 			let realSource;
 			let isBuffer = false;
-			const id = Date.now();
+
 			if (source instanceof Canvas) {
 				realSource = (source as any).native;
 			} else if (source instanceof ImageBitmap) {
@@ -61,7 +61,8 @@ export class ImageBitmap {
 					realSource = source._canvas.native;
 				}
 			} else if (source instanceof ArrayBuffer) {
-				realSource = source;
+				// wrapping to create a ref
+				realSource = new Uint8Array(source);
 			} else if (source instanceof ImageSource) {
 				if (global.isAndroid) {
 					realSource = source.android; // todo
@@ -70,15 +71,12 @@ export class ImageBitmap {
 					realSource = source.ios; // todo
 				}
 			}
-
-			setTimeout(() => {
-				global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
-					if (value) {
-						resolve(ImageBitmap.fromNative(value));
-					} else {
-						reject(new Error(error));
-					}
-				});
+			global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
+				if (value) {
+					resolve(ImageBitmap.fromNative(value));
+				} else {
+					reject(new Error(error));
+				}
 			});
 		});
 	}
@@ -104,7 +102,8 @@ export class ImageBitmap {
 					realSource = source._canvas.native;
 				}
 			} else if (source instanceof ArrayBuffer) {
-				realSource = source;
+				// wrapping to create a ref
+				realSource = new Uint8Array(source);
 			} else if (source instanceof ImageSource) {
 				if (global.isAndroid) {
 					realSource = source.android; // todo
@@ -115,14 +114,12 @@ export class ImageBitmap {
 				}
 			}
 
-			setTimeout(() => {
-				global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
-					if (value) {
-						resolve(ImageBitmap.fromNative(value));
-					} else {
-						reject(new Error(error));
-					}
-				});
+			global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {
+				if (value) {
+					resolve(ImageBitmap.fromNative(value));
+				} else {
+					reject(new Error(error));
+				}
 			});
 		});
 	}

@@ -3377,7 +3377,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_image_asset(
     internalformat: i32,
     format: i32,
     image_type: i32,
-    image_asset: *mut ImageAsset,
+    image_asset: *const ImageAsset,
     state: *mut WebGLState,
 ) {
     assert!(!state.is_null());
@@ -3427,7 +3427,7 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_asset(
     yoffset: i32,
     format: u32,
     image_type: i32,
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     state: *mut WebGLState,
 ) {
     assert!(!state.is_null());

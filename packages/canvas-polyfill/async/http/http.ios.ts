@@ -683,7 +683,7 @@ export class Http {
 					debugRequest = network && network.create();
 				}
 
-				if (TNSHttpSettings.saveImage && isImageUrl(options.url)) {
+				if (false && isImageUrl(options.url)) {
 					// handle saved images to disk
 					if (!TNSHttpSettings.currentlySavedImages) {
 						const stored = ApplicationSettings.getString(SaveImageStorageKey);

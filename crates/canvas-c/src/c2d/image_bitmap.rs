@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::image_asset::ImageAsset;
 
 #[allow(non_camel_case_types)]
@@ -62,22 +63,22 @@ impl Into<i32> for ImageBitmapResizeQuality {
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_asset(
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     flip_y: bool,
     premultiply_alpha: ImageBitmapPremultiplyAlpha,
     color_space_conversion: ImageBitmapColorSpaceConversion,
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-) -> *mut ImageAsset {
+) -> *const ImageAsset {
     if asset.is_null() {
         return std::ptr::null_mut();
     }
-    let asset = unsafe { &mut *asset };
+    let asset = unsafe { &*asset };
 
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_from_image_asset_src_rect(
-            &mut asset.0,
+            &asset.0,
             None,
             flip_y,
             premultiply_alpha.into(),
@@ -91,7 +92,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -102,14 +103,14 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_asset_src_rect(
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-) -> *mut ImageAsset {
+) -> *const ImageAsset {
     if asset.is_null() {
         return std::ptr::null_mut();
     }
-    let asset = unsafe { &mut *asset };
+    let asset = unsafe {  &*asset };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_from_image_asset_src_rect(
-            &mut asset.0,
+            &asset.0,
             Some((sx, sy, s_width, s_height).into()),
             flip_y,
             premultiply_alpha.into(),
@@ -131,9 +132,9 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes(
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-) -> *mut ImageAsset {
+) -> *const ImageAsset {
     let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
-    Box::into_raw(Box::new(ImageAsset(
+    Arc::into_raw(Arc::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
             bytes,
             None,
@@ -157,11 +158,11 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-    output: *mut ImageAsset,
+    output: *const ImageAsset,
 ) -> bool {
     assert!(!output.is_null());
     let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
-    let output = unsafe { &mut *output };
+    let output = unsafe { &*output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
         bytes,
         None,
@@ -171,7 +172,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_with_outp
         resize_quality.into(),
         resize_width,
         resize_height,
-        &mut output.0,
+        &output.0,
     );
 
     output.is_valid()
@@ -191,7 +192,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect(
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-) -> *mut ImageAsset {
+) -> *const ImageAsset {
     let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
     Box::into_raw(Box::new(ImageAsset(
         canvas_2d::image_bitmap::create_image_asset_encoded(
@@ -221,11 +222,11 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
     resize_quality: ImageBitmapResizeQuality,
     resize_width: f32,
     resize_height: f32,
-    output: *mut ImageAsset,
+    output: *const ImageAsset,
 ) -> bool {
     assert!(!output.is_null());
     let bytes = unsafe { std::slice::from_raw_parts(bytes, size) };
-    let output = unsafe { &mut *output };
+    let output = unsafe { &*output };
     canvas_2d::image_bitmap::create_image_asset_with_output(
         bytes,
         Some((sx, sy, s_width, s_height).into()),
@@ -235,7 +236,7 @@ pub extern "C" fn canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_
         resize_quality.into(),
         resize_width,
         resize_height,
-        &mut output.0,
+        &output.0,
     );
 
     output.is_valid()

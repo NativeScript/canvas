@@ -4350,8 +4350,113 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                     ptr->GetState()
             );
             return;
-        }
+        } else {
+            auto objectType = GetNativeType(value);
 
+            switch (objectType) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(value.As<v8::Object>());
+
+                    if (image_asset !=
+                        nullptr) {
+
+                        canvas_native_webgl2_tex_image2d_image_asset(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_asset->GetImageAsset(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::ImageBitmap: {
+                    auto image_bitmap = ImageBitmapImpl::GetPointer(value.As<v8::Object>());
+
+                    if (image_bitmap !=
+                        nullptr) {
+                        canvas_native_webgl2_tex_image2d_image_asset(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_bitmap->GetImageAsset(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::CanvasRenderingContext2D: {
+                    auto canvas_2d = CanvasRenderingContext2DImpl::GetPointer(
+                            value.As<v8::Object>());
+
+                    if (canvas_2d != nullptr) {
+                        canvas_native_webgl2_tex_image2d_canvas2d(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                canvas_2d->GetContext(),
+                                ptr->GetState()
+                        );
+                    }
+
+                    return;
+                }
+                case NativeType::WebGLRenderingContextBase: {
+                    auto gl = WebGLRenderingContext::GetPointer(value.As<v8::Object>());
+
+                    if (gl != nullptr) {
+                        canvas_native_webgl2_tex_image2d_webgl(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                gl->GetState(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::ImageData: {
+                    auto image_data = ImageDataImpl::GetPointer(value.As<v8::Object>());
+                    if (image_data != nullptr) {
+                        canvas_native_webgl2_tex_image2d_image_data(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_data->GetImageData(),
+                                ptr->GetState()
+                        );
+                    }
+
+                }
+                default:
+                    break;
+            }
+        }
     }
 }
 

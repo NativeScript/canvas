@@ -3,7 +3,7 @@ use jni::sys::{jboolean, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::bitmap::BitmapFormat;
 
-use canvas_c::ImageAsset;
+use canvas_c::{canvas_native_image_asset_release, ImageAsset};
 
 #[no_mangle]
 pub extern "system" fn nativeCreateImageAsset(_env: JNIEnv, _: JClass) -> jlong {
@@ -16,8 +16,9 @@ pub extern "system" fn nativeDestroyImageAsset(_env: JNIEnv, _: JClass, asset: j
         return;
     }
 
-    let asset = asset as *mut ImageAsset;
-    let _ = unsafe { Box::from_raw(asset) };
+    let asset = asset as *const ImageAsset;
+
+    canvas_native_image_asset_release(asset);
 }
 
 #[no_mangle]
@@ -31,8 +32,8 @@ pub extern "system" fn nativeLoadFromBitmap(
         return JNI_FALSE;
     }
 
-    let asset = asset as *mut ImageAsset;
-    let asset = unsafe { &mut *asset };
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
@@ -70,8 +71,8 @@ pub extern "system" fn nativeLoadFromPath(
         return JNI_FALSE;
     }
 
-    let asset = asset as *mut ImageAsset;
-    let asset = unsafe { &mut *asset };
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
 
     match env.get_string(&path) {
         Ok(path) => {
@@ -100,7 +101,7 @@ pub extern "system" fn nativeLoadFromUrl(
         return JNI_FALSE;
     }
 
-    let asset = asset as *mut ImageAsset;
+    let asset = asset as *const ImageAsset;
 
     match env.get_string(&url) {
         Ok(path) => {
@@ -110,7 +111,7 @@ pub extern "system" fn nativeLoadFromUrl(
             JNI_FALSE
         }
         Err(error) => {
-            let asset = unsafe { &mut *asset };
+            let asset = unsafe {  &*asset };
             let error = error.to_string();
             asset.set_error(error.as_str());
             JNI_FALSE
@@ -129,13 +130,13 @@ pub unsafe extern "system" fn nativeLoadFromBytes(
         return JNI_FALSE;
     }
 
-    let asset = asset as *mut ImageAsset;
+    let asset = asset as *const ImageAsset;
 
     match env.get_array_elements_critical(&byteArray, ReleaseMode::NoCopyBack) {
         Ok(bytes) => {
             let size = bytes.len();
             let slice = std::slice::from_raw_parts_mut(bytes.as_ptr() as *mut u8, size);
-            let asset = unsafe { &mut *asset };
+            let asset = unsafe { &*asset };
             if asset.load_from_bytes(slice) {
                 return JNI_TRUE;
             }
@@ -156,14 +157,14 @@ pub extern "system" fn nativeLoadFromBuffer(
         return JNI_FALSE;
     }
 
-    let asset = asset as *mut ImageAsset;
+    let asset = asset as *const ImageAsset;
 
     if let (Ok(buf), Ok(size)) = (
         env.get_direct_buffer_address(&buffer),
         env.get_direct_buffer_capacity(&buffer),
     ) {
         let slice = unsafe { std::slice::from_raw_parts(buf, size) };
-        let asset = unsafe { &mut *asset };
+        let asset = unsafe { &*asset };
         if asset.load_from_bytes(slice) {
             return JNI_TRUE;
         }
@@ -182,8 +183,8 @@ pub extern "system" fn nativeGetDimensions(
         return;
     }
 
-    let asset = asset as *mut ImageAsset;
-    let asset = unsafe { &mut *asset };
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
 
     let (width, height) = asset.dimensions();
     let dim = [width as i32, height as i32];
@@ -196,8 +197,8 @@ pub extern "system" fn nativeGetError(env: JNIEnv, _: JClass, asset: jlong) -> j
         return JObject::null().into_raw();
     }
 
-    let asset = asset as *mut ImageAsset;
-    let asset = unsafe { &mut *asset };
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
 
     let error = asset.error();
     if error.is_empty() {

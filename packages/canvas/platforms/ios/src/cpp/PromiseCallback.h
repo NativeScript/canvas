@@ -163,7 +163,7 @@ struct PromiseCallback {
         auto data = new PromiseCallback(this->inner_);
         ALooper_addFd(looper,
                       fd,
-                      ALOOPER_POLL_CALLBACK,
+                      0,
                       ALOOPER_EVENT_INPUT,
                       [](int fd, int events,
                          void *data) {
@@ -175,7 +175,6 @@ struct PromiseCallback {
                           return 0;
                       }, (void *) data);
 
-        ALooper_wake(looper);
         inner->isPrepared_ = true;
     }
 

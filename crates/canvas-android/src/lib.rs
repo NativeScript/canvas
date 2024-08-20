@@ -14,10 +14,9 @@ use android_logger::Config;
 use itertools::izip;
 use jni::NativeMethod;
 use jni::sys::jlong;
-use jni::{ NativeMethod};
 use log::LevelFilter;
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer, nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL, nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer, nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL, nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
     nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
@@ -31,6 +30,8 @@ use crate::utils::{
     nativeInitContextWithCustomSurface, nativeInitContextWithCustomSurfaceNormal,
     nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
 };
+use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
+use crate::utils::gl::texture_render::nativeDrawFrame;
 
 mod jni_compat;
 pub mod utils;
@@ -89,6 +90,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeContext2DRender",
                 "nativeWebGLC2DRender",
                 "nativeInitWebGPU",
+                "nativeResizeWebGPU",
             ];
 
             let canvas_signatures = if ret >= ANDROID_O {
@@ -113,7 +115,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)V",
                     "(JJII)V",
-                    "(JLandroid/view/Surface;II)J"
+                    "(JLandroid/view/Surface;II)J",
+                    "(JLandroid/view/Surface;II)V"
                 ]
             } else {
                 [
@@ -137,7 +140,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)V",
                     "!(JJII)V",
-                    "!(JLandroid/view/Surface;II)J"
+                    "!(JLandroid/view/Surface;II)J",
+                    "!(JLandroid/view/Surface;II)V"
                 ]
             };
 
@@ -164,6 +168,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeContext2DRender as *mut c_void,
                     nativeWebGLC2DRender as *mut c_void,
                     nativeInitWebGPU as *mut c_void,
+                    nativeResizeWebGPU as *mut c_void,
                 ]
             } else {
                 [
@@ -188,6 +193,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeContext2DRender as *mut c_void,
                     nativeWebGLC2DRender as *mut c_void,
                     nativeInitWebGPU as *mut c_void,
+                    nativeResizeWebGPU as *mut c_void,
                 ]
             };
 

@@ -40,7 +40,7 @@ export class FileManager {
 				if (error) {
 					callback(new Error(error), null);
 				} else {
-					callback(null, data);
+					callback(null, interop.bufferFromData(data));
 				}
 			});
 		}

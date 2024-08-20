@@ -7,12 +7,16 @@
 
 @implementation NSOperationQueueWrapperObjC {
     NSOperationQueue* operationQueue;
+    __CFRunLoop* current;
+    BOOL isSerial;
 }
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        operationQueue = [[NSOperationQueue alloc] init];
+        isSerial = false;
+        operationQueue = NULL;
+        current = NULL;
     }
     return self;
 }
@@ -20,7 +24,15 @@
 -(instancetype)initWithCurrentQueue {
     self = [super init];
     if (self) {
-        operationQueue = [NSOperationQueue currentQueue];
+        current = CFRunLoopGetCurrent();
+    }
+    return self;
+}
+
+-(instancetype)initWithSerial:(BOOL)serial {
+    self = [super init];
+    if (self) {
+        isSerial = serial;
     }
     return self;
 }
@@ -28,11 +40,32 @@
 - (void)dealloc {}
 
 - (void)addOperation:(void (^)())task {
-    NSBlockOperation* operation = [NSBlockOperation blockOperationWithBlock:^{
-        task();
-    }];
     
-    [operationQueue addOperation:operation];
+    if(current != NULL){
+        if(current == CFRunLoopGetCurrent()){
+            task();
+        }else {
+            CFRunLoopPerformBlock(current, kCFRunLoopDefaultMode, ^{
+                task();
+            });
+            CFRunLoopWakeUp(current);
+        }
+    }else if(operationQueue != NULL){
+        NSBlockOperation* operation = [NSBlockOperation blockOperationWithBlock:^{
+            task();
+        }];
+        
+        [operationQueue addOperation:operation];
+    }else if(isSerial){
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_SERIAL, 0), ^{
+              task();
+          });
+        
+    }else {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+              task();
+          });
+    }
 }
 
 - (NSOperationQueue*)getOperationQueue {
@@ -42,7 +75,7 @@
 
 @end
 
-NSOperationQueueWrapper::NSOperationQueueWrapper(bool currentQueue) {
+NSOperationQueueWrapper::NSOperationQueueWrapper(bool currentQueue, bool serial) {
     if (currentQueue) {
         NSOperationQueueWrapperObjC* objcWrapper = [[NSOperationQueueWrapperObjC alloc] initWithCurrentQueue];
         
@@ -50,11 +83,10 @@ NSOperationQueueWrapper::NSOperationQueueWrapper(bool currentQueue) {
     
         operationQueue = (void*)ptr;
     }else {
-        NSOperationQueueWrapperObjC* objcWrapper = [[NSOperationQueueWrapperObjC alloc] init];
+        NSOperationQueueWrapperObjC* objcWrapper = [[NSOperationQueueWrapperObjC alloc] initWithSerial: serial];
         CFTypeRef ptr = (__bridge_retained CFTypeRef)objcWrapper;
         operationQueue = (void*)ptr;
     }
-   
 }
 
 NSOperationQueueWrapper::~NSOperationQueueWrapper() {

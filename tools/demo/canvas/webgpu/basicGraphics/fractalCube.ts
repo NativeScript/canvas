@@ -2,7 +2,7 @@ import { Canvas, GPUBufferUsage, GPUCanvasContext, GPUDevice, GPUTextureUsage, G
 
 import { mat4, vec3 } from '../../../wgpu-matrix/wgpu-matrix';
 import { cubeVertexArray, cubeVertexSize, cubeUVOffset, cubePositionOffset, cubeVertexCount } from '../meshes/cube';
-import { knownFolders, File } from '@nativescript/core';
+import { knownFolders, File, Application, Screen } from '@nativescript/core';
 
 export async function run(canvas: Canvas) {
 	const adapter = await navigator.gpu?.requestAdapter();
@@ -11,8 +11,81 @@ export async function run(canvas: Canvas) {
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
 
 	const devicePixelRatio = window.devicePixelRatio;
+
 	canvas.width = canvas.clientWidth * devicePixelRatio;
 	canvas.height = canvas.clientHeight * devicePixelRatio;
+
+	let { width, height } = canvas;
+
+	let renderPassDescriptor;
+	let cubeTexture;
+	let uniformBindGroup;
+	let changed = false;
+	let aspect: number;
+	let projectionMatrix: Float32Array;
+	const initialOrientation = Application.orientation();
+	const w = canvas.clientWidth * devicePixelRatio;
+	const h = canvas.clientHeight * devicePixelRatio;
+	Application.on('orientationChanged', (event) => {
+		if (__ANDROID__) {
+			// app orientation is locked to portrait but one can still rotate the device
+			// so magic time
+			if (initialOrientation !== event.newValue) {
+				width = h;
+				height = w;
+				canvas.width = h;
+				canvas.height = w;
+			} else {
+				width = w;
+				height = h;
+				canvas.width = w;
+				canvas.height = h;
+			}
+		} else {
+			canvas.width = width;
+			canvas.height = height;
+		}
+
+		const depthTexture = device.createTexture({
+			size: [width, height],
+			format: 'depth24plus',
+			usage: GPUTextureUsage.RENDER_ATTACHMENT,
+		});
+
+		renderPassDescriptor.depthStencilAttachment.view = depthTexture.createView();
+
+		cubeTexture = device.createTexture({
+			size: [width, height],
+			format: presentationFormat,
+			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+		});
+
+		uniformBindGroup = device.createBindGroup({
+			layout: pipeline.getBindGroupLayout(0),
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: uniformBuffer,
+					},
+				},
+				{
+					binding: 1,
+					resource: sampler,
+				},
+				{
+					binding: 2,
+					resource: cubeTexture.createView(),
+				},
+			],
+		});
+
+		aspect = width / height;
+		projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
+
+		changed = true;
+	});
+
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const appPath = knownFolders.currentApp().path;
@@ -29,10 +102,11 @@ export async function run(canvas: Canvas) {
 		device,
 		format: presentationFormat,
 		usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+		size: {
+			width: canvas.width,
+			height: canvas.height,
+		},
 	});
-
-	const width = canvas.width as number;
-	const height = canvas.height as number;
 
 	// Create a vertex buffer from the cube data.
 	const verticesBuffer = device.createBuffer({
@@ -113,7 +187,7 @@ export async function run(canvas: Canvas) {
 
 	// We will copy the frame's rendering results into this texture and
 	// sample it on the next frame.
-	const cubeTexture = device.createTexture({
+	cubeTexture = device.createTexture({
 		size: [width, height],
 		format: presentationFormat,
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
@@ -125,7 +199,7 @@ export async function run(canvas: Canvas) {
 		minFilter: 'linear',
 	});
 
-	const uniformBindGroup = device.createBindGroup({
+	uniformBindGroup = device.createBindGroup({
 		layout: pipeline.getBindGroupLayout(0),
 		entries: [
 			{
@@ -145,7 +219,7 @@ export async function run(canvas: Canvas) {
 		],
 	});
 
-	const renderPassDescriptor = {
+	renderPassDescriptor = {
 		colorAttachments: [
 			{
 				view: undefined, // Assigned later
@@ -164,8 +238,8 @@ export async function run(canvas: Canvas) {
 		},
 	};
 
-	const aspect = width / height;
-	const projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
+	aspect = width / height;
+	projectionMatrix = mat4.perspective((2 * Math.PI) / 5, aspect, 1, 100.0);
 	const modelViewProjectionMatrix = mat4.create();
 
 	function getTransformationMatrix() {
@@ -180,10 +254,15 @@ export async function run(canvas: Canvas) {
 	}
 
 	function frame() {
+		const swapChainTexture = context.getCurrentTexture();
+		if (!swapChainTexture || changed) {
+			requestAnimationFrame(frame);
+			changed = false;
+			return;
+		}
 		const transformationMatrix = getTransformationMatrix();
 		device.queue.writeBuffer(uniformBuffer, 0, transformationMatrix.buffer, transformationMatrix.byteOffset, transformationMatrix.byteLength);
 
-		const swapChainTexture = context.getCurrentTexture();
 		// prettier-ignore
 		renderPassDescriptor.colorAttachments[0].view = swapChainTexture.createView();
 

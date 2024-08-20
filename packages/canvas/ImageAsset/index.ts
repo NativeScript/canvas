@@ -153,7 +153,7 @@ export class ImageAsset extends Observable {
 
 			this._incrementStrongRef();
 
-			this.native.fromFileCb(path, (success, error) => {
+			this.native.fromFileCb(path.toString(), (success, error) => {
 				this.emitComplete(success, error);
 				if (error) {
 					reject(error);
@@ -199,27 +199,52 @@ export class ImageAsset extends Observable {
 			if (__ANDROID__) {
 				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
-				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
-					asset,
-					bytes,
-					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-						onComplete(success) {
-							const owner = ref.get();
-							if (!success) {
-								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-								if (owner) {
-									owner.emitComplete(success, error);
+
+				if (!ArrayBuffer.isView(bytes)) {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(
+						asset,
+						bytes,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
 								}
-								reject(error);
-							} else {
-								if (owner) {
-									owner.emitComplete(success, undefined);
+							},
+						})
+					);
+				} else {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
+						asset,
+						bytes,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
 								}
-								resolve(success);
-							}
-						},
-					})
-				);
+							},
+						})
+					);
+				}
 				return;
 			}
 

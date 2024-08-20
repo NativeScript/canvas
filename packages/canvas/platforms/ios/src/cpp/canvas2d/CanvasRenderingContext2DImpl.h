@@ -636,7 +636,7 @@ public:
     static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
-    DrawImageDxDyAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset, double dx,
+    DrawImageDxDyAssetImpl(CanvasRenderingContext2DImpl *ptr, const ImageAsset *asset, double dx,
                            double dy) {
         if (asset != nullptr) {
             canvas_native_context_draw_image_dx_dy_asset(
@@ -690,7 +690,7 @@ public:
         }
     }
 
-    static void DrawImageDxDyDwDhAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset,
+    static void DrawImageDxDyDwDhAssetImpl(CanvasRenderingContext2DImpl *ptr, const ImageAsset *asset,
                                            double dx, double dy, double dw, double dh) {
 
 
@@ -783,7 +783,7 @@ public:
 
     static void
     DrawImageAssetImpl(CanvasRenderingContext2DImpl *ptr,
-                       ImageAsset *asset, double sx,
+                       const ImageAsset *asset, double sx,
                        double sy, double sw, double sh, double dx, double dy, double dw,
                        double dh) {
 

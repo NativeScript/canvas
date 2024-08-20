@@ -5,7 +5,7 @@ const gpu = new GPU();
 
 export class Navigator {
 	product = 'NativeScript';
-	userAgent = 'chrome';
+	userAgent = 'NativeScript';
 	vendor = '';
 	vendorSub = '';
 	platform = [];

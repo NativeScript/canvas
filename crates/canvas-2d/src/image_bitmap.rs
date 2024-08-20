@@ -3,7 +3,7 @@
 use core::convert::{From, Into};
 use std::sync::Arc;
 
-use skia_safe::{surfaces, EncodedImageFormat};
+use skia_safe::{EncodedImageFormat, surfaces};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -201,7 +201,7 @@ pub(crate) fn create_image_bitmap_internal(
     resize_quality: i32,
     resize_width: f32,
     resize_height: f32,
-    output: &mut ImageAsset,
+    output: &ImageAsset,
 ) {
     let mut out_width = image.width() as f32;
     let mut out_height = image.height() as f32;
@@ -397,7 +397,7 @@ pub fn create_image_asset_with_output(
     resize_quality: i32,
     resize_width: f32,
     resize_height: f32,
-    output: &mut ImageAsset,
+    output: &ImageAsset,
 ) {
     if let Some(image) = from_image_slice_encoded(buf) {
         create_image_bitmap_internal(
@@ -450,23 +450,24 @@ pub fn create_from_image_asset_src_rect(
     resize_width: f32,
     resize_height: f32,
 ) -> ImageAsset {
-    if let Some(bytes) = image_asset.get_bytes() {
-        let width = image_asset.width() as f32;
-        let height = image_asset.height() as f32;
-        return create_image_asset(
-            bytes,
-            width,
-            height,
-            rect,
-            flip_y,
-            premultiply_alpha,
-            color_space_conversion,
-            resize_quality,
-            resize_width,
-            resize_height,
-        );
-    }
-    ImageAsset::new()
+    let mut ret = ImageAsset::new();
+    image_asset.with_bytes_dimension(|bytes, (width, height)| {
+        if width != 0 && height != 0 {
+            ret = create_image_asset(
+                bytes,
+                width as f32,
+                height as f32,
+                rect,
+                flip_y,
+                premultiply_alpha,
+                color_space_conversion,
+                resize_quality,
+                resize_width,
+                resize_height,
+            );
+        }
+    });
+    ret
 }
 
 pub fn create_image_asset_encoded(

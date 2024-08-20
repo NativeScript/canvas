@@ -38,7 +38,7 @@ export class FileManager {
 				}
 			});
 		} else {
-			com.github.triniwiz.async.Async2.FileManager.readFile(
+			com.github.triniwiz.async.Async2.FileManager.readFileBuffer(
 				path,
 				null,
 				new com.github.triniwiz.async.Async2.FileManager.Callback({
@@ -46,7 +46,7 @@ export class FileManager {
 						callback(param0, null);
 					},
 					onComplete(param0: any): void {
-						callback(null, param0);
+						callback(null, (<any>ArrayBuffer).from(param0));
 					},
 				})
 			);

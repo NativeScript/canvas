@@ -21,6 +21,7 @@
 #include "GPUQuerySetImpl.h"
 #include "GPURenderBundleEncoderImpl.h"
 #include "GPUUtils.h"
+#include "GPULabel.h"
 
 GPUDeviceImpl::GPUDeviceImpl(const CanvasGPUDevice *device) : device_(device) {}
 
@@ -432,7 +433,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    std::string label;
+    GPULabel label;
 
     auto optionsVal = args[0];
 
@@ -444,7 +445,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
 
-        label = ConvertFromV8String(isolate, labelVal);
+        label = GPULabel(isolate, labelVal);
 
         const CanvasGPUBindGroupLayout *layout = nullptr;
 
@@ -466,7 +467,7 @@ void GPUDeviceImpl::CreateBindGroup(const v8::FunctionCallbackInfo<v8::Value> &a
         entries = ParseBindGroupEntries(isolate, entriesVal);
 
         auto bind_group = canvas_native_webgpu_device_create_bind_group(ptr->GetGPUDevice(),
-                                                                        label.c_str(),
+                                                                        *label,
                                                                         layout, entries.data(),
                                                                         entries.size());
 
@@ -487,7 +488,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    std::string label;
+    GPULabel label;
 
     auto optionsVal = args[0];
 
@@ -496,7 +497,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        label = std::string(ConvertFromV8String(isolate, labelVal));
+        label = GPULabel(isolate, labelVal);
 
         v8::Local<v8::Value> entriesVal;
         options->Get(context, ConvertToV8String(isolate, "entries")).ToLocal(&entriesVal);
@@ -505,7 +506,7 @@ void GPUDeviceImpl::CreateBindGroupLayout(const v8::FunctionCallbackInfo<v8::Val
                                                                                       entriesVal);
 
         auto bind_group = canvas_native_webgpu_device_create_bind_group_layout(ptr->GetGPUDevice(),
-                                                                               label.c_str(),
+                                                                               *label,
                                                                                entries.data(),
                                                                                entries.size());
 
@@ -527,7 +528,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
     }
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    std::string label;
+    GPULabel label;
     bool mappedAtCreation = false;
     uint64_t size = 0;
     uint32_t usage = 0;
@@ -539,7 +540,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        label = ConvertFromV8String(isolate, labelVal);
+        label = GPULabel(isolate, labelVal);
         v8::Local<v8::Value> mappedAtCreationVal;
 
         options->Get(context, ConvertToV8String(isolate, "mappedAtCreation")).ToLocal(
@@ -565,7 +566,7 @@ void GPUDeviceImpl::CreateBuffer(const v8::FunctionCallbackInfo<v8::Value> &args
         }
     }
 
-    auto buffer = canvas_native_webgpu_device_create_buffer(ptr->GetGPUDevice(), label.c_str(),
+    auto buffer = canvas_native_webgpu_device_create_buffer(ptr->GetGPUDevice(), *label,
                                                             size, usage,
                                                             mappedAtCreation);
 
@@ -587,14 +588,10 @@ void GPUDeviceImpl::CreateCommandEncoder(const v8::FunctionCallbackInfo<v8::Valu
     }
     auto isolate = args.GetIsolate();
 
-    std::string label;
-
-    auto labelVal = args[0];
-
-    label = ConvertFromV8String(isolate, labelVal);
+    auto label = GPULabel(isolate, args[0]);
 
     auto encoder = canvas_native_webgpu_device_create_command_encoder(ptr->GetGPUDevice(),
-                                                                      label.c_str());
+                                                                      *label);
 
     if (encoder != nullptr) {
         auto instance = new GPUCommandEncoderImpl(encoder);
@@ -626,9 +623,7 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    std::string label;
-
-    label = ConvertFromV8String(isolate, labelVal);
+    GPULabel label(isolate, labelVal);
 
     CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout{
             CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
@@ -714,7 +709,7 @@ void GPUDeviceImpl::CreateComputePipeline(const v8::FunctionCallbackInfo<v8::Val
         };
 
         auto pipeline = canvas_native_webgpu_device_create_compute_pipeline(ptr->GetGPUDevice(),
-                                                                            label.c_str(), layout,
+                                                                            *label, layout,
                                                                             &stage);
 
         if (entry_point != nullptr) {
@@ -785,9 +780,7 @@ void GPUDeviceImpl::CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    std::string label;
-
-    label = ConvertFromV8String(isolate, labelVal);
+    auto label = GPULabel(isolate, labelVal);
 
     CanvasGPUPipelineLayoutOrGPUAutoLayoutMode layout{
             CanvasGPUPipelineLayoutOrGPUAutoLayoutModeAuto
@@ -995,7 +988,7 @@ void GPUDeviceImpl::CreateComputePipelineAsync(const v8::FunctionCallbackInfo<v8
         };
         async_callback->prepare();
         canvas_native_webgpu_device_create_compute_pipeline_async(ptr->GetGPUDevice(),
-                                                                  label.c_str(), layout, &stage,
+                                                                  *label, layout, &stage,
                                                                   [](const struct CanvasGPUComputePipeline *pipeline,
                                                                      enum CanvasGPUErrorType type,
                                                                      char *message,
@@ -1039,9 +1032,7 @@ void GPUDeviceImpl::CreatePipelineLayout(const v8::FunctionCallbackInfo<v8::Valu
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    std::string label;
-
-    label = ConvertFromV8String(isolate, labelVal);
+    auto label = GPULabel(isolate, labelVal);
 
 
     std::vector<const CanvasGPUBindGroupLayout *> group_layouts;
@@ -1064,7 +1055,7 @@ void GPUDeviceImpl::CreatePipelineLayout(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         auto layout = canvas_native_webgpu_device_create_pipeline_layout(ptr->GetGPUDevice(),
-                                                                         label.c_str(),
+                                                                         *label,
                                                                          group_layouts.data(),
                                                                          group_layouts.size());
 
@@ -1099,9 +1090,7 @@ void GPUDeviceImpl::CreateQuerySet(const v8::FunctionCallbackInfo<v8::Value> &ar
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    std::string label;
-
-    label = ConvertFromV8String(isolate, labelVal);
+    auto label = GPULabel(isolate, labelVal);
     v8::Local<v8::Value> typeVal;
     options->Get(context, ConvertToV8String(isolate, "type")).ToLocal(&typeVal);
 
@@ -1113,12 +1102,12 @@ void GPUDeviceImpl::CreateQuerySet(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     const CanvasGPUQuerySet *query_set = nullptr;
     if (typeStr == "occlusion") {
-        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label.c_str(),
+        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), *label,
                                                                  CanvasQueryTypeOcclusion,
                                                                  countVal->Uint32Value(
                                                                          context).FromJust());
     } else if (typeStr == "timestamp") {
-        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), label.c_str(),
+        query_set = canvas_native_webgpu_device_create_query_set(ptr->GetGPUDevice(), *label,
                                                                  CanvasQueryTypeTimestamp,
                                                                  countVal->Uint32Value(
                                                                          context).FromJust());
@@ -1156,9 +1145,7 @@ void GPUDeviceImpl::CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8:
     v8::Local<v8::Value> labelVal;
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-    std::string label;
-
-    label = ConvertFromV8String(isolate, labelVal);
+    auto label = GPULabel(isolate, labelVal);
 
     std::vector<CanvasGPUTextureFormat> colorFormats;
 
@@ -1204,7 +1191,7 @@ void GPUDeviceImpl::CreateRenderBundleEncoder(const v8::FunctionCallbackInfo<v8:
     bool stencilReadOnly = false;
 
     CanvasCreateRenderBundleEncoderDescriptor descriptor{
-            label.c_str(),
+            *label,
             colorFormats.data(),
             colorFormats.size(),
             depthStencilFormat,
@@ -1307,7 +1294,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     }
     auto options = optionsVal.As<v8::Object>();
 
-    std::string label;
+    GPULabel label;
 
     v8::Local<v8::Value> stencilValue;
     options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
@@ -1720,11 +1707,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             &labelVal);
 
 
-    label = ConvertFromV8String(isolate, labelVal);
+    label = GPULabel(isolate, labelVal);
 
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        descriptor.label = label.c_str();
-    }
+  
+    descriptor.label = *label;
 
 
     v8::Local<v8::Value> layoutVal;
@@ -2227,7 +2213,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
         return;
     }
     auto options = optionsVal.As<v8::Object>();
-    std::string label;
+    GPULabel label;
 
     v8::Local<v8::Value> stencilValue;
     options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
@@ -2639,12 +2625,10 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(
             &labelVal);
 
-    label = ConvertFromV8String(isolate, labelVal);
+    label = GPULabel(isolate, labelVal);
 
-
-    if (!labelVal.IsEmpty() && labelVal->IsString()) {
-        descriptor.label = label.c_str();
-    }
+    descriptor.label = *label;
+    
 
 
     v8::Local<v8::Value> layoutVal;
@@ -3268,9 +3252,7 @@ void GPUDeviceImpl::CreateSampler(const v8::FunctionCallbackInfo<v8::Value> &arg
         v8::Local<v8::Value> labelVal;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        std::string label;
-
-        label = ConvertFromV8String(isolate, labelVal);
+        GPULabel label(isolate, labelVal);
 
         auto addressModeU = CanvasAddressModeClampToEdge;
 
@@ -3405,7 +3387,7 @@ void GPUDeviceImpl::CreateSampler(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 
         CanvasCreateSamplerDescriptor descriptor{
-                label.c_str(),
+                *label,
                 addressModeU,
                 addressModeV,
                 addressModeW,
@@ -3456,9 +3438,7 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
         v8::Local<v8::Value> labelVal;
         desc->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        std::string label;
-
-        label = ConvertFromV8String(isolate, labelVal);
+        GPULabel label(isolate, labelVal);
 
         v8::Local<v8::Value> codeVal;
 
@@ -3469,7 +3449,7 @@ void GPUDeviceImpl::CreateShaderModule(const v8::FunctionCallbackInfo<v8::Value>
         }
 
         auto module = canvas_native_webgpu_device_create_shader_module(ptr->GetGPUDevice(),
-                                                                       label.c_str(),
+                                                                       *label,
                                                                        code.c_str());
 
         if (module != nullptr) {

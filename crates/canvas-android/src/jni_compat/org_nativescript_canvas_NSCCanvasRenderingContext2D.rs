@@ -303,7 +303,7 @@ fn draw_image_with_asset(
     }
 
     let context = context as *mut CanvasRenderingContext2D;
-    let image = image as *mut ImageAsset;
+    let image = image as *const ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_asset(
         context, image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
@@ -326,7 +326,7 @@ pub extern "system" fn nativeDrawImageDxDyWithAsset(
     }
 
     let context = context as *mut CanvasRenderingContext2D;
-    let image = image as *mut ImageAsset;
+    let image = image as *const ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_dx_dy_asset(context, image, dx, dy);
 
@@ -349,7 +349,7 @@ pub extern "system" fn nativeDrawImageDxDyDwDhWithAsset(
     }
 
     let context = context as *mut CanvasRenderingContext2D;
-    let image = image as *mut ImageAsset;
+    let image = image as *const ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_dx_dy_dw_dh_asset(
         context, image, dx, dy, d_width, d_height,
@@ -378,7 +378,7 @@ pub extern "system" fn nativeDrawImageWithAsset(
     }
 
     let context = context as *mut CanvasRenderingContext2D;
-    let image = image as *mut ImageAsset;
+    let image = image as *const ImageAsset;
 
     canvas_c::canvas_native_context_draw_image_asset(
         context, image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,

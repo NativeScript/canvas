@@ -386,18 +386,19 @@ fn texImage2DAsset(
     border: jint,
     format: jint,
     image_type: jint,
-    asset: &mut ImageAsset,
+    asset: &ImageAsset,
     flipY: jboolean,
 ) {
-    if let Some(data_array) = asset.get_bytes() {
+
+    asset.with_bytes_dimension(|bytes,dimension |{
         if flipY == JNI_TRUE {
-            let mut data_array = data_array.to_vec();
+            let mut data_array = bytes.to_vec();
             canvas_2d::utils::gl::flip_in_place(
                 data_array.as_mut_ptr(),
                 data_array.len(),
                 (canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                    * asset.width() as u32) as i32 as usize,
-                asset.height() as usize,
+                    * dimension.0) as usize,
+                dimension.1 as usize,
             );
 
             unsafe {
@@ -424,11 +425,11 @@ fn texImage2DAsset(
                     border,
                     format as u32,
                     image_type as u32,
-                    data_array.as_ptr() as *const c_void,
+                    bytes.as_ptr() as *const c_void,
                 );
             }
         }
-    }
+    });
 }
 
 #[no_mangle]
@@ -772,17 +773,18 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
     asset: jlong,
     flip_y: jboolean,
 ) {
-    let asset: *mut ImageAsset = asset as _;
-    let asset = &mut *asset;
-    if let Some(data_array) = asset.get_bytes() {
+    let asset: *const ImageAsset = asset as _;
+    let asset = &*asset;
+
+    asset.with_bytes_dimension(|bytes,dimension|{
         if flip_y == JNI_TRUE {
-            let mut data_array = data_array.to_vec();
+            let mut data_array = bytes.to_vec();
             canvas_2d::utils::gl::flip_in_place(
                 data_array.as_mut_ptr(),
                 data_array.len(),
                 (canvas_2d::utils::gl::bytes_per_pixel(image_type as u32, format as u32)
-                    * asset.width() as u32) as i32 as usize,
-                asset.height() as usize,
+                    * dimension.0) as usize,
+                dimension.1 as usize,
             );
 
             gl_bindings::TexSubImage2D(
@@ -806,10 +808,10 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_TNSWebGLRenderingCont
                 height,
                 format as u32,
                 image_type as u32,
-                data_array.as_ptr() as *const c_void,
+                bytes.as_ptr() as *const c_void,
             );
         }
-    }
+    });
 }
 
 #[no_mangle]

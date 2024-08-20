@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::{
     borrow::Cow,
     ffi::CString,
@@ -9,6 +8,7 @@ use std::sync::Arc;
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
+
 use super::gpu::CanvasWebGPUInstance;
 
 #[repr(C)]

@@ -154,8 +154,9 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             callback->Call(context, context->Global(),
                                            2,
                                            args);  // ignore JS return value
-
+                            
                             delete static_cast<AsyncCallback *>(data);
+
                         } else {
                             v8::Local<v8::Value> args[1] = {
                                     v8::Null(isolate)};

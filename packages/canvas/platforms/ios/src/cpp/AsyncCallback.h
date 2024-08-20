@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <thread>
 
 typedef void(*CompleteCallback)(bool success, void *data);
 
@@ -45,14 +46,23 @@ struct AsyncCallback {
             this->completeCallbackWrapper_ = [](bool success, void *data){
                 if(data != nullptr){
                     auto* callback = static_cast<AsyncCallback*>(data);
-                    auto inner = callback->inner_.get();
-                    if(inner == nullptr || inner->current_queue == nullptr){
+                    if(callback->inner_->current_queue == nullptr){
                         return;
                     }
-                    inner->current_queue->addOperation([success, data, inner, callback](){
+                    
+                    auto inner = std::shared_ptr<Inner>(callback->inner_);
+                                        
+                    std::thread thread([success, data, callback](std::shared_ptr<Inner> inner){
+                        inner->current_queue = nullptr;
                         inner->completeCallback_(success, data);
-                       // delete callback;
-                    });
+                    }, std::move(inner));
+                    
+                    thread.detach();
+                    
+//                    callback->inner_->current_queue->addOperation([success, data, callback, inner_ptr](){
+//                        inner_ptr->completeCallback_(success, data);
+//                       // delete callback;
+//                    });
                 }
             };
         }
@@ -170,7 +180,7 @@ struct AsyncCallback {
         auto data = new AsyncCallback(this->inner_);
         ALooper_addFd(looper,
                       fd,
-                      ALOOPER_POLL_CALLBACK,
+                      0,
                       ALOOPER_EVENT_INPUT,
                       [](int fd, int events,
                          void *data) {
@@ -181,8 +191,6 @@ struct AsyncCallback {
                           cb->inner_->completeCallback_(done, data);
                           return 0;
                       }, (void *) data);
-
-        ALooper_wake(looper);
     }
 
     void execute(bool complete) const {

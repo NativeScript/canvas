@@ -1,5 +1,4 @@
 use std::ffi::{c_int, c_longlong, c_void, CStr, CString};
-use std::ops::DerefMut;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 
@@ -7,9 +6,10 @@ use parking_lot::RwLock;
 
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::utils::image::from_image_slice;
+pub use canvas_c::*;
 use canvas_c::CanvasRenderingContext2D;
 use canvas_c::PaintStyle;
-pub use canvas_c::*;
+use canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext;
 use canvas_core::context_attributes::{ContextAttributes, PowerPreference};
 use canvas_core::gl::GLContext;
 use canvas_core::image_asset::ImageAsset;
@@ -42,7 +42,7 @@ pub extern "C" fn canvas_native_init_ios_webgpu(
     width: u32,
     height: u32,
 ) -> c_longlong {
-    env_logger::init();
+    // let _ = env_logger::try_init();
 
     if instance == 0 {
         return 0;
@@ -71,7 +71,7 @@ pub extern "C" fn canvas_native_init_ios_webgpu_uiview(
     width: u32,
     height: u32,
 ) -> c_longlong {
-    env_logger::init();
+    // let _ = env_logger::try_init();
 
     if instance == 0 {
         return 0;
@@ -90,6 +90,33 @@ pub extern "C" fn canvas_native_init_ios_webgpu_uiview(
     }
 
     0
+}
+
+#[cfg(any(target_os = "ios"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_resize_ios_webgpu_uiview(
+    context: i64,
+    view: i64,
+    width: u32,
+    height: u32,
+) {
+    // let _ = env_logger::try_init();
+
+    if context == 0 {
+        return;
+    }
+
+    if let Some(view) = NonNull::new(view as *mut c_void) {
+        let context = unsafe { context as *mut CanvasGPUCanvasContext };
+        return unsafe {
+            webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize_uiview(
+                context,
+                view.as_ptr(),
+                width,
+                height,
+            );
+        };
+    }
 }
 
 #[no_mangle]
@@ -112,7 +139,7 @@ pub extern "C" fn canvas_native_init_ios_gl(
         return 0;
     }
 
-    env_logger::init();
+    // let _ = env_logger::try_init();
 
     if let Some(power_preference) = PowerPreference::try_from(power_preference).ok() {
         if let Some(ios_view) = NonNull::new(view as *mut c_void) {
@@ -513,8 +540,8 @@ pub extern "C" fn canvas_native_imageasset_load_from_bytes(
         return false;
     }
 
-    let asset = asset as *mut ImageAsset;
-    let asset = unsafe { &mut *asset };
+    let asset = asset as *const ImageAsset;
+    let asset = unsafe { &*asset };
 
     let bytes = unsafe { std::slice::from_raw_parts(bytes as _, size) };
     asset.load_from_bytes(bytes)
@@ -568,23 +595,23 @@ fn draw_image(
     d_width: f32,
     d_height: f32,
 ) -> bool {
-        if context == 0 {
-            return false;
-        }
+    if context == 0 {
+        return false;
+    }
 
-        let context = context as *mut CanvasRenderingContext2D;
+    let context = context as *mut CanvasRenderingContext2D;
 
-        let context = unsafe { &mut *context };
+    let context = unsafe { &mut *context };
 
-        if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
-            context.make_current();
-            let context = context.get_context_mut();
-            context.draw_image_src_xywh_dst_xywh(
-                &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
-            );
-            return true;
-        }
-        false
+    if let Some(image) = from_image_slice(image_data, width as i32, height as i32) {
+        context.make_current();
+        let context = context.get_context_mut();
+        context.draw_image_src_xywh_dst_xywh(
+            &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
+        );
+        return true;
+    }
+    false
 }
 
 #[no_mangle]

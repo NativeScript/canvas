@@ -1,10 +1,10 @@
 import { native_ } from './Constants';
 import { GPUAdapterInfo } from './GPUAdapterInfo';
 import { GPUDevice } from './GPUDevice';
-import { GPUQueue } from './GPUQueue';
 import { GPUDeviceDescriptor } from './Interfaces';
+import { GPUFeatureName } from './Types';
 
-export class GPUSupportedFeatures extends Set<string> {
+export class GPUSupportedFeatures extends Set<GPUFeatureName> {
 	get [Symbol.toStringTag]() {
 		return 'GPUSupportedFeatures';
 	}
@@ -13,7 +13,7 @@ export class GPUSupportedFeatures extends Set<string> {
 export class GPUAdapter {
 	[native_];
 
-	_features: GPUSupportedFeatures;
+	private _features: GPUSupportedFeatures;
 
 	get label() {
 		return this[native_]?.label ?? '';
@@ -57,6 +57,12 @@ export class GPUAdapter {
 	requestDevice(desc?: GPUDeviceDescriptor): Promise<GPUDevice> {
 		return new Promise((resolve, reject) => {
 			const options = desc ?? {};
+			if (Array.isArray(options.requiredFeatures)) {
+				options.requiredFeatures.push('texture-adapter-specific-format-features' as never);
+			} else {
+				options.requiredFeatures = ['texture-adapter-specific-format-features' as never];
+			}
+
 			this[native_].requestDevice(options, (error, device) => {
 				if (error) {
 					reject(error);

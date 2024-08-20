@@ -29,6 +29,7 @@ enum ContextType {
 	Canvas,
 	WebGL,
 	WebGL2,
+	WebGPU,
 }
 
 const viewRect_ = Symbol('[[viewRect]]');
@@ -156,13 +157,17 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value: number) {
+		if (value === undefined || value === null) {
+			return;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
 
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
-			this._canvas.surfaceWidth = value;
+			const newValue = Math.floor(value);
+			this._canvas.surfaceWidth = newValue;
 		}
 	}
 
@@ -175,13 +180,17 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value: number) {
+		if (value === undefined || value === null) {
+			return;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
 
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
-			this._canvas.surfaceHeight = value;
+			const newValue = Math.floor(value);
+			this._canvas.surfaceHeight = newValue;
 		}
 	}
 
@@ -375,7 +384,7 @@ export class Canvas extends CanvasBase {
 					this._contextType = ContextType.WebGL;
 				}
 				return this._webglContext;
-			} else if (type === 'webgl2') {
+			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
 				if (this._2dContext || this._webglContext) {
 					return null;
 				}
@@ -404,6 +413,8 @@ export class Canvas extends CanvasBase {
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
 
 					(this._gpuContext as any)._canvas = this;
+					(this._gpuContext as any)._type = 'webgpu';
+					this._contextType = ContextType.WebGPU;
 				}
 
 				return this._gpuContext;

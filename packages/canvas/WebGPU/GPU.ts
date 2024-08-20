@@ -1,14 +1,15 @@
 import { native_ } from './Constants';
 import { GPUAdapter } from './GPUAdapter';
+let gpu;
 export class GPU {
 	private _wgslLanguageFeatures = new Set();
 	static [native_];
 
 	get native() {
-		if (!this[native_]) {
-			this[native_] = new global.CanvasModule.GPU();
+		if (!gpu) {
+			gpu = new global.CanvasModule.GPU();
 		}
-		return this[native_];
+		return gpu;
 	}
 	get wgslLanguageFeatures() {
 		return this._wgslLanguageFeatures;

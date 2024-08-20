@@ -86,7 +86,7 @@ export function init(canvas) {
 	pmremGenerator = new THREE.PMREMGenerator(renderer);
 
 	const loader = new GLTFLoader();
-	loader.setPath(root).load('TriniShip.glb', function (gltf) {
+	loader.load(root + 'TriniShip.glb', function (gltf) {
 		ship = gltf.scene;
 
 		shipContainer.add(ship);
@@ -102,7 +102,7 @@ export function init(canvas) {
 	});
 
 	const droneLoader = new GLTFLoader();
-	droneLoader.setPath(root).load('Drone.glb', function (gltf) {
+	droneLoader.load(root + 'Drone.glb', function (gltf) {
 		const droneContainer = new THREE.Group();
 		const map = new THREE.TextureLoader().load(root + 'explosion.png');
 		const material = new THREE.SpriteMaterial({ map: map, transparent: true });

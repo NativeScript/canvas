@@ -402,7 +402,7 @@ impl GLContext {
         view: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<GLContext> {
-        let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match glview {
             None => None,
             Some(glview) => {
@@ -416,7 +416,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
     ) -> Option<GLContext> {
-        let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match glview {
             None => None,
             Some(glview) => {

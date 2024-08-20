@@ -358,6 +358,7 @@ export class TNSXMLHttpRequest {
 				path = (URL as any)?.InternalAccessor?.getData?.(this._request.url).blob;
 				isBlob = true;
 			}
+
 			if (isBlob) {
 				const buf = (Blob as any).InternalAccessor.getBuffer(path) as Uint8Array;
 				const responseURL = this._request.url;
@@ -591,26 +592,8 @@ export class TNSXMLHttpRequest {
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
-						if (!fastRead) {
-							if ((global as any).isIOS) {
-								this._response = interop.bufferFromData(data);
-							} else {
-								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data).rewind());
-							}
-						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						let buffer: ArrayBuffer = data;
-
-						if (!fastRead) {
-							if ((global as any).isIOS) {
-								buffer = interop.bufferFromData(data);
-							} else {
-								//	buffer = data;
-								const buf = java.nio.ByteBuffer.wrap(data).rewind();
-								buffer = (ArrayBuffer as any).from(buf);
-							}
-						}
-						this._response = new Blob([buffer]);
+						this._response = new Blob([data]);
 					}
 
 					let size = 0;

@@ -1,51 +1,48 @@
 require('@nativescript/canvas-polyfill');
+import { Canvas } from '@nativescript/canvas';
+import { knownFolders } from '@nativescript/core';
 import * as Pixii from 'pixi.js';
-import { Screen } from '@nativescript/core';
+
+const NSCAdapter: Pixii.Adapter = {
+	createCanvas(width?: number, height?: number) {
+		const canvas = new Canvas();
+		canvas.width = width;
+		canvas.height = height;
+		return canvas as never;
+	},
+	getCanvasRenderingContext2D() {
+		return CanvasRenderingContext2D as never;
+	},
+	getWebGLRenderingContext() {
+		return WebGLRenderingContext as never;
+	},
+	getNavigator() {
+		return {
+			userAgent: '',
+			gpu: global.navigator.gpu,
+		};
+	},
+	getBaseUrl() {
+		return knownFolders.currentApp().path;
+	},
+	getFontFaceSet() {
+		// todo FontFaceSet
+		return null;
+	},
+	fetch(url: RequestInfo, options?: RequestInit) {
+		return fetch(url, options);
+	},
+	parseXML(xml: string) {
+		const parser = new DOMParser();
+		return parser.parseFromString(xml, 'text/xml');
+	},
+};
+
+Pixii.DOMAdapter.set(NSCAdapter);
+
 let PIXI = Pixii;
 
-// import * as filters from 'pixi-filters';
-class NSCPIXIApplication extends Pixii.Application {
-	constructor({ context, view, ...props }) {
-		let clientWidth = 300;
-		let clientHeight = 150;
-		if (context) {
-			clientWidth = context.canvas.width;
-			clientHeight = context.canvas.height;
-		}
-		if (!view) {
-			view = context.canvas.toHTMLCanvas();
-		}
-
-		if (view) {
-			clientWidth = view.clientWidth;
-			clientHeight = view.clientHeight;
-		}
-
-		view.width = view.clientWidth;
-		view.height = view.clientHeight;
-
-		const width = props.width || clientWidth;
-		const height = props.height || clientHeight;
-
-		//	PIXI.settings.RESOLUTION = 1;
-
-		super({
-			...props,
-			resolution: Screen.mainScreen.scale,
-			view,
-			width,
-			height,
-		});
-	}
-}
-
-if (!(PIXI.Application instanceof NSCPIXIApplication)) {
-	PIXI.Assets.setPreferences({ preferWorkers: false });
-	PIXI = {
-		...PIXI,
-		Application: NSCPIXIApplication as never,
-	};
-}
+PIXI.Assets.setPreferences({ preferWorkers: false });
 
 (global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || PIXI;
 

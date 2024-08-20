@@ -85,9 +85,7 @@ public class Async2 {
 						try {
 							os?.flush()
 							os?.close()
-						} catch (e: java.lang.Exception) {
-
-						}
+						} catch (_: java.lang.Exception) {}
 
 						if (!isError) {
 							callback.success(file.absolutePath)
@@ -149,42 +147,17 @@ public class Async2 {
 			@JvmOverloads
 			fun decodeBuffer(stream: ByteBuffer, encoding: String? = null): String {
 				stream.rewind()
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-					val ret = when (encoding) {
-						"UTF-8" -> {
-							StandardCharsets.UTF_8.decode(stream).toString()
-						}
-						"US-ASCII" -> {
-							StandardCharsets.US_ASCII.decode(stream).toString()
-						}
-						else -> StandardCharsets.ISO_8859_1.decode(stream).toString()
+				val ret = when (encoding) {
+					"UTF-8" -> {
+						StandardCharsets.UTF_8.decode(stream).toString()
 					}
-					stream.rewind()
-					return ret
-				} else {
-					val encoding = encoding?.let {
-						when (it) {
-							"UTF-8", "US-ASCII", "ISO-8859-1" -> {
-								Charset.forName(it)
-							}
-							else -> null
-						}
+					"US-ASCII" -> {
+						StandardCharsets.US_ASCII.decode(stream).toString()
 					}
-
-					return if (stream.isDirect) {
-						val buf = ByteArray(stream.remaining())
-						stream.get(buf)
-						stream.rewind()
-						encoding?.let {
-							String(buf, it)
-						} ?: String(buf)
-					} else {
-						val buf = stream.array()
-						encoding?.let {
-							String(buf, it)
-						} ?: String(buf)
-					}
+					else -> StandardCharsets.ISO_8859_1.decode(stream).toString()
 				}
+				stream.rewind()
+				return ret
 			}
 
 			@JvmStatic
@@ -239,11 +212,8 @@ public class Async2 {
 									e.printStackTrace()
 								}
 								if (value is JSONObject) {
-									val formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+									val formBody =
 										FormBody.Builder(StandardCharsets.UTF_8)
-									} else {
-										FormBody.Builder(Charset.forName("UTF-8"))
-									}
 									val it = value.keys()
 									while (it.hasNext()) {
 										val key = it.next()
@@ -280,11 +250,8 @@ public class Async2 {
 							if (contentType == "application/x-www-form-urlencoded") {
 								if (options.content is JSONObject) {
 									var formBody: FormBody.Builder?
-									formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+									formBody =
 										FormBody.Builder(StandardCharsets.UTF_8)
-									} else {
-										FormBody.Builder(Charset.forName("UTF-8"))
-									}
 									val it = (options.content as JSONObject?)!!.keys()
 									while (it.hasNext()) {
 										val key = it.next()
@@ -957,6 +924,7 @@ public class Async2 {
 						} catch (ignored: IOException) {
 						}
 						if (!isError) {
+							buffer?.rewind()
 							callback.onComplete(buffer)
 						}
 					}

@@ -5,7 +5,7 @@ import { HTMLCanvasElement } from './HTMLCanvasElement';
 import { HTMLDivElement } from './HTMLDivElement';
 import { Text } from './Text';
 import { Canvas } from '@nativescript/canvas';
-import { ContentView, Frame, StackLayout, eachDescendant } from '@nativescript/core';
+import { ContentView, Frame, StackLayout, eachDescendant, knownFolders } from '@nativescript/core';
 import { Node } from './Node';
 import { Element, parseChildren } from './Element';
 import { SVGSVGElement } from './svg/SVGSVGElement';
@@ -113,12 +113,16 @@ export class Document extends Node {
 		return global.window;
 	}
 
+	// set as app root
+	baseURI: string;
+
 	constructor() {
 		super('#document');
 		this.body = new Element('BODY');
 		this._documentElement = new Element('HTML');
 		this.readyState = 'complete';
 		this.head = new Element('HEAD');
+		this.baseURI = knownFolders.currentApp().path;
 	}
 
 	get children() {
@@ -194,7 +198,7 @@ export class Document extends Node {
 			if (!element.nativeElement) {
 				// set dummy nativeElement
 				element.nativeElement = new ContentView();
-				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName}/>`, 'text/html').documentElement as never;
+				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName.toLowerCase()}/>`, 'text/html').documentElement as never;
 			}
 
 			element._ownerDocument = this as never;
@@ -209,9 +213,8 @@ export class Document extends Node {
 			if (!element.nativeElement) {
 				// set dummy nativeElement
 				element.nativeElement = new ContentView();
-				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName}/>`, 'image/svg+xml').documentElement as never;
+				element.nativeElement.__domElement = new DOMParser().parseFromString(`<${element.nodeName.toLowerCase()}/>`, 'image/svg+xml').documentElement as never;
 			}
-
 			element._ownerDocument = this as never;
 		}
 		return element;
@@ -227,7 +230,6 @@ export class Document extends Node {
 		if (this.__instance) {
 			return this.__instance.getElementById(id);
 		}
-		console.log('getElementsByTagName', id);
 		const topmost = Frame.topmost();
 		if (topmost) {
 			let nativeElement;
@@ -259,7 +261,6 @@ export class Document extends Node {
 		if (this.__instance) {
 			return this.__instance.getElementsByTagName(tagname);
 		}
-		console.log('getElementsByTagName', tagname);
 		const topmost = Frame.topmost();
 		if (topmost) {
 			let view;
@@ -279,7 +280,6 @@ export class Document extends Node {
 		if (this.__instance) {
 			return this.__instance.getElementsByClassName(className);
 		}
-		console.log('getElementsByClassName', className);
 		const topmost = Frame.topmost();
 		if (topmost) {
 			let view;
@@ -303,7 +303,6 @@ export class Document extends Node {
 	set documentElement(value) {}
 
 	querySelectorAll(selector) {
-		console.log('querySelectorAll', selector);
 		if (this.__instance) {
 			return this.__instance.querySelectorAll?.(selector) ?? [];
 		}
@@ -311,7 +310,6 @@ export class Document extends Node {
 	}
 
 	querySelector(selector) {
-		console.log('querySelector', selector);
 		const ret = this.__instance?.querySelectorAll?.(selector);
 		// let element = ret?.[0] ?? null;
 		// if (ret === undefined) {

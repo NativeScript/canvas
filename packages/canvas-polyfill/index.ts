@@ -1,6 +1,5 @@
 require('globals');
 
-
 if (global.android && !(global as any).__canvasLoaded) {
 	try {
 		// load canvas lib if polyfill is called before
@@ -16,7 +15,7 @@ import './resize';
 import './process';
 import './localStorage';
 import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
-import { URL } from './URL';
+import './workerPatch';
 
 if (!global.Document) {
 	Object.defineProperty(global, 'Document', {
@@ -105,11 +104,4 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 	});
 }
 
-if (typeof global?.URL?.createObjectURL !== 'function') {
-	Object.defineProperty(global, 'URL', {
-		value: URL,
-		configurable: true,
-		writable: true,
-	});
-	(global as any).window.URL = (global as any).URL;
-}
+// require('./urlBlobPatch');

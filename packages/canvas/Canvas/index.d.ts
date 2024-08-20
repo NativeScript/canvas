@@ -4,6 +4,7 @@ import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { GPUCanvasContext } from '../WebGPU';
+import { LengthPercentage } from '@nativescript/core/css/parser';
 
 export declare function createSVGMatrix(): DOMMatrix;
 
@@ -29,6 +30,11 @@ export declare class Canvas extends CanvasBase {
 	native: any;
 	parentElement: any;
 
+	set width(value: LengthPercentage | number | string);
+	get width(): number;
+	set height(value: LengthPercentage | number | string);
+	get height(): number;
+
 	constructor();
 
 	flush(): void;
@@ -47,11 +53,13 @@ export declare class Canvas extends CanvasBase {
 
 	getContext(type: '2d', options?: any): CanvasRenderingContext2D | null;
 
-	getContext(type: 'webgl', options?: any): WebGLRenderingContext | null;
+	getContext(type: 'bitmaprenderer', options?: any): any;
 
-	getContext(type: 'webgl2', options?: any): WebGL2RenderingContext | null;
+	getContext(type: 'webgl' | 'experimental-webgl', options?: any): WebGLRenderingContext | null;
 
-	getContext(type: 'webgpu', options?: any): GPUCanvasContext | null;
+	getContext(type: 'webgl2' | 'experimental-webgl2', options?: any): WebGL2RenderingContext | null;
+
+	getContext(type: 'webgpu'): GPUCanvasContext | null;
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null;
 

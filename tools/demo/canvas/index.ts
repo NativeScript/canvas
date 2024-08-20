@@ -250,16 +250,22 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	drawOnCanvasWithCanvas(canvas) {
-		const c2 = document.createElement('canvas');
-		c2.width = 512;
-		c2.height = 512;
-		const c2d = c2.getContext('2d');
+		// const c2 = document.createElement('canvas');
+		// c2.width = 512;
+		// c2.height = 512;
+		// const c2d = c2.getContext('2d');
+
 		const image = new global.ImageAsset();
 
-		image.fromUrl(`https://source.unsplash.com/random/${512 * window?.devicePixelRatio ?? 1}x${512 * window?.devicePixelRatio ?? 1}}`).then(() => {
-			c2d.drawImage(image, 0, 0, c2.width, c2.height);
+		image.fromUrl(`https://picsum.photos/${512 * window?.devicePixelRatio ?? 1}/${512 * window?.devicePixelRatio ?? 1}`).then(async () => {
+			//	c2d.drawImage(image, 0, 0, c2.width, c2.height);
+			const bm = await createImageBitmap(image);
+			console.log('done', image.width, image.height);
+			canvas.width = canvas.clientWidth * window?.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window?.devicePixelRatio;
 			const ctx = canvas.getContext('2d');
-			ctx.drawImage(c2, 0, 0, canvas.width, canvas.height);
+			ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
+			//ctx.drawImage(c2, 0, 0, canvas.width, canvas.height);
 		});
 	}
 
@@ -559,8 +565,11 @@ fn main() -> @location(0) vec4f {
 		// const rc = require('./webgpu/rotatingCube');
 		// rc.run(this.canvas);
 
-		const renderBundles = require('./webgpu/renderBundles');
-		renderBundles.run(this.canvas);
+		// const tests = require('./webgpu/tests');
+		// tests.run(this.canvas);
+
+		// const renderBundles = require('./webgpu/renderBundles');
+		// renderBundles.run(this.canvas);
 
 		// const occlusionQuery = require('./webgpu/occlusionQuery');
 		// occlusionQuery.run(this.canvas);
@@ -586,8 +595,8 @@ fn main() -> @location(0) vec4f {
 		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
 		// twoCubes.run(this.canvas);
 
-		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
-		// fractualCube.run(this.canvas);
+		const fractualCube = require('./webgpu/basicGraphics/fractalCube');
+		fractualCube.run(this.canvas);
 
 		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
 		// wireframe.run(this.canvas);

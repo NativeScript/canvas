@@ -4,7 +4,7 @@
 
 #include "GPUAdapterImpl.h"
 #include "Caches.h"
-
+#include "GPULabel.h"
 GPUAdapterImpl::GPUAdapterImpl(const CanvasGPUAdapter *adapter) : adapter_(adapter) {}
 
 const CanvasGPUAdapter *GPUAdapterImpl::GetGPUAdapter() {
@@ -192,7 +192,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
 
     auto func = cb.As<v8::Function>();
 
-    std::string label;
+    GPULabel label;
 
     std::vector<std::string> required_features_buf;
 
@@ -203,10 +203,9 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
         v8::Local<v8::Value> labelValue;
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(
                 &labelValue);
+        
+        label = GPULabel(isolate, labelValue);
 
-        if (!labelValue.IsEmpty() && labelValue->IsString()) {
-            label = ConvertFromV8String(isolate, labelValue);
-        }
 
         v8::Local<v8::Value> requiredFeaturesValue;
 
@@ -299,6 +298,8 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
                             callback->Call(context, context->Global(),
                                            1,
                                            args);  // ignore JS return value
+                            
+                            
                         } else {
 
                             auto impl = new GPUDeviceImpl(requestData->device_);
@@ -339,7 +340,7 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
     callback->prepare();
 
     canvas_native_webgpu_adapter_request_device(ptr->GetGPUAdapter(),
-                                                label.empty() ? nullptr : label.c_str(),
+                                                *label,
                                                 required_features_data,
                                                 required_features_data_length,
                                                 limits,

@@ -1,8 +1,8 @@
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import { createProgramFromScripts } from './utils';
 import { ImageSource } from '@nativescript/core';
 
-export function imageFilter(canvas) {
-
+export function imageFilter(canvas: Canvas) {
 	var vertexShaderSource = `#version 300 es
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
@@ -73,10 +73,11 @@ void main() {
 `;
 
 	function main() {
-		ImageSource.fromUrl('https://webglfundamentals.org/webgl/resources/leaves.jpg')
-			.then(image => {
-				render(image);
-			});
+		const asset = new global.ImageAsset();
+		asset.fromUrl('https://webglfundamentals.org/webgl/resources/leaves.jpg').then((done) => {
+			console.log('done', done, asset.width, asset.height);
+			render(asset);
+		});
 	}
 
 	function render(image) {
@@ -86,8 +87,10 @@ void main() {
 		}
 
 		// setup GLSL program
-		var program = createProgramFromScripts(gl,
-			[{type: 'vertex', src: vertexShaderSource}, {type:'fragment',src: fragmentShaderSource}]);
+		var program = createProgramFromScripts(gl, [
+			{ type: 'vertex', src: vertexShaderSource },
+			{ type: 'fragment', src: fragmentShaderSource },
+		]);
 
 		// look up where the vertex data needs to go.
 		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
@@ -117,33 +120,24 @@ void main() {
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
 		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-		var size = 2;          // 2 components per iteration
-		var type = gl.FLOAT;   // the data is 32bit floats
+		var size = 2; // 2 components per iteration
+		var type = gl.FLOAT; // the data is 32bit floats
 		var normalize = false; // don't normalize the data
-		var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-		var offset = 0;        // start at the beginning of the buffer
-		gl.vertexAttribPointer(
-			positionAttributeLocation, size, type, normalize, stride, offset);
+		var stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+		var offset = 0; // start at the beginning of the buffer
+		gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
 
 		// provide texture coordinates for the rectangle.
 		var texCoordBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			0.0, 0.0,
-			1.0, 0.0,
-			0.0, 1.0,
-			0.0, 1.0,
-			1.0, 0.0,
-			1.0, 1.0,
-		]), gl.STATIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW);
 		gl.enableVertexAttribArray(texCoordAttributeLocation);
-		var size = 2;          // 2 components per iteration
-		var type = gl.FLOAT;   // the data is 32bit floats
+		var size = 2; // 2 components per iteration
+		var type = gl.FLOAT; // the data is 32bit floats
 		var normalize = false; // don't normalize the data
-		var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-		var offset = 0;        // start at the beginning of the buffer
-		gl.vertexAttribPointer(
-			texCoordAttributeLocation, size, type, normalize, stride, offset);
+		var stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+		var offset = 0; // start at the beginning of the buffer
+		gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
 
 		function createAndSetupTexture(gl) {
 			var texture = gl.createTexture();
@@ -162,16 +156,11 @@ void main() {
 		var originalImageTexture = createAndSetupTexture(gl);
 
 		// Upload the image into the texture.
-		var mipLevel = 0;               // the largest mip
-		var internalFormat = gl.RGBA;   // format we want in the texture
-		var srcFormat = gl.RGBA;        // format of data we are supplying
+		var mipLevel = 0; // the largest mip
+		var internalFormat = gl.RGBA; // format we want in the texture
+		var srcFormat = gl.RGBA; // format of data we are supplying
 		var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
-		gl.texImage2D(gl.TEXTURE_2D,
-			mipLevel,
-			internalFormat,
-			srcFormat,
-			srcType,
-			image);
+		gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
 
 		// create 2 textures and attach them to framebuffers.
 		var textures = [];
@@ -181,15 +170,13 @@ void main() {
 			textures.push(texture);
 
 			// make the texture the same size as the image
-			var mipLevel = 0;               // the largest mip
-			var internalFormat = gl.RGBA;   // format we want in the texture
-			var border = 0;                 // must be 0
-			var srcFormat = gl.RGBA;        // format of data we are supplying
+			var mipLevel = 0; // the largest mip
+			var internalFormat = gl.RGBA; // format we want in the texture
+			var border = 0; // must be 0
+			var srcFormat = gl.RGBA; // format of data we are supplying
 			var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
-			var data = null;                // no data = create a blank texture
-			gl.texImage2D(
-				gl.TEXTURE_2D, mipLevel, internalFormat, image.width, image.height, border,
-				srcFormat, srcType, data);
+			var data = null; // no data = create a blank texture
+			gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, image.width, image.height, border, srcFormat, srcType, data);
 
 			// Create a framebuffer
 			var fbo = gl.createFramebuffer();
@@ -198,8 +185,7 @@ void main() {
 
 			// Attach a texture to it.
 			var attachmentPoint = gl.COLOR_ATTACHMENT0;
-			gl.framebufferTexture2D(
-				gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, mipLevel);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, mipLevel);
 		}
 
 		// Bind the position buffer so gl.bufferData that will be called
@@ -211,127 +197,29 @@ void main() {
 
 		// Define several convolution kernels
 		var kernels = {
-			normal: [
-				0, 0, 0,
-				0, 1, 0,
-				0, 0, 0,
-			],
-			gaussianBlur: [
-				0.045, 0.122, 0.045,
-				0.122, 0.332, 0.122,
-				0.045, 0.122, 0.045,
-			],
-			gaussianBlur2: [
-				1, 2, 1,
-				2, 4, 2,
-				1, 2, 1,
-			],
-			gaussianBlur3: [
-				0, 1, 0,
-				1, 1, 1,
-				0, 1, 0,
-			],
-			unsharpen: [
-				-1, -1, -1,
-				-1, 9, -1,
-				-1, -1, -1,
-			],
-			sharpness: [
-				0, -1, 0,
-				-1, 5, -1,
-				0, -1, 0,
-			],
-			sharpen: [
-				-1, -1, -1,
-				-1, 16, -1,
-				-1, -1, -1,
-			],
-			edgeDetect: [
-				-0.125, -0.125, -0.125,
-				-0.125, 1, -0.125,
-				-0.125, -0.125, -0.125,
-			],
-			edgeDetect2: [
-				-1, -1, -1,
-				-1, 8, -1,
-				-1, -1, -1,
-			],
-			edgeDetect3: [
-				-5, 0, 0,
-				0, 0, 0,
-				0, 0, 5,
-			],
-			edgeDetect4: [
-				-1, -1, -1,
-				0, 0, 0,
-				1, 1, 1,
-			],
-			edgeDetect5: [
-				-1, -1, -1,
-				2, 2, 2,
-				-1, -1, -1,
-			],
-			edgeDetect6: [
-				-5, -5, -5,
-				-5, 39, -5,
-				-5, -5, -5,
-			],
-			sobelHorizontal: [
-				1, 2, 1,
-				0, 0, 0,
-				-1, -2, -1,
-			],
-			sobelVertical: [
-				1, 0, -1,
-				2, 0, -2,
-				1, 0, -1,
-			],
-			previtHorizontal: [
-				1, 1, 1,
-				0, 0, 0,
-				-1, -1, -1,
-			],
-			previtVertical: [
-				1, 0, -1,
-				1, 0, -1,
-				1, 0, -1,
-			],
-			boxBlur: [
-				0.111, 0.111, 0.111,
-				0.111, 0.111, 0.111,
-				0.111, 0.111, 0.111,
-			],
-			triangleBlur: [
-				0.0625, 0.125, 0.0625,
-				0.125, 0.25, 0.125,
-				0.0625, 0.125, 0.0625,
-			],
-			emboss: [
-				-2, -1, 0,
-				-1, 1, 1,
-				0, 1, 2,
-			],
+			normal: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+			gaussianBlur: [0.045, 0.122, 0.045, 0.122, 0.332, 0.122, 0.045, 0.122, 0.045],
+			gaussianBlur2: [1, 2, 1, 2, 4, 2, 1, 2, 1],
+			gaussianBlur3: [0, 1, 0, 1, 1, 1, 0, 1, 0],
+			unsharpen: [-1, -1, -1, -1, 9, -1, -1, -1, -1],
+			sharpness: [0, -1, 0, -1, 5, -1, 0, -1, 0],
+			sharpen: [-1, -1, -1, -1, 16, -1, -1, -1, -1],
+			edgeDetect: [-0.125, -0.125, -0.125, -0.125, 1, -0.125, -0.125, -0.125, -0.125],
+			edgeDetect2: [-1, -1, -1, -1, 8, -1, -1, -1, -1],
+			edgeDetect3: [-5, 0, 0, 0, 0, 0, 0, 0, 5],
+			edgeDetect4: [-1, -1, -1, 0, 0, 0, 1, 1, 1],
+			edgeDetect5: [-1, -1, -1, 2, 2, 2, -1, -1, -1],
+			edgeDetect6: [-5, -5, -5, -5, 39, -5, -5, -5, -5],
+			sobelHorizontal: [1, 2, 1, 0, 0, 0, -1, -2, -1],
+			sobelVertical: [1, 0, -1, 2, 0, -2, 1, 0, -1],
+			previtHorizontal: [1, 1, 1, 0, 0, 0, -1, -1, -1],
+			previtVertical: [1, 0, -1, 1, 0, -1, 1, 0, -1],
+			boxBlur: [0.111, 0.111, 0.111, 0.111, 0.111, 0.111, 0.111, 0.111, 0.111],
+			triangleBlur: [0.0625, 0.125, 0.0625, 0.125, 0.25, 0.125, 0.0625, 0.125, 0.0625],
+			emboss: [-2, -1, 0, -1, 1, 1, 0, 1, 2],
 		};
 
-		var effects = [
-			{ name: 'gaussianBlur3', on: true },
-			{ name: 'gaussianBlur3', on: true },
-			{ name: 'gaussianBlur3', on: true },
-			{ name: 'sharpness', },
-			{ name: 'sharpness', },
-			{ name: 'sharpness', },
-			{ name: 'sharpen', },
-			{ name: 'sharpen', },
-			{ name: 'sharpen', },
-			{ name: 'unsharpen', },
-			{ name: 'unsharpen', },
-			{ name: 'unsharpen', },
-			{ name: 'emboss', on: true },
-			{ name: 'edgeDetect', },
-			{ name: 'edgeDetect', },
-			{ name: 'edgeDetect3', },
-			{ name: 'edgeDetect3', },
-		];
+		var effects = [{ name: 'gaussianBlur3', on: true }, { name: 'gaussianBlur3', on: true }, { name: 'gaussianBlur3', on: true }, { name: 'sharpness' }, { name: 'sharpness' }, { name: 'sharpness' }, { name: 'sharpen' }, { name: 'sharpen' }, { name: 'sharpen' }, { name: 'unsharpen' }, { name: 'unsharpen' }, { name: 'unsharpen' }, { name: 'emboss', on: true }, { name: 'edgeDetect' }, { name: 'edgeDetect' }, { name: 'edgeDetect3' }, { name: 'edgeDetect3' }];
 
 		/* add btns
 		// Setup a ui.
@@ -401,12 +289,12 @@ void main() {
 				var checkbox = effects[ii];
 				if (checkbox.on) {
 					// Setup to draw into one of the framebuffers.
-					setFramebuffer(framebuffers[ count % 2 ], image.width, image.height);
+					setFramebuffer(framebuffers[count % 2], image.width, image.height);
 
 					drawWithKernel(checkbox.name);
 
 					// for the next draw, use the texture we just rendered to.
-					gl.bindTexture(gl.TEXTURE_2D, textures[ count % 2 ]);
+					gl.bindTexture(gl.TEXTURE_2D, textures[count % 2]);
 
 					// increment count so we use the other texture next time.
 					++count;
@@ -414,7 +302,7 @@ void main() {
 			}
 
 			// finally draw the result to the canvas.
-			gl.uniform1f(flipYLocation, -1);  // need to y flip for canvas
+			gl.uniform1f(flipYLocation, -1); // need to y flip for canvas
 
 			setFramebuffer(null, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
@@ -438,8 +326,8 @@ void main() {
 
 		function drawWithKernel(name) {
 			// set the kernel and it's weight
-			gl.uniform1fv(kernelLocation, kernels[ name ]);
-			gl.uniform1f(kernelWeightLocation, computeKernelWeight(kernels[ name ]));
+			gl.uniform1fv(kernelLocation, kernels[name]);
+			gl.uniform1f(kernelWeightLocation, computeKernelWeight(kernels[name]));
 
 			// Draw the rectangle.
 			var primitiveType = gl.TRIANGLES;
@@ -454,16 +342,8 @@ void main() {
 		var x2 = x + width;
 		var y1 = y;
 		var y2 = y + height;
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			x1, y1,
-			x2, y1,
-			x1, y2,
-			x1, y2,
-			x2, y1,
-			x2, y2,
-		]), gl.STATIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]), gl.STATIC_DRAW);
 	}
 
 	main();
-
 }

@@ -1517,7 +1517,7 @@ pub extern "C" fn canvas_native_context_create_pattern(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_pattern_asset(
     context: *mut CanvasRenderingContext2D,
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     repetition: CanvasRepetition,
 ) -> *mut PaintStyle {
     assert!(!context.is_null());
@@ -1525,10 +1525,12 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
     let context = unsafe { &*context };
     let asset = unsafe { &*asset };
     let repetition: Repetition = repetition.into();
-    let has_alpha = asset.get_channels() == 4;
-    if let Some(bytes) = asset.get_bytes() {
-        return if has_alpha {
-            from_image_slice(bytes, asset.width() as i32, asset.height() as i32).map(
+    let has_alpha = asset.has_alpha();
+    let mut ret = std::ptr::null_mut();
+    // todo use bitmap directly ??
+    asset.with_bytes_dimension(|bytes, (width, height)|{
+       ret = if has_alpha {
+            from_image_slice(bytes, width as i32, height as i32).map(
                 |image| {
                     Box::into_raw(Box::new(PaintStyle(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                         context.context.create_pattern(image, repetition),
@@ -1536,7 +1538,7 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
                 },
             ).unwrap_or(std::ptr::null_mut())
         } else {
-            from_bitmap_slice(bytes, asset.width() as i32, asset.height() as i32).map(
+            from_bitmap_slice(bytes, width as i32, height as i32).map(
                 |image| {
                     Box::into_raw(Box::new(PaintStyle(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
                         context.context.create_pattern(image, repetition),
@@ -1544,9 +1546,9 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
                 },
             ).unwrap_or(std::ptr::null_mut())
         };
-    }
+    });
 
-    std::ptr::null_mut()
+    ret
 }
 
 #[no_mangle]
@@ -1803,7 +1805,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
     context: *mut CanvasRenderingContext2D,
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     dx: f32,
     dy: f32,
     d_width: f32,
@@ -1821,7 +1823,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_image_asset(
     context: *mut CanvasRenderingContext2D,
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     sx: f32,
     sy: f32,
     s_width: f32,
@@ -2130,7 +2132,7 @@ pub extern "C" fn canvas_native_context_draw_atlas_encoded(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_draw_atlas_asset(
     context: *mut CanvasRenderingContext2D,
-    asset: *mut ImageAsset,
+    asset: *const ImageAsset,
     xform: *const f32,
     xform_size: usize,
     tex: *const f32,

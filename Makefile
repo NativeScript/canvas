@@ -1,4 +1,5 @@
 ARCHS_IOS = x86_64-apple-ios aarch64-apple-ios aarch64-apple-ios-sim
+# ARCHS_IOS = aarch64-apple-ios-sim
 ARCHS_ANDROID = i686-linux-android x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
 # LIB = libcanvasative.dylib
 XCFRAMEWORK = CanvasNative.xcframework

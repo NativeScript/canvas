@@ -1159,6 +1159,10 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                   [](int fd, int events,
                      void *data) {
 
+                        if(data == 0){
+                            return 0;
+                        }
+
                       auto cb = static_cast<JSIReadFileCallback *>(data);
                       bool done;
                       read(fd, &done,
@@ -1228,7 +1232,6 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                                   }
                                   return 0;
                               }
-                              LogToConsole(ConvertFromV8String(isolate, stackV8Str));
 
                           }
                       }

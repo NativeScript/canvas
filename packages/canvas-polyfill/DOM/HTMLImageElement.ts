@@ -239,33 +239,18 @@ export class HTMLImageElement extends HTMLElement {
 							this._onerror?.();
 						}
 					} else {
-						if (src && src.indexOf('.webp') > -1) {
-							const bm = android.graphics.BitmapFactory.decodeFile(this.src);
-							const newPath = src.replace('.webp', '.png');
-							const bos = new java.io.BufferedOutputStream(new java.io.FileOutputStream(newPath));
-							bm.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bos);
-							bos.flush();
-
-							await this._asset.fromFile(newPath);
-
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = true;
-							this._onload?.();
-						} else {
-							this._asset
-								.fromFile(src)
-								.then((done) => {
-									this.width = this._asset.width;
-									this.height = this._asset.height;
-									this.complete = true;
-									this._onload?.();
-								})
-								.catch((e) => {
-									this.dispatchEvent({ type: 'error', target: this, e });
-									this._onerror?.();
-								});
-						}
+						this._asset
+							.fromFile(src)
+							.then((done) => {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+								this._onload?.();
+							})
+							.catch((e) => {
+								this.dispatchEvent({ type: 'error', target: this, e });
+								this._onerror?.();
+							});
 					}
 				}
 			}

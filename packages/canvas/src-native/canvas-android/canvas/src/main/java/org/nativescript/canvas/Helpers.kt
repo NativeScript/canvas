@@ -20,19 +20,15 @@ object Helpers {
 			)
 			val canvas = Canvas(bitmap)
 			var previousBounds: Rect? = null
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				(src as? VectorDrawable)?.let {
-					previousBounds = src.bounds
-					src.setBounds(0, 0, src.intrinsicWidth, src.intrinsicHeight)
-				}
+			(src as? VectorDrawable)?.let {
+				previousBounds = src.bounds
+				src.setBounds(0, 0, src.intrinsicWidth, src.intrinsicHeight)
 			}
 
 			src.draw(canvas)
 
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				previousBounds?.let {
-					src.bounds = it
-				}
+			previousBounds?.let {
+				src.bounds = it
 			}
 
 			bitmap

@@ -1,35 +1,10 @@
 import { CSSType, View, Property, booleanConverter, widthProperty, heightProperty } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
+import { removeItemFromArray } from './utils';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
-
-const defaultGLOptions = {
-	alpha: true,
-	antialias: true,
-	depth: true,
-	failIfMajorPerformanceCaveat: false,
-	powerPreference: 'default',
-	premultipliedAlpha: true,
-	preserveDrawingBuffer: false,
-	stencil: false,
-	desynchronized: false,
-	xrCompatible: false,
-};
-
-const default2DOptions = {
-	alpha: true,
-	antialias: true,
-	depth: true,
-	failIfMajorPerformanceCaveat: false,
-	powerPreference: 'default',
-	premultipliedAlpha: true,
-	preserveDrawingBuffer: false,
-	stencil: false,
-	desynchronized: false,
-	xrCompatible: false,
-};
 
 interface EventOptions {
 	bubbles?: boolean;
@@ -405,23 +380,24 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return window?.document ?? doc;
 	}
 
-	emit() {
-		console.log('emit');
-	}
+	emit() {}
 
 	dispatchEvent(event) {
-		console.log('dispatchEvent', event);
 		return true;
 	}
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') {
+			thisArg = {
+				capture: thisArg,
+			};
+		}
 		super.addEventListener(arg, callback, thisArg);
 		if (typeof arg !== 'string') {
 			return;
 		}
-		const eventtype = arg.toLowerCase();
 
-		switch (eventtype) {
+		switch (arg) {
 			case 'mousemove':
 				this._mouseMoveCallbacks.push(callback);
 				break;
@@ -473,66 +449,63 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _removeItemFromArray(array: any[], item) {
-		const index = array.indexOf(item);
-		if (index !== -1) {
-			array.splice(index, 1);
-		}
-	}
-
 	public removeEventListener(arg: string, callback: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') {
+			thisArg = {
+				capture: thisArg,
+			};
+		}
+
 		super.removeEventListener(arg, callback, thisArg);
 
-		const eventtype = arg.toLowerCase();
-
-		switch (eventtype) {
+		switch (arg) {
 			case 'mousemove':
-				this._removeItemFromArray(this._mouseMoveCallbacks, callback);
+				removeItemFromArray(this._mouseMoveCallbacks, callback);
 				break;
 			case 'pointermove':
-				this._removeItemFromArray(this._pointerMoveCallbacks, callback);
+				removeItemFromArray(this._pointerMoveCallbacks, callback);
 				break;
 			case 'mousedown':
-				this._removeItemFromArray(this._mouseDownCallbacks, callback);
+				removeItemFromArray(this._mouseDownCallbacks, callback);
 				break;
 			case 'pointerdown':
-				this._removeItemFromArray(this._pointerDownCallbacks, callback);
+				removeItemFromArray(this._pointerDownCallbacks, callback);
 				break;
 			case 'mouseup':
-				this._removeItemFromArray(this._mouseUpCallbacks, callback);
+				removeItemFromArray(this._mouseUpCallbacks, callback);
 				break;
 			case 'pointerup':
-				this._removeItemFromArray(this._pointerUpCallbacks, callback);
+				removeItemFromArray(this._pointerUpCallbacks, callback);
 				break;
 			case 'pointerout':
-				this._removeItemFromArray(this._pointerOutCallbacks, callback);
+				removeItemFromArray(this._pointerOutCallbacks, callback);
 				break;
 			case 'pointerleave':
-				this._removeItemFromArray(this._pointerLeaveCallbacks, callback);
+				removeItemFromArray(this._pointerLeaveCallbacks, callback);
 				break;
 			case 'mouseout':
 			case 'mousecancel':
-				this._removeItemFromArray(this._mouseCancelCallbacks, callback);
+				removeItemFromArray(this._mouseCancelCallbacks, callback);
 				break;
 			case 'pointercancel':
-				this._removeItemFromArray(this._pointerCancelCallbacks, callback);
+				removeItemFromArray(this._pointerCancelCallbacks, callback);
 				break;
 			case 'touchstart':
-				this._removeItemFromArray(this._touchStartCallbacks, callback);
+				removeItemFromArray(this._touchStartCallbacks, callback);
 				break;
 			case 'touchend':
-				this._removeItemFromArray(this._touchEndCallbacks, callback);
+				removeItemFromArray(this._touchEndCallbacks, callback);
 				break;
 			case 'touchmove':
-				this._removeItemFromArray(this._touchMoveCallbacks, callback);
+				removeItemFromArray(this._touchMoveCallbacks, callback);
 				break;
 			case 'touchcancel':
-				this._removeItemFromArray(this._touchCancelCallbacks, callback);
+				removeItemFromArray(this._touchCancelCallbacks, callback);
 				break;
 			case 'wheel':
 			case 'mousewheel':
 			case 'dommousescroll':
-				this._removeItemFromArray(this._mouseWheelCallbacks, callback);
+				removeItemFromArray(this._mouseWheelCallbacks, callback);
 				break;
 		}
 	}
@@ -1017,61 +990,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this._classList;
 	}
 
-	_handlePowerPreference(powerPreference: string) {
-		switch (powerPreference) {
-			case 'default':
-				return 0;
-			case 'high-performance':
-				return 1;
-			case 'low-power':
-				return 2;
-			default:
-				return -1;
-		}
-	}
-
-	_handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextOpts?) {
-		if (!contextOpts) {
-			if (type === '2d') {
-				return { ...default2DOptions, powerPreference: 0 };
-			}
-			if (type.indexOf('webgl') > -1) {
-				return { ...defaultGLOptions, powerPreference: 0 };
-			}
-		}
-		if (type === '2d') {
-			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
-				return { ...contextOpts, powerPreference: 0 };
-			} else {
-				return { alpha: true, powerPreference: 0 };
-			}
-		}
-		const glOptions = { ...defaultGLOptions };
-		const setIfDefined = (prop: string, value: unknown) => {
-			const property = glOptions[prop];
-			if (property !== undefined && prop === 'powerPreference') {
-				// converts to int
-				glOptions[prop] = value as never;
-			}
-			if (property !== undefined && typeof value === typeof property) {
-				glOptions[prop] = value;
-			}
-		};
-		if (type.indexOf('webgl') > -1 || type === 'experimental-webgl') {
-			setIfDefined('alpha', contextOpts.alpha);
-			setIfDefined('antialias', contextOpts.antialias);
-			setIfDefined('depth', contextOpts.depth);
-			setIfDefined('failIfMajorPerformanceCaveat', contextOpts.failIfMajorPerformanceCaveat);
-			setIfDefined('powerPreference', this._handlePowerPreference(contextOpts.powerPreference ?? 'default'));
-			setIfDefined('premultipliedAlpha', contextOpts.premultipliedAlpha);
-			setIfDefined('preserveDrawingBuffer', contextOpts.preserveDrawingBuffer);
-			setIfDefined('stencil', contextOpts.stencil);
-			setIfDefined('desynchronized', contextOpts.desynchronized);
-			return glOptions;
-		}
-		return null;
-	}
-
 	_readyEvent() {
 		this.notify({
 			eventName: 'ready',
@@ -1080,38 +998,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	getAttribute(attrib) {
-		if (attrib === 'width') {
-			return this.width;
-		}
-		if (attrib === 'height') {
-			return this.height;
-		}
-
-		if (attrib === 'tabindex') {
-			return (this['tabindex'] = arguments[1]);
-		}
 		return this[attrib];
 	}
 
 	setAttribute(attrib) {
-		if (attrib === 'width') {
-			if (!isNaN(parseInt(arguments[1]))) {
-				this.width = parseInt(arguments[1]);
-			}
-		}
-		if (attrib === 'height') {
-			if (!isNaN(parseInt(arguments[1]))) {
-				this.height = parseInt(arguments[1]);
-			}
-		}
-		if (attrib === 'tabindex') {
-			this['tabindex'] = arguments[1];
-		}
-
-		this['data-engine'] = arguments[1];
+		this[attrib] = attrib;
 	}
 
-	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;
+	public abstract getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;
 
 	public abstract getBoundingClientRect(): {
 		x: number;

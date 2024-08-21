@@ -4,6 +4,9 @@ export class EventTarget {
 	_emitter?: WeakRef<Observable>;
 
 	addEventListener(event: string, handler: any, options: AddEventListenerOptions = {}) {
+		if (typeof options === 'boolean') {
+			options = { capture: options };
+		}
 		const { capture, once } = options;
 		if (capture) {
 			//   debug("Bubble propagation is not supported");

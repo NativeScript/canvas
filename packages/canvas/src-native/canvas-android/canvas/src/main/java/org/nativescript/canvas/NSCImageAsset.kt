@@ -1,7 +1,11 @@
 package org.nativescript.canvas
 
+import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.Nullable
 import dalvik.annotation.optimization.FastNative
 import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGL
@@ -44,6 +48,47 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
+		fun loadImageFromResource(resources: Resources, asset: Long, image: Int): Boolean {
+			val bitmap = BitmapFactory.decodeResource(resources, image) ?: return false
+			if (bitmap.config != Bitmap.Config.ARGB_8888) {
+				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+
+				val canvas = Canvas(bm)
+				canvas.drawBitmap(bitmap, 0F, 0F, null)
+				return nativeLoadFromBitmap(asset, bitmap)
+			}
+			return nativeLoadFromBitmap(asset, bitmap)
+		}
+
+
+		@JvmStatic
+		fun loadImageFromResourceAsync(
+			resources: Resources,
+			asset: Long,
+			image: Int,
+			callback: Callback
+		) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val bitmap = BitmapFactory.decodeResource(resources, image)
+				if (bitmap == null) {
+					callback.onComplete(false)
+					return@execute
+				}
+				val done = loadImageFromResource(resources, asset, image)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
+
+			}
+		}
+
+		@JvmStatic
 		fun loadImageFromBitmap(asset: Long, bitmap: Bitmap): Boolean {
 			if (bitmap.config != Bitmap.Config.ARGB_8888) {
 				val bm = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
@@ -66,54 +111,126 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
+		fun loadWebP(asset: Long, path: String): Boolean {
+			val bm = BitmapFactory.decodeFile(path)
+			return nativeLoadFromBitmap(asset, bm)
+		}
+
+		@JvmStatic
+		fun loadWebPAsync(asset: Long, path: String, callback: Callback) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val bm = BitmapFactory.decodeFile(path)
+				val done = nativeLoadFromBitmap(asset, bm)
+
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
+			}
+		}
+
+		@JvmStatic
 		fun loadImageFromBitmapAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done = nativeLoadFromBitmap(asset, bitmap)
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 
 		@JvmStatic
 		fun loadImageFromPathAsync(asset: Long, path: String, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done = nativeLoadFromPath(asset, path)
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 
 		@JvmStatic
 		fun loadImageFromUrlAsync(asset: Long, url: String, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done = nativeLoadFromUrl(asset, url)
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 
 		@JvmStatic
 		fun loadImageFromBufferAsync(asset: Long, buffer: ByteBuffer, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done: Boolean = if (buffer.isDirect) {
 					nativeLoadFromBuffer(asset, buffer)
 				} else {
 					nativeLoadFromBytes(asset, buffer.array())
 				}
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 
 		@JvmStatic
-		fun loadImageFromBytes(asset: Long, bytes: ByteArray, callback: Callback) {
+		fun loadImageFromBytesAsync(asset: Long, bytes: ByteArray, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done = nativeLoadFromBytes(asset, bytes)
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 
 		@JvmStatic
 		fun loadImageFromBytesAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
+			val looper = Looper.myLooper()
 			executorService.execute {
 				val done = nativeLoadFromBitmap(asset, bitmap)
-				callback.onComplete(done)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
 			}
 		}
 

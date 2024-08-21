@@ -40,10 +40,8 @@ const NSCAdapter: Pixii.Adapter = {
 
 Pixii.DOMAdapter.set(NSCAdapter);
 
-let PIXI = Pixii;
+Pixii.Assets.setPreferences({ preferWorkers: false });
 
-PIXI.Assets.setPreferences({ preferWorkers: false });
+(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || Pixii;
 
-(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || PIXI;
-
-export default PIXI;
+export default Pixii;

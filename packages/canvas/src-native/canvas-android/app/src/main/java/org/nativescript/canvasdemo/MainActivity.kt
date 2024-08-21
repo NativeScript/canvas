@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
 
 //		System.loadLibrary("canvasnative")
 		//  canvas?.ignorePixelScaling = false
-
 		canvas?.touchEventListener = object : NSCCanvas.TouchEvents {
 			override fun onEvent(event: String, motionEvent: MotionEvent) {
 				try {
@@ -191,13 +190,24 @@ class MainActivity : AppCompatActivity() {
 					canvas.surfaceWidth = (canvas.width / resources.displayMetrics.density).toInt()
 
 
+
+					NSCImageAsset.loadImageFromResourceAsync(resources, asset, R.drawable.dp, object :
+						NSCImageAsset.Callback {
+						override fun onComplete(done: Boolean) {
+							NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+							NSCCanvas.context2DRender(ctx)
+						}
+
+					})
+
+
 //
 					//	NSCCanvas.context2DImageTest(context)
 				//		NSCCanvas.context2DPathTest(ctx)
 
 				//	NSCCanvasRenderingContext2D.scale(ctx, resources.displayMetrics.density,  resources.displayMetrics.density)
-					NSCCanvasRenderingContext2D.drawImage(ctx, bm, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
-					NSCCanvas.context2DRender(ctx)
+//					NSCCanvasRenderingContext2D.drawImage(ctx, webp, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+//					NSCCanvas.context2DRender(ctx)
 				}
 
 			}

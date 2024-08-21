@@ -5,6 +5,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, Screen } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
+import { handleContextOptions } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
 
 export function createSVGMatrix(): DOMMatrix {
@@ -215,11 +216,6 @@ export class Canvas extends CanvasBase {
 	static createCustomView() {
 		const canvas = new Canvas();
 		canvas._isCustom = true;
-		canvas.style.width = {
-			unit: '%',
-			value: 1,
-		};
-		canvas.style.height = 'auto';
 		return canvas;
 	}
 
@@ -353,7 +349,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._2dContext) {
-					const opts = { ...defaultOpts, ...this._handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
+					const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
 
@@ -374,7 +370,7 @@ export class Canvas extends CanvasBase {
 					return null;
 				}
 				if (!this._webglContext) {
-					const opts = { version: 1, ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -390,7 +386,7 @@ export class Canvas extends CanvasBase {
 				}
 
 				if (!this._webgl2Context) {
-					const opts = { version: 2, ...defaultOpts, ...this._handleContextOptions(type, options) };
+					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, options) };
 
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 
@@ -431,6 +427,8 @@ export class Canvas extends CanvasBase {
 				return this._webglContext.native;
 			case ContextType.WebGL2:
 				return this._webgl2Context.native;
+			case ContextType.WebGPU:
+				return this._gpuContext;
 			default:
 				return null;
 		}

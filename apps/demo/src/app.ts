@@ -20,8 +20,6 @@ Application.on('uncaughtError', (args) => {
 global.process = {} as any;
 global.process.env = {} as any;
 
-console.log(Array.from((<any>navigator).gpu.wgslLanguageFeatures));
-
 Application.on('uncaughtError', (args) => {
 	console.log('uncaughtError: error', args.error);
 	console.log('uncaughtError: platform error', args.android ?? args.ios);

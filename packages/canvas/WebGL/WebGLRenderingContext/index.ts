@@ -964,7 +964,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	@profile
 	texSubImage2D(target: any, level: any, xoffset: any, yoffset: any, width: any, height: any, format: any, type?: any, pixels?: any) {
 		const length = arguments.length;
-		console.log('texSubImage2D', length, pixels);
+
 		if (length === 9) {
 			this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
 		} else if (length === 7) {

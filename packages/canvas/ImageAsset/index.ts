@@ -127,27 +127,51 @@ export class ImageAsset extends Observable {
 			if (__ANDROID__) {
 				const asset = this._android.getAsset();
 				const ref = new WeakRef(this);
-				(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
-					asset,
-					path,
-					new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
-						onComplete(success) {
-							const owner = ref.get();
-							if (!success) {
-								const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
-								if (owner) {
-									owner.emitComplete(success, error);
+				if (typeof path === 'string' && path.indexOf('.webp') > -1) {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadWebPAsync(
+						asset,
+						path,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
 								}
-								reject(error);
-							} else {
-								if (owner) {
-									owner.emitComplete(success, undefined);
+							},
+						})
+					);
+				} else {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
+						asset,
+						path,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
 								}
-								resolve(success);
-							}
-						},
-					})
-				);
+							},
+						})
+					);
+				}
 				return;
 			}
 

@@ -40,7 +40,6 @@ export class ImageBitmap {
 	static createFrom(source: any, options: any) {
 		return new Promise(function (resolve, reject) {
 			let realSource;
-			let isBuffer = false;
 
 			if (source instanceof Canvas) {
 				realSource = (source as any).native;
@@ -53,7 +52,9 @@ export class ImageBitmap {
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source) as Uint8Array;
 				realSource = bytes;
-				isBuffer = true;
+				if (ArrayBuffer.isView(bytes)) {
+					realSource = new Uint8Array(bytes.buffer);
+				}
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
 				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
 					realSource = source._asset.native;
@@ -95,6 +96,9 @@ export class ImageBitmap {
 			} else if (source instanceof Blob) {
 				const bytes = (Blob as any).InternalAccessor.getBuffer(source);
 				realSource = bytes;
+				if (ArrayBuffer.isView(bytes)) {
+					realSource = new Uint8Array(bytes.buffer);
+				}
 			} else if (source && typeof source === 'object' && typeof source.tagName === 'string') {
 				if (source.tagName === 'IMG' || source.tagName === 'IMAGE') {
 					realSource = source._asset.native;

@@ -574,9 +574,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
 #[no_mangle]
 #[allow(unused)]
 pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
-    context: *const CanvasGPUCanvasContext,
-    device: *mut CanvasGPUDevice,
-    config: *const CanvasGPUSurfaceConfiguration,
+    context: *const CanvasGPUCanvasContext
 ) {
     if context.is_null() {
         return;

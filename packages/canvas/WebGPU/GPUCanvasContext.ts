@@ -55,6 +55,7 @@ export class GPUCanvasContext {
 			...options,
 		};
 
+		console.log(opts);
 		if (__ANDROID__ || __IOS__) {
 			const capabilities = this.getCapabilities(options?.device?.[adapter_]);
 
@@ -73,7 +74,18 @@ export class GPUCanvasContext {
 
 			if (__ANDROID__ && !capabilities.format.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
 				opts.format = capabilities.format[0];
-				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${capabilities.format[0]}`);
+				// fallback to rgba8unorm ... Android 🤪
+				if (opts.format === 'rgba8unorm-srgb') {
+					opts.format = 'rgba8unorm';
+				}
+				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
+			}
+
+			if (__IOS__ && !capabilities.format.includes(options.format)) {
+				opts.format = capabilities.format.filter((value) => {
+					return value.indexOf('srgb') === -1;
+				})[0];
+				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
 			}
 
 			if (__IOS__ && opts.usage > capabilities.usages) {
@@ -90,12 +102,13 @@ export class GPUCanvasContext {
 		this[native_].unconfigure();
 	}
 
-	_currentTexture: GPUTexture;
+	private _currentTexture: GPUTexture;
 	getCurrentTexture() {
 		if (this._currentTexture) {
 			return this._currentTexture;
 		}
 		const texture = this[native_].getCurrentTexture();
+
 		if (texture) {
 			this._currentTexture = GPUTexture.fromNative(texture);
 		} else {
@@ -107,7 +120,7 @@ export class GPUCanvasContext {
 
 	presentSurface() {
 		if (this._currentTexture) {
-			this[native_].presentSurface(this._currentTexture?.[native_]);
+			this[native_].presentSurface(this._currentTexture[native_]);
 			this._currentTexture = null;
 		} else {
 			console.warn('call getCurrentTexture: before presentSurface');

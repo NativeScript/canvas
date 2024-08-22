@@ -369,6 +369,7 @@ export class GPUDevice extends EventTarget {
 
 		if (layout instanceof GPUPipelineLayout) {
 			descriptor.layout = descriptor.layout[native_];
+		} else {
 		}
 
 		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(descriptor));
@@ -401,6 +402,7 @@ export class GPUDevice extends EventTarget {
 
 			if (layout instanceof GPUPipelineLayout) {
 				descriptor.layout = descriptor.layout[native_];
+			} else {
 			}
 
 			this[native_].createRenderPipelineAsync(descriptor, (error, pipeline) => {
@@ -428,7 +430,7 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format; usage; viewFormats?: any[] /* default=[] */ }) {
+	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format: GPUTextureFormat; usage: number; viewFormats?: any[] /* default=[] */ }) {
 		const sizeIsArray = Array.isArray(descriptor.size);
 
 		const opts = {

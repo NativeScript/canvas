@@ -2997,9 +2997,7 @@ void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext 
                                             const struct CanvasGPUDevice *device,
                                             const struct CanvasGPUSurfaceConfiguration *config);
 
-void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context,
-                                              struct CanvasGPUDevice *device,
-                                              const struct CanvasGPUSurfaceConfiguration *config);
+void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context);
 
 const struct CanvasGPUTexture *canvas_native_webgpu_context_get_current_texture(const struct CanvasGPUCanvasContext *context);
 
@@ -3575,6 +3573,8 @@ struct FileHelper *canvas_native_helper_read_file(const char *path);
 bool canvas_native_helper_read_file_has_error(const struct FileHelper *file);
 
 struct U8Buffer *canvas_native_helper_read_file_get_data(struct FileHelper *file);
+
+struct U8Buffer *canvas_native_helper_read_file_take_data(struct FileHelper *file);
 
 const char *canvas_native_helper_read_file_get_error(const struct FileHelper *file);
 

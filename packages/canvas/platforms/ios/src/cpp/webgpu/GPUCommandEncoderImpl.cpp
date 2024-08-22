@@ -282,7 +282,6 @@ void GPUCommandEncoderImpl::BeginRenderPass(const v8::FunctionCallbackInfo<v8::V
 
             v8::Local<v8::Value> viewVal;
 
-
             if (colorAttachment->Get(context, ConvertToV8String(isolate,
                                                                 "view")).ToLocal(&viewVal)) {
                 auto type = GetNativeType(viewVal);

@@ -1,4 +1,4 @@
-require('@nativescript/canvas-polyfill');
+import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
 import * as Pixii from 'pixi.js';

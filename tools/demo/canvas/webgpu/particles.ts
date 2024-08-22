@@ -262,6 +262,13 @@ export async function run(canvas: Canvas) {
 			const levelHeight = textureHeight >> level;
 			const pipeline = level == 0 ? probabilityMapImportLevelPipeline.getBindGroupLayout(0) : probabilityMapExportLevelPipeline.getBindGroupLayout(0);
 
+			const view = texture.createView({
+				format: 'rgba8unorm',
+				dimension: '2d',
+				baseMipLevel: level,
+				mipLevelCount: 1,
+			});
+
 			const probabilityMapBindGroup = device.createBindGroup({
 				layout: pipeline,
 				entries: [
@@ -283,12 +290,12 @@ export async function run(canvas: Canvas) {
 					{
 						// tex_in / tex_out
 						binding: 3,
-						resource: texture.createView({
-							format: 'rgba8unorm',
-							dimension: '2d',
-							baseMipLevel: level,
-							mipLevelCount: 1,
-						}),
+						resource: view,
+					},
+					{
+						// tex_in / tex_out
+						binding: 4,
+						resource: view,
 					},
 				],
 			});
@@ -341,6 +348,7 @@ export async function run(canvas: Canvas) {
 			entryPoint: 'simulate',
 		},
 	});
+	const tv = texture.createView();
 	const computeBindGroup = device.createBindGroup({
 		layout: computePipeline.getBindGroupLayout(0),
 		entries: [
@@ -360,7 +368,11 @@ export async function run(canvas: Canvas) {
 			},
 			{
 				binding: 2,
-				resource: texture.createView(),
+				resource: tv,
+			},
+			{
+				binding: 3,
+				resource: tv,
 			},
 		],
 	});

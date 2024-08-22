@@ -3,6 +3,15 @@ use std::borrow::Cow;
 use std::ffi::CString;
 
 #[inline]
+pub(crate) fn ptr_into_slice<'a, T>(entries: *const T,
+                                    size: usize) -> &'a [T] {
+    if entries.is_null() || size == 0 {
+        return &[];
+    }
+
+    unsafe { std::slice::from_raw_parts(entries, size) }
+}
+#[inline]
 pub(crate) fn ptr_into_label<'a>(ptr: *const std::ffi::c_char) -> wgpu_core::Label<'a> {
     unsafe { ptr.as_ref() }.and_then(|ptr| {
         unsafe { CStr::from_ptr(ptr) }

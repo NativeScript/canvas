@@ -207,7 +207,7 @@ void GPUCanvasContextImpl::UnConfigure(const v8::FunctionCallbackInfo<v8::Value>
         return;
     }
 
-    //  canvas_native_webgpu_context_unconfigure(ptr->GetContext());
+    canvas_native_webgpu_context_unconfigure(ptr->GetContext());
 
 }
 

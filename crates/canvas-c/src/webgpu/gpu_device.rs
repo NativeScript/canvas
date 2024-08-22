@@ -311,6 +311,7 @@ impl CanvasGPUDevice {
             .iter()
             .map(|entry| (*entry).into())
             .collect::<Vec<_>>();
+
         let desc = wgpu_core::binding_model::BindGroupLayoutDescriptor {
             label: label.clone(),
             entries: Cow::from(entries),
@@ -601,13 +602,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_bind_group_layout(
     entries: *const CanvasBindGroupLayoutEntry,
     size: usize,
 ) -> *const CanvasGPUBindGroupLayout {
-    if device.is_null() || entries.is_null() || size == 0 {
+    if device.is_null() {
         return std::ptr::null();
     }
 
     let device = unsafe { &*device };
 
-    let entries = std::slice::from_raw_parts(entries, size);
+    let entries = ptr_into_slice(entries, size);
 
     let label = ptr_into_label(label);
 

@@ -5,6 +5,7 @@
 #include "GPUTextureImpl.h"
 #include "Caches.h"
 #include "GPUTextureViewImpl.h"
+#include "GPULabel.h"
 
 GPUTextureImpl::GPUTextureImpl(const CanvasGPUTexture *texture) : texture_(texture) {}
 
@@ -274,7 +275,7 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
             aspect, 0, -1, 0, -1
     };
 
-    std::string label;
+    GPULabel label;
 
     if (descVal->IsObject()) {
         descriptor = new CanvasCreateTextureViewDescriptor{};
@@ -341,9 +342,9 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
         v8::Local<v8::Value> labelVal;
         descObj->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        label = ConvertFromV8String(isolate, labelVal);
+        label = GPULabel(isolate, labelVal);
 
-        descriptor->label = label.c_str();
+        descriptor->label = *label;
 
         v8::Local<v8::Value> dimensionVal;
         if (descObj->Get(context, ConvertToV8String(isolate, "dimension")).ToLocal(&dimensionVal)) {

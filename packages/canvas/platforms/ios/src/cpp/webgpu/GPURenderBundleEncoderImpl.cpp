@@ -8,6 +8,7 @@
 #include "GPUBufferImpl.h"
 #include "GPURenderBundleImpl.h"
 #include "GPUBindGroupImpl.h"
+#include "GPULabel.h"
 
 GPURenderBundleEncoderImpl::GPURenderBundleEncoderImpl(const CanvasGPURenderBundleEncoder *encoder)
         : encoder_(
@@ -287,7 +288,7 @@ void GPURenderBundleEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    std::string label;
+    GPULabel label;
     v8::Local<v8::Value> labelVal;
 
     auto optionsVal = args[0];
@@ -296,11 +297,11 @@ void GPURenderBundleEncoderImpl::Finish(const v8::FunctionCallbackInfo<v8::Value
         auto options = optionsVal.As<v8::Object>();
         options->Get(context, ConvertToV8String(isolate, "label")).ToLocal(&labelVal);
 
-        label = ConvertFromV8String(isolate, labelVal);
+        label = GPULabel(isolate, labelVal);
     }
 
 
-    auto bundle = canvas_native_webgpu_render_bundle_encoder_finish(ptr->GetEncoder(), label.c_str());
+    auto bundle = canvas_native_webgpu_render_bundle_encoder_finish(ptr->GetEncoder(), *label);
 
     if (bundle != nullptr) {
         auto ret = GPURenderBundleImpl::NewInstance(isolate, new GPURenderBundleImpl(bundle));

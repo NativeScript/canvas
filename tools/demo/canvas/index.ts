@@ -574,8 +574,8 @@ fn main() -> @location(0) vec4f {
 		// const occlusionQuery = require('./webgpu/occlusionQuery');
 		// occlusionQuery.run(this.canvas);
 
-		// const particles = require('./webgpu/particles');
-		// particles.run(this.canvas);
+		const particles = require('./webgpu/particles');
+		particles.run(this.canvas);
 
 		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
 		// texturedCube.run(this.canvas);
@@ -595,8 +595,8 @@ fn main() -> @location(0) vec4f {
 		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
 		// twoCubes.run(this.canvas);
 
-		const fractualCube = require('./webgpu/basicGraphics/fractalCube');
-		fractualCube.run(this.canvas);
+		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
+		// fractualCube.run(this.canvas);
 
 		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
 		// wireframe.run(this.canvas);

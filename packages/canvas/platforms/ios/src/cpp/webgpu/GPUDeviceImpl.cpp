@@ -1294,8 +1294,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     }
     auto options = optionsVal.As<v8::Object>();
 
-    GPULabel label;
-
     v8::Local<v8::Value> stencilValue;
     options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
             &stencilValue);
@@ -1707,9 +1705,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             &labelVal);
 
 
-    label = GPULabel(isolate, labelVal);
+    auto label = GPULabel(isolate, labelVal);
 
-  
+
     descriptor.label = *label;
 
 
@@ -2628,7 +2626,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     label = GPULabel(isolate, labelVal);
 
     descriptor.label = *label;
-    
+
 
 
     v8::Local<v8::Value> layoutVal;
@@ -3547,7 +3545,6 @@ void GPUDeviceImpl::CreateTexture(const v8::FunctionCallbackInfo<v8::Value> &arg
 
         if (dimensionVal->IsString()) {
             auto dimension = ConvertFromV8String(isolate, dimensionVal);
-
             // todo use enum
             if (dimension == "1d") {
                 descriptor.dimension = CanvasTextureDimension::CanvasTextureDimensionD1;

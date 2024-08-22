@@ -259,7 +259,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
 
         CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
-        
+
         if (imageAsset != nullptr){
             CanvasImageCopyImageAsset source{
                     imageAsset,
@@ -273,7 +273,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
                                                                       &extent3D);
             return;
         }
-        
+
 
         auto data = canvas_native_u8_buffer_get_bytes(buffer);
         auto size = canvas_native_u8_buffer_get_length(buffer);
@@ -448,8 +448,6 @@ void GPUQueueImpl::WriteTexture(const v8::FunctionCallbackInfo<v8::Value> &args)
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-
-    bool flipY = false;
 
 
     auto destinationVal = args[0];

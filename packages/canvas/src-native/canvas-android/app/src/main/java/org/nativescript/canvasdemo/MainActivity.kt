@@ -191,14 +191,60 @@ class MainActivity : AppCompatActivity() {
 
 
 
-					NSCImageAsset.loadImageFromResourceAsync(resources, asset, R.drawable.dp, object :
-						NSCImageAsset.Callback {
-						override fun onComplete(done: Boolean) {
-							NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
-							NSCCanvas.context2DRender(ctx)
-						}
 
-					})
+
+					executor.execute {
+						try {
+							//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+							val file = File(filesDir, "canvas_createpattern.jpeg")
+							if (file.exists()) {
+								file.delete()
+							}
+
+							val url =
+								URL("https://picsum.photos/seed/picsum/${canvas.surfaceWidth}/${canvas.surfaceHeight}")
+							val fs = FileOutputStream(file)
+							url.openStream().use { input ->
+								fs.use { output ->
+									input.copyTo(output)
+								}
+							}
+							val bm = BitmapFactory.decodeFile(file.absolutePath)
+
+
+//							NSCImageAsset.loadFromPath(asset, file.absolutePath)
+
+							NSCImageAsset.loadImageFromBitmap(asset, bm)
+							runOnUiThread {
+
+								NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+								NSCCanvas.context2DRender(ctx)
+							}
+
+						}catch (e: Exception){
+							e.printStackTrace()
+						}
+					}
+
+
+//					NSCImageAsset.loadImageFromUrlAsync( asset, "https://picsum.photos/seed/picsum/600/600", object :
+//						NSCImageAsset.Callback {
+//						override fun onComplete(done: Boolean) {
+//							NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+//							NSCCanvas.context2DRender(ctx)
+//						}
+//
+//					})
+
+
+//					NSCImageAsset.loadImageFromResourceAsync(resources, asset, R.drawable.dp, object :
+//						NSCImageAsset.Callback {
+//						override fun onComplete(done: Boolean) {
+//							NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+//							NSCCanvas.context2DRender(ctx)
+//						}
+//
+//					})
 
 
 //

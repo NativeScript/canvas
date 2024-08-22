@@ -6,8 +6,6 @@ source $HOME/.profile
 
 whereis cc
 
-echo $PATH
-
 function to_bool() {
   local arg="$1"
   case "$(echo "$arg" | tr '[:upper:]' '[:lower:]')" in
@@ -29,8 +27,8 @@ function to_bool() {
   esac
 }
 
-CWD="$SRCROOT/../canvas-native"
-pushd "$SRCROOT/../canvas-native"
+CWD="$SRCROOT/../../../../crates"
+pushd "$SRCROOT/../../../.."
 
 IS_SIMULATOR=false
 
@@ -87,5 +85,7 @@ export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
 cbindgen --config "$CWD/canvas-c/cbindgen.toml"  "$CWD/canvas-c/src/lib.rs" -l c >"$SRCROOT/CanvasNative/include/canvas_native.h"
 cbindgen --config "$CWD/canvas-ios/cbindgen.toml"  "$CWD/canvas-ios/src/lib.rs" -l c >"$SRCROOT/CanvasNative/include/canvas_ios.h"
 
-RUSTFLAGS="-Zlocation-detail=none -C panic=abort" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort  --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
+cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort  --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
+
+# cargo +nightly build -Z build-std='std'  --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 popd

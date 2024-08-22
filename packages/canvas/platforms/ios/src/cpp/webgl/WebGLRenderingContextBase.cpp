@@ -142,7 +142,7 @@ WebGLRenderingContextBase::~WebGLRenderingContextBase() {
         canvas_native_raf_stop(
                                _raf->GetRaf());
     }
-    canvas_native_raf_destroy(_raf->GetRaf());
+    canvas_native_raf_release(_raf->GetRaf());
     this->raf_ = nullptr;
     canvas_native_webgl_state_destroy(this->GetState());
     this->state_ = nullptr;

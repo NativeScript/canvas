@@ -28,7 +28,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_disjoint_timer_queryImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_disjoint_timer_query);
+        SetNativeType( query, NativeType::EXT_disjoint_timer_query);
         object->SetAlignedPointerInInternalField(0, query);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_disjoint_timer_query"));

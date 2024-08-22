@@ -1,7 +1,7 @@
-require('@nativescript/canvas-polyfill');
+import '@nativescript/canvas-polyfill';
 
 function initPhaser() {
-/*  if ((global as any).Phaser) {
+	/*  if ((global as any).Phaser) {
     const version = parseFloat((global as any).Phaser.VERSION);
     if (!Number.isNaN(version) && version < 3) {
       (global as any).PIXI = (global as any).window.PIXI = undefined;
@@ -9,8 +9,8 @@ function initPhaser() {
       (global as any).window.Phaser = (global as any).Phaser = undefined;
     }
   }*/
-  (global as any).window.Phaser = (global as any).Phaser = (global as any).Phaser || require('phaser');
-  return (global as any).Phaser;
+	(global as any).window.Phaser = (global as any).Phaser = (global as any).Phaser || require('phaser');
+	return (global as any).Phaser;
 }
 
 export default initPhaser();

@@ -1,22 +1,22 @@
-require('@nativescript/canvas-polyfill');
-
+import '@nativescript/canvas-polyfill';
 
 interface TNSPhaserCe {
-    PIXI: any;
+	PIXI: any;
 	Phaser: any;
 }
 
 export declare var global: TNSPhaserCe;
 
-
 function initPhaser() {
 	(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || require('phaser-ce/build/custom/pixi');
 	(global as any).p2 = (global as any).window.p2 = (global as any).p2 || require('phaser-ce/build/custom/p2');
-	(global as any).Phaser = (global as any).window.Phaser = (global as any).Phaser || require('phaser-ce/build/phaser');
+	const p = require('phaser-ce/build/phaser');
+
+	(global as any).Phaser = (global as any).window.Phaser = (global as any).Phaser || p;
 
 	(global as any).PIXI.WebGLRenderer.prototype.updateTexture = function (texture) {
 		if (!texture.hasLoaded || texture.source.nodeName === 'CANVAS') {
-				return false;
+			return false;
 		}
 		if (texture.source.compressionAlgorithm) {
 			return this.updateCompressedTexture(texture);
@@ -31,45 +31,17 @@ function initPhaser() {
 
 		gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
 
+		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultipliedAlpha);
 
-		gl.pixelStorei(
-			gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,
-			texture.premultipliedAlpha
-		);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.source);
 
-		gl.texImage2D(
-			gl.TEXTURE_2D,
-			0,
-			gl.RGBA,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			texture.source
-		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, texture.scaleMode === global.PIXI.scaleModes.LINEAR ? gl.LINEAR : gl.NEAREST);
 
-		gl.texParameteri(
-			gl.TEXTURE_2D,
-			gl.TEXTURE_MAG_FILTER,
-			texture.scaleMode === global.PIXI.scaleModes.LINEAR ? gl.LINEAR : gl.NEAREST
-		);
-
-		if (
-			texture.mipmap &&
-			global.Phaser.Math.isPowerOfTwo(texture.width, texture.height)
-		) {
-			gl.texParameteri(
-				gl.TEXTURE_2D,
-				gl.TEXTURE_MIN_FILTER,
-				texture.scaleMode === global.PIXI.scaleModes.LINEAR
-					? gl.LINEAR_MIPMAP_LINEAR
-					: gl.NEAREST_MIPMAP_NEAREST
-			);
+		if (texture.mipmap && global.Phaser.Math.isPowerOfTwo(texture.width, texture.height)) {
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texture.scaleMode === global.PIXI.scaleModes.LINEAR ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
 			gl.generateMipmap(gl.TEXTURE_2D);
 		} else {
-			gl.texParameteri(
-				gl.TEXTURE_2D,
-				gl.TEXTURE_MIN_FILTER,
-				texture.scaleMode === global.PIXI.scaleModes.LINEAR ? gl.LINEAR : gl.NEAREST
-			);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texture.scaleMode === global.PIXI.scaleModes.LINEAR ? gl.LINEAR : gl.NEAREST);
 		}
 
 		if (!texture._powerOf2) {
@@ -85,8 +57,6 @@ function initPhaser() {
 		// return texture._glTextures[gl.id];
 		return true;
 	};
-	
-
 
 	return (global as any).Phaser;
 }

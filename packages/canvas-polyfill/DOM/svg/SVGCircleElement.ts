@@ -1,47 +1,25 @@
-import { Element } from '../Element';
-import { Circle } from '@nativescript/canvas';
+import { SVGGeometryElement } from './SVGGeometryElement';
+import { Circle } from '@nativescript/canvas-svg';
+import { SVGAnimatedLength } from './SVGAnimatedLength';
 
-export class SVGCircleElement extends Element {
-	__internalElement: Circle;
+export class SVGCircleElement extends SVGGeometryElement {
+	private _cx = new SVGAnimatedLength(this, 'cx');
+	private _cy = new SVGAnimatedLength(this, 'cy');
+	private _r = new SVGAnimatedLength(this, 'r');
 	constructor() {
 		super('circle');
-		let circle = undefined;
-		if (arguments.length > 1) {
-			circle = arguments[1];
-		}
-
-		if (circle instanceof Circle) {
-			this.__internalElement = circle;
-		} else {
-			this.__internalElement = new Circle();
-		}
+		this.nativeElement = new Circle() as never;
 	}
 
-	set width(value) {
-		this.__internalElement.width = value;
+	get cx() {
+		return this._cx;
 	}
 
-	get width() {
-		return this.__internalElement.getMeasuredWidth();
+	get cy() {
+		return this._cy;
 	}
 
-	set height(value) {
-		this.__internalElement.height = value;
-	}
-
-	get height() {
-		return this.__internalElement.getMeasuredHeight();
-	}
-
-	setAttribute(key, value) {
-		this.__internalElement._dom.documentElement.setAttribute(key, value);
-	}
-
-	getAttribute(key) {
-		return this.__internalElement._dom.documentElement.getAttribute(key);
-	}
-
-	removeAttribute(key, value) {
-		this.__internalElement._dom.documentElement.removeAttribute(key, value);
+	get r() {
+		return this._r;
 	}
 }

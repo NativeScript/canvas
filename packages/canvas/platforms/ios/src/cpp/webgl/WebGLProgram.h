@@ -9,9 +9,9 @@
 
 class WebGLProgram:ObjectWrapperImpl  {
 public:
-    WebGLProgram(uint32_t program) : program_(program) {}
+    explicit WebGLProgram(uint32_t program) : program_(program) {}
 
-    uint32_t GetProgram() {
+    uint32_t GetProgram() const {
         return this->program_;
     }
 
@@ -39,7 +39,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLProgram::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLProgram);
+        SetNativeType( program, NativeType::WebGLProgram);
         object->SetAlignedPointerInInternalField(0, program);
         program->BindFinalizer(isolate, object);
         return scope.Escape(object);

@@ -54,25 +54,22 @@ import {
 	clip2,
 	clip3,
 	clearRect,
+	skew,
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
-import * as Svg from '@nativescript/canvas/SVG';
 import { drawChart, issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
+import { Svg } from '@nativescript/canvas-svg';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
-	private svg: Svg.Svg;
-	private svg2: Svg.Svg;
-	private svg3: Svg.Svg;
-	private svg4: Svg.Svg;
 
 	constructor() {
 		super();
@@ -124,293 +121,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.restore();
 			ctx.fillText(baseline, x + 5, 50);
 		});
-	}
-
-	svgViewLoaded(args) {
-		const view = args.object;
-		console.log('svg ready', view.id);
-		this.drawSvg(this.svg, view.id);
-	}
-
-	svg2ViewLoaded(args) {
-		this.svg2 = args.object;
-		console.log('svg2 ready');
-		this.set('src2', 'http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg');
-	}
-
-	drawTransformMatrixSvg() {
-		this.set(
-			'src',
-			`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-		<rect x="10" y="10" width="30" height="20" fill="green" />
-
-		<!--
-		In the following example we are applying the matrix:
-		[a c e]    [3 -1 30]
-		[b d f] => [1  3 40]
-		[0 0 1]    [0  0  1]
-
-		which transform the rectangle as such:
-
-		top left corner: oldX=10 oldY=10
-		newX = a * oldX + c * oldY + e = 3 * 10 - 1 * 10 + 30 = 50
-		newY = b * oldX + d * oldY + f = 1 * 10 + 3 * 10 + 40 = 80
-
-		top right corner: oldX=40 oldY=10
-		newX = a * oldX + c * oldY + e = 3 * 40 - 1 * 10 + 30 = 140
-		newY = b * oldX + d * oldY + f = 1 * 40 + 3 * 10 + 40 = 110
-
-		bottom left corner: oldX=10 oldY=30
-		newX = a * oldX + c * oldY + e = 3 * 10 - 1 * 30 + 30 = 30
-		newY = b * oldX + d * oldY + f = 1 * 10 + 3 * 30 + 40 = 140
-
-		bottom right corner: oldX=40 oldY=30
-		newX = a * oldX + c * oldY + e = 3 * 40 - 1 * 30 + 30 = 120
-		newY = b * oldX + d * oldY + f = 1 * 40 + 3 * 30 + 40 = 170
-		-->
-		<rect x="10" y="10" width="30" height="20" fill="red"
-		transform="matrix(3 1 -1 3 30 40)" />
-		</svg>`
-		);
-	}
-
-	drawTransformTranslateSvg() {
-		/// translate transform
-
-		this.set(
-			'src',
-			`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <!-- No translation -->
-  <rect x="5" y="5" width="40" height="40" fill="green" />
-
-  <!-- Horizontal translation -->
-  <rect x="5" y="5" width="40" height="40" fill="blue"
-        transform="translate(50)" />
-
-  <!-- Vertical translation -->
-  <rect x="5" y="5" width="40" height="40" fill="red"
-        transform="translate(0 50)" />
-
-  <!-- Both horizontal and vertical translation -->
-  <rect x="5" y="5" width="40" height="40" fill="yellow"
-         transform="translate(50,50)" />
-</svg>
-			`
-		);
-	}
-
-	drawTransformScaleSvg() {
-		this.set(
-			'src',
-			`
-				<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
-				  <!-- uniform scale -->
-				  <circle cx="0" cy="0" r="10" fill="red"
-				          transform="scale(4)" />
-
-				  <!-- vertical scale -->
-				  <circle cx="0" cy="0" r="10" fill="yellow"
-				          transform="scale(1,4)" />
-
-				  <!-- horizontal scale -->
-				  <circle cx="0" cy="0" r="10" fill="pink"
-				          transform="scale(4,1)" />
-
-				  <!-- No scale -->
-				  <circle cx="0" cy="0" r="10" fill="black" />
-				</svg>
-			`
-		);
-	}
-
-	drawTransformRotateSvg() {
-		this.set(
-			'src',
-			`
-			<svg viewBox="-12 -2 34 14" xmlns="http://www.w3.org/2000/svg">
-			  <rect x="0" y="0" width="10" height="10" />
-
-			  <!-- rotation is done around the point 0,0 -->
-			  <rect x="0" y="0" width="10" height="10" fill="red"
-			        transform="rotate(100)" />
-
-			  <!-- rotation is done around the point 10,10 -->
-			  <rect x="0" y="0" width="10" height="10" fill="green"
-			        transform="rotate(100,10,10)" />
-			</svg>
-		`
-		);
-	}
-
-	drawTransformSkewX() {
-		this.set(
-			'src',
-			`
-			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
-			  <rect x="-3" y="-3" width="6" height="6" />
-
-			  <rect x="-3" y="-3" width="6" height="6" fill="red"
-			        transform="skewX(30)" />
-			</svg>
-		`
-		);
-	}
-
-	drawTransformSkewY() {
-		this.set(
-			'src',
-			`
-			<svg viewBox="-5 -5 10 10" xmlns="http://www.w3.org/2000/svg">
-			  <rect x="-3" y="-3" width="6" height="6" />
-
-			  <rect x="-3" y="-3" width="6" height="6" fill="red"
-			        transform="skewY(30)" />
-			</svg>
-		`
-		);
-	}
-
-	drawSvg(args: Svg.Svg, id) {
-		switch (id) {
-			case '1':
-				this.set('src1', 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg');
-				break;
-			case '2':
-				this.set('src2', 'https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
-				break;
-			case '3':
-				this.set('src3', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
-				break;
-			case '4':
-				this.set('src4', 'https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg');
-				break;
-		}
-		//this.drawTransformSkewY();
-		//this.set('src','https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/car.svg');
-		//this.set('src','http://thenewcode.com/assets/images/thumbnails/homer-simpson.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Location_map_San_Francisco_Bay_Area.svg');
-		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/4/4c/The_Hague%2C_Netherlands%2C_the_old_city_center.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Moldova_%281483%29-en.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/9/95/Kaiserstandarte_Version1.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/f/ff/1_42_polytope_7-cube.svg');
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/1/1c/KINTETSU23000_20140424A.svg');
-		//this.set('src', 'https://raw.githubusercontent.com/RazrFalcon/resvg/7b26adbcc9698dcca687214c84d216794f60a5be/tests/svg/e-radialGradient-013.svg');
-		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/c/c1/Propane_flame_contours-en.svg')
-		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/9/9d/The_Rhodopes_on_The_Paths_Of_Orpheus_And_Eurydice_Project_Map.svg')
-		//this.set('src', 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Map_of_the_world_by_the_US_Gov_as_of_2016_no_legend.svg');
-		//this.set('src','https://upload.wikimedia.org/wikipedia/commons/7/78/61453-Planeta_berria_2006an.svg')
-		// https://upload.wikimedia.org/wikipedia/commons/6/61/Figure_in_Manga_style.svg
-		// https://upload.wikimedia.org/wikipedia/commons/a/a0/Plan_des_Forts_de_Lyon_premi%C3%A8re_ceinture_-_OSM.svg
-
-		/*this.set('src', `
-		<svg viewBox="0 0 100 100">
-  <!-- No translation -->
-  <rect x="5" y="5" width="40" height="40" fill="green" />
-
-  <!-- Horizontal translation -->
-  <rect x="5" y="5" width="40" height="40" fill="blue"
-		transform="translate(50)" />
-
-  <!-- Vertical translation -->
-  <rect x="5" y="5" width="40" height="40" fill="red"
-		transform="translate(0 50)" />
-
-  <!-- Both horizontal and vertical translation -->
-  <rect x="5" y="5" width="40" height="40" fill="yellow"
-		 transform="translate(50,50)" />
-</svg>
-		`) */
-
-		/*
-		const circle = new Svg.Circle();
-		circle.cx = 100;
-		circle.cy = 100;
-		circle.r = 50;
-		circle.fill = 'gold';
-		circle.id = 'circle';
-		args.addChild(circle);
-
-		const rect = new Svg.Rect();
-		rect.x = 0;
-		rect.y = 200;
-		rect.width = 300;
-		rect.height = 300;
-		rect.stroke = 'green';
-		rect.fill = 'black';
-		rect.id = 'rect';
-		args.addChild(rect);
-
-		const image = new Svg.Image();
-		image.href = 'https://source.unsplash.com/1600x900/?water';
-		image.x = 0;
-		image.y = 600;
-		image.width = 500;
-		image.height = 500;
-		args.addChild(image);
-
-		const image2 = new Svg.Image();
-		image2.href = 'https://source.unsplash.com/1600x900/?nature';
-		image2.x = 600;
-		image2.y = 600;
-		image2.width = 500;
-		image2.height = 500;
-		args.addChild(image2);
-
-		const path = new Svg.Path();
-		path.d = "M150 0 L75 200 L225 200 Z";
-		args.addChild(path);
-
-		const ellipse = new Svg.Ellipse();
-		ellipse.cx = 500;
-		ellipse.cy = 80;
-		ellipse.rx = 100;
-		ellipse.ry = 50;
-		ellipse.setInlineStyle('fill:yellow;stroke:purple;stroke-width:2');
-		args.addChild(ellipse);
-
-		const line = new Svg.Line();
-		line.x1 = 0;
-		line.y1 = 0;
-		line.x2 = 200;
-		line.y2 = 200;
-		line.setInlineStyle('stroke:rgb(255,0,0);stroke-width:2');
-		args.addChild(line);
-
-
-		const polygon = new Svg.Polygon();
-		polygon.points = "200,10 250,190 160,210";
-		polygon.setInlineStyle('fill:lime;stroke:purple;stroke-width:1');
-		args.addChild(polygon);
-
-
-		const polyline = new Svg.Polyline();
-		polyline.points = "20,20 40,25 60,40 80,120 120,140 200,180";
-		polyline.setInlineStyle("fill:none;stroke:black;stroke-width:3");
-		args.addChild(polyline);
-
-		const text = new Svg.Text();
-		text.text = "I love SVG!";
-		text.x = 0;
-		text.y = 15;
-		args.addChild(text);
-		const g = new Svg.G();
-
-		const path1 = new Svg.Path();
-		path1.d = "M5 20 l215 0";
-		path1.stroke = "red";
-
-		const path2 = new Svg.Path();
-		path2.d = "M5 40 l215 0";
-		path2.stroke = "black";
-
-		const path3 = new Svg.Path();
-		path3.d = "M5 60 l215 0";
-		path3.stroke = "blue";
-		g.addChildren(path1, path2, path3);
-		args.addChild(g);
-		*/
 	}
 
 	urlTests() {
@@ -540,16 +250,22 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	}
 
 	drawOnCanvasWithCanvas(canvas) {
-		const c2 = document.createElement('canvas');
-		c2.width = 512;
-		c2.height = 512;
-		const c2d = c2.getContext('2d');
+		// const c2 = document.createElement('canvas');
+		// c2.width = 512;
+		// c2.height = 512;
+		// const c2d = c2.getContext('2d');
+
 		const image = new global.ImageAsset();
 
-		image.fromUrl(`https://source.unsplash.com/random/${512}x${512}`).then(() => {
-			c2d.drawImage(image, 0, 0);
+		image.fromUrl(`https://picsum.photos/${512 * window?.devicePixelRatio ?? 1}/${512 * window?.devicePixelRatio ?? 1}`).then(async () => {
+			//	c2d.drawImage(image, 0, 0, c2.width, c2.height);
+			const bm = await createImageBitmap(image);
+			console.log('done', image.width, image.height);
+			canvas.width = canvas.clientWidth * window?.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window?.devicePixelRatio;
 			const ctx = canvas.getContext('2d');
-			ctx.drawImage(c2, 0, 0);
+			ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
+			//ctx.drawImage(c2, 0, 0, canvas.width, canvas.height);
 		});
 	}
 
@@ -630,9 +346,271 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		ctx.resetTransform();
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
+
+	drawChart(canvas) {
+		canvas.backgroundColor = 'black';
+		let ctx = canvas.getContext('2d');
+
+		if (!ctx) {
+			console.error('missing draw context');
+			return;
+		}
+
+		let chartList = [];
+		console.log('*** drawChart: ' + canvas + ', #arcs=' + chartList.length);
+		let { width, height } = canvas;
+		let bgRadius = Math.floor(Math.min(width, height) / 2);
+		let bgWidth = bgRadius * 0.5;
+		let borderWidth = bgRadius * 0.02;
+		let contentWidth = bgRadius - 2 * borderWidth;
+		let outerContentRadius = bgRadius - borderWidth;
+		let centerX = Math.round(width / 2);
+		let centerY = Math.round(height / 2);
+
+		ctx.clearRect(0, 0, width, height);
+
+		const _2_PI = Math.PI * 2;
+
+		// background donut
+		ctx.strokeStyle = '#363636';
+		ctx.lineWidth = bgWidth;
+		console.log(bgWidth);
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius - bgWidth / 2, 0, Math.PI * 2);
+		ctx.stroke();
+		// background donut outer
+		ctx.strokeStyle = 'white';
+		ctx.lineWidth = borderWidth;
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius - borderWidth / 2, 0, _2_PI);
+		ctx.stroke();
+		// background donut inner
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, bgRadius / 2 + borderWidth / 2, 0, _2_PI);
+		ctx.stroke();
+
+		//<TEMP>
+		chartList = [
+			{
+				color: '#eeeeeeff',
+				minAngle: -1.9634954084936207,
+				maxAngle: -1.1780972450961724,
+				outerRadius: 1.278232843017578,
+				width: 0.768232843017578,
+			},
+			{
+				color: '#b82433',
+				minAngle: -1.9474526277449578,
+				maxAngle: -1.1941400258448356,
+				outerRadius: 1.268232843017578,
+				width: 0.758232843017578,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: 1.1780972450961724,
+				maxAngle: 1.9634954084936207,
+				outerRadius: 1.2404586791992187,
+				width: 0.7304586791992187,
+			},
+			{
+				color: '#b82433',
+				minAngle: 1.1941400258448356,
+				maxAngle: 1.9474526277449578,
+				outerRadius: 1.2304586791992187,
+				width: 0.7204586791992187,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: -3.5342917352885173,
+				maxAngle: -2.748893571891069,
+				outerRadius: 1.2133154541015623,
+				width: 0.7033154541015624,
+			},
+			{
+				color: '#b82433',
+				minAngle: -3.518248954539854,
+				maxAngle: -2.764936352639732,
+				outerRadius: 1.2033154541015623,
+				width: 0.6933154541015624,
+			},
+			{
+				color: '#eeeeeeff',
+				minAngle: -0.39269908169872414,
+				maxAngle: 0.39269908169872414,
+				outerRadius: 0.9305414001464843,
+				width: 0.42054140014648433,
+			},
+			{
+				color: '#b82433',
+				minAngle: -0.37665630095006103,
+				maxAngle: 0.37665630095006103,
+				outerRadius: 0.9205414001464843,
+				width: 0.4105414001464843,
+			},
+		];
+
+		for (let item of chartList) {
+			let outerRadius = borderWidth + item.outerRadius * outerContentRadius;
+
+			console.log('*** draw arc: ' + JSON.stringify(item, null, 4));
+			ctx.strokeStyle = item.color;
+			ctx.lineWidth = item.width * bgRadius; //contentWidth;
+			ctx.beginPath();
+			ctx.arc(centerX, centerY, outerRadius - ctx.lineWidth / 2, item.minAngle, item.maxAngle);
+			ctx.stroke();
+		}
+	}
+
+	async webgpuTriangle() {
+		const tri = `@vertex
+fn main(
+  @builtin(vertex_index) VertexIndex : u32
+) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 3>(
+    vec2(0.0, 0.5),
+    vec2(-0.5, -0.5),
+    vec2(0.5, -0.5)
+  );
+
+  return vec4f(pos[VertexIndex], 0.0, 1.0);
+}`;
+
+		const red = `@fragment
+fn main() -> @location(0) vec4f {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}`;
+
+		if (navigator.gpu) {
+			const adapter = await navigator.gpu.requestAdapter();
+			const device = await adapter.requestDevice();
+
+			device.addEventListener('uncapturederror', (event: any) => {
+				console.error('A WebGPU error was not captured:', event.error.message);
+			});
+
+			const devicePixelRatio = window.devicePixelRatio;
+			this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
+			this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
+			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+
+			const capabilities = (context as any).getCapabilities(adapter);
+			const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+			const alphaMode = capabilities.alphaModes[0];
+
+			context.configure({
+				device,
+				format: presentationFormat,
+				alphaMode,
+			});
+
+			const pipeline = device.createRenderPipeline({
+				layout: 'auto',
+				vertex: {
+					module: device.createShaderModule({
+						code: tri,
+					}),
+					entryPoint: 'main',
+				},
+				fragment: {
+					module: device.createShaderModule({
+						code: red,
+					}),
+					targets: [
+						{
+							format: presentationFormat,
+						},
+					],
+					entryPoint: 'main',
+				},
+				primitive: {
+					topology: 'triangle-list',
+				},
+			});
+
+			function frame() {
+				const framebuffer = context.getCurrentTexture();
+				if (!framebuffer) {
+					requestAnimationFrame(frame);
+					return;
+				}
+
+				const commandEncoder = device.createCommandEncoder();
+				const textureView = framebuffer.createView();
+
+				const passEncoder = commandEncoder.beginRenderPass({
+					colorAttachments: [
+						{
+							view: textureView,
+							clearValue: [0, 0, 0, 1],
+							loadOp: 'clear',
+							storeOp: 'store',
+						},
+					],
+				});
+				passEncoder.setPipeline(pipeline);
+				passEncoder.draw(3);
+				passEncoder.end();
+
+				device.queue.submit([commandEncoder.finish()]);
+				(<any>context).presentSurface();
+				requestAnimationFrame(frame);
+			}
+			requestAnimationFrame(frame);
+		}
+	}
+
 	draw() {
-	//	const ctx = this.canvas.getContext('2d');
-/*
+		//this.webgpuTest();
+		//this.webgpuTriangle();
+		// const rc = require('./webgpu/rotatingCube');
+		// rc.run(this.canvas);
+
+		// const tests = require('./webgpu/tests');
+		// tests.run(this.canvas);
+
+		// const renderBundles = require('./webgpu/renderBundles');
+		// renderBundles.run(this.canvas);
+
+		// const occlusionQuery = require('./webgpu/occlusionQuery');
+		// occlusionQuery.run(this.canvas);
+
+		const particles = require('./webgpu/particles');
+		particles.run(this.canvas);
+
+		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
+		// texturedCube.run(this.canvas);
+
+		// const imageBlur = require('./webgpu/imageBlur');
+		// imageBlur.run(this.canvas);
+
+		// const cubeMap = require('./webgpu/cubeMap');
+		// cubeMap.run(this.canvas);
+
+		// const instancedCube = require('./webgpu/instancedCube');
+		// instancedCube.run(this.canvas);
+
+		// const computeBoids = require('./webgpu/gpgpu/computeBoids');
+		// computeBoids.run(this.canvas);
+
+		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
+		// twoCubes.run(this.canvas);
+
+		// const fractualCube = require('./webgpu/basicGraphics/fractalCube');
+		// fractualCube.run(this.canvas);
+
+		// const wireframe = require('./webgpu/graphicsTechniques/wireframe');
+		// wireframe.run(this.canvas);
+
+		// const cameras = require('./webgpu/graphicsTechniques/cameras/cameras.ts');
+		// cameras.run(this.canvas);
+
+		// const pristineGrid = require('./webgpu/pristine-grid');
+		// pristineGrid.run(this.canvas);
+
+		//this.drawChart(this.canvas);
+		//this.drawSVG(this.canvas);
+		//	const ctx = this.canvas.getContext('2d');
+		/*
 
 		const asset = new global.ImageAsset();
 		asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
@@ -690,27 +668,27 @@ export class DemoSharedCanvas extends DemoSharedBase {
 
 		*/
 		//this.pathIssue(this.canvas);
-		//lines(this.canvas);
+		//(this.canvas);
 		//this.clearIssue(this.canvas);
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
 		//breathe(this.canvas);
-		///this.drawOnCanvasWithCanvas(this.canvas);
+		//this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
 		//const str = new java.lang.String()
 		// ctx.font = '50px serif';
 		// ctx.fillText('Hello world', 50, 90);
 		/*	const ctx = this.canvas.getContext('2d');
-	
+
 	// Moved square
 	ctx.translate(110, 30);
 	ctx.fillStyle = 'red';
 	ctx.fillRect(0, 0, 80, 80);
-	
+
 	// Reset current transformation matrix to the identity matrix
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	
+
 	// Unmoved square
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
@@ -738,7 +716,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			}
 		});
 
-		
+
 		if (global.isAndroid) {
 			//    canvas.android.setHandleInvalidationManually(true);
 			(org.nativescript as any).canvas.NSCCanvas.getViews().put(`${this.canvas._domId}`, new java.lang.ref.WeakReference(this.canvas.android));
@@ -768,6 +746,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//const ctx = canvas.getContext('2d');
 		//clearRect(this.canvas);
 		//fillRule(this.canvas);
+		//font(this.canvas);
 		//fillStyle(this.canvas);
 		//ctx.setLineDash([1,2]);
 		//console.log(ctx.getLineDash());
@@ -780,7 +759,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		//circle_demo(this.canvas);
+		// circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -810,6 +789,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//createLinearGradient(this.canvas);
 		//createRadialGradient(this.canvas);
 		//march(this.canvas);
+		//skew(this.canvas);
 		//this.putImageDataDemo(this.canvas);
 		//	this.drawImage(this.canvas);
 		// ctx.fillStyle = 'blue';
@@ -855,7 +835,7 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		//fog(this.canvas);
 		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
-		main(this.canvas);
+		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
 		//this.wordSpacing(this.canvas);
 		//imageProcessing(this.canvas);
@@ -893,6 +873,19 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
 		//this.textBaseLine2(this.canvas);
+	}
+
+	drawSVG(canvas) {
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		const data = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+		<rect width="100" height="500" stroke="red" fill="none"></rect>
+		<line x1="0" y1="80" x2="100" y2="20" stroke="black" />
+	  </svg>
+	  `;
+
+		const svg = Svg.fromSrcSync(data) as any;
+		const img = (<any>HTMLImageElement)._fromSvg(svg);
+		ctx.drawImage(img, 0, 0, img.width, img.height);
 	}
 
 	letterSpacing(canvas) {
@@ -1757,9 +1750,9 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		// 	patternContext.clear(patternContext.COLOR_BUFFER_BIT);
 		// }
 
-		const scale = Screen.mainScreen.scale;
+		// const scale = Screen.mainScreen.scale;
 
-		const size = 50 * scale;
+		const size = 50;
 		const patternContext = patternCanvas.getContext('2d') as any;
 
 		//glViewport(0,0,50,50);
@@ -1774,19 +1767,6 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		patternContext.fillRect(0, 0, size, size);
 		patternContext.arc(0, 0, size, 0, 0.5 * Math.PI);
 		patternContext.stroke();
-
-		if (global.isIOS) {
-			var vp = interop.alloc(16);
-
-			glGetIntegerv(0x0ba2, vp);
-
-			const x = new interop.Reference<number>(interop.types.int32, vp);
-			const y = new interop.Reference<number>(interop.types.int32, vp.add(4));
-			const w = new interop.Reference<number>(interop.types.int32, vp.add(8));
-			const h = new interop.Reference<number>(interop.types.int32, vp.add(12));
-
-			console.log(x.value, y.value, w.value, h.value);
-		}
 
 		// Create our primary canvas and fill it with the pattern
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -1912,13 +1892,11 @@ export class DemoSharedCanvas extends DemoSharedBase {
 	clock(canvas) {
 		let scale = false;
 		var ctx = canvas.getContext('2d');
-		ctx.scale(0.1, 0.1);
-		ctx.translate(100, 100);
-
 		function clock() {
 			var now = new Date();
 			ctx.save();
-			ctx.clearRect(100, 100, 150, 150);
+
+			ctx.clearRect(0, 0, 150, 150);
 			ctx.translate(75, 75);
 			ctx.scale(0.4, 0.4);
 			ctx.rotate(-Math.PI / 2);

@@ -11,9 +11,7 @@ export class FileManager {
 			native = NSData.dataWithData(bytes as any);
 		}
 
-		console.log('writeFile');
 		NSSCanvasHelpers.writeFile(bytes, path, (error, result) => {
-			console.log('writeFile', error, result);
 			if (error) {
 				callback(new Error(error), null);
 			} else {
@@ -22,15 +20,15 @@ export class FileManager {
 		});
 	}
 
-	static _readFile;
+	static supportFastRead;
 
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
-		if (this._readFile === undefined) {
-			this._readFile = global?.CanvasModule?.readFile;
+		if (this.supportFastRead === undefined) {
+			this.supportFastRead = typeof global?.CanvasModule?.readFile === 'function';
 		}
 
-		if (this._readFile) {
-			this._readFile(path, (error, buffer) => {
+		if (this.supportFastRead) {
+			global?.CanvasModule?.readFile(path, (error, buffer) => {
 				if (error) {
 					callback(new Error(error), null);
 				} else {
@@ -42,14 +40,13 @@ export class FileManager {
 				if (error) {
 					callback(new Error(error), null);
 				} else {
-					callback(null, data);
+					callback(null, interop.bufferFromData(data));
 				}
 			});
 		}
 	}
 
 	public static deleteFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
-		console.log('deleteFile');
 		NSSCanvasHelpers.deleteFile(path, (error, done) => {
 			if (error) {
 				callback(new Error(error), null);

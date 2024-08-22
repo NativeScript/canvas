@@ -48,9 +48,9 @@ async function init(canvas) {
 	const sky = new THREE.Mesh(new THREE.SphereGeometry(4000, 32, 15), skyMat);
 	scene.add(sky);
 
-	// RENDERER                                                                                                         
+	// RENDERER
 
-	renderer = new THREE.WebGLRenderer({context, antialias: true });
+	renderer = new THREE.WebGLRenderer({ context, antialias: true });
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(drawingBufferWidth, drawingBufferHeight);
 
@@ -63,6 +63,7 @@ async function init(canvas) {
 	// MODEL
 
 	const loader = new THREE.ObjectLoader();
+
 	const object = await loader.loadAsync('~/assets/three/models/json/lightmap/lightmap.json');
 	scene.add(object);
 

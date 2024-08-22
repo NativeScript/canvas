@@ -12,12 +12,12 @@
 				"production": true,
 				"uglify": true,
 				"release": true,
-				"forDevice": true,
+				"forDevice": true
 			},
 			"dependsOn": [
 				{
 					"target": "build.all",
-					"projects": "dependencies"
+					"dependencies": true
 				}
 			]
 		},
@@ -25,12 +25,13 @@
 			"executor": "@nativescript/nx:build",
 			"options": {
 				"platform": "ios",
-				"noHmr": true
+				"noHmr": true,
+				"flags": "--env.watchNodeModules"
 			},
 			"dependsOn": [
 				{
 					"target": "build.all",
-					"projects": "dependencies"
+					"dependencies": true
 				}
 			]
 		},
@@ -44,7 +45,7 @@
 			"dependsOn": [
 				{
 					"target": "build.all",
-					"projects": "dependencies"
+					"dependencies": true
 				}
 			]
 		},
@@ -55,10 +56,7 @@
 			}
 		},
 		"lint": {
-			"executor": "@nrwl/linter:eslint",
-			"options": {
-				"lintFilePatterns": ["apps/demo/**/*.ts"]
-			}
+			"executor": "@nx/eslint:lint"
 		}
 	}
 }

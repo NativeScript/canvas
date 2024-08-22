@@ -126,7 +126,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_draw_buffersImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::WEBGL_draw_buffers);
+        SetNativeType(buffers, NativeType::WEBGL_draw_buffers);
         object->SetAlignedPointerInInternalField(0, buffers);
         buffers->BindFinalizer(isolate, object);
         return scope.Escape(object);

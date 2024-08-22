@@ -17,19 +17,19 @@
         
         
         
-        public static func drawImage(_ context: Int64, _ image: UIImage, _ dx: Float, _ dy: Float){
-            CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy)
+        public static func drawImage(_ context: Int64, _ image: UIImage, _ dx: Float, _ dy: Float) -> Bool {
+            return CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy)
         }
         
 
 
-        public static func drawImage(_ context: Int64,_ image: UIImage, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float){
-            CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
+        public static func drawImage(_ context: Int64,_ image: UIImage, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float) -> Bool{
+           return CanvasHelpers.drawImage(context: context, image: image, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
         }
         
     
-        public static func drawImage(_ context: Int64,_ image: UIImage, _ sx: Float, _ sy: Float, _ sWidth: Float, _ sHeight: Float, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float){
-            CanvasHelpers.drawImage(context: context, image: image, sx: sx, sy: sy, sw: sWidth, sh: sHeight, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
+        public static func drawImage(_ context: Int64,_ image: UIImage, _ sx: Float, _ sy: Float, _ sWidth: Float, _ sHeight: Float, _ dx: Float, _ dy: Float, _ dWidth: Float, _ dHeight: Float) -> Bool{
+            return CanvasHelpers.drawImage(context: context, image: image, sx: sx, sy: sy, sw: sWidth, sh: sHeight, dx: dx, dy: dy, dw: dWidth, dh: dHeight)
         }
         
        

@@ -1,0 +1,46 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-bare-slash-regex -module-name CanvasSVG
+@_exported import CanvasSVG
+import Foundation
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCSVG) @_Concurrency.MainActor(unsafe) public class NSCSVG : UIKit.UIView {
+  @objc @_Concurrency.MainActor(unsafe) public var data: Swift.UnsafeMutableRawPointer? {
+    get
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var data_size: CoreFoundation.CGSize {
+    get
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var buf_size: Swift.UInt {
+    get
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var autoScale: Swift.Bool {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var src: Swift.String? {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var srcPath: Swift.String? {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor(unsafe) public func update()
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
+  @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
+  @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromStringSync(_ source: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromPathSync(_ path: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromRemoteSync(_ path: Swift.String) -> CanvasSVG.NSCSVG?
+  @objc @_Concurrency.MainActor(unsafe) public static func fromString(_ source: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
+  @objc @_Concurrency.MainActor(unsafe) public static func fromPath(_ path: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
+  @objc @_Concurrency.MainActor(unsafe) public static func fromRemote(_ path: Swift.String, _ callback: @escaping ((CanvasSVG.NSCSVG?) -> Swift.Void))
+  @objc deinit
+}

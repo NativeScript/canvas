@@ -1,12 +1,12 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 5.9.2 (swiftlang-5.9.2.2.56 clang-1500.1.0.2.5)
-// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CanvasNative
-// swift-module-flags-ignorable: -enable-bare-slash-regex
+// swift-compiler-version: Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)
+// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-bare-slash-regex -module-name CanvasNative
 import AVFoundation
 @_exported import CanvasNative
 import CoreVideo
 import Foundation
 import GLKit
+import MetalKit
 import OpenGLES
 import Swift
 import UIKit
@@ -21,13 +21,16 @@ import _SwiftConcurrencyShims
   @objc public static func getBytesFromUIImage(_ image: UIKit.UIImage) -> Foundation.NSMutableData
   @objc public static func createPattern(_ context: Swift.Int64, _ image: UIKit.UIImage, _ repetition: Swift.String) -> Swift.Int64
   @objc public static func loadImageAssetWithContext(_ asset: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
-  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float)
-  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
-  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float)
-  @objc public static func initGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
-  @objc public static func initSharedGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool, _ shared_context: Swift.Int64) -> Swift.Int64
-  @objc public static func initGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
-  @objc public static func initSharedGLWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.String, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool, _ shared_context: Swift.Int64) -> Swift.Int64
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float) -> Swift.Bool
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float) -> Swift.Bool
+  @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float) -> Swift.Bool
+  @objc public static func initWebGPUWithViewLayer(_ instance: Swift.Int64, _ view: Swift.Int64, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
+  @objc public static func initWebGPUWithView(_ instance: Swift.Int64, _ view: Swift.Int64, _ width: Swift.UInt32, _ height: Swift.UInt32) -> Swift.Int64
+  @objc public static func resizeWebGPUWithView(_ context: Swift.Int64, _ view: Swift.Int64, _ width: Swift.UInt32, _ height: Swift.UInt32)
+  @objc public static func initGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
+  @objc public static func initSharedGLWithView(_ view: Swift.Int64, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool, _ shared_context: Swift.Int64) -> Swift.Int64
+  @objc public static func initGLWithWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool) -> Swift.Int64
+  @objc public static func initSharedGLWidthAndHeight(_ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ fail_if_major_performance_caveat: Swift.Bool, _ power_preference: Swift.Int32, _ premultiplied_alpha: Swift.Bool, _ preserve_drawing_buffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xr_compatible: Swift.Bool, _ version: Swift.Int32, _ is_canvas: Swift.Bool, _ shared_context: Swift.Int64) -> Swift.Int64
   @objc public static func resize2DContext(_ context: Swift.Int64, _ width: Swift.Float, _ height: Swift.Float)
   @objc public static func flush2DContext(_ context: Swift.Int64)
   @objc public static func flushGL(_ context: Swift.Int64) -> Swift.Bool
@@ -42,14 +45,32 @@ import _SwiftConcurrencyShims
   @objc public static func readFile(_ path: Swift.String, _ callback: @escaping (Swift.String?, Foundation.NSData?) -> Swift.Void)
   @objc public static func deleteFile(_ path: Swift.String, _ callback: @escaping (Foundation.NSError?, Swift.Bool) -> Swift.Void)
   @objc public static func handleBase64Image(_ mime: Swift.String, _ dir: Swift.String, _ base64: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
+  @objc public static func getPixelsPerInchForCurrentDevice() -> Swift.String
   @objc override dynamic public init()
   @objc deinit
 }
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCCanvas) @_Concurrency.MainActor(unsafe) public class NSCCanvas : UIKit.UIView {
+  @objc(CanvasFit) public enum CanvasFit : Swift.Int, Swift.RawRepresentable {
+    public typealias RawValue = Swift.UInt32
+    case None
+    case Fill
+    case FitX
+    case FitY
+    case ScaleDown
+    public var rawValue: CanvasNative.NSCCanvas.CanvasFit.RawValue {
+      get
+    }
+    public init?(rawValue: CanvasNative.NSCCanvas.CanvasFit.RawValue)
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var fit: CanvasNative.NSCCanvas.CanvasFit {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public static let store: Foundation.NSMutableDictionary
   @objc @_Concurrency.MainActor(unsafe) public static func getViews() -> Foundation.NSMapTable<Foundation.NSString, CanvasNative.NSCCanvas>
   @objc @_Concurrency.MainActor(unsafe) public func getViewPtr() -> Swift.UnsafeMutableRawPointer
-  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool {
+  @objc @_Concurrency.MainActor(unsafe) public func getMtlViewPtr() -> Swift.UnsafeMutableRawPointer
+  @objc @_Concurrency.MainActor(unsafe) public var autoScale: Swift.Bool {
     @objc get
     @objc set
   }
@@ -59,10 +80,10 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public var nativeContext: Swift.Int64 {
     get
   }
-  @objc @_Concurrency.MainActor(unsafe) public var drawingBufferWidth: Swift.Int {
+  @objc @_Concurrency.MainActor(unsafe) public var drawingBufferWidth: CoreFoundation.CGFloat {
     @objc get
   }
-  @objc @_Concurrency.MainActor(unsafe) public var drawingBufferHeight: Swift.Int {
+  @objc @_Concurrency.MainActor(unsafe) public var drawingBufferHeight: CoreFoundation.CGFloat {
     @objc get
   }
   @objc @_Concurrency.MainActor(unsafe) public var width: Swift.Float {
@@ -71,9 +92,9 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public var height: Swift.Float {
     @objc get
   }
-  @objc @_Concurrency.MainActor(unsafe) public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.String = "default", _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false)
-  @objc @_Concurrency.MainActor(unsafe) public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.String, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32) -> Swift.Int64
-  @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
+  @objc @_Concurrency.MainActor(unsafe) public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.Int32 = 0, _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false)
+  @objc @_Concurrency.MainActor(unsafe) public func initWebGPUContext(_ instance: Swift.Int64)
+  @objc @_Concurrency.MainActor(unsafe) public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.Int32, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32) -> Swift.Int64
   @objc @_Concurrency.MainActor(unsafe) public func snapshot(_ flip: Swift.Bool) -> UIKit.UIImage?
   @objc @discardableResult
   @_Concurrency.MainActor(unsafe) public func render() -> Swift.Bool
@@ -82,34 +103,26 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public var touchEventListener: ((Swift.String, UIKit.UIGestureRecognizer) -> Swift.Void)?
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
+  @objc @_Concurrency.MainActor(unsafe) public var surfaceWidth: Swift.Int {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor(unsafe) public var surfaceHeight: Swift.Int {
+    @objc get
+    @objc set
+  }
+  @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
-  @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ canvas: CanvasNative.NSCCanvas, _ buffer: Swift.UnsafeMutableRawPointer)
+  @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ view: UIKit.UIView, _ buffer: Swift.UnsafeMutableRawPointer)
+}
+extension UIKit.UIView {
+  @objc @_Concurrency.MainActor(unsafe) dynamic public func getBoundingClientRect(_ buffer: Swift.UnsafeMutableRawPointer)
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()
   @objc public func texImage2D(_ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ source: CanvasNative.NSCCanvas, _ dest: CanvasNative.NSCCanvas, _ flipYWebGL: Swift.Bool)
   @objc public func createSurface()
-  @objc deinit
-}
-@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(TNSSVG) @_Concurrency.MainActor(unsafe) public class NSCSVG : UIKit.UIView {
-  @objc @_Concurrency.MainActor(unsafe) public var ignorePixelScaling: Swift.Bool {
-    @objc get
-    @objc set
-  }
-  @objc @_Concurrency.MainActor(unsafe) public var src: Swift.String? {
-    @objc get
-    @objc set
-  }
-  @objc @_Concurrency.MainActor(unsafe) public var srcPath: Swift.String? {
-    @objc get
-    @objc set
-  }
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
-  @objc @_Concurrency.MainActor(unsafe) public func toImage() -> UIKit.UIImage?
-  @objc @_Concurrency.MainActor(unsafe) public func toData() -> Foundation.NSData?
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageBitmap) public class NSCImageBitmap : ObjectiveC.NSObject {
@@ -128,19 +141,27 @@ import _SwiftConcurrencyShims
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCCanvasRenderingContext2D) public class NSCCanvasRenderingContext2D : CanvasNative.NSCCanvasRenderingContext {
   @objc public static func createPattern(_ context: Swift.Int64, _ src: UIKit.UIImage, _ repetition: Swift.String) -> Swift.Int64
-  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float)
-  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
-  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ sx: Swift.Float, _ sy: Swift.Float, _ sWidth: Swift.Float, _ sHeight: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float)
+  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float) -> Swift.Bool
+  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float) -> Swift.Bool
+  @objc public static func drawImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ sx: Swift.Float, _ sy: Swift.Float, _ sWidth: Swift.Float, _ sHeight: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dWidth: Swift.Float, _ dHeight: Swift.Float) -> Swift.Bool
   @objc override dynamic public init()
   @objc deinit
 }
-@_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor(unsafe) public class CanvasGLKView : GLKit.GLKView {
+@_inheritsConvenienceInitializers @objc(NSCWebGLRenderingContext) @objcMembers public class NSCWebGLRenderingContext : ObjectiveC.NSObject {
+  @objc public static func texImage2D(_ context: Swift.Int64, _ target: Swift.Int32, _ level: Swift.Int32, _ internalformat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ data: Swift.UnsafeMutablePointer<Swift.UInt8>, _ size: Swift.UInt, _ dimensions: CoreFoundation.CGSize, _ flipY: Swift.Bool)
+  @objc public static func texSubImage2D(_ context: Swift.Int64, _ target: Swift.Int32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ data: Swift.UnsafeMutablePointer<Swift.UInt8>, _ size: Swift.UInt, _ dimensions: CoreFoundation.CGSize, _ flipY: Swift.Bool)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objcMembers @objc(CanvasGLKView) @_Concurrency.MainActor(unsafe) public class CanvasGLKView : GLKit.GLKView, GLKit.GLKViewDelegate {
+  @objc @_Concurrency.MainActor(unsafe) weak public var canvas: CanvasNative.NSCCanvas? {
+    get
+  }
   @_Concurrency.MainActor(unsafe) @objc dynamic public init()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay()
-  @_Concurrency.MainActor(unsafe) @objc override dynamic public func setNeedsDisplay(_ rect: CoreFoundation.CGRect)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func bindDrawable()
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func deleteDrawable()
+  @_Concurrency.MainActor(unsafe) @objc public func glkView(_ view: GLKit.GLKView, drawIn rect: CoreFoundation.CGRect)
   @objc deinit
 }
 extension GLKit.GLKView {
@@ -163,3 +184,5 @@ extension GLKit.GLKView {
   @objc override dynamic public init()
   @objc deinit
 }
+extension CanvasNative.NSCCanvas.CanvasFit : Swift.Equatable {}
+extension CanvasNative.NSCCanvas.CanvasFit : Swift.Hashable {}

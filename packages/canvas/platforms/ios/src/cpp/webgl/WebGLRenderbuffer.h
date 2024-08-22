@@ -8,7 +8,7 @@
 #include "ObjectWrapperImpl.h"
 class WebGLRenderbuffer: ObjectWrapperImpl {
 public:
-    WebGLRenderbuffer(uint32_t renderbuffer) : renderbuffer_(renderbuffer) {}
+    explicit WebGLRenderbuffer(uint32_t renderbuffer) : renderbuffer_(renderbuffer) {}
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate) {
         auto cache = Caches::Get(isolate);
@@ -34,7 +34,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLRenderbuffer::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLRenderbuffer);
+        SetNativeType( buffer, NativeType::WebGLRenderbuffer);
         object->SetAlignedPointerInInternalField(0, buffer);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -48,7 +48,7 @@ public:
         return static_cast<WebGLRenderbuffer *>(ptr);
     }
 
-    uint32_t GetRenderBuffer() {
+    uint32_t GetRenderBuffer() const {
         return this->renderbuffer_;
     }
 

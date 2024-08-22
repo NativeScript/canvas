@@ -6,7 +6,8 @@
 
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
-class WebGLTexture: ObjectWrapperImpl {
+
+class WebGLTexture : ObjectWrapperImpl {
 public:
     WebGLTexture(uint32_t texture) : texture_(texture) {}
 
@@ -34,7 +35,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLTexture::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLTexture);
+        SetNativeType(texture, NativeType::WebGLTexture);
         object->SetAlignedPointerInInternalField(0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);

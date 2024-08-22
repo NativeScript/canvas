@@ -2,7 +2,7 @@
 
 **Powered by**
 
-- [CanvasNative](src-native/canvas-native) - Rust
+- [CanvasNative](src-native/canvas-native) - Rust ([Skia](https://github.com/rust-skia/rust-skia), [WGPU](https://github.com/gfx-rs/wgpu))
 - [CanvasNative](src-native/canvas-ios) - IOS
 - [CanvasNative](src-native/canvas-android) - Android
 
@@ -12,14 +12,15 @@
 ns plugin add @nativescript/canvas
 ```
 
-_Note_ min ios support 11 | min android support 17
+_Note_ min ios support 11 | min android support 21
 
 IMPORTANT: ensure you include xmlns:canvas="@nativescript/canvas" on the Page element for core {N}
 
 ## Usage
 
+
 ```xml
-<canvas:Canvas id="canvas" width="100%" height="100%" ready="canvasReady"/>
+<canvas:Canvas id="canvas" style="width:100%; height:100%"  width="100%" height="100%" ready="canvasReady"/>
 ```
 
 ### 2D
@@ -36,6 +37,7 @@ export function canvasReady(args) {
 	ctx.fillRect(10, 10, 150, 100);
 }
 ```
+
 
 ### WEBGL
 
@@ -55,8 +57,65 @@ export function canvasReady(args) {
 }
 ```
 
+## WebGPU
+
+_Note_ min ios support 11 | min android support 27
+
+```typescript
+
+// the webgpu type works as well but these exposes any non standard web api (native)
+
+import type { GPUDevice, GPUAdapter } from '@nativescript/canvas';
+import { Screen } from '@nativescript/core';
+
+let canvas;
+let device: GPUDevice;
+export async function canvasReady(args) {
+	console.log('canvas ready');
+	canvas = args.object;
+
+	const adapter: GPUAdapter = (await navigator.gpu.requestAdapter()) as never;
+	device = (await adapter.requestDevice()) as never;
+	// scaling the canvas to ensure everthing looks crisp
+	const devicePixelRatio = Screen.mainScreen.scale;
+	canvas.width = canvas.clientWidth * devicePixelRatio;
+	canvas.height = canvas.clientHeight * devicePixelRatio;
+
+	const context = canvas.getContext('webgpu');
+
+
+	/// configureing the context
+	// Passing in the following options will aollow the configure method to choose the best configs.
+	// If unsure about what is supported try the following method
+
+	const capabilities = this.getCapabilities(device);
+
+	// cap.presentModes
+	// cap.alphaModes
+	// cap.format
+	// cap.usages
+
+	context.configure({
+		device,
+		format: presentationFormat,
+	});
+
+
+
+	/// rendering logic
+	// to render to your screen you will need to call presentSurfacefrom the WebGPU context.
+	// Add the followig to the end of your render loop to ensure it gets displayed.
+
+	context.presentSurface();
+}
+```
+
+
+
+
 ## API
 
 - 2D Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
 - WebGL Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext)
 - WebGL2 Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext)
+- WebGPU Similar to -> the [Web Spec](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)

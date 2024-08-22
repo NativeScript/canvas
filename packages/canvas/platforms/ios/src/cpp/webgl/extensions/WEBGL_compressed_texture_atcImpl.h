@@ -45,7 +45,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_atcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_compressed_texture_atc);
+        SetNativeType( compressedTextureAtc, NativeType::WEBGL_compressed_texture_atc);
         object->SetAlignedPointerInInternalField(0, compressedTextureAtc);
         compressedTextureAtc->BindFinalizer(isolate, object);
         return scope.Escape(object);

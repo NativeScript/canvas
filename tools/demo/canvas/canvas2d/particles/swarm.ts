@@ -14,8 +14,13 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 		var W = width || canvas.getMeasuredWidth(),
 			H = height || canvas.getMeasuredHeight();
 
+		canvas.width = W;
+		canvas.height = H;
+
+		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
 		// Some variables for later use
-		var particleCount = 400,
+		var particleCount = 1000,
 			particles = [],
 			minDist = 50,
 			dist;
@@ -27,6 +32,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 
 			// This will create a rectangle of white color from the
 			// top left (0,0) to the bottom right corner (W,H)
+			//ctx.clearRect(0,0, W,H);
 			ctx.fillRect(0, 0, W, H);
 		}
 
@@ -154,8 +160,7 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 			if (dist <= minDist) {
 				// Draw the line
 				ctx.beginPath();
-				ctx.strokeStyle =
-				  'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
+				ctx.strokeStyle = 'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
 				ctx.moveTo(p1.x, p1.y);
 				ctx.lineTo(p2.x, p2.y);
 				ctx.stroke();

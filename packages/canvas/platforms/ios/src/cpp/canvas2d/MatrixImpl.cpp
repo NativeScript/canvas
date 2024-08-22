@@ -183,6 +183,71 @@ v8::Local<v8::FunctionTemplate> MatrixImpl::GetCtor(v8::Isolate *isolate) {
     );
 
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "translate"),
+            v8::FunctionTemplate::New(isolate, Translate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "translateSelf"),
+            v8::FunctionTemplate::New(isolate, TranslateSelf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "multiplySelf"),
+            v8::FunctionTemplate::New(isolate, MultiplySelf)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "premultiplySelf"),
+            v8::FunctionTemplate::New(isolate, PremultiplySelf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "scaleNonUniform"),
+            v8::FunctionTemplate::New(isolate, ScaleNonUniform)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "scaleNonUniformSelf"),
+            v8::FunctionTemplate::New(isolate, ScaleNonUniformSelf)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "rotate"),
+            v8::FunctionTemplate::New(isolate, Rotate)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "rotateSelf"),
+            v8::FunctionTemplate::New(isolate, RotateSelf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "skewX"),
+            v8::FunctionTemplate::New(isolate, SkewX)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "skewXSelf"),
+            v8::FunctionTemplate::New(isolate, SkewXSelf)
+    );
+
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "skewY"),
+            v8::FunctionTemplate::New(isolate, SkewY)
+    );
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "skewYSelf"),
+            v8::FunctionTemplate::New(isolate, SkewYSelf)
+    );
+
+
     cache->MatrixTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -216,7 +281,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetAlignedPointerInInternalField(0, object);
 
-                SetNativeType( ret, NativeType::Matrix);
+                SetNativeType(object, NativeType::Matrix);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -242,7 +307,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
                 ret->SetAlignedPointerInInternalField(0, object);
 
-                SetNativeType( ret, NativeType::Matrix);
+                SetNativeType(object, NativeType::Matrix);
 
                 object->BindFinalizer(isolate, ret);
 
@@ -257,7 +322,7 @@ void MatrixImpl::Ctor(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         ret->SetAlignedPointerInInternalField(0, object);
 
-        SetNativeType( ret, NativeType::Matrix);
+        SetNativeType(object, NativeType::Matrix);
 
         object->BindFinalizer(isolate, ret);
 
@@ -802,6 +867,347 @@ void MatrixImpl::SetM44(v8::Local<v8::String> property,
     canvas_native_matrix_set_m44(ptr->GetMatrix(), (float) value->NumberValue(context).ToChecked());
 }
 
+
+void MatrixImpl::Translate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+
+    if (count >= 3) {
+        auto context = isolate->GetCurrentContext();
+        auto x = args[0];
+        auto y = args[1];
+        auto value = args[2];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
+            auto matrix = canvas_native_matrix_translate(
+                    (float) x->NumberValue(context).ToChecked(),
+                    (float) y->NumberValue(context).ToChecked(),
+                    ptr->GetMatrix());
+            if (matrix == nullptr) {
+                args.GetReturnValue().SetUndefined();
+                return;
+            }
+
+
+            auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            auto object = new MatrixImpl(matrix);
+
+            ret->SetAlignedPointerInInternalField(0, object);
+
+            SetNativeType(object, NativeType::Matrix);
+
+            object->BindFinalizer(isolate, ret);
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::TranslateSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 2) {
+        auto context = isolate->GetCurrentContext();
+        auto x = args[0];
+        auto y = args[1];
+
+        canvas_native_matrix_translate_self(ptr->GetMatrix(),
+                                            (float) x->NumberValue(context).ToChecked(),
+                                            (float) y->NumberValue(context).ToChecked());
+    }
+}
+
+void MatrixImpl::MultiplySelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 1) {
+        auto context = isolate->GetCurrentContext();
+        auto value = args[0];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto matrix = GetPointer(value.As<v8::Object>());
+            canvas_native_matrix_multiply_self(ptr->GetMatrix(), matrix->GetMatrix());
+        }
+    }
+}
+
+void MatrixImpl::PremultiplySelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 1) {
+        auto context = isolate->GetCurrentContext();
+        auto value = args[0];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto matrix = GetPointer(value.As<v8::Object>());
+            canvas_native_matrix_premultiply_self(ptr->GetMatrix(), matrix->GetMatrix());
+        }
+    }
+}
+
+void MatrixImpl::ScaleNonUniform(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+
+    if (count >= 3) {
+        auto context = isolate->GetCurrentContext();
+        auto sx = args[0];
+        auto sy = args[1];
+        auto value = args[2];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
+            auto matrix = canvas_native_matrix_scale_non_uniform(
+                    (float) sx->NumberValue(context).ToChecked(),
+                    (float) sy->NumberValue(context).ToChecked(),
+                    ptr->GetMatrix());
+            if (matrix == nullptr) {
+                args.GetReturnValue().SetUndefined();
+                return;
+            }
+
+
+            auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            auto object = new MatrixImpl(matrix);
+
+            ret->SetAlignedPointerInInternalField(0, object);
+
+            SetNativeType(object, NativeType::Matrix);
+
+            object->BindFinalizer(isolate, ret);
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::ScaleNonUniformSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 2) {
+        auto context = isolate->GetCurrentContext();
+        auto x = args[0];
+        auto y = args[1];
+        canvas_native_matrix_scale_non_uniform_self(ptr->GetMatrix(),
+                                                    (float) x->NumberValue(context).ToChecked(),
+                                                    (float) y->NumberValue(context).ToChecked());
+    }
+}
+
+void MatrixImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+
+    if (count >= 4) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        auto cx = args[1];
+        auto cy = args[2];
+        auto value = args[3];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
+            auto matrix = canvas_native_matrix_rotate(
+                    (float) angle->NumberValue(context).ToChecked(),
+                    (float) cx->NumberValue(context).ToChecked(),
+                    (float) cy->NumberValue(context).ToChecked(),
+                    ptr->GetMatrix());
+            if (matrix == nullptr) {
+                args.GetReturnValue().SetUndefined();
+                return;
+            }
+
+
+            auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            auto object = new MatrixImpl(matrix);
+
+            ret->SetAlignedPointerInInternalField(0, object);
+
+            SetNativeType(object, NativeType::Matrix);
+
+            object->BindFinalizer(isolate, ret);
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::RotateSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 2) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        auto cx = args[1];
+        auto cy = args[2];
+        canvas_native_matrix_rotate_self(ptr->GetMatrix(),
+                                         (float) angle->NumberValue(context).ToChecked(),
+                                         (float) cx->NumberValue(context).ToChecked(),
+                                         (float) cy->NumberValue(context).ToChecked());
+    }
+}
+
+void MatrixImpl::SkewX(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+
+    if (count >= 2) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        auto value = args[1];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
+            auto matrix = canvas_native_matrix_skew_x(
+                    (float) angle->NumberValue(context).ToChecked(),
+                    ptr->GetMatrix());
+            if (matrix == nullptr) {
+                args.GetReturnValue().SetUndefined();
+                return;
+            }
+
+
+            auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            auto object = new MatrixImpl(matrix);
+
+            ret->SetAlignedPointerInInternalField(0, object);
+
+            SetNativeType(object, NativeType::Matrix);
+
+            object->BindFinalizer(isolate, ret);
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::SkewXSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 1) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        canvas_native_matrix_skew_x_self(ptr->GetMatrix(),
+                                         (float) angle->NumberValue(context).ToChecked());
+    }
+}
+
+void MatrixImpl::SkewY(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+
+    if (count >= 2) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        auto value = args[1];
+        auto type = GetNativeType(value);
+        if (type == NativeType::Matrix) {
+            auto ptr = MatrixImpl::GetPointer(value.As<v8::Object>());
+            auto matrix = canvas_native_matrix_skew_y(
+                    (float) angle->NumberValue(context).ToChecked(),
+                    ptr->GetMatrix());
+            if (matrix == nullptr) {
+                args.GetReturnValue().SetUndefined();
+                return;
+            }
+
+
+            auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+                    context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            auto object = new MatrixImpl(matrix);
+
+            ret->SetAlignedPointerInInternalField(0, object);
+
+            SetNativeType(object, NativeType::Matrix);
+
+            object->BindFinalizer(isolate, ret);
+
+            args.GetReturnValue().Set(ret);
+            return;
+        }
+    }
+
+    args.GetReturnValue().SetUndefined();
+}
+
+void MatrixImpl::SkewYSelf(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto count = args.Length();
+    auto isolate = args.GetIsolate();
+
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    if (count >= 1) {
+        auto context = isolate->GetCurrentContext();
+        auto angle = args[0];
+        canvas_native_matrix_skew_y_self(ptr->GetMatrix(),
+                                         (float) angle->NumberValue(context).ToChecked());
+    }
+}
+
+void MatrixImpl::Clone(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    MatrixImpl *ptr = GetPointer(args.This());
+
+    auto matrix = canvas_native_matrix_clone(ptr->GetMatrix());
+
+
+    auto ret = MatrixImpl::GetCtor(isolate)->GetFunction(
+            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+    auto object = new MatrixImpl(matrix);
+
+    ret->SetAlignedPointerInInternalField(0, object);
+
+    SetNativeType(object, NativeType::Matrix);
+
+    object->BindFinalizer(isolate, ret);
+
+    args.GetReturnValue().Set(ret);
+}
+
+
 Matrix *MatrixImpl::GetMatrix() {
     return this->matrix_;
 }
+
+

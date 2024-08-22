@@ -34,6 +34,9 @@ export class HomeComponent {
 		name: 'canvas-polyfill'
 	},
 	{
+		name: 'canvas-svg'
+	},
+	{
 		name: 'canvas-three'
 	}
 ];

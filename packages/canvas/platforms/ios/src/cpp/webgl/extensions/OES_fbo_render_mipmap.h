@@ -32,16 +32,16 @@ public:
     }
 
     static v8::Local<v8::Object>
-    NewInstance(v8::Isolate *isolate, OES_fbo_render_mipmapImpl *texture) {
+    NewInstance(v8::Isolate *isolate, OES_fbo_render_mipmapImpl *mipmap) {
         auto context = isolate->GetCurrentContext();
         v8::EscapableHandleScope scope(isolate);
         auto object = OES_fbo_render_mipmapImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::OES_fbo_render_mipmap);
-        object->SetAlignedPointerInInternalField(0, texture);
+        SetNativeType( mipmap, NativeType::OES_fbo_render_mipmap);
+        object->SetAlignedPointerInInternalField(0, mipmap);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
-                    ConvertToV8String(isolate, "OES_fbo_render_mipmap"));
-        texture->BindFinalizer(isolate, object);
+                    ConvertToV8String(isolate, "OES_fbo_render_mipmap")).FromJust();
+        mipmap->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }
 

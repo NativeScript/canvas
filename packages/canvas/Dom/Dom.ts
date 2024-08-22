@@ -1,4 +1,4 @@
-import { EventData, LayoutBase, ViewBase, Utils, View } from '@nativescript/core';
+import { EventData, LayoutBase, ViewBase, Utils, View, Screen } from '@nativescript/core';
 import { Canvas } from '../Canvas';
 import { Image } from './Image';
 import { Paint } from './Paint';
@@ -15,10 +15,13 @@ export class Dom extends LayoutBase {
 	_state: State = State.None;
 	_isReady: boolean = false;
 	_onFrameCallback?: (frame: number) => void = null;
+
 	constructor() {
 		super();
 		this._canvas = new Canvas();
 		this._canvas.on('ready', this._ready.bind(this));
+		this._canvas.style.width = { unit: '%', value: 1 };
+		this._canvas.style.height = 'auto';
 	}
 
 	createNativeView(): Object {
@@ -56,6 +59,11 @@ export class Dom extends LayoutBase {
 	public onLayout(left: number, top: number, right: number, bottom: number): void {
 		super.onLayout(left, top, right, bottom);
 		View.layoutChild(this, this._canvas, left, top, right, bottom);
+		this._canvas.width = this.getMeasuredWidth();
+		this._canvas.height = this.getMeasuredHeight();
+		// auto scale to screen size
+		const ctx = this._canvas.getContext('2d');
+		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	}
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {

@@ -83,7 +83,7 @@ public class NSCRender: NSObject {
 
         let source_texture = canvas_native_context_get_texture_from_2d(source.native2DContext)
         
-        var textureID: GLuint = canvas_native_context_backend_texture_get_id(source_texture)
+        let textureID: GLuint = canvas_native_context_backend_texture_get_id(source_texture)
     
         canvas_native_gl_make_current(dest.nativeGL)
         
@@ -235,7 +235,7 @@ public class NSCRender: NSObject {
         
         glDrawArrays(GLenum(GL_TRIANGLE_STRIP), 0, 4)
         
-       // glFinish()
+       glFinish()
         
         glBindRenderbuffer(GLenum(GL_RENDERBUFFER), GLuint(previousRenderBuffer))
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(previousFrameBuffer))

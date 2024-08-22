@@ -1,6 +1,6 @@
 import { TouchEvent, PointerEvent } from './Canvas';
-
 export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
+
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
 import { ImageBitmap } from './ImageBitmap';
@@ -11,6 +11,7 @@ import { CanvasPattern, CanvasGradient, Path2D, ImageData, DOMMatrix } from './C
 import { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
+import { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } from './WebGPU/Constants';
 
 export * from './Canvas2D';
 export * from './ImageBitmap';
@@ -19,7 +20,7 @@ export * from './TextEncoder';
 export * from './TextDecoder';
 export * from './WebGL';
 export * from './WebGL2';
-export * from './SVG';
+export * from './WebGPU';
 
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,
@@ -101,6 +102,30 @@ Object.defineProperty(global, 'PointerEvent', {
 
 Object.defineProperty(global, 'ImageAsset', {
 	value: ImageAsset,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'GPUBufferUsage', {
+	value: GPUBufferUsage,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'GPUTextureUsage', {
+	value: GPUTextureUsage,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'GPUMapMode', {
+	value: GPUMapMode,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'GPUShaderStage', {
+	value: GPUShaderStage,
 	configurable: true,
 	writable: true,
 });

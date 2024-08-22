@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22.0)
+cmake_minimum_required(VERSION 3.4.1)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 project(canvasnativev8)
@@ -30,15 +30,18 @@ endif ()
 
 get_filename_component(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
-get_filename_component(PROJECT_NATIVE_ROOT_DIR ${PROJECT_ROOT_DIR} DIRECTORY)
+get_filename_component(PROJECT_NATIVE_ROOT_DIR "${PROJECT_ROOT_DIR}/../../../../.." DIRECTORY)
 
-set(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR}/canvas-native)
+set(PROJECT_NATIVE_ROOT_DIR "${PROJECT_NATIVE_ROOT_DIR}")
 
 set(CARGO_MANIFEST ${PROJECT_NATIVE_ROOT_DIR}/Cargo.toml)
 set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
-set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH")
+
+message(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR})
+
+set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH -Wno-vla-extension -Wno-deprecated")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(RUST_BUILD_TYPE)
@@ -51,6 +54,8 @@ endif ()
 
 
 set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasnative${CMAKE_SHARED_LIBRARY_SUFFIX})
+
+message(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB})
 
 if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
@@ -73,9 +78,7 @@ add_definitions(-DTARGET_OS_ANDROID)
 
 include_directories(
         canvasnativev8
-
         PUBLIC
-
         ${PROJECT_SOURCE_DIR}/src/main/cpp
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include/libc++
         ${PROJECT_SOURCE_DIR}/src/main/cpp/include
@@ -84,6 +87,7 @@ include_directories(
         ../../../platforms/ios/src/cpp/webgl
         ../../../platforms/ios/src/cpp/webgl/extensions
         ../../../platforms/ios/src/cpp/webgl2
+        ../../../platforms/ios/src/cpp/webgpu
 )
 
 set(CMAKE_CXX_FLAGS ${COMMON_CMAKE_ARGUMENTS})
@@ -130,7 +134,6 @@ add_library(
         ${CPP_DIR}/ImageBitmapImpl.cpp
         ${CPP_DIR}/TextDecoderImpl.cpp
         ${CPP_DIR}/TextEncoderImpl.cpp
-        ${CPP_DIR}/URLImpl.cpp
 
 
         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp
@@ -151,31 +154,40 @@ add_library(
 
         ${CPP_DIR}/webgl2/WebGL2RenderingContext.cpp
 
+        ${CPP_DIR}/webgpu/GPUAdapterInfoImpl.cpp
+        ${CPP_DIR}/webgpu/GPUImpl.cpp
+        ${CPP_DIR}/webgpu/GPUAdapterImpl.cpp
+        ${CPP_DIR}/webgpu/GPUSupportedLimitsImpl.cpp
+        ${CPP_DIR}/webgpu/GPUDeviceImpl.cpp
+        ${CPP_DIR}/webgpu/GPUQueueImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBufferImpl.cpp
+
+        ${CPP_DIR}/webgpu/GPUCanvasContextImpl.cpp
+        ${CPP_DIR}/webgpu/GPUTextureImpl.cpp
+        ${CPP_DIR}/webgpu/GPUComputePassEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPUQuerySetImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCommandEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPUShaderModuleImpl.cpp
+        ${CPP_DIR}/webgpu/GPUPipelineLayoutImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderPipelineImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBindGroupLayoutImpl.cpp
+        ${CPP_DIR}/webgpu/GPUTextureViewImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderPassEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCommandBufferImpl.cpp
+        ${CPP_DIR}/webgpu/GPUBindGroupImpl.cpp
+        ${CPP_DIR}/webgpu/GPUComputePipelineImpl.cpp
+        ${CPP_DIR}/webgpu/GPUSamplerImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderBundleEncoderImpl.cpp
+        ${CPP_DIR}/webgpu/GPURenderBundleImpl.cpp
+
+
+
         ${CPP_DIR}/CanvasJSIModule.cpp
 
-        ${CPP_DIR}/PerIsolateData.cpp
-
         ${CPP_DIR}/JSIRuntime.cpp
+
 )
 
-
-#add_custom_command(
-#        TARGET canvasnativev8
-#        #COMMAND RUSTFLAGS='-Cpanic=abort -C target-cpu=native -C target-feature=-outline-atomics' cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features='panic_immediate_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        COMMAND cargo +nightly build -Z build-std='std,panic_abort' --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        # COMMAND cargo build --manifest-path ${CARGO_MANIFEST} --target ${RUST_BUILD_TARGET} ${RUST_BUILD_TYPE} -p canvas-android
-#        #        DEPENDS ${CANVAS_ANDROID_SOURCE_FILE}
-#        DEPENDS ${CANVAS_ANDROID_LIB}
-#        #USES_TERMINAL
-#)
-
-
-#add_custom_command(
-#        TARGET canvasnativev8 PRE_BUILD
-#        COMMAND cbindgen --config ${CANVAS_C}/cbindgen.toml  ${CANVAS_C}/src/lib.rs -l c > ${CANVAS_INCLUDE}/canvas_native.h
-#        DEPENDS ${CANVAS_INCLUDE}/canvas_native.h
-#        #USES_TERMINAL
-#)
 
 set_target_properties(
         canvasnativev8 PROPERTIES
@@ -191,37 +203,26 @@ find_library(egl EGL)
 
 add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
 
-if ("${ANDROID_ABI}" MATCHES "armeabi-v7a" OR "${ANDROID_ABI}" MATCHES "x86" AND NOT "${ANDROID_ABI}" MATCHES "x86_64")
-  # On API Level 19 and lower we need to link with android_support
-  # because it contains some implementation of functions such as "strtoll" and "strtoul"
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${OPENGL_LIB}
-          ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
-          #${ANDROID_NDK_ROOT}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libandroid_support.a
-          ${CANVAS_ANDROID_LIB}
-          android
-          #            ${canvasnative}
-          )
 
-else ()
-  target_link_libraries(canvasnativev8
-          ${system-log}
-          ${system-z}
-          ${egl}
-          ${OPENGL_LIB}
-          ${graphics}
-          ${PROJECT_SOURCE_DIR}/src/main/java/jniLibs/${ANDROID_ABI}/libNativeScript.so
-          ${CANVAS_ANDROID_LIB}
-          android
-          )
-endif ()
+target_link_libraries(canvasnativev8
+        ${system-log}
+        ${system-z}
+        ${egl}
+        ${OPENGL_LIB}
+        ${graphics}
+        ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+        ${CANVAS_ANDROID_LIB}
+        android
+)
+
+## API 35 support
+if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
+  target_link_options(canvasnativev8 PRIVATE "-Wl,-z,max-page-size=16384")
+endif()
 
 
 add_custom_command(TARGET canvasnativev8
-        POST_BUILD
+        PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         ${CANVAS_ANDROID_LIB}
         ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasnative.so

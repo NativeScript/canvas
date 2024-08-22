@@ -1,8 +1,7 @@
 import { CancellablePromise, Http } from '../http/http';
 import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
 import { FileManager } from '../file/file';
-import { isNullOrUndefined, isObject, isFunction } from '@nativescript/core/utils/types';
-import { knownFolders, path as filePath, File as fsFile } from '@nativescript/core';
+import { knownFolders, path as filePath, File as fsFile, Utils } from '@nativescript/core';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -270,13 +269,13 @@ export class TNSXMLHttpRequest {
 	private _addToStringOnResponse() {
 		// Add toString() method to ease debugging and
 		// make Angular2 response.text() method work properly.
-		if (isNullOrUndefined(this.response)) {
+		if (Utils.isNullOrUndefined(this.response)) {
 			return;
 		}
 		if (this.response instanceof ArrayBuffer) {
 			return;
 		}
-		if (isObject(this.response)) {
+		if (Utils.isObject(this.response)) {
 			Object.defineProperty(this._response, 'toString', {
 				configurable: true,
 				enumerable: false,
@@ -344,6 +343,7 @@ export class TNSXMLHttpRequest {
 		if (!this._headers['Accept']) {
 			this._headers['Accept'] = '*/*';
 		}
+
 		if (typeof this._request.method === 'string' && this._request.method.toLowerCase() === 'get' && typeof this._request.url === 'string' && !this._request.url.startsWith('http')) {
 			let path;
 			let isBlob = false;
@@ -358,6 +358,7 @@ export class TNSXMLHttpRequest {
 				path = (URL as any)?.InternalAccessor?.getData?.(this._request.url).blob;
 				isBlob = true;
 			}
+
 			if (isBlob) {
 				const buf = (Blob as any).InternalAccessor.getBuffer(path) as Uint8Array;
 				const responseURL = this._request.url;
@@ -525,7 +526,7 @@ export class TNSXMLHttpRequest {
 					this._httpContent = data;
 					this._responseURL = responseURL;
 
-					const fastRead = (FileManager as any)._readFile !== undefined;
+					const fastRead = FileManager.supportFastRead;
 
 					if (this.responseType === XMLHttpRequestResponseType.json) {
 						try {
@@ -591,26 +592,8 @@ export class TNSXMLHttpRequest {
 						}
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
-						if (!fastRead) {
-							if ((global as any).isIOS) {
-								this._response = interop.bufferFromData(data);
-							} else {
-								this._response = (ArrayBuffer as any).from(java.nio.ByteBuffer.wrap(data).rewind());
-							}
-						}
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						let buffer: ArrayBuffer = data;
-
-						if (!fastRead) {
-							if ((global as any).isIOS) {
-								buffer = interop.bufferFromData(data);
-							} else {
-								//	buffer = data;
-								const buf = java.nio.ByteBuffer.wrap(data).rewind();
-								buffer = (ArrayBuffer as any).from(buf);
-							}
-						}
-						this._response = new Blob([buffer]);
+						this._response = new Blob([data]);
 					}
 
 					let size = 0;
@@ -729,6 +712,7 @@ export class TNSXMLHttpRequest {
 		if (this.timeout > 0) {
 			request['timeout'] = this.timeout;
 		}
+
 		this._currentRequest = this._http.request(request);
 
 		this._currentRequest
@@ -837,8 +821,14 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							const buffer = interop.bufferFromData(res.content);
-							this._response = new Blob([buffer]);
+							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
+								const encoder = new TextEncoder();
+								const buffer = encoder.encode(res.content.toString());
+								this._response = new Blob([buffer]);
+							} else {
+								const buffer = interop.bufferFromData(res.content);
+								this._response = new Blob([buffer]);
+							}
 						}
 					} else {
 						if (typeof res.content === 'string') {
@@ -846,8 +836,14 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							const buffer = (ArrayBuffer as any).from(res.content);
-							this._response = new Blob([buffer]);
+							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
+								const encoder = new TextEncoder();
+								const buffer = encoder.encode(res.content.toString());
+								this._response = new Blob([buffer]);
+							} else {
+								const buffer = (ArrayBuffer as any).from(res.content);
+								this._response = new Blob([buffer]);
+							}
 						}
 					}
 				}
@@ -1192,7 +1188,7 @@ export class FileReader {
 	}
 
 	private emitEvent(eventName: string, ...args: Array<any>) {
-		if (isFunction(this['on' + eventName])) {
+		if (Utils.isFunction(this['on' + eventName])) {
 			this['on' + eventName](...args);
 		}
 

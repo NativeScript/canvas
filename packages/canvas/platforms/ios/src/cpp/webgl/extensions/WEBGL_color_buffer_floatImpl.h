@@ -47,7 +47,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_color_buffer_floatImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_color_buffer_float);
+        SetNativeType( buffer, NativeType::WEBGL_color_buffer_float);
         object->SetAlignedPointerInInternalField(0, buffer);
         buffer->BindFinalizer(isolate, object);
         return scope.Escape(object);

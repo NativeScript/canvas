@@ -1,20 +1,21 @@
 {
-  "main": "./src/main.ts",
-  "dependencies": {
-    "@nativescript/canvas": "file:../../dist/packages/canvas",
-    "@nativescript/canvas-babylon": "file:../../dist/packages/canvas-babylon",
-    "@nativescript/canvas-media": "file:../../dist/packages/canvas-media",
-    "@nativescript/canvas-phaser": "file:../../dist/packages/canvas-phaser",
-    "@nativescript/canvas-phaser-ce": "file:../../dist/packages/canvas-phaser-ce",
-    "@nativescript/canvas-pixi": "file:../../dist/packages/canvas-pixi",
-    "@nativescript/canvas-polyfill": "file:../../dist/packages/canvas-polyfill",
-    "@nativescript/canvas-three": "file:../../dist/packages/canvas-three",
-    "@nativescript/core": "file:../../node_modules/@nativescript/core",
-    "three": "file:../../node_modules/three",
-    "@nativescript/canvas-chartjs": "file:../../dist/packages/canvas-chartjs"
-  },
-  "devDependencies": {
-    "@nativescript/android": "~8.5.0",
-    "@nativescript/ios": "8.5.1-dev.0"
-  }
+	"main": "./src/main.ts",
+	"dependencies": {
+		"@nativescript/canvas": "file:../../dist/packages/canvas",
+		"@nativescript/canvas-babylon": "file:../../dist/packages/canvas-babylon",
+		"@nativescript/canvas-media": "file:../../dist/packages/canvas-media",
+		"@nativescript/canvas-phaser": "file:../../dist/packages/canvas-phaser",
+		"@nativescript/canvas-phaser-ce": "file:../../dist/packages/canvas-phaser-ce",
+		"@nativescript/canvas-pixi": "file:../../dist/packages/canvas-pixi",
+		"@nativescript/canvas-polyfill": "file:../../dist/packages/canvas-polyfill",
+		"@nativescript/canvas-three": "file:../../dist/packages/canvas-three",
+		"@nativescript/core": "file:../../node_modules/@nativescript/core",
+		"three": "file:../../node_modules/three",
+		"@nativescript/canvas-chartjs": "file:../../dist/packages/canvas-chartjs",
+		"@nativescript/canvas-svg": "file:../../dist/packages/canvas-svg"
+	},
+	"devDependencies": {
+		"@nativescript/android": "~8.8.0",
+		"@nativescript/ios": "~8.8.0"
+	}
 }

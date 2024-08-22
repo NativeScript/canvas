@@ -35,7 +35,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_shader_texture_lodImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_shader_texture_lod);
+        SetNativeType( texture, NativeType::EXT_shader_texture_lod);
         object->SetAlignedPointerInInternalField(0, texture);
         texture->BindFinalizer(isolate, object);
         return scope.Escape(object);

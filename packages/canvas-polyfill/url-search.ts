@@ -26,8 +26,6 @@
         encodesAmpersandsCorrectly = nativeURLSearchParams ? (function() {
             var ampersandTest = new nativeURLSearchParams();
             ampersandTest.append('s', ' &');
-
-            console.log('asdassasds');
             return ampersandTest.toString() === 's=+%26';
         })() : true,
         prototype = URLSearchParamsPolyfill.prototype,

@@ -1,39 +1,39 @@
 {
-  "name": "@nativescript/canvas-phaser-ce",
-  "version": "2.0.0-beta.11",
-  "description": "Tools for using Phaser-ce to build native 2D games in NativeScript 👾",
-  "main": "index",
-  "typings": "index.d.ts",
-  "nativescript": {
-    "platforms": {
-      "ios": "7.0.0",
-      "android": "7.0.0"
-    }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/NativeScript/canvas.git"
-  },
-  "keywords": [
-    "NativeScript",
-    "JavaScript",
-    "TypeScript",
-    "iOS",
-    "Android"
-  ],
-  "author": {
-    "name": "NativeScript",
-    "email": "oss@nativescript.org"
-  },
-  "bugs": {
-    "url": "https://github.com/NativeScript/canvas/issues"
-  },
-  "license": "Apache-2.0",
-  "homepage": "https://github.com/NativeScript/canvas",
-  "readmeFilename": "README.md",
-  "bootstrapper": "@nativescript/plugin-seed",
-  "dependencies": {
-    "@nativescript/canvas-polyfill": "alpha",
-    "phaser-ce": "2.20.0"
-  }
+	"name": "@nativescript/canvas-phaser-ce",
+	"version": "2.0.0-webgpu.15",
+	"description": "Tools for using Phaser-ce to build native 2D games in NativeScript 👾",
+	"main": "index",
+	"typings": "index.d.ts",
+	"nativescript": {
+		"platforms": {
+			"ios": "7.0.0",
+			"android": "7.0.0"
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NativeScript/canvas.git"
+	},
+	"keywords": [
+		"NativeScript",
+		"JavaScript",
+		"TypeScript",
+		"iOS",
+		"Android"
+	],
+	"author": {
+		"name": "NativeScript",
+		"email": "oss@nativescript.org"
+	},
+	"bugs": {
+		"url": "https://github.com/NativeScript/canvas/issues"
+	},
+	"license": "Apache-2.0",
+	"homepage": "https://github.com/NativeScript/canvas",
+	"readmeFilename": "README.md",
+	"bootstrapper": "@nativescript/plugin-seed",
+	"dependencies": {
+		"@nativescript/canvas-polyfill": "webgpu",
+		"phaser-ce": "2.20.0"
+	}
 }

@@ -41,8 +41,7 @@ class Storage {
 		this._localStorageData[name] = value;
 		saveData(this);
 	}
-	// Revamp this to be "String" only
-	// https://github.com/NathanaelA/nativescript-localstorage/issues/17
+
 	setItem(name, value) {
 		if (value == null) {
 			if (value === null) {

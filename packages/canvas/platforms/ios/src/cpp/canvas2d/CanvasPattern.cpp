@@ -17,7 +17,7 @@ void CanvasPattern::Init(const v8::Local<v8::Object> &canvasModule, v8::Isolate 
     auto context = isolate->GetCurrentContext();
     auto func = ctor->GetFunction(context).ToLocalChecked();
 
-    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func);
+    canvasModule->Set(context, ConvertToV8String(isolate, "CanvasPattern"), func).FromJust();
 }
 
 v8::CFunction CanvasPattern::fast_set_transform_(
@@ -29,16 +29,6 @@ CanvasPattern *CanvasPattern::GetPointer(const v8::Local<v8::Object> &object) {
         return nullptr;
     }
     return static_cast<CanvasPattern *>(ptr);
-}
-
-static v8::Local<v8::Object> NewInstance(v8::Isolate *isolate, CanvasPattern *pattern) {
-    auto context = isolate->GetCurrentContext();
-    v8::EscapableHandleScope scope(isolate);
-    auto object = CanvasPattern::GetCtor(isolate)->GetFunction(
-            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-    SetNativeType(object, NativeType::CanvasPattern);
-    object->SetAlignedPointerInInternalField(0, pattern);
-    return scope.Escape(object);
 }
 
 v8::Local<v8::FunctionTemplate> CanvasPattern::GetCtor(v8::Isolate *isolate) {

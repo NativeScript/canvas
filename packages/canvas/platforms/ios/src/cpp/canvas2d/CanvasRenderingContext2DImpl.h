@@ -171,7 +171,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = CanvasRenderingContext2DImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType(object, NativeType::CanvasRenderingContext2D);
+        SetNativeType(renderingContext, NativeType::CanvasRenderingContext2D);
         object->SetAlignedPointerInInternalField(0, renderingContext);
         renderingContext->BindFinalizer(isolate, object);
         return scope.Escape(object);
@@ -503,9 +503,12 @@ public:
 
         switch (rule) {
             case 0:
+                canvas_native_context_clip_rule(
+                        ptr->GetContext(), CanvasFillRuleNonZero);
+                break;
             case 1:
                 canvas_native_context_clip_rule(
-                        ptr->GetContext(), rule);
+                        ptr->GetContext(), CanvasFillRuleEvenOdd);
                 break;
             default:
                 break;
@@ -521,7 +524,7 @@ public:
         if (GetNativeType(path_obj) == NativeType::Path2D) {
             auto path = Path2D::GetPointer(path_obj);
             canvas_native_context_clip(
-                    ptr->GetContext(), path->GetPath(), 0);
+                    ptr->GetContext(), path->GetPath(), CanvasFillRuleNonZero);
         }
 
 
@@ -536,8 +539,18 @@ public:
 
         if (GetNativeType(path_obj) == NativeType::Path2D) {
             auto path = Path2D::GetPointer(path_obj);
-            canvas_native_context_clip(
-                    ptr->GetContext(), path->GetPath(), rule);
+            switch (rule) {
+                case 0:
+                    canvas_native_context_clip(
+                            ptr->GetContext(), path->GetPath(), CanvasFillRuleNonZero);
+                    break;
+                case 1:
+                    canvas_native_context_clip(
+                            ptr->GetContext(), path->GetPath(), CanvasFillRuleEvenOdd);
+                    break;
+                default:
+                    break;
+            }
         }
 
     }
@@ -623,7 +636,7 @@ public:
     static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
-    DrawImageDxDyAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset, double dx,
+    DrawImageDxDyAssetImpl(CanvasRenderingContext2DImpl *ptr, const ImageAsset *asset, double dx,
                            double dy) {
         if (asset != nullptr) {
             canvas_native_context_draw_image_dx_dy_asset(
@@ -677,7 +690,7 @@ public:
         }
     }
 
-    static void DrawImageDxDyDwDhAssetImpl(CanvasRenderingContext2DImpl *ptr, ImageAsset *asset,
+    static void DrawImageDxDyDwDhAssetImpl(CanvasRenderingContext2DImpl *ptr, const ImageAsset *asset,
                                            double dx, double dy, double dw, double dh) {
 
 
@@ -770,7 +783,7 @@ public:
 
     static void
     DrawImageAssetImpl(CanvasRenderingContext2DImpl *ptr,
-                       ImageAsset *asset, double sx,
+                       const ImageAsset *asset, double sx,
                        double sy, double sw, double sh, double dx, double dy, double dw,
                        double dh) {
 
@@ -884,10 +897,23 @@ public:
         auto object = Path2D::GetPointer(path);
 
         if (object != nullptr) {
-            canvas_native_context_fill_with_path(
-                    ptr->GetContext(),
-                    object->GetPath(),
-                    rule);
+            switch (rule) {
+                case 0:
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(),
+                            CanvasFillRuleNonZero);
+                    break;
+                case 1:
+                    canvas_native_context_fill_with_path(
+                            ptr->GetContext(),
+                            object->GetPath(),
+                            CanvasFillRuleEvenOdd);
+                    break;
+                default:
+                    break;
+            }
+
             ptr->UpdateInvalidateState();
         }
     }
@@ -901,9 +927,10 @@ public:
 
         auto object = Path2D::GetPointer(path);
 
+
         canvas_native_context_fill_with_path(
                 ptr->GetContext(),
-                object->GetPath(), 0);
+                object->GetPath(), CanvasFillRuleNonZero);
         ptr->UpdateInvalidateState();
     }
 
@@ -913,8 +940,21 @@ public:
             return;
         }
 
-        canvas_native_context_fill(
-                ptr->GetContext(), rule);
+
+        switch (rule) {
+            case 0:
+                canvas_native_context_fill(
+                        ptr->GetContext(), CanvasFillRuleNonZero);
+                break;
+            case 1:
+                canvas_native_context_fill(
+                        ptr->GetContext(), CanvasFillRuleEvenOdd);
+                break;
+            default:
+                break;
+        }
+
+
         ptr->UpdateInvalidateState();
     }
 
@@ -925,7 +965,7 @@ public:
         }
 
         canvas_native_context_fill(
-                ptr->GetContext(), 0);
+                ptr->GetContext(), CanvasFillRuleNonZero);
         ptr->UpdateInvalidateState();
     }
 
@@ -986,7 +1026,8 @@ public:
         }
 
         return canvas_native_context_is_point_in_path(
-                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), 0);
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y),
+                CanvasFillRuleNonZero);
     }
 
     static bool
@@ -997,8 +1038,10 @@ public:
             return false;
         }
 
+
         return canvas_native_context_is_point_in_path(
-                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y), rule);
+                ptr->GetContext(), static_cast<float>(x), static_cast<float>(y),
+                rule == 0 ? CanvasFillRuleNonZero : CanvasFillRuleEvenOdd);
     }
 
     static bool
@@ -1018,10 +1061,22 @@ public:
         if (type == NativeType::Path2D) {
             auto path = Path2D::GetPointer(path_obj);
 
+            switch (rule) {
+                case 0:
 
-            ret = canvas_native_context_is_point_in_path_with_path(
-                    ptr->GetContext(),
-                    path->GetPath(), x, y, rule);
+                    ret = canvas_native_context_is_point_in_path_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), (float) x, (float) y, CanvasFillRuleNonZero);
+                    break;
+                case 1:
+
+                    ret = canvas_native_context_is_point_in_path_with_path(
+                            ptr->GetContext(),
+                            path->GetPath(), (float) x, (float) y, CanvasFillRuleEvenOdd);
+                    break;
+                default:
+                    break;
+            }
 
         }
         return ret;
@@ -1396,7 +1451,6 @@ public:
 
 
     static void StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args);
-
 
 
     static void StrokeOval(const v8::FunctionCallbackInfo<v8::Value> &args);

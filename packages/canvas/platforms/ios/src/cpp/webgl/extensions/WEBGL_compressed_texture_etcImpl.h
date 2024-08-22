@@ -70,10 +70,10 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_etcImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_compressed_texture_etc);
+        SetNativeType( compressedTextureEtc, NativeType::WEBGL_compressed_texture_etc);
         object->SetAlignedPointerInInternalField(0, compressedTextureEtc);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
-                    ConvertToV8String(isolate, "WEBGL_compressed_texture_etc"));
+                    ConvertToV8String(isolate, "WEBGL_compressed_texture_etc")).FromJust();
         compressedTextureEtc->BindFinalizer(isolate, object);
         return scope.Escape(object);
     }

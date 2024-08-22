@@ -1,6 +1,8 @@
 <component name="ProjectDictionaryState">
   <dictionary name="triniwiz">
     <words>
+      <w>abcdef</w>
+      <w>addr</w>
       <w>attrib</w>
       <w>bufferfi</w>
       <w>bufferfv</w>
@@ -19,6 +21,7 @@
       <w>parameterf</w>
       <w>parameteri</w>
       <w>pname</w>
+      <w>postmultiplied</w>
       <w>premultiplied</w>
       <w>premultiply</w>
       <w>primcount</w>
@@ -27,8 +30,12 @@
       <w>shaders</w>
       <w>triniwiz</w>
       <w>uint</w>
+      <w>unclipped</w>
       <w>varyings</w>
       <w>webgl</w>
+      <w>webgpu</w>
+      <w>wgpu</w>
+      <w>xform</w>
     </words>
   </dictionary>
 </component>

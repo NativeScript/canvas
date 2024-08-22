@@ -11,6 +11,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.io.*
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
@@ -84,9 +85,7 @@ public class Async2 {
 						try {
 							os?.flush()
 							os?.close()
-						} catch (e: java.lang.Exception) {
-
-						}
+						} catch (_: java.lang.Exception) {}
 
 						if (!isError) {
 							callback.success(file.absolutePath)
@@ -130,7 +129,8 @@ public class Async2 {
 						"application/xml",
 						"application/rss+xml",
 						"text/html",
-						"text/xml"
+						"text/xml",
+						"image/svg+xml"
 					)
 					for (type in textTypes) {
 						isTextType = contentType.contains(type)
@@ -147,42 +147,17 @@ public class Async2 {
 			@JvmOverloads
 			fun decodeBuffer(stream: ByteBuffer, encoding: String? = null): String {
 				stream.rewind()
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-					val ret = when (encoding) {
-						"UTF-8" -> {
-							StandardCharsets.UTF_8.decode(stream).toString()
-						}
-						"US-ASCII" -> {
-							StandardCharsets.US_ASCII.decode(stream).toString()
-						}
-						else -> StandardCharsets.ISO_8859_1.decode(stream).toString()
+				val ret = when (encoding) {
+					"UTF-8" -> {
+						StandardCharsets.UTF_8.decode(stream).toString()
 					}
-					stream.rewind()
-					return ret
-				} else {
-					val encoding = encoding?.let {
-						when (it) {
-							"UTF-8", "US-ASCII", "ISO-8859-1" -> {
-								Charset.forName(it)
-							}
-							else -> null
-						}
+					"US-ASCII" -> {
+						StandardCharsets.US_ASCII.decode(stream).toString()
 					}
-
-					return if (stream.isDirect) {
-						val buf = ByteArray(stream.remaining())
-						stream.get(buf)
-						stream.rewind()
-						encoding?.let {
-							String(buf, it)
-						} ?: String(buf)
-					} else {
-						val buf = stream.array()
-						encoding?.let {
-							String(buf, it)
-						} ?: String(buf)
-					}
+					else -> StandardCharsets.ISO_8859_1.decode(stream).toString()
 				}
+				stream.rewind()
+				return ret
 			}
 
 			@JvmStatic
@@ -199,6 +174,7 @@ public class Async2 {
 						builder.readTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
 						builder.writeTimeout(options.timeout.toLong(), TimeUnit.MILLISECONDS)
 					}
+
 					if (options.username != null && options.password != null) {
 						builder.authenticator { route, response ->
 							if (response.request().header("Authorization") != null) {
@@ -236,12 +212,8 @@ public class Async2 {
 									e.printStackTrace()
 								}
 								if (value is JSONObject) {
-									var formBody: FormBody.Builder?
-									formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+									val formBody =
 										FormBody.Builder(StandardCharsets.UTF_8)
-									} else {
-										FormBody.Builder(Charset.forName("UTF-8"))
-									}
 									val it = value.keys()
 									while (it.hasNext()) {
 										val key = it.next()
@@ -278,11 +250,8 @@ public class Async2 {
 							if (contentType == "application/x-www-form-urlencoded") {
 								if (options.content is JSONObject) {
 									var formBody: FormBody.Builder?
-									formBody = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+									formBody =
 										FormBody.Builder(StandardCharsets.UTF_8)
-									} else {
-										FormBody.Builder(Charset.forName("UTF-8"))
-									}
 									val it = (options.content as JSONObject?)!!.keys()
 									while (it.hasNext()) {
 										val key = it.next()
@@ -386,19 +355,38 @@ public class Async2 {
 							}
 							val source = responseBody.source()
 
-							stream = ByteBuffer
-								.allocateDirect(responseBody.contentLength().toInt())
-								.order(ByteOrder.nativeOrder())
-
 							val result = Result()
 							result.contentText = ""
 							result.url = response.request().url().toString()
 							result.headers = ArrayList()
+
+
+							var contentLength = responseBody.contentLength()
+
+//							val headers = response.headers()
+//							headers.names().forEach {
+//								result.headers?.add(KeyValuePair(it, headers.get(it)))
+//							}
 							try {
-								source.read(stream!!)
-								stream?.rewind()
+
+								if (contentLength == -1L) {
+									val array = source.readByteArray()
+									stream = ByteBuffer
+										.allocateDirect(array.size)
+										.order(ByteOrder.nativeOrder())
+									stream?.put(array)
+									stream?.rewind()
+								} else {
+									stream = ByteBuffer
+										.allocateDirect(responseBody.contentLength().toInt())
+										.order(ByteOrder.nativeOrder())
+
+									source.read(stream!!)
+									stream?.rewind()
+								}
+
 								if (isTextType(returnType)) {
-									result.headers!!.add(KeyValuePair("Content-Type", returnType))
+//									result.headers!!.add(KeyValuePair("Content-Type", returnType))
 									result.content = decodeBuffer(stream!!)
 									result.contentText = result.content as String?
 									callback.onComplete(result)
@@ -407,17 +395,17 @@ public class Async2 {
 									val tokener = JSONTokener(returnValue)
 									val value = tokener.nextValue()
 									if (value is JSONObject || value is JSONArray) {
-										result.headers!!.add(KeyValuePair("Content-Type", returnType))
+//										result.headers!!.add(KeyValuePair("Content-Type", returnType))
 										result.content = value
 										result.contentText = returnValue
 									} else {
-										result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
+//										result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
 										result.content = returnValue
 										result.contentText = returnValue
 									}
 									callback.onComplete(result)
 								} else {
-									result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
+//									result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
 									result.content = stream
 									callback.onComplete(result)
 								}
@@ -432,11 +420,11 @@ public class Async2 {
 										try {
 											val value = tokener.nextValue()
 											if (value is JSONObject || value is JSONArray) {
-												result.headers!!.add(KeyValuePair("Content-Type", returnType))
+//												result.headers!!.add(KeyValuePair("Content-Type", returnType))
 												result.content = value
 												result.contentText = returnValue
 											} else {
-												result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
+//												result.headers!!.add(KeyValuePair("Content-Type", "text/plain"))
 												result.content = returnValue
 												result.contentText = returnValue
 											}
@@ -445,7 +433,7 @@ public class Async2 {
 											callback.onError(e1.message, e1)
 										}
 									} else {
-										result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
+//										result.headers!!.add(KeyValuePair("Content-Type", "application/octet-stream"))
 										result.content = stream
 										callback.onCancel(result)
 									}
@@ -621,8 +609,7 @@ public class Async2 {
 
 			@Throws(IOException::class)
 			override fun writeTo(sink: BufferedSink) {
-				val bufferedSink: BufferedSink
-				bufferedSink = forwardingSink(sink).buffer()
+				val bufferedSink: BufferedSink = forwardingSink(sink).buffer()
 				body.writeTo(bufferedSink)
 				bufferedSink.close()
 			}
@@ -725,7 +712,6 @@ public class Async2 {
 			}
 
 			override fun responseHeadersEnd(call: Call, response: Response) {
-
 				for (key in callMap.keys) {
 					val options = callMap[key]
 					if (options != null && options.call == call) {
@@ -938,6 +924,7 @@ public class Async2 {
 						} catch (ignored: IOException) {
 						}
 						if (!isError) {
+							buffer?.rewind()
 							callback.onComplete(buffer)
 						}
 					}

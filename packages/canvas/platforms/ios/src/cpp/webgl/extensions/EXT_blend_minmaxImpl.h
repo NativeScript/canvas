@@ -18,7 +18,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = EXT_blend_minmaxImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::EXT_blend_minmax);
+        SetNativeType( minmax, NativeType::EXT_blend_minmax);
         object->SetAlignedPointerInInternalField(0, minmax);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "EXT_blend_minmax"));

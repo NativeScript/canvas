@@ -282,7 +282,7 @@ export class Video extends VideoBase {
 				settings[kCVPixelBufferPixelFormatTypeKey] = NSNumber.numberWithUnsignedInt(kCVPixelFormatType_32BGRA);
 				this._assetOutput = AVPlayerItemVideoOutput.alloc().initWithOutputSettings(settings);
 				item.addOutput(this._assetOutput);
-				item.addObserverForKeyPathOptionsContext(this.#protocols, 'status', 0, null);
+				item.addObserverForKeyPathOptionsContext(this.#protocols, 'status', NSKeyValueObservingOptions.New, null);
 				item.addObserverForKeyPathOptionsContext(this.#protocols, 'loadedTimeRanges', NSKeyValueObservingOptions.Initial | NSKeyValueObservingOptions.New, null);
 				this._playEndNotificationId = NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(AVPlayerItemDidPlayToEndTimeNotification, item, null, (notfi) => {
 					if (this.loop) {

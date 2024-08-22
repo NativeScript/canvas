@@ -7,8 +7,9 @@
 #include <memory>
 #include "Common.h"
 #include "OneByteStringResource.h"
-#include "PerIsolateData.h"
 #include "v8-fast-api-calls.h"
+#include "AsyncCallback.h"
+#include "PromiseCallback.h"
 //#ifdef __APPLE__
 //#ifdef __OBJC__
 //#include <Foundation/Foundation.h>
@@ -17,8 +18,6 @@
 //extern "C" void NSLog(CFStringRef format, ...);
 //#endif
 //#endif
-
-
 
 static const char *LOG_TAG = "JS";
 static int m_maxLogcatObjectSize = 4096;
@@ -71,64 +70,6 @@ static void LogToConsole(const std::string &message) {
 #endif
 }
 
-enum class NativeMask {
-    Type = 1
-};
-
-enum class NativeType {
-    None,
-    CanvasGradient,
-    CanvasPattern,
-    ImageData,
-    ImageAsset,
-    CanvasRenderingContext2D,
-    WebGLRenderingContextBase,
-    Path2D,
-    Matrix,
-    ImageBitmap,
-    TextMetrics,
-
-    WebGLQuery,
-    WebGLProgram,
-    WebGLShader,
-    WebGLBuffer,
-    WebGLFramebuffer,
-    WebGLRenderbuffer,
-    WebGLTexture,
-    WebGLActiveInfo,
-    OES_fbo_render_mipmap,
-    EXT_blend_minmax,
-    EXT_color_buffer_half_float,
-    EXT_disjoint_timer_query,
-    EXT_sRGB,
-    EXT_shader_texture_lod,
-    EXT_texture_filter_anisotropic,
-    OES_element_index_uint,
-    OES_standard_derivatives,
-    OES_texture_float,
-    OES_texture_float_linear,
-    OES_texture_half_float_linear,
-    OES_texture_half_float,
-    WEBGL_color_buffer_float,
-    OES_vertex_array_object,
-    WebGLVertexArrayObject,
-    WEBGL_compressed_texture_atc,
-    WEBGL_compressed_texture_etc1,
-    WEBGL_compressed_texture_s3tc,
-    WEBGL_compressed_texture_s3tc_srgb,
-    WEBGL_compressed_texture_etc,
-    WEBGL_compressed_texture_pvrtc,
-    WEBGL_lose_context,
-    ANGLE_instanced_arrays,
-    WEBGL_depth_texture,
-    WEBGL_draw_buffers,
-    WebGLShaderPrecisionFormat,
-    WebGLUniformLocation,
-    WebGLSampler,
-    WebGLTransformFeedback,
-    WebGLSync
-};
-
 inline static v8::Local<v8::String>
 ConvertToV8OneByteString(v8::Isolate *isolate, std::string string) {
     auto value = new OneByteStringResource(std::move(string));
@@ -170,74 +111,6 @@ ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
 
     return {*result};
 }
-
-
-static void SetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
-                            const v8::Local<v8::String> &propName,
-                            const v8::Local<v8::Value> &value) {
-    v8::Local<v8::Context> context;
-    obj->GetCreationContext().ToLocal(&context);
-    v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, propName);
-    obj->SetPrivate(context, privateKey, value);
-}
-
-static v8::Local<v8::Value>
-GetPrivateValue(v8::Isolate *isolate, const v8::Local<v8::Object> &obj,
-                const v8::Local<v8::String> &propName) {
-    v8::Local<v8::Context> context;
-    obj->GetCreationContext().ToLocal(&context);
-    v8::Local<v8::Private> privateKey = v8::Private::ForApi(isolate, propName);
-
-    v8::Maybe<bool> hasPrivate = obj->HasPrivate(context, privateKey);
-
-    if (!hasPrivate.FromMaybe(false)) {
-        return v8::Local<v8::Value>();
-    }
-
-    v8::Local<v8::Value> result;
-
-    obj->GetPrivate(context, privateKey).ToLocal(&result);
-
-    return result;
-}
-
-static void SetNativeType(const v8::Local<v8::Object> &obj, NativeType type) {
-    auto value = (int32_t) type;
-    obj->SetAlignedPointerInInternalField(1, new int32_t(value));
-}
-
-inline static NativeType GetNativeType(const v8::Local<v8::Value> &obj) {
-    if (!obj->IsNullOrUndefined() && obj->IsObject() &&
-        obj.As<v8::Object>()->InternalFieldCount() > 1) {
-        auto info = obj.As<v8::Object>()->GetAlignedPointerFromInternalField(1);
-
-        if (info != nullptr) {
-            auto value = *static_cast<int32_t *>(info);
-            auto ret = value;
-            if (ret >= (int) NativeType::CanvasGradient &&
-                ret <= (int) NativeType::WebGLSync) {
-                return (NativeType) ret;
-            }
-        }
-    }
-
-    return NativeType::None;
-}
-
-
-//template<class T>
-//static inline void Finalizer(const v8::WeakCallbackInfo<T> &data) {
-//    auto *pThis = data.GetParameter();
-//    pThis->weakHandle_.Reset();
-//    delete pThis;
-//}
-
-//static inline void BindFinalizer(v8::Isolate *isolate, v8::Global<v8::Object> &weakHandle, const v8::Local<v8::Object> &object) {
-//    v8::HandleScope scopedHandle(isolate);
-//    weakHandle.Reset(isolate, object);
-//    weakHandle.SetWeak(this, Finalizer, v8::WeakCallbackType::kParameter);
-//}
-
 
 
 static void SetFastMethod(v8::Isolate *isolate,

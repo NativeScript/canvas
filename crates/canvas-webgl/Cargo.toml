@@ -1,0 +1,9 @@
+[package]
+name = "canvas-webgl"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+parking_lot.workspace = true
+canvas-core.workspace = true
+gl-bindings.workspace = true

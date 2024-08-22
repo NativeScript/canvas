@@ -53,7 +53,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WEBGL_compressed_texture_s3tc_srgbImpl::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WEBGL_compressed_texture_s3tc_srgb);
+        SetNativeType( compressedTextureS3TcSrgb, NativeType::WEBGL_compressed_texture_s3tc_srgb);
         object->SetAlignedPointerInInternalField(0, compressedTextureS3TcSrgb);
         object->Set(context, ConvertToV8String(isolate, "ext_name"),
                     ConvertToV8String(isolate, "WEBGL_compressed_texture_s3tc_srgb"));

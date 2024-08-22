@@ -4,8 +4,8 @@
     <ActionBar title="canvas-three" icon="" class="action-bar">
     </ActionBar>
   </Page.actionBar>
-  <GridLayout>
-    <canvas:Canvas height="100%" width="100%" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
+  <GridLayout height="100%" width="100%" >
+    <canvas:Canvas style="width:100%;height:auto;" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
                       unloaded="{{unloaded}}"/>
   </GridLayout>
 </Page>

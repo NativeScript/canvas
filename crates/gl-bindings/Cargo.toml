@@ -1,0 +1,10 @@
+[package]
+name = "gl-bindings"
+version = "2.0.0"
+authors = ["triniwiz <fortune.osei@yahoo.com>"]
+edition = "2021"
+
+
+[build-dependencies]
+gl_generator = "0.14"
+cfg_aliases = "0.2.0"

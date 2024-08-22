@@ -43,14 +43,14 @@ public class Utils: NSObject {
     
     
     private static func getParent(_ path: String) -> String {
-        let fileManager = FileManager.default
+      //  let fileManager = FileManager.default
         let nsString = NSString(string: path)
         let parentPath = nsString.deletingLastPathComponent
-        let name = fileManager.displayName(atPath: parentPath)
+        // let name = fileManager.displayName(atPath: parentPath)
         return parentPath
     }
     
-    enum TNSError: Error {
+    enum NSCError: Error {
         case customError(String)
     }
     
@@ -69,7 +69,7 @@ public class Utils: NSObject {
             
             
             if(failed && !fileManager.createFile(atPath: path, contents: nil, attributes: nil)){
-                throw TNSError.customError("Failed to create file at path '" + path + "'")
+                throw NSCError.customError("Failed to create file at path '" + path + "'")
             }
         }
         

@@ -4,9 +4,12 @@ import { HTMLImageElement } from './DOM/HTMLImageElement';
 import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
+import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
 import { Device, fromObject, View } from '@nativescript/core';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
-
+import { HTMLCollection } from './DOM/HTMLCollection';
+import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
+import { Navigator } from './navigator';
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -25,8 +28,53 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 (global as any).window.CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D || CanvasRenderingContext2D;
 (global as any).window.WebGLRenderingContext = (global as any).WebGLRenderingContext = (global as any).WebGLRenderingContext || WebGLRenderingContext;
 (global as any).window.WebGL2RenderingContext = (global as any).WebGL2RenderingContext = (global as any).WebGL2RenderingContext || WebGL2RenderingContext;
-
 (global as any).window.ImageData = (global as any).ImageData = (global as any).ImageData || ImageData;
+(global as any).window.DOMPoint = (global as any).DOMPoint = (global as any).DOMPoint || DOMPoint;
+(global as any).window.DOMPointReadOnly = (global as any).DOMPointReadOnly = (global as any).DOMPointReadOnly || DOMPointReadOnly;
+(global as any).window.HTMLCollection = (global as any).HTMLCollection = (global as any).HTMLCollection || HTMLCollection;
+(global as any).window.HTMLUnknownElement = (global as any).HTMLUnknownElement = (global as any).HTMLUnknownElement || HTMLUnknownElement;
+
+// svg
+import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopElement, SVGRadialGradientElement, SVGLinearGradientElement, SVGGradientElement, SVGTextElement, SVGPolygonElement, SVGEllipseElement, SVGImageElement, SVGAnimatedRect, SVGPointList, SVGTransformList, SVGTransform, SVGRect, SVGNumber, SVGMatrix, SVGPoint, SVGAngle, SVGCircleElement, SVGElement, SVGSVGElement, SVGGraphicsElement, SVGMaskElement, SVGLineElement, SVGLength, SVGAnimatedLength, SVGPolylineElement, SVGGElement, SVGPathElement, SVGRectElement, SVGAnimatedString } from './DOM/svg';
+
+(global as any).window.SVGCircleElement = (global as any).SVGCircleElement = (global as any).SVGCircleElement || SVGCircleElement;
+(global as any).window.SVGSVGElement = (global as any).SVGSVGElement = (global as any).SVGSVGElement || SVGSVGElement;
+(global as any).window.SVGElement = (global as any).SVGElement = (global as any).SVGElement || SVGElement;
+(global as any).window.SVGGraphicsElement = (global as any).SVGGraphicsElement = (global as any).SVGGraphicsElement || SVGGraphicsElement;
+(global as any).window.SVGMaskElement = (global as any).SVGMaskElement = (global as any).SVGMaskElement || SVGMaskElement;
+(global as any).window.SVGLineElement = (global as any).SVGLineElement = (global as any).SVGLineElement || SVGLineElement;
+(global as any).window.SVGLength = (global as any).SVGLength = (global as any).SVGLength || SVGLength;
+(global as any).window.SVGAnimatedLength = (global as any).SVGAnimatedLength = (global as any).SVGAnimatedLength || SVGAnimatedLength;
+(global as any).window.SVGPolylineElement = (global as any).SVGPolylineElement = (global as any).SVGPolylineElement || SVGPolylineElement;
+(global as any).window.SVGPolygonElement = (global as any).SVGPolygonElement = (global as any).SVGPolygonElement || SVGPolygonElement;
+(global as any).window.SVGGElement = (global as any).SVGGElement = (global as any).SVGGElement || SVGGElement;
+(global as any).window.SVGPathElement = (global as any).SVGPathElement = (global as any).SVGPathElement || SVGPathElement;
+(global as any).window.SVGRectElement = (global as any).SVGRectElement = (global as any).SVGRectElement || SVGRectElement;
+(global as any).window.SVGAnimatedString = (global as any).SVGAnimatedString = (global as any).SVGAnimatedString || SVGAnimatedString;
+
+(global as any).window.SVGPoint = (global as any).SVGPoint = (global as any).SVGPoint || SVGPoint;
+(global as any).window.SVGAngle = (global as any).SVGAngle = (global as any).SVGAngle || SVGAngle;
+(global as any).window.SVGMatrix = (global as any).SVGMatrix = (global as any).SVGMatrix || SVGMatrix;
+(global as any).window.SVGNumber = (global as any).SVGNumber = (global as any).SVGNumber || SVGNumber;
+(global as any).window.SVGRect = (global as any).SVGRect = (global as any).SVGRect || SVGRect;
+(global as any).window.SVGTransform = (global as any).SVGTransform = (global as any).SVGTransform || SVGTransform;
+(global as any).window.SVGPointList = (global as any).SVGPointList = (global as any).SVGPointList || SVGPointList;
+(global as any).window.SVGTransformList = (global as any).SVGTransformList = (global as any).SVGTransformList || SVGTransformList;
+(global as any).window.SVGAnimatedRect = (global as any).SVGAnimatedRect = (global as any).SVGAnimatedRect || SVGAnimatedRect;
+
+(global as any).window.SVGImageElement = (global as any).SVGImageElement = (global as any).SVGImageElement || SVGImageElement;
+(global as any).window.SVGEllipseElement = (global as any).SVGEllipseElement = (global as any).SVGEllipseElement || SVGEllipseElement;
+(global as any).window.SVGTextElement = (global as any).SVGTextElement = (global as any).SVGTextElement || SVGTextElement;
+
+(global as any).window.SVGGradientElement = (global as any).SVGGradientElement = (global as any).SVGGradientElement || SVGGradientElement;
+(global as any).window.SVGRadialGradientElement = (global as any).SVGRadialGradientElement = (global as any).SVGRadialGradientElement || SVGRadialGradientElement;
+(global as any).window.SVGLinearGradientElement = (global as any).SVGLinearGradientElement = (global as any).SVGLinearGradientElement || SVGLinearGradientElement;
+(global as any).window.SVGStopElement = (global as any).SVGStopElement = (global as any).SVGStopElement || SVGStopElement;
+(global as any).window.SVGUseElement = (global as any).SVGUseElement = (global as any).SVGUseElement || SVGUseElement;
+(global as any).window.SVGAnimatedTransformList = (global as any).SVGAnimatedTransformList = (global as any).SVGAnimatedTransformList || SVGAnimatedTransformList;
+(global as any).window.SVGMarkerElement = (global as any).SVGMarkerElement = (global as any).SVGMarkerElement || SVGMarkerElement;
+
+global.window.URL = global.URL;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
@@ -47,6 +95,10 @@ function checkEmitter() {
 			(global as any).emitter.addListener(eventName, listener);
 		}
 	};
+
+	if (typeof listener !== 'function') {
+		return;
+	}
 
 	addListener();
 
@@ -70,11 +122,24 @@ function checkEmitter() {
 	}
 };
 
-import { DOMParser as Parser } from 'xmldom';
+import { DOMParser as Parser } from '@xmldom/xmldom';
 
-export class DOMParser extends Parser {
-	parseFromString(string, mimeType) {
-		return XMLDocument.fromParser(super.parseFromString(string, mimeType));
+type DOMParserSupportedType = 'application/xhtml+xml' | 'application/xml' | 'image/svg+xml' | 'text/html' | 'text/xml';
+
+export class DOMParser {
+	parseFromString(xmlsource: string, mimeType?: DOMParserSupportedType) {
+		const instance = new Parser().parseFromString(xmlsource, mimeType);
+		if (mimeType === 'image/svg+xml' || mimeType === 'application/xhtml+xml' || mimeType === 'text/xml' || mimeType === 'application/xml') {
+			return XMLDocument.fromParser(instance);
+		} else {
+			if (instance) {
+				const doc = new Document();
+				doc.__instance = instance as never;
+				return doc;
+			}
+		}
+
+		return null;
 	}
 }
 
@@ -82,15 +147,7 @@ export class DOMParser extends Parser {
 
 (global as any).window.XMLDocument = (global as any).XMLDocument = XMLDocument;
 
-const agent = 'chrome';
-(global as any).window.navigator = (global as any).navigator = (global as any).navigator || {};
-(global as any).window.userAgent = (global as any).userAgent = (global as any).userAgent || agent;
-(global as any).window.navigator.userAgent = (global as any).navigator.userAgent = (global as any).navigator.userAgent || agent;
-(global as any).window.navigator.product = (global as any).navigator.product = 'NativeScript';
-(global as any).window.navigator.platform = (global as any).navigator.platform = (global as any).navigator.platform || [];
-(global as any).window.navigator.appVersion = (global as any).navigator.appVersion = (global as any).navigator.appVersion || Device.osVersion;
-(global as any).window.navigator.maxTouchPoints = (global as any).navigator.maxTouchPoints = (global as any).navigator.maxTouchPoints || 5;
-(global as any).window.navigator.standalone = (global as any).navigator.standalone = (global as any).navigator.standalone === null ? true : (global as any).navigator.standalone;
+(global as any).window.navigator = (global as any).navigator = (global as any).navigator || new Navigator();
 
 (global as any).window['chrome'] = (global as any)['chrome'] = (global as any)['chrome'] || {
 	extension: {},
@@ -106,6 +163,10 @@ const agent = 'chrome';
 
 if ((global as any).document) {
 	(global as any).document.readyState = 'complete';
+}
+
+if (!global.ontouchstart) {
+	global.ontouchstart = () => {};
 }
 
 (global as any).window.setTimeout = setTimeout;

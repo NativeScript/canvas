@@ -1,65 +1,39 @@
 {
-  "compilerOptions": {
-    "rootDir": ".",
-    "sourceMap": true,
-    "declaration": true,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "noEmitHelpers": false,
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": [
-      "ESNext",
-      "dom"
-    ],
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "baseUrl": ".",
-    "plugins": [
-      {
-        "transform": "@nativescript/webpack/dist/transformers/NativeClass",
-        "type": "raw"
-      }
-    ],
-    "paths": {
-      "@demo/shared": [
-        "tools/demo/index.ts"
-      ],
-      "@nativescript/canvas": [
-        "packages/canvas/index.ts"
-      ],
-      "@nativescript/canvas-babylon": [
-        "packages/canvas-babylon/index.ts"
-      ],
-      "@nativescript/canvas-media": [
-        "packages/canvas-media/index.ts"
-      ],
-      "@nativescript/canvas-phaser": [
-        "packages/canvas-phaser/index.ts"
-      ],
-      "@nativescript/canvas-phaser-ce": [
-        "packages/canvas-phaser-ce/index.ts"
-      ],
-      "@nativescript/canvas-pixi": [
-        "packages/canvas-pixi/index.ts"
-      ],
-      "@nativescript/canvas-polyfill": [
-        "packages/canvas-polyfill/index.ts"
-      ],
-      "@nativescript/canvas-three": [
-        "packages/canvas-three/index.ts"
-      ],
-      "@nativescript/canvas/angular": [
-        "packages/canvas/angular/index.ts"
-      ],
-      "@nativescript/canvas-chartjs": [
-        "packages/canvas-chartjs/index.d.ts"
-      ]
-    }
-  },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+	"compilerOptions": {
+		"rootDir": ".",
+		"sourceMap": true,
+		"declaration": true,
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noEmitHelpers": false,
+		"target": "ES2020",
+		"module": "ESNext",
+		"lib": ["ESNext", "dom"],
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"baseUrl": ".",
+		"plugins": [
+			{
+				"transform": "@nativescript/webpack/dist/transformers/NativeClass",
+				"type": "raw"
+			}
+		],
+		"paths": {
+			"@demo/shared": ["tools/demo/index.ts"],
+			"@nativescript/*": ["packages/*"],
+			"@nativescript/canvas": ["packages/canvas/index.ts"],
+			"@nativescript/canvas-babylon": ["packages/canvas-babylon/index.ts"],
+			"@nativescript/canvas-chartjs": ["packages/canvas-chartjs/index.d.ts"],
+			"@nativescript/canvas-media": ["packages/canvas-media/index.ts"],
+			"@nativescript/canvas-phaser": ["packages/canvas-phaser/index.ts"],
+			"@nativescript/canvas-phaser-ce": ["packages/canvas-phaser-ce/index.ts"],
+			"@nativescript/canvas-pixi": ["packages/canvas-pixi/index.ts"],
+			"@nativescript/canvas-polyfill": ["packages/canvas-polyfill/index.ts"],
+			"@nativescript/canvas-svg": ["packages/canvas-svg/index.d.ts"],
+			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
+			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"]
+		}
+	},
+	"exclude": ["node_modules", "tmp"]
 }

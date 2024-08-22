@@ -1,0 +1,11 @@
+framework module CanvasSVG {
+  umbrella header "CanvasSVG.h"
+  export *
+
+  module * { export * }
+}
+
+module CanvasSVG.Swift {
+  header "CanvasSVG-Swift.h"
+  requires objc
+}

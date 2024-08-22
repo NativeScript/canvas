@@ -1,35 +1,10 @@
-import { CSSType, PercentLength, View, Screen, Utils, Application, Property, booleanConverter } from '@nativescript/core';
+import { CSSType, View, Property, booleanConverter, widthProperty, heightProperty } from '@nativescript/core';
 import { CanvasRenderingContext } from '../common';
+import { removeItemFromArray } from './utils';
 
 export interface ICanvasBase {
 	on(eventName: 'ready', callback: (data: any) => void, thisArg?: any): void;
 }
-
-const defaultGLOptions = {
-	alpha: true,
-	antialias: true,
-	depth: true,
-	failIfMajorPerformanceCaveat: false,
-	powerPreference: 'default',
-	premultipliedAlpha: true,
-	preserveDrawingBuffer: false,
-	stencil: false,
-	desynchronized: false,
-	xrCompatible: false,
-};
-
-const default2DOptions = {
-	alpha: true,
-	antialias: true,
-	depth: true,
-	failIfMajorPerformanceCaveat: false,
-	powerPreference: 'default',
-	premultipliedAlpha: true,
-	preserveDrawingBuffer: false,
-	stencil: false,
-	desynchronized: false,
-	xrCompatible: false,
-};
 
 interface EventOptions {
 	bubbles?: boolean;
@@ -46,6 +21,7 @@ export class DOMRectReadOnly {
 	readonly width: number;
 	readonly x: number;
 	readonly y: number;
+
 	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
 		this.x = x;
 		this.y = y;
@@ -70,6 +46,7 @@ export class Event {
 	readonly cancelable: boolean = false;
 	readonly composed: boolean = false;
 	readonly timeStamp: number;
+
 	constructor(type: string, options: EventOptions) {
 		this.type = type;
 		this.bubbles = options?.bubbles ?? false;
@@ -79,6 +56,7 @@ export class Event {
 	}
 
 	preventDefault() {}
+
 	stopPropagation() {}
 }
 
@@ -92,6 +70,7 @@ export class UIEvent extends Event {
 	readonly detail: number;
 	readonly view: any;
 	readonly sourceCapabilities?: any;
+
 	constructor(type: 'load' | 'unload' | 'abort' | 'error' | 'select', options?: UIEventOptions) {
 		super(type, options);
 		this.detail = options?.detail ?? 0;
@@ -136,6 +115,7 @@ export class MouseEvent extends UIEvent {
 	readonly movementY: number;
 	readonly pageX: number;
 	readonly pageY: number;
+
 	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup', options?: MouseEventOptions) {
 		super(type as any, options);
 		this.screenX = options?.screenX ?? 0;
@@ -182,6 +162,7 @@ export class PointerEvent extends MouseEvent {
 	readonly tiltY?: number;
 	readonly twist?: number;
 	readonly isPrimary?: boolean;
+
 	constructor(type: 'pointerover' | 'pointerenter' | 'pointerdown' | 'pointermove' | 'pointerrawupdate' | 'pointerup' | 'pointercancel' | 'pointerout' | 'pointerleave' | 'gotpointercapture' | 'lostpointercapture', options?: PointerEventOptions) {
 		super(type as any, options);
 		this.pointerType = options?.pointerType ?? '';
@@ -196,7 +177,9 @@ export class PointerEvent extends MouseEvent {
 		this.twist = options?.twist ?? 0;
 		this.isPrimary = options?.isPrimary ?? false;
 	}
+
 	preventDefault() {}
+
 	stopPropagation() {}
 }
 
@@ -228,6 +211,7 @@ export class Touch {
 	readonly radiusY: number;
 	readonly rotationAngle: number;
 	readonly force: number;
+
 	constructor(options: TouchOptions) {
 		this.identifier = options.identifier;
 		this.target = options.target;
@@ -242,31 +226,29 @@ export class Touch {
 		this.rotationAngle = options?.rotationAngle ?? 0;
 		this.force = options?.force ?? 0;
 	}
+
 	preventDefault() {}
+
 	stopPropagation() {}
 }
 
-export class TouchList {
-	private _list: Touch[];
-
+export class TouchList extends Array {
 	static fromList(list: Touch[]): TouchList {
 		const ret = new TouchList();
-		ret._list = list;
+		ret.splice(0, 0, ...list);
 		return ret;
 	}
 
 	static empty() {
-		const ret = new TouchList();
-		ret._list = [];
-		return ret;
+		return new TouchList();
 	}
 
 	item(index: number): Touch {
-		return this._list[index];
+		return this[index];
 	}
 
 	get length(): number {
-		return this._list.length;
+		return this.length;
 	}
 }
 
@@ -288,6 +270,7 @@ export class TouchEvent extends UIEvent {
 	readonly shiftKey: boolean;
 	readonly altKey: boolean;
 	readonly metaKey: boolean;
+
 	constructor(type: 'touchstart' | 'touchend' | 'touchmove' | 'touchcancel', options?: TouchEventOptions) {
 		super(type as any, options);
 		this.touches = options?.touches ?? TouchList.empty();
@@ -298,7 +281,9 @@ export class TouchEvent extends UIEvent {
 		this.ctrlKey = options?.ctrlKey ?? false;
 		this.shiftKey = options?.shiftKey ?? false;
 	}
+
 	preventDefault() {}
+
 	stopPropagation() {}
 }
 
@@ -314,6 +299,7 @@ export class WheelEvent extends UIEvent {
 	readonly deltaY?: number;
 	readonly deltaZ?: number;
 	readonly deltaMode?: number;
+
 	constructor(type: 'wheel', options?: WheelEventOptions) {
 		super('wheel' as any, options);
 		this.deltaX = options?.deltaX ?? 0;
@@ -328,7 +314,8 @@ class Rectangle {
 	left: number;
 	width: number;
 	height: number;
-	constructor(top, left, width, height) {
+
+	constructor(top: number, left: number, width: number, height: number) {
 		this.top = top;
 		this.left = left;
 		// check name of fields!
@@ -336,18 +323,6 @@ class Rectangle {
 		this.height = height;
 	}
 }
-
-export const ignorePixelScalingProperty = new Property<CanvasBase, boolean>({
-	name: 'ignorePixelScaling',
-	defaultValue: false,
-	valueConverter: booleanConverter,
-});
-
-export const upscaleProperty = new Property<CanvasBase, boolean>({
-	name: 'upscale',
-	defaultValue: false,
-	valueConverter: booleanConverter,
-});
 
 export const ignoreTouchEventsProperty = new Property<CanvasBase, boolean>({
 	name: 'ignoreTouchEvents',
@@ -366,14 +341,14 @@ export const doc = {
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {
 	public static readyEvent = 'ready';
-	ignorePixelScaling: boolean;
-	upscaleProperty: boolean;
 	ignoreTouchEvents: boolean;
 	_isCustom: boolean = false;
 	_classList: Set<any>;
 
 	_pointerMoveCallbacks = [];
 	_pointerUpCallbacks = [];
+	_pointerOutCallbacks = [];
+	_pointerLeaveCallbacks = [];
 	_pointerDownCallbacks = [];
 	_pointerCancelCallbacks = [];
 
@@ -384,33 +359,45 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_mouseCancelCallbacks = [];
 	_mouseWheelCallbacks = [];
 
-	_touchStartCallbacks = new Array<(TouchEvent) => void>();
-	_touchEndCallbacks = new Array<(TouchEvent) => void>();
-	_touchMoveCallbacks = new Array<(TouchEvent) => void>();
-	_touchCancelCallbacks = new Array<(TouchEvent) => void>();
+	_touchStartCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchEndCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchMoveCallbacks = new Array<(arg0: TouchEvent) => void>();
+	_touchCancelCallbacks = new Array<(arg0: TouchEvent) => void>();
 
 	_touches: Touch[] = [];
 	_touchesById: Touch[] = [];
 
-	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = new Array();
+	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = [];
 
 	protected constructor() {
 		super();
 		this._classList = new Set();
+		this.style.width = { unit: '%', value: 1 };
+		this.style.height = 'auto';
 	}
 
 	get ownerDocument() {
 		return window?.document ?? doc;
 	}
 
+	emit() {}
+
+	dispatchEvent(event) {
+		return true;
+	}
+
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') {
+			thisArg = {
+				capture: thisArg,
+			};
+		}
 		super.addEventListener(arg, callback, thisArg);
 		if (typeof arg !== 'string') {
 			return;
 		}
-		const eventtype = arg.toLowerCase();
 
-		switch (eventtype) {
+		switch (arg) {
 			case 'mousemove':
 				this._mouseMoveCallbacks.push(callback);
 				break;
@@ -429,7 +416,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			case 'pointerup':
 				this._pointerUpCallbacks.push(callback);
 				break;
-			case 'moveout':
+			case 'pointerout':
+				this._pointerOutCallbacks.push(callback);
+				break;
+			case 'pointerleave':
+				this._pointerLeaveCallbacks.push(callback);
+				break;
+			case 'mouseout':
 			case 'mousecancel':
 				this._mouseCancelCallbacks.push(callback);
 				break;
@@ -456,60 +449,63 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _removeItemFromArray(array: any[], item) {
-		const index = array.indexOf(item);
-		if (index !== -1) {
-			array.splice(index, 1);
-		}
-	}
-
 	public removeEventListener(arg: string, callback: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') {
+			thisArg = {
+				capture: thisArg,
+			};
+		}
+
 		super.removeEventListener(arg, callback, thisArg);
 
-		const eventtype = arg.toLowerCase();
-
-		switch (eventtype) {
+		switch (arg) {
 			case 'mousemove':
-				this._removeItemFromArray(this._mouseMoveCallbacks, callback);
+				removeItemFromArray(this._mouseMoveCallbacks, callback);
 				break;
 			case 'pointermove':
-				this._removeItemFromArray(this._pointerMoveCallbacks, callback);
+				removeItemFromArray(this._pointerMoveCallbacks, callback);
 				break;
 			case 'mousedown':
-				this._removeItemFromArray(this._mouseDownCallbacks, callback);
+				removeItemFromArray(this._mouseDownCallbacks, callback);
 				break;
 			case 'pointerdown':
-				this._removeItemFromArray(this._pointerDownCallbacks, callback);
+				removeItemFromArray(this._pointerDownCallbacks, callback);
 				break;
 			case 'mouseup':
-				this._removeItemFromArray(this._mouseUpCallbacks, callback);
+				removeItemFromArray(this._mouseUpCallbacks, callback);
 				break;
 			case 'pointerup':
-				this._removeItemFromArray(this._pointerUpCallbacks, callback);
+				removeItemFromArray(this._pointerUpCallbacks, callback);
 				break;
-			case 'moveout':
+			case 'pointerout':
+				removeItemFromArray(this._pointerOutCallbacks, callback);
+				break;
+			case 'pointerleave':
+				removeItemFromArray(this._pointerLeaveCallbacks, callback);
+				break;
+			case 'mouseout':
 			case 'mousecancel':
-				this._removeItemFromArray(this._mouseCancelCallbacks, callback);
+				removeItemFromArray(this._mouseCancelCallbacks, callback);
 				break;
 			case 'pointercancel':
-				this._removeItemFromArray(this._pointerCancelCallbacks, callback);
+				removeItemFromArray(this._pointerCancelCallbacks, callback);
 				break;
 			case 'touchstart':
-				this._removeItemFromArray(this._touchStartCallbacks, callback);
+				removeItemFromArray(this._touchStartCallbacks, callback);
 				break;
 			case 'touchend':
-				this._removeItemFromArray(this._touchEndCallbacks, callback);
+				removeItemFromArray(this._touchEndCallbacks, callback);
 				break;
 			case 'touchmove':
-				this._removeItemFromArray(this._touchMoveCallbacks, callback);
+				removeItemFromArray(this._touchMoveCallbacks, callback);
 				break;
 			case 'touchcancel':
-				this._removeItemFromArray(this._touchCancelCallbacks, callback);
+				removeItemFromArray(this._touchCancelCallbacks, callback);
 				break;
 			case 'wheel':
 			case 'mousewheel':
 			case 'dommousescroll':
-				this._removeItemFromArray(this._mouseWheelCallbacks, callback);
+				removeItemFromArray(this._mouseWheelCallbacks, callback);
 				break;
 		}
 	}
@@ -523,7 +519,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				const index = this._lastPointerEventById.findIndex((item) => {
 					return item?.pointerId === pointerId;
 				});
-				let previousEvent;
+				let previousEvent: { pointerId: number; x: number; y: number };
 				if (index > -1) {
 					previousEvent = this._lastPointerEventById[index];
 				} else {
@@ -576,7 +572,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 
 		if (this._touchMoveCallbacks.length > 0) {
-			const changedTouches = [];
+			const changedTouches = TouchList.empty();
 
 			for (const pointer of pointers) {
 				changedTouches.push(
@@ -607,14 +603,36 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _upCallback(ptrId, x, y, isPrimary) {
-		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0;
+	private _upCallback(ptrId: number, x: number, y: number, isPrimary: boolean = false) {
+		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0 || this._pointerOutCallbacks.length > 0 || this._pointerLeaveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 
 		if (hasPointerCallbacks || hasMouseCallbacks) {
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
-				const event = new PointerEvent('pointerup', {
+				const up = new PointerEvent('pointerup', {
+					pointerType: 'touch',
+					pointerId,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					isPrimary,
+					pageX: x,
+					pageY: y,
+				});
+				const out = new PointerEvent('pointerout', {
+					pointerType: 'touch',
+					pointerId,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					isPrimary,
+					pageX: x,
+					pageY: y,
+				});
+				const leave = new PointerEvent('pointerleave', {
 					pointerType: 'touch',
 					pointerId,
 					clientX: x,
@@ -627,7 +645,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				});
 
 				for (const callback of this._pointerUpCallbacks) {
-					callback(event);
+					callback(up);
+				}
+
+				for (const callback of this._pointerOutCallbacks) {
+					callback(out);
+				}
+
+				for (const callback of this._pointerLeaveCallbacks) {
+					callback(leave);
 				}
 			}
 
@@ -665,7 +691,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (this._touchEndCallbacks.length > 0) {
 			const touches = TouchList.fromList(this._touches);
 
-			const changedTouches = [
+			const changedTouches = TouchList.fromList([
 				new Touch({
 					identifier: ptrId,
 					target: null,
@@ -676,7 +702,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 				}),
-			];
+			]);
 
 			const event = new TouchEvent('touchend', {
 				touches,
@@ -690,7 +716,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _downCallback(ptrId, x, y, isPrimary = false) {
+	private _downCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
 
@@ -759,11 +785,11 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		}
 	}
 
-	private _cancelCallback(ptrid, x, y, isPrimary = false) {
+	private _cancelCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
 		if (hasPointerCallbacks || hasMouseCallbacks) {
-			const pointerId = ptrid;
+			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointercancel', {
 					pointerType: 'touch',
@@ -800,7 +826,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 		if (this._touchCancelCallbacks.length > 0) {
 			const touch = new Touch({
-				identifier: ptrid,
+				identifier: ptrId,
 				target: this,
 				clientX: x,
 				clientY: y,
@@ -811,7 +837,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			});
 			const touchesList = [touch];
 			const touchesById = [];
-			touchesById[ptrid] = touch;
+			touchesById[ptrId] = touch;
 			const touches = TouchList.fromList(touchesList);
 			const touchEvent = new TouchEvent('touchcancel', {
 				touches,
@@ -964,51 +990,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this._classList;
 	}
 
-	get _realSize(): { width: number; height: number } {
-		return {
-			width: this.getSize(this.style.width, this.getMeasuredWidth(), 'width'),
-			height: this.getSize(this.style.height, this.getMeasuredHeight(), 'height'),
-		};
-	}
-
-	_handleContextOptions(type, contextOpts?) {
-		if (!contextOpts) {
-			if (type === '2d') {
-				return { ...default2DOptions };
-			}
-			if (type.indexOf('webgl') > -1) {
-				return { ...defaultGLOptions };
-			}
-		}
-		if (type === '2d') {
-			if (contextOpts.alpha !== undefined && typeof contextOpts.alpha === 'boolean') {
-				return contextOpts;
-			} else {
-				return { alpha: true };
-			}
-		}
-		const glOptions = { ...defaultGLOptions };
-		const setIfDefined = (prop, value) => {
-			const property = glOptions[prop];
-			if (property !== undefined && typeof value === typeof property) {
-				glOptions[prop] = value;
-			}
-		};
-		if (type.indexOf('webgl') > -1) {
-			setIfDefined('alpha', contextOpts.alpha);
-			setIfDefined('antialias', contextOpts.antialias);
-			setIfDefined('depth', contextOpts.depth);
-			setIfDefined('failIfMajorPerformanceCaveat', contextOpts.failIfMajorPerformanceCaveat);
-			setIfDefined('powerPreference', contextOpts.powerPreference);
-			setIfDefined('premultipliedAlpha', contextOpts.premultipliedAlpha);
-			setIfDefined('preserveDrawingBuffer', contextOpts.preserveDrawingBuffer);
-			setIfDefined('stencil', contextOpts.stencil);
-			setIfDefined('desynchronized', contextOpts.desynchronized);
-			return glOptions;
-		}
-		return null;
-	}
-
 	_readyEvent() {
 		this.notify({
 			eventName: 'ready',
@@ -1017,36 +998,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	getAttribute(attrib) {
-		if (attrib === 'width') {
-			return this.width;
-		}
-		if (attrib === 'height') {
-			return this.height;
-		}
-
-		if (attrib === 'tabindex') {
-			return (this['tabindex'] = arguments[1]);
-		}
 		return this[attrib];
 	}
 
 	setAttribute(attrib) {
-		if (attrib === 'width') {
-			if (!isNaN(parseInt(arguments[1]))) {
-				this.width = parseInt(arguments[1]);
-			}
-		}
-		if (attrib === 'height') {
-			if (!isNaN(parseInt(arguments[1]))) {
-				this.height = parseInt(arguments[1]);
-			}
-		}
-		if (attrib === 'tabindex') {
-			this['tabindex'] = arguments[1];
-		}
+		this[attrib] = attrib;
 	}
 
-	public abstract getContext(type: string, options?: any): CanvasRenderingContext | null;
+	public abstract getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;
 
 	public abstract getBoundingClientRect(): {
 		x: number;
@@ -1059,42 +1018,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		left: number;
 	};
 
-	private getSize(value, measuredSize, type): number {
-		if (value === 'auto') {
-			return Utils.layout.toDeviceIndependentPixels(Utils.layout.getMeasureSpecSize(Utils.layout.makeMeasureSpec(measuredSize, Utils.layout.UNSPECIFIED)));
-		}
-		if (typeof value === 'string') {
-			value = PercentLength.parse(value);
-		}
-		if (typeof value === 'number') {
-			if (global.isAndroid) {
-				return Utils.layout.toDevicePixels(value) || 0;
-			}
-			return value || 0;
-		} else if ((value !== null || true) && typeof value === 'object' && typeof value.value && typeof value.unit) {
-			if (value.unit === 'px') {
-				if (global.isIOS) {
-					return Utils.layout.toDeviceIndependentPixels(value.value || 0);
-				}
-				return value.value || 0;
-			} else if (value.unit === 'dip') {
-				if (global.isAndroid) {
-					return Utils.layout.toDevicePixels(value.value) || 0;
-				}
-				return value.value || 0;
-			} else if (value.unit === '%') {
-				return Utils.layout.toDeviceIndependentPixels(measuredSize * value.value ?? 0);
-			}
-		}
-
-		return 0;
-	}
-
 	setPointerCapture(id) {}
 
 	releasePointerCapture(id) {}
 }
-
-ignorePixelScalingProperty.register(CanvasBase);
-
-upscaleProperty.register(CanvasBase);

@@ -27,11 +27,11 @@ OneByteStringResource::OneByteStringResource(std::string string) : stdString_(st
 
 OneByteStringResource::~OneByteStringResource() {
     if (usingBuffer_) {
-        canvas_native_u8_buffer_destroy(buffer_);
+        canvas_native_u8_buffer_release(buffer_);
         this->string_ = nullptr;
         this->length_ = 0;
     }else if(usingCow_){
-        canvas_native_ccow_destroy(cow_);
+        canvas_native_ccow_release(cow_);
         this->string_ = nullptr;
         this->length_ = 0;
     }else if(usingString){

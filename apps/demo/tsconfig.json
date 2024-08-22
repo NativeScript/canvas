@@ -14,7 +14,8 @@
 			"@nativescript/canvas-phaser-ce": ["../../packages/canvas-phaser-ce/index.ts"],
 			"@nativescript/canvas-pixi": ["../../packages/canvas-pixi/index.ts"],
 			"@nativescript/canvas-three": ["../../packages/canvas-three/index.ts"],
-			"@nativescript/canvas-media": ["../../packages/canvas-media/index.ts"]
+			"@nativescript/canvas-media": ["../../packages/canvas-media/index.ts"],
+			"@nativescript/*": ["../../packages/*"]
 		}
 	},
 	"include": ["../../packages/**/*.ios.ts", "../../packages/**/*.android.ts"]

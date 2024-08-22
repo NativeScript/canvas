@@ -10,6 +10,8 @@ var asset;
 var cubeRotation = 0;
 
 export function main(canvas, nativeCanvas?) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const gl = canvas.getContext ? canvas.getContext('webgl2') : canvas;
 
 	if (!nativeCanvas) {
@@ -328,34 +330,35 @@ function loadTexture(gl: WebGLRenderingContext) {
 
 	const asset = new global.ImageAsset();
 
-	//  const done = asset.fromFileSync('~/assets/file-assets/webgl/svh.jpeg');
+	asset.fromFile('~/assets/file-assets/webgl/svh.jpeg').then((done) => {
+		if (done) {
+			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, asset);
 
-	//  if (done) {
-	// 	gl.bindTexture(gl.TEXTURE_2D, texture);
-	// 	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, asset);
+			// WebGL1 has different requirements for power of 2 images
+			// vs non power of 2 images so check if the image is a
+			// power of 2 in both dimensions.
+			if (isPowerOf2(asset.width) && isPowerOf2(asset.height)) {
+				// Yes, it's a power of 2. Generate mips.
+				gl.generateMipmap(gl.TEXTURE_2D);
+			} else {
+				// No, it's not a power of 2. Turn of mips and set
+				// wrapping to clamp to edge
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			}
+		}
+	});
 
-	// 	// WebGL1 has different requirements for power of 2 images
-	// 	// vs non power of 2 images so check if the image is a
-	// 	// power of 2 in both dimensions.
-	// 	if (isPowerOf2(asset.width) && isPowerOf2(asset.height)) {
-	// 		// Yes, it's a power of 2. Generate mips.
-	// 		gl.generateMipmap(gl.TEXTURE_2D);
-	// 	} else {
-	// 		// No, it's not a power of 2. Turn of mips and set
-	// 		// wrapping to clamp to edge
-	// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	// 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	// 	}
-	// }
-
+	/*
 	const canvas = document.createElement('canvas');
 	asset.fromFile('~/assets/file-assets/webgl/svh.jpeg').then((done) => {
 		if (done) {
-			canvas.width = asset.width;
-			canvas.height = asset.height;
+			canvas.width = asset.width * window.devicePixelRatio;
+			canvas.height = asset.height * window.devicePixelRatio;
 			const ctx = canvas.getContext('2d');
-			ctx.drawImage(asset, 0, 0, asset.width, asset.height);
+			ctx.drawImage(asset, 0, 0, asset.width * window.devicePixelRatio, asset.height * window.devicePixelRatio);
 
 			// gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, canvas);
@@ -374,8 +377,8 @@ function loadTexture(gl: WebGLRenderingContext) {
 			}
 		}
 	});
-
 	
+	*/
 
 	// asset.loadFileAsync(knownFolders.currentApp().path + '/assets/file-assets/webgl/svh.jpeg').then((done) => {
 	// 	if (done) {

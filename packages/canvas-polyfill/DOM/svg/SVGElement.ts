@@ -1,71 +1,85 @@
 import { Element } from '../Element';
-import { Svg } from '@nativescript/canvas';
+import { Svg } from '@nativescript/canvas-svg';
+import { SVGAnimatedString } from './SVGAnimatedString';
+import { Text } from '../Text';
+import { SVGAnimatedTransformList } from './SVGAnimatedTransformList';
 
 export class SVGElement extends Element {
-	__internalElement: Svg;
-	constructor() {
-		super('svg');
-		let svg = undefined;
-		if (arguments.length > 1) {
-			svg = arguments[1];
+	private _className = new SVGAnimatedString(this, 'className');
+	__domElement: Element;
+	constructor(tagName: string) {
+		super(tagName ?? '');
+	}
+
+	private get nativeValue(): Svg {
+		return this.nativeElement as never;
+	}
+
+	// @ts-ignore
+	get className() {
+		return this._className;
+	}
+
+	set className(value: unknown) {}
+
+	_appendChild(view, redraw = true) {
+		if (view?.nativeElement?.__domElement) {
+			this.nativeValue?.__domElement?.appendChild?.(view.nativeElement.__domElement);
+			if (redraw) {
+				(<any>this.nativeValue).__redraw();
+			}
+			(<any>this.nativeValue)?.addChild?.(view.nativeElement);
+			return view;
+		} else if (view instanceof Text) {
+			const dom = this.__domElement ?? this.nativeElement.__domElement;
+			const text = dom.ownerDocument?.createTextNode?.(view.data);
+			view.__domNode = text;
+			dom?.appendChild?.(text);
+			return view;
+		} else if (view.__domNode) {
+			const dom = this.__domElement ?? this.nativeElement.__domElement;
+			dom?.appendChild?.(view.__domNode);
+			return view;
 		}
-
-		if (svg instanceof Svg) {
-			this.__internalElement = svg;
-		} else {
-			this.__internalElement = new Svg();
-		}
-	}
-
-	//@ts-ignore
-	get nativeElement() {
-		return this.__internalElement;
-	}
-
-	set width(value) {
-		this.__internalElement.width = value;
-	}
-
-	get width() {
-		return this.__internalElement.getMeasuredWidth();
-	}
-
-	set height(value) {
-		this.__internalElement.height = value;
-	}
-
-	get height() {
-		return this.__internalElement.getMeasuredHeight();
-	}
-
-	setAttribute(key, value) {
-		this.__internalElement._dom.documentElement.setAttribute(key, value);
-	}
-
-	getAttribute(key) {
-		return this.__internalElement._dom.documentElement.getAttribute(key);
-	}
-
-	removeAttribute(key, value) {
-		this.__internalElement._dom.documentElement.removeAttribute(key, value);
+		return null;
 	}
 
 	appendChild(view) {
-		this.__internalElement._dom.documentElement.appendChild(view.__internalElement._dom);
-		this.__internalElement.__redraw();
-		return view;
+		return this._appendChild(view, true);
 	}
 
-	insertBefore(view) {
-		const v = arguments[0];
-		const c = arguments[1];
-		if (v && c) {
-			this.__internalElement._dom.documentElement.insertBefore(v.__internalElement._dom, c.__internalElement._dom);
-			return v;
+	append(views: Array<any>) {
+		for (const view of arguments) {
+			this._appendChild(view, false);
+		}
+		(<any>this.nativeValue).__redraw();
+	}
+
+	insertBefore(view) {}
+
+	removeChild(view) {}
+
+	setAttribute(key, value) {
+		const dom = this.nativeElement.__domElement;
+		if (dom) {
+			dom.setAttribute?.(key, value);
+		} else {
+			super.setAttribute(key, value);
 		}
 	}
 
-	removeChild(view) {
-		console.log(this.nodeName, 'removeChild', view);
+	getAttribute(key): string | null {
+		const dom = this.nativeElement.__domElement;
+		if (dom) {
+			return (dom.getAttribute?.(key) as never) ?? null;
+		}
+		return (super.getAttribute(key) as never) ?? null;
+	}
+
+	removeAttribute(key) {
+		const dom = this.nativeElement.__domElement;
+		if (dom) {
+			return dom.removeAttribute?.(key);
+		}
 	}
 }

@@ -1,0 +1,623 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F10445172BA8F1E0009434E9 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F10445162BA8F1D7009434E9 /* libresolv.tbd */; };
+		F104451D2BA8F579009434E9 /* CanvasSVGHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = F104451C2BA8F579009434E9 /* CanvasSVGHelper.m */; };
+		F104451F2BA8F7E6009434E9 /* CanvasSVGHelper.h in Headers */ = {isa = PBXBuildFile; fileRef = F104451E2BA8F5D5009434E9 /* CanvasSVGHelper.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F17435DC2BA82D8300134EC8 /* CanvasSVG.docc in Sources */ = {isa = PBXBuildFile; fileRef = F17435DB2BA82D8300134EC8 /* CanvasSVG.docc */; };
+		F17435E22BA82D8400134EC8 /* CanvasSVG.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F17435D72BA82D8300134EC8 /* CanvasSVG.framework */; };
+		F17435E72BA82D8400134EC8 /* CanvasSVGTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17435E62BA82D8400134EC8 /* CanvasSVGTests.swift */; };
+		F17435E82BA82D8400134EC8 /* CanvasSVG.h in Headers */ = {isa = PBXBuildFile; fileRef = F17435DA2BA82D8300134EC8 /* CanvasSVG.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		F17435F32BA835BF00134EC8 /* NSCSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17435F22BA835BF00134EC8 /* NSCSVG.swift */; };
+		F17435FE2BA83E3800134EC8 /* canvas_svg.h in Headers */ = {isa = PBXBuildFile; fileRef = F17435FD2BA83E3800134EC8 /* canvas_svg.h */; settings = {ATTRIBUTES = (Public, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F17435E32BA82D8400134EC8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F17435CE2BA82D8300134EC8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F17435D62BA82D8300134EC8;
+			remoteInfo = CanvasSVG;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		F10445162BA8F1D7009434E9 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.4.sdk/usr/lib/libresolv.tbd; sourceTree = DEVELOPER_DIR; };
+		F104451C2BA8F579009434E9 /* CanvasSVGHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CanvasSVGHelper.m; sourceTree = "<group>"; };
+		F104451E2BA8F5D5009434E9 /* CanvasSVGHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CanvasSVGHelper.h; path = CanvasSVG/CanvasSVGHelper.h; sourceTree = "<group>"; };
+		F17435D72BA82D8300134EC8 /* CanvasSVG.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CanvasSVG.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F17435DA2BA82D8300134EC8 /* CanvasSVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CanvasSVG.h; sourceTree = "<group>"; };
+		F17435DB2BA82D8300134EC8 /* CanvasSVG.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = CanvasSVG.docc; sourceTree = "<group>"; };
+		F17435E12BA82D8400134EC8 /* CanvasSVGTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CanvasSVGTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F17435E62BA82D8400134EC8 /* CanvasSVGTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasSVGTests.swift; sourceTree = "<group>"; };
+		F17435F22BA835BF00134EC8 /* NSCSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCSVG.swift; sourceTree = "<group>"; };
+		F17435FD2BA83E3800134EC8 /* canvas_svg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = canvas_svg.h; path = CanvasSVG/include/canvas_svg.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F17435D42BA82D8300134EC8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F10445172BA8F1E0009434E9 /* libresolv.tbd in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17435DE2BA82D8400134EC8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17435E22BA82D8400134EC8 /* CanvasSVG.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F10445152BA8F1D7009434E9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F10445162BA8F1D7009434E9 /* libresolv.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F17435CD2BA82D8300134EC8 = {
+			isa = PBXGroup;
+			children = (
+				F104451E2BA8F5D5009434E9 /* CanvasSVGHelper.h */,
+				F17435FD2BA83E3800134EC8 /* canvas_svg.h */,
+				F17435D92BA82D8300134EC8 /* CanvasSVG */,
+				F17435E52BA82D8400134EC8 /* CanvasSVGTests */,
+				F17435D82BA82D8300134EC8 /* Products */,
+				F10445152BA8F1D7009434E9 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		F17435D82BA82D8300134EC8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F17435D72BA82D8300134EC8 /* CanvasSVG.framework */,
+				F17435E12BA82D8400134EC8 /* CanvasSVGTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F17435D92BA82D8300134EC8 /* CanvasSVG */ = {
+			isa = PBXGroup;
+			children = (
+				F17435DA2BA82D8300134EC8 /* CanvasSVG.h */,
+				F17435DB2BA82D8300134EC8 /* CanvasSVG.docc */,
+				F17435F22BA835BF00134EC8 /* NSCSVG.swift */,
+				F104451C2BA8F579009434E9 /* CanvasSVGHelper.m */,
+			);
+			path = CanvasSVG;
+			sourceTree = "<group>";
+		};
+		F17435E52BA82D8400134EC8 /* CanvasSVGTests */ = {
+			isa = PBXGroup;
+			children = (
+				F17435E62BA82D8400134EC8 /* CanvasSVGTests.swift */,
+			);
+			path = CanvasSVGTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		F17435D22BA82D8300134EC8 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17435E82BA82D8400134EC8 /* CanvasSVG.h in Headers */,
+				F17435FE2BA83E3800134EC8 /* canvas_svg.h in Headers */,
+				F104451F2BA8F7E6009434E9 /* CanvasSVGHelper.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		F17435D62BA82D8300134EC8 /* CanvasSVG */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F17435EB2BA82D8400134EC8 /* Build configuration list for PBXNativeTarget "CanvasSVG" */;
+			buildPhases = (
+				F17435F92BA8382000134EC8 /* PreBuild */,
+				F17435D22BA82D8300134EC8 /* Headers */,
+				F17435D32BA82D8300134EC8 /* Sources */,
+				F17435D42BA82D8300134EC8 /* Frameworks */,
+				F17435D52BA82D8300134EC8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CanvasSVG;
+			productName = CanvasSVG;
+			productReference = F17435D72BA82D8300134EC8 /* CanvasSVG.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		F17435E02BA82D8400134EC8 /* CanvasSVGTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F17435EE2BA82D8400134EC8 /* Build configuration list for PBXNativeTarget "CanvasSVGTests" */;
+			buildPhases = (
+				F17435DD2BA82D8400134EC8 /* Sources */,
+				F17435DE2BA82D8400134EC8 /* Frameworks */,
+				F17435DF2BA82D8400134EC8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F17435E42BA82D8400134EC8 /* PBXTargetDependency */,
+			);
+			name = CanvasSVGTests;
+			productName = CanvasSVGTests;
+			productReference = F17435E12BA82D8400134EC8 /* CanvasSVGTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F17435CE2BA82D8300134EC8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1530;
+				LastUpgradeCheck = 1530;
+				TargetAttributes = {
+					F17435D62BA82D8300134EC8 = {
+						CreatedOnToolsVersion = 15.3;
+						LastSwiftMigration = 1530;
+					};
+					F17435E02BA82D8400134EC8 = {
+						CreatedOnToolsVersion = 15.3;
+					};
+				};
+			};
+			buildConfigurationList = F17435D12BA82D8300134EC8 /* Build configuration list for PBXProject "CanvasSVG" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F17435CD2BA82D8300134EC8;
+			productRefGroup = F17435D82BA82D8300134EC8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F17435D62BA82D8300134EC8 /* CanvasSVG */,
+				F17435E02BA82D8400134EC8 /* CanvasSVGTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F17435D52BA82D8300134EC8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17435DF2BA82D8400134EC8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F17435F92BA8382000134EC8 /* PreBuild */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = PreBuild;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\"$SRCROOT/pre-build.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F17435D32BA82D8300134EC8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17435DC2BA82D8300134EC8 /* CanvasSVG.docc in Sources */,
+				F104451D2BA8F579009434E9 /* CanvasSVGHelper.m in Sources */,
+				F17435F32BA835BF00134EC8 /* NSCSVG.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F17435DD2BA82D8400134EC8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F17435E72BA82D8400134EC8 /* CanvasSVGTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F17435E42BA82D8400134EC8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F17435D62BA82D8300134EC8 /* CanvasSVG */;
+			targetProxy = F17435E32BA82D8400134EC8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		F17435E92BA82D8400134EC8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		F17435EA2BA82D8400134EC8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		F17435EC2BA82D8400134EC8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../canvas-svg/target\"",
+					"\"$(SRCROOT)/CanvasSVG/include\"",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "";
+				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/debug\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
+				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVG;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F17435ED2BA82D8400134EC8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../canvas-svg/target\"",
+					"\"$(SRCROOT)/CanvasSVG/include\"",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "";
+				"OTHER_LDFLAGS[sdk=iphoneos*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=arm64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/aarch64-apple-ios-sim/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=x86_64]" = (
+					"$(inherited)",
+					"-L\"$(SRCROOT)/../../../../target/x86_64-apple-ios/release\"",
+					"-Wl,-no_compact_unwind",
+					"-lcanvassvg",
+					"-ObjC",
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "-Xcc -Wno-error=non-modular-include-in-framework-module";
+				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVG;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F17435EF2BA82D8400134EC8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVGTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F17435F02BA82D8400134EC8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.nativescript.canvas.svg.CanvasSVGTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F17435D12BA82D8300134EC8 /* Build configuration list for PBXProject "CanvasSVG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17435E92BA82D8400134EC8 /* Debug */,
+				F17435EA2BA82D8400134EC8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F17435EB2BA82D8400134EC8 /* Build configuration list for PBXNativeTarget "CanvasSVG" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17435EC2BA82D8400134EC8 /* Debug */,
+				F17435ED2BA82D8400134EC8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F17435EE2BA82D8400134EC8 /* Build configuration list for PBXNativeTarget "CanvasSVGTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F17435EF2BA82D8400134EC8 /* Debug */,
+				F17435F02BA82D8400134EC8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F17435CE2BA82D8300134EC8 /* Project object */;
+}

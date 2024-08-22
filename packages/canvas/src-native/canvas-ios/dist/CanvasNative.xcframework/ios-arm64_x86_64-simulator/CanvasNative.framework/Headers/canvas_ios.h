@@ -8,12 +8,31 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+long long canvas_native_init_ios_webgpu(int64_t instance,
+                                        int64_t view,
+                                        uint32_t width,
+                                        uint32_t height);
+
+#if defined(TARGET_OS_IOS)
+long long canvas_native_init_ios_webgpu_uiview(int64_t instance,
+                                               int64_t view,
+                                               uint32_t width,
+                                               uint32_t height);
+#endif
+
+#if defined(TARGET_OS_IOS)
+void canvas_native_resize_ios_webgpu_uiview(int64_t context,
+                                            int64_t view,
+                                            uint32_t width,
+                                            uint32_t height);
+#endif
+
 long long canvas_native_init_ios_gl(int64_t view,
                                     bool alpha,
                                     bool antialias,
                                     bool depth,
                                     bool fail_if_major_performance_caveat,
-                                    const char *power_preference,
+                                    int32_t power_preference,
                                     bool premultiplied_alpha,
                                     bool preserve_drawing_buffer,
                                     bool stencil,
@@ -27,7 +46,7 @@ long long canvas_native_init_ios_gl_with_shared_gl(int64_t view,
                                                    bool antialias,
                                                    bool depth,
                                                    bool fail_if_major_performance_caveat,
-                                                   const char *power_preference,
+                                                   int32_t power_preference,
                                                    bool premultiplied_alpha,
                                                    bool preserve_drawing_buffer,
                                                    bool stencil,
@@ -43,7 +62,7 @@ long long canvas_native_init_offscreen_ios_gl(int32_t width,
                                               bool antialias,
                                               bool depth,
                                               bool fail_if_major_performance_caveat,
-                                              const char *power_preference,
+                                              int32_t power_preference,
                                               bool premultiplied_alpha,
                                               bool preserve_drawing_buffer,
                                               bool stencil,
@@ -58,7 +77,7 @@ long long canvas_native_init_offscreen_ios_gl_with_shared_gl(int32_t width,
                                                              bool antialias,
                                                              bool depth,
                                                              bool fail_if_major_performance_caveat,
-                                                             const char *power_preference,
+                                                             int32_t power_preference,
                                                              bool premultiplied_alpha,
                                                              bool preserve_drawing_buffer,
                                                              bool stencil,
@@ -141,10 +160,6 @@ bool canvas_native_context_draw_image_with_bytes(int64_t context,
                                                  float d_width,
                                                  float d_height);
 
-void canvas_native_svg_draw_from_string(int64_t context, const char *svg);
-
-void canvas_native_svg_draw_from_path(int64_t context, const char *path);
-
 void canvas_native_context_custom_with_buffer_flush(int64_t context,
                                                     uint8_t *bytes,
                                                     uintptr_t size,
@@ -165,5 +180,30 @@ int64_t canvas_native_context_get_texture_from_2d(int64_t context);
 uint32_t canvas_native_context_backend_texture_get_id(int64_t texture);
 
 void canvas_native_context_backend_texture_destroy(int64_t texture);
+
+void canvas_native_webgl_tex_image_2d(int64_t context,
+                                      int32_t target,
+                                      int32_t level,
+                                      int32_t internalformat,
+                                      int32_t format,
+                                      int32_t type_,
+                                      uint8_t *bytes,
+                                      uintptr_t size,
+                                      float width,
+                                      float height,
+                                      bool flip_y);
+
+void canvas_native_webgl_tex_sub_image_2d(int64_t context,
+                                          int32_t target,
+                                          int32_t level,
+                                          int32_t xoffset,
+                                          int32_t yoffset,
+                                          int32_t format,
+                                          int32_t type_,
+                                          uint8_t *bytes,
+                                          uintptr_t size,
+                                          float width,
+                                          float height,
+                                          bool flip_y);
 
 #endif /* CANVAS_IOS_H */

@@ -1,49 +1,41 @@
-import { Element } from '../Element';
-import {Rect} from '@nativescript/canvas';
+import { SVGAnimatedLengthEmpty } from './SVGAnimatedLength';
+import { SVGGeometryElement } from './SVGGeometryElement';
+import { Rect } from '@nativescript/canvas-svg';
+import { SVGAnimatedLength } from './SVGAnimatedLength';
+export class SVGRectElement extends SVGGeometryElement {
+	_x = new SVGAnimatedLength(this, 'x');
+	_y = new SVGAnimatedLength(this, 'y');
+	_width = new SVGAnimatedLength(this, 'width');
+	_height = new SVGAnimatedLength(this, 'height');
+	_rx = new SVGAnimatedLength(this, 'rx');
+	_ry = new SVGAnimatedLength(this, 'ry');
 
-export class SVGRectElement extends Element {
-    __internalElement: Rect;
-    constructor(){
-        super('rect');
-        let rect = undefined;
-		if (arguments.length > 1) {
-			rect = arguments[1];
-		}
+	constructor() {
+		super('rect');
+		this.nativeElement = new Rect() as never;
+	}
 
-		if (rect instanceof Rect) {
-			this.__internalElement = rect;
-		} else {
-			this.__internalElement = new Rect();
-		}
-    }
+	get x() {
+		return this._x;
+	}
 
-    set width(value) {
-		this.__internalElement.width = value;
+	get y() {
+		return this._y;
 	}
 
 	get width() {
-		return this.__internalElement.getMeasuredWidth();
-	}
-
-	set height(value) {
-		this.__internalElement.height = value;
+		return this._width;
 	}
 
 	get height() {
-		return this.__internalElement.getMeasuredHeight();
+		return this._height;
 	}
 
-
-    setAttribute(key, value) {
-        this.__internalElement._dom.documentElement.setAttribute(key, value);
+	get rx() {
+		return this._rx;
 	}
 
-
-	getAttribute(key) {
-		return this.__internalElement._dom.documentElement.getAttribute(key);
-	}
-
-	removeAttribute(key, value) {
-        this.__internalElement._dom.documentElement.removeAttribute(key, value);
+	get ry() {
+		return this._rx;
 	}
 }

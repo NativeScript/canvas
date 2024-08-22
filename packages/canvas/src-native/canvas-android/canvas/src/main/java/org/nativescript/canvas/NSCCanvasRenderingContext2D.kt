@@ -2,6 +2,7 @@ package org.nativescript.canvas
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import dalvik.annotation.optimization.FastNative
 
 class NSCCanvasRenderingContext2D {
@@ -86,6 +87,64 @@ class NSCCanvasRenderingContext2D {
 		}
 
 		@JvmStatic
+		fun drawImage(context: Long, image: Long, dx: Float, dy: Float): Boolean {
+			return nativeDrawImageDxDyWithAsset(context, image, dx, dy)
+		}
+
+		@JvmStatic
+		fun drawImage(
+			context: Long,
+			image: Long,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean {
+			return nativeDrawImageDxDyDwDhWithAsset(
+				context,
+				image,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+		}
+
+		@JvmStatic
+		fun drawImage(
+			context: Long,
+			image: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean {
+			return nativeDrawImageWithAsset(
+				context, image, sx,
+				sy,
+				sWidth,
+				sHeight,
+				dx,
+				dy,
+				dWidth,
+				dHeight
+			)
+		}
+
+		@JvmStatic
+		fun scale(
+			context: Long,
+			x: Float,
+			y: Float,
+		) {
+			nativeScale(context, x, y)
+		}
+
+		@JvmStatic
 		@FastNative
 		private external fun nativeCreatePattern(
 			context: Long,
@@ -138,6 +197,42 @@ class NSCCanvasRenderingContext2D {
 
 		@JvmStatic
 		@FastNative
+		private external fun nativeDrawImageDxDyWithAsset(
+			context: Long,
+			asset: Long,
+			dx: Float,
+			dy: Float
+		): Boolean
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawImageDxDyDwDhWithAsset(
+			context: Long,
+			asset: Long,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeDrawImageWithAsset(
+			context: Long,
+			asset: Long,
+			sx: Float,
+			sy: Float,
+			sWidth: Float,
+			sHeight: Float,
+			dx: Float,
+			dy: Float,
+			dWidth: Float,
+			dHeight: Float
+		): Boolean
+
+
+		@JvmStatic
+		@FastNative
 		private external fun nativeDrawAtlasWithBitmap(
 			context: Long,
 			bitmap: Bitmap,
@@ -145,6 +240,15 @@ class NSCCanvasRenderingContext2D {
 			tex: FloatArray,
 			colors: IntArray,
 			blendMode: Int
+		)
+
+
+		@JvmStatic
+		@FastNative
+		private external fun nativeScale(
+			context: Long,
+			x: Float,
+			y: Float
 		)
 	}
 

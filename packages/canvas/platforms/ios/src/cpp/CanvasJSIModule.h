@@ -19,7 +19,11 @@
 #include "webgl/WebGLRenderingContext.h"
 #include "webgl2/WebGL2RenderingContext.h"
 
-#include "URLImpl.h"
+#include "webgpu/GPUImpl.h"
+#include "webgpu/GPUSupportedLimitsImpl.h"
+#include "webgpu/GPUDeviceImpl.h"
+#include "webgpu/GPUQueueImpl.h"
+#include "webgpu/GPUCanvasContextImpl.h"
 
 class CanvasJSIModule {
 public:
@@ -36,6 +40,8 @@ public:
     static void CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &args);
 };

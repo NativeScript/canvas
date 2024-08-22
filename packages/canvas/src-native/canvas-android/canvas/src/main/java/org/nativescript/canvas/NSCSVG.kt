@@ -32,10 +32,6 @@ class NSCSVG : View {
 		init(context)
 	}
 
-	constructor(context: Context, useCpu: Boolean) : super(context, null) {
-		init(context)
-	}
-
 	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
 		init(context)
 	}
@@ -45,21 +41,6 @@ class NSCSVG : View {
 			return
 		}
 	}
-
-
-	var ignorePixelScaling: Boolean = false
-		set(value) {
-			field = value
-			if (value) {
-				val density = resources.displayMetrics.density
-				mMatrix.postScale(density, density)
-			} else {
-				mMatrix.reset()
-			}
-			if (width > 0 || height > 0) {
-				invalidate()
-			}
-		}
 
 	private var currentTask: java.util.concurrent.Future<*>? = null
 	private fun resize(w: Int, h: Int) {

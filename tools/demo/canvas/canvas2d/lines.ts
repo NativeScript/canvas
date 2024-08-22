@@ -2,8 +2,8 @@ import { Canvas } from '@nativescript/canvas';
 import { Screen } from '@nativescript/core';
 
 export function lines(c: Canvas) {
-	var w =  c.getMeasuredWidth()/ Screen.mainScreen.scale as number,
-		h = c.getMeasuredHeight()/ Screen.mainScreen.scale as number,
+	var w = c.getMeasuredWidth(),
+		h = c.getMeasuredHeight(),
 		ctx = c.getContext('2d') as never as CanvasRenderingContext2D,
 		spawnProb = 1,
 		numberOfMoves = [8, 16], //[min, max]
@@ -12,11 +12,11 @@ export function lines(c: Canvas) {
 		timeBetweenMoves = [4, 10],
 		lines = [] as any[],
 		frame = (Math.random() * 360) | 0;
-
+	c.width = w;
+	c.height = h;
 	ctx.lineWidth = 1;
-    
 
-  //  console.log(c.width, c.height, c.getMeasuredWidth(), c.getMeasuredHeight());
+	//  console.log(c.width, c.height, c.getMeasuredWidth(), c.getMeasuredHeight());
 
 	function rand(ar: any) {
 		return Math.random() * (ar[1] - ar[0]) + ar[0];

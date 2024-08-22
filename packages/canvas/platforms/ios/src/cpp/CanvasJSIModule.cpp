@@ -7,7 +7,121 @@
 #include "JSIRuntime.h"
 #include "JSIReadFileCallback.h"
 #include "Helpers.h"
-#include "PerIsolateData.h"
+
+struct GLOptions {
+    int32_t version;
+    bool alpha;
+    bool antialias;
+    bool depth;
+    bool failIfMajorPerformanceCaveat;
+    int32_t powerPreference;
+    bool premultipliedAlpha;
+    bool preserveDrawingBuffer;
+    bool stencil;
+    bool desynchronized;
+    bool xrCompatible;
+
+public:
+    GLOptions() {
+        this->version = 0;
+        this->alpha = true;
+        this->antialias = true;
+        this->depth = true;
+        this->failIfMajorPerformanceCaveat = false;
+        this->powerPreference = 0;
+        this->premultipliedAlpha = true;
+        this->preserveDrawingBuffer = false;
+        this->stencil = false;
+        this->desynchronized = false;
+        this->xrCompatible = false;
+    }
+
+    void parseGLOptions(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        auto configValue = args[0];
+
+        if (!(!configValue->IsNullOrUndefined() && configValue->IsObject())) {
+            return;
+        }
+
+        auto isolate = args.GetIsolate();
+        auto context = isolate->GetCurrentContext();
+        auto config = configValue.As<v8::Object>();
+
+        v8::Local<v8::Value> versionValue;
+
+        config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue);
+
+        if (!versionValue.IsEmpty() && versionValue->IsInt32()) {
+            versionValue->Int32Value(context).To(&this->version);
+        }
+
+        v8::Local<v8::Value> alphaValue;
+
+        config->Get(context, ConvertToV8String(isolate, "alpha")).ToLocal(&alphaValue);
+        if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
+            this->alpha = alphaValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> antialiasValue;
+        config->Get(context, ConvertToV8String(isolate, "antialias")).ToLocal(
+                &antialiasValue);
+        if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
+            this->antialias = antialiasValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
+        config->Get(context, ConvertToV8String(isolate, "failIfMajorPerformanceCaveat")).ToLocal(
+                &failIfMajorPerformanceCaveatValue);
+        if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
+            failIfMajorPerformanceCaveatValue->IsBoolean()) {
+            this->failIfMajorPerformanceCaveat = failIfMajorPerformanceCaveatValue->BooleanValue(
+                    isolate);
+        }
+
+        v8::Local<v8::Value> powerPreferenceValue;
+        config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
+                &powerPreferenceValue);
+        if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsInt32()) {
+            powerPreferenceValue->Int32Value(context).To(&this->powerPreference);
+        }
+
+        v8::Local<v8::Value> premultipliedAlphaValue;
+        config->Get(context,
+                    ConvertToV8String(isolate, "premultipliedAlpha")).ToLocal(
+                &premultipliedAlphaValue);
+        if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
+            this->premultipliedAlpha = premultipliedAlphaValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> preserveDrawingBufferValue;
+        config->Get(context,
+                    ConvertToV8String(isolate, "preserveDrawingBuffer")).ToLocal(
+                &preserveDrawingBufferValue);
+        if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
+            this->preserveDrawingBuffer = preserveDrawingBufferValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> stencilValue;
+        config->Get(context, ConvertToV8String(isolate, "stencil")).ToLocal(&stencilValue);
+        if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
+            this->stencil = stencilValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> desynchronizedValue;
+        config->Get(context, ConvertToV8String(isolate, "desynchronized")).ToLocal(
+                &desynchronizedValue);
+        if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
+            this->desynchronized = desynchronizedValue->BooleanValue(isolate);
+        }
+
+        v8::Local<v8::Value> xrCompatibleValue;
+        config->Get(context, ConvertToV8String(isolate, "xrCompatible")).ToLocal(
+                &xrCompatibleValue);
+        if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
+            this->xrCompatible = xrCompatibleValue->BooleanValue(isolate);
+        }
+    }
+};
 
 void CanvasJSIModule::install(v8::Isolate *isolate) {
 
@@ -35,46 +149,52 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         CanvasPattern::Init(canvasMod, isolate);
         MatrixImpl::Init(canvasMod, isolate);
         TextMetricsImpl::Init(canvasMod, isolate);
-        URLImpl::Init(canvasMod, isolate);
 
-        // always use the last slot
-        auto lastSlot = isolate->GetNumberOfDataSlots() - 1;
-        auto data = new PerIsolateData(isolate);
-        isolate->SetData(lastSlot, data);
 
-        v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod);
+        GPUImpl::Init(canvasMod, isolate);
+        GPUSupportedLimitsImpl::Init(canvasMod, isolate);
+        GPUDeviceImpl::Init(canvasMod, isolate);
+        GPUQueueImpl::Init(canvasMod, isolate);
+
+        v8Global->Set(context, ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContext"),
                        v8::FunctionTemplate::New(isolate, &Create2DContext)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
         canvasMod->Set(context, ConvertToV8String(isolate, "createImageBitmap"),
                        v8::FunctionTemplate::New(isolate, &CreateImageBitmap)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
         canvasMod->Set(context, ConvertToV8String(isolate, "create2DContextWithPointer"),
                        v8::FunctionTemplate::New(isolate, &Create2DContextWithPointer)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
+
+        canvasMod->Set(context, ConvertToV8String(isolate, "createWebGPUContextWithPointer"),
+                       v8::FunctionTemplate::New(isolate,
+                                                 &CreateWebGPUContextWithPointer)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
+
         canvasMod->Set(context, ConvertToV8String(isolate, "readFile"),
                        v8::FunctionTemplate::New(isolate, &ReadFile)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
 
         canvasMod->Set(context, ConvertToV8String(isolate, "createWebGLContext"),
                        v8::FunctionTemplate::New(isolate, &CreateWebGLContext)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
 
         canvasMod->Set(context, ConvertToV8String(isolate, "createWebGL2Context"),
                        v8::FunctionTemplate::New(isolate, &CreateWebGL2Context)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
 
 
         canvasMod->Set(context, ConvertToV8String(isolate, "__addFontFamily"),
                        v8::FunctionTemplate::New(isolate, &AddFontFamily)->GetFunction(
-                               context).ToLocalChecked());
+                               context).ToLocalChecked()).FromJust();
 
         global->Set(context,
-                    ConvertToV8String(isolate, "CanvasModule"), canvasMod);
+                    ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
 
     }
 }
-
 
 void CanvasJSIModule::AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
@@ -165,7 +285,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
     if (image->IsNullOrUndefined()) {
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate, "Failed to load image"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
         return;
@@ -175,7 +295,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate,
                                                          "Failed to execute 'createImageBitmap' : The crop rect width is 0"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
 
@@ -184,7 +304,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
     if (len >= 5 && (sh->IsNumber() && sh->IsNumber() == 0)) {
         v8::Local<v8::Value> ret[2] = {ConvertToV8String(isolate,
                                                          "Failed to execute 'createImageBitmap' : The crop rect height is 0"),
-                                       v8::Undefined(isolate)};
+                                       v8::Null(isolate)};
 
         cb.As<v8::Function>()->Call(context, context->Global(), 2, ret);
         return;
@@ -204,7 +324,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
+                auto shared_asset = canvas_native_image_asset_reference(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
 
@@ -218,15 +338,17 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 #ifdef __ANDROID__
                 ALooper_addFd(jsi_callback->looper_,
                               jsi_callback->fd_[0],
-                              ALOOPER_POLL_CALLBACK,
+                              0,
                               ALOOPER_EVENT_INPUT,
                               [](int fd, int events,
                                  void *data) {
+                                    if(data == nullptr){
+                                        return 1;
+                                    }
                                   auto cb = static_cast<JSICallback *>(data);
                                   bool done;
                                   read(fd, &done,
                                        sizeof(bool));
-
 
                                   v8::Isolate *isolate = cb->isolate_;
                                   v8::Locker locker(isolate);
@@ -252,23 +374,23 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                       args[1] = v8::Null(isolate);
                                   }
 
-
                                   callback->Call(context, context->Global(), 2, args);
 
                                   delete static_cast<JSICallback *>(data);
                                   return 0;
                               }, jsi_callback);
 
-                ALooper_wake(jsi_callback->looper_);
-
                 if (isArrayBuffer) {
+                    // converting to Uint8Array
                     auto arrayBuffer = imageObject.As<v8::ArrayBuffer>();
-                    auto store = arrayBuffer->GetBackingStore();
+                    auto size = arrayBuffer->ByteLength();
+                    imageObject = v8::Uint8Array::New(arrayBuffer, 0, size);
+                /*  auto store = arrayBuffer->GetBackingStore();
                     auto dataBuffer = (uint8_t *) store->Data();
-                    v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
+
                     std::thread thread(
-                            [&dataBuffer, jsi_callback, &options, store, shared_asset](
-                                    v8::Global<v8::ArrayBuffer> ab, size_t size) {
+                            [&dataBuffer, jsi_callback, &options, store, shared_asset, size](
+                                    v8::Global<v8::ArrayBuffer> ab) {
 
 
                                 auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -281,22 +403,23 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
-
                                 write(jsi_callback->fd_[1],
                                       &done,
                                       sizeof(bool));
 
+                                //  canvas_native_image_asset_release(shared_asset);
 
-                            }, std::move(ab), arrayBuffer->ByteLength());
+
+                            });
 
                     thread.detach();
                     return;
+
+                    */
                 }
 
 
                 auto ta = imageObject.As<v8::ArrayBufferView>();
-
 
                 auto array = ta->Buffer();
                 auto offset = ta->ByteOffset();
@@ -320,11 +443,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
-
                             write(jsi_callback->fd_[1],
                                   &done,
                                   sizeof(bool));
+
+                            //  canvas_native_image_asset_release(shared_asset);
 
 
                         }, std::move(ab));
@@ -344,9 +467,74 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     auto dataBuffer = (uint8_t *) store->Data();
                     v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
 
+                    auto size = arrayBuffer->ByteLength();
+
+
+                    auto thread_queue = new NSOperationQueueWrapper(false);
+
+
+                    thread_queue->addOperation([&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue, &ab, size]() {
+
+                        auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+                                                                                                     dataBuffer, size,
+                                                                                                     options.flipY,
+                                                                                                     options.premultiplyAlpha,
+                                                                                                     options.colorSpaceConversion,
+                                                                                                     options.resizeQuality,
+                                                                                                     options.resizeWidth,
+                                                                                                     options.resizeHeight,
+                                                                                                     shared_asset);
+
+
+
+                        auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
+
+                            v8::Isolate *isolate = jsi_callback->isolate_;
+                            v8::Locker locker(isolate);
+                            v8::Isolate::Scope isolate_scope(isolate);
+                            v8::HandleScope handle_scope(isolate);
+                            v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
+                            v8::Local<v8::External> cbData = jsi_callback->data_->Get(
+                                                                                      isolate).As<v8::External>();
+                            v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                            v8::Context::Scope context_scope(context);
+
+                            auto ret = ImageBitmapImpl::NewInstance(isolate, cbData);
+
+                            v8::Local<v8::Value> args[2];
+
+                            if (done) {
+                                args[0] = v8::Null(isolate);
+                                args[1] = ret;
+
+                            } else {
+                                args[0] = v8::Exception::Error(
+                                                               ConvertToV8String(isolate, "Failed to load image"));
+                                args[1] = v8::Null(isolate);
+                            }
+
+
+                            callback->Call(context, context->Global(), 2, args);
+
+                            delete jsi_callback;
+                            delete current_queue;
+
+                            canvas_native_image_asset_release(shared_asset);
+
+                        };
+                        current_queue->addOperation(main_task);
+
+                    });
+
+
+
+
+
+
+                    /*
                     std::thread thread(
-                            [&dataBuffer, jsi_callback, &options, store, shared_asset, current_queue](
-                                    v8::Global<v8::ArrayBuffer> ab, size_t size
+                            [&dataBuffer, jsi_callback, &options, store, &shared_asset, current_queue, size](
+                                    v8::Global<v8::ArrayBuffer> ab
                             ) {
 
                                 auto done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
@@ -359,10 +547,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeHeight,
                                         shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
-
-
-                                auto main_task = [jsi_callback, current_queue, done]() {
+                                auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                     v8::Isolate *isolate = jsi_callback->isolate_;
@@ -396,12 +581,17 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     delete jsi_callback;
                                     delete current_queue;
 
+                                    canvas_native_image_asset_release(shared_asset);
+
                                 };
                                 current_queue->addOperation(main_task);
 
-                            }, std::move(ab), arrayBuffer->ByteLength());
+                            }, std::move(ab));
 
-                    thread.detach();
+                   thread.detach();
+
+
+                    */
 
                     return;
                 }
@@ -433,9 +623,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeHeight,
                                     shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
 
-                            auto main_task = [jsi_callback, current_queue, done]() {
+                            auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                 v8::Isolate *isolate = jsi_callback->isolate_;
@@ -467,6 +656,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                 delete jsi_callback;
                                 delete current_queue;
 
+                                canvas_native_image_asset_release(shared_asset);
+
                             };
                             current_queue->addOperation(main_task);
 
@@ -481,7 +672,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
             } else if (len == 5 || len == 6) {
                 auto asset = canvas_native_image_asset_create();
 
-                auto shared_asset = canvas_native_image_asset_shared_clone(asset);
+                auto shared_asset = canvas_native_image_asset_reference(asset);
 
                 auto ret = new ImageBitmapImpl(asset);
 
@@ -497,7 +688,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 #ifdef __ANDROID__
                 ALooper_addFd(jsi_callback->looper_,
                               jsi_callback->fd_[0],
-                              ALOOPER_POLL_CALLBACK,
+                              0,
                               ALOOPER_EVENT_INPUT,
                               [](int fd, int events,
                                  void *data) {
@@ -535,11 +726,13 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                   return 0;
                               }, jsi_callback);
 
-                ALooper_wake(jsi_callback->looper_);
-
                 auto bufferValue = args[0];
 
                 if (isArrayBuffer) {
+                    auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
+                    auto size = arrayBuffer->ByteLength();
+                    imageObject = v8::Uint8Array::New(arrayBuffer, 0, size);
+                    /*
                     auto arrayBuffer = bufferValue.As<v8::ArrayBuffer>();
                     auto dataBuffer = (uint8_t *) arrayBuffer->GetBackingStore()->Data();
                     v8::Global<v8::ArrayBuffer> ab(isolate, arrayBuffer);
@@ -566,12 +759,11 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
-
-
                                 write(jsi_callback->fd_[1],
                                       &done,
                                       sizeof(bool));
+
+                                canvas_native_image_asset_release(shared_asset);
 
                             },
                             (float) sx_or_options->NumberValue(context).ToChecked(),
@@ -583,6 +775,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                     thread.detach();
 
                     return;
+                    */
                 }
 
                 auto ta = bufferValue.As<v8::ArrayBufferView>();
@@ -616,12 +809,12 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
-
 
                             write(jsi_callback->fd_[1],
                                   &done,
                                   sizeof(bool));
+
+                            canvas_native_image_asset_release(shared_asset);
 
                         },
                         (float) sx_or_options->NumberValue(context).ToChecked(),
@@ -666,10 +859,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                         options.resizeWidth,
                                         options.resizeHeight, shared_asset);
 
-                                canvas_native_image_asset_destroy(shared_asset);
 
-
-                                auto main_task = [jsi_callback, current_queue, done]() {
+                                auto main_task = [jsi_callback, current_queue, done,shared_asset]() {
 
 
                                     v8::Isolate *isolate = jsi_callback->isolate_;
@@ -702,6 +893,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 
                                     delete jsi_callback;
                                     delete current_queue;
+
+                                    canvas_native_image_asset_release(shared_asset);
 
                                 };
                                 current_queue->addOperation(main_task);
@@ -751,9 +944,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                     options.resizeWidth,
                                     options.resizeHeight, shared_asset);
 
-                            canvas_native_image_asset_destroy(shared_asset);
 
-                            auto main_task = [jsi_callback, current_queue, done]() {
+                            auto main_task = [jsi_callback, current_queue, done, shared_asset]() {
 
 
                                 v8::Isolate *isolate = jsi_callback->isolate_;
@@ -785,6 +977,8 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                                 delete jsi_callback;
                                 delete current_queue;
 
+                                canvas_native_image_asset_release(shared_asset);
+
                             };
                             current_queue->addOperation(main_task);
 
@@ -807,7 +1001,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
         }
     }
 
-    auto type = GetNativeType( image);
+    auto type = ObjectWrapperImpl::GetNativeType(image);
 
     if (len == 1 || len == 2) {
         if (len == 2) {
@@ -960,10 +1154,14 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 #ifdef __ANDROID__
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
-                  ALOOPER_POLL_CALLBACK,
+                  0,
                   ALOOPER_EVENT_INPUT,
                   [](int fd, int events,
                      void *data) {
+
+                        if(data == 0){
+                            return 0;
+                        }
 
                       auto cb = static_cast<JSIReadFileCallback *>(data);
                       bool done;
@@ -1034,7 +1232,6 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                                   }
                                   return 0;
                               }
-                              LogToConsole(ConvertFromV8String(isolate, stackV8Str));
 
                           }
                       }
@@ -1044,8 +1241,6 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                       }
                       return 0;
                   }, jsi_callback);
-
-    ALooper_wake(jsi_callback->looper_);
 
     std::thread thread(
             [jsi_callback](const std::string &file) {
@@ -1063,7 +1258,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                     jsi_callback->SetError(const_cast<char *>(error));
                 }
-                canvas_native_helper_destroy(ret);
+                canvas_native_helper_release(ret);
 
                 write(jsi_callback->fd_[1],
                       &done,
@@ -1101,7 +1296,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
             jsi_callback->SetError((char*)error);
         }
 
-        canvas_native_helper_destroy(ret);
+        canvas_native_helper_release(ret);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
 
@@ -1190,404 +1385,209 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 }
 
 void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto configValue = args[0];
+
+    auto options = GLOptions();
+    options.parseGLOptions(args);
+
+    if (options.version != 1) {
+        args.GetReturnValue().SetNull();
+        return;
+    }
+
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    if (!configValue->IsNullOrUndefined() && configValue->IsObject()) {
-        auto config = configValue.As<v8::Object>();
-        std::string version("none");
-        auto alpha = true;
-        auto antialias = true;
-        auto depth = true;
-        auto fail_if_major_performance_caveat = false;
-        std::string power_preference("default");
-        auto premultiplied_alpha = true;
-        auto preserve_drawing_buffer = false;
-        auto stencil = false;
-        auto desynchronized = false;
-        auto xr_compatible = false;
-
-        auto last = isolate->GetNumberOfDataSlots() - 1;
-        auto data = isolate->GetData(last);
-
-        if (data != nullptr) {
-            auto consts = static_cast<PerIsolateData *>(data);
-
-            v8::Local<v8::Value> versionValue;
-
-            config->Get(context, consts->VERSION_PERSISTENT->Get(isolate)).ToLocal(&versionValue);
-
-            if (!versionValue.IsEmpty() && versionValue->IsString()) {
-                version = ConvertFromV8String(isolate, versionValue);
-            }
-
-            v8::Local<v8::Value> alphaValue;
-
-            config->Get(context, consts->ALPHA_PERSISTENT->Get(isolate)).ToLocal(&alphaValue);
-            if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
-                alpha = alphaValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> antialiasValue;
-            config->Get(context, consts->ANTIALIAS_PERSISTENT->Get(isolate)).ToLocal(
-                    &antialiasValue);
-            if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
-                antialias = antialiasValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
-            config->Get(context,
-                        consts->FAIL_IF_MAJOR_PERFORMANCE_CAVEAT_PERSISTENT->Get(isolate)).ToLocal(
-                    &failIfMajorPerformanceCaveatValue);
-            if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
-                failIfMajorPerformanceCaveatValue->IsBoolean()) {
-                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
-                        isolate);
-            }
-
-            v8::Local<v8::Value> powerPreferenceValue;
-            config->Get(context, consts->POWER_PREFERENCE_PERSISTENT->Get(isolate)).ToLocal(
-                    &powerPreferenceValue);
-            if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
-                power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
-            }
-
-            v8::Local<v8::Value> premultipliedAlphaValue;
-            config->Get(context,
-                        consts->PREMULTIPLIED_ALPHA_PERSISTENT->Get(isolate)).ToLocal(
-                    &premultipliedAlphaValue);
-            if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
-                premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> preserveDrawingBufferValue;
-            config->Get(context,
-                        consts->PRESERVE_DRAWING_BUFFER_PERSISTENT->Get(isolate)).ToLocal(
-                    &preserveDrawingBufferValue);
-            if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
-                preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> stencilValue;
-            config->Get(context, consts->STENCIL_PERSISTENT->Get(isolate)).ToLocal(&stencilValue);
-            if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
-                stencil = stencilValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> desynchronizedValue;
-            config->Get(context, consts->DESYNCHRONIZED_PERSISTENT->Get(isolate)).ToLocal(
-                    &desynchronizedValue);
-            if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
-                desynchronized = desynchronizedValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> xrCompatibleValue;
-            config->Get(context,
-                        consts->XR_COMPATIBLE_PERSISTENT->Get(isolate)).ToLocal(&xrCompatibleValue);
-            if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
-                xr_compatible = xrCompatibleValue->BooleanValue(isolate);
-            }
-        }
 
 
-        if (version !=
-            "v1") {
-            args.GetReturnValue().SetNull();
-            return;
-        } else {
-            auto count = args.Length();
-            if (count == 6) {
-                auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-//                auto density = args[2]->NumberValue(context).ToChecked();
-//                auto fontColor = args[3]->NumberValue(context).ToChecked();
-//                auto ppi = args[4]->NumberValue(context).ToChecked();
-//                auto direction = args[5]->NumberValue(context).ToChecked();
-                auto webgl = canvas_native_webgl_create(
-                        ctx,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible
-                );
+    auto count = args.Length();
+    if (count == 6) {
+        auto ctx = args[1].As<v8::BigInt>()->Int64Value();
+        auto webgl = canvas_native_webgl_create(
+                ctx,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible
+        );
 
-                auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
-                                                                           new WebGLRenderingContext(
-                                                                                   webgl));
+        auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
+                                                                   new WebGLRenderingContext(
+                                                                           webgl));
 
-                args.GetReturnValue().Set(renderingContext);
-                return;
-            } else if (count == 7) {
-                auto width = args[1]->NumberValue(context).ToChecked();
-                auto height = args[2]->NumberValue(context).ToChecked();
-//                auto density = args[3]->NumberValue(context).ToChecked();
-//                auto fontColor = args[4]->NumberValue(context).ToChecked();
-//                auto ppi = args[5]->NumberValue(context).ToChecked();
-//                auto direction = args[6]->NumberValue(context).ToChecked();
-                auto ctx = canvas_native_webgl_create_no_window(
-                        (int32_t) width,
-                        (int32_t) height,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible,
-                        false
-                );
+        args.GetReturnValue().Set(renderingContext);
+        return;
+    } else if (count == 7) {
+        auto width = args[1]->NumberValue(context).ToChecked();
+        auto height = args[2]->NumberValue(context).ToChecked();
+        auto ctx = canvas_native_webgl_create_no_window(
+                (int32_t) width,
+                (int32_t) height,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible,
+                false
+        );
 
-                auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
-                                                                           new WebGLRenderingContext(
-                                                                                   ctx));
+        auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
+                                                                   new WebGLRenderingContext(
+                                                                           ctx));
 
-                args.GetReturnValue().Set(renderingContext);
-                return;
+        args.GetReturnValue().Set(renderingContext);
+        return;
 
-            } else {
-                auto width = (int32_t) args[1]->NumberValue(context).ToChecked();
-                auto height = (int32_t) args[2]->NumberValue(context).ToChecked();
+    } else {
+        auto width = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[2]->NumberValue(context).ToChecked();
 
-                auto ctx = canvas_native_webgl_create_no_window(
-                        width,
-                        height,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible,
-                        false
-                );
+        auto ctx = canvas_native_webgl_create_no_window(
+                width,
+                height,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible,
+                false
+        );
 
-                auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
-                                                                           new WebGLRenderingContext(
-                                                                                   ctx));
+        auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
+                                                                   new WebGLRenderingContext(
+                                                                           ctx));
 
-                args.GetReturnValue().Set(renderingContext);
-                return;
-            }
-
-        }
+        args.GetReturnValue().Set(renderingContext);
+        return;
     }
-    args.GetReturnValue().SetNull();
 }
 
 void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto configValue = args[0];
-    auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    if (!configValue->IsNullOrUndefined() && configValue->IsObject()) {
-        auto config = configValue.As<v8::Object>();
-        std::string version("none");
-        auto alpha = true;
-        auto antialias = true;
-        auto depth = true;
-        auto fail_if_major_performance_caveat = false;
-        std::string power_preference("default");
-        auto premultiplied_alpha = true;
-        auto preserve_drawing_buffer = false;
-        auto stencil = false;
-        auto desynchronized = false;
-        auto xr_compatible = false;
 
 
-        auto last = isolate->GetNumberOfDataSlots() - 1;
-        auto data = isolate->GetData(last);
+    auto options = GLOptions();
+    options.parseGLOptions(args);
 
-        if (data != nullptr) {
-            auto consts = static_cast<PerIsolateData *>(data);
-
-            v8::Local<v8::Value> versionValue;
-
-            config->Get(context, consts->VERSION_PERSISTENT->Get(isolate)).ToLocal(&versionValue);
-
-            if (!versionValue.IsEmpty() && versionValue->IsString()) {
-                version = ConvertFromV8String(isolate, versionValue);
-            }
-
-            v8::Local<v8::Value> alphaValue;
-
-            config->Get(context, consts->ALPHA_PERSISTENT->Get(isolate)).ToLocal(&alphaValue);
-            if (!alphaValue.IsEmpty() && alphaValue->IsBoolean()) {
-                alpha = alphaValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> antialiasValue;
-            config->Get(context, consts->ANTIALIAS_PERSISTENT->Get(isolate)).ToLocal(
-                    &antialiasValue);
-            if (!antialiasValue.IsEmpty() && antialiasValue->IsBoolean()) {
-                antialias = antialiasValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> failIfMajorPerformanceCaveatValue;
-            config->Get(context,
-                        consts->FAIL_IF_MAJOR_PERFORMANCE_CAVEAT_PERSISTENT->Get(isolate)).ToLocal(
-                    &failIfMajorPerformanceCaveatValue);
-            if (!failIfMajorPerformanceCaveatValue.IsEmpty() &&
-                failIfMajorPerformanceCaveatValue->IsBoolean()) {
-                fail_if_major_performance_caveat = failIfMajorPerformanceCaveatValue->BooleanValue(
-                        isolate);
-            }
-
-            v8::Local<v8::Value> powerPreferenceValue;
-            config->Get(context, consts->POWER_PREFERENCE_PERSISTENT->Get(isolate)).ToLocal(
-                    &powerPreferenceValue);
-            if (!powerPreferenceValue.IsEmpty() && powerPreferenceValue->IsString()) {
-                power_preference = ConvertFromV8String(isolate, powerPreferenceValue);
-            }
-
-            v8::Local<v8::Value> premultipliedAlphaValue;
-            config->Get(context,
-                        consts->PREMULTIPLIED_ALPHA_PERSISTENT->Get(isolate)).ToLocal(
-                    &premultipliedAlphaValue);
-            if (!premultipliedAlphaValue.IsEmpty() && premultipliedAlphaValue->IsBoolean()) {
-                premultiplied_alpha = premultipliedAlphaValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> preserveDrawingBufferValue;
-            config->Get(context,
-                        consts->PRESERVE_DRAWING_BUFFER_PERSISTENT->Get(isolate)).ToLocal(
-                    &preserveDrawingBufferValue);
-            if (!preserveDrawingBufferValue.IsEmpty() && preserveDrawingBufferValue->IsBoolean()) {
-                preserve_drawing_buffer = preserveDrawingBufferValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> stencilValue;
-            config->Get(context, consts->STENCIL_PERSISTENT->Get(isolate)).ToLocal(&stencilValue);
-            if (!stencilValue.IsEmpty() && stencilValue->IsBoolean()) {
-                stencil = stencilValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> desynchronizedValue;
-            config->Get(context, consts->DESYNCHRONIZED_PERSISTENT->Get(isolate)).ToLocal(
-                    &desynchronizedValue);
-            if (!desynchronizedValue.IsEmpty() && desynchronizedValue->IsBoolean()) {
-                desynchronized = desynchronizedValue->BooleanValue(isolate);
-            }
-
-            v8::Local<v8::Value> xrCompatibleValue;
-            config->Get(context,
-                        consts->XR_COMPATIBLE_PERSISTENT->Get(isolate)).ToLocal(&xrCompatibleValue);
-            if (!xrCompatibleValue.IsEmpty() && xrCompatibleValue->IsBoolean()) {
-                xr_compatible = xrCompatibleValue->BooleanValue(isolate);
-            }
-        }
-
-
-        if (version !=
-            "v2") {
-            args.GetReturnValue().SetNull();
-            return;
-        } else {
-            auto count = args.Length();
-            if (count == 6) {
-                auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-//                auto density = args[2]->NumberValue(context).ToChecked();
-//                auto fontColor = args[3]->NumberValue(context).ToChecked();
-//                auto ppi = args[4]->NumberValue(context).ToChecked();
-//                auto direction = args[5]->NumberValue(context).ToChecked();
-
-                auto webgl = canvas_native_webgl_create(
-                        ctx,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible
-                );
-
-                auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
-                                                                            new WebGL2RenderingContext(
-                                                                                    webgl,
-                                                                                    WebGLRenderingVersion::V2));
-
-                args.GetReturnValue().Set(renderingContext);
-                return;
-
-            } else if (count ==
-                       7) {
-                auto width = args[1]->NumberValue(context).ToChecked();
-                auto height = args[2]->NumberValue(context).ToChecked();
-//                auto density = args[3]->NumberValue(context).ToChecked();
-//                auto fontColor = args[4]->NumberValue(context).ToChecked();
-//                auto ppi = args[5]->NumberValue(context).ToChecked();
-//                auto direction = args[6]->NumberValue(context).ToChecked();
-                auto ctx = canvas_native_webgl_create_no_window(
-                        (int32_t) width,
-                        (int32_t) height,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible,
-                        false
-                );
-                auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
-                                                                            new WebGL2RenderingContext(
-                                                                                    ctx,
-                                                                                    WebGLRenderingVersion::V2));
-
-                args.GetReturnValue().Set(renderingContext);
-                return;
-
-            } else {
-                auto width = (int32_t) args[1]->NumberValue(context).ToChecked();
-                auto height = (int32_t) args[2]->NumberValue(context).ToChecked();
-                auto ctx = canvas_native_webgl_create_no_window(
-                        width,
-                        height,
-                        version.c_str(),
-                        alpha,
-                        antialias,
-                        depth,
-                        fail_if_major_performance_caveat,
-                        power_preference.c_str(),
-                        premultiplied_alpha,
-                        preserve_drawing_buffer,
-                        stencil,
-                        desynchronized,
-                        xr_compatible,
-                        false
-                );
-
-                auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
-                                                                            new WebGL2RenderingContext(
-                                                                                    ctx,
-                                                                                    WebGLRenderingVersion::V2));
-
-                args.GetReturnValue().Set(renderingContext);
-                return;
-            }
-        }
+    if (options.version != 2) {
+        args.GetReturnValue().SetNull();
+        return;
     }
 
-    args.GetReturnValue().SetNull();
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    auto count = args.Length();
+    if (count == 6) {
+        auto ctx = args[1].As<v8::BigInt>()->Int64Value();
+        auto webgl = canvas_native_webgl_create(
+                ctx,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible
+        );
+
+        auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
+                                                                    new WebGL2RenderingContext(
+                                                                            webgl,
+                                                                            WebGLRenderingVersion::V2));
+
+        args.GetReturnValue().Set(renderingContext);
+        return;
+
+    } else if (count ==
+               7) {
+        auto width = args[1]->NumberValue(context).ToChecked();
+        auto height = args[2]->NumberValue(context).ToChecked();
+        auto ctx = canvas_native_webgl_create_no_window(
+                (int32_t) width,
+                (int32_t) height,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible,
+                false
+        );
+        auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
+                                                                    new WebGL2RenderingContext(
+                                                                            ctx,
+                                                                            WebGLRenderingVersion::V2));
+
+        args.GetReturnValue().Set(renderingContext);
+        return;
+
+    } else {
+        auto width = (int32_t) args[1]->NumberValue(context).ToChecked();
+        auto height = (int32_t) args[2]->NumberValue(context).ToChecked();
+        auto ctx = canvas_native_webgl_create_no_window(
+                width,
+                height,
+                options.version,
+                options.alpha,
+                options.antialias,
+                options.depth,
+                options.failIfMajorPerformanceCaveat,
+                options.powerPreference,
+                options.premultipliedAlpha,
+                options.preserveDrawingBuffer,
+                options.stencil,
+                options.desynchronized,
+                options.xrCompatible,
+                false
+        );
+
+        auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
+                                                                    new WebGL2RenderingContext(
+                                                                            ctx,
+                                                                            WebGLRenderingVersion::V2));
+
+        args.GetReturnValue().Set(renderingContext);
+        return;
+    }
+}
+
+void
+CanvasJSIModule::CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto ptr = args[0]->ToBigInt(context).ToLocalChecked()->Int64Value();
+
+    auto wgpu = static_cast<CanvasGPUCanvasContext *>((void *) ptr);
+
+    auto ret = GPUCanvasContextImpl::NewInstance(isolate, new GPUCanvasContextImpl(
+            wgpu));
+    args.GetReturnValue().Set(ret);
 }

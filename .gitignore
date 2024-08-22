@@ -44,3 +44,13 @@ Thumbs.db
 packages/**/angular/dist
 apps/demo/times.html
 rust-skia
+
+/target
+/**/*.rs.bk
+/Cargo.lock
+
+**/canvas-native/target
+**/.fingerprint
+.build
+.nx/cache
+.nx/workspace-data

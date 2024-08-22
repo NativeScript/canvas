@@ -1,8 +1,10 @@
-import { Element } from './Element';
-import { knownFolders, path, File, Utils } from '@nativescript/core';
+import { knownFolders, path, File, Utils, Image, Screen } from '@nativescript/core';
+// @ts-ignore
 import { ImageAsset } from '@nativescript/canvas';
+import { HTMLElement } from './HTMLElement';
+
 declare const NSSCanvasHelpers;
-declare var NSUUID, java, NSData, android;
+// declare var NSUUID, java, NSData, android;
 const b64Extensions = {
 	'/': 'jpg',
 	i: 'png',
@@ -21,6 +23,10 @@ function getMIMEforBase64String(b64) {
 	}
 	const first = input.charAt(0);
 	const mime = b64Extensions[first];
+	// todo support webp on ios
+	if (__IOS__ && mime === 'webp') {
+		throw new Error('Unknown Base64 MIME type: ' + b64);
+	}
 	if (!mime) {
 		throw new Error('Unknown Base64 MIME type: ' + b64);
 	}
@@ -34,13 +40,16 @@ function getUUID() {
 	return java.util.UUID.randomUUID().toString();
 }
 
-export class HTMLImageElement extends Element {
+export class HTMLImageElement extends HTMLElement {
 	private localUri: any;
 	private _onload: any;
+	private _onerror: any;
 	private _complete: any;
 	private _base64: string;
-	_asset;
-	_imageSource: any;
+	width: number = 0;
+	height: number = 0;
+	_asset: ImageAsset;
+	_svg;
 	__id: any;
 
 	decoding = 'auto';
@@ -62,6 +71,14 @@ export class HTMLImageElement extends Element {
 		this._onload = value;
 	}
 
+	get onerror() {
+		return this._onerror;
+	}
+
+	set onerror(value) {
+		this._onerror = value;
+	}
+
 	get complete() {
 		return this._complete;
 	}
@@ -69,13 +86,36 @@ export class HTMLImageElement extends Element {
 	set complete(value) {
 		this._complete = value;
 		if (value) {
-			this.emitter.emit('load', this);
+			this.dispatchEvent({ type: 'load', target: this });
 			this.onload();
 		}
 	}
 
+	// we're {N} :D
+	static _fromSvg(svg) {
+		const img = new HTMLImageElement();
+		if (svg) {
+			const nativeSvg = svg?._svg;
+			if (nativeSvg) {
+				img._svg = svg;
+				img.width = svg.width;
+				img.height = svg.height;
+				img.complete = true;
+				return img;
+			}
+		}
+
+		return null;
+	}
+
 	constructor(props?) {
 		super('img');
+		this.nativeElement = new Image();
+
+		if (!this.nativeElement.__domElement) {
+			this.nativeElement.__domElement = new DOMParser().parseFromString('<img></img>', 'text/html').documentElement as never;
+		}
+
 		this._asset = new ImageAsset();
 		this.__id = getUUID();
 		this._onload = () => {};
@@ -87,7 +127,7 @@ export class HTMLImageElement extends Element {
 		}
 	}
 
-	_load() {
+	async _load() {
 		if (this.src) {
 			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
@@ -106,7 +146,8 @@ export class HTMLImageElement extends Element {
 									if ((global as any).__debug_browser_polyfill_image) {
 										console.log(`nativescript-browser-polyfill: Error:`, error.message);
 									}
-									this.emitter.emit('error', { target: this, error });
+									this.dispatchEvent({ type: 'error', target: this, error });
+									this._onerror?.();
 								} else {
 									this.localUri = localUri;
 									this._load();
@@ -132,24 +173,27 @@ export class HTMLImageElement extends Element {
 										}
 										const owner = ref.get();
 										if (owner) {
-											owner.emitter.emit('error', { target: ref.get(), message });
+											owner.dispatchEvent({ type: 'error', target: ref.get(), message });
+											owner._onerror?.();
 										}
 									},
 								})
 							);
 						}
 					} catch (error) {
+						//	this.dispatchEvent({type: 'loading', target: this });
 						if ((global as any).__debug_browser_polyfill_image) {
 							console.log(`nativescript-browser-polyfill: Error:`, error.message);
 						}
-						this.emitter.emit('error', { target: this, error });
+						this.dispatchEvent({ type: 'error', target: this, error });
+						this._onerror?.();
 					}
 				})();
 				return;
 			}
 
 			if (typeof this.src === 'string') {
-				this.emitter.emit('loading', { target: this });
+				this.dispatchEvent({ type: 'loading', target: this });
 				let async = this.decoding !== 'sync';
 				if (this.src.startsWith('http')) {
 					if (!async) {
@@ -158,8 +202,10 @@ export class HTMLImageElement extends Element {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;
+							this._onload?.();
 						} else {
-							this.emitter.emit('error', { target: this });
+							this.dispatchEvent({ type: 'error', target: this });
+							this._onerror?.();
 						}
 					} else {
 						this._asset
@@ -168,35 +214,43 @@ export class HTMLImageElement extends Element {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
+								this._onload?.();
 							})
 							.catch((e) => {
-								this.emitter.emit('error', { target: this });
+								this.dispatchEvent({ type: 'error', target: this, e });
+								this._onerror?.();
 							});
 					}
 				} else {
-					if (!this.width || !this.height) {
-						this.complete = false;
-						if (!async) {
-							const loaded = this._asset.fromFileSync(this.src);
-							if (loaded) {
+					this.complete = false;
+					let src = this.src;
+					if (src.startsWith('~')) {
+						src = knownFolders.currentApp().path + src.replace('~', '');
+					}
+					if (!async) {
+						const loaded = this._asset.fromFileSync(src);
+						if (loaded) {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = true;
+							this._onload?.();
+						} else {
+							this.dispatchEvent({ type: 'error', target: this });
+							this._onerror?.();
+						}
+					} else {
+						this._asset
+							.fromFile(src)
+							.then((done) => {
 								this.width = this._asset.width;
 								this.height = this._asset.height;
 								this.complete = true;
-							} else {
-								this.emitter.emit('error', { target: this });
-							}
-						} else {
-							this._asset
-								.fromFile(this.src)
-								.then((done) => {
-									this.width = this._asset.width;
-									this.height = this._asset.height;
-									this.complete = true;
-								})
-								.catch((e) => {
-									this.emitter.emit('error', { target: this });
-								});
-						}
+								this._onload?.();
+							})
+							.catch((e) => {
+								this.dispatchEvent({ type: 'error', target: this, e });
+								this._onerror?.();
+							});
 					}
 				}
 			}

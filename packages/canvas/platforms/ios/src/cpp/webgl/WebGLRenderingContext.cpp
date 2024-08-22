@@ -700,7 +700,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             }
             return scope.Escape(v8::Integer::New(isolate, value));
         }
-        case (uint32_t) GLConstants::UNPACK_COLORSPACE_CONVERSION_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnpackColorSpaceConversionWebGL:
             return scope.Escape(v8::Integer::New(isolate,
                                                  canvas_native_webgl_state_get_unpack_colorspace_conversion_webgl(
                                                          this->GetState())));
@@ -719,7 +719,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  canvas_native_f32_buffer_destroy(
+                                                                  canvas_native_f32_buffer_release(
                                                                           (F32Buffer *) deleter_data);
                                                               }
                                                           },
@@ -729,10 +729,10 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
 
             return scope.Escape(v8::Float32Array::New(arraybuffer, 0, size));
         }
-        case (uint32_t) GLConstants::UNPACK_FLIP_Y_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnPackFlipYWebGL:
             return scope.Escape(v8::Boolean::New(isolate, canvas_native_webgl_state_get_flip_y(
                     this->GetState())));
-        case (uint32_t) GLConstants::UNPACK_PREMULTIPLY_ALPHA_WEBGL:
+        case (uint32_t) GLConstants::GLConstantsUnpackPremultiplyAlphaWebGL:
             return scope.Escape(v8::Boolean::New(isolate,
                                                  canvas_native_webgl_state_get_premultiplied_alpha(
                                                          this->GetState())));
@@ -754,7 +754,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
             auto array = v8::Array::New(isolate, (int) len);
 
             for (int j = 0; j < len; ++j) {
-                array->Set(context, j, v8::Boolean::New(isolate, buf[j] == 1));
+                array->Set(context, j, v8::Boolean::New(isolate, buf[j] == 1)).FromJust();
             }
             return scope.Escape(array);
         }
@@ -773,7 +773,7 @@ v8::Local<v8::Value> WebGLRenderingContext::GetParameterInternal(v8::Isolate *is
                                                           [](void *data, size_t length,
                                                              void *deleter_data) {
                                                               if (deleter_data != nullptr) {
-                                                                  canvas_native_i32_buffer_destroy(
+                                                                  canvas_native_i32_buffer_release(
                                                                           (I32Buffer *) deleter_data);
                                                               }
                                                           },
@@ -893,8 +893,6 @@ void WebGLRenderingContext::AttachShader(const v8::FunctionCallbackInfo<v8::Valu
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
     auto programValue = args[0];
     auto shaderValue = args[1];
@@ -1200,59 +1198,24 @@ void WebGLRenderingContext::BufferData(const v8::FunctionCallbackInfo<v8::Value>
         auto usage = args[2]->Uint32Value(context).ToChecked();
 
         if (args[1]->IsObject()) {
-
             auto sizeOrBuf = args[1];
             if (sizeOrBuf->IsArrayBufferView()) {
-                if (sizeOrBuf->IsUint16Array()) {
-                    auto buf = sizeOrBuf.As<v8::Uint16Array>();
+                auto buf = sizeOrBuf.As<v8::ArrayBufferView>();
 
-                    auto array = buf->Buffer();
-                    auto offset = buf->ByteOffset();
-                    auto size = buf->Length();
-                    auto data_ptr =
-                            static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-                    auto data = static_cast<uint16_t *>((void *) data_ptr);
-
-                    canvas_native_webgl_buffer_data_u16(
-                            target,
-                            data, size,
-                            usage,
-                            ptr->GetState()
-                    );
-                } else if (sizeOrBuf->IsFloat32Array()) {
-                    auto buf = sizeOrBuf.As<v8::Float32Array>();
-
-                    auto array = buf->Buffer();
-                    auto offset = buf->ByteOffset();
-                    auto size = buf->Length();
-                    auto data_ptr =
-                            static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-                    auto data = static_cast<float *>((void *) data_ptr);
-
-                    canvas_native_webgl_buffer_data_f32(
-                            target,
-                            data, size,
-                            usage,
-                            ptr->GetState()
-                    );
-                } else {
-                    auto buf = sizeOrBuf.As<v8::ArrayBufferView>();
-
-                    auto array = buf->Buffer();
-                    auto offset = buf->ByteOffset();
-                    auto size = buf->ByteLength();
-                    auto data_ptr =
-                            static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-                    auto data = static_cast<uint8_t *>((void *) data_ptr);
+                auto array = buf->Buffer();
+                auto offset = buf->ByteOffset();
+                auto size = buf->ByteLength();
+                auto data_ptr =
+                        static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
+                auto data = static_cast<uint8_t *>((void *) data_ptr);
 
 
-                    canvas_native_webgl_buffer_data(
-                            target,
-                            data, size,
-                            usage,
-                            ptr->GetState()
-                    );
-                }
+                canvas_native_webgl_buffer_data(
+                        target,
+                        data, size,
+                        usage,
+                        ptr->GetState()
+                );
             } else if (sizeOrBuf->IsArrayBuffer()) {
                 auto array = sizeOrBuf.As<v8::ArrayBuffer>();
 
@@ -1524,8 +1487,7 @@ void WebGLRenderingContext::CompressedTexImage2D(const v8::FunctionCallbackInfo<
                 auto array = buf->Buffer();
                 auto offset = buf->ByteOffset();
                 auto size = buf->ByteLength();
-                auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-                auto data = static_cast<uint8_t *>((void *) data_ptr);
+                auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
                 canvas_native_webgl_compressed_tex_image2d(
@@ -1583,8 +1545,7 @@ WebGLRenderingContext::CompressedTexSubImage2D(const v8::FunctionCallbackInfo<v8
         auto array = buf->Buffer();
         auto offset = buf->ByteOffset();
         auto size = array->ByteLength();
-        auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-        auto data = static_cast<uint8_t *>((void *) data_ptr);
+        auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
         canvas_native_webgl_compressed_tex_sub_image2d(
                 target,
@@ -1854,9 +1815,6 @@ void WebGLRenderingContext::DeleteBuffer(const v8::FunctionCallbackInfo<v8::Valu
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLBuffer) {
@@ -1877,8 +1835,6 @@ void WebGLRenderingContext::DeleteFramebuffer(const v8::FunctionCallbackInfo<v8:
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLFramebuffer) {
@@ -1898,8 +1854,6 @@ void WebGLRenderingContext::DeleteProgram(const v8::FunctionCallbackInfo<v8::Val
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -1922,8 +1876,6 @@ void WebGLRenderingContext::DeleteRenderbuffer(const v8::FunctionCallbackInfo<v8
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
 
     auto value = args[0];
@@ -1948,8 +1900,6 @@ void WebGLRenderingContext::DeleteShader(const v8::FunctionCallbackInfo<v8::Valu
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -1970,8 +1920,6 @@ void WebGLRenderingContext::DeleteTexture(const v8::FunctionCallbackInfo<v8::Val
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
 
     auto value = args[0];
@@ -2048,8 +1996,6 @@ void WebGLRenderingContext::DetachShader(const v8::FunctionCallbackInfo<v8::Valu
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
 
     auto programValue = args[0];
@@ -2398,11 +2344,11 @@ void WebGLRenderingContext::GetAttachedShaders(const v8::FunctionCallbackInfo<v8
             for (int i = 0; i < len; ++i) {
                 auto shader = WebGLShader::NewInstance(isolate, new WebGLShader(
                         buf[i]));
-                array->Set(context, i, shader);
+                array->Set(context, i, shader).FromJust();
             }
             args.GetReturnValue().Set(array);
 
-            canvas_native_u32_buffer_destroy(info);
+            canvas_native_u32_buffer_release(info);
             return;
         }
     }
@@ -2484,63 +2430,81 @@ void WebGLRenderingContext::GetContextAttributes(const v8::FunctionCallbackInfo<
             attr);
 
 
-    ret->Set(context, ConvertToV8String(isolate, "alpha"), v8::Boolean::New(isolate, alpha));
+    ret->Set(context, ConvertToV8String(isolate, "alpha"),
+             v8::Boolean::New(isolate, alpha)).FromJust();
 
     auto antialias = canvas_native_webgl_context_attribute_get_get_antialias(
             attr);
 
     ret->Set(context, ConvertToV8String(isolate, "antialias"),
-             v8::Boolean::New(isolate, antialias));
+             v8::Boolean::New(isolate, antialias)).FromJust();
 
     auto depth = canvas_native_webgl_context_attribute_get_get_depth(
             attr);
 
-    ret->Set(context, ConvertToV8String(isolate, "depth"), v8::Boolean::New(isolate, depth));
+    ret->Set(context, ConvertToV8String(isolate, "depth"),
+             v8::Boolean::New(isolate, depth)).FromJust();
 
     auto fail_if_major_performance_caveat = canvas_native_webgl_context_attribute_get_get_fail_if_major_performance_caveat(
             attr);
 
     ret->Set(context,
              ConvertToV8String(isolate, "failIfMajorPerformanceCaveat"),
-             v8::Boolean::New(isolate, fail_if_major_performance_caveat));
+             v8::Boolean::New(isolate, fail_if_major_performance_caveat)).FromJust();
 
     auto power_preference = canvas_native_webgl_context_attribute_get_get_power_preference(
             attr);
 
+    std::string powerp;
+    switch (power_preference) {
+        case 0:
+            powerp = std::string("default");
+            break;
+        case 1:
+            powerp = std::string("high-performance");
+            break;
+        case 2:
+            powerp = std::string("low-power");
+            break;
+        default:
+            break;
+    }
+
     ret->Set(context, ConvertToV8String(isolate, "powerPreference"),
-             ConvertToV8OneByteString(isolate, (char *) power_preference));
+             ConvertToV8String(isolate, powerp.c_str())).FromJust();
+
 
     auto premultiplied_alpha = canvas_native_webgl_context_attribute_get_get_premultiplied_alpha(
             attr);
 
     ret->Set(context,
              ConvertToV8String(isolate, "premultipliedAlpha"),
-             v8::Boolean::New(isolate, premultiplied_alpha));
+             v8::Boolean::New(isolate, premultiplied_alpha)).FromJust();
 
     auto preserve_drawing_buffer = canvas_native_webgl_context_attribute_get_get_preserve_drawing_buffer(
             attr);
 
     ret->Set(context,
              ConvertToV8String(isolate, "preserveDrawingBuffer"),
-             v8::Boolean::New(isolate, preserve_drawing_buffer));
+             v8::Boolean::New(isolate, preserve_drawing_buffer)).FromJust();
 
     auto stencil = canvas_native_webgl_context_attribute_get_get_stencil(
             attr);
 
     ret->Set(context, ConvertToV8String(isolate, "stencil"),
-             v8::Boolean::New(isolate, stencil));
+             v8::Boolean::New(isolate, stencil)).FromJust();
 
     auto desynchronized = canvas_native_webgl_context_attribute_get_get_desynchronized(
             attr);
 
     ret->Set(context, ConvertToV8String(isolate, "desynchronized"),
-             v8::Boolean::New(isolate, desynchronized));
+             v8::Boolean::New(isolate, desynchronized)).FromJust();
 
     auto xr_compatible = canvas_native_webgl_context_attribute_get_get_xr_compatible(
             attr);
 
     ret->Set(context, ConvertToV8String(isolate, "xrCompatible"),
-             v8::Boolean::New(isolate, xr_compatible));
+             v8::Boolean::New(isolate, xr_compatible)).FromJust();
 
     canvas_native_context_attributes_destroy(attr);
 
@@ -2595,200 +2559,193 @@ void WebGLRenderingContext::GetExtension(const v8::FunctionCallbackInfo<v8::Valu
     auto type = canvas_native_webgl_context_extension_get_type(
             ext);
     switch (type) {
-        case WebGLExtensionType::WebGLExtensionTypeOES_fbo_render_mipmap: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_fbo_render_mipmap: {
             auto ret = OES_fbo_render_mipmapImpl::NewInstance(isolate,
                                                               new OES_fbo_render_mipmapImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_blend_minmax: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_blend_minmax: {
             auto ret = EXT_blend_minmaxImpl::NewInstance(isolate, new EXT_blend_minmaxImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_color_buffer_half_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_color_buffer_half_float: {
             auto ret = EXT_color_buffer_half_floatImpl::NewInstance(isolate,
                                                                     new EXT_color_buffer_half_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_disjoint_timer_query: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_disjoint_timer_query: {
             auto ret = canvas_native_webgl_context_extension_to_ext_disjoint_timer_query(ext);
             auto query = EXT_disjoint_timer_queryImpl::NewInstance(isolate,
                                                                    new EXT_disjoint_timer_queryImpl(
                                                                            ret));
 
             args.GetReturnValue().Set(query);
-            canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_sRGB: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_sRGB: {
             auto ret = EXT_sRGBImpl::NewInstance(isolate, new EXT_sRGBImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_shader_texture_lod: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_shader_texture_lod: {
             auto ret = EXT_shader_texture_lodImpl::NewInstance(isolate,
                                                                new EXT_shader_texture_lodImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeEXT_texture_filter_anisotropic: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeEXT_texture_filter_anisotropic: {
             auto ret = EXT_texture_filter_anisotropicImpl::NewInstance(isolate,
                                                                        new EXT_texture_filter_anisotropicImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_element_index_uint: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_element_index_uint: {
             auto ret = OES_element_index_uintImpl::NewInstance(isolate,
                                                                new OES_element_index_uintImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_standard_derivatives: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_standard_derivatives: {
             auto ret = OES_standard_derivativesImpl::NewInstance(
                     isolate, new OES_standard_derivativesImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_float: {
             auto ret = OES_texture_floatImpl::NewInstance(isolate, new OES_texture_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_float_linear: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_float_linear: {
             auto ret = OES_texture_float_linearImpl::NewInstance(isolate,
                                                                  new OES_texture_float_linearImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float: {
             auto ret = OES_texture_half_floatImpl::NewInstance(isolate,
                                                                new OES_texture_half_floatImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_texture_half_float_linear: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_texture_half_float_linear: {
             auto ret = OES_texture_half_float_linearImpl::NewInstance(isolate,
                                                                       new OES_texture_half_float_linearImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeOES_vertex_array_object: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeOES_vertex_array_object: {
             auto ret = canvas_native_webgl_context_extension_to_oes_vertex_array_object(ext);
             auto array = OES_vertex_array_objectImpl::NewInstance(isolate,
                                                                   new OES_vertex_array_objectImpl(
                                                                           ret));
             args.GetReturnValue().Set(array);
-            canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_color_buffer_float: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_color_buffer_float: {
             auto ret = WEBGL_color_buffer_floatImpl::NewInstance(isolate,
                                                                  new WEBGL_color_buffer_floatImpl());
             if (ptr->GetVersion() ==
                 WebGLRenderingVersion::V2) {
                 ret->Set(context, ConvertToV8String(isolate, "ext_name"),
-                         ConvertToV8String(isolate, "EXT_color_buffer_float"));
+                         ConvertToV8String(isolate, "EXT_color_buffer_float")).FromJust();
             }
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_atc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_atc: {
             auto ret = WEBGL_compressed_texture_atcImpl::NewInstance(isolate,
                                                                      new WEBGL_compressed_texture_atcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc1: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc1: {
             auto ret = WEBGL_compressed_texture_etc1Impl::NewInstance(isolate,
                                                                       new WEBGL_compressed_texture_etc1Impl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc: {
             auto ret = WEBGL_compressed_texture_s3tcImpl::NewInstance(isolate,
                                                                       new WEBGL_compressed_texture_s3tcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_s3tc_srgb: {
             auto ret = WEBGL_compressed_texture_s3tc_srgbImpl::NewInstance(isolate,
                                                                            new WEBGL_compressed_texture_s3tc_srgbImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_etc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_etc: {
             auto ret = WEBGL_compressed_texture_etcImpl::NewInstance(isolate,
                                                                      new WEBGL_compressed_texture_etcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_compressed_texture_pvrtc: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_compressed_texture_pvrtc: {
             auto ret = WEBGL_compressed_texture_pvrtcImpl::NewInstance(isolate,
                                                                        new WEBGL_compressed_texture_pvrtcImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_lose_context: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_lose_context: {
             auto ret = canvas_native_webgl_context_extension_to_lose_context(ext);
             auto ctx = WEBGL_lose_contextImpl::NewInstance(isolate,
                                                            new WEBGL_lose_contextImpl(ret));
 
             args.GetReturnValue().Set(ctx);
-
-            canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeANGLE_instanced_arrays: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeANGLE_instanced_arrays: {
             auto ret = canvas_native_webgl_context_extension_to_angle_instanced_arrays(ext);
             auto instance = ANGLE_instanced_arraysImpl::NewInstance(isolate,
                                                                     new ANGLE_instanced_arraysImpl(
                                                                             ret));
 
             args.GetReturnValue().Set(instance);
-            canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_depth_texture: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_depth_texture: {
             auto ret = WEBGL_depth_textureImpl::NewInstance(isolate, new WEBGL_depth_textureImpl());
             args.GetReturnValue().Set(ret);
             canvas_native_webgl_extension_destroy(ext);
             return;
         }
-        case WebGLExtensionType::WebGLExtensionTypeWEBGL_draw_buffers: {
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeWEBGL_draw_buffers: {
             auto ret = canvas_native_webgl_context_extension_to_draw_buffers(ext);
 
             auto buffers = WEBGL_draw_buffersImpl::NewInstance(isolate,
                                                                new WEBGL_draw_buffersImpl(ret));
 
             args.GetReturnValue().Set(buffers);
-
-            canvas_native_webgl_extension_destroy(ext);
             return;
 
 
         }
-        case WebGLExtensionType::WebGLExtensionTypeNone:
+        case WebGLExtensionType::WebGLExtensionTypeWebGLExtensionTypeNone:
             args.GetReturnValue().SetUndefined();
             canvas_native_webgl_extension_destroy(ext);
             return;
@@ -2846,7 +2803,7 @@ void WebGLRenderingContext::GetFramebufferAttachmentParameter(
         object->Set(context,
                     ConvertToV8String(isolate, "isRenderbuffer"),
                     v8::Boolean::New(isolate,
-                                     true));
+                                     true)).FromJust();
         args.GetReturnValue().Set(object);
 
         canvas_native_webgl_framebuffer_attachment_parameter_destroy(ret);
@@ -2906,7 +2863,6 @@ void WebGLRenderingContext::GetProgramInfoLog(const v8::FunctionCallbackInfo<v8:
 
             if (strlen(log) == 0) {
                 args.GetReturnValue().SetEmptyString();
-                canvas_native_string_destroy((char *) log);
                 return;
             }
 
@@ -3015,7 +2971,6 @@ void WebGLRenderingContext::GetShaderInfoLog(const v8::FunctionCallbackInfo<v8::
 
             if (strlen(log) == 0) {
                 args.GetReturnValue().SetEmptyString();
-                canvas_native_string_destroy((char *) log);
                 return;
             }
 
@@ -3131,7 +3086,6 @@ void WebGLRenderingContext::GetShaderSource(const v8::FunctionCallbackInfo<v8::V
 
             if (strlen(source) == 0) {
                 args.GetReturnValue().SetEmptyString();
-                canvas_native_string_destroy((char *) source);
                 return;
             }
 
@@ -3164,14 +3118,15 @@ WebGLRenderingContext::GetSupportedExtensions(const v8::FunctionCallbackInfo<v8:
     for (int i = 0; i < len; ++i) {
         auto item = canvas_native_string_buffer_get_value_at(exts, i);
         if (item != nullptr) {
-            array->Set(context, i, ConvertToV8OneByteString(isolate, (char *) item));
+            array->Set(context, i, ConvertToV8OneByteString(isolate, (char *) item)).FromJust();
+            canvas_native_string_destroy(item);
         }
 
     }
 
     args.GetReturnValue().Set(array);
 
-    canvas_native_string_buffer_destroy(exts);
+    canvas_native_string_buffer_release(exts);
 }
 
 void
@@ -3314,7 +3269,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                 context, i,
                                 v8::Boolean::New(isolate,
                                                  item ==
-                                                 1));
+                                                 1)).FromJust();
                     }
                     args.GetReturnValue().Set(array);
                     canvas_native_webgl_WebGLResult_destroy(val);
@@ -3336,7 +3291,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_f32_buffer_destroy(
+                                                                          canvas_native_f32_buffer_release(
                                                                                   (F32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3367,7 +3322,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_i32_buffer_destroy(
+                                                                          canvas_native_i32_buffer_release(
                                                                                   (I32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3398,7 +3353,7 @@ WebGLRenderingContext::GetUniform(const v8::FunctionCallbackInfo<v8::Value> &arg
                                                                      void *deleter_data) {
                                                                       if (deleter_data !=
                                                                           nullptr) {
-                                                                          canvas_native_u32_buffer_destroy(
+                                                                          canvas_native_u32_buffer_release(
                                                                                   (U32Buffer *) deleter_data);
                                                                       }
                                                                   },
@@ -3501,7 +3456,7 @@ WebGLRenderingContext::GetVertexAttrib(const v8::FunctionCallbackInfo<v8::Value>
                                                       [](void *data, size_t length,
                                                          void *deleter_data) {
                                                           if (deleter_data != nullptr) {
-                                                              canvas_native_f32_buffer_destroy(
+                                                              canvas_native_f32_buffer_release(
                                                                       (F32Buffer *) deleter_data);
                                                           }
                                                       },
@@ -3560,7 +3515,6 @@ WebGLRenderingContext::IsBuffer(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -3619,8 +3573,6 @@ WebGLRenderingContext::IsFramebuffer(const v8::FunctionCallbackInfo<v8::Value> &
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLFramebuffer) {
@@ -3642,11 +3594,9 @@ void
 WebGLRenderingContext::IsProgram(const v8::FunctionCallbackInfo<v8::Value> &args) {
     WebGLRenderingContext *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
-        args.GetReturnValue().SetNull();
+        args.GetReturnValue().Set(false);
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -3674,8 +3624,6 @@ WebGLRenderingContext::IsRenderbuffer(const v8::FunctionCallbackInfo<v8::Value> 
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLRenderbuffer) {
@@ -3702,8 +3650,6 @@ WebGLRenderingContext::IsShader(const v8::FunctionCallbackInfo<v8::Value> &args)
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLShader) {
@@ -3728,8 +3674,6 @@ WebGLRenderingContext::IsTexture(const v8::FunctionCallbackInfo<v8::Value> &args
         args.GetReturnValue().Set(false);
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -3773,7 +3717,6 @@ WebGLRenderingContext::LinkProgram(const v8::FunctionCallbackInfo<v8::Value> &ar
         return;
     }
 
-    auto isolate = args.GetIsolate();
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::WebGLProgram) {
@@ -4215,7 +4158,6 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                 if (image_asset !=
                     nullptr) {
 
-
                     canvas_native_webgl_tex_image2d_image_asset(
                             target,
                             level,
@@ -4278,6 +4220,30 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                     );
                 }
                 return;
+            }
+            case NativeType::ImageData: {
+                auto image_data = ImageDataImpl::GetPointer(pixels.As<v8::Object>());
+                if (image_data != nullptr) {
+                    auto width = canvas_native_image_data_get_width(image_data->GetImageData());
+                    auto height = canvas_native_image_data_get_height(image_data->GetImageData());
+                    auto buffer = canvas_native_image_data_get_data(image_data->GetImageData());
+                    auto size = canvas_native_u8_buffer_get_length(buffer);
+                    auto data = canvas_native_u8_buffer_get_bytes(buffer);
+                    canvas_native_webgl_tex_image2d(
+                            target,
+                            level,
+                            internalformat,
+                            width,
+                            height,
+                            format,
+                            type,
+                            GL_RGBA,
+                            data,
+                            size,
+                            ptr->GetState()
+                    );
+                }
+
             }
             default:
                 break;
@@ -4348,8 +4314,7 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = array->ByteLength();
-            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-            auto data = static_cast<uint8_t *>((void *) data_ptr);
+            auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
             canvas_native_webgl_tex_image2d(
@@ -4385,8 +4350,113 @@ WebGLRenderingContext::TexImage2D(const v8::FunctionCallbackInfo<v8::Value> &arg
                     ptr->GetState()
             );
             return;
-        }
+        } else {
+            auto objectType = GetNativeType(value);
 
+            switch (objectType) {
+                case NativeType::ImageAsset: {
+                    auto image_asset = ImageAssetImpl::GetPointer(value.As<v8::Object>());
+
+                    if (image_asset !=
+                        nullptr) {
+
+                        canvas_native_webgl2_tex_image2d_image_asset(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_asset->GetImageAsset(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::ImageBitmap: {
+                    auto image_bitmap = ImageBitmapImpl::GetPointer(value.As<v8::Object>());
+
+                    if (image_bitmap !=
+                        nullptr) {
+                        canvas_native_webgl2_tex_image2d_image_asset(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_bitmap->GetImageAsset(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::CanvasRenderingContext2D: {
+                    auto canvas_2d = CanvasRenderingContext2DImpl::GetPointer(
+                            value.As<v8::Object>());
+
+                    if (canvas_2d != nullptr) {
+                        canvas_native_webgl2_tex_image2d_canvas2d(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                canvas_2d->GetContext(),
+                                ptr->GetState()
+                        );
+                    }
+
+                    return;
+                }
+                case NativeType::WebGLRenderingContextBase: {
+                    auto gl = WebGLRenderingContext::GetPointer(value.As<v8::Object>());
+
+                    if (gl != nullptr) {
+                        canvas_native_webgl2_tex_image2d_webgl(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                gl->GetState(),
+                                ptr->GetState()
+                        );
+                    }
+                    return;
+                }
+                case NativeType::ImageData: {
+                    auto image_data = ImageDataImpl::GetPointer(value.As<v8::Object>());
+                    if (image_data != nullptr) {
+                        canvas_native_webgl2_tex_image2d_image_data(
+                                target,
+                                level,
+                                internalformat,
+                                width,
+                                height,
+                                border,
+                                format,
+                                type,
+                                image_data->GetImageData(),
+                                ptr->GetState()
+                        );
+                    }
+
+                }
+                default:
+                    break;
+            }
+        }
     }
 }
 
@@ -4538,6 +4608,30 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
                 }
                 return;
             }
+            case NativeType::ImageData: {
+                auto image_data = ImageDataImpl::GetPointer(pixels.As<v8::Object>());
+                if (image_data != nullptr) {
+                    auto width = canvas_native_image_data_get_width(image_data->GetImageData());
+                    auto height = canvas_native_image_data_get_height(image_data->GetImageData());
+                    auto buffer = canvas_native_image_data_get_data(image_data->GetImageData());
+                    auto size = canvas_native_u8_buffer_get_length(buffer);
+                    auto data = canvas_native_u8_buffer_get_bytes(buffer);
+                    canvas_native_webgl_tex_sub_image2d(
+                            target,
+                            level,
+                            xoffset,
+                            yoffset,
+                            width,
+                            height,
+                            format,
+                            GL_RGBA,
+                            data,
+                            size,
+                            ptr->GetState()
+                    );
+                }
+
+            }
             default:
                 break;
         }
@@ -4569,8 +4663,7 @@ WebGLRenderingContext::TexSubImage2D(const v8::FunctionCallbackInfo<v8::Value> &
             auto array = buf->Buffer();
             auto offset = buf->ByteOffset();
             auto size = array->ByteLength();
-            auto data_ptr = static_cast<uint8_t *>(array->GetBackingStore()->Data()) + offset;
-            auto data = static_cast<uint8_t *>((void *) data_ptr);
+            auto data = static_cast<const uint8_t *>(array->GetBackingStore()->Data()) + offset;
 
 
             canvas_native_webgl_tex_sub_image2d(
@@ -4717,7 +4810,6 @@ WebGLRenderingContext::VertexAttrib1fv(const v8::FunctionCallbackInfo<v8::Value>
     auto value = args[1];
     if (value->IsFloat32Array()) {
         auto buf = value.As<v8::Float32Array>();
-
         auto array = buf->Buffer();
         auto offset = buf->ByteOffset();
         auto size = buf->Length();
@@ -5705,10 +5797,8 @@ WebGLRenderingContext::UseProgram(const v8::FunctionCallbackInfo<v8::Value> &arg
         return;
     }
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
-    if (value->IsNull()) {
+    if (value->IsNullOrUndefined()) {
         canvas_native_webgl_use_program(0,
                                         ptr->GetState());
 
@@ -5734,8 +5824,6 @@ WebGLRenderingContext::ValidateProgram(const v8::FunctionCallbackInfo<v8::Value>
     if (ptr == nullptr) {
         return;
     }
-
-    auto isolate = args.GetIsolate();
 
     auto value = args[0];
     auto type = GetNativeType(value);
@@ -6300,7 +6388,6 @@ WebGLRenderingContext::SetMethods(v8::Isolate *isolate, const v8::Local<v8::Obje
 
     SetFastMethod(isolate, tmpl, "__stopRaf", __StopRaf, &fast_stop_raf_,
                   v8::Local<v8::Value>());
-
 
 
     tmpl->SetAccessor(ConvertToV8String(isolate, "continuousRenderMode"), GetContinuousRenderMode,

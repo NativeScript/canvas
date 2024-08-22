@@ -81,7 +81,9 @@ export class DemoModel extends DemoSharedCanvas {
 
 	colors = ['blue', 'yellow'];
 
-	image = new ImageAsset();
+	// image = new ImageAsset();
+
+	image = 'https://images.unsplash.com/photo-1722494285961-9bc4bb89ad93?q=80&w=3088&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
 	width = 256;
 	height = 256;
@@ -95,7 +97,6 @@ export class DemoModel extends DemoSharedCanvas {
 	sprites = [];
 	constructor() {
 		super();
-		this.image.fromFile('~/assets/file-assets/webgl/svh.jpeg');
 	}
 
 	domLoaded(event) {
@@ -154,7 +155,6 @@ export class DemoModel extends DemoSharedCanvas {
 		this.set('img', img);
 
 		*/
-
 	}
 
 	rectLoaded(event) {

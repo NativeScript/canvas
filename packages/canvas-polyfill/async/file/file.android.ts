@@ -21,15 +21,15 @@ export class FileManager {
 		}
 	}
 
-	static _readFile;
+	static supportFastRead;
 
 	public static readFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
 		//const opts = new com.github.triniwiz.async.Async2.FileManager.Options();
 		//opts.asStream = options.asStream;
-		if (this._readFile === undefined) {
-			this._readFile = !!global?.CanvasModule?.readFile;
+		if (this.supportFastRead === undefined) {
+			this.supportFastRead = typeof global?.CanvasModule?.readFile === 'function';
 		}
-		if (this._readFile) {
+		if (this.supportFastRead) {
 			global?.CanvasModule?.readFile(path, (error, buffer: ArrayBuffer) => {
 				if (error) {
 					callback(new Error(error), null);
@@ -38,7 +38,7 @@ export class FileManager {
 				}
 			});
 		} else {
-			com.github.triniwiz.async.Async2.FileManager.readFile(
+			com.github.triniwiz.async.Async2.FileManager.readFileBuffer(
 				path,
 				null,
 				new com.github.triniwiz.async.Async2.FileManager.Callback({
@@ -46,7 +46,7 @@ export class FileManager {
 						callback(param0, null);
 					},
 					onComplete(param0: any): void {
-						callback(null, param0);
+						callback(null, (<any>ArrayBuffer).from(param0));
 					},
 				})
 			);

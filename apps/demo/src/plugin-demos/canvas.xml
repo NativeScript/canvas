@@ -1,11 +1,45 @@
-<Page xmlns:canvas="@nativescript/canvas" xmlns:ui="@nativescript/canvas/dom/index" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
+<Page xmlns:canvas="@nativescript/canvas"  xmlns:ui="@nativescript/canvas/dom/index" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo" class="page">
     <Page.actionBar>
-        <ActionBar title="canvas 2.0" icon="" class="action-bar">
+        <ActionBar title="Canvas 2.0" icon="" class="action-bar">
         </ActionBar>
     </Page.actionBar>
 
-  <GridLayout rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" width="100%" height="100%">
-  
+  <GridLayout rows="*" columns="*" loaded="{{ gridLoaded }}" iosOverflowSafeArea="false" style="width:100%; height:100%">
+
+
+<!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}">
+<ui:Line
+        p1="{{({x: 10, y: 10})}}"
+        p2="{{({x: 256, y: 256})}}"
+        color="lightblue"
+        paintStyle="stroke"
+        strokeWidth="8"
+      />
+ </ui:Dom>  -->
+
+
+ <!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}">
+    <ui:Image image="{{image}}" fit="contain" x="50" y="0"  width="256" height="256"/>
+ </ui:Dom> -->
+
+ <!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}">
+   <ui:Points
+        points="{{ points }}"
+        mode="polygon"
+        color="lightblue"
+        paintStyle="stroke"
+        strokeWidth="4"
+      />
+ </ui:Dom> -->
+  <!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}">
+     <ui:Text
+        x="0"
+        y="100"
+        text="Hello World"
+        font="bold 32px serif"
+      />
+ </ui:Dom> -->
+
   <!-- <ui:Dom rowSpan="2" colSpan="2" loaded="{{ domLoaded }}"> -->
 
 
@@ -83,7 +117,7 @@ loaded="{{ rectLoaded }}"
         <ui:Paint color="#adbce6" paintStyle="stroke" strokeWidth="{{strokeWidth}}" />
         <ui:Paint color="#ade6d8" paintStyle="stroke" strokeWidth="{{strokeWidth / 2}}" />
       </ui:Rect> -->
-<!-- 
+<!--
         <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR}}" color="#51AFED" />
       <ui:Group color="lightblue" paintStyle="stroke" strokeWidth="10">
         <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR / 2}}" />
@@ -97,10 +131,10 @@ loaded="{{ rectLoaded }}"
         origin="{{origin}}"
         transform="{{[{ skewX: Math.PI / 6 }]}}"
       >
-        <ui:RoundedRect x="64" y="64" width="128" height="128" r="10" /> 
+        <ui:RoundedRect x="64" y="64" width="128" height="128" r="10" />
 
    </ui:Group> -->
-  
+
 
    <!-- <ui:Circle cx="{{groupR}}" cy="{{groupR}}" r="{{groupR}}" color="#51AFED" />
       <ui:Group color="lightblue" paintStyle="stroke" strokeWidth="10">
@@ -129,17 +163,16 @@ loaded="{{ rectLoaded }}"
         <ui:Shadow dx="-12" dy="-12" blur="25" color="#c7f8ff" />
       </ui:RoundedRect>
 -->
-        
+
   <!-- </ui:Dom>  -->
-   
-  
-  <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/> -->
-		 <canvas:Canvas rowSpan="2" colSpan="2" ready="{{ canvasLoaded }}"
-									 layoutChanged="{{ onLayout }}"/> 
-                                     <!-- <canvas:Svg  id="1" width="100%" height="100%" src="{{src1}}" loaded="{{svgViewLoaded}}"/> -->
-                                     <!-- <canvas:Svg  id="2" col="1" width="100%" height="100%" src="{{src2}}" loaded="{{svgViewLoaded}}"/> -->
-                                      <!-- <canvas:Svg  id="3" row="1" width="100%" height="100%" src="{{src3}}" loaded="{{svgViewLoaded}}"/> -->
-                                     <!-- <canvas:Svg id="4" row="1" col="1" width="100%" height="100%" src="{{src4}}" loaded="{{svgViewLoaded}}"/> -->
+
+
+  <!-- <WebView rowSpan="2" colSpan="2" height="100%" width="100%" loaded="loaded"/>" -->
+
+  <GridLayout verticalAlignment="top" rowSpan="2" colSpan="2" height="100%" width="100%">
+   <canvas:Canvas ready="{{ canvasLoaded }}"/>
+  </GridLayout>
+		
     <!-- <Button height="40" text="Draw" tap="{{ draw }}"/> -->
 
     <!-- <ScrollView  rowSpan="4" visibility="{{ show ? 'visible': 'collapse' }}" orientation="vertical">

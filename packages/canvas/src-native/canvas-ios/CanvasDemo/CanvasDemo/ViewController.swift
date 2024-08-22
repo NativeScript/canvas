@@ -18,16 +18,37 @@ class ViewController: UIViewController {
     }
     
     required init?(coder: NSCoder) {
-        canvas = NSCCanvas()
         super.init(coder: coder)
-         view.addSubview(canvas!)
     }
+        
     
    // var svg: TNSSVG?
     override func viewDidLoad() {
-        super.viewDidLoad()
+       // super.viewDidLoad()
+        canvas = NSCCanvas(frame: .zero)
+        view.addSubview(canvas!)
+        canvas?.frame = view.frame
         view.backgroundColor = .white
-        canvas?.forceLayout(view.bounds.width, view.bounds.height)
+        let c = NSCCanvas(frame: .zero)
+        
+        let cc = c.create2DContext(
+                                     true,
+                                     true,
+                                     true,
+                                     false,
+                                     0,
+                                     true,
+                                     false,
+                                     false,
+                                     false,
+                                     false,
+                                     -16777216
+         )
+        
+    
+        print(canvas?.subviews[0], canvas)
+        
+      //  canvas?.forceLayout(view.bounds.width, view.bounds.height)
        // canvas = NSCCanvas(frame: view.bounds)
         //view.addSubview(canvas!)
 //        canvas?.frame = view.frame
@@ -38,7 +59,7 @@ class ViewController: UIViewController {
                                     true,
                                     true,
                                     false,
-                                    "default",
+                                    0,
                                     true,
                                     false,
                                     false,
@@ -65,7 +86,7 @@ class ViewController: UIViewController {
                                     true,
                                     true,
                                     false,
-                                    "default",
+                                    0,
                                     true,
                                     false,
                                     false,
@@ -75,7 +96,9 @@ class ViewController: UIViewController {
         )
             
   
-        canvas2.forceLayout(300, 300)
+      //  canvas2.forceLayout(300, 300)
+        
+        print(canvas2.subviews[0])
 
             
         
@@ -83,18 +106,17 @@ class ViewController: UIViewController {
 
          glGetIntegerv(GLenum(GL_VIEWPORT), &vp)
 
-         print(vp)
         
 
-       canvas2.context2DTest(ctx2)
+//       canvas2.context2DTest(ctx2)
 //
        let glView = canvas2.subviews.first as? GLKView
 //
         let data = glView?.snapshot.pngData()?.base64EncodedData()
        
-        if(data != nil){
-            print(String(data: data!, encoding: .utf8))
-        }
+//        if(data != nil){
+//            print(String(data: data!, encoding: .utf8))
+//        }
         
         /*var start = CACurrentMediaTime()
         print(canvas?.context2DTestToDataURL(ctx))

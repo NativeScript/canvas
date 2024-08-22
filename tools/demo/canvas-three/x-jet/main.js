@@ -29,14 +29,17 @@ let height = 0;
 const root = '~/assets/x-jet/';
 let context;
 export function init(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio; //context.drawingBufferWidth;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio; //context.drawingBufferHeight
 	context = canvas.getContext('webgl2');
-	width = canvas.width;//context.drawingBufferWidth;
-	height = canvas.height;//context.drawingBufferHeight;
+	width = canvas.width;
+	height = canvas.height;
+
 	renderer = new THREE.WebGLRenderer({ context, antialias: false });
-	renderer.setPixelRatio(window.devicePixelRatio); // reduce this value for better quality 1 is original too heavy and not needed for mobile
-	renderer.setSize(width, height);
+	renderer.setPixelRatio(1); // reduce this value for better quality 1 is original too heavy and not needed for mobile
+	renderer.setSize(height, height);
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	renderer.outputEncoding = THREE.sRGBEncoding;
+	//	renderer.outputEncoding = THREE.sRGBEncoding;
 	//document.body.appendChild(renderer.domElement);
 
 	scene = new THREE.Scene();
@@ -83,7 +86,7 @@ export function init(canvas) {
 	pmremGenerator = new THREE.PMREMGenerator(renderer);
 
 	const loader = new GLTFLoader();
-	loader.setPath(root).load('TriniShip.glb', function (gltf) {
+	loader.load(root + 'TriniShip.glb', function (gltf) {
 		ship = gltf.scene;
 
 		shipContainer.add(ship);
@@ -99,7 +102,7 @@ export function init(canvas) {
 	});
 
 	const droneLoader = new GLTFLoader();
-	droneLoader.setPath(root).load('Drone.glb', function (gltf) {
+	droneLoader.load(root + 'Drone.glb', function (gltf) {
 		const droneContainer = new THREE.Group();
 		const map = new THREE.TextureLoader().load(root + 'explosion.png');
 		const material = new THREE.SpriteMaterial({ map: map, transparent: true });
@@ -123,7 +126,7 @@ export function init(canvas) {
 
 	updateSun();
 
-	controls = new OrbitControls(camera, canvas);
+	controls = new OrbitControls(camera, canvas.toHTMLCanvas());
 	controls.enableDamping = true;
 	controls.maxPolarAngle = Math.PI * 0.495;
 	controls.minDistance = 40.0;

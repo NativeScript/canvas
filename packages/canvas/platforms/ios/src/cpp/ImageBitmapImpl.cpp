@@ -5,11 +5,11 @@
 #include "ImageBitmapImpl.h"
 #include "Caches.h"
 
-ImageBitmapImpl::ImageBitmapImpl(ImageAsset* asset)
+ImageBitmapImpl::ImageBitmapImpl(const ImageAsset *asset)
         : bitmap_(asset) {}
 
-ImageBitmapImpl::~ImageBitmapImpl(){
-    canvas_native_image_asset_destroy(bitmap_);
+ImageBitmapImpl::~ImageBitmapImpl() {
+    canvas_native_image_asset_release(bitmap_);
     this->bitmap_ = nullptr;
 }
 
@@ -56,6 +56,9 @@ v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "close"), v8::FunctionTemplate::New(isolate, Close));
 
+    tmpl->SetAccessor(
+            ConvertToV8String(isolate, "__addr"),
+            GetAddr);
 
     cache->ImageBitmapTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -93,6 +96,8 @@ void ImageBitmapImpl::Close(const v8::FunctionCallbackInfo<v8::Value> &args) {
         return;
     }
 
+    canvas_native_image_asset_close(ptr->GetImageAsset());
+
     ptr->closed_ = true;
 }
 
@@ -121,11 +126,11 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
             auto premultiplyAlpha = ConvertFromV8String(isolate, premultiplyAlphaValue);
 
             if (premultiplyAlpha == "premultiply") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaPremultiply;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaPremultiply;
             }
 
             if (premultiplyAlpha == "none") {
-                ret.premultiplyAlpha = ImageBitmapPremultiplyAlphaNone;
+                ret.premultiplyAlpha = ImageBitmapPremultiplyAlpha::ImageBitmapPremultiplyAlphaAlphaNone;
             }
         }
 
@@ -184,6 +189,20 @@ ImageBitmapImpl::HandleOptions(v8::Isolate *isolate, const v8::Local<v8::Value> 
     return ret;
 }
 
-ImageAsset* ImageBitmapImpl::GetImageAsset() {
+
+void
+ImageBitmapImpl::GetAddr(v8::Local<v8::String> name,
+                        const v8::PropertyCallbackInfo<v8::Value> &info) {
+    auto ptr = GetPointer(info.This());
+    if (ptr != nullptr) {
+        auto isolate = info.GetIsolate();
+        auto ret = std::to_string(canvas_native_image_asset_get_addr(ptr->GetImageAsset()));
+        info.GetReturnValue().Set(ConvertToV8String(isolate, ret));
+        return;
+    }
+    info.GetReturnValue().SetEmptyString();
+}
+
+const ImageAsset *ImageBitmapImpl::GetImageAsset() {
     return this->bitmap_;
 }

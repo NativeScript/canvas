@@ -1,33 +1,18 @@
 package org.nativescript.canvas
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 
-internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
+class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	private var isCreated = false
 	private var isCreatedWithZeroSized = false
 	internal var canvas: NSCCanvas? = null
-
-	private fun setScaling() {
-		val density = resources.displayMetrics.density
-		if (ignorePixelScaling) {
-			scaleX = density
-			scaleY = density
-		} else {
-			scaleX = 1f
-			scaleY = 1f
-		}
-	}
+	private var wasDestroyed = false
 
 	internal var isReady = false
-
-	var ignorePixelScaling: Boolean = false
-		set(value) {
-			field = value
-			setScaling()
-		}
 
 	constructor(context: Context) : super(context) {
 		init()
@@ -38,6 +23,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	fun init() {
+		holder.setFormat(PixelFormat.RGBA_8888)
 		setZOrderOnTop(true)
 		holder.addCallback(this)
 	}
@@ -47,6 +33,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 			isCreatedWithZeroSized = true
 			isCreated = true
 		}
+		wasDestroyed = false
 	}
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -63,7 +50,7 @@ internal class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	override fun surfaceDestroyed(holder: SurfaceHolder) {
-		isCreated = false
-		isCreatedWithZeroSized = false
+		wasDestroyed = true
+		canvas?.surfaceDestroyed()
 	}
 }

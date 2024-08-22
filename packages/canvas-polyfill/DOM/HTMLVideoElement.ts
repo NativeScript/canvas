@@ -1,7 +1,10 @@
-import { Element } from './Element';
+import { HTMLElement } from './HTMLElement';
+
 let Video: any;
-export class HTMLVideoElement extends Element {
+
+export class HTMLVideoElement extends HTMLElement {
 	_video;
+
 	constructor() {
 		super('video');
 		if (!Video) {
@@ -13,14 +16,23 @@ export class HTMLVideoElement extends Element {
 		}
 		if (Video) {
 			this._video = Video.createCustomView();
+			this.nativeElement = this._video;
+
+			if (!this.nativeElement.__domElement) {
+				this.nativeElement.__domElement = new DOMParser().parseFromString('<video></video>', 'text/html').documentElement as never;
+			}
 		}
 	}
 
-	addEventListener(type: string, listener: Function, useCapture: boolean | any) {
-		this._video?.addEventListener(type, listener, useCapture);
-	}
-	removeEventListener(type: string, listener: Function, useCapture: boolean | any) {
-		this._video?.removeEventListener(type, listener, useCapture);
+	canPlayType(type): '' | 'probably' | 'maybe' {
+		// "video/webm"
+		switch (type) {
+			case 'video/mp4':
+			case 'video/ogg':
+				return 'probably';
+			default:
+				return '';
+		}
 	}
 
 	requestVideoFrameCallback(callback: Function) {

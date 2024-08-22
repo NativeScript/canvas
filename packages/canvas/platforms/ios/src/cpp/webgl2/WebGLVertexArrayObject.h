@@ -9,7 +9,7 @@
 #include "Helpers.h"
 #include "ObjectWrapperImpl.h"
 
-class WebGLVertexArrayObject: ObjectWrapperImpl {
+class WebGLVertexArrayObject : ObjectWrapperImpl {
 public:
     WebGLVertexArrayObject(uint32_t vertexArrayObject) : vertexArrayObject_(vertexArrayObject) {}
 
@@ -38,7 +38,7 @@ public:
         v8::EscapableHandleScope scope(isolate);
         auto object = WebGLVertexArrayObject::GetCtor(isolate)->GetFunction(
                 context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-        SetNativeType( object, NativeType::WebGLVertexArrayObject);
+        SetNativeType(vertexArrayObject, NativeType::WebGLVertexArrayObject);
         object->SetAlignedPointerInInternalField(0, vertexArrayObject);
         vertexArrayObject->BindFinalizer(isolate, object);
         return scope.Escape(object);

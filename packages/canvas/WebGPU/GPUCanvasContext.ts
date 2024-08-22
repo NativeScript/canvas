@@ -54,8 +54,6 @@ export class GPUCanvasContext {
 			presentMode: 'fifo',
 			...options,
 		};
-
-		console.log(opts);
 		if (__ANDROID__ || __IOS__) {
 			const capabilities = this.getCapabilities(options?.device?.[adapter_]);
 

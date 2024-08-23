@@ -60,10 +60,14 @@ public:
     static void GetHeight(v8::Local<v8::String> name,
                           const v8::PropertyCallbackInfo<v8::Value> &info);
 
+    static void GetReference(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void GetAddr(v8::Local<v8::String> name,
                         const v8::PropertyCallbackInfo<v8::Value> &info);
 
     static void Close(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromAsset(const v8::FunctionCallbackInfo<v8::Value> &args);
 
 private:
     const ImageAsset *bitmap_;

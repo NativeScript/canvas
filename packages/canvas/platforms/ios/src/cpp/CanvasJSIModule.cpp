@@ -145,6 +145,7 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
         Path2D::Init(canvasMod, isolate);
         ImageDataImpl::Init(canvasMod, isolate);
         ImageAssetImpl::Init(canvasMod, isolate);
+        ImageBitmapImpl::Init(canvasMod, isolate);
         CanvasGradient::Init(canvasMod, isolate);
         CanvasPattern::Init(canvasMod, isolate);
         MatrixImpl::Init(canvasMod, isolate);
@@ -1248,7 +1249,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                 auto ret = canvas_native_helper_read_file(file.c_str());
 
                 if (!canvas_native_helper_read_file_has_error(ret)) {
-                    auto buf = canvas_native_helper_read_file_get_data(ret);
+                    auto buf = canvas_native_helper_read_file_take_data(ret);
 
                     jsi_callback->SetData(buf);
 

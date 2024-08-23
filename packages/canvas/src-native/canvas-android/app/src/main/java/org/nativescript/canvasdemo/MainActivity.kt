@@ -24,6 +24,8 @@ import org.json.JSONObject
 import org.nativescript.canvas.*
 import java.io.*
 import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.Executors
 import kotlin.Exception
 
@@ -190,9 +192,6 @@ class MainActivity : AppCompatActivity() {
 					canvas.surfaceWidth = (canvas.width / resources.displayMetrics.density).toInt()
 
 
-
-
-
 					executor.execute {
 						try {
 							//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -202,24 +201,45 @@ class MainActivity : AppCompatActivity() {
 							}
 
 							val url =
-								URL("https://picsum.photos/seed/picsum/${canvas.surfaceWidth}/${canvas.surfaceHeight}")
-							val fs = FileOutputStream(file)
+								URL("https://raw.githubusercontent.com/NativeScript/canvas/master/tools/demo/canvas-pixi/assets/images/star.png")
+							val fs = ByteArrayOutputStream()
+							url.openStream()
 							url.openStream().use { input ->
 								fs.use { output ->
 									input.copyTo(output)
 								}
 							}
-							val bm = BitmapFactory.decodeFile(file.absolutePath)
+
+							val b = ByteBuffer.allocateDirect(fs.size())
+							b.order(ByteOrder.nativeOrder())
+							b.put(fs.toByteArray())
+							b.rewind()
+							val bm = NSCImageAsset.createImageAsset()
+							NSCImageBitmap.createFrom(bm, b, object: NSCImageBitmap.Callback{
+								override fun onComplete(done: Boolean) {
+									runOnUiThread {
+										NSCCanvasRenderingContext2D.drawImage(
+											ctx,
+											bm,
+											0F,
+											0F
+										)
+										NSCCanvas.context2DRender(ctx)
+									}
+								}
+							})
+
+//							val bm = BitmapFactory.decodeFile(file.absolutePath)
 
 
 //							NSCImageAsset.loadFromPath(asset, file.absolutePath)
 
-							NSCImageAsset.loadImageFromBitmap(asset, bm)
-							runOnUiThread {
-
-								NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
-								NSCCanvas.context2DRender(ctx)
-							}
+//							NSCImageAsset.loadImageFromBitmap(asset, bm)
+//							runOnUiThread {
+//
+//								NSCCanvasRenderingContext2D.drawImage(ctx, asset, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
+//								NSCCanvas.context2DRender(ctx)
+//							}
 
 						}catch (e: Exception){
 							e.printStackTrace()

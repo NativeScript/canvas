@@ -245,7 +245,7 @@ class NSCImageAsset(asset: Long) {
 		private external fun nativeCreateImageAsset(): Long
 
 		@JvmStatic
-		private external fun nativeDestroyImageAsset(asset: Long)
+		external fun nativeDestroyImageAsset(asset: Long)
 
 		@JvmStatic
 		private external fun nativeLoadFromBitmap(asset: Long, bitmap: Bitmap): Boolean

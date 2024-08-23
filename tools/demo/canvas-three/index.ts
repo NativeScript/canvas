@@ -1,5 +1,5 @@
 import { DemoSharedBase } from '../utils';
-import * as THREE from '@nativescript/canvas-three';
+// import * as THREE from '@nativescript/canvas-three';
 // import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 // import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader';
 // import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
@@ -44,11 +44,11 @@ import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
 
 import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer';
 
-class IconMesh extends THREE.Mesh {
-	constructor() {
-		super(new THREE.BoxGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
-	}
-}
+// class IconMesh extends THREE.Mesh {
+// 	constructor() {
+// 		super(new THREE.BoxGeometry(5.0, 5.0, 5.0), new THREE.MeshNormalMaterial());
+// 	}
+// }
 
 // global.console.warn = () => {};
 
@@ -132,7 +132,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
 		canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
 
-		var camera, scene, renderer: WebGPURenderer;
+		/*	var camera, scene, renderer: WebGPURenderer;
 		var geometry, material, mesh;
 		var context: GPUCanvasContext;
 
@@ -177,7 +177,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			console.log('end');
 			requestAnimationFrame(animate);
 		}
-
+*/
 		//animate();
 	}
 

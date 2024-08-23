@@ -26,6 +26,23 @@ void ImageBitmapImpl::Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isol
     canvasModule->Set(context, ConvertToV8String(isolate, "ImageBitmap"), func);
 }
 
+
+void ImageBitmapImpl::FromAsset(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto asset = args[0];
+    auto type = GetNativeType(asset);
+    auto isolate = args.GetIsolate();
+    if (type == NativeType::ImageAsset){
+        auto ptr = ImageAssetImpl::GetPointer(asset.As<v8::Object>());
+        auto ret = canvas_native_image_asset_reference(ptr->GetImageAsset());
+        auto bitmap = new ImageBitmapImpl(ret);
+        auto data = v8::External::New(isolate, bitmap);
+        auto object = ImageBitmapImpl::NewInstance(isolate, data);
+        args.GetReturnValue().Set(object);
+        return;
+    }
+    args.GetReturnValue().SetNull();
+}
+
 ImageBitmapImpl *ImageBitmapImpl::GetPointer(v8::Local<v8::Object> object) {
     auto ptr = object->GetAlignedPointerFromInternalField(0);
     if (ptr == nullptr) {
@@ -45,7 +62,10 @@ v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
     ctorTmpl->InstanceTemplate()->SetInternalFieldCount(2);
     ctorTmpl->SetClassName(ConvertToV8String(isolate, "ImageBitmap"));
 
+    ctorTmpl->Set(ConvertToV8String(isolate, "fromAsset"), v8::FunctionTemplate::New(isolate, FromAsset));
+
     auto tmpl = ctorTmpl->InstanceTemplate();
+
     tmpl->SetInternalFieldCount(2);
     tmpl->SetAccessor(
             ConvertToV8String(isolate, "width"), GetWidth);
@@ -59,6 +79,10 @@ v8::Local<v8::FunctionTemplate> ImageBitmapImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->SetAccessor(
             ConvertToV8String(isolate, "__addr"),
             GetAddr);
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "__getRef"),
+            v8::FunctionTemplate::New(isolate, GetReference));
 
     cache->ImageBitmapTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -201,6 +225,20 @@ ImageBitmapImpl::GetAddr(v8::Local<v8::String> name,
         return;
     }
     info.GetReturnValue().SetEmptyString();
+}
+
+void
+ImageBitmapImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto ptr = GetPointer(args.This());
+    if (ptr != nullptr) {
+        auto isolate = args.GetIsolate();
+        auto reference = canvas_native_image_asset_reference(ptr->GetImageAsset());
+        auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
+        args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
+        return;
+    }
+
+    args.GetReturnValue().SetEmptyString();
 }
 
 const ImageAsset *ImageBitmapImpl::GetImageAsset() {

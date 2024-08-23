@@ -18,11 +18,8 @@ use log::LevelFilter;
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer, nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL, nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
-use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{
-    nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError,
-    nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath,
-    nativeLoadFromUrl,
-};
+use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath, nativeLoadFromUrl};
+use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
 use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{
     nativeTexImage2D, nativeTexSubImage2D,
 };
@@ -364,8 +361,68 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
             })
             .collect();
 
+
             let _ = env
                 .register_native_methods(&image_asset_class, image_asset_native_methods.as_slice());
+
+
+
+            let image_bitmap_class = env
+                .find_class("org/nativescript/canvas/NSCImageBitmap")
+                .unwrap();
+
+            let image_bitmap_method_names = [
+                "nativeLoadFromBytes",
+                "nativeLoadFromBuffer",
+                "nativeLoadFromBytesOptions",
+                "nativeLoadFromBufferOptions",
+                "nativeLoadFromBytesRectOptions",
+                "nativeLoadFromBufferRectOptions"
+            ];
+
+            let image_bitmap_signatures = if ret >= ANDROID_O {
+                [
+                    "(J[B)Z",
+                    "(JLjava/nio/ByteBuffer;)Z",
+                    "(J[BZIIIFF)Z",
+                    "(JLjava/nio/ByteBuffer;ZIIIFF)Z",
+                    "(J[BFFFFZIIIFF)Z",
+                    "(JLjava/nio/ByteBuffer;FFFFZIIIFF)Z",
+                ]
+            } else {
+                [
+                    "!(J[B)Z",
+                    "!(JLjava/nio/ByteBuffer;)Z",
+                    "(J[BZIIIFF)Z",
+                    "(JLjava/nio/ByteBuffer;ZIIIFF)Z",
+                    "(J[BFFFFZIIIFF)Z",
+                    "(JLjava/nio/ByteBuffer;FFFFZIIIFF)Z",
+                ]
+            };
+
+            let image_bitmap_methods = [
+                nativeLoadBitmapFromBytes as *mut c_void,
+                nativeLoadBitmapFromBuffer as *mut c_void,
+                nativeLoadBitmapFromBytesOptions as *mut c_void,
+                nativeLoadBitmapFromBufferOptions as *mut c_void,
+                nativeLoadBitmapFromBytesRectOptions as *mut c_void,
+                nativeLoadBitmapFromBufferRectOptions as *mut c_void
+            ];
+
+            let image_bitmap_native_methods: Vec<NativeMethod> = izip!(
+                image_bitmap_method_names,
+                image_bitmap_signatures,
+                image_bitmap_methods
+            )
+                .map(|(name, signature, method)| NativeMethod {
+                    name: name.into(),
+                    sig: signature.into(),
+                    fn_ptr: method,
+                })
+                .collect();
+
+            let _ = env
+                .register_native_methods(&image_bitmap_class, image_bitmap_native_methods.as_slice());
 
             let webgl_rendering_class = env
                 .find_class("org/nativescript/canvas/NSCWebGLRenderingContext")

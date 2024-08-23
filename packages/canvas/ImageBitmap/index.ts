@@ -5,6 +5,55 @@ import { ImageSource } from '@nativescript/core';
 
 import { Helpers } from '../helpers';
 
+function parseOptions(options) {
+	if (__ANDROID__) {
+		const opts = new org.nativescript.canvas.NSCImageBitmap.Options();
+		if (options?.imageOrientation === 'flipY') {
+			opts.setImageOrientation(org.nativescript.canvas.ImageBitmapImageOrientation.FlipY);
+		}
+
+		switch (options?.premultiplyAlpha) {
+			case 'premultiply':
+				opts.setPremultiplyAlpha(org.nativescript.canvas.ImageBitmapPremultiplyAlpha.PremultiplyAlpha);
+				break;
+			case 'none':
+				opts.setPremultiplyAlpha(org.nativescript.canvas.ImageBitmapPremultiplyAlpha.None);
+				break;
+		}
+
+		if (options?.colorSpaceConversion === 'none') {
+			opts.setColorSpaceConversion(org.nativescript.canvas.ImageBitmapColorSpaceConversion.None);
+		}
+
+		if (typeof options?.resizeWidth === 'number') {
+			opts.setResizeWidth(options.resizeWidth);
+		}
+
+		if (typeof options?.resizeHeight === 'number') {
+			opts.setResizeHeight(options.resizeWidth);
+		}
+
+		switch (options?.resizeQuality) {
+			case 'medium':
+				opts.setResizeQuality(org.nativescript.canvas.ImageBitmapResizeQuality.Medium);
+				break;
+			case 'high':
+				opts.setResizeQuality(org.nativescript.canvas.ImageBitmapResizeQuality.High);
+				break;
+			case 'pixelated':
+				opts.setResizeQuality(org.nativescript.canvas.ImageBitmapResizeQuality.Pixelated);
+				break;
+		}
+
+		if (options?.premultiplyAlpha === 'flipY') {
+			opts.setImageOrientation(org.nativescript.canvas.ImageBitmapImageOrientation.FlipY);
+		}
+
+		return opts;
+	}
+	return options;
+}
+
 export class ImageBitmap {
 	static {
 		Helpers.initialize();
@@ -72,6 +121,31 @@ export class ImageBitmap {
 					realSource = source.ios; // todo
 				}
 			}
+
+			if (__ANDROID__) {
+				if (ArrayBuffer.isView(realSource)) {
+					const asset = new global.CanvasModule.ImageAsset();
+					const ptr = long(asset.__getRef());
+					const cb = new org.nativescript.canvas.NSCImageBitmap.Callback({
+						onComplete(done) {
+							if (done) {
+								const value = global.CanvasModule.ImageBitmap.fromAsset(asset);
+								resolve(ImageBitmap.fromNative(value));
+							} else {
+								reject(new Error('Failed to create ImageBitmap'));
+							}
+						},
+					});
+					if (options) {
+						const opts = parseOptions(options);
+						org.nativescript.canvas.NSCImageBitmap.createFromOptions(ptr, realSource as never, opts, cb);
+					} else {
+						org.nativescript.canvas.NSCImageBitmap.createFrom(ptr, realSource as never, cb);
+					}
+				}
+				return;
+			}
+
 			global.CanvasModule.createImageBitmap(realSource, options, (error, value) => {
 				if (value) {
 					resolve(ImageBitmap.fromNative(value));
@@ -116,6 +190,26 @@ export class ImageBitmap {
 				if (global.isIOS) {
 					realSource = source.ios; // todo
 				}
+			}
+
+			if (__ANDROID__) {
+				if (ArrayBuffer.isView(realSource)) {
+					const asset = new global.CanvasModule.ImageAsset();
+					const ptr = long(asset.__getRef());
+					const cb = new org.nativescript.canvas.NSCImageBitmap.Callback({
+						onComplete(done) {
+							if (done) {
+								const value = global.CanvasModule.ImageBitmap.fromAsset(asset);
+								resolve(ImageBitmap.fromNative(value));
+							} else {
+								reject(new Error('Failed to create ImageBitmap'));
+							}
+						},
+					});
+					const opts = parseOptions(options ?? {});
+					org.nativescript.canvas.NSCImageBitmap.createFromRectOptions(ptr, realSource as never, sx, sy, sWidth, sHeight, opts, cb);
+				}
+				return;
 			}
 
 			global.CanvasModule.createImageBitmap(realSource, sx, sy, sWidth, sHeight, options, (error, value) => {

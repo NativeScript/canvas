@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-pixi",
-	"version": "2.0.0-webgpu.16",
+	"version": "2.0.0-webgpu.17",
 	"description": "Plugin for using pixi.js in NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

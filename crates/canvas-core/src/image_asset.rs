@@ -10,8 +10,9 @@ enum CanvasImage {
     #[cfg(not(feature = "2d"))]
     Stb(stb_image::image::Image<u8>),
     #[cfg(feature = "2d")]
-    Skia(skia_safe::Bitmap),
+    Skia(skia_safe::Bitmap, Arc<skia_safe::Pixmap<'static>>, Vec<u8>),
 }
+
 
 impl CanvasImage {
     pub fn with_bytes_dimension<F>(&self, f: F)
@@ -24,12 +25,9 @@ impl CanvasImage {
                 f(image.data.as_slice(), (image.width as u32, image.height as u32))
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
-                let dimensions = (image.width() as u32, image.height() as u32);
-                let pixmap = image.pixmap();
-                let size = image.compute_byte_size();
-                let slice = unsafe { std::slice::from_raw_parts(pixmap.addr() as *const u8, size) };
-                f(slice, dimensions)
+            CanvasImage::Skia(image, _, data) => {
+                let dimensions = (image.width() as u32, image.height() as u32);;
+                f(data.as_slice(), dimensions)
             }
         }
     }
@@ -53,11 +51,9 @@ impl CanvasImage {
                 f(image.data.as_mut_slice(), (image.width as u32, image.height as u32))
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
+            CanvasImage::Skia(image, _, data) => {
                 let dimensions = (image.width() as u32, image.height() as u32);
-                let size = image.compute_byte_size();
-                let slice = unsafe { std::slice::from_raw_parts_mut(image.pixels() as *mut u8, size) };
-                f(slice, dimensions)
+                f(data.as_mut_slice(), dimensions)
             }
         }
     }
@@ -73,13 +69,14 @@ impl CanvasImage {
     }
 
     #[cfg(feature = "2d")]
-    pub fn new(info: &skia_safe::ImageInfo, data: Vec<u8>) -> Self {
+    pub fn new(info: &skia_safe::ImageInfo, mut data: Vec<u8>) -> Self {
         let mut bitmap = skia_safe::Bitmap::new();
-        bitmap.alloc_pixels_info(info, None);
-        let size = bitmap.compute_byte_size();
-        let dst = unsafe { std::slice::from_raw_parts_mut(bitmap.pixels() as *mut u8, size) };
-        dst.copy_from_slice(data.as_slice());
-        Self::Skia(bitmap)
+        let min_row_bytes = info.min_row_bytes();
+        let size = data.len();
+        let slice = unsafe { std::slice::from_raw_parts_mut(data.as_mut_ptr(), size) };
+        let pixmap = Arc::new(skia_safe::Pixmap::new(info, slice, min_row_bytes).unwrap());
+        unsafe { bitmap.install_pixels(info, pixmap.writable_addr(), min_row_bytes) };
+        Self::Skia(bitmap, pixmap, data)
     }
 
     #[cfg(not(feature = "2d"))]
@@ -95,7 +92,7 @@ impl CanvasImage {
                 image.width as u32
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
+            CanvasImage::Skia(image, _, _) => {
                 image.width() as u32
             }
         }
@@ -108,7 +105,7 @@ impl CanvasImage {
                 image.height as u32
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
+            CanvasImage::Skia(image, _, _) => {
                 image.height() as u32
             }
         }
@@ -122,7 +119,7 @@ impl CanvasImage {
             }
 
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
+            CanvasImage::Skia(image, _, _) => {
                 (image.width() as u32, image.height() as u32)
             }
         }
@@ -133,7 +130,7 @@ impl CanvasImage {
             #[cfg(not(feature = "2d"))]
             CanvasImage::Stb(image) => image.data.len(),
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => image.compute_byte_size()
+            CanvasImage::Skia(image, _, _) => image.compute_byte_size()
         }
     }
 }
@@ -149,12 +146,9 @@ impl Clone for CanvasImage {
                 Self::Stb(image)
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
-                let mut ret = skia_safe::Bitmap::new();
-                ret.alloc_pixels_flags(image.info());
-                let dst_row_bytes = ret.row_bytes();
-                unsafe { image.read_pixels(image.info(), ret.pixels(), dst_row_bytes, 0, 0); }
-                Self::Skia(ret)
+            CanvasImage::Skia(image, _, data) => {
+                let data = data.clone();
+                CanvasImage::new(image.info(), data)
             }
         }
     }
@@ -175,7 +169,7 @@ impl Debug for CanvasImage {
                 d.finish()
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image) => {
+            CanvasImage::Skia(image, _, _) => {
                 let mut d = f.debug_struct("Image");
                 d.field("width", &image.width());
                 d.field("height", &image.height());
@@ -277,7 +271,7 @@ impl ImageAsset {
                             }
                         }
                         #[cfg(feature = "2d")]
-                        CanvasImage::Skia(image) => {
+                        CanvasImage::Skia(image, _, _) => {
                             f(Some(image))
                         }
                     }
@@ -313,7 +307,7 @@ impl ImageAsset {
                             f(image.as_ref())
                         }
                         #[cfg(feature = "2d")]
-                        CanvasImage::Skia(bitmap) => {
+                        CanvasImage::Skia(bitmap, _, _) => {
                             let image = skia_safe::images::raster_from_bitmap(bitmap);
                             f(image.as_ref())
                         }
@@ -351,11 +345,8 @@ impl ImageAsset {
                             f(image.as_ref(), Some((dimensions, slice)))
                         }
                         #[cfg(feature = "2d")]
-                        CanvasImage::Skia(bitmap) => {
+                        CanvasImage::Skia(bitmap, _, bytes) => {
                             let image = skia_safe::images::raster_from_bitmap(bitmap);
-                            let size = bitmap.compute_byte_size();
-                            let pixmap = bitmap.pixmap();
-                            let bytes = unsafe { std::slice::from_raw_parts(pixmap.addr() as *mut u8, size) };
                             let dimensions = bitmap.dimensions();
                             // should not fail to cast
                             f(image.as_ref(), Some(((dimensions.width as u32, dimensions.height as u32), bytes)))
@@ -384,14 +375,9 @@ impl ImageAsset {
             None,
         );
 
-        let mut bitmap = skia_safe::Bitmap::new();
-        bitmap.alloc_pixels_info(&info, None);
-        let size = bitmap.compute_byte_size();
-        let dst = unsafe { std::slice::from_raw_parts_mut(bitmap.pixels() as *mut u8, size) };
-        dst.copy_from_slice(data.as_slice());
-        let has_alpha = !bitmap.is_opaque();
+        let has_alpha = info.is_opaque();
         let inner = ImageAssetInner {
-            image: Some(CanvasImage::Skia(bitmap)),
+            image: Some(CanvasImage::new(&info, data)),
             error: Cow::default(),
             has_alpha,
         };
@@ -560,39 +546,30 @@ impl ImageAsset {
 
     #[cfg(feature = "2d")]
     pub fn load_from_bytes(&self, buf: &[u8]) -> bool {
-        {
-            let mut lock = self.0.lock();
-            if !lock.error.is_empty() {
-                lock.error = Cow::default();
-            }
-            lock.image = None;
-        }
-
+        let mut lock = self.0.lock();
+        lock.error = Cow::default();
+        lock.image = None;
         let data = unsafe { skia_safe::Data::new_bytes(buf) };
 
         match skia_safe::images::deferred_from_encoded_data(data, None) {
             None => {
-                let mut lock = self.0.lock();
                 lock.error = Cow::Borrowed("Failed to decode image");
                 false
             }
             Some(image) => {
-                let mut bm = skia_safe::Bitmap::new();
                 let info = skia_safe::ImageInfo::new(
                     image.dimensions(),
                     skia_safe::ColorType::RGBA8888,
                     skia_safe::AlphaType::Unpremul,
                     None,
                 );
-                bm.alloc_pixels_info(&info, None);
-                let size = bm.compute_byte_size();
-                let data = unsafe { std::slice::from_raw_parts_mut(bm.pixels() as *mut u8, size) };
-                let success = image.read_pixels(image.image_info(), data, bm.row_bytes(), (0i32, 0i32), skia_safe::image::CachingHint::Allow);
+                let row_bytes = (info.width() * 4) as usize;
+                let size = info.height() as usize * row_bytes;
+                let mut buffer = vec![0u8; size];
+                let success = image.read_pixels(image.image_info(), buffer.as_mut_slice(), row_bytes, (0i32, 0i32), skia_safe::image::CachingHint::Allow);
                 if success {
-                    let mut lock = self.0.lock();
-                    lock.image = Some(CanvasImage::Skia(bm));
+                    lock.image = Some(CanvasImage::new(&info, buffer));
                 } else {
-                    let mut lock = self.0.lock();
                     lock.error = Cow::Borrowed("Failed to decode image");
                 }
                 success
@@ -603,13 +580,10 @@ impl ImageAsset {
 
     #[cfg(not(feature = "2d"))]
     pub fn load_from_bytes(&self, buf: &[u8]) -> bool {
-        {
-            let mut lock = self.0.lock();
-            if !lock.error.is_empty() {
-                lock.error = Cow::default();
-            }
-            lock.image = None;
-        }
+        let mut lock = self.0.lock();
+        lock.error = Cow::default();
+        lock.image = None;
+
 
         unsafe {
             stb_image::stb_image::stbi_set_unpremultiply_on_load(1);
@@ -618,18 +592,15 @@ impl ImageAsset {
 
         match stb_image::image::load_from_memory_with_depth(buf, 4, true) {
             LoadResult::Error(e) => {
-                let mut lock = self.0.lock();
                 let error = e.to_string();
                 lock.error = Cow::Owned(error);
                 false
             }
             LoadResult::ImageU8(image) => {
-                let mut lock = self.0.lock();
                 lock.image = Some(CanvasImage::Stb(image));
                 true
             }
             LoadResult::ImageF32(_) => {
-                let mut lock = self.0.lock();
                 lock.image = None;
                 false
             }
@@ -723,7 +694,7 @@ impl ImageAsset {
                     Self::rgba_to_rgb(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -745,7 +716,7 @@ impl ImageAsset {
                     Self::rgba_to_luminance(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -767,7 +738,7 @@ impl ImageAsset {
                     Self::rgba_to_luminance_alpha(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -789,7 +760,7 @@ impl ImageAsset {
                     Self::rgba_to_alpha(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -811,7 +782,7 @@ impl ImageAsset {
                     Self::rgba_to_red(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -833,7 +804,7 @@ impl ImageAsset {
                     Self::rgba_to_rg(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -855,7 +826,7 @@ impl ImageAsset {
                     Self::rgba_to_rgba_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -877,7 +848,7 @@ impl ImageAsset {
                     Self::rgba_to_rgb_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -899,7 +870,7 @@ impl ImageAsset {
                     Self::rgba_to_red_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -921,7 +892,7 @@ impl ImageAsset {
                     Self::rgba_to_rg_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -950,7 +921,7 @@ impl ImageAsset {
                     image.data.clone()
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image) => {
+                CanvasImage::Skia(image, _, _) => {
                     let size = image.compute_byte_size();
                     let pixmap = image.pixmap();
                     let data = unsafe { std::slice::from_raw_parts(pixmap.addr() as *const u8, size) };

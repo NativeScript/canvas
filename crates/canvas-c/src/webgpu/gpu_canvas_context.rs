@@ -101,7 +101,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
 }
 
 
-// #[cfg(any(target_os = "android"))]
+#[cfg(any(target_os = "android"))]
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     context: *mut CanvasGPUCanvasContext,
@@ -259,9 +259,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
 
     let window_handle = RawWindowHandle::UiKit(handle);
 
+    let mut surface = context.surface.lock();
+
+    global.surface_drop(*surface);
+
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
-            *context.surface.lock() = surface_id;
+            *surface = surface_id;
             context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
             let mut view_data = context.view_data.lock();
             view_data.width = width;
@@ -270,7 +274,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
             if let Some(surface_data) = surface_data_lock.as_mut() {
                 surface_data.texture_data.size.width = width;
                 surface_data.texture_data.size.height = height;
-
 
                 let mut new_config = surface_data.previous_configuration.clone();
                 new_config.width = width;
@@ -356,9 +359,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
     let handle = raw_window_handle::AppKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
     let window_handle = RawWindowHandle::AppKit(handle);
 
+    let mut surface = context.surface.lock();
+
+    global.surface_drop(*surface);
+
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
-            *context.surface.lock() = surface_id;
+            *surface = surface_id;
             context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
             let mut view_data = context.view_data.lock();
             view_data.width = width;
@@ -707,7 +714,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
     match gfx_select!(surface_id => global.surface_get_capabilities(*surface_id, adapter_id)) {
         Ok(capabilities) => {
             let cap: CanvasSurfaceCapabilities = capabilities.into();
-            return Box::into_raw(Box::new(cap));
+            Box::into_raw(Box::new(cap))
         }
         Err(cause) => {
             handle_error_fatal(global, cause, "canvas_native_webgpu_context_get_capabilities");

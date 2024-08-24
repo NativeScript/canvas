@@ -220,6 +220,21 @@ pub struct CanvasGPUDevice {
     pub(crate) error_sink: ErrorSink,
 }
 
+impl Drop for CanvasGPUDevice {
+    fn drop(&mut self) {
+        if !std::thread::panicking() {
+            let context = self.instance.global();
+
+            match gfx_select!(self.id => context.device_poll(self.device, wgt::Maintain::Wait)) {
+                Ok(_) => (),
+                Err(err) => handle_error_fatal(context, err, "CanvasGPUDevice::drop"),
+            }
+
+            gfx_select!(self.id => context.device_drop(self.device));
+        }
+    }
+}
+
 impl CanvasGPUDevice {
     pub fn label(&self) -> Option<Cow<'static, str>> {
         self.label.clone()

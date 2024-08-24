@@ -42,7 +42,7 @@ import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
 
 //import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If, color, toneMapping, viewportSharedTexture, viewportTopLeft, checker, uv, timerLocal, oscSine, output, MeshStandardNodeMaterial } from 'three/examples/jsm/nodes/Nodes';
 
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer';
+import * as THREE from 'three';
 
 // class IconMesh extends THREE.Mesh {
 // 	constructor() {
@@ -129,55 +129,51 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	async webgpu_cube(canvas: Canvas) {
 		// const adapter = await navigator.gpu?.requestAdapter();
 		// const device: GPUDevice = (await adapter?.requestDevice()) as never;
-		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
-		canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
 
-		/*	var camera, scene, renderer: WebGPURenderer;
+		var camera, scene, renderer;
 		var geometry, material, mesh;
 		var context: GPUCanvasContext;
 
+		function animate() {
+			mesh.rotation.x += 0.01;
+			mesh.rotation.y += 0.02;
+
+			renderer.render(scene, camera);
+
+			context.presentSurface();
+		}
+
 		async function init() {
+			canvas.width = canvas.clientWidth * window.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window.devicePixelRatio;
 			const { width, height } = canvas;
 
 			const innerWidth = width;
 			const innerHeight = height;
 
-			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
-			camera.position.set(15, 30, 15);
+			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
+			//	camera.position.set(15, 30, 15);
 
 			scene = new THREE.Scene();
 
-			// geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-			// material = new THREE.MeshNormalMaterial();
+			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+			material = new THREE.MeshNormalMaterial();
 
-			// mesh = new THREE.Mesh(geometry, material);
-			// scene.add(mesh);
+			mesh = new THREE.Mesh(geometry, material);
+			scene.add(mesh);
 
-			renderer = new WebGPURenderer({ antialias: true, alpha: true, canvas: canvas as any });
-			// renderer.setPixelRatio(window.devicePixelRatio);
-			// renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+			renderer = new THREE.WebGPURenderer({ antialias: false, alpha: true, canvas, context, forceWebGL: false });
+			// console.log(renderer);
 			await renderer.init();
+			//renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height);
+			camera.aspect = canvas.width / canvas.height;
 			context = canvas.getContext('webgpu');
-			//renderer.setAnimationLoop(animate);
-
-			requestAnimationFrame(animate);
+			renderer.setAnimationLoop(animate);
 		}
 
 		init();
 
-		function animate() {
-			console.log('start');
-			// 	mesh.rotation.x += 0.01;
-			// mesh.rotation.y += 0.02;
-
-			renderer.render(scene, camera);
-
-			context.presentSurface();
-
-			console.log('end');
-			requestAnimationFrame(animate);
-		}
-*/
 		//animate();
 	}
 

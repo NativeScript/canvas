@@ -2953,10 +2953,12 @@ const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct 
                                                                          uint32_t height);
 #endif
 
+#if defined(TARGET_OS_ANDROID)
 void canvas_native_webgpu_context_resize(struct CanvasGPUCanvasContext *context,
                                          void *window,
                                          uint32_t width,
                                          uint32_t height);
+#endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,

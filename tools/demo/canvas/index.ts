@@ -568,14 +568,14 @@ fn main() -> @location(0) vec4f {
 		// const tests = require('./webgpu/tests');
 		// tests.run(this.canvas);
 
-		// const renderBundles = require('./webgpu/renderBundles');
-		// renderBundles.run(this.canvas);
+		const renderBundles = require('./webgpu/renderBundles');
+		renderBundles.run(this.canvas);
 
 		// const occlusionQuery = require('./webgpu/occlusionQuery');
 		// occlusionQuery.run(this.canvas);
 
-		const particles = require('./webgpu/particles');
-		particles.run(this.canvas);
+		// const particles = require('./webgpu/particles');
+		// particles.run(this.canvas);
 
 		// const texturedCube = require('./webgpu/basicGraphics/texturedCube');
 		// texturedCube.run(this.canvas);

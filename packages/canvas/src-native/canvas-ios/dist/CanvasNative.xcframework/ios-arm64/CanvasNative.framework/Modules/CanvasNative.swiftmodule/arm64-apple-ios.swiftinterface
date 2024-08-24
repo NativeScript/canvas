@@ -21,6 +21,7 @@ import _SwiftConcurrencyShims
   @objc public static func getBytesFromUIImage(_ image: UIKit.UIImage) -> Foundation.NSMutableData
   @objc public static func createPattern(_ context: Swift.Int64, _ image: UIKit.UIImage, _ repetition: Swift.String) -> Swift.Int64
   @objc public static func loadImageAssetWithContext(_ asset: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
+  @objc public static func loadImageAssetWithPath(_ asset: Swift.Int64, _ path: Swift.String) -> Swift.Bool
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float) -> Swift.Bool
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float) -> Swift.Bool
   @objc public static func drawImage(context: Swift.Int64, image: UIKit.UIImage, sx: Swift.Float, sy: Swift.Float, sw: Swift.Float, sh: Swift.Float, dx: Swift.Float, dy: Swift.Float, dw: Swift.Float, dh: Swift.Float) -> Swift.Bool
@@ -177,6 +178,8 @@ extension GLKit.GLKView {
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageAsset) public class NSCImageAsset : ObjectiveC.NSObject {
   @objc public static func loadImageFromImageSync(_ context: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
   @objc public static func loadImageFromImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ callback: @escaping (Swift.Bool) -> ())
+  @objc public static func loadImageFromPathSync(_ asset: Swift.Int64, _ path: Swift.String) -> Swift.Bool
+  @objc public static func loadImageFromPath(_ asset: Swift.Int64, _ path: Swift.String, _ callback: @escaping (Swift.Bool) -> ())
   @objc override dynamic public init()
   @objc deinit
 }

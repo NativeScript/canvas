@@ -5,7 +5,7 @@ import { adapter_, native_ } from './Constants';
 import { GPUShaderModule } from './GPUShaderModule';
 import { GPUQueue } from './GPUQueue';
 import { GPUPipelineLayout } from './GPUPipelineLayout';
-import { parseVertexFormat } from './Utils';
+import { parseBindGroupDescriptor, parseComputePipelineDescriptor, parseRenderPipelineDescriptor, parseVertexFormat } from './Utils';
 import { GPURenderPipeline } from './GPURenderPipeline';
 import { GPUCommandEncoder } from './GPUCommandEncoder';
 import { GPUDeviceLostInfo, GPUInternalError, GPUOutOfMemoryError, GPUValidationError } from './Errors';
@@ -15,7 +15,7 @@ import { GPUTextureView } from './GPUTextureView';
 import { GPUSampler } from './GPUSampler';
 import { GPUExternalTexture } from './GPUExternalTexture';
 import type { GPUAddressMode, GPUCompareFunction, GPUErrorFilter, GPUFilterMode, GPUMipmapFilterMode, GPUQueryType, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension } from './Types';
-import type { GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPUVertexState } from './Interfaces';
+import type { GPUBindGroupDescriptor, GPUBindGroupLayoutEntry, GPUComputePipelineDescriptor, GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPURenderPipelineDescriptor, GPUVertexState } from './Interfaces';
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
@@ -33,6 +33,9 @@ function fixup_shader_code(code: string) {
 	code = code.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
 	// patch switch issue
 	code = code.replace(/case\s+(\d+)\s*:\s*{/g, 'case $1u: {');
+
+	// diagnostic is unsupport atm, remove after https://github.com/gfx-rs/wgpu/pull/6148
+	code = code.replace(/diagnostic\s*\([^)]*\)/g, '');
 	return code;
 }
 
@@ -207,41 +210,10 @@ export class GPUDevice extends EventTarget {
 		this.native.destroy();
 	}
 
-	createBindGroup(descriptor: {
-		label?: string;
-		layout: GPUBindGroupLayout;
-		entries: {
-			binding: number;
-			resource:
-				| GPUTextureView
-				| GPUSampler
-				| GPUExternalTexture
-				| {
-						buffer: GPUBuffer;
-						offset?: number;
-						size?: number;
-				  };
-		}[];
-	}) {
-		descriptor.layout = descriptor?.layout?.[native_];
-		if (Array.isArray(descriptor.entries)) {
-			descriptor.entries = descriptor.entries.map((entry) => {
-				if (entry.resource instanceof GPUTextureView) {
-					entry.resource = entry.resource[native_];
-				} else if (entry.resource instanceof GPUSampler) {
-					entry.resource = entry.resource[native_];
-				} else if (entry.resource instanceof GPUExternalTexture) {
-					entry.resource = entry.resource[native_];
-				} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
-					entry.resource.buffer = entry.resource.buffer[native_];
-					entry.resource.offset ??= 0;
-					entry.resource.size ??= entry.resource.buffer.size - entry.resource.offset;
-				}
-				return entry;
-			});
-		}
+	createBindGroup(descriptor: GPUBindGroupDescriptor) {
+		const desc = parseBindGroupDescriptor(descriptor);
 
-		const group = this.native.createBindGroup(descriptor);
+		const group = this.native.createBindGroup(desc);
 
 		if (group) {
 			return GPUBindGroup.fromNative(group);
@@ -249,32 +221,7 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createBindGroupLayout(descriptor: {
-		label?: string;
-		entries: {
-			binding: number;
-			visibility: number;
-			buffer?: {
-				hasDynamicOffset?: boolean;
-				minBindingSize?: number;
-				type?: 'uniform' | 'storage' | 'read-only-storage';
-			};
-			externalTexture?: GPUExternalTextureBindingLayout;
-			sampler?: {
-				type?: 'filtering' | 'non-filtering' | 'comparison';
-			};
-			storageTexture?: {
-				access?: 'write-only' | 'read-only' | 'read-write';
-				format: GPUTextureFormat;
-				viewDimension?: GPUTextureViewDimension;
-			};
-			texture?: {
-				multisampled?: boolean;
-				sampleType?: GPUTextureSampleType;
-				viewDimension?: GPUTextureViewDimension;
-			};
-		}[];
-	}) {
+	createBindGroupLayout(descriptor: GPUBindGroupLayoutEntry) {
 		const groupLayout = this.native.createBindGroupLayout(descriptor);
 		if (groupLayout) {
 			return GPUBindGroupLayout.fromNative(groupLayout);
@@ -295,25 +242,16 @@ export class GPUDevice extends EventTarget {
 		return GPUCommandEncoder.fromNative(encoder);
 	}
 
-	createComputePipeline(descriptor: { compute: GPUProgrammableStage; label?: string; layout: GPUPipelineLayout | 'auto' }) {
-		if (descriptor.layout instanceof GPUPipelineLayout) {
-			descriptor.layout = descriptor.layout[native_];
-		}
-
-		descriptor.compute.module = descriptor.compute.module[native_];
-
-		return GPUComputePipeline.fromNative(this.native.createComputePipeline(descriptor));
+	createComputePipeline(descriptor: GPUComputePipelineDescriptor) {
+		const desc = parseComputePipelineDescriptor(descriptor);
+		return GPUComputePipeline.fromNative(this.native.createComputePipeline(desc));
 	}
 
-	createComputePipelineAsync(descriptor: { compute: GPUProgrammableStage; label?: string; layout: GPUPipelineLayout | 'auto' }) {
+	createComputePipelineAsync(descriptor: GPUComputePipelineDescriptor) {
 		return new Promise((resolve, reject) => {
-			if (descriptor.layout instanceof GPUPipelineLayout) {
-				descriptor.layout = descriptor.layout[native_];
-			}
+			const desc = parseComputePipelineDescriptor(descriptor);
 
-			descriptor.compute.module = descriptor.compute.module[native_];
-
-			this.native.createComputePipelineAsync(descriptor, (error, pipeline) => {
+			this.native.createComputePipelineAsync(desc, (error, pipeline) => {
 				if (error) {
 					reject(error.error);
 				} else {
@@ -324,13 +262,15 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createPipelineLayout(descriptor: { bindGroupLayouts: GPUBindGroupLayout[]; label?: string }) {
-		const desc = {
-			label: descriptor.label,
+		const desc: { bindGroupLayouts: GPUBindGroupLayout[]; label?: string } = {
 			bindGroupLayouts: descriptor.bindGroupLayouts.map((layout) => {
 				return layout[native_];
 			}),
 		};
 
+		if (typeof descriptor?.label === 'string') {
+			desc.label = descriptor.label;
+		}
 		return GPUPipelineLayout.fromNative(this.native.createPipelineLayout(desc));
 	}
 
@@ -343,69 +283,16 @@ export class GPUDevice extends EventTarget {
 		return GPURenderBundleEncoder.fromNative(this.native.createRenderBundleEncoder(descriptor));
 	}
 
-	createRenderPipeline(descriptor: { depthStencil?: GPUDepthStencilState; fragment?: GPUFragmentState; label?: string; layout: GPUPipelineLayout | 'auto'; multisample?: GPUMultisampleState; primitive?: GPUPrimitiveState; vertex: GPUVertexState }) {
-		const vertex = descriptor.vertex;
-		vertex.module = vertex.module[native_];
+	createRenderPipeline(descriptor: GPURenderPipelineDescriptor) {
+		const desc = parseRenderPipelineDescriptor(descriptor, 'createRenderPipeline');
 
-		const buffers = vertex?.buffers;
-		if (Array.isArray(buffers)) {
-			vertex.buffers = buffers.map((buffer) => {
-				buffer.attributes = buffer.attributes.map((attr) => {
-					attr.format = parseVertexFormat(attr.format) as never;
-					return attr;
-				});
-
-				return buffer;
-			});
-		}
-
-		const fragment = descriptor.fragment;
-		if (fragment) {
-			handleUnsupportedPlatformFormat(fragment, 'createRenderPipeline');
-			fragment.module = fragment.module[native_];
-		}
-
-		const layout = descriptor.layout;
-
-		if (layout instanceof GPUPipelineLayout) {
-			descriptor.layout = descriptor.layout[native_];
-		} else {
-		}
-
-		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(descriptor));
+		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(desc));
 	}
 
-	createRenderPipelineAsync(descriptor: { depthStencil?: GPUDepthStencilState; fragment?: GPUFragmentState; label?: string; layout: GPUPipelineLayout | 'auto'; multisample?: GPUMultisampleState; primitive?: GPUPrimitiveState; vertex: GPUVertexState }) {
+	createRenderPipelineAsync(descriptor: GPURenderPipelineDescriptor) {
 		return new Promise((resolve, reject) => {
-			const vertex = descriptor.vertex;
-			vertex.module = vertex.module[native_];
-
-			const buffers = vertex?.buffers;
-			if (Array.isArray(buffers)) {
-				vertex.buffers = buffers.map((buffer) => {
-					buffer.attributes = buffer.attributes.map((attr) => {
-						attr.format = parseVertexFormat(attr.format) as never;
-						return attr;
-					});
-
-					return buffer;
-				});
-			}
-
-			const fragment = descriptor.fragment;
-			if (fragment) {
-				handleUnsupportedPlatformFormat(fragment, 'createRenderPipelineAsync');
-				fragment.module = fragment.module[native_];
-			}
-
-			const layout = descriptor.layout;
-
-			if (layout instanceof GPUPipelineLayout) {
-				descriptor.layout = descriptor.layout[native_];
-			} else {
-			}
-
-			this[native_].createRenderPipelineAsync(descriptor, (error, pipeline) => {
+			const desc = parseRenderPipelineDescriptor(descriptor, 'createRenderPipelineAsync');
+			this[native_].createRenderPipelineAsync(desc, (error, pipeline) => {
 				if (error) {
 					reject(error.error);
 				} else {
@@ -419,8 +306,13 @@ export class GPUDevice extends EventTarget {
 		return GPUSampler.fromNative(this.native.createSampler(descriptor));
 	}
 
-	createShaderModule(desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
-		desc.code = fixup_shader_code(desc.code);
+	createShaderModule(descriptor: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
+		const desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] } = {
+			code: fixup_shader_code(descriptor.code),
+		};
+		if (typeof descriptor.label === 'string') {
+			desc.label = descriptor.label;
+		}
 
 		const module = this.native.createShaderModule(desc);
 		if (module) {
@@ -503,28 +395,5 @@ export class GPUDevice extends EventTarget {
 			this._queue = GPUQueue.fromNative(this[native_].queue);
 		}
 		return this._queue;
-	}
-}
-
-function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: string) {
-	// falls back to platform supported format ... maybe this can be removed once frameworks use the getPreferredCanvasFormat
-	if (__ANDROID__) {
-		let hasBrga = false;
-		fragment.targets = fragment.targets.map((target) => {
-			switch (target.format) {
-				case 'bgra8unorm':
-					target.format = 'rgba8unorm';
-					hasBrga = true;
-					break;
-				case 'bgra8unorm-srgb':
-					target.format = 'rgba8unorm-srgb';
-					hasBrga = true;
-					break;
-			}
-			return target;
-		});
-		if (hasBrga) {
-			console.warn(`GPUDevice:${method} using unsupported brga format falling back to rgba counterpart.`);
-		}
 	}
 }

@@ -1,9 +1,11 @@
+import type { GPUBindGroupLayout } from './GPUBindGroupLayout';
 import type { GPUBuffer } from './GPUBuffer';
+import type { GPUPipelineLayout } from './GPUPipelineLayout';
 import type { GPUQuerySet } from './GPUQuerySet';
 import type { GPUShaderModule } from './GPUShaderModule';
 import type { GPUTexture } from './GPUTexture';
 import type { GPUTextureView } from './GPUTextureView';
-import type { GPUBlendFactor, GPUBlendOperation, GPUColor, GPUCompareFunction, GPUCullMode, GPUFeatureName, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUStencilOperation, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode } from './Types';
+import type { GPUBindingResource, GPUBlendFactor, GPUBlendOperation, GPUBufferBindingType, GPUColor, GPUCompareFunction, GPUCullMode, GPUFeatureName, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUOrigin2D, GPUOrigin3D, GPUPrimitiveTopology, GPUSamplerBindingType, GPUStencilOperation, GPUStorageTextureAccess, GPUStoreOp, GPUTextureAspect, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode } from './Types';
 export interface GPUExternalTextureBindingLayout {}
 
 export interface GPUProgrammableStage {
@@ -184,4 +186,97 @@ export interface GPUDeviceDescriptor {
 	requiredLimits?: {
 		[name: string]: number;
 	};
+}
+
+export interface GPUComputePassTimestampWrites {
+	beginningOfPassWriteIndex: number;
+	endOfPassWriteIndex: number;
+	querySet: GPUQuerySet;
+}
+
+export interface GPUComputePassDescriptor {
+	label?: string;
+	timestampWrites?: GPUComputePassTimestampWrites;
+}
+
+export interface GPURenderPassDescriptor {
+	colorAttachments: (null | GPURenderPassColorAttachment)[];
+	depthStencilAttachment?: GPURenderPassDepthStencilAttachment;
+	label?: string;
+	maxDrawCount?: number;
+	occlusionQuerySet?: GPUQuerySet;
+	timestampWrites?: GPURenderPassTimestampWrites;
+}
+
+export interface GPUBufferBinding {
+	buffer: GPUBuffer;
+	offset?: number;
+	size?: number;
+}
+
+export interface GPUBindGroupEntry {
+	binding: number;
+	resource: GPUBindingResource;
+}
+
+export interface GPUBindGroupDescriptor {
+	entries: GPUBindGroupEntry[];
+	label?: string;
+	layout: GPUBindGroupLayout;
+}
+
+export interface GPUBufferBindingLayout {
+	hasDynamicOffset?: boolean;
+	minBindingSize?: number;
+	type?: GPUBufferBindingType;
+}
+
+export interface GPUExternalTextureBindingLayout {}
+
+export interface GPUStorageTextureBindingLayout {
+	access?: GPUStorageTextureAccess;
+	format: GPUTextureFormat;
+	viewDimension?: GPUTextureViewDimension;
+}
+
+export interface GPUSamplerBindingLayout {
+	type?: GPUSamplerBindingType;
+}
+
+export interface GPUTextureBindingLayout {
+	multisampled?: boolean;
+	sampleType?: GPUTextureSampleType;
+	viewDimension?: GPUTextureViewDimension;
+}
+
+export interface GPUBindGroupLayoutEntry {
+	label?: string;
+	binding: number;
+	buffer?: GPUBufferBindingLayout;
+	externalTexture?: GPUExternalTextureBindingLayout;
+	sampler?: GPUSamplerBindingLayout;
+	storageTexture?: GPUStorageTextureBindingLayout;
+	texture?: GPUTextureBindingLayout;
+	visibility: number;
+}
+
+export interface GPUBindGroupLayoutDescriptor {
+	entries: GPUBindGroupLayoutEntry[];
+	label?: string;
+}
+
+export interface GPUComputePipelineDescriptor {
+	compute: GPUProgrammableStage;
+	label?: string;
+	layout: GPUPipelineLayout | 'auto';
+}
+
+export interface GPURenderPipelineDescriptor {
+	depthStencil?: GPUDepthStencilState;
+	fragment?: GPUFragmentState;
+	label?: string;
+	layout: GPUPipelineLayout | 'auto';
+	multisample?: GPUMultisampleState;
+	primitive?: GPUPrimitiveState;
+	vertex: GPUVertexState;
 }

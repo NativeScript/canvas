@@ -40,10 +40,18 @@ export class GPUBuffer {
 	}
 
 	mapAsync(mode: number, offset?: number, size?: number): Promise<void> {
-		return this[native_].mapAsync(mode, offset, size).then((value) => {
-			this[mapState_] = 'mapped';
-			return value;
-		});
+		const previousSrc = this[mapState_];
+		this[mapState_] = 'pending';
+		return this[native_]
+			.mapAsync(mode, offset, size)
+			.then((value) => {
+				this[mapState_] = 'mapped';
+				return value;
+			})
+			.catch((e) => {
+				this[mapState_] = previousSrc;
+				throw e;
+			});
 	}
 
 	unmap() {

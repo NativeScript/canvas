@@ -15,8 +15,10 @@ export default function Game({ canvas, width = null, height = null, renderer = 2
 		transparent: transparent || false,
 		antialias: antialias || true,
 		physicsConfig: physicsConfig || null,
-		canvas
+		canvas,
 	};
+
+	console.dir(Phaser);
 
 	const game = new Phaser.Game(config);
 

@@ -21,29 +21,66 @@ export class GPUQueue {
 	}
 
 	copyExternalImageToTexture(source: GPUImageCopyExternalImage, destination: GPUImageCopyTextureTagged, copySize: GPUExtent3D) {
-		destination.texture = destination.texture[native_];
+		const src: GPUImageCopyExternalImage = {
+			source: undefined,
+		};
+
 		if (source.source) {
 			if (source.source instanceof ImageBitmap) {
-				source.source = (source.source as any).native;
+				src.source = (source.source as any).native;
 			} else if (source.source instanceof ImageData) {
-				source.source = (source.source as any).native;
+				src.source = (source.source as any).native;
 			} else if (source.source instanceof ImageAsset) {
-				source.source = source.source.native;
+				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'IMG' || source.source.tagName === 'IMAGE')) {
 				if (source.source._asset instanceof ImageAsset) {
-					source.source = source.source._asset.native;
+					src.source = source.source._asset.native;
 				}
 			}
 		}
 
+		if (typeof source.flipY === 'boolean') {
+			src.flipY = source.flipY;
+		}
+
+		if (source.origin) {
+			src.origin = { ...source.origin };
+		}
+
+		const dst: GPUImageCopyTextureTagged = {
+			texture: destination.texture[native_],
+		};
+
+		if (destination.aspect) {
+			dst.aspect = destination.aspect;
+		}
+
+		if (destination.colorSpace) {
+			dst.colorSpace = destination.colorSpace;
+		}
+
+		if (typeof destination.mipLevel === 'number') {
+			dst.mipLevel = destination.mipLevel;
+		}
+
+		if (destination.origin) {
+			dst.origin = { ...destination.origin };
+		}
+
+		if (typeof destination.premultipliedAlpha === 'boolean') {
+			dst.premultipliedAlpha = destination.premultipliedAlpha;
+		}
+
+		let size: GPUExtent3D;
+
 		if (Array.isArray(copySize)) {
-			copySize = {
+			size = {
 				width: copySize[0],
 				height: copySize[1] ?? 1,
 				depthOrArrayLayers: copySize[2] ?? 1,
 			};
 		} else {
-			copySize = {
+			size = {
 				width: 0,
 				height: 1,
 				depthOrArrayLayers: 1,
@@ -51,7 +88,7 @@ export class GPUQueue {
 			};
 		}
 
-		this[native_].copyExternalImageToTexture(source, destination, copySize);
+		this[native_].copyExternalImageToTexture(src, dst, size);
 	}
 
 	submit(commands: GPUCommandBuffer[]) {

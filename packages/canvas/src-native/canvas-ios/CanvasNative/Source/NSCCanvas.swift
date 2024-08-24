@@ -33,36 +33,36 @@ public class NSCCanvas: UIView {
         case ScaleDown
         
         public var rawValue: RawValue {
-                switch self {
-                case .None:
-                    return 0
-                case .Fill:
-                    return 1
-                case .FitX:
-                    return 2
-                case .FitY:
-                    return 3
-                case .ScaleDown:
-                    return 4
-                }
+            switch self {
+            case .None:
+                return 0
+            case .Fill:
+                return 1
+            case .FitX:
+                return 2
+            case .FitY:
+                return 3
+            case .ScaleDown:
+                return 4
             }
-            
-            public init?(rawValue: RawValue) {
-                switch rawValue {
-                case 0:
-                    self = .None
-                case 1:
-                    self = .Fill
-                case 2:
-                    self = .FitX
-                case 3:
-                    self = .FitY
-                case 4:
-                    self = .ScaleDown
-                default:
-                    return nil
-                }
+        }
+        
+        public init?(rawValue: RawValue) {
+            switch rawValue {
+            case 0:
+                self = .None
+            case 1:
+                self = .Fill
+            case 2:
+                self = .FitX
+            case 3:
+                self = .FitY
+            case 4:
+                self = .ScaleDown
+            default:
+                return nil
             }
+        }
     }
     
     public var fit = CanvasFit.Fill {
@@ -479,7 +479,7 @@ public class NSCCanvas: UIView {
     private func initializeView(){
         if #available(iOS 13.0, *) {
             if((mtlView.layer as? CAMetalLayer) != nil){
-               // let layer = mtlView.layer as! CAMetalLayer
+                // let layer = mtlView.layer as! CAMetalLayer
                 // https://developer.apple.com/documentation/quartzcore/cametallayer/1478157-presentswithtransaction/
                 //  layer.presentsWithTransaction = false
                 // layer.framebufferOnly = true
@@ -502,6 +502,7 @@ public class NSCCanvas: UIView {
         scaleSurface()
         
         self.isOpaque = false
+        mtlView.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
     }
     
@@ -523,7 +524,7 @@ public class NSCCanvas: UIView {
     }
     
     private var isLoaded: Bool = false
-
+    
     
     public var surfaceWidth: Int = 300 {
         didSet {
@@ -543,8 +544,8 @@ public class NSCCanvas: UIView {
     private func resize(){
         if(engine == .Metal && nativeContext != 0){
             let viewPtr = Int64(Int(bitPattern: getMtlViewPtr()))
-            var width = UInt32(surfaceWidth)
-            var height =  UInt32(surfaceHeight)
+            let width = UInt32(surfaceWidth)
+            let height =  UInt32(surfaceHeight)
             CanvasHelpers.resizeWebGPUWithView(nativeContext, viewPtr, width, height)
             return
         }
@@ -592,69 +593,69 @@ public class NSCCanvas: UIView {
         if(surfaceWidth == 0 || surfaceHeight == 0){
             return
         }
-     /*
-        var density = UIScreen.main.nativeScale
-        
-        if(!autoScale){
-            density = 1
-        }
-        
-        let scaledInternalWidth = CGFloat(surfaceWidth) / density
-        let scaledInternalHeight = CGFloat(surfaceHeight) / density
-    
-        if(scaledInternalWidth.isZero || scaledInternalHeight.isZero){
-            return
-        }
-        
-        if(frame.size.width.isZero || frame.size.width.isNaN || frame.size.height.isZero || frame.size.height.isNaN){return}
-        
-        let scaleX = frame.size.width / scaledInternalWidth
-        let scaleY = frame.size.height / scaledInternalHeight
-        
-        
-        if(scaleX.isZero || scaleX.isNaN ||  scaleY.isZero || scaleY.isNaN ){
-            return
-        }
-        
-        var transform = CGAffineTransform.identity
-
-        switch(fit){
-        case .None:
-            // noop
-            break
-        case .Fill:
-            transform = CGAffineTransform.identity.scaledBy(x: scaleX , y: scaleY)
-            
-        case .FitX:
-            let dx = (frame.size.width - scaledInternalWidth) / 2
-            let  dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
-            
-            
-            transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX).translatedBy(x: dx, y: dy)
-            break
-        case .FitY:
-            
-           
-            let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
-            let dy = (frame.size.height - scaledInternalHeight) / 2
-            
-            
-            transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY).translatedBy(x: dx, y: dy)
-            break
-        case .ScaleDown:
-            let scale =  min(min(scaleX, scaleY), 1)
-            
-            transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale)
-            break
-        }
-        
-        
-        // disable animation
-       
-        glkView.transform = transform
-        mtlView.transform = transform
-        
-        */
+        /*
+         var density = UIScreen.main.nativeScale
+         
+         if(!autoScale){
+         density = 1
+         }
+         
+         let scaledInternalWidth = CGFloat(surfaceWidth) / density
+         let scaledInternalHeight = CGFloat(surfaceHeight) / density
+         
+         if(scaledInternalWidth.isZero || scaledInternalHeight.isZero){
+         return
+         }
+         
+         if(frame.size.width.isZero || frame.size.width.isNaN || frame.size.height.isZero || frame.size.height.isNaN){return}
+         
+         let scaleX = frame.size.width / scaledInternalWidth
+         let scaleY = frame.size.height / scaledInternalHeight
+         
+         
+         if(scaleX.isZero || scaleX.isNaN ||  scaleY.isZero || scaleY.isNaN ){
+         return
+         }
+         
+         var transform = CGAffineTransform.identity
+         
+         switch(fit){
+         case .None:
+         // noop
+         break
+         case .Fill:
+         transform = CGAffineTransform.identity.scaledBy(x: scaleX , y: scaleY)
+         
+         case .FitX:
+         let dx = (frame.size.width - scaledInternalWidth) / 2
+         let  dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
+         
+         
+         transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX).translatedBy(x: dx, y: dy)
+         break
+         case .FitY:
+         
+         
+         let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
+         let dy = (frame.size.height - scaledInternalHeight) / 2
+         
+         
+         transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY).translatedBy(x: dx, y: dy)
+         break
+         case .ScaleDown:
+         let scale =  min(min(scaleX, scaleY), 1)
+         
+         transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale)
+         break
+         }
+         
+         
+         // disable animation
+         
+         glkView.transform = transform
+         mtlView.transform = transform
+         
+         */
         
         
     }

@@ -56,6 +56,7 @@ export async function run(canvas: Canvas) {
 	context.configure({
 		device,
 		format: presentationFormat,
+		alphaMode: 'premultiplied',
 	});
 	const depthFormat = 'depth24plus';
 	const animate = true;
@@ -296,23 +297,26 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([encoder.finish()]);
 
-		context.presentSurface();
-
 		if (resultBuf.mapState === 'unmapped') {
-			resultBuf.mapAsync(GPUMapMode.READ).then(() => {
-				const results = new BigUint64Array(resultBuf.getMappedRange());
+			resultBuf
+				.mapAsync(GPUMapMode.READ)
+				.then(() => {
+					const results = new BigUint64Array(resultBuf.getMappedRange());
 
-				const visible = objectInfos
-					.filter((_, i) => results[i])
-					.map(({ id }) => id)
-					.join('');
+					const visible = objectInfos
+						.filter((_, i) => results[i])
+						.map(({ id }) => id)
+						.join('');
 
-				// info.textContent = `visible: ${visible}`;
-				resultBuf.unmap();
-			});
+					// info.textContent = `visible: ${visible}`;
+					resultBuf.unmap();
+				})
+				.catch((e) => console.log(e));
 		}
 
-		//requestAnimationFrame(render);
+		context.presentSurface();
+
+		requestAnimationFrame(render);
 	}
 
 	requestAnimationFrame(render);

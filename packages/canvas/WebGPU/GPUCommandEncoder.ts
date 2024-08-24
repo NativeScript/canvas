@@ -4,8 +4,9 @@ import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUComputePassEncoder } from './GPUComputePassEncoder';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderPassEncoder } from './GPURenderPassEncoder';
-import { GPUImageCopyBuffer, GPUImageCopyTexture, GPURenderPassColorAttachment, GPURenderPassDepthStencilAttachment, GPURenderPassTimestampWrites } from './Interfaces';
+import { GPUImageCopyBuffer, GPUImageCopyTexture, GPURenderPassColorAttachment, GPURenderPassDepthStencilAttachment, GPURenderPassDescriptor, GPURenderPassTimestampWrites } from './Interfaces';
 import { GPUExtent3D } from './Types';
+import { parseComputePassDescriptor, parseRenderPassDescriptor } from './Utils';
 
 export class GPUCommandEncoder {
 	[native_];
@@ -31,43 +32,13 @@ export class GPUCommandEncoder {
 			querySet: GPUQuerySet;
 		};
 	}) {
-		if (descriptor?.timestampWrites) {
-			descriptor.timestampWrites.querySet = descriptor.timestampWrites.querySet[native_];
-		}
-
-		return GPUComputePassEncoder.fromNative(this[native_].beginComputePass(descriptor));
+		const desc = parseComputePassDescriptor(descriptor);
+		return GPUComputePassEncoder.fromNative(this[native_].beginComputePass(desc));
 	}
 
-	beginRenderPass(descriptor: { colorAttachments: (null | GPURenderPassColorAttachment)[]; depthStencilAttachment?: GPURenderPassDepthStencilAttachment; label?: string; maxDrawCount?: number; occlusionQuerySet?: GPUQuerySet; timestampWrites?: GPURenderPassTimestampWrites }) {
-		descriptor.colorAttachments = descriptor.colorAttachments.map((attachment) => {
-			if (Array.isArray(attachment.clearValue)) {
-				attachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
-			}
-			if (attachment.view) {
-				attachment.view = attachment.view[native_];
-			} else {
-				/// ???
-			}
-
-			if (attachment.resolveTarget) {
-				attachment.resolveTarget = attachment.resolveTarget[native_];
-			}
-			return attachment;
-		});
-
-		if (descriptor?.depthStencilAttachment?.view?.[native_]) {
-			descriptor.depthStencilAttachment.view = descriptor.depthStencilAttachment.view[native_];
-		}
-
-		if (descriptor?.occlusionQuerySet) {
-			descriptor.occlusionQuerySet = descriptor.occlusionQuerySet[native_];
-		}
-
-		if (descriptor?.timestampWrites?.querySet) {
-			descriptor.timestampWrites.querySet = descriptor.timestampWrites.querySet[native_];
-		}
-
-		const passEncoder = this[native_].beginRenderPass(descriptor);
+	beginRenderPass(descriptor: GPURenderPassDescriptor) {
+		const desc = parseRenderPassDescriptor(descriptor);
+		const passEncoder = this[native_].beginRenderPass(desc);
 		return GPURenderPassEncoder.fromNative(passEncoder);
 	}
 
@@ -80,48 +51,141 @@ export class GPUCommandEncoder {
 	}
 
 	copyBufferToTexture(source: GPUImageCopyBuffer, destination: GPUImageCopyTexture, copySize: GPUExtent3D) {
-		source.buffer = source.buffer[native_];
-		destination.texture = destination.texture[native_];
+		const src: GPUImageCopyBuffer = {
+			buffer: source.buffer[native_],
+			bytesPerRow: source.bytesPerRow,
+		};
+
+		if (typeof source.offset === 'number') {
+			src.offset = source.offset;
+		}
+
+		if (typeof source.rowsPerImage === 'number') {
+			src.rowsPerImage = source.rowsPerImage;
+		}
+
+		const dst: GPUImageCopyTexture = {
+			texture: destination.texture[native_],
+		};
+
+		if (destination.aspect) {
+			dst.aspect = destination.aspect;
+		}
+
+		if (typeof destination.mipLevel === 'number') {
+			dst.mipLevel = destination.mipLevel;
+		}
+
+		if (destination.origin) {
+			dst.origin = destination.origin;
+		}
+
+		let size: GPUExtent3D;
 
 		if (Array.isArray(copySize)) {
-			copySize = {
+			size = {
 				width: copySize[0],
 				height: copySize[1] ?? 1,
 				depthOrArrayLayers: copySize[2] ?? 1,
 			};
+		} else {
+			size = { ...copySize };
 		}
 
-		this[native_].copyBufferToTexture(source, destination, copySize);
+		this[native_].copyBufferToTexture(src, dst, size);
 	}
 
 	copyTextureToBuffer(source: GPUImageCopyTexture, destination: GPUImageCopyBuffer, copySize: GPUExtent3D) {
-		source.texture = source.texture[native_];
-		destination.buffer = destination.buffer[native_];
+		const src: GPUImageCopyTexture = {
+			texture: source.texture[native_],
+		};
+
+		if (source.aspect) {
+			src.aspect = source.aspect;
+		}
+
+		if (typeof source.mipLevel === 'number') {
+			src.mipLevel = source.mipLevel;
+		}
+
+		if (source.origin) {
+			src.origin = source.origin;
+		}
+
+		const dst: GPUImageCopyBuffer = {
+			buffer: destination.buffer[native_],
+			bytesPerRow: destination.bytesPerRow,
+		};
+
+		if (typeof destination.offset === 'number') {
+			dst.offset = destination.offset;
+		}
+
+		if (typeof destination.rowsPerImage === 'number') {
+			dst.rowsPerImage = destination.rowsPerImage;
+		}
+
+		let size: GPUExtent3D;
 
 		if (Array.isArray(copySize)) {
-			copySize = {
+			size = {
 				width: copySize[0],
 				height: copySize[1] ?? 1,
 				depthOrArrayLayers: copySize[2] ?? 1,
 			};
+		} else {
+			size = { ...copySize };
 		}
 
-		this[native_].copyTextureToBuffer(source, destination, copySize);
+		this[native_].copyTextureToBuffer(src, dst, size);
 	}
 
 	copyTextureToTexture(source: GPUImageCopyTexture, destination: GPUImageCopyTexture, copySize: GPUExtent3D) {
-		source.texture = source.texture[native_];
-		destination.texture = destination.texture[native_];
+		const src: GPUImageCopyTexture = {
+			texture: source.texture[native_],
+		};
+
+		if (source.aspect) {
+			src.aspect = source.aspect;
+		}
+
+		if (typeof source.mipLevel === 'number') {
+			src.mipLevel = source.mipLevel;
+		}
+
+		if (source.origin) {
+			src.origin = source.origin;
+		}
+
+		const dst: GPUImageCopyTexture = {
+			texture: destination.texture[native_],
+		};
+
+		if (destination.aspect) {
+			dst.aspect = destination.aspect;
+		}
+
+		if (typeof destination.mipLevel === 'number') {
+			dst.mipLevel = destination.mipLevel;
+		}
+
+		if (destination.origin) {
+			dst.origin = destination.origin;
+		}
+
+		let size: GPUExtent3D;
 
 		if (Array.isArray(copySize)) {
-			copySize = {
+			size = {
 				width: copySize[0],
 				height: copySize[1] ?? 1,
 				depthOrArrayLayers: copySize[2] ?? 1,
 			};
+		} else {
+			size = { ...copySize };
 		}
 
-		this[native_].copyTextureToTexture(source, destination, copySize);
+		this[native_].copyTextureToTexture(src, dst, size);
 	}
 
 	finish(descriptor?: { label?: string }) {

@@ -65,8 +65,20 @@ export class GPUCanvasContext {
 				opts.alphaMode = capabilities.alphaModes[0];
 			} else {
 				if (!capabilities.alphaModes.includes(options.alphaMode) && (options.alphaMode === 'opaque' || options.alphaMode === 'premultiplied')) {
-					opts.alphaMode = capabilities.alphaModes[0];
-					console.warn(`GPUCanvasContext: configure alphaMode ${options.alphaMode} unsupported falling back to ${capabilities.alphaModes[0]}`);
+					if (__IOS__ && options.alphaMode === 'premultiplied') {
+						let index = capabilities.alphaModes.indexOf('premultiplied');
+						if (index === -1) {
+							index = capabilities.alphaModes.indexOf('postmultiplied');
+						}
+						if (index === -1) {
+							index = 0;
+						}
+
+						opts.alphaMode = capabilities.alphaModes[index];
+					} else {
+						opts.alphaMode = capabilities.alphaModes[0];
+					}
+					console.warn(`GPUCanvasContext: configure alphaMode ${options.alphaMode} unsupported falling back to ${opts.alphaMode}`);
 				}
 			}
 

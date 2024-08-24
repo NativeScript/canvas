@@ -30,5 +30,24 @@ public class NSCImageAsset: NSObject {
             }
         }
     }
+    
+    public static func loadImageFromPathSync(_ asset: Int64, _ path: String) -> Bool {
+        return CanvasHelpers.loadImageAssetWithPath(asset, path)
+    }
+    
+    public static func loadImageFromPath(_ asset: Int64,_ path: String, _ callback: @escaping (Bool)-> ()){
+        NSCImageAsset.queue.async {
+            let success = NSCImageAsset.loadImageFromPathSync(asset,path)
+            if(success){
+                DispatchQueue.main.async {
+                    callback(true)
+                }
+            }else {
+                DispatchQueue.main.async {
+                     callback(false)
+                }
+            }
+        }
+    }
 }
 

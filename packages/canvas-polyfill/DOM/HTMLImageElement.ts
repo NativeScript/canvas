@@ -139,7 +139,7 @@ export class HTMLImageElement extends HTMLElement {
 				(async () => {
 					try {
 						const MIME = getMIMEforBase64String(base64result);
-						const dir = knownFolders.documents().path;
+						const dir = knownFolders.temp().path;
 						if (global.isIOS) {
 							NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
 								if (error) {

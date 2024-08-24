@@ -1,4 +1,7 @@
-import type { GPUColorDict } from './Interfaces';
+import type { GPUExternalTexture } from './GPUExternalTexture';
+import type { GPUSampler } from './GPUSampler';
+import type { GPUTextureView } from './GPUTextureView';
+import type { GPUBufferBinding, GPUColorDict } from './Interfaces';
 // export type GPUImageCopyExternalImageSource = ImageBitmap | ImageData | HTMLImageElement | HTMLVideoElement | VideoFrame | HTMLCanvasElement | OffscreenCanvas;
 export type GPUOrigin2D = [number, number] | { x?: number; y?: number };
 export type GPUExtent3D = [number, number, number] | [number, number] | { depthOrArrayLayers?: number; height?: number; width: number };
@@ -127,3 +130,11 @@ export type GPUCanvasAlphaMode = 'opaque' | 'premultiplied' | 'postmultiplied' |
 export type GPUCanvasPresentMode = 'autoVsync' | 'autoNoVsync' | 'fifo' | 'fifoRelaxed' | 'immediate' | 'mailbox';
 
 export type GPUFeatureName = 'depth-clip-control' | 'depth32float-stencil8' | 'texture-compression-bc' | 'texture-compression-etc2' | 'texture-compression-astc' | 'timestamp-query' | 'indirect-first-instance' | 'shader-f16' | 'rg11b10ufloat-renderable' | 'bgra8unorm-storage' | 'float32-filterable';
+
+export type GPUBindingResource = GPUSampler | GPUTextureView | GPUBufferBinding | GPUExternalTexture;
+
+export type GPUBufferBindingType = 'uniform' | 'storage' | 'read-only-storage';
+
+export type GPUSamplerBindingType = 'filtering' | 'non-filtering' | 'comparison';
+
+export type GPUStorageTextureAccess = 'write-only' | 'read-only' | 'read-write';

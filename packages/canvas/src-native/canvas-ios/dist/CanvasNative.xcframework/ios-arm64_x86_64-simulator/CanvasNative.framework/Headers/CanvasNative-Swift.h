@@ -342,6 +342,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (NSMutableData * _Nonnull)getBytesFromUIImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)image :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)loadImageAssetWithContext:(int64_t)asset :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)loadImageAssetWithPath:(int64_t)asset :(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
@@ -448,6 +449,8 @@ SWIFT_CLASS_NAMED("NSCImageAsset")
 @interface NSCImageAsset : NSObject
 + (BOOL)loadImageFromImageSync:(int64_t)context :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (void)loadImageFromImage:(int64_t)context :(UIImage * _Nonnull)image :(void (^ _Nonnull)(BOOL))callback;
++ (BOOL)loadImageFromPathSync:(int64_t)asset :(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (void)loadImageFromPath:(int64_t)asset :(NSString * _Nonnull)path :(void (^ _Nonnull)(BOOL))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -845,6 +848,7 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (NSMutableData * _Nonnull)getBytesFromUIImage:(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (int64_t)createPattern:(int64_t)context :(UIImage * _Nonnull)image :(NSString * _Nonnull)repetition SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)loadImageAssetWithContext:(int64_t)asset :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
++ (BOOL)loadImageAssetWithPath:(int64_t)asset :(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
@@ -951,6 +955,8 @@ SWIFT_CLASS_NAMED("NSCImageAsset")
 @interface NSCImageAsset : NSObject
 + (BOOL)loadImageFromImageSync:(int64_t)context :(UIImage * _Nonnull)image SWIFT_WARN_UNUSED_RESULT;
 + (void)loadImageFromImage:(int64_t)context :(UIImage * _Nonnull)image :(void (^ _Nonnull)(BOOL))callback;
++ (BOOL)loadImageFromPathSync:(int64_t)asset :(NSString * _Nonnull)path SWIFT_WARN_UNUSED_RESULT;
++ (void)loadImageFromPath:(int64_t)asset :(NSString * _Nonnull)path :(void (^ _Nonnull)(BOOL))callback;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

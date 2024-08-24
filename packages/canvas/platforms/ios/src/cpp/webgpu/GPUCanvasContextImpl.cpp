@@ -189,7 +189,7 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
 
     v8::Local<v8::Value> sizeValue;
     options->Get(context, ConvertToV8String(isolate, "size")).ToLocal(
-            &usageValue);
+            &sizeValue);
 
     CanvasExtent3d size = ParseExtent3d(isolate, sizeValue);
 
@@ -224,7 +224,8 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
     auto texture = canvas_native_webgpu_context_get_current_texture(ctx);
 
     if (texture != nullptr) {
-        if(canvas_native_webgpu_texture_get_status(texture) == SurfaceGetCurrentTextureStatusSuccess){
+        auto status = canvas_native_webgpu_texture_get_status(texture);
+        if(status == SurfaceGetCurrentTextureStatusSuccess){
             auto textureImpl = new GPUTextureImpl(texture);
             auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
             args.GetReturnValue().Set(ret);

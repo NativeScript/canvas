@@ -51,6 +51,13 @@ public class CanvasHelpers: NSObject {
         return canvas_native_imageasset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
     }
     
+    
+    public static func loadImageAssetWithPath(_ asset: Int64, _ path: String) -> Bool {
+        let ptr =  OpaquePointer.init(bitPattern: UInt(asset))
+        return canvas_native_image_asset_load_from_path(ptr, (path as NSString).utf8String)
+    }
+    
+    
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float) -> Bool {
         let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width)

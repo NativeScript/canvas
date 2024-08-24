@@ -591,13 +591,13 @@ void GPURenderPassEncoderImpl::SetVertexBuffer(const v8::FunctionCallbackInfo<v8
     int64_t size = -1;
     auto offsetVal = args[2];
     auto sizeVal = args[3];
-
-    if (slotVal->IsUint32() && bufferVal->IsObject()) {
-        auto slot = slotVal.As<v8::Uint32>()->Value();
-        if (GetNativeType(bufferVal) != NativeType::GPUBuffer) {
-            // todo throw ??
-            return;
-        }
+    auto type = GetNativeType(bufferVal);
+    auto isolate = args.GetIsolate();
+    if (type == NativeType::GPUBuffer) {
+        auto context = isolate->GetCurrentContext();
+        auto slot = slotVal->ToUint32(context).ToLocalChecked();
+        
+    
 
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
 
@@ -609,7 +609,7 @@ void GPURenderPassEncoderImpl::SetVertexBuffer(const v8::FunctionCallbackInfo<v8
             size = (int64_t) sizeVal.As<v8::Number>()->Value();
         }
 
-        canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(ptr->GetPass(), slot,
+        canvas_native_webgpu_render_pass_encoder_set_vertex_buffer(ptr->GetPass(), slot->Value(),
                                                                    buffer->GetGPUBuffer(), offset,
                                                                    size);
 

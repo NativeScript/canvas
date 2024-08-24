@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-three",
-	"version": "2.0.0-webgpu.17",
+	"version": "2.0.0-webgpu.21",
 	"description": "Utilities for using THREE.js on NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -34,6 +34,6 @@
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
 		"@nativescript/canvas-polyfill": "webgpu",
-		"three": "~0.157.0"
+		"three": "~0.167.1"
 	}
 }

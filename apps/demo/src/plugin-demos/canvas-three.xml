@@ -1,7 +1,7 @@
 <Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
       class="page">
   <Page.actionBar>
-    <ActionBar title="canvas-three" icon="" class="action-bar">
+    <ActionBar title="Canvas Three WebGPU" icon="" class="action-bar">
     </ActionBar>
   </Page.actionBar>
   <GridLayout height="100%" width="100%" >

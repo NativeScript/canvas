@@ -70,6 +70,7 @@
 		"svelte-native": "^1.0.5",
 		"teapot": "^1.0.0",
 		"three": "~0.167.1",
+		"three-stdlib": "^2.32.2",
 		"typescript": "~5.5.0",
 		"util": "~0.12.5",
 		"vexflow": "^4.2.3",

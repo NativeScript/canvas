@@ -2,11 +2,8 @@ import { DemoSharedBase } from '../utils';
 // import * as THREE from '@nativescript/canvas-three';
 // import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 // import { TDSLoader } from 'three/examples/jsm/loaders/TDSLoader';
-// import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
-// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 // import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
 // import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
 // import { VertexTangentsHelper } from 'three/examples/jsm/helpers/VertexTangentsHelper';
 // import { DRACOLoader } from './custom/DRACOLoader';
@@ -36,13 +33,16 @@ import { DemoSharedBase } from '../utils';
 // import { ghost_card } from './examples/ghost_card';
 // import { tiny_poly_world } from './games/tiny_poly_world';
 import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
+import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
+
+const THREE = require('./custom/three.webgpu');
+
+import { RGBELoader, GLTFLoader, OrbitControls } from 'three-stdlib';
 
 //import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
 //import { tslFn, uniform, texture, instanceIndex, float, vec3, storage, SpriteNodeMaterial, If, color, toneMapping, viewportSharedTexture, viewportTopLeft, checker, uv, timerLocal, oscSine, output, MeshStandardNodeMaterial } from 'three/examples/jsm/nodes/Nodes';
-
-import * as THREE from 'three';
 
 // class IconMesh extends THREE.Mesh {
 // 	constructor() {
@@ -70,8 +70,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		this.webgpu_cube(this.canvas);
-
+		//this.webgpu_cube(this.canvas);
+		//this.webGPUGtlfLoader(this.canvas);
+		this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -144,15 +145,15 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		async function init() {
-			canvas.width = canvas.clientWidth * window.devicePixelRatio;
-			canvas.height = canvas.clientHeight * window.devicePixelRatio;
+			canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
+			canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
 			const { width, height } = canvas;
 
 			const innerWidth = width;
 			const innerHeight = height;
 
 			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
-			//	camera.position.set(15, 30, 15);
+			camera.position.z = 1;
 
 			scene = new THREE.Scene();
 
@@ -162,19 +163,139 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh = new THREE.Mesh(geometry, material);
 			scene.add(mesh);
 
-			renderer = new THREE.WebGPURenderer({ antialias: false, alpha: true, canvas, context, forceWebGL: false });
-			// console.log(renderer);
+			renderer = new THREE.WebGPURenderer({ canvas });
+
 			await renderer.init();
-			//renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height);
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 			camera.aspect = canvas.width / canvas.height;
 			context = canvas.getContext('webgpu');
 			renderer.setAnimationLoop(animate);
 		}
 
 		init();
+	}
 
-		//animate();
+	async webgpu_tsl_galaxy(canvas: Canvas) {
+		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('./custom/three.webgpu');
+
+		let camera, scene, renderer, controls, context;
+
+		init();
+
+		async function init() {
+			canvas.width = canvas.clientWidth * window.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
+			camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+			camera.position.set(4, 2, 5);
+			//camera.position.set( 0,0, 5);
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x201919);
+
+			// galaxy
+
+			const material = new THREE.SpriteNodeMaterial({
+				transparent: true,
+				depthWrite: false,
+				blending: THREE.AdditiveBlending,
+			});
+
+			const size = uniform(0.08);
+			material.scaleNode = range(0, 1).mul(size);
+
+			const time = timerLocal();
+
+			const radiusRatio = range(0, 1);
+			const radius = radiusRatio.pow(1.5).mul(5).toVar();
+
+			const branches = 3;
+			const branchAngle = range(0, branches).floor().mul(PI2.div(branches));
+			const angle = branchAngle.add(time.mul(radiusRatio.oneMinus()));
+
+			const position = vec3(cos(angle), 0, sin(angle)).mul(radius);
+
+			const sphericalToVec3 = Fn(([phi, theta]) => {
+				const sinPhiRadius = sin(phi);
+
+				return vec3(sinPhiRadius.mul(sin(theta)), cos(phi), sinPhiRadius.mul(cos(theta)));
+			});
+
+			const phi = range(0, PI2);
+			const theta = range(0, PI);
+			const offsetRadius = range(0, 1).pow(2).mul(radiusRatio).mul(1.25);
+			const randomOffset = sphericalToVec3(phi, theta).mul(offsetRadius);
+
+			material.positionNode = position.add(randomOffset);
+
+			const colorInside = uniform(color('#ffa575'));
+			const colorOutside = uniform(color('#311599'));
+			const colorFinal = mix(colorInside, colorOutside, radiusRatio.oneMinus().pow(2).oneMinus());
+			const alpha = float(0.1).div(uv().sub(0.5).length()).sub(0.2);
+			material.colorNode = vec4(colorFinal, alpha);
+
+			const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material, 20000);
+			scene.add(mesh);
+
+			// debug
+			/*
+				const gui = new GUI();
+
+				gui.add( size, 'value', 0, 1, 0.001 ).name( 'size' );
+
+				gui.addColor( { color: colorInside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
+					.name( 'colorInside' )
+					.onChange( function ( value ) {
+
+						colorInside.value.set( value );
+
+					} );
+
+				gui.addColor( { color: colorOutside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
+					.name( 'colorOutside' )
+					.onChange( function ( value ) {
+
+						colorOutside.value.set( value );
+
+					} );
+
+					*/
+
+			// renderer
+
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
+			//renderer.setPixelRatio( window.devicePixelRatio );
+			//renderer.setSize( canvas.clientWidth, canvas.clientHeight);
+			await renderer.init();
+			context = canvas.getContext('webgpu');
+
+			renderer.setAnimationLoop(animate);
+			// document.body.appendChild( renderer.domElement );
+
+			controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.minDistance = 0.1;
+			controls.maxDistance = 50;
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		async function animate() {
+			controls.update();
+
+			renderer.render(scene, camera);
+
+			context.presentSurface();
+		}
 	}
 
 	async webgpu_backdrop(canvas: Canvas) {
@@ -307,251 +428,335 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		*/
 	}
 
-	// async webgpu_1m_particles(canvas: Canvas) {
-	// 	/*const adapter = await navigator.gpu?.requestAdapter();
-	// 	const device: GPUDevice = (await adapter?.requestDevice()) as never;
-	// 	const context = canvas.getContext('webgpu');
+	async webGPUGtlfLoader(canvas) {
+		var container, controls, context, width, height;
+		var camera, scene, renderer;
+		var mouseX = 0,
+			mouseY = 0,
+			windowHalfX = 0,
+			windowHalfY = 0;
+		// THREE.RGBELoader: unsupported type:  1009
+		const init = async () => {
+			canvas.width = canvas.clientWidth * window.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window.devicePixelRatio;
+			width = canvas.width;
+			height = canvas.height;
+			camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+			camera.position.set(-1.8, 0.6, 2.7);
+			scene = new THREE.Scene();
+			const light = new THREE.SpotLight();
+			light.position.set(-1.8, 0.6, 2.7);
+			scene.add(light);
+
+			global.parent = window.parent = window;
+
+			new (<any>RGBELoader)().setPath(this.root + '/textures/equirectangular/').load('royal_esplanade_1k.hdr', (texture) => {
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+
+				scene.background = texture;
+				scene.environment = texture;
+
+				var loader = new (<any>GLTFLoader)().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
+				loader.load('DamagedHelmet.gltf', function (gltf) {
+					scene.add(gltf.scene);
+					animate();
+				});
+			});
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			await renderer.init();
+			//renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height);
+			camera.aspect = canvas.width / canvas.height;
+			// renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			// renderer.toneMappingExposure = 1;
+
+			// var pmremGenerator = new THREE.PMREMGenerator(renderer);
+			// pmremGenerator.compileEquirectangularShader();
+
+			controls = new OrbitControls(camera, canvas);
+
+			canvas.addEventListener('change', render);
+			controls.minDistance = 2;
+			controls.maxDistance = 10;
+			controls.target.set(0, 0, -0.2);
+			controls.update();
+
+			context = canvas.getContext('webgpu');
+
+			onWindowResize();
+			window.addEventListener('resize', onWindowResize, false);
+		};
+
+		function onWindowResize() {
+			const width = canvas.width;
+			const height = canvas.height;
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			renderer.setSize(width, height);
+			render();
+		}
 
-	// 	const particleCount = 1000000;
+		//
 
-	// 	const gravity = uniform(-0.0098);
-	// 	const bounce = uniform(0.8);
-	// 	const friction = uniform(0.99);
-	// 	const size = uniform(0.12);
+		function render() {
+			renderer.render(scene, camera);
+			context.presentSurface();
+		}
 
-	// 	const clickPosition = uniform(new THREE.Vector3());
+		function animate() {
+			render();
+			//stats.update();
+			requestAnimationFrame(animate);
+		}
 
-	// 	let camera, scene, renderer;
-	// 	let controls, stats;
-	// 	let computeParticles;
+		init();
+	}
 
-	// 	//const timestamps = document.getElementById('timestamps');
+	async webgpu_1m_particles(canvas: Canvas) {
+		/*const adapter = await navigator.gpu?.requestAdapter();
+		const device: GPUDevice = (await adapter?.requestDevice()) as never;
+		const context = canvas.getContext('webgpu');
 
-	// 	const root = this.root;
+		const particleCount = 1000000;
 
-	// 	console.log('root', this.root);
+		const gravity = uniform(-0.0098);
+		const bounce = uniform(0.8);
+		const friction = uniform(0.99);
+		const size = uniform(0.12);
 
-	// 	function init() {
-	// 		const { width, height } = canvas;
+		const clickPosition = uniform(new THREE.Vector3());
 
-	// 		const innerWidth = width as number;
-	// 		const innerHeight = height as number;
+		let camera, scene, renderer;
+		let controls, stats;
+		let computeParticles;
 
-	// 		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
-	// 		camera.position.set(15, 30, 15);
+		//const timestamps = document.getElementById('timestamps');
 
-	// 		scene = new THREE.Scene();
+		const root = this.root;
 
-	// 		// textures
+		console.log('root', this.root);
 
-	// 		console.log('textureLoader', root + '/textures/sprite1.png');
-	// 		const textureLoader = new THREE.TextureLoader();
-	// 		textureLoader.setPath(root);
-	// 		const map = textureLoader.load('textures/sprite1.png');
+		function init() {
+			const { width, height } = canvas;
 
-	// 		console.log('??');
+			const innerWidth = width as number;
+			const innerHeight = height as number;
 
-	// 		//
-	// 		const createBuffer = () => storage(new StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
+			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
+			camera.position.set(15, 30, 15);
 
-	// 		const positionBuffer = createBuffer();
-	// 		const velocityBuffer = createBuffer();
-	// 		const colorBuffer = createBuffer();
+			scene = new THREE.Scene();
 
-	// 		// compute
+			// textures
 
-	// 		const computeInit = tslFn(() => {
-	// 			const position = positionBuffer.element(instanceIndex);
-	// 			const color = colorBuffer.element(instanceIndex);
+			console.log('textureLoader', root + '/textures/sprite1.png');
+			const textureLoader = new THREE.TextureLoader();
+			textureLoader.setPath(root);
+			const map = textureLoader.load('textures/sprite1.png');
 
-	// 			const randX = instanceIndex.hash();
-	// 			const randY = instanceIndex.add(2).hash();
-	// 			const randZ = instanceIndex.add(3).hash();
+			console.log('??');
 
-	// 			position.x = randX.mul(100).add(-50);
-	// 			position.y = 0; // randY.mul( 10 );
-	// 			position.z = randZ.mul(100).add(-50);
+			//
+			const createBuffer = () => storage(new StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
 
-	// 			color.assign(vec3(randX, randY, randZ));
-	// 		})().compute(particleCount);
+			const positionBuffer = createBuffer();
+			const velocityBuffer = createBuffer();
+			const colorBuffer = createBuffer();
 
-	// 		//
+			// compute
 
-	// 		const computeUpdate = tslFn(() => {
-	// 			const position = positionBuffer.element(instanceIndex);
-	// 			const velocity = velocityBuffer.element(instanceIndex);
+			const computeInit = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const color = colorBuffer.element(instanceIndex);
 
-	// 			velocity.addAssign(vec3(0.0, gravity, 0.0));
-	// 			position.addAssign(velocity);
+				const randX = instanceIndex.hash();
+				const randY = instanceIndex.add(2).hash();
+				const randZ = instanceIndex.add(3).hash();
 
-	// 			velocity.mulAssign(friction);
+				position.x = randX.mul(100).add(-50);
+				position.y = 0; // randY.mul( 10 );
+				position.z = randZ.mul(100).add(-50);
 
-	// 			// floor
+				color.assign(vec3(randX, randY, randZ));
+			})().compute(particleCount);
 
-	// 			If(position.y.lessThan(0), () => {
-	// 				position.y = 0;
-	// 				velocity.y = velocity.y.negate().mul(bounce);
+			//
 
-	// 				// floor friction
+			const computeUpdate = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const velocity = velocityBuffer.element(instanceIndex);
 
-	// 				velocity.x = velocity.x.mul(0.9);
-	// 				velocity.z = velocity.z.mul(0.9);
-	// 			});
-	// 		});
+				velocity.addAssign(vec3(0.0, gravity, 0.0));
+				position.addAssign(velocity);
 
-	// 		computeParticles = computeUpdate().compute(particleCount);
+				velocity.mulAssign(friction);
 
-	// 		// create nodes
+				// floor
 
-	// 		const textureNode = texture(map);
+				If(position.y.lessThan(0), () => {
+					position.y = 0;
+					velocity.y = velocity.y.negate().mul(bounce);
 
-	// 		// create particles
+					// floor friction
 
-	// 		const particleMaterial = new SpriteNodeMaterial();
-	// 		particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
-	// 		particleMaterial.positionNode = positionBuffer.toAttribute();
-	// 		particleMaterial.scaleNode = size;
-	// 		particleMaterial.depthWrite = false;
-	// 		particleMaterial.depthTest = true;
-	// 		particleMaterial.transparent = true;
+					velocity.x = velocity.x.mul(0.9);
+					velocity.z = velocity.z.mul(0.9);
+				});
+			});
 
-	// 		const particles = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), particleMaterial);
-	// 		particles.count = particleCount;
-	// 		particles.frustumCulled = false;
-	// 		scene.add(particles);
+			computeParticles = computeUpdate().compute(particleCount);
 
-	// 		//
+			// create nodes
 
-	// 		const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
-	// 		scene.add(helper);
+			const textureNode = texture(map);
 
-	// 		const geometry = new THREE.PlaneGeometry(1000, 1000);
-	// 		geometry.rotateX(-Math.PI / 2);
+			// create particles
 
-	// 		const plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ visible: false }));
-	// 		scene.add(plane);
+			const particleMaterial = new SpriteNodeMaterial();
+			particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
+			particleMaterial.positionNode = positionBuffer.toAttribute();
+			particleMaterial.scaleNode = size;
+			particleMaterial.depthWrite = false;
+			particleMaterial.depthTest = true;
+			particleMaterial.transparent = true;
 
-	// 		const raycaster = new THREE.Raycaster();
-	// 		const pointer = new THREE.Vector2();
+			const particles = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), particleMaterial);
+			particles.count = particleCount;
+			particles.frustumCulled = false;
+			scene.add(particles);
 
-	// 		//
+			//
 
-	// 		const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
+			const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
+			scene.add(helper);
 
-	// 		renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, context, device });
+			const geometry = new THREE.PlaneGeometry(1000, 1000);
+			geometry.rotateX(-Math.PI / 2);
 
-	// 		const element = new (<any>HTMLCanvasElement)(canvas);
-	// 		renderer['backend'] = element;
-	// 		renderer.setPixelRatio(window.devicePixelRatio);
-	// 		renderer.setSize(innerWidth, innerHeight);
-	// 		renderer.setAnimationLoop(animate);
-	// 		//document.body.appendChild(renderer.domElement);
+			const plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ visible: false }));
+			scene.add(plane);
 
-	// 		// stats = new Stats();
-	// 		// document.body.appendChild(stats.dom);
+			const raycaster = new THREE.Raycaster();
+			const pointer = new THREE.Vector2();
 
-	// 		//
+			//
 
-	// 		renderer.compute(computeInit);
+			const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
 
-	// 		// click event
+			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, context, device });
 
-	// 		const computeHit = tslFn(() => {
-	// 			const position = positionBuffer.element(instanceIndex);
-	// 			const velocity = velocityBuffer.element(instanceIndex);
+			const element = new (<any>HTMLCanvasElement)(canvas);
+			renderer['backend'] = element;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(innerWidth, innerHeight);
+			renderer.setAnimationLoop(animate);
+			//document.body.appendChild(renderer.domElement);
 
-	// 			const dist = position.distance(clickPosition);
-	// 			const direction = position.sub(clickPosition).normalize();
-	// 			const distArea = float(6).sub(dist).max(0);
+			// stats = new Stats();
+			// document.body.appendChild(stats.dom);
 
-	// 			const power = distArea.mul(0.01);
-	// 			const relativePower = power.mul(instanceIndex.hash().mul(0.5).add(0.5));
+			//
 
-	// 			velocity.assign(velocity.add(direction.mul(relativePower)));
-	// 		})().compute(particleCount);
+			renderer.compute(computeInit);
 
-	// 		//
+			// click event
 
-	// 		function onMove(event) {
-	// 			pointer.set((event.clientX / innerWidth) * 2 - 1, -(event.clientY / innerHeight) * 2 + 1);
+			const computeHit = tslFn(() => {
+				const position = positionBuffer.element(instanceIndex);
+				const velocity = velocityBuffer.element(instanceIndex);
 
-	// 			raycaster.setFromCamera(pointer, camera);
+				const dist = position.distance(clickPosition);
+				const direction = position.sub(clickPosition).normalize();
+				const distArea = float(6).sub(dist).max(0);
 
-	// 			const intersects = raycaster.intersectObjects([plane], false);
+				const power = distArea.mul(0.01);
+				const relativePower = power.mul(instanceIndex.hash().mul(0.5).add(0.5));
 
-	// 			if (intersects.length > 0) {
-	// 				const { point } = intersects[0];
+				velocity.assign(velocity.add(direction.mul(relativePower)));
+			})().compute(particleCount);
 
-	// 				// move to uniform
+			//
 
-	// 				clickPosition.value.copy(point);
-	// 				clickPosition.value.y = -1;
+			function onMove(event) {
+				pointer.set((event.clientX / innerWidth) * 2 - 1, -(event.clientY / innerHeight) * 2 + 1);
 
-	// 				// compute
+				raycaster.setFromCamera(pointer, camera);
 
-	// 				renderer.compute(computeHit);
-	// 			}
-	// 		}
+				const intersects = raycaster.intersectObjects([plane], false);
 
-	// 		// events
+				if (intersects.length > 0) {
+					const { point } = intersects[0];
 
-	// 		canvas.addEventListener('pointermove', onMove);
-	// 		//
+					// move to uniform
 
-	// 		controls = new OrbitControls(camera, canvas as never);
-	// 		controls.minDistance = 5;
-	// 		controls.maxDistance = 200;
-	// 		controls.target.set(0, 0, 0);
-	// 		controls.update();
+					clickPosition.value.copy(point);
+					clickPosition.value.y = -1;
 
-	// 		//
+					// compute
 
-	// 		window.addEventListener('resize', onWindowResize);
+					renderer.compute(computeHit);
+				}
+			}
 
-	// 		// gui
+			// events
 
-	// 		// const gui = new GUI();
+			canvas.addEventListener('pointermove', onMove);
+			//
 
-	// 		// gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
-	// 		// gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
-	// 		// gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
-	// 		// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
-	// 	}
+			controls = new OrbitControls(camera, canvas as never);
+			controls.minDistance = 5;
+			controls.maxDistance = 200;
+			controls.target.set(0, 0, 0);
+			controls.update();
 
-	// 	init();
+			//
 
-	// 	function onWindowResize() {
-	// 		const { innerWidth, innerHeight } = window;
+			window.addEventListener('resize', onWindowResize);
 
-	// 		camera.aspect = innerWidth / innerHeight;
-	// 		camera.updateProjectionMatrix();
+			// gui
 
-	// 		renderer.setSize(innerWidth, innerHeight);
-	// 	}
+			// const gui = new GUI();
 
-	// 	async function animate() {
-	// 		//	stats.update();
+			// gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
+			// gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
+			// gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
+			// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
+		}
 
-	// 		await renderer.computeAsync(computeParticles);
+		init();
 
-	// 		await renderer.renderAsync(scene, camera);
+		function onWindowResize() {
+			const { innerWidth, innerHeight } = window;
 
-	// 		// throttle the logging
+			camera.aspect = innerWidth / innerHeight;
+			camera.updateProjectionMatrix();
 
-	// 		// if (renderer.hasFeature('timestamp-query')) {
-	// 		// 	if (renderer.info.render.calls % 5 === 0) {
-	// 		// 		timestamps.innerHTML = `
+			renderer.setSize(innerWidth, innerHeight);
+		}
 
-	// 		// 				Compute ${renderer.info.compute.frameCalls} pass in ${renderer.info.compute.timestamp.toFixed(6)}ms<br>
-	// 		// 				Draw ${renderer.info.render.drawCalls} pass in ${renderer.info.render.timestamp.toFixed(6)}ms`;
-	// 		// 	}
-	// 		// } else {
-	// 		// 	timestamps.innerHTML = 'Timestamp queries not supported';
-	// 		// }
-	// 	}
+		async function animate() {
+			//	stats.update();
 
-	// 	*/
-	// }
+			await renderer.computeAsync(computeParticles);
+
+			await renderer.renderAsync(scene, camera);
+
+			// throttle the logging
+
+			// if (renderer.hasFeature('timestamp-query')) {
+			// 	if (renderer.info.render.calls % 5 === 0) {
+			// 		timestamps.innerHTML = `
+
+			// 				Compute ${renderer.info.compute.frameCalls} pass in ${renderer.info.compute.timestamp.toFixed(6)}ms<br>
+			// 				Draw ${renderer.info.render.drawCalls} pass in ${renderer.info.render.timestamp.toFixed(6)}ms`;
+			// 	}
+			// } else {
+			// 	timestamps.innerHTML = 'Timestamp queries not supported';
+			// }
+		}
+
+		*/
+	}
 
 	// topDown(canvas) {
 	// 	const context = canvas.getContext('webgl2');

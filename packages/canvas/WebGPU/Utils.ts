@@ -123,6 +123,8 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 
 		if (Array.isArray(attachment.clearValue)) {
 			newAttachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
+		} else {
+			newAttachment.clearValue = attachment.clearValue;
 		}
 		if (attachment.view) {
 			newAttachment.view = attachment.view[native_];

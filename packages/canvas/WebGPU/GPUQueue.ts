@@ -122,14 +122,18 @@ export class GPUQueue {
 	}
 
 	writeTexture(destination: GPUImageCopyTexture, data: BufferSource, dataLayout: GPUImageDataLayout, size: GPUExtent3D) {
-		destination.texture = destination.texture[native_];
-		if (Array.isArray(size)) {
-			size = {
-				width: size[0],
-				height: size[1] ?? 1,
-				depthOrArrayLayers: size[2] ?? 1,
+		const dst: GPUImageCopyTexture = {
+			...destination,
+			texture: destination.texture[native_],
+		};
+		let ext = { ...size };
+		if (Array.isArray(ext)) {
+			ext = {
+				width: ext[0],
+				height: ext[1] ?? 1,
+				depthOrArrayLayers: ext[2] ?? 1,
 			};
 		}
-		this[native_].writeTexture(destination, data, dataLayout, size);
+		this[native_].writeTexture(dst, data, dataLayout, ext);
 	}
 }

@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas",
-	"version": "2.0.0-webgpu.21",
+	"version": "2.0.0-webgpu.22",
 	"description": "DOM Canvas API for NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

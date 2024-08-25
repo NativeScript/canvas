@@ -124,6 +124,8 @@ export class Element extends Node {
 
 	_namespaceURI: string | null = null;
 
+	nodeType = Node.ELEMENT_NODE;
+
 	get namespaceURI() {
 		return this._namespaceURI;
 	}
@@ -186,6 +188,13 @@ export class Element extends Node {
 		}
 
 		return [];
+	}
+
+	hasAttribute(key) {
+		if (this.nativeElement) {
+			return Object.hasOwn(this.nativeElement, key);
+		}
+		return this._attrs.has(key);
 	}
 
 	getAttribute(key: string): string {

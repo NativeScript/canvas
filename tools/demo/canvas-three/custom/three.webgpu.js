@@ -31678,7 +31678,8 @@ class ConstNode extends InputNode {
 
 	generate(builder, output) {
 		const type = this.getNodeType(builder);
-
+		console.log('generate', type, output);
+		// textureLoad
 		if (type === 'float' && ['int', 'uint'].includes(output)) {
 			return `${Math.round(parseFloat(this.generateConst(builder)))}`;
 		}

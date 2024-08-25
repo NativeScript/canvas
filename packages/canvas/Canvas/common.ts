@@ -377,7 +377,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	get ownerDocument() {
-		return window?.document ?? doc;
+		//return window?.document ?? doc;
+		return this;
 	}
 
 	emit() {}

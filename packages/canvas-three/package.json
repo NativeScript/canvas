@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-three",
-	"version": "2.0.0-webgpu.22",
+	"version": "2.0.0-webgpu.23",
 	"description": "Utilities for using THREE.js on NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

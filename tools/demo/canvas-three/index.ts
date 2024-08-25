@@ -72,7 +72,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		//	this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -96,7 +96,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//canvas.height = 1000;
 		//this.threeOcean(this.canvas);
 
-		//this.skinningAndMorphing(this.canvas);
+		this.skinningAndMorphingWebGPU(this.canvas);
 
 		//this.geoColors(this.canvas);
 		// setTimeout(()=>{
@@ -145,12 +145,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		async function init() {
-			canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
-			canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
-			const { width, height } = canvas;
+			canvas.width = canvas.clientWidth * window.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-			const innerWidth = width;
-			const innerHeight = height;
+			const innerWidth = canvas.clientWidth;
+			const innerHeight = canvas.clientHeight;
 
 			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
 			camera.position.z = 1;
@@ -166,10 +165,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer = new THREE.WebGPURenderer({ canvas });
 
 			await renderer.init();
-			renderer.setSize(width, height);
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-			camera.aspect = canvas.width / canvas.height;
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			context = canvas.getContext('webgpu');
 			renderer.setAnimationLoop(animate);
 		}
@@ -266,8 +263,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// renderer
 
 			renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
-			//renderer.setPixelRatio( window.devicePixelRatio );
-			//renderer.setSize( canvas.clientWidth, canvas.clientHeight);
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
 			context = canvas.getContext('webgpu');
 
@@ -441,7 +438,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			canvas.height = canvas.clientHeight * window.devicePixelRatio;
 			width = canvas.width;
 			height = canvas.height;
-			camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+			camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.25, 20);
 			camera.position.set(-1.8, 0.6, 2.7);
 			scene = new THREE.Scene();
 			const light = new THREE.SpotLight();
@@ -463,10 +460,10 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				});
 			});
 			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
-			//renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(width, height);
-			camera.aspect = canvas.width / canvas.height;
+
 			// renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			// renderer.toneMappingExposure = 1;
 
@@ -483,7 +480,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			context = canvas.getContext('webgpu');
 
-			onWindowResize();
+			//	onWindowResize();
 			window.addEventListener('resize', onWindowResize, false);
 		};
 
@@ -3364,6 +3361,231 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	// 	animate();
 	// }
 	// */
+
+	skinningAndMorphingWebGPU(canvas) {
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
+		const { clientWidth: width, clientHeight: height } = canvas;
+		var container, stats, clock, gui, mixer, actions, activeAction, previousAction;
+		var camera, scene, renderer, model, face;
+		var context;
+
+		var api = { state: 'Walking' };
+
+		const init = async () => {
+			camera = new THREE.PerspectiveCamera(45, width / height, 0.25, 100);
+			camera.position.set(0, 6, 10);
+			camera.lookAt(new THREE.Vector3(0, 2, 0));
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xe0e0e0);
+			scene.fog = new THREE.Fog(0xe0e0e0, 20, 100);
+
+			clock = new THREE.Clock();
+
+			// lights
+
+			var light = new THREE.HemisphereLight(0xffffff, 0x444444);
+			light.position.set(0, 20, 0);
+			scene.add(light);
+
+			light = new THREE.DirectionalLight(0xffffff) as any;
+			light.position.set(0, 20, 10);
+			scene.add(light);
+
+			// ground
+
+			var mesh = new THREE.Mesh(
+				new THREE.PlaneGeometry(2000, 2000),
+				new THREE.MeshPhongMaterial({
+					color: 0x999999,
+					depthWrite: false,
+				})
+			);
+			mesh.rotation.x = -Math.PI / 2;
+			scene.add(mesh);
+
+			var grid = new THREE.GridHelper(200, 40, 0x000000, 0x000000) as any;
+			grid.material.opacity = 0.2;
+			grid.material.transparent = true;
+			scene.add(grid);
+
+			// model
+
+			var loader = new GLTFLoader();
+			loader.load(
+				this.root + '/models/gltf/RobotExpressive/RobotExpressive.glb',
+				function (gltf) {
+					model = gltf.scene;
+					scene.add(model);
+
+					createGUI(model, gltf.animations);
+				},
+				undefined,
+				function (e) {
+					console.error(e);
+				}
+			);
+
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			await renderer.init();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height, false);
+
+			context = canvas.getContext('webgpu');
+			//renderer.outputEncoding = THREE.sRGBEncoding;
+			//container.appendChild( renderer.domElement );
+
+			window.addEventListener('resize', onWindowResize, false);
+
+			const controls = new OrbitControls(camera, canvas);
+			controls.update();
+
+			// stats
+			/*stats = new Stats();
+			container.appendChild( stats.dom );*/
+		};
+
+		function createGUI(model, animations) {
+			var states = ['Idle', 'Walking', 'Running', 'Dance', 'Death', 'Sitting', 'Standing'];
+			var emotes = ['Jump', 'Yes', 'No', 'Wave', 'Punch', 'ThumbsUp'];
+
+			//	gui = new GUI();
+
+			mixer = new THREE.AnimationMixer(model);
+
+			actions = {};
+
+			for (var i = 0; i < animations.length; i++) {
+				var clip = animations[i];
+				var action = mixer.clipAction(clip);
+				actions[clip.name] = action;
+
+				if (emotes.indexOf(clip.name) >= 0 || states.indexOf(clip.name) >= 4) {
+					action.clampWhenFinished = true;
+					action.loop = THREE.LoopOnce;
+				}
+			}
+
+			// states
+
+			/*
+			var statesFolder = gui.addFolder( 'States' );
+
+			var clipCtrl = statesFolder.add( api, 'state' ).options( states );
+
+			clipCtrl.onChange( function () {
+
+				fadeToAction( api.state, 0.5 );
+
+			} );
+
+			statesFolder.open();
+
+			// emotes
+
+							var emoteFolder = gui.addFolder( 'Emotes' );
+
+							*/
+
+			function createEmoteCallback(name) {
+				api[name] = function () {
+					fadeToAction(name, 0.2);
+
+					mixer.addEventListener('finished', restoreState);
+				};
+
+				//emoteFolder.add( api, name );
+			}
+
+			function restoreState() {
+				mixer.removeEventListener('finished', restoreState);
+
+				fadeToAction(api.state, 0.2);
+			}
+
+			for (var i = 0; i < emotes.length; i++) {
+				createEmoteCallback(emotes[i]);
+			}
+
+			//	emoteFolder.open();
+
+			// expressions
+
+			face = model.getObjectByName('Head_2');
+
+			/*	var expressions = Object.keys( face.morphTargetDictionary );
+			var expressionFolder = gui.addFolder( 'Expressions' );
+
+			for ( var i = 0; i < expressions.length; i ++ ) {
+
+				expressionFolder.add( face.morphTargetInfluences, i, 0, 1, 0.01 ).name( expressions[ i ] );
+
+			}*/
+
+			activeAction = actions['Walking'];
+			activeAction.play();
+
+			//expressionFolder.open();
+
+			setTimeout(() => {
+				fadeToAction('Punch', 0.2);
+				setTimeout(() => {
+					fadeToAction('Jump', 0.2);
+					setTimeout(() => {
+						fadeToAction('Running', 0.2);
+					}, 5000);
+				}, 5000);
+			}, 5000);
+		}
+
+		function fadeToAction(name, duration) {
+			previousAction = activeAction;
+			activeAction = actions[name];
+
+			if (previousAction !== activeAction) {
+				previousAction.fadeOut(duration);
+			}
+
+			activeAction.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(duration).play();
+		}
+
+		function onWindowResize() {
+			camera.aspect = canvas.width / canvas.height;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(canvas.width, canvas.height);
+		}
+
+		//
+
+		var last = 0;
+
+		function animate(d = 0) {
+			var delta = 0;
+			if (last != 0) {
+				delta = (d - last) / 1000;
+			}
+			var dt = clock.getDelta();
+
+			if (mixer) mixer.update(last == 0 ? 0 : delta);
+
+			requestAnimationFrame(animate);
+
+			renderer.render(scene, camera);
+
+			//stats.update();
+
+			context.presentSurface();
+
+			last = d;
+		}
+
+		init().then(() => {
+			animate();
+		});
+	}
 
 	// skinningAndMorphing(canvas) {
 	// 	const context = canvas.getContext('webgl2', { antialias: true }) as WebGL2RenderingContext;

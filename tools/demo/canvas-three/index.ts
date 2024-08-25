@@ -71,7 +71,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
-		//this.webGPUGtlfLoader(this.canvas);
+		this.webGPUGtlfLoader(this.canvas);
 		//	this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
@@ -96,7 +96,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//canvas.height = 1000;
 		//this.threeOcean(this.canvas);
 
-		this.skinningAndMorphingWebGPU(this.canvas);
+		//this.skinningAndMorphingWebGPU(this.canvas);
 
 		//this.geoColors(this.canvas);
 		// setTimeout(()=>{

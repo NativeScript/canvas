@@ -1668,6 +1668,987 @@
 			},
 			{
 				"kind": "Import",
+				"name": "CoreVideo",
+				"printedName": "CoreVideo",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
+				"kind": "Import",
+				"name": "AVFoundation",
+				"printedName": "AVFoundation",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCVideoFrame",
+				"printedName": "NSCVideoFrame",
+				"children": [
+					{
+						"kind": "TypeDecl",
+						"name": "NSCVideoFrameFormat",
+						"printedName": "NSCVideoFrameFormat",
+						"children": [
+							{
+								"kind": "Var",
+								"name": "I420",
+								"printedName": "I420",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4I420yA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4I420yA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 0
+							},
+							{
+								"kind": "Var",
+								"name": "I420A",
+								"printedName": "I420A",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO5I420AyA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO5I420AyA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 1
+							},
+							{
+								"kind": "Var",
+								"name": "I422",
+								"printedName": "I422",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4I422yA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4I422yA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 2
+							},
+							{
+								"kind": "Var",
+								"name": "I444",
+								"printedName": "I444",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4I444yA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4I444yA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 3
+							},
+							{
+								"kind": "Var",
+								"name": "NV12",
+								"printedName": "NV12",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4NV12yA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4NV12yA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 4
+							},
+							{
+								"kind": "Var",
+								"name": "RGBA",
+								"printedName": "RGBA",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4RGBAyA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4RGBAyA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 5
+							},
+							{
+								"kind": "Var",
+								"name": "RGBX",
+								"printedName": "RGBX",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4RGBXyA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4RGBXyA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 6
+							},
+							{
+								"kind": "Var",
+								"name": "BGRA",
+								"printedName": "BGRA",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4BGRAyA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4BGRAyA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 7
+							},
+							{
+								"kind": "Var",
+								"name": "BGRX",
+								"printedName": "BGRX",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type) -> CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCVideoFrameFormat",
+														"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+														"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO4BGRXyA2EmF",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO4BGRXyA2EmF",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"fixedbinaryorder": 8
+							},
+							{
+								"kind": "Var",
+								"name": "rawValue",
+								"printedName": "rawValue",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "UInt32",
+										"printedName": "Swift.UInt32",
+										"usr": "s:s6UInt32V"
+									}
+								],
+								"declKind": "Var",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValues6UInt32Vvp",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValues6UInt32Vvp",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["AccessControl"],
+								"accessors": [
+									{
+										"kind": "Accessor",
+										"name": "Get",
+										"printedName": "Get()",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "UInt32",
+												"printedName": "Swift.UInt32",
+												"usr": "s:s6UInt32V"
+											}
+										],
+										"declKind": "Accessor",
+										"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValues6UInt32Vvg",
+										"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValues6UInt32Vvg",
+										"moduleName": "CanvasNative",
+										"accessorKind": "get"
+									}
+								]
+							},
+							{
+								"kind": "Constructor",
+								"name": "init",
+								"printedName": "init(rawValue:)",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCVideoFrameFormat",
+												"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+												"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+											}
+										],
+										"usr": "s:Sq"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "UInt32",
+										"printedName": "Swift.UInt32",
+										"usr": "s:s6UInt32V"
+									}
+								],
+								"declKind": "Constructor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValueAESgs6UInt32V_tcfc",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValueAESgs6UInt32V_tcfc",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["AccessControl"],
+								"init_kind": "Designated"
+							}
+						],
+						"declKind": "Enum",
+						"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC0cD6FormatO",
+						"moduleName": "CanvasNative",
+						"objc_name": "NSCVideoFrameFormat",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"enumRawTypeName": "Int",
+						"conformances": [
+							{
+								"kind": "Conformance",
+								"name": "Equatable",
+								"printedName": "Equatable",
+								"usr": "s:SQ",
+								"mangledName": "$sSQ"
+							},
+							{
+								"kind": "Conformance",
+								"name": "Hashable",
+								"printedName": "Hashable",
+								"usr": "s:SH",
+								"mangledName": "$sSH"
+							},
+							{
+								"kind": "Conformance",
+								"name": "RawRepresentable",
+								"printedName": "RawRepresentable",
+								"children": [
+									{
+										"kind": "TypeWitness",
+										"name": "RawValue",
+										"printedName": "RawValue",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "UInt32",
+												"printedName": "Swift.UInt32",
+												"usr": "s:s6UInt32V"
+											}
+										]
+									}
+								],
+								"usr": "s:SY",
+								"mangledName": "$sSY"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "pixelBuffer",
+						"printedName": "pixelBuffer",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "CVBuffer",
+								"printedName": "CoreVideo.CVBuffer",
+								"usr": "c:@T@CVBufferRef"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC11pixelBufferSo11CVBufferRefavp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC11pixelBufferSo11CVBufferRefavp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasStorage", "AccessControl", "SetterAccess"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CVBuffer",
+										"printedName": "CoreVideo.CVBuffer",
+										"usr": "c:@T@CVBufferRef"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC11pixelBufferSo11CVBufferRefavg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC11pixelBufferSo11CVBufferRefavg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "timestamp",
+						"printedName": "timestamp",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int64",
+								"printedName": "Swift.Int64",
+								"usr": "s:s5Int64V"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC9timestamps5Int64Vvp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC9timestamps5Int64Vvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasStorage", "AccessControl", "SetterAccess"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int64",
+										"printedName": "Swift.Int64",
+										"usr": "s:s5Int64V"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC9timestamps5Int64Vvg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC9timestamps5Int64Vvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "format",
+						"printedName": "format",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrameFormat",
+								"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+								"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC6formatAC0cD6FormatOvp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC6formatAC0cD6FormatOvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasStorage", "AccessControl", "SetterAccess"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCVideoFrameFormat",
+										"printedName": "CanvasNative.NSCVideoFrame.NSCVideoFrameFormat",
+										"usr": "s:12CanvasNative13NSCVideoFrameC0cD6FormatO"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC6formatAC0cD6FormatOvg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC6formatAC0cD6FormatOvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "getCurrentFrame",
+						"printedName": "getCurrentFrame(_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCVideoFrame?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCVideoFrame",
+										"printedName": "CanvasNative.NSCVideoFrame",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayer",
+								"printedName": "AVFoundation.AVPlayer",
+								"usr": "c:objc(cs)AVPlayer"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayerItemVideoOutput",
+								"printedName": "AVFoundation.AVPlayerItemVideoOutput",
+								"usr": "c:objc(cs)AVPlayerItemVideoOutput"
+							}
+						],
+						"declKind": "Func",
+						"usr": "s:12CanvasNative13NSCVideoFrameC010getCurrentD0yACSgSo8AVPlayerC_So0G15ItemVideoOutputCtKFZ",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC010getCurrentD0yACSgSo8AVPlayerC_So0G15ItemVideoOutputCtKFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"declAttributes": ["Final", "AccessControl"],
+						"throwing": true,
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(currentTime:frame:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrame",
+								"printedName": "CanvasNative.NSCVideoFrame",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CMTime",
+								"printedName": "CoreMedia.CMTime",
+								"usr": "c:@SA@CMTime"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CVBuffer",
+								"printedName": "CoreVideo.CVBuffer",
+								"usr": "c:@T@CVBufferRef"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative13NSCVideoFrameC11currentTime5frameACSo6CMTimea_So11CVBufferRefatKcfc",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC11currentTime5frameACSo6CMTimea_So11CVBufferRefatKcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"throwing": true,
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(buffer:ts:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrame",
+								"printedName": "CanvasNative.NSCVideoFrame",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CVBuffer",
+								"printedName": "CoreVideo.CVBuffer",
+								"usr": "c:@T@CVBufferRef"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int64",
+								"printedName": "Swift.Int64",
+								"usr": "s:s5Int64V"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative13NSCVideoFrameC6buffer2tsACSo11CVBufferRefa_s5Int64VtKcfc",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC6buffer2tsACSo11CVBufferRefa_s5Int64VtKcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "RawDocComment"],
+						"throwing": true,
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Function",
+						"name": "clone",
+						"printedName": "clone()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrame",
+								"printedName": "CanvasNative.NSCVideoFrame",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame"
+							}
+						],
+						"declKind": "Func",
+						"usr": "s:12CanvasNative13NSCVideoFrameC5cloneACyKF",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC5cloneACyKF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"throwing": true,
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Var",
+						"name": "codedWidth",
+						"printedName": "codedWidth",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC10codedWidthSivp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC10codedWidthSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC10codedWidthSivg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC10codedWidthSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "codedHeight",
+						"printedName": "codedHeight",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC11codedHeightSivp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC11codedHeightSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC11codedHeightSivg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC11codedHeightSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "codedRect",
+						"printedName": "codedRect",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "CGRect",
+								"printedName": "CoreFoundation.CGRect",
+								"usr": "c:@S@CGRect"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CGRect",
+										"printedName": "CoreFoundation.CGRect",
+										"usr": "c:@S@CGRect"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "visibleRect",
+						"printedName": "visibleRect",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "CGRect",
+								"printedName": "CoreFoundation.CGRect",
+								"usr": "c:@S@CGRect"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvp",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CGRect",
+										"printedName": "CoreFoundation.CGRect",
+										"usr": "c:@S@CGRect"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvg",
+								"mangledName": "$s12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCVideoFrame",
+								"printedName": "CanvasNative.NSCVideoFrame",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame(im)init",
+						"mangledName": "$s12CanvasNative13NSCVideoFrameCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCVideoFrame",
+				"mangledName": "$s12CanvasNative13NSCVideoFrameC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCVideoFrame",
+				"declAttributes": ["AccessControl", "ObjC"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					}
+				]
+			},
+			{
+				"kind": "Import",
+				"name": "Foundation",
+				"printedName": "Foundation",
+				"declKind": "Import",
+				"moduleName": "CanvasNative",
+				"declAttributes": ["RawDocComment"]
+			},
+			{
+				"kind": "Import",
 				"name": "UIKit",
 				"printedName": "UIKit",
 				"declKind": "Import",
@@ -3821,8 +4802,8 @@
 			},
 			{
 				"kind": "TypeDecl",
-				"name": "Utils",
-				"printedName": "Utils",
+				"name": "NSCCanvasUtils",
+				"printedName": "NSCCanvasUtils",
 				"children": [
 					{
 						"kind": "Function",
@@ -3845,8 +4826,8 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(cm)createTextureCache",
-						"mangledName": "$s12CanvasNative5UtilsC18createTextureCacheSo017CVOpenGLESTextureF3RefaSgyFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)createTextureCache",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC18createTextureCacheSo017CVOpenGLESTextureG3RefaSgyFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
@@ -3941,8 +4922,8 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(cm)createImage::::::::::",
-						"mangledName": "$s12CanvasNative5UtilsC11createImageySo11CVBufferRefaSgSo022CVOpenGLESTextureCacheG0a_AFSo012CFDictionaryG0aSgs6UInt32Vs5Int32VA2p2NSitFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)createImage::::::::::",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC11createImageySo11CVBufferRefaSgSo022CVOpenGLESTextureCacheH0a_AFSo012CFDictionaryH0aSgs6UInt32Vs5Int32VA2p2NSitFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
@@ -3961,8 +4942,8 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(cm)setupRender",
-						"mangledName": "$s12CanvasNative5UtilsC11setupRenderAA9NSCRenderCyFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)setupRender",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC11setupRenderAA9NSCRenderCyFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
@@ -4022,12 +5003,90 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(cm)drawFrame:::::::",
-						"mangledName": "$s12CanvasNative5UtilsC9drawFrameyySo8AVPlayerC_So0F15ItemVideoOutputCSo6CGSizeVAA9NSCRenderCs5Int32VANSbtFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)drawFrame:::::::",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC9drawFrameyySo8AVPlayerC_So0G15ItemVideoOutputCSo6CGSizeVAA9NSCRenderCs5Int32VANSbtFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "TypeDecl",
+						"name": "NSCError",
+						"printedName": "NSCError",
+						"children": [
+							{
+								"kind": "Var",
+								"name": "customError",
+								"printedName": "customError",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCCanvasUtils.NSCError.Type) -> (Swift.String) -> CanvasNative.NSCCanvasUtils.NSCError",
+										"children": [
+											{
+												"kind": "TypeFunc",
+												"name": "Function",
+												"printedName": "(Swift.String) -> CanvasNative.NSCCanvasUtils.NSCError",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCError",
+														"printedName": "CanvasNative.NSCCanvasUtils.NSCError",
+														"usr": "s:12CanvasNative14NSCCanvasUtilsC8NSCErrorO"
+													},
+													{
+														"kind": "TypeNominal",
+														"name": "String",
+														"printedName": "Swift.String",
+														"usr": "s:SS"
+													}
+												]
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Metatype",
+												"printedName": "CanvasNative.NSCCanvasUtils.NSCError.Type",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCError",
+														"printedName": "CanvasNative.NSCCanvasUtils.NSCError",
+														"usr": "s:12CanvasNative14NSCCanvasUtilsC8NSCErrorO"
+													}
+												]
+											}
+										]
+									}
+								],
+								"declKind": "EnumElement",
+								"usr": "s:12CanvasNative14NSCCanvasUtilsC8NSCErrorO11customErroryAESScAEmF",
+								"mangledName": "$s12CanvasNative14NSCCanvasUtilsC8NSCErrorO11customErroryAESScAEmF",
+								"moduleName": "CanvasNative"
+							}
+						],
+						"declKind": "Enum",
+						"usr": "s:12CanvasNative14NSCCanvasUtilsC8NSCErrorO",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC8NSCErrorO",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"conformances": [
+							{
+								"kind": "Conformance",
+								"name": "Error",
+								"printedName": "Error",
+								"usr": "s:s5ErrorP",
+								"mangledName": "$ss5ErrorP"
+							},
+							{
+								"kind": "Conformance",
+								"name": "Sendable",
+								"printedName": "Sendable",
+								"usr": "s:s8SendableP",
+								"mangledName": "$ss8SendableP"
+							}
+						]
 					},
 					{
 						"kind": "Function",
@@ -4053,8 +5112,8 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(cm)writeToFile::error:",
-						"mangledName": "$s12CanvasNative5UtilsC11writeToFileyySo6NSDataC_SStKFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)writeToFile::error:",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC11writeToFileyySo6NSDataC_SStKFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
@@ -4068,14 +5127,14 @@
 						"children": [
 							{
 								"kind": "TypeNominal",
-								"name": "Utils",
-								"printedName": "CanvasNative.Utils",
-								"usr": "c:@M@CanvasNative@objc(cs)Utils"
+								"name": "NSCCanvasUtils",
+								"printedName": "CanvasNative.NSCCanvasUtils",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils"
 							}
 						],
 						"declKind": "Constructor",
-						"usr": "c:@M@CanvasNative@objc(cs)Utils(im)init",
-						"mangledName": "$s12CanvasNative5UtilsCACycfc",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(im)init",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsCACycfc",
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"implicit": true,
@@ -4085,10 +5144,10 @@
 					}
 				],
 				"declKind": "Class",
-				"usr": "c:@M@CanvasNative@objc(cs)Utils",
-				"mangledName": "$s12CanvasNative5UtilsC",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils",
+				"mangledName": "$s12CanvasNative14NSCCanvasUtilsC",
 				"moduleName": "CanvasNative",
-				"objc_name": "Utils",
+				"objc_name": "NSCCanvasUtils",
 				"declAttributes": ["AccessControl", "ObjC"],
 				"superclassUsr": "c:objc(cs)NSObject",
 				"inheritsConvenienceInitializers": true,
@@ -5893,6 +6952,69 @@
 	},
 	"ConstValues": [
 		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 403,
+			"length": 5,
+			"value": "1"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 425,
+			"length": 4,
+			"value": "2"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 446,
+			"length": 4,
+			"value": "3"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 467,
+			"length": 4,
+			"value": "4"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 488,
+			"length": 4,
+			"value": "5"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 509,
+			"length": 4,
+			"value": "6"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 530,
+			"length": 4,
+			"value": "7"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "IntegerLiteral",
+			"offset": 551,
+			"length": 4,
+			"value": "8"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
+			"kind": "StringLiteral",
+			"offset": 190,
+			"length": 13,
+			"value": "\"CanvasNative.NSCVideoFrame\""
+		},
+		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
 			"offset": 524,
@@ -6208,9 +7330,9 @@
 			"value": "\"NSCImageBitmapQueue\""
 		},
 		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/Utils.swift",
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCCanvasUtils.swift",
 			"kind": "IntegerLiteral",
-			"offset": 242,
+			"offset": 269,
 			"length": 1,
 			"value": "4"
 		},

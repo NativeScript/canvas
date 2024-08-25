@@ -444,6 +444,20 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSCRender;
+@class AVPlayer;
+@class AVPlayerItemVideoOutput;
+
+SWIFT_CLASS_NAMED("NSCCanvasUtils")
+@interface NSCCanvasUtils : NSObject
++ (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
++ (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
++ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
 
 SWIFT_CLASS_NAMED("NSCImageAsset")
 @interface NSCImageAsset : NSObject
@@ -471,6 +485,25 @@ SWIFT_CLASS_NAMED("NSCRender")
 @end
 
 
+SWIFT_CLASS_NAMED("NSCVideoFrame")
+@interface NSCVideoFrame : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCVideoFrameFormat, "NSCVideoFrameFormat", open) {
+  NSCVideoFrameFormatI420 = 0,
+  NSCVideoFrameFormatI420A = 1,
+  NSCVideoFrameFormatI422 = 2,
+  NSCVideoFrameFormatI444 = 3,
+  NSCVideoFrameFormatNV12 = 4,
+  NSCVideoFrameFormatRGBA = 5,
+  NSCVideoFrameFormatRGBX = 6,
+  NSCVideoFrameFormatBGRA = 7,
+  NSCVideoFrameFormatBGRX = 8,
+};
+
+
 SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 @interface NSCWebGLRenderingContext : NSObject
 + (void)texImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
@@ -481,19 +514,6 @@ SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 
 @interface UIView (SWIFT_EXTENSION(CanvasNative))
 - (void)getBoundingClientRect:(void * _Nonnull)buffer;
-@end
-
-@class AVPlayer;
-@class AVPlayerItemVideoOutput;
-
-SWIFT_CLASS_NAMED("Utils")
-@interface Utils : NSObject
-+ (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
-+ (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
-+ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
-+ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 #endif
@@ -950,6 +970,20 @@ SWIFT_CLASS_NAMED("NSCCanvasRenderingContext2D")
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSCRender;
+@class AVPlayer;
+@class AVPlayerItemVideoOutput;
+
+SWIFT_CLASS_NAMED("NSCCanvasUtils")
+@interface NSCCanvasUtils : NSObject
++ (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
++ (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
++ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
 
 SWIFT_CLASS_NAMED("NSCImageAsset")
 @interface NSCImageAsset : NSObject
@@ -977,6 +1011,25 @@ SWIFT_CLASS_NAMED("NSCRender")
 @end
 
 
+SWIFT_CLASS_NAMED("NSCVideoFrame")
+@interface NSCVideoFrame : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCVideoFrameFormat, "NSCVideoFrameFormat", open) {
+  NSCVideoFrameFormatI420 = 0,
+  NSCVideoFrameFormatI420A = 1,
+  NSCVideoFrameFormatI422 = 2,
+  NSCVideoFrameFormatI444 = 3,
+  NSCVideoFrameFormatNV12 = 4,
+  NSCVideoFrameFormatRGBA = 5,
+  NSCVideoFrameFormatRGBX = 6,
+  NSCVideoFrameFormatBGRA = 7,
+  NSCVideoFrameFormatBGRX = 8,
+};
+
+
 SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 @interface NSCWebGLRenderingContext : NSObject
 + (void)texImage2D:(int64_t)context :(int32_t)target :(int32_t)level :(int32_t)internalformat :(int32_t)format :(int32_t)type :(uint8_t * _Nonnull)data :(NSUInteger)size :(CGSize)dimensions :(BOOL)flipY;
@@ -987,19 +1040,6 @@ SWIFT_CLASS_NAMED("NSCWebGLRenderingContext")
 
 @interface UIView (SWIFT_EXTENSION(CanvasNative))
 - (void)getBoundingClientRect:(void * _Nonnull)buffer;
-@end
-
-@class AVPlayer;
-@class AVPlayerItemVideoOutput;
-
-SWIFT_CLASS_NAMED("Utils")
-@interface Utils : NSObject
-+ (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
-+ (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
-+ (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
-+ (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 #endif

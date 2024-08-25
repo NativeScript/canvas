@@ -50,6 +50,50 @@ import _SwiftConcurrencyShims
   @objc override dynamic public init()
   @objc deinit
 }
+@objc(NSCVideoFrame) public class NSCVideoFrame : ObjectiveC.NSObject {
+  @objc(NSCVideoFrameFormat) public enum NSCVideoFrameFormat : Swift.Int, Swift.RawRepresentable {
+    public typealias RawValue = Swift.UInt32
+    case I420
+    case I420A
+    case I422
+    case I444
+    case NV12
+    case RGBA
+    case RGBX
+    case BGRA
+    case BGRX
+    public var rawValue: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.RawValue {
+      get
+    }
+    public init?(rawValue: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.RawValue)
+  }
+  public var pixelBuffer: CoreVideo.CVPixelBuffer {
+    get
+  }
+  public var timestamp: CoreMedia.CMTimeValue {
+    get
+  }
+  public var format: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat {
+    get
+  }
+  public static func getCurrentFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput) throws -> CanvasNative.NSCVideoFrame?
+  public init(currentTime: CoreMedia.CMTime, frame: CoreVideo.CVPixelBuffer) throws
+  public init(buffer: CoreVideo.CVPixelBuffer, ts: CoreMedia.CMTimeValue) throws
+  public func clone() throws -> CanvasNative.NSCVideoFrame
+  public var codedWidth: Swift.Int {
+    get
+  }
+  public var codedHeight: Swift.Int {
+    get
+  }
+  public var codedRect: CoreFoundation.CGRect {
+    get
+  }
+  public var visibleRect: CoreFoundation.CGRect {
+    get
+  }
+  @objc deinit
+}
 @_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objcMembers @objc(NSCCanvas) @_Concurrency.MainActor(unsafe) public class NSCCanvas : UIKit.UIView {
   @objc(CanvasFit) public enum CanvasFit : Swift.Int, Swift.RawRepresentable {
     public typealias RawValue = Swift.UInt32
@@ -131,11 +175,14 @@ extension UIKit.UIView {
   @objc override dynamic public init()
   @objc deinit
 }
-@_inheritsConvenienceInitializers @objc(Utils) public class Utils : ObjectiveC.NSObject {
+@_inheritsConvenienceInitializers @objc(NSCCanvasUtils) public class NSCCanvasUtils : ObjectiveC.NSObject {
   @objc public static func createTextureCache() -> CoreVideo.CVOpenGLESTextureCache?
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
   @objc public static func setupRender() -> CanvasNative.NSCRender
   @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ render: CanvasNative.NSCRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  public enum NSCError : Swift.Error {
+    case customError(Swift.String)
+  }
   @objc public static func writeToFile(_ data: Foundation.NSData, _ path: Swift.String) throws
   @objc override dynamic public init()
   @objc deinit
@@ -187,5 +234,7 @@ extension GLKit.GLKView {
   @objc override dynamic public init()
   @objc deinit
 }
+extension CanvasNative.NSCVideoFrame.NSCVideoFrameFormat : Swift.Equatable {}
+extension CanvasNative.NSCVideoFrame.NSCVideoFrameFormat : Swift.Hashable {}
 extension CanvasNative.NSCCanvas.CanvasFit : Swift.Equatable {}
 extension CanvasNative.NSCCanvas.CanvasFit : Swift.Hashable {}

@@ -75,6 +75,7 @@ import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopEleme
 (global as any).window.SVGMarkerElement = (global as any).SVGMarkerElement = (global as any).SVGMarkerElement || SVGMarkerElement;
 
 global.window.URL = global.URL;
+global.parent = window.parent = window;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {

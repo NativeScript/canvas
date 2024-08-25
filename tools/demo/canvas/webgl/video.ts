@@ -1,14 +1,17 @@
 var cubeRotation = 0.0;
 // will set to true when video can be copied to texture
 var copyVideo = false;
+import { Canvas } from '@nativescript/canvas';
 import * as glMatrix from './gl-matrix';
 const mat4 = glMatrix.mat4;
 import { Video } from '@nativescript/canvas-media';
 //
 // Start here
 //
-export function handleVideo(canvas) {
-	const gl = canvas.getContext('webgl2') as WebGLRenderingContext;
+export function handleVideo(canvas: Canvas) {
+	canvas.width = canvas.clientWidth;
+	canvas.height = canvas.clientHeight;
+	const gl = canvas.getContext('webgl2');
 	// If we don't have a GL context, give up now
 
 	if (!gl) {
@@ -334,7 +337,7 @@ function initTexture(gl, url?) {
 //
 // copy the video texture
 //
-function updateTexture(gl: WebGLRenderingContext, texture, video) {
+function updateTexture(gl, texture, video) {
 	const level = 0;
 	const internalFormat = gl.RGBA;
 	const srcFormat = gl.RGBA;

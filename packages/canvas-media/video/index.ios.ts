@@ -1,7 +1,7 @@
 import { controlsProperty, VideoBase, playsinlineProperty, mutedProperty, srcProperty, currentTimeProperty } from './common';
 import { Source } from '../common';
 import { knownFolders, path } from '@nativescript/core';
-declare const Utils;
+declare const NSCCanvasUtils;
 @NativeClass()
 class NativeObject extends NSObject {
 	_owner: WeakRef<Video>;
@@ -131,13 +131,13 @@ export class Video extends VideoBase {
 		if (this._assetOutput) {
 			try {
 				if (!this._render) {
-					this._render = Utils.setupRender();
+					this._render = NSCCanvasUtils.setupRender();
 					this._render.createSurface();
 				}
-				Utils.drawFrame(this.#player, this._assetOutput, this._videoSize, this._render, arguments[4], arguments[5], false);
+				NSCCanvasUtils.drawFrame(this.#player, this._assetOutput, this._videoSize, this._render, arguments[4], arguments[5], false);
 			} catch (e) {
 				if (Video.IS_DEBUG) {
-					console.log('getCurrentFrame error:', e);
+					console.error('getCurrentFrame error:', e);
 				}
 			}
 		}

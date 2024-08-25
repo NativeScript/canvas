@@ -14,6 +14,7 @@
 				"assets": [
 					"packages/canvas-three/*.md",
 					"packages/canvas-three/index.d.ts",
+					"packages/canvas-three/three.webgpu.js",
 					"LICENSE",
 					{
 						"glob": "**/*",

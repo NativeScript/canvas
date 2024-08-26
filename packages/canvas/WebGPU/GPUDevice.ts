@@ -36,6 +36,12 @@ function fixup_shader_code(code: string) {
 
 	// diagnostic is unsupport atm, remove after https://github.com/gfx-rs/wgpu/pull/6148
 	code = code.replace(/diagnostic\s*\([^)]*\)/g, '');
+
+	// todo: remove after wgpu adds support for textureLoad with u32
+	code = code.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
+		return match.replace(/0u/, '0');
+	});
+
 	return code;
 }
 

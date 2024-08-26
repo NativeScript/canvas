@@ -38,7 +38,10 @@ import { knownFolders } from '@nativescript/core';
 
 const THREE = require('@nativescript/canvas-three');
 
-import { RGBELoader, GLTFLoader, OrbitControls } from 'three-stdlib';
+import { RGBELoader, GLTFLoader, OrbitControls, SimplexNoise, DRACOLoader } from 'three-stdlib';
+import { tiny_poly_world } from './games/tiny_poly_world';
+import { tiny_poly_world_webgpu } from './games/tiny_poly_world_webgpu';
+import { context } from '@nativescript/canvas-three';
 
 //import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
@@ -71,8 +74,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
-		this.webGPUGtlfLoader(this.canvas);
-		//	this.webgpu_tsl_galaxy(this.canvas);
+		//this.webGPUGtlfLoader(this.canvas);
+		this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -110,7 +113,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.threeCube(this.canvas);
 		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		//tiny_poly_world(this.canvas);
+		// tiny_poly_world(this.canvas);
+		//tiny_poly_world_webgpu(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
 		//this.gtlfLoader(this.canvas);
@@ -123,6 +127,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
+		//this.ao(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
@@ -175,7 +180,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_tsl_galaxy(canvas: Canvas) {
-		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('./custom/three.webgpu');
+		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('@nativescript/canvas-three');
 
 		let camera, scene, renderer, controls, context;
 
@@ -811,99 +816,438 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	// 	animate();
 	// }
 
-	// webgl_postprocessing_unreal_bloom(canvas) {
-	// 	const context = canvas.getContext('webgl2');
+	ao(canvas) {
+		const { pass, mrt, output, transformedNormalView, texture, ao, denoise } = require('@nativescript/canvas-three');
 
-	// 	const width = canvas.width;
-	// 	const height = canvas.height;
+		let camera, scene, renderer, postProcessing, controls, clock, mixer;
 
-	// 	let camera, stats;
-	// 	let composer, renderer, mixer, clock;
+		let aoPass, denoisePass, blendPassAO, blendPassDenoise, scenePassColor;
 
-	// 	const params = {
-	// 		threshold: 0,
-	// 		strength: 1,
-	// 		radius: 0,
-	// 		exposure: 1,
-	// 	};
-	// 	const root = this.root;
+		let context: GPUCanvasContext;
 
-	// 	init();
+		const params = {
+			distanceExponent: 1,
+			distanceFallOff: 1,
+			radius: 0.25,
+			scale: 1,
+			thickness: 1,
+			denoised: true,
+			enabled: true,
+			denoiseRadius: 5,
+			lumaPhi: 5,
+			depthPhi: 5,
+			normalPhi: 5,
+		};
 
-	// 	function init() {
-	// 		clock = new THREE.Clock();
+		const root = this.root;
 
-	// 		renderer = new THREE.WebGLRenderer({ context: context, antialias: true });
-	// 		renderer.setPixelRatio(window.devicePixelRatio);
-	// 		renderer.setSize(width, height);
-	// 		renderer.toneMapping = THREE.ReinhardToneMapping;
+		init().catch((err) => console.error(err));
 
-	// 		const scene = new THREE.Scene();
+		async function init() {
+			const width = canvas.clientWidth;
+			const height = canvas.clientHeight;
+			canvas.width = width * window.devicePixelRatio;
+			canvas.height = height * window.devicePixelRatio;
 
-	// 		camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
-	// 		camera.position.set(-5, 2.5, -3.5);
-	// 		scene.add(camera);
+			camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
+			camera.position.set(5, 2, 10);
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xbfe3dd);
 
-	// 		const controls = new OrbitControls(camera, canvas);
-	// 		controls.maxPolarAngle = Math.PI * 0.5;
-	// 		controls.minDistance = 3;
-	// 		controls.maxDistance = 8;
+			clock = new THREE.Clock();
 
-	// 		scene.add(new THREE.AmbientLight(0xcccccc));
+			const hdrloader = new RGBELoader();
+			const envMap = await hdrloader.loadAsync(root + '/textures/equirectangular/quarry_01_1k.hdr');
+			envMap.mapping = THREE.EquirectangularReflectionMapping;
+			scene.environment = envMap;
 
-	// 		const pointLight = new THREE.PointLight(0xffffff, 100);
-	// 		camera.add(pointLight);
+			renderer = new THREE.WebGPURenderer({ canvas });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(canvas.width, canvas.height, false);
+			await renderer.init();
+			context = canvas.getContext('webgpu');
+			renderer.setAnimationLoop(animate);
+			// document.body.appendChild( renderer.domElement );
 
-	// 		const renderScene = new RenderPass(scene, camera);
+			controls = new OrbitControls(camera, canvas);
+			controls.target.set(0, 0.5, 0);
+			controls.update();
+			controls.enablePan = false;
+			controls.enableDamping = true;
 
-	// 		const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85);
-	// 		bloomPass.threshold = params.threshold;
-	// 		bloomPass.strength = params.strength;
-	// 		bloomPass.radius = params.radius;
+			//
 
-	// 		const outputPass = new OutputPass();
+			postProcessing = new THREE.PostProcessing(renderer);
 
-	// 		composer = new EffectComposer(renderer);
-	// 		composer.addPass(renderScene);
-	// 		composer.addPass(bloomPass);
-	// 		composer.addPass(outputPass);
+			const scenePass = pass(scene, camera);
+			scenePass.setMRT(
+				mrt({
+					output: output,
+					normal: transformedNormalView,
+				})
+			);
 
-	// 		new GLTFLoader().load(root + '/models/gltf/PrimaryIonDrive.glb', function (gltf) {
-	// 			const model = gltf.scene;
+			scenePassColor = scenePass.getTextureNode('output');
+			const scenePassNormal = scenePass.getTextureNode('normal');
+			const scenePassDepth = scenePass.getTextureNode('depth');
 
-	// 			scene.add(model);
+			// ao
 
-	// 			mixer = new THREE.AnimationMixer(model);
-	// 			const clip = gltf.animations[0];
-	// 			mixer.clipAction(clip.optimize()).play();
+			aoPass = ao(scenePassDepth, scenePassNormal, camera);
+			blendPassAO = aoPass.getTextureNode().mul(scenePassColor);
 
-	// 			animate();
-	// 		});
+			// denoise (optional)
 
-	// 		window.addEventListener('resize', onWindowResize);
-	// 	}
+			const noiseTexture = texture(generateNoise());
+			denoisePass = denoise(aoPass.getTextureNode(), scenePassDepth, scenePassNormal, noiseTexture, camera);
+			blendPassDenoise = denoisePass.mul(scenePassColor);
 
-	// 	function onWindowResize() {
-	// 		const width = window.innerWidth;
-	// 		const height = window.innerHeight;
+			postProcessing.outputNode = blendPassDenoise;
 
-	// 		camera.aspect = width / height;
-	// 		camera.updateProjectionMatrix();
+			//
 
-	// 		renderer.setSize(width, height);
-	// 		composer.setSize(width, height);
-	// 	}
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath(root + '/js/libs/draco/gltf/');
+			dracoLoader.setDecoderConfig({ type: 'js' });
+			const loader = new GLTFLoader();
+			loader.setDRACOLoader(dracoLoader);
+			loader.setPath(root + '/models/gltf/');
 
-	// 	function animate() {
-	// 		requestAnimationFrame(animate);
+			const gltf = await loader.loadAsync('LittlestTokyo.glb');
 
-	// 		const delta = clock.getDelta();
+			const model = gltf.scene;
+			model.position.set(1, 1, 0);
+			model.scale.set(0.01, 0.01, 0.01);
+			scene.add(model);
 
-	// 		mixer.update(delta);
+			mixer = new THREE.AnimationMixer(model);
+			mixer.clipAction(gltf.animations[0]).play();
 
-	// 		composer.render();
-	// 	}
-	// }
+			window.addEventListener('resize', onWindowResize);
+
+			//
+
+			// const gui = new GUI();
+			// gui.title( 'AO settings' );
+			// gui.add( params, 'distanceExponent' ).min( 1 ).max( 4 ).onChange( updateParameters );
+			// gui.add( params, 'distanceFallOff' ).min( 0.01 ).max( 1 ).onChange( updateParameters );
+			// gui.add( params, 'radius' ).min( 0.01 ).max( 1 ).onChange( updateParameters );
+			// gui.add( params, 'scale' ).min( 0.01 ).max( 2 ).onChange( updateParameters );
+			// gui.add( params, 'thickness' ).min( 0.01 ).max( 2 ).onChange( updateParameters );
+			// gui.add( params, 'denoised' ).onChange( updatePassChain );
+			// gui.add( params, 'enabled' ).onChange( updatePassChain );
+			// const folder = gui.addFolder( 'Denoise settings' );
+			// folder.add( params, 'denoiseRadius' ).min( 0.01 ).max( 10 ).name( 'radius' ).onChange( updateParameters );
+			// folder.add( params, 'lumaPhi' ).min( 0.01 ).max( 10 ).onChange( updateParameters );
+			// folder.add( params, 'depthPhi' ).min( 0.01 ).max( 10 ).onChange( updateParameters );
+			// folder.add( params, 'normalPhi' ).min( 0.01 ).max( 10 ).onChange( updateParameters );
+		}
+
+		function updatePassChain() {
+			if (params.enabled === true) {
+				if (params.denoised === true) {
+					postProcessing.outputNode = blendPassDenoise;
+				} else {
+					postProcessing.outputNode = blendPassAO;
+				}
+			} else {
+				postProcessing.outputNode = scenePassColor;
+			}
+
+			postProcessing.needsUpdate = true;
+		}
+
+		function updateParameters() {
+			aoPass.distanceExponent.value = params.distanceExponent;
+			aoPass.distanceFallOff.value = params.distanceFallOff;
+			aoPass.radius.value = params.radius;
+			aoPass.scale.value = params.scale;
+			aoPass.thickness.value = params.thickness;
+
+			denoisePass.radius.value = params.denoiseRadius;
+			denoisePass.lumaPhi.value = params.lumaPhi;
+			denoisePass.depthPhi.value = params.depthPhi;
+			denoisePass.normalPhi.value = params.normalPhi;
+		}
+
+		function generateNoise(size = 64) {
+			const simplex = new SimplexNoise();
+
+			const arraySize = size * size * 4;
+			const data = new Uint8Array(arraySize);
+
+			for (let i = 0; i < size; i++) {
+				for (let j = 0; j < size; j++) {
+					const x = i;
+					const y = j;
+
+					data[(i * size + j) * 4] = (simplex.noise(x, y) * 0.5 + 0.5) * 255;
+					data[(i * size + j) * 4 + 1] = (simplex.noise(x + size, y) * 0.5 + 0.5) * 255;
+					data[(i * size + j) * 4 + 2] = (simplex.noise(x, y + size) * 0.5 + 0.5) * 255;
+					data[(i * size + j) * 4 + 3] = (simplex.noise(x + size, y + size) * 0.5 + 0.5) * 255;
+				}
+			}
+
+			const noiseTexture = new THREE.DataTexture(data, size, size);
+			noiseTexture.wrapS = THREE.RepeatWrapping;
+			noiseTexture.wrapT = THREE.RepeatWrapping;
+			noiseTexture.needsUpdate = true;
+
+			return noiseTexture;
+		}
+
+		function onWindowResize() {
+			const width = canvas.clientWidth;
+			const height = canvas.clientHeight;
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(width, height);
+		}
+
+		function animate() {
+			const delta = clock.getDelta();
+
+			if (mixer) {
+				mixer.update(delta);
+			}
+
+			controls.update();
+
+			postProcessing.render();
+
+			context.presentSurface();
+		}
+	}
+
+	webgpu_postprocessing_unreal_bloom(canvas) {
+		const width = canvas.clientWidth;
+		const height = canvas.clientHeight;
+
+		canvas.width = width * window.devicePixelRatio;
+		canvas.height = height * window.devicePixelRatio;
+
+		let camera, stats;
+		let postProcessing, renderer, mixer, clock, context;
+
+		const { pass, bloom } = require('@nativescript/canvas-three');
+
+		const params = {
+			threshold: 0,
+			strength: 1,
+			radius: 0,
+			exposure: 1,
+		};
+		const root = this.root;
+
+		init().catch((e) => {
+			console.error('error', e);
+		});
+
+		async function init() {
+			clock = new THREE.Clock();
+
+			const scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
+			camera.position.set(-5, 2.5, -3.5);
+			scene.add(camera);
+
+			scene.add(new THREE.AmbientLight(0xcccccc));
+
+			const pointLight = new THREE.PointLight(0xffffff, 100);
+			camera.add(pointLight);
+
+			const loader = new GLTFLoader();
+			const gltf = await loader.loadAsync(root + '/models/gltf/PrimaryIonDrive.glb');
+
+			const model = gltf.scene;
+			scene.add(model);
+
+			mixer = new THREE.AnimationMixer(model);
+			const clip = gltf.animations[0];
+			mixer.clipAction(clip.optimize()).play();
+
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height, false);
+			renderer.toneMapping = THREE.ReinhardToneMapping;
+			await renderer.init();
+			renderer.setAnimationLoop(animate);
+			context = canvas.getContext('webgpu');
+
+			postProcessing = new THREE.PostProcessing(renderer);
+
+			const scenePass = pass(scene, camera);
+			const scenePassColor = scenePass.getTextureNode('output');
+
+			const bloomPass = bloom(scenePassColor);
+
+			postProcessing.outputNode = scenePassColor.add(bloomPass);
+
+			//
+
+			//
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.maxPolarAngle = Math.PI * 0.5;
+			controls.minDistance = 3;
+			controls.maxDistance = 8;
+
+			//
+			/*
+
+				const gui = new GUI();
+
+				const bloomFolder = gui.addFolder( 'bloom' );
+
+				bloomFolder.add( params, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
+
+					bloomPass.threshold.value = value;
+
+				} );
+
+				bloomFolder.add( params, 'strength', 0.0, 3.0 ).onChange( function ( value ) {
+
+					bloomPass.strength.value = value;
+
+				} );
+
+				gui.add( params, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+
+					bloomPass.radius.value = value;
+
+				} );
+
+				const toneMappingFolder = gui.addFolder( 'tone mapping' );
+
+				toneMappingFolder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+
+					renderer.toneMappingExposure = Math.pow( value, 4.0 );
+
+				} );
+				*/
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function onWindowResize() {
+			const width = canvas.width;
+			const height = canvas.height;
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(width, height, false);
+		}
+
+		function animate() {
+			const delta = clock.getDelta();
+
+			mixer.update(delta);
+
+			postProcessing.render();
+
+			context.presentSurface();
+		}
+	}
+
+	/*
+	webgl_postprocessing_unreal_bloom(canvas) {
+		const context = canvas.getContext('webgl2');
+
+		const width = canvas.width;
+		const height = canvas.height;
+
+		let camera, stats;
+		let composer, renderer, mixer, clock;
+
+		const params = {
+			threshold: 0,
+			strength: 1,
+			radius: 0,
+			exposure: 1,
+		};
+		const root = this.root;
+
+		init();
+
+		function init() {
+			clock = new THREE.Clock();
+
+			renderer = new THREE.WebGLRenderer({ context: context, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(width, height);
+			renderer.toneMapping = THREE.ReinhardToneMapping;
+
+			const scene = new THREE.Scene();
+
+			camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
+			camera.position.set(-5, 2.5, -3.5);
+			scene.add(camera);
+
+			const controls = new OrbitControls(camera, canvas);
+			controls.maxPolarAngle = Math.PI * 0.5;
+			controls.minDistance = 3;
+			controls.maxDistance = 8;
+
+			scene.add(new THREE.AmbientLight(0xcccccc));
+
+			const pointLight = new THREE.PointLight(0xffffff, 100);
+			camera.add(pointLight);
+
+			const renderScene = new RenderPass(scene, camera);
+
+			const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height), 1.5, 0.4, 0.85);
+			bloomPass.threshold = params.threshold;
+			bloomPass.strength = params.strength;
+			bloomPass.radius = params.radius;
+
+			const outputPass = new OutputPass();
+
+			composer = new EffectComposer(renderer);
+			composer.addPass(renderScene);
+			composer.addPass(bloomPass);
+			composer.addPass(outputPass);
+
+			new GLTFLoader().load(root + '/models/gltf/PrimaryIonDrive.glb', function (gltf) {
+				const model = gltf.scene;
+
+				scene.add(model);
+
+				mixer = new THREE.AnimationMixer(model);
+				const clip = gltf.animations[0];
+				mixer.clipAction(clip.optimize()).play();
+
+				animate();
+			});
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function onWindowResize() {
+			const width = window.innerWidth;
+			const height = window.innerHeight;
+
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(width, height);
+			composer.setSize(width, height);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			const delta = clock.getDelta();
+
+			mixer.update(delta);
+
+			composer.render();
+		}
+	}
+	*/
 
 	// gtlfLoader(canvas) {
 	// 	var container, controls, context, width, height;

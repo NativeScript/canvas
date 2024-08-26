@@ -1,68 +1,113 @@
-const BLOB_STORE = new Map();
+import { Folder, knownFolders, path, Utils, File as NSFile } from '@nativescript/core';
+
+const BLOB_PATH = 'blob:nativescript/';
+const BLOB_DIR = 'ns_blobs';
+const BLOB_KEYS = 'org.nativescript.canvas.blob.keys';
+
+let sharedPreferences;
+
 if (__ANDROID__) {
-	(<any>URL).createObjectURL = function (object, options: { ext?: string } | null = null) {
-		try {
-			console.log('createObjectURL', object);
-			if (object instanceof Blob || object instanceof File) {
-				const id = java.util.UUID.randomUUID().toString();
-				const ret = `blob:nativescript/${id}`;
-				BLOB_STORE.set(ret, {
-					blob: object,
-					type: object?.type,
-					ext: options?.ext,
-				});
-				return ret;
+	(<any>URL).InternalAccessor.getPath = (url: string) => {
+		const blob = (<any>URL).InternalAccessor.getData(url);
+		if (!blob) {
+			return '';
+		}
+		if (blob.path) {
+			return blob.path;
+		}
+		const buf = (Blob as any).InternalAccessor.getBuffer(blob.blob);
+		const path = (<any>org).nativescript.canvas.polyfill.Utils.getItemOrCreateAndReturn(Utils.android.getApplicationContext(), url, buf, buf.byteOffset, blob?.type ?? null, blob?.ext ?? null);
+		blob.path = path;
+		return path;
+	};
+}
+
+if (__IOS__) {
+	const putItem = (key: string, value: string) => {
+		if (!sharedPreferences) {
+			sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
+		}
+
+		(<NSUserDefaults>sharedPreferences).setObjectForKey(value, key);
+	};
+
+	const createObjectURLLegacyWithId = (id: string, object: any, options = null) => {
+		const buf = (Blob as any).InternalAccessor.getBuffer(object);
+		if (buf || object instanceof Blob || object instanceof File) {
+			const exists = Folder.exists(path.join(knownFolders.documents().path, BLOB_DIR));
+			if (!exists) {
+				Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
 			}
-		} catch (error) {
-			console.log('error', error);
-			return null;
+			let fileName = id;
+			// todo get type from magic bytes
+			if (options?.ext) {
+				fileName = `${fileName}.${options.ext}`;
+			}
+
+			const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+
+			NSFile.fromPath(filePath).writeSync(NSData.dataWithData(buf));
+
+			putItem(id, fileName);
+			return `${BLOB_PATH}${id}`;
 		}
 		return null;
 	};
-}
-URL.revokeObjectURL = function (url) {
-	BLOB_STORE.delete(url);
-};
-const InternalAccessor = class {
-	static getData = function (url) {
-		console.log('getData', url);
-		return BLOB_STORE.get(url);
-	};
-	static InternalAccessor() {
-		return InternalAccessor;
-	}
-};
 
-// Object.defineProperty(URL.prototype, 'searchParams', {
-// 	get() {
-// 		if (this._searchParams == null) {
-// 			this._searchParams = new URLSearchParams(this.search);
-// 			Object.defineProperty(this._searchParams, '_url', {
-// 				enumerable: false,
-// 				writable: false,
-// 				value: this,
-// 			});
-// 			this._searchParams._append = this._searchParams.append;
-// 			this._searchParams.append = function (name, value) {
-// 				this._append(name, value);
-// 				this._url.search = this.toString();
-// 			};
-// 			this._searchParams._delete = this._searchParams.delete;
-// 			this._searchParams.delete = function (name) {
-// 				this._delete(name);
-// 				this._url.search = this.toString();
-// 			};
-// 			this._searchParams._set = this._searchParams.set;
-// 			this._searchParams.set = function (name, value) {
-// 				this._set(name, value);
-// 				this._url.search = this.toString();
-// 			};
-// 			this._searchParams._sort = this._searchParams.sort;
-// 			this._searchParams.sort = function () {
-// 				this._sort();
-// 				this._url.search = this.toString();
-// 			};
-// 		}
-// 		return this._searchParams;
-// 	},
-// });
+	const getItem = (key: string) => {
+		const fileDir = Folder.fromPath(path.join(knownFolders.documents().path, BLOB_DIR));
+		let fileName = null;
+
+		if (!sharedPreferences) {
+			sharedPreferences = NSUserDefaults.alloc().initWithSuiteName(BLOB_KEYS);
+		}
+
+		if (!(<NSUserDefaults>sharedPreferences).objectForKey(key)) {
+			return null;
+		}
+
+		fileName = (<NSUserDefaults>sharedPreferences).stringForKey(key);
+
+		if (fileName) {
+			return path.join(fileDir.path, fileName);
+		}
+		return null;
+	};
+
+	(<any>URL).InternalAccessor.getPath = (url: string) => {
+		const blob = (<any>URL).InternalAccessor.getData(url);
+		if (!blob) {
+			return '';
+		}
+		if (blob.path) {
+			return blob.path;
+		}
+		//const buf = (Blob as any).InternalAccessor.getBuffer(blob.blob);
+
+		const id = url.replace(BLOB_PATH, '');
+
+		if (id === '') {
+			return '';
+		}
+
+		const created = createObjectURLLegacyWithId(id, blob.blob, {
+			type: blob?.type,
+			ext: blob?.ext,
+		});
+
+		if (!created) {
+			return '';
+		}
+
+		let fileName = id;
+
+		if (blob?.ext) {
+			fileName = `${fileName}.${blob?.ext}`;
+		}
+
+		const filePath = path.join(knownFolders.documents().path, BLOB_DIR, fileName);
+
+		blob.path = filePath;
+		return filePath;
+	};
+}

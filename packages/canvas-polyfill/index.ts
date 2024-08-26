@@ -104,4 +104,6 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 	});
 }
 
+import './urlBlobPatch';
+
 // require('./urlBlobPatch');

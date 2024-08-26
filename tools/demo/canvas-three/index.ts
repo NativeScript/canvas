@@ -36,7 +36,7 @@ import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
-const THREE = require('./custom/three.webgpu');
+const THREE = require('@nativescript/canvas-three');
 
 import { RGBELoader, GLTFLoader, OrbitControls } from 'three-stdlib';
 

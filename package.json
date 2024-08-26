@@ -41,6 +41,7 @@
 		"@nativescript/webpack": "~5.0.22",
 		"@ngtools/webpack": "^18.0.0",
 		"@pixi-essentials/svg": "2.0.1",
+		"@types/three": "~0.167.2",
 		"@xmldom/xmldom": "0.8.10",
 		"babylonjs": "7.22.2",
 		"babylonjs-materials": "7.22.2",

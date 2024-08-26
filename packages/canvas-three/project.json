@@ -15,11 +15,17 @@
 					"packages/canvas-three/*.md",
 					"packages/canvas-three/index.d.ts",
 					"packages/canvas-three/three.webgpu.js",
+					"packages/canvas-three/three.webgpu.d.ts",
 					"LICENSE",
 					{
 						"glob": "**/*",
 						"input": "packages/canvas-three/platforms/",
 						"output": "./platforms/"
+					},
+					{
+						"glob": "**/*",
+						"input": "packages/canvas-three/three/",
+						"output": "./three/"
 					}
 				]
 			},

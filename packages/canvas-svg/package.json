@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-svg",
-	"version": "2.0.0-webgpu.28",
+	"version": "2.0.0-webgpu.29",
 	"description": "Add a plugin description",
 	"main": "index",
 	"typings": "index.d.ts",

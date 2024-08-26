@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-media",
-	"version": "2.0.0-webgpu.28",
+	"version": "2.0.0-webgpu.29",
 	"description": "Canvas media",
 	"main": "index",
 	"typings": "index.d.ts",

@@ -25,7 +25,7 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/gfx-rs/wgpu"
-rev = "c72bc7b84b094f70cc47dd8a1aa8175e3f3dc5b6"
+rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091"
 
 [workspace.dependencies]
 parking_lot = "0.12.3"
@@ -37,5 +37,5 @@ gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
 skia-safe = { version = "0.73.0", features = ["textlayout"] }
 itertools = "0.13.0"
-wgpu-core = { git = "https://github.com/gfx-rs/wgpu", rev = "c72bc7b84b094f70cc47dd8a1aa8175e3f3dc5b6", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-types = { git = "https://github.com/gfx-rs/wgpu", rev = "c72bc7b84b094f70cc47dd8a1aa8175e3f3dc5b6" }
+wgpu-core = { git = "https://github.com/gfx-rs/wgpu", rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
+wgpu-types = { git = "https://github.com/gfx-rs/wgpu", rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091" }

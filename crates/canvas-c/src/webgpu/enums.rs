@@ -267,7 +267,7 @@ pub enum CanvasGPUTextureFormat {
     /// Red, green, blue, and alpha channels. 10 bit integer for RGB channels, 2 bit integer for alpha channel. [0, 1023] ([0, 3] for alpha) converted to/from float [0, 1] in shader.
     Rgb10a2Unorm,
     /// Red, green, and blue channels. 11 bit float with no sign bit for RG channels. 10 bit float with no sign bit for blue channel. Float in shader.
-    Rg11b10Float,
+    Rg11b10UFloat,
 
     // Normal 64 bit formats
     /// Red and green channels. 32 bit integer per channel. Unsigned in shader.
@@ -526,7 +526,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
             wgt::TextureFormat::Rgb9e5Ufloat => CanvasGPUTextureFormat::Rgb9e5Ufloat,
             wgt::TextureFormat::Rgb10a2Uint => CanvasGPUTextureFormat::Rgb10a2Uint,
             wgt::TextureFormat::Rgb10a2Unorm => CanvasGPUTextureFormat::Rgb10a2Unorm,
-            wgt::TextureFormat::Rg11b10Float => CanvasGPUTextureFormat::Rg11b10Float,
+            wgt::TextureFormat::Rg11b10UFloat => CanvasGPUTextureFormat::Rg11b10UFloat,
             wgt::TextureFormat::Rg32Uint => CanvasGPUTextureFormat::Rg32Uint,
             wgt::TextureFormat::Rg32Sint => CanvasGPUTextureFormat::Rg32Sint,
             wgt::TextureFormat::Rg32Float => CanvasGPUTextureFormat::Rg32Float,
@@ -621,7 +621,7 @@ impl Into<wgt::TextureFormat> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Rgb9e5Ufloat => wgt::TextureFormat::Rgb9e5Ufloat,
             CanvasGPUTextureFormat::Rgb10a2Uint => wgt::TextureFormat::Rgb10a2Uint,
             CanvasGPUTextureFormat::Rgb10a2Unorm => wgt::TextureFormat::Rgb10a2Unorm,
-            CanvasGPUTextureFormat::Rg11b10Float => wgt::TextureFormat::Rg11b10Float,
+            CanvasGPUTextureFormat::Rg11b10UFloat => wgt::TextureFormat::Rg11b10UFloat,
             CanvasGPUTextureFormat::Rg32Uint => wgt::TextureFormat::Rg32Uint,
             CanvasGPUTextureFormat::Rg32Sint => wgt::TextureFormat::Rg32Sint,
             CanvasGPUTextureFormat::Rg32Float => wgt::TextureFormat::Rg32Float,
@@ -739,7 +739,7 @@ impl Into<String> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Bgra8UnormSrgb => "bgra8unorm-srgb",
             CanvasGPUTextureFormat::Rgb10a2Uint => "rgb10a2uint",
             CanvasGPUTextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
-            CanvasGPUTextureFormat::Rg11b10Float => "rg11b10ufloat",
+            CanvasGPUTextureFormat::Rg11b10UFloat => "rg11b10ufloat",
             CanvasGPUTextureFormat::Rg32Uint => "rg32uint",
             CanvasGPUTextureFormat::Rg32Sint => "rg32sint",
             CanvasGPUTextureFormat::Rg32Float => "rg32float",
@@ -851,7 +851,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
         CanvasGPUTextureFormat::Bgra8UnormSrgb => "bgra8unorm-srgb",
         CanvasGPUTextureFormat::Rgb10a2Uint => "rgb10a2uint",
         CanvasGPUTextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
-        CanvasGPUTextureFormat::Rg11b10Float => "rg11b10ufloat",
+        CanvasGPUTextureFormat::Rg11b10UFloat => "rg11b10ufloat",
         CanvasGPUTextureFormat::Rg32Uint => "rg32uint",
         CanvasGPUTextureFormat::Rg32Sint => "rg32sint",
         CanvasGPUTextureFormat::Rg32Float => "rg32float",
@@ -977,7 +977,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_enum_string_to_gpu_texture(
             CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rgb10a2Unorm)
         }
         "rg11b10ufloat" => {
-            CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg11b10Float)
+            CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg11b10UFloat)
         }
         "rg32uint" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg32Uint),
         "rg32sint" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg32Sint),

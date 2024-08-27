@@ -1,10 +1,10 @@
 <Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
       class="page">
   <Page.actionBar>
-    <ActionBar title="Canvas Three WebGPU" icon="" class="action-bar">
+    <ActionBar title="Canvas Three WebGPU" class="bg-black text-white" >
     </ActionBar>
   </Page.actionBar>
-  <GridLayout height="100%" width="100%" >
+  <GridLayout class="bg-black w-full h-full" iosOverflowSafeArea="true">
     <canvas:Canvas style="width:100%;height:auto;" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
                       unloaded="{{unloaded}}"/>
   </GridLayout>

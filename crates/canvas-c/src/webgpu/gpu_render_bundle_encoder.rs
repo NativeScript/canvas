@@ -516,7 +516,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_finish(
     };
 
     let (render_bundle_id, error) =
-        gfx_select!(encoder.parent() =>  global.render_bundle_encoder_finish(*encoder, &desc, None));
+        global.render_bundle_encoder_finish(*encoder, &desc, None);
 
     if let Some(cause) = error {
         handle_error_fatal(

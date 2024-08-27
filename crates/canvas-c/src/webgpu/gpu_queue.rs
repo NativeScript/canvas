@@ -23,7 +23,7 @@ impl Drop for QueueId {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.id => global.queue_drop(self.id));
+            global.queue_drop(self.id);
         }
     }
 }
@@ -180,9 +180,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
             size.width as usize,
             size.height as usize,
         );
-        gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size))
+        global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
     } else {
-        gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data, &data_layout, &size))
+        global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
     };
 
     if let Err(cause) = ret {
@@ -220,7 +220,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
         callback(std::ptr::null_mut(), callback_data);
     }));
 
-    if let Err(cause) = gfx_select!(queue_id => global.queue_on_submitted_work_done(queue_id, done))
+    if let Err(cause) = global.queue_on_submitted_work_done(queue_id, done)
     {
         handle_error_fatal(
             global,
@@ -257,13 +257,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         })
         .collect::<Vec<_>>();
 
-    if let Err(cause) = gfx_select!(queue_id => global.queue_submit(queue_id, &command_buffer_ids))
+    if let Err(cause) = global.queue_submit(queue_id, &command_buffer_ids)
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }
 
     for id in command_buffer_ids.into_iter() {
-        gfx_select!(id => global.command_buffer_drop(id));
+        global.command_buffer_drop(id);
     }
 }
 
@@ -298,7 +298,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
         None => &data[data_offset..],
     };
 
-    if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data))
+    if let Err(cause) = global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data)
     {
         handle_error(
             global,
@@ -351,7 +351,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let size: wgt::Extent3d = size.into();
 
-    if let Err(cause) = gfx_select!(queue_id =>  global.queue_write_texture(queue_id, &destination, data, &data_layout, &size))
+    if let Err(cause) = global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
     {
         handle_error(
             global,

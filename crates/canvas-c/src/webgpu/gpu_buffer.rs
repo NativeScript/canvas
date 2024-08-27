@@ -49,7 +49,7 @@ impl Drop for CanvasGPUBuffer {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(id => global.buffer_drop(self.buffer));
+            global.buffer_drop(self.buffer);
         }
     }
 }
@@ -69,13 +69,13 @@ impl CanvasGPUBuffer {
     pub fn destroy(&self) {
         let buffer_id = self.buffer;
         let global = self.instance.global();
-        let _ = gfx_select!(buffer_id => global.buffer_destroy(buffer_id));
+        let _ = global.buffer_destroy(buffer_id);
     }
 
     pub fn unmap(&self) {
         let buffer_id = self.buffer;
         let global = self.instance.global();
-        let _ = gfx_select!(buffer_id => global.buffer_unmap(buffer_id));
+        let _ = global.buffer_unmap(buffer_id);
     }
 }
 
@@ -141,7 +141,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     let buffer_id = buffer.buffer;
     let global = buffer.instance.global();
 
-    let range = gfx_select!( buffer_id => global.buffer_get_mapped_range(buffer_id, offset, size));
+    let range = global.buffer_get_mapped_range(buffer_id, offset, size);
 
     match range {
         Ok((buf, _)) => buf.as_ptr() as *mut c_void,
@@ -232,5 +232,5 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
     let global = buffer.instance.global();
     let buffer_id = buffer.buffer;
 
-    let _ = gfx_select!(buffer_id => global.buffer_map_async(buffer_id, offset, size, op));
+    let _ = global.buffer_map_async(buffer_id, offset, size, op);
 }

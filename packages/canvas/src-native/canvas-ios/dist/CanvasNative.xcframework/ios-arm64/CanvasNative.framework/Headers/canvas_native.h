@@ -953,7 +953,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
   /**
    * Red, green, and blue channels. 11 bit float with no sign bit for RG channels. 10 bit float with no sign bit for blue channel. Float in shader.
    */
-  CanvasGPUTextureFormatRg11b10Float,
+  CanvasGPUTextureFormatRg11b10UFloat,
   /**
    * Red and green channels. 32 bit integer per channel. Unsigned in shader.
    */

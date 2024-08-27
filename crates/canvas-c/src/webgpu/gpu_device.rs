@@ -225,12 +225,12 @@ impl Drop for CanvasGPUDevice {
         if !std::thread::panicking() {
             let context = self.instance.global();
 
-            match gfx_select!(self.id => context.device_poll(self.device, wgt::Maintain::Wait)) {
+            match context.device_poll(self.device, wgt::Maintain::Wait) {
                 Ok(_) => (),
                 Err(err) => handle_error_fatal(context, err, "CanvasGPUDevice::drop"),
             }
 
-            gfx_select!(self.id => context.device_drop(self.device));
+            context.device_drop(self.device);
         }
     }
 }
@@ -242,13 +242,13 @@ impl CanvasGPUDevice {
     pub fn features(&self) -> Result<Features, DeviceError> {
         let device_id = self.device;
         let global = self.instance.global();
-        gfx_select!(device_id => global.device_features(device_id))
+        global.device_features(device_id)
     }
 
     pub fn destroy(&self) {
         let device_id = self.device;
         let global = self.instance.global();
-        gfx_select!(device_id => global.device_destroy(device_id));
+        global.device_destroy(device_id);
     }
 
     pub fn create_bind_group(
@@ -295,7 +295,7 @@ impl CanvasGPUDevice {
         };
         let device_id = self.device;
         let (group, error) =
-            gfx_select!(device_id => global.device_create_bind_group(device_id, &desc, None));
+            global.device_create_bind_group(device_id, &desc, None);
 
         let error_sink = self.error_sink.as_ref();
         if let Some(cause) = error {
@@ -333,7 +333,7 @@ impl CanvasGPUDevice {
         };
 
         let device_id = self.device;
-        let (group_layout_id, error) = gfx_select!(device_id => global.device_create_bind_group_layout(device_id, &desc, None));
+        let (group_layout_id, error) = global.device_create_bind_group_layout(device_id, &desc, None);
 
         let error_sink = self.error_sink.as_ref();
         if let Some(cause) = error {
@@ -374,8 +374,7 @@ impl CanvasGPUDevice {
 
                 let device_id = self.device;
 
-                let (buffer, err) =
-                    gfx_select!(device_id => global.device_create_buffer(device_id, &desc, None));
+                let (buffer, err) = global.device_create_buffer(device_id, &desc, None);
 
                 let error_sink = self.error_sink.as_ref();
                 if let Some(cause) = err {
@@ -457,7 +456,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_limits(
     let device = unsafe { &*device };
     let device_id = device.device;
     let global = device.instance.global();
-    match gfx_select!(device_id => global.device_limits(device_id)) {
+    match global.device_limits(device_id) {
         Ok(limits) => {
             let limits: CanvasGPUSupportedLimits = limits.into();
             Box::into_raw(Box::new(limits))
@@ -669,8 +668,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_command_encoder(
     let device_id = device.device;
     let global = &device.instance.global();
 
-    let (encoder, error) =
-        gfx_select!(device_id => global.device_create_command_encoder(device_id, &desc, None));
+    let (encoder, error) = global.device_create_command_encoder(device_id, &desc, None);
     let error_sink = device.error_sink.as_ref();
     if let Some(cause) = error {
         handle_error(
@@ -748,7 +746,7 @@ unsafe fn create_compute_pipeline(
 
     let global = device.instance.global();
 
-    let (pipeline, error) = gfx_select!(device_id => global.device_create_compute_pipeline(device_id, &descriptor, None, None));
+    let (pipeline, error) = global.device_create_compute_pipeline(device_id, &descriptor, None, None);
 
     let pipeline = CanvasGPUComputePipeline {
         label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
@@ -952,8 +950,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
         push_constant_ranges: Default::default(),
     };
 
-    let (pipeline_layout, error) =
-        gfx_select!(device_id => global.device_create_pipeline_layout(device_id, &desc, None));
+    let (pipeline_layout, error) = global.device_create_pipeline_layout(device_id, &desc, None);
 
     let error_sink = device.error_sink.as_ref();
     if let Some(cause) = error {
@@ -998,8 +995,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
         count,
     };
 
-    let (query, error) =
-        gfx_select!(device_id => global.device_create_query_set(device_id, &desc, None));
+    let (query, error) = global.device_create_query_set(device_id, &desc, None);
 
     let error_sink = device.error_sink.as_ref();
     if let Some(cause) = error {
@@ -1134,7 +1130,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let device_id = device.device;
     let global = &device.instance.global();
 
-    let (module, error) = gfx_select!(device_id => global.device_create_shader_module(device_id, &desc, source, None));
+    let (module, error) = global.device_create_shader_module(device_id, &desc, source, None);
 
     if let Some(cause) = error {
         handle_error(
@@ -1502,7 +1498,7 @@ unsafe fn create_render_pipeline(
     descriptor: RenderPipelineDescriptor,
 ) -> (wgpu_core::id::RenderPipelineId, Option<CreateRenderPipelineError>) {
     let global = global.global();
-    gfx_select!(device_id => global.device_create_render_pipeline(device_id, &descriptor,None, None))
+    global.device_create_render_pipeline(device_id, &descriptor,None, None)
 }
 
 #[no_mangle]
@@ -1700,8 +1696,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         view_formats,
     };
 
-    let (texture_id, err) =
-        gfx_select!(device_id => global.device_create_texture(device_id, &desc, None));
+    let (texture_id, err) = global.device_create_texture(device_id, &desc, None);
 
     if let Some(cause) = err {
         handle_error(
@@ -1806,8 +1801,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
         }
     };
 
-    let (sampler_id, error) =
-        gfx_select!(device_id => global.device_create_sampler(device_id, &desc,None));
+    let (sampler_id, error) =  global.device_create_sampler(device_id, &desc,None);
 
     let error_sink = device.error_sink.as_ref();
     if let Some(cause) = error {

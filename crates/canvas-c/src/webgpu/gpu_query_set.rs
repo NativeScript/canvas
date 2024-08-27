@@ -20,7 +20,7 @@ impl Drop for CanvasGPUQuerySet {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.query => global.query_set_drop(self.query));
+            global.query_set_drop(self.query);
         }
     }
 }

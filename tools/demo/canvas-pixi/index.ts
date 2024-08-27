@@ -100,7 +100,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 		//this.drawPatternWithCanvas(canvas);
 		//this.simpleWebGPU(canvas);
-		//this.simplePlane(canvas);
+		this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
@@ -109,7 +109,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
-		this.starWarp(canvas);
+		//this.starWarp(canvas);
 		//this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);
@@ -1745,10 +1745,19 @@ void main()
 			canvas,
 			width: canvas.width,
 			height: canvas.height,
+			preference: 'webgpu',
 		});
 
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
-		const texture = await PIXI.Assets.load(this.root + '/images/bg_grass.jpg');
+		const texture = await PIXI.Assets.load('https://pixijs.com/assets/bg_grass.jpg');
+
+		const ctx = canvas.getContext('webgpu');
+
+		app.ticker.add((delta) => {
+			if (ctx) {
+				ctx.presentSurface();
+			}
+		});
 
 		const plane = new PIXI.MeshPlane({ texture, verticesX: 10, verticesY: 10 });
 		plane.x = 100;

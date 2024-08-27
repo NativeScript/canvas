@@ -30,7 +30,7 @@ export class FileManager {
 			this.supportFastRead = typeof global?.CanvasModule?.readFile === 'function';
 		}
 		if (this.supportFastRead) {
-			global?.CanvasModule?.readFile(path, (error, buffer: ArrayBuffer) => {
+			global.CanvasModule.readFile(path, function (error, buffer: ArrayBuffer) {
 				if (error) {
 					callback(new Error(error), null);
 				} else {

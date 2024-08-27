@@ -16,7 +16,7 @@ impl Drop for CanvasGPUPipelineLayout {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(layout => global.pipeline_layout_drop(self.layout));
+            global.pipeline_layout_drop(self.layout);
         }
     }
 }

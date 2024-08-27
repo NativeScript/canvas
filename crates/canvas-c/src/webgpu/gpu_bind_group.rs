@@ -17,7 +17,7 @@ impl Drop for CanvasGPUBindGroup {
     fn drop(&mut self) {
         let global = self.instance.global();
         let group_id = self.group;
-        gfx_select!(group_id => global.bind_group_drop(group_id));
+        global.bind_group_drop(group_id);
     }
 }
 

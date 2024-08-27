@@ -27,7 +27,7 @@ impl Drop for CanvasGPUAdapter {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.adapter => global.adapter_drop(self.adapter));
+            global.adapter_drop(self.adapter);
         }
     }
 }
@@ -96,7 +96,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
     let adapter_id = adapter.adapter;
     let global = adapter.instance.global();
 
-    gfx_select!(adapter_id => global.adapter_get_info(adapter_id))
+    global.adapter_get_info(adapter_id)
         .map(|info| Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info))))
         .ok()
         .unwrap_or_else(|| std::ptr::null())
@@ -144,13 +144,13 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
         let global = instance.global();
 
-        let (device, queue, error) = gfx_select!(adapter_id => global.adapter_request_device(
+        let (device, queue, error) = global.adapter_request_device(
             adapter_id,
             &descriptor,
             None,
             None,
             None,
-        ));
+        );
 
         let callback = unsafe {
             std::mem::transmute::<*const i64, fn(*mut c_char, *const CanvasGPUDevice, *mut c_void)>(

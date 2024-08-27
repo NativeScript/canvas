@@ -18,7 +18,7 @@ impl Drop for CanvasGPUTextureView {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            let _ = gfx_select!(self.texture_view => global.texture_view_drop(self.texture_view));
+            let _ = global.texture_view_drop(self.texture_view);
         }
     }
 }

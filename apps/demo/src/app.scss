@@ -17,15 +17,30 @@
 	}
 }
 
-
 .distanceTitle {
-  text-transform:uppercase;
-  color:#ffa873;//100707;
-  font-size:12px;
-  letter-spacing:0.1px;
-  text-align:center;
+	text-transform: uppercase;
+	color: #ffa873; //100707;
+	font-size: 12px;
+	letter-spacing: 0.1px;
+	text-align: center;
 }
 
 .distanceValue {
-  font-size:40px;
+	font-size: 40px;
+}
+
+.bg-black {
+	background-color: #000;
+}
+
+.w-full {
+	width: 100%;
+}
+
+.h-full {
+	height: 100%;
+}
+
+.text-white {
+	color: #fff;
 }

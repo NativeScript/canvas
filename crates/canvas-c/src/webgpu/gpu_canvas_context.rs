@@ -146,8 +146,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) =
-                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device_id, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
                 } else {
@@ -279,8 +278,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) =
-                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device_id, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
                 } else {
@@ -547,8 +545,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         view_formats,
     };
 
-    if let Some(cause) =
-        gfx_select!(surface_id => global.surface_configure(*surface_id, device_id, &config))
+    if let Some(cause) = global.surface_configure(*surface_id, device_id, &config)
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_context_configure");
         let mut lock = context.data.lock();
@@ -605,7 +602,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
 
     let surface_id = context.surface.lock();
 
-    let result = gfx_select!(surface_id => global.surface_get_current_texture(*surface_id, None));
+    let result = global.surface_get_current_texture(*surface_id, None);
 
     match result {
         Ok(texture) => {
@@ -680,7 +677,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     let surface_id = context.surface.lock();
     let texture = unsafe { &*texture };
 
-    if let Err(cause) = gfx_select!(surface_id => global.surface_present(*surface_id)) {
+    if let Err(cause) = global.surface_present(*surface_id) {
         handle_error_fatal(
             global,
             cause,
@@ -711,7 +708,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
 
     let surface_id = context.surface.lock();
 
-    match gfx_select!(surface_id => global.surface_get_capabilities(*surface_id, adapter_id)) {
+    match global.surface_get_capabilities(*surface_id, adapter_id) {
         Ok(capabilities) => {
             let cap: CanvasSurfaceCapabilities = capabilities.into();
             Box::into_raw(Box::new(cap))

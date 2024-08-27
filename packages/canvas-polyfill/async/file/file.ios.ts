@@ -28,7 +28,7 @@ export class FileManager {
 		}
 
 		if (this.supportFastRead) {
-			global?.CanvasModule?.readFile(path, (error, buffer) => {
+			global.CanvasModule.readFile(path, function (error, buffer) {
 				if (error) {
 					callback(new Error(error), null);
 				} else {
@@ -47,7 +47,7 @@ export class FileManager {
 	}
 
 	public static deleteFile(path: string, options: Options = { asStream: false }, callback: (...args) => void) {
-		NSSCanvasHelpers.deleteFile(path, (error, done) => {
+		NSSCanvasHelpers.deleteFile(path, function (error, done) {
 			if (error) {
 				callback(new Error(error), null);
 			} else {

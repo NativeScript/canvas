@@ -1,8 +1,7 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
 use std::sync::Arc;
+use std::{ffi::CStr, os::raw::c_char};
 
-use wgpu_core::command::DynRenderPass;
 
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::label_to_ptr;
@@ -16,12 +15,8 @@ use super::{
 pub struct CanvasGPURenderPassEncoder {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
-    #[cfg(any(target_os = "android"))]
     pub(crate) pass:
-        parking_lot::Mutex<Option<wgpu_core::command::RenderPass<wgpu_core::api::Vulkan>>>,
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    pub(crate) pass:
-        parking_lot::Mutex<Option<wgpu_core::command::RenderPass<wgpu_core::api::Metal>>>,
+        parking_lot::Mutex<Option<wgpu_core::command::RenderPass>>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
 
@@ -71,7 +66,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_begin_occlusio
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.begin_occlusion_query(global, query_index) {
+        if let Err(cause) = global.render_pass_begin_occlusion_query(pass, query_index) {
             handle_error(
                 global,
                 error_sink,
@@ -104,8 +99,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw(
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.draw(
-            global,
+        if let Err(cause) = global.render_pass_draw(
+            pass,
             vertex_count,
             instance_count,
             first_vertex,
@@ -144,8 +139,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed(
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.draw_indexed(
-            global,
+        if let Err(cause) = global.render_pass_draw_indexed(
+            pass,
             index_count,
             instance_count,
             first_index,
@@ -186,7 +181,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_i
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.draw_indexed_indirect(global, buffer_id, indirect_offset) {
+        if let Err(cause) = global.render_pass_draw_indexed_indirect(pass, buffer_id, indirect_offset) {
             handle_error(
                 global,
                 error_sink,
@@ -220,7 +215,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indirect(
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.draw_indirect(global, buffer_id, indirect_offset) {
+        if let Err(cause) = global.render_pass_draw_indirect(pass, buffer_id, indirect_offset) {
             handle_error(
                 global,
                 error_sink,
@@ -249,7 +244,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
     let mut lock = render_pass.pass.lock();
 
     if let Some(pass) = lock.as_mut() {
-        if let Err(cause) = pass.end(global) {
+        if let Err(cause) = global.render_pass_end(pass) {
             handle_error(
                 global,
                 error_sink,
@@ -281,7 +276,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end_occlusion_
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.end_occlusion_query(global) {
+        if let Err(cause) = global.render_pass_end_occlusion_query(pass) {
             handle_error(
                 global,
                 error_sink,
@@ -316,7 +311,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_execute_bundle
             .map(|value| (&**value).bundle)
             .collect::<Vec<_>>();
 
-        if let Err(cause) = pass.execute_bundles(global, bundles.as_slice()) {
+        if let Err(cause) = global.render_pass_execute_bundles(pass, bundles.as_slice()) {
             handle_error(
                 global,
                 error_sink,
@@ -348,7 +343,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_insert_debug_m
         let marker_label = CStr::from_ptr(marker_label);
         let marker_label = marker_label.to_str().unwrap();
 
-        if let Err(cause) = pass.insert_debug_marker(global, marker_label, 0) {
+        if let Err(cause) = global.render_pass_insert_debug_marker(pass, marker_label, 0) {
             handle_error(
                 global,
                 error_sink,
@@ -376,7 +371,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_pop_debug_grou
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.pop_debug_group(global) {
+        if let Err(cause) = global.render_pass_pop_debug_group(pass) {
             handle_error(
                 global,
                 error_sink,
@@ -408,7 +403,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_push_debug_gro
         let group_label = CStr::from_ptr(group_label);
         let group_label = group_label.to_str().unwrap();
 
-        if let Err(cause) = pass.push_debug_group(global, group_label, 0) {
+        if let Err(cause) = global.render_pass_push_debug_group(pass, group_label, 0) {
             handle_error(
                 global,
                 error_sink,
@@ -457,7 +452,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group
 
             let dynamic_offsets: &[u32] = &dynamic_offsets[start..start + len];
 
-            if let Err(cause) = pass.set_bind_group(global, index, bind_group_id, dynamic_offsets) {
+            if let Err(cause) = global.render_pass_set_bind_group(pass, index, bind_group_id, dynamic_offsets) {
                 handle_error(
                     global,
                     error_sink,
@@ -468,7 +463,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_bind_group
                 );
             }
         } else {
-            if let Err(cause) = pass.set_bind_group(global, index, bind_group_id, &[]) {
+            if let Err(cause) = global.render_pass_set_bind_group(pass, index, bind_group_id, &[]) {
                 handle_error(
                     global,
                     error_sink,
@@ -500,7 +495,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_blend_cons
     if let Some(pass) = pass.as_mut() {
         let color: wgt::Color = (*color).into();
 
-        if let Err(cause) = pass.set_blend_constant(global, color) {
+        if let Err(cause) = global.render_pass_set_blend_constant(pass, color) {
             handle_error(
                 global,
                 error_sink,
@@ -547,8 +542,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
 
         if size.is_some() {
             if let Some(size) = sizeValue {
-                if let Err(cause) = pass.set_index_buffer(
-                    global,
+                if let Err(cause) = global.render_pass_set_index_buffer(
+                    pass,
                     buffer_id,
                     index_format.into(),
                     offset,
@@ -568,7 +563,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_index_buff
             }
         } else {
             if let Err(cause) =
-                pass.set_index_buffer(global, buffer_id, index_format.into(), offset, None)
+                global.render_pass_set_index_buffer(pass, buffer_id, index_format.into(), offset, None)
             {
                 handle_error(
                     global,
@@ -602,7 +597,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_pipeline(
         let pipeline = &*pipeline;
         let pipeline_id = pipeline.pipeline;
 
-        if let Err(cause) = pass.set_pipeline(global, pipeline_id) {
+        if let Err(cause) = global.render_pass_set_pipeline(pass, pipeline_id) {
             handle_error(
                 global,
                 error_sink,
@@ -634,7 +629,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_scissor_re
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.set_scissor_rect(global, x, y, width, height) {
+        if let Err(cause) = global.render_pass_set_scissor_rect(pass, x, y, width, height) {
             handle_error(
                 global,
                 error_sink,
@@ -663,7 +658,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_stencil_re
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.set_stencil_reference(global, reference) {
+        if let Err(cause) = global.render_pass_set_stencil_reference(pass, reference) {
             handle_error(
                 global,
                 error_sink,
@@ -710,8 +705,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
 
         if size.is_some() {
             if let Some(size) = sizeValue {
-                if let Err(cause) = pass.set_vertex_buffer(
-                    global,
+                if let Err(cause) = global.render_pass_set_vertex_buffer(
+                    pass,
                     slot,
                     buffer_id,
                     offset.try_into().unwrap_or_default(),
@@ -730,8 +725,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_vertex_buf
                 // todo error ??
             }
         } else {
-            if let Err(cause) = pass.set_vertex_buffer(
-                global,
+            if let Err(cause) = global.render_pass_set_vertex_buffer(
+                pass,
                 slot,
                 buffer_id,
                 offset.try_into().unwrap_or_default(),
@@ -771,7 +766,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_set_viewport(
     let mut pass = render_pass.pass.lock();
 
     if let Some(pass) = pass.as_mut() {
-        if let Err(cause) = pass.set_viewport(global, x, y, width, height, depth_min, depth_max) {
+        if let Err(cause) = global.render_pass_set_viewport(pass, x, y, width, height, depth_min, depth_max) {
             handle_error(
                 global,
                 error_sink,

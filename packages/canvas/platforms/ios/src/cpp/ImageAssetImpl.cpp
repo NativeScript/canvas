@@ -477,7 +477,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     auto task = [jsi_callback, current_queue, queue, asset, path]() {
 
         auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
-        
+
         canvas_native_image_asset_release(asset);
 
         auto main_task = [jsi_callback, current_queue, queue, done]() {
@@ -497,11 +497,9 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
             callback->Call(context, context->Global(), 1,
                            args);  // ignore JS return value
 
-
-            delete jsi_callback;
-            delete queue;
-            delete current_queue;
-
+                           delete queue;
+                           delete current_queue;
+                           delete jsi_callback;
 
         };
 
@@ -510,7 +508,7 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     };
 
     queue->addOperation(task);
-    
+
 
 #endif
 }

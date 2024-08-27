@@ -11,7 +11,7 @@ gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.6.2"
 rand = "0.8.5"
 reqwest = { version = "0.11.14", features = ["blocking"] }
-chrono = "0.4.23"
+chrono = "^0.3"
 canvas-c = { path = "../canvas-c", features = ["2d","webgl"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "android"))'.dependencies]

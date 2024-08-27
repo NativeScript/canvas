@@ -16,7 +16,7 @@ impl Drop for CanvasGPUSampler {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.sampler => global.sampler_drop(self.sampler));
+            global.sampler_drop(self.sampler);
         }
     }
 }

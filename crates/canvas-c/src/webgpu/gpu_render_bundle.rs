@@ -15,7 +15,7 @@ impl Drop for CanvasGPURenderBundle {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.bundle => global.render_bundle_drop(self.bundle));
+            global.render_bundle_drop(self.bundle);
         }
     }
 }

@@ -50,7 +50,7 @@ impl Drop for CanvasGPUTexture {
                     .load(std::sync::atomic::Ordering::SeqCst)
                 {
                     let global = self.instance.global();
-                    match gfx_select!(surface_id => global.surface_texture_discard(surface_id)) {
+                    match global.surface_texture_discard(surface_id) {
                         Ok(_) => (),
                         Err(cause) => handle_error_fatal(
                             global,
@@ -62,7 +62,7 @@ impl Drop for CanvasGPUTexture {
             }
             None => {
                 let context = self.instance.global();
-                gfx_select!(self.texture => context.texture_drop(self.texture));
+                context.texture_drop(self.texture);
             }
         }
     }
@@ -146,7 +146,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
     };
 
     let (texture_view, error) =
-        gfx_select!(texture_id => global.texture_create_view(texture_id, &desc, None));
+        global.texture_create_view(texture_id, &desc, None);
 
     let error_sink = texture.error_sink.as_ref();
 
@@ -263,5 +263,5 @@ pub extern "C" fn canvas_native_webgpu_texture_destroy(texture: *const CanvasGPU
     let texture_id = texture.texture;
     let global = texture.instance.global();
 
-    let _ = gfx_select!(texture_id => global.texture_destroy(texture_id));
+    let _ = global.texture_destroy(texture_id);
 }

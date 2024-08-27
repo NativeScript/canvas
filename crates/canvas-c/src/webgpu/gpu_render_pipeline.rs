@@ -19,7 +19,7 @@ impl Drop for CanvasGPURenderPipeline {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-            gfx_select!(self.pipeline => global.render_pipeline_drop(self.pipeline));
+            global.render_pipeline_drop(self.pipeline);
         }
     }
 }
@@ -70,7 +70,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pipeline_get_bind_group_lay
 
     let global = pipeline.instance.global();
 
-    let (group_layout, error) = gfx_select!(pipeline_id => global.render_pipeline_get_bind_group_layout(pipeline_id, index, None));
+    let (group_layout, error) = global.render_pipeline_get_bind_group_layout(pipeline_id, index, None);
 
     if let Some(cause) = error {
         handle_error(

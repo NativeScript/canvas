@@ -75,7 +75,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		// this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -127,7 +127,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		//this.ao(this.canvas);
+		this.ao(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
@@ -863,7 +863,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			renderer = new THREE.WebGPURenderer({ canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(canvas.width, canvas.height, false);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
 			context = canvas.getContext('webgpu');
 			renderer.setAnimationLoop(animate);

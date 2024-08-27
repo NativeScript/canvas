@@ -354,7 +354,6 @@ export class TNSXMLHttpRequest {
 			} else if (this._request.url.startsWith('/')) {
 				path = this._request.url;
 			} else if (this._request.url.startsWith('blob:nativescript')) {
-				//path = (URL as any)?.InternalAccessor?.getPath?.(this._request.url);
 				path = (URL as any)?.InternalAccessor?.getData?.(this._request.url).blob;
 				isBlob = true;
 			}
@@ -428,8 +427,8 @@ export class TNSXMLHttpRequest {
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						let buffer: ArrayBuffer = data;
-						this._response = new Blob([buffer]);
+						// path is Blob;
+						this._response = path;
 					}
 
 					const size = data?.byteLength ?? 0;
@@ -473,11 +472,14 @@ export class TNSXMLHttpRequest {
 				return;
 			}
 
-			const responseURL = `file://${path}`;
+			const url = new URL(`file://${path}`);
+
+			const responseURL = url.href;
 
 			let contentLength = -1;
-			const file = fsFile.fromPath(path);
+
 			if (fsFile.exists(path)) {
+				const file = fsFile.fromPath(path);
 				contentLength = file.size;
 			}
 
@@ -597,7 +599,7 @@ export class TNSXMLHttpRequest {
 					}
 
 					let size = 0;
-					if ((global as any).isIOS) {
+					if (__IOS__) {
 						if (data instanceof NSData) {
 							size = data.length;
 						}
@@ -735,7 +737,7 @@ export class TNSXMLHttpRequest {
 						this._response = res.content;
 						this._responseText = res.responseText;
 					} else {
-						if ((global as any).isIOS) {
+						if (__IOS__) {
 							if (res.content instanceof NSData) {
 								let code = NSUTF8StringEncoding; // long:4
 
@@ -809,26 +811,24 @@ export class TNSXMLHttpRequest {
 						}
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
-					if ((global as any).isIOS) {
+					if (__IOS__) {
 						this._response = interop.bufferFromData(res.content);
 					} else {
 						this._response = (ArrayBuffer as any).from(res.content);
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-					if ((global as any).isIOS) {
+					if (__IOS__) {
 						if (typeof res.content === 'string') {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
+						} else if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
+							const buffer = interop.bufferFromData(res.content);
+							this._response = new Blob([buffer]);
 						} else {
-							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
-								const encoder = new TextEncoder();
-								const buffer = encoder.encode(res.content.toString());
-								this._response = new Blob([buffer]);
-							} else {
-								const buffer = interop.bufferFromData(res.content);
-								this._response = new Blob([buffer]);
-							}
+							const encoder = new TextEncoder();
+							const buffer = encoder.encode(res.content.toString());
+							this._response = new Blob([buffer]);
 						}
 					} else {
 						if (typeof res.content === 'string') {
@@ -836,12 +836,12 @@ export class TNSXMLHttpRequest {
 							const buffer = encoder.encode(res.content);
 							this._response = new Blob([buffer]);
 						} else {
-							if (res.content !== null && res.content !== undefined && typeof res.content === 'object') {
-								const encoder = new TextEncoder();
-								const buffer = encoder.encode(res.content.toString());
+							if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
+								const buffer = (ArrayBuffer as any).from(res.content);
 								this._response = new Blob([buffer]);
 							} else {
-								const buffer = (ArrayBuffer as any).from(res.content);
+								const encoder = new TextEncoder();
+								const buffer = encoder.encode(res.content.toString());
 								this._response = new Blob([buffer]);
 							}
 						}
@@ -1086,7 +1086,9 @@ export class Blob {
 		return '[object Blob]';
 	}
 
-	[Symbol.toStringTag] = 'Blob';
+	get [Symbol.toStringTag]() {
+		return 'Blob';
+	}
 }
 
 export class File extends Blob {
@@ -1111,7 +1113,9 @@ export class File extends Blob {
 		return '[object File]';
 	}
 
-	[Symbol.toStringTag] = 'File';
+	get [Symbol.toStringTag]() {
+		return 'File';
+	}
 }
 
 export class FileReader {
@@ -1192,7 +1196,7 @@ export class FileReader {
 			this['on' + eventName](...args);
 		}
 
-		let handlers = this._listeners.get(eventName) || [];
+		const handlers = this._listeners.get(eventName) || [];
 		handlers.forEach((handler) => {
 			handler(this, ...args);
 		});
@@ -1203,15 +1207,17 @@ export class FileReader {
 			throw new Error('Event not supported: ' + eventName);
 		}
 
-		let handlers = this._listeners.get(eventName) || [];
+		const handlers = this._listeners.get(eventName) || [];
 		handlers.push(handler);
 		this._listeners.set(eventName, handlers);
 	}
 
 	public removeEventListener(eventName: string, toDetach: Function) {
-		let handlers = this._listeners.get(eventName) || [];
-		handlers = handlers.filter((handler) => handler !== toDetach);
-		this._listeners.set(eventName, handlers);
+		const handlers = this._listeners.get(eventName) || [];
+		this._listeners.set(
+			eventName,
+			handlers.filter((handler) => handler !== toDetach)
+		);
 	}
 
 	public readAsDataURL(blob: Blob) {

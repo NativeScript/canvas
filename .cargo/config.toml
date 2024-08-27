@@ -1,3 +1,19 @@
+#[target.aarch64-apple-visionos]
+#rustflags = [
+#  "-C", "link-arg=-undefined",
+#  "-C", "link-arg=dynamic_lookup",
+#  "-C", "target-cpu=native",
+#  "-C", "panic=abort"
+#]
+#
+#[target.aarch64-apple-visionos-sim]
+#rustflags = [
+#  "-C", "link-arg=-undefined",
+#  "-C", "link-arg=dynamic_lookup",
+#  "-C", "target-cpu=native",
+#  "-C", "panic=abort"
+#]
+
 [target.x86_64-apple-darwin]
 rustflags = [
   "-C", "link-arg=-undefined",

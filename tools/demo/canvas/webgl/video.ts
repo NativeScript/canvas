@@ -9,8 +9,8 @@ import { Video } from '@nativescript/canvas-media';
 // Start here
 //
 export function handleVideo(canvas: Canvas) {
-	canvas.width = canvas.clientWidth;
-	canvas.height = canvas.clientHeight;
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const gl = canvas.getContext('webgl2');
 	// If we don't have a GL context, give up now
 
@@ -371,7 +371,7 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
 	// and 100 units away from the camera.
 
 	const fieldOfView = (45 * Math.PI) / 180; // in radians
-	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+	const aspect = gl.canvas.width / gl.canvas.height;
 	const zNear = 0.1;
 	const zFar = 100.0;
 	const projectionMatrix = mat4.create();

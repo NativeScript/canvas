@@ -4035,6 +4035,90 @@
 						"init_kind": "Designated"
 					},
 					{
+						"kind": "Var",
+						"name": "ignoreTouchEvents",
+						"printedName": "ignoreTouchEvents",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)ignoreTouchEvents",
+						"mangledName": "$s12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)ignoreTouchEvents",
+								"mangledName": "$s12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)setIgnoreTouchEvents:",
+								"mangledName": "$s12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvM",
+								"mangledName": "$s12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
 						"kind": "Function",
 						"name": "setListener",
 						"printedName": "setListener(_:)",
@@ -4458,93 +4542,10 @@
 						"mangledName": "$s12CanvasNative9NSCRenderCACycfc",
 						"moduleName": "CanvasNative",
 						"overriding": true,
+						"implicit": true,
 						"objc_name": "init",
-						"declAttributes": ["Dynamic", "ObjC", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
 						"init_kind": "Designated"
-					},
-					{
-						"kind": "Function",
-						"name": "texImage2D",
-						"printedName": "texImage2D(_:_:_:_:_:_:_:_:)",
-						"children": [
-							{
-								"kind": "TypeNominal",
-								"name": "Void",
-								"printedName": "()"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Int32",
-								"printedName": "Swift.Int32",
-								"usr": "s:s5Int32V"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Int32",
-								"printedName": "Swift.Int32",
-								"usr": "s:s5Int32V"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Int32",
-								"printedName": "Swift.Int32",
-								"usr": "s:s5Int32V"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Int32",
-								"printedName": "Swift.Int32",
-								"usr": "s:s5Int32V"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Int32",
-								"printedName": "Swift.Int32",
-								"usr": "s:s5Int32V"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "NSCCanvas",
-								"printedName": "CanvasNative.NSCCanvas",
-								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "NSCCanvas",
-								"printedName": "CanvasNative.NSCCanvas",
-								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "Bool",
-								"printedName": "Swift.Bool",
-								"usr": "s:Sb"
-							}
-						],
-						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)NSCRender(im)texImage2D::::::::",
-						"mangledName": "$s12CanvasNative9NSCRenderC10texImage2Dyys5Int32V_A4fA9NSCCanvasCAHSbtF",
-						"moduleName": "CanvasNative",
-						"declAttributes": ["AccessControl", "ObjC"],
-						"funcSelfKind": "NonMutating"
-					},
-					{
-						"kind": "Function",
-						"name": "createSurface",
-						"printedName": "createSurface()",
-						"children": [
-							{
-								"kind": "TypeNominal",
-								"name": "Void",
-								"printedName": "()"
-							}
-						],
-						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)NSCRender(im)createSurface",
-						"mangledName": "$s12CanvasNative9NSCRenderC13createSurfaceyyF",
-						"moduleName": "CanvasNative",
-						"declAttributes": ["AccessControl", "ObjC"],
-						"funcSelfKind": "NonMutating"
 					}
 				],
 				"declKind": "Class",
@@ -4801,6 +4802,13 @@
 				"moduleName": "CanvasNative"
 			},
 			{
+				"kind": "Import",
+				"name": "UIKit",
+				"printedName": "UIKit",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
 				"kind": "TypeDecl",
 				"name": "NSCCanvasUtils",
 				"printedName": "NSCCanvasUtils",
@@ -4952,7 +4960,7 @@
 					{
 						"kind": "Function",
 						"name": "drawFrame",
-						"printedName": "drawFrame(_:_:_:_:_:_:_:)",
+						"printedName": "drawFrame(_:_:_:_:_:_:)",
 						"children": [
 							{
 								"kind": "TypeNominal",
@@ -4979,12 +4987,6 @@
 							},
 							{
 								"kind": "TypeNominal",
-								"name": "NSCRender",
-								"printedName": "CanvasNative.NSCRender",
-								"usr": "c:@M@CanvasNative@objc(cs)NSCRender"
-							},
-							{
-								"kind": "TypeNominal",
 								"name": "Int32",
 								"printedName": "Swift.Int32",
 								"usr": "s:s5Int32V"
@@ -5003,8 +5005,8 @@
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)drawFrame:::::::",
-						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC9drawFrameyySo8AVPlayerC_So0G15ItemVideoOutputCSo6CGSizeVAA9NSCRenderCs5Int32VANSbtFZ",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvasUtils(cm)drawFrame::::::",
+						"mangledName": "$s12CanvasNative14NSCCanvasUtilsC9drawFrameyySo8AVPlayerC_So0G15ItemVideoOutputCSo6CGSizeVs5Int32VALSbtFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
 						"declAttributes": ["Final", "AccessControl", "ObjC"],
@@ -7192,119 +7194,77 @@
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 14804,
+			"offset": 14811,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 15239,
+			"offset": 15246,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 15290,
+			"offset": 15297,
 			"length": 3,
 			"value": "300"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 15467,
+			"offset": 15474,
 			"length": 3,
 			"value": "150"
 		},
 		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "IntegerLiteral",
-			"offset": 316,
-			"length": 2,
-			"value": "-1"
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "IntegerLiteral",
-			"offset": 341,
-			"length": 2,
-			"value": "-1"
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "IntegerLiteral",
-			"offset": 386,
-			"length": 2,
-			"value": "-1"
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "IntegerLiteral",
-			"offset": 479,
-			"length": 1,
-			"value": "4"
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "StringLiteral",
-			"offset": 512,
-			"length": 274,
-			"value": "\"precision highp float;\nattribute vec4 aPosition;\nuniform mat4 uTextureMatrix;\nvarying vec2 TexCoord;\nvoid main(){\nvec2 clipSpace = (1.0 - 2.0 * aPosition.xy);\nTexCoord = aPosition.xy;\ngl_Position = vec4(clipSpace, 0.0, 1.0);\n}\""
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCRender.swift",
-			"kind": "StringLiteral",
-			"offset": 833,
-			"length": 170,
-			"value": "\"precision highp float;\nvarying vec2 TexCoord;\nuniform sampler2D uSampler;\nvoid main(){\ngl_FragColor = texture2D(uSampler, TexCoord);\n}\""
-		},
-		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "Array",
-			"offset": 383,
+			"offset": 387,
 			"length": 2,
 			"value": "[]"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "IntegerLiteral",
-			"offset": 421,
+			"offset": 425,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 10963,
+			"offset": 11212,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 11130,
+			"offset": 11383,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 11299,
+			"offset": 11556,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 11470,
+			"offset": 11727,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
 			"kind": "BooleanLiteral",
-			"offset": 11640,
+			"offset": 11897,
 			"length": 5,
 			"value": "false"
 		},
@@ -7332,7 +7292,7 @@
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCCanvasUtils.swift",
 			"kind": "IntegerLiteral",
-			"offset": 269,
+			"offset": 282,
 			"length": 1,
 			"value": "4"
 		},

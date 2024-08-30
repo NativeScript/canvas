@@ -568,8 +568,8 @@ fn main() -> @location(0) vec4f {
 		// const tests = require('./webgpu/tests');
 		// tests.run(this.canvas);
 
-		const renderBundles = require('./webgpu/renderBundles');
-		renderBundles.run(this.canvas);
+		// const renderBundles = require('./webgpu/renderBundles');
+		// renderBundles.run(this.canvas);
 
 		// const occlusionQuery = require('./webgpu/occlusionQuery');
 		// occlusionQuery.run(this.canvas);
@@ -833,7 +833,7 @@ fn main() -> @location(0) vec4f {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 		//fog(this.canvas);
-		//environmentMap(this.canvas);
+		environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);

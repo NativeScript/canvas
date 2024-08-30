@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-phaser",
-	"version": "2.0.0-webgpu.30",
+	"version": "2.0.0-webgpu.31",
 	"description": "Build awesome 2D games with Phaser.js and NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",

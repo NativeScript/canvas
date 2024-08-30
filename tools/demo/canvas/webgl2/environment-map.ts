@@ -190,27 +190,18 @@ void main() {
 			// setup each face so it's immediately renderable
 			gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
 
-			FileManager.readFile(url.replace('~', knownFolders.currentApp().path), {}, async (error, buffer) => {
-				if (error) {
-					console.log('Image failed: ', error);
-				} else {
-					const bm = await createImageBitmap(buffer);
-					gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-					gl.texImage2D(target, level, internalFormat, format, type, bm);
-					gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-					bm.close();
-				}
-			});
-
 			// Asynchronously load an image
-			// const asset = new global.ImageAsset();
-			// asset.fromFile(url).then(() => {
-			//   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-			//   gl.texImage2D(target, level, internalFormat, format, type, asset);
-			//   gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-			// }).catch(e => {
-			//   console.log('Image failed: ', e)
-			// });
+			const asset = new global.ImageAsset();
+			asset
+				.fromFile(url)
+				.then(() => {
+					gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+					gl.texImage2D(target, level, internalFormat, format, type, asset);
+					gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+				})
+				.catch((e) => {
+					console.log('Image failed: ', e);
+				});
 
 			/*ImageSource.fromFile(url)
         .then((image) => {

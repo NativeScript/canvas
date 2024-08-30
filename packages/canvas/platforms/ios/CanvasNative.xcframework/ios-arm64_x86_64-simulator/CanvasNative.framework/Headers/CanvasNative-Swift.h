@@ -406,6 +406,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, copy) void (^ _Nullable touchEventListener)(NSString * _Nonnull, UIGestureRecognizer * _Nonnull);
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
+@property (nonatomic) BOOL ignoreTouchEvents;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
 @property (nonatomic) NSInteger surfaceWidth;
 @property (nonatomic) NSInteger surfaceHeight;
@@ -453,7 +454,7 @@ SWIFT_CLASS_NAMED("NSCCanvasUtils")
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
 + (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -480,8 +481,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) dispatch_que
 SWIFT_CLASS_NAMED("NSCRender")
 @interface NSCRender : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-- (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
-- (void)createSurface;
 @end
 
 
@@ -932,6 +931,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, copy) void (^ _Nullable touchEventListener)(NSString * _Nonnull, UIGestureRecognizer * _Nonnull);
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
+@property (nonatomic) BOOL ignoreTouchEvents;
 - (void)setListener:(id <NSCCanvasListener> _Nullable)listener;
 @property (nonatomic) NSInteger surfaceWidth;
 @property (nonatomic) NSInteger surfaceHeight;
@@ -979,7 +979,7 @@ SWIFT_CLASS_NAMED("NSCCanvasUtils")
 + (CVOpenGLESTextureCacheRef _Nullable)createTextureCache SWIFT_WARN_UNUSED_RESULT;
 + (CVOpenGLESTextureRef _Nullable)createImage:(CVOpenGLESTextureCacheRef _Nonnull)texturecache :(CVImageBufferRef _Nonnull)buffer :(CFDictionaryRef _Nullable)textureAttributes :(GLenum)target :(GLint)internalFormat :(GLsizei)width :(GLsizei)height :(GLenum)format :(GLenum)type :(NSInteger)planeIndex SWIFT_WARN_UNUSED_RESULT;
 + (NSCRender * _Nonnull)setupRender SWIFT_WARN_UNUSED_RESULT;
-+ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(NSCRender * _Nonnull)render :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
++ (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
@@ -1006,8 +1006,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) dispatch_que
 SWIFT_CLASS_NAMED("NSCRender")
 @interface NSCRender : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-- (void)texImage2D:(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)format :(int32_t)type :(NSCCanvas * _Nonnull)source :(NSCCanvas * _Nonnull)dest :(BOOL)flipYWebGL;
-- (void)createSurface;
 @end
 
 

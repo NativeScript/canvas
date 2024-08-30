@@ -885,6 +885,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 			} else if (pixels instanceof ImageData) {
 				this.native.texImage2D(target, level, internalformat, width, height, (<any>pixels).native);
 			} else {
+				this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels);
 			}
 		} else if (length === 6) {
 			if (border && typeof border.tagName === 'string' && (border.tagName === 'VID' || border.tagName === 'VIDEO') && border._video && typeof border._video.getCurrentFrame === 'function') {

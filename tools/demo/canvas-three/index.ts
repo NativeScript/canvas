@@ -74,8 +74,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
-		//this.webGPUGtlfLoader(this.canvas);
-		// this.webgpu_tsl_galaxy(this.canvas);
+		this.webGPUGtlfLoader(this.canvas);
+		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -127,7 +127,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgl_buffergeometry_drawrange(this.canvas);
 		//this.panorama_cube(this.canvas);
 		//this.webgl_postprocessing_unreal_bloom(this.canvas);
-		this.ao(this.canvas);
+		//this.ao(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
 	}
@@ -515,51 +515,46 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_1m_particles(canvas: Canvas) {
-		/*const adapter = await navigator.gpu?.requestAdapter();
-		const device: GPUDevice = (await adapter?.requestDevice()) as never;
-		const context = canvas.getContext('webgpu');
+		const { Fn, uniform, texture, instanceIndex, float, hash, vec3, storage, If, StorageInstancedBufferAttribute, SpriteNodeMaterial } = require('@nativescript/canvas-three');
 
-		const particleCount = 1000000;
+		const particleCount = 100; //0000;
 
 		const gravity = uniform(-0.0098);
 		const bounce = uniform(0.8);
 		const friction = uniform(0.99);
-		const size = uniform(0.12);
+		const size = uniform(1);
 
 		const clickPosition = uniform(new THREE.Vector3());
 
 		let camera, scene, renderer;
 		let controls, stats;
 		let computeParticles;
+		var context;
+		var innerWidth, innerHeight;
 
 		//const timestamps = document.getElementById('timestamps');
 
 		const root = this.root;
 
-		console.log('root', this.root);
+		async function init() {
+			canvas.width = canvas.clientWidth * window.devicePixelRatio;
+			canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-		function init() {
-			const { width, height } = canvas;
+			innerWidth = canvas.clientWidth as number;
+			innerHeight = canvas.clientHeight as number;
 
-			const innerWidth = width as number;
-			const innerHeight = height as number;
-
-			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
-			camera.position.set(15, 30, 15);
+			camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+			camera.position.set(15, 30, 30);
 
 			scene = new THREE.Scene();
 
 			// textures
 
-			console.log('textureLoader', root + '/textures/sprite1.png');
 			const textureLoader = new THREE.TextureLoader();
-			textureLoader.setPath(root);
-			const map = textureLoader.load('textures/sprite1.png');
+			// textureLoader.setPath(root);
+			const map = textureLoader.load(root + '/textures/sprite1.png');
 
-			console.log('??');
-
-			//
-			const createBuffer = () => storage(new StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
+			const createBuffer = () => storage(new THREE.StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
 
 			const positionBuffer = createBuffer();
 			const velocityBuffer = createBuffer();
@@ -567,13 +562,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// compute
 
-			const computeInit = tslFn(() => {
+			const computeInit = Fn(() => {
 				const position = positionBuffer.element(instanceIndex);
 				const color = colorBuffer.element(instanceIndex);
 
-				const randX = instanceIndex.hash();
-				const randY = instanceIndex.add(2).hash();
-				const randZ = instanceIndex.add(3).hash();
+				const randX = hash(instanceIndex);
+				const randY = hash(instanceIndex.add(2));
+				const randZ = hash(instanceIndex.add(3));
 
 				position.x = randX.mul(100).add(-50);
 				position.y = 0; // randY.mul( 10 );
@@ -584,7 +579,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			const computeUpdate = tslFn(() => {
+			const computeUpdate = Fn(() => {
 				const position = positionBuffer.element(instanceIndex);
 				const velocity = velocityBuffer.element(instanceIndex);
 
@@ -614,7 +609,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// create particles
 
-			const particleMaterial = new SpriteNodeMaterial();
+			const particleMaterial = new THREE.SpriteNodeMaterial();
 			particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
 			particleMaterial.positionNode = positionBuffer.toAttribute();
 			particleMaterial.scaleNode = size;
@@ -641,17 +636,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const raycaster = new THREE.Raycaster();
 			const pointer = new THREE.Vector2();
 
-			//
-
-			const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
-
-			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, context, device });
-
-			const element = new (<any>HTMLCanvasElement)(canvas);
-			renderer['backend'] = element;
+			renderer = new THREE.WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(innerWidth, innerHeight);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+			await renderer.init();
+			context = canvas.getContext('webgpu');
 			renderer.setAnimationLoop(animate);
+
 			//document.body.appendChild(renderer.domElement);
 
 			// stats = new Stats();
@@ -659,11 +650,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			//
 
-			renderer.compute(computeInit);
-
 			// click event
 
-			const computeHit = tslFn(() => {
+			const computeHit = Fn(() => {
 				const position = positionBuffer.element(instanceIndex);
 				const velocity = velocityBuffer.element(instanceIndex);
 
@@ -677,10 +666,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				velocity.assign(velocity.add(direction.mul(relativePower)));
 			})().compute(particleCount);
 
+			renderer.compute(computeInit);
+
 			//
 
 			function onMove(event) {
-				pointer.set((event.clientX / innerWidth) * 2 - 1, -(event.clientY / innerHeight) * 2 + 1);
+				const x = event.clientX; //* window.devicePixelRatio;
+				const y = event.clientY; //* window.devicePixelRatio;
+				pointer.set((x / canvas.width) * 2 - 1, -(y / canvas.height) * 2 + 1);
 
 				raycaster.setFromCamera(pointer, camera);
 
@@ -706,6 +699,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			//
 
 			controls = new OrbitControls(camera, canvas as never);
+			controls.enabled = true;
 			controls.minDistance = 5;
 			controls.maxDistance = 200;
 			controls.target.set(0, 0, 0);
@@ -725,15 +719,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
 		}
 
-		init();
-
 		function onWindowResize() {
-			const { innerWidth, innerHeight } = window;
-
 			camera.aspect = innerWidth / innerHeight;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(innerWidth, innerHeight);
+			renderer.setSize(innerWidth, innerHeight, false);
 		}
 
 		async function animate() {
@@ -742,6 +732,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			await renderer.computeAsync(computeParticles);
 
 			await renderer.renderAsync(scene, camera);
+
+			context.presentSurface();
 
 			// throttle the logging
 
@@ -757,7 +749,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// }
 		}
 
-		*/
+		init();
 	}
 
 	// topDown(canvas) {

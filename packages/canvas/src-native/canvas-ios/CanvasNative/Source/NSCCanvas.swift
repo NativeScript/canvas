@@ -507,7 +507,7 @@ public class NSCCanvas: UIView {
     }
     
     
-    var ignoreTouchEvents = false {
+    public var ignoreTouchEvents = false {
         didSet {
             if(ignoreTouchEvents){
                 removeGestureRecognizer(handler!.gestureRecognizer!)

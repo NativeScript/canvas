@@ -147,6 +147,10 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public func context2DTestToDataURL(_ context: Swift.Int64) -> Swift.String
   @objc @_Concurrency.MainActor(unsafe) public var touchEventListener: ((Swift.String, UIKit.UIGestureRecognizer) -> Swift.Void)?
   @_Concurrency.MainActor(unsafe) @objc override dynamic public init(frame: CoreFoundation.CGRect)
+  @objc @_Concurrency.MainActor(unsafe) public var ignoreTouchEvents: Swift.Bool {
+    @objc get
+    @objc set
+  }
   @objc @_Concurrency.MainActor(unsafe) public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
   @objc @_Concurrency.MainActor(unsafe) public var surfaceWidth: Swift.Int {
     @objc get
@@ -166,8 +170,6 @@ extension UIKit.UIView {
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()
-  @objc public func texImage2D(_ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ source: CanvasNative.NSCCanvas, _ dest: CanvasNative.NSCCanvas, _ flipYWebGL: Swift.Bool)
-  @objc public func createSurface()
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageBitmap) public class NSCImageBitmap : ObjectiveC.NSObject {
@@ -179,7 +181,7 @@ extension UIKit.UIView {
   @objc public static func createTextureCache() -> CoreVideo.CVOpenGLESTextureCache?
   @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
   @objc public static func setupRender() -> CanvasNative.NSCRender
-  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ render: CanvasNative.NSCRender, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
   public enum NSCError : Swift.Error {
     case customError(Swift.String)
   }

@@ -9,6 +9,7 @@ import Foundation
 import OpenGLES
 import CoreVideo
 import AVFoundation
+import UIKit
 @objc(NSCCanvasUtils)
 public class NSCCanvasUtils: NSObject {
     private static let BYTES_PER_TEXEL = 4
@@ -29,17 +30,19 @@ public class NSCCanvasUtils: NSObject {
         return NSCRender()
     }
     
-    @objc public static func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ render: NSCRender,_ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
+    @objc public static func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
 
         let currentTime = player.currentTime()
         
         if(!output.hasNewPixelBuffer(forItemTime: currentTime)) {return}
         
-        let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: nil)
+        var presentationTime = CMTime.zero
         
+        let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
         
         guard let pixel_buffer = buffer else {return}
-        render.drawFrame(buffer: pixel_buffer, width: Int(videoSize.width), height: Int(videoSize.height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+        
+        NSCRender.drawFrame(buffer: pixel_buffer, width: Int(videoSize.width), height: Int(videoSize.height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
     }
     
     

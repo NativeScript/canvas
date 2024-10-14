@@ -1,9 +1,9 @@
-import { func } from 'canvas-phaser-ce/games/utils';
-
 let LAF;
 
 export function colorRain(canvas) {
 	//initial
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	var w = canvas.width,
 		h = canvas.height,
 		ctx = canvas.getContext('2d'),

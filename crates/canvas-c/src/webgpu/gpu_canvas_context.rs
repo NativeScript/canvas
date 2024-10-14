@@ -238,7 +238,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
 #[cfg(any(target_os = "ios"))]
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
-    context: *const CanvasGPUCanvasContext,
+    context: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
     view: *mut c_void,
     width: u32,
     height: u32,
@@ -378,8 +378,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) =
-                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device_id, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
                 } else {

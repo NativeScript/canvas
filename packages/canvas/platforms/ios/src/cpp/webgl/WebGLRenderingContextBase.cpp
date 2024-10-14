@@ -82,11 +82,11 @@ void WebGLRenderingContextBase::StopRaf() {
 
 void WebGLRenderingContextBase::UpdateInvalidateState() {
     auto raf = this->GetRaf();
-    if (raf != nullptr) {
-        if (!canvas_native_raf_get_started(raf->GetRaf())) {
-            canvas_native_raf_start(raf->GetRaf());
-        }
-    }
+//    if (raf != nullptr) {
+//        if (!canvas_native_raf_get_started(raf->GetRaf())) {
+//            canvas_native_raf_start(raf->GetRaf());
+//        }
+//    }
     auto state = this->GetInvalidateState();
     this->SetInvalidateState(state | (int) InvalidateState::InvalidateStatePending);
 }

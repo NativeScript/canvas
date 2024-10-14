@@ -190,7 +190,7 @@ impl Paint {
     ) -> Option<skia_safe::Paint> {
         let sigma = blur / 2.0;
         let filter =
-            skia_safe::image_filters::drop_shadow_only(offset, (sigma, sigma), color, None, None);
+            skia_safe::image_filters::drop_shadow_only(offset, (sigma, sigma), color, None, None, None);
         paint.set_image_filter(filter);
         return Some(paint);
     }

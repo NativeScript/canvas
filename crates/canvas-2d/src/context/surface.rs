@@ -46,10 +46,16 @@ impl Context {
 
         Context {
             direct_context: None,
+            #[cfg(feature = "gl")]
+            gl_context: None,
+            #[cfg(feature = "metal")]
+            metal_context: None,
+            #[cfg(feature = "metal")]
+            metal_texture_info: None,
             #[cfg(feature = "vulkan")]
-            ash_graphics: None,
+            vulkan_context: None,
             #[cfg(feature = "vulkan")]
-            vk_surface: None,
+            vulkan_texture: None,
             surface_data: SurfaceData {
                 bounds,
                 ppi,

@@ -13,6 +13,7 @@ extern "C" {
 
 #import "canvas_native.h"
 #import "canvas_ios.h"
+#import "NSCMTLView.h"
 
 //! Project version number for CanvasNative.
 

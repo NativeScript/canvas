@@ -61,7 +61,7 @@ import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotat
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
-import { drawChart, issue54, issue93 } from './issues';
+import { drawChart, issue127, issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
@@ -759,7 +759,8 @@ fn main() -> @location(0) vec4f {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		// circle_demo(this.canvas);
+		//issue127(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -821,7 +822,7 @@ fn main() -> @location(0) vec4f {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
-		//createConicGradient(this.canvas);
+		createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -833,7 +834,7 @@ fn main() -> @location(0) vec4f {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 		//fog(this.canvas);
-		environmentMap(this.canvas);
+		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);

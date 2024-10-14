@@ -56,12 +56,12 @@ var Particle = function (x, y) {
 };
 
 function touchParticles(canvas, w?, h?, nativeCanvas?) {
-	width = w || canvas.clientWidth * window.devicePixelRatio;
-	height = h || canvas.clientHeight * window.devicePixelRatio;
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
+	width = w || canvas.width;
+	height = h || canvas.height;
 
 	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
-	canvas.width = width;
-	canvas.height = height;
 
 	context.scale(window.devicePixelRatio, window.devicePixelRatio);
 
@@ -138,7 +138,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 			const touches = args.touches.item(0);
 			const first = touches;
 			cleanUpArray();
-			initParticles(first.clientX, first.clientY);
+			initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
 		});
 
 		canvas.addEventListener('touchmove', (args) => {
@@ -146,7 +146,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 			if (Array.isArray(touches)) {
 				const first = touches[0];
 				cleanUpArray();
-				initParticles(first.clientX, first.clientY);
+				initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
 			}
 		});
 

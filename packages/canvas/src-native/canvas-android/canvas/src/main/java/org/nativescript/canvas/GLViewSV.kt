@@ -37,7 +37,7 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-		if (canvas?.nativeGL != 0L) {
+		if (canvas?.nativeContext != 0L) {
 			canvas?.resize()
 			return
 		}

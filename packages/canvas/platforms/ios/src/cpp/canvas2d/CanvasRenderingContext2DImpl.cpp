@@ -1110,7 +1110,6 @@ void CanvasRenderingContext2DImpl::SetTextAlign(v8::Local<v8::String> property,
 void CanvasRenderingContext2DImpl::GetTextBaseline(v8::Local<v8::String> property,
                                                    const v8::PropertyCallbackInfo<v8::Value> &info) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(info.This());
-    auto isolate = info.GetIsolate();
     if (ptr == nullptr) {
         info.GetReturnValue().Set(0);
         return;
@@ -1963,7 +1962,6 @@ CanvasRenderingContext2DImpl::DrawAtlas(const v8::FunctionCallbackInfo<v8::Value
         return;
     }
 
-    auto count = args.Length();
     auto value = args[0];
 
     if (value->IsNullOrUndefined() || !value->IsObject()) {
@@ -2968,8 +2966,6 @@ void
 CanvasRenderingContext2DImpl::Stroke(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
 
-    auto isolate = args.GetIsolate();
-
     auto value = args[0];
     auto type = GetNativeType(value);
     if (type == NativeType::Path2D) {
@@ -3136,12 +3132,12 @@ CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
 }
 
 void CanvasRenderingContext2DImpl::UpdateInvalidateState() {
-    auto raf = this->GetRaf();
-    if (raf != nullptr) {
-        if (!canvas_native_raf_get_started(raf->GetRaf())) {
-            canvas_native_raf_start(raf->GetRaf());
-        }
-    }
+//    auto raf = this->GetRaf();
+//    if (raf != nullptr) {
+//        if (!canvas_native_raf_get_started(raf->GetRaf())) {
+//            canvas_native_raf_start(raf->GetRaf());
+//        }
+//    }
 
     auto state = this->GetInvalidateState();
     this->SetInvalidateState((int) state | (int) InvalidateState::InvalidateStatePending);

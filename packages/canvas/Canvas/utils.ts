@@ -14,7 +14,7 @@ const defaultGLOptions = {
 const default2DOptions = {
 	alpha: true,
 	antialias: true,
-	depth: true,
+	depth: false,
 	failIfMajorPerformanceCaveat: false,
 	powerPreference: 'default',
 	premultipliedAlpha: true,
@@ -64,7 +64,7 @@ export function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experime
 			glOptions[prop] = value;
 		}
 	};
-	if (type.indexOf('webgl') > -1 || type === 'experimental-webgl') {
+	if (type.indexOf('webgl') > -1) {
 		setIfDefined('alpha', contextAttributes.alpha);
 		setIfDefined('antialias', contextAttributes.antialias);
 		setIfDefined('depth', contextAttributes.depth);

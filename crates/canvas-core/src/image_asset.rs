@@ -26,7 +26,7 @@ impl CanvasImage {
             }
             #[cfg(feature = "2d")]
             CanvasImage::Skia(image, _, data) => {
-                let dimensions = (image.width() as u32, image.height() as u32);;
+                let dimensions = (image.width() as u32, image.height() as u32);
                 f(data.as_slice(), dimensions)
             }
         }
@@ -250,30 +250,28 @@ impl ImageAsset {
                 f(None)
             }
             Some(image) => {
-                unsafe {
-                    match image {
-                        #[cfg(not(feature = "2d"))]
-                        CanvasImage::Stb(image) => {
-                            // should always be rgba
-                            let info = skia_safe::ImageInfo::new(
-                                (image.width as i32, image.height as i32),
-                                skia_safe::ColorType::RGBA8888,
-                                skia_safe::AlphaType::Unpremul,
-                                None,
-                            );
-                            let mut bm = skia_safe::Bitmap::new();
-                            let success = unsafe { bm.install_pixels(&info, image.data.as_mut_ptr() as *mut c_void, info.min_row_bytes()) };
+                match image {
+                    #[cfg(not(feature = "2d"))]
+                    CanvasImage::Stb(image) => {
+                        // should always be rgba
+                        let info = skia_safe::ImageInfo::new(
+                            (image.width as i32, image.height as i32),
+                            skia_safe::ColorType::RGBA8888,
+                            skia_safe::AlphaType::Unpremul,
+                            None,
+                        );
+                        let mut bm = skia_safe::Bitmap::new();
+                        let success = unsafe { bm.install_pixels(&info, image.data.as_mut_ptr() as *mut c_void, info.min_row_bytes()) };
 
-                            if success {
-                                f(Some(&bm))
-                            } else {
-                                f(None)
-                            }
+                        if success {
+                            f(Some(&bm))
+                        } else {
+                            f(None)
                         }
-                        #[cfg(feature = "2d")]
-                        CanvasImage::Skia(image, _, _) => {
-                            f(Some(image))
-                        }
+                    }
+                    #[cfg(feature = "2d")]
+                    CanvasImage::Skia(image, _, _) => {
+                        f(Some(image))
                     }
                 }
             }
@@ -291,26 +289,24 @@ impl ImageAsset {
                 f(None)
             }
             Some(image) => {
-                unsafe {
-                    match image {
-                        #[cfg(not(feature = "2d"))]
-                        CanvasImage::Stb(image) => {
-                            // should always be rgba
-                            let info = skia_safe::ImageInfo::new(
-                                (image.width as i32, image.height as i32),
-                                skia_safe::ColorType::RGBA8888,
-                                skia_safe::AlphaType::Unpremul,
-                                None,
-                            );
-                            let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
-                            let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                            f(image.as_ref())
-                        }
-                        #[cfg(feature = "2d")]
-                        CanvasImage::Skia(bitmap, _, _) => {
-                            let image = skia_safe::images::raster_from_bitmap(bitmap);
-                            f(image.as_ref())
-                        }
+                match image {
+                    #[cfg(not(feature = "2d"))]
+                    CanvasImage::Stb(image) => {
+                        // should always be rgba
+                        let info = skia_safe::ImageInfo::new(
+                            (image.width as i32, image.height as i32),
+                            skia_safe::ColorType::RGBA8888,
+                            skia_safe::AlphaType::Unpremul,
+                            None,
+                        );
+                        let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
+                        let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                        f(image.as_ref())
+                    }
+                    #[cfg(feature = "2d")]
+                    CanvasImage::Skia(bitmap, _, _) => {
+                        let image = skia_safe::images::raster_from_bitmap(bitmap);
+                        f(image.as_ref())
                     }
                 }
             }
@@ -327,30 +323,28 @@ impl ImageAsset {
                 f(None, None)
             }
             Some(image) => {
-                unsafe {
-                    match image {
-                        #[cfg(not(feature = "2d"))]
-                        CanvasImage::Stb(image) => {
-                            // should always be rgba
-                            let info = skia_safe::ImageInfo::new(
-                                (image.width as i32, image.height as i32),
-                                skia_safe::ColorType::RGBA8888,
-                                skia_safe::AlphaType::Unpremul,
-                                None,
-                            );
-                            let dimensions = (image.width as u32, image.height as u32);
-                            let slice = image.data.as_slice();
-                            let data = unsafe { skia_safe::Data::new_bytes(slice) };
-                            let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                            f(image.as_ref(), Some((dimensions, slice)))
-                        }
-                        #[cfg(feature = "2d")]
-                        CanvasImage::Skia(bitmap, _, bytes) => {
-                            let image = skia_safe::images::raster_from_bitmap(bitmap);
-                            let dimensions = bitmap.dimensions();
-                            // should not fail to cast
-                            f(image.as_ref(), Some(((dimensions.width as u32, dimensions.height as u32), bytes)))
-                        }
+                match image {
+                    #[cfg(not(feature = "2d"))]
+                    CanvasImage::Stb(image) => {
+                        // should always be rgba
+                        let info = skia_safe::ImageInfo::new(
+                            (image.width as i32, image.height as i32),
+                            skia_safe::ColorType::RGBA8888,
+                            skia_safe::AlphaType::Unpremul,
+                            None,
+                        );
+                        let dimensions = (image.width as u32, image.height as u32);
+                        let slice = image.data.as_slice();
+                        let data = unsafe { skia_safe::Data::new_bytes(slice) };
+                        let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                        f(image.as_ref(), Some((dimensions, slice)))
+                    }
+                    #[cfg(feature = "2d")]
+                    CanvasImage::Skia(bitmap, _, bytes) => {
+                        let image = skia_safe::images::raster_from_bitmap(bitmap);
+                        let dimensions = bitmap.dimensions();
+                        // should not fail to cast
+                        f(image.as_ref(), Some(((dimensions.width as u32, dimensions.height as u32), bytes)))
                     }
                 }
             }
@@ -609,7 +603,7 @@ impl ImageAsset {
 
 
     pub fn load_from_bytes_int(&self, buf: &mut [i8]) -> bool {
-        self.load_from_bytes(unsafe { std::mem::transmute(buf) })
+        self.load_from_bytes(unsafe { std::mem::transmute::<&mut [i8], &[u8]>(buf) })
     }
 
     #[cfg(feature = "2d")]
@@ -913,6 +907,10 @@ impl ImageAsset {
             .unwrap_or_default()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.0.lock().image.is_none()
+    }
+
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
         self.0.lock().image.as_ref().map(|d| {
             match d {
@@ -1108,10 +1106,10 @@ impl ImageAsset {
         }
 
         for i in 0..(width * height) {
-            let red = data[i * 4 + 0];
+            let red = data[i * 4];
             let green = data[i * 4 + 1];
 
-            buf[i * 2 + 0] = red;
+            buf[i * 2] = red;
             buf[i * 2 + 1] = green;
         }
 
@@ -1126,10 +1124,10 @@ impl ImageAsset {
         }
 
         for i in 0..(width * height) {
-            let red = data[i * 3 + 0];
+            let red = data[i * 3];
             let green = data[i * 3 + 1];
 
-            buf[i * 2 + 0] = red;
+            buf[i * 2] = red;
             buf[i * 2 + 1] = green;
         }
 
@@ -1145,7 +1143,7 @@ impl ImageAsset {
         }
 
         for i in 0..num_pixels {
-            let red = data[i * 4 + 0] as u32;
+            let red = data[i * 4] as u32;
             let green = data[i * 4 + 1] as u32;
 
             let rg_packed = (red << 16) | green;

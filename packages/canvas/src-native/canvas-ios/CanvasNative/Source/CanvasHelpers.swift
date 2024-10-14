@@ -43,12 +43,12 @@ public class CanvasHelpers: NSObject {
         let width = Int32(image.size.width)
         let height = Int32(image.size.height)
         let repetition = (repetition as NSString).utf8String
-        return canvas_native_context_create_pattern_raw(context, width, height, bytes.mutableBytes, UInt(bytes.count), repetition)
+        return canvas_native_ios_context_create_pattern_raw(context, width, height, bytes.mutableBytes, UInt(bytes.count), repetition)
     }
     
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
         let bytes = getBytesFromUIImage(image)
-        return canvas_native_imageasset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
+        return canvas_native_ios_image_asset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))
     }
     
     
@@ -62,37 +62,43 @@ public class CanvasHelpers: NSObject {
         let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width)
         let height = Float(image.size.height)
-        return canvas_native_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy)
+        return canvas_native_ios_context_draw_image_dx_dy_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy)
     }
     
     public static func drawImage(context: Int64, image: UIImage, dx: Float, dy: Float, dw: Float, dh: Float) -> Bool {
         let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width)
         let height = Float(image.size.height)
-        return canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
+        return canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height,dx, dy, dw, dh)
     }
     
     public static func drawImage(context: Int64, image: UIImage, sx: Float, sy: Float, sw: Float, sh: Float ,dx: Float, dy: Float, dw: Float, dh: Float)  -> Bool {
         let bytes = getBytesFromUIImage(image)
         let width = Float(image.size.width)
         let height = Float(image.size.height)
-        return canvas_native_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
+        return canvas_native_ios_context_draw_image_with_bytes(context, bytes.mutableBytes, UInt(bytes.count),width, height, sx,  sy, sw, sh ,dx, dy, dw, dh)
     }
     
     
-    public static func initWebGPUWithViewLayer(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
-        return canvas_native_init_ios_webgpu(instance, view, width, height)
+    public static func initWebGPUWithViewLayer(_ instance: Int64,_ view: NSCCanvas, _ width: UInt32, _ height: UInt32) -> Int64{
+        return canvas_native_init_ios_webgpu(instance, view.mtlPtr, width, height)
     }
     
-    public static func initWebGPUWithView(_ instance: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32) -> Int64{
-        return canvas_native_init_ios_webgpu_uiview(instance, view, width, height)
+    public static func initWebGPUWithView(_ instance: Int64,_ view: NSCCanvas, _ width: UInt32, _ height: UInt32) -> Int64{
+        let instance = OpaquePointer(bitPattern: Int(instance))!
+        let ret = canvas_native_webgpu_context_create(instance, view.getMtlLayerPtr(), width, height)
+        
+        if(ret == nil){
+            return 0
+        }
+        return unsafeBitCast(ret, to: Int64.self)
     }
     
-    public static func resizeWebGPUWithView(_ context: Int64,_ view: Int64, _ width: UInt32, _ height: UInt32){
-       canvas_native_resize_ios_webgpu_uiview(context, view, width, height)
+    public static func resizeWebGPUWithView(_ context: Int64,_ view: NSCCanvas, _ width: UInt32, _ height: UInt32){
+       canvas_native_resize_ios_webgpu_uiview(context, view.getMtlViewPtr(), width, height)
     }
     
-    public static func initGLWithView(_ view: Int64, _ alpha: Bool,
+    public static func initWebGLWithView(_ view: NSCCanvas, _ alpha: Bool,
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
@@ -102,12 +108,19 @@ public class CanvasHelpers: NSObject {
                                _ stencil:Bool,
                         _ desynchronized:Bool,
                          _ xr_compatible:Bool,
-                               _ version:Int32,
-                             _ is_canvas:Bool) -> Int64{
-        return canvas_native_init_ios_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
+                               _ version: Int32) -> Int64{
+        
+        let ret =  canvas_native_webgl_create(view.getGlViewPtr(), version, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible)
+        
+        if(ret == nil){
+            return 0
+        }
+        return unsafeBitCast(ret, to: Int64.self)
+        
     }
     
-    public static func initSharedGLWithView(_ view: Int64, _ alpha: Bool,
+    
+    public static func initWebGLWithWidthAndHeight(_ width: Int32, _ height: Int32, _ alpha: Bool,
                                  _ antialias: Bool,
                                  _ depth: Bool,
               _ fail_if_major_performance_caveat: Bool,
@@ -117,108 +130,73 @@ public class CanvasHelpers: NSObject {
                                _ stencil:Bool,
                         _ desynchronized:Bool,
                          _ xr_compatible:Bool,
-                               _ version:Int32,
-                             _ is_canvas:Bool,
-                                            _ shared_context: Int64) -> Int64{
+                               _ version:Int32) -> Int64{
     
         
-        return canvas_native_init_ios_gl_with_shared_gl(view, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
-    }
-    
-    
-    
-    public static func initGLWithWidthAndHeight(_ width: Int32, _ height: Int32, _ alpha: Bool,
-                                 _ antialias: Bool,
-                                 _ depth: Bool,
-              _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:Int32,
-                   _ premultiplied_alpha: Bool,
-               _ preserve_drawing_buffer:Bool,
-                               _ stencil:Bool,
-                        _ desynchronized:Bool,
-                         _ xr_compatible:Bool,
-                               _ version:Int32,
-                             _ is_canvas:Bool) -> Int64{
+        let ret =  canvas_native_webgl_create_no_window(width, height,version, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, false)
         
-        return canvas_native_init_offscreen_ios_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas)
+        if(ret == nil){
+            return 0
+        }
+        return unsafeBitCast(ret, to: Int64.self)
     }
-    
-    public static func initSharedGLWidthAndHeight(_ width: Int32, _ height: Int32, _ alpha: Bool,
-                                 _ antialias: Bool,
-                                 _ depth: Bool,
-              _ fail_if_major_performance_caveat: Bool,
-                      _ power_preference:Int32,
-                   _ premultiplied_alpha: Bool,
-               _ preserve_drawing_buffer:Bool,
-                               _ stencil:Bool,
-                        _ desynchronized:Bool,
-                         _ xr_compatible:Bool,
-                               _ version:Int32,
-                             _ is_canvas:Bool,
-                                            _ shared_context: Int64) -> Int64{
-        
-        return canvas_native_init_offscreen_ios_gl_with_shared_gl(width, height, alpha, antialias, depth, fail_if_major_performance_caveat, power_preference, premultiplied_alpha, premultiplied_alpha, stencil, desynchronized, xr_compatible, version, is_canvas, shared_context)
-    }
-    
     
     public static func resize2DContext(_ context: Int64, _ width: Float, _ height: Float) {
-        canvas_native_resize_context_2d(context, width, height)
+        canvas_native_ios_resize_context_2d(context, width, height)
     }
     
     public static func flush2DContext(_ context: Int64) {
         canvas_native_ios_flush_2d_context(context)
     }
     
-    public static func flushGL(_ context: Int64)-> Bool {
-        return canvas_native_ios_flush_gl(context)
+    public static func flush2DContextAndSyncCPU(_ context: Int64) {
+        canvas_native_ios_flush_2d_context_and_sync_cpu(context)
+    }
+    
+    public static func presentDrawable(_ context: Int64) {
+        canvas_native_ios_present_drawable(context)
+    }
+    
+    public static func flushWebGL(_ context: Int64)-> Bool {
+        return canvas_native_ios_flush_webgl(context)
     }
   
 
-    public static func releaseGL(_ context: Int64) {
-        canvas_native_release_ios_gl(context)
-    }
-
-    public static func getGLPointer(_ context: Int64) -> Int64 {
-        return canvas_native_get_gl_pointer(context)
-    }
-
-    public static func releaseGLPointer(_ context: Int64) {
-        canvas_native_release_gl_pointer(context)
+    public static func releaseWebGL(_ context: Int64) {
+        canvas_native_ios_release_webgl(context)
     }
     
-    public static func create2DContext(_ context: Int64,
+    public static func create2DContext(
+                        _ view: NSCCanvas,
                         _ width:Int32,
                        _ height:Int32,
                         _ alpha:Bool,
                       _ density:Float,
-                      _ samples:Int32,
-                   _ font_color:Int32,
+                   _ fontColor:Int32,
                           _ ppi:Float,
                                        _ direction:Int32 ) -> Int64 {
-        return canvas_native_create_2d_context(context, width, height, alpha, density, samples, font_color, ppi, direction)
+                                           return canvas_native_ios_create_2d_context(view.getGlViewPtr(), width, height, alpha, density, fontColor, ppi, direction)
+    }
+    
+    public static func create2DContextMetal(
+                        _ view: NSCCanvas,
+                        _ alpha:Bool,
+                      _ density:Float,
+                   _ fontColor:Int32,
+                          _ ppi:Float,
+                            _ direction:Int32 ) -> Int64 {
+                                let viewPtr = view.getMtlViewPtr()
+                                let devicePtr = view.mtlView.getDevicePtr()
+                                let queuePtr = view.mtlView.getQueuePtr()
+                                return canvas_native_ios_create_2d_context_metal_device_queue(viewPtr,devicePtr, queuePtr, alpha, density, UInt(view.mtlView.sampleCount), fontColor, ppi, direction)
     }
 
 
-    public static func updateGLSurfaceWithView(_ view: Int64,
+    public static func updateWebGLSurfaceWithView(_ view: Int64,
                              _ width:Int32,
                             _ height:Int32,
                                                _ context:Int64) {
-        canvas_native_update_gl_surface(view, width, height, context)
-    }
-
-    public static func test2D(_ context: Int64) {
-        canvas_native_context_2d_test(context)
-    }
-    
-    public static func testToDataURL(_ context: Int64)-> String {
-        let data = canvas_native_context_2d_test_to_data_url(context);
-        if(data == nil){
-            return String()
-        }
-        let ret = String(utf8String: data!)
-        
-        canvas_native_context_2d_destroy_string(data)
-        return ret ?? String()
+        canvas_native_ios_update_webgl_surface(view, width, height, context)
     }
     
     

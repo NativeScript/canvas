@@ -58,7 +58,7 @@ impl ImageAsset {
         &self,
         width: u32,
         height: u32,
-        depth: u32,
+        _depth: u32,
         data: Vec<u8>,
     ) -> bool {
         self.0

@@ -13,10 +13,13 @@ use ::jni::JavaVM;
 use android_logger::Config;
 use itertools::izip;
 use jni::NativeMethod;
-use jni::sys::jlong;
+use jni::sys::{jfloat, jlong};
 use log::LevelFilter;
 
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCreate2DContextNormal, nativeCustomWithBitmapFlush, nativeGetGLPointer, nativeGetGLPointerNormal, nativeGLPointerRefCount, nativeGLPointerRefCountNormal, nativeInitGL, nativeInitGLNoSurface, nativeInitWebGPU, nativeMakeGLCurrent, nativeMakeGLCurrentNormal, nativeReleaseGL, nativeReleaseGLNormal, nativeReleaseGLPointer, nativeReleaseGLPointerNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateGLNoSurfaceNormal, nativeUpdateGLSurface, nativeWebGLC2DRender, nativeWriteCurrentGLContextToBitmap};
+// #[cfg(feature = "vulkan")]
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{ nativeCreate2dContextVulkan};
+
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
 use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
@@ -65,20 +68,18 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
             let canvas_class = env.find_class(NSC_CANVAS_CLASS).unwrap();
 
-            let canvas_method_names = [
-                "nativeInitGL",
-                "nativeInitGLNoSurface",
+
+            let mut canvas_method_names = vec![
+                "nativeInitWebGL",
+                "nativeInitWebGLNoSurface",
                 "nativeCreate2DContext",
-                "nativeUpdateGLSurface",
+                "nativeUpdateWebGLSurface",
                 "nativeUpdate2DSurface",
                 "nativeUpdate2DSurfaceNoSurface",
-                "nativeUpdateGLNoSurface",
-                "nativeReleaseGL",
-                "nativeMakeGLCurrent",
-                "nativeGLPointerRefCount",
-                "nativeGetGLPointer",
-                "nativeReleaseGLPointer",
-                "nativeWriteCurrentGLContextToBitmap",
+                "nativeUpdateWebGLNoSurface",
+                "nativeReleaseWebGL",
+                "nativeMakeWebGLCurrent",
+                "nativeWriteCurrentWebGLContextToBitmap",
                 "nativeInitContextWithCustomSurface",
                 "nativeResizeCustomSurface",
                 "nativeCustomWithBitmapFlush",
@@ -90,20 +91,21 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeResizeWebGPU",
             ];
 
+          //  #[cfg(feature = "vulkan")] {
+                canvas_method_names.push("nativeCreate2dContextVulkan");
+          //  }
+
             let canvas_signatures = if ret >= ANDROID_O {
-                [
-                    "(Landroid/view/Surface;ZZZZIZZZZZIZ)J",
-                    "(IIZZZZIZZZZZIZ)J",
-                    "(JIIZFIIFI)J",
+                let mut ret = vec![
+                    "(Landroid/view/Surface;ZZZZIZZZZZI)J",
+                    "(IIZZZZIZZZZZI)J",
+                    "(Landroid/view/Surface;ZFIFI)J",
                     "(Landroid/view/Surface;J)V",
                     "(Landroid/view/Surface;J)V",
                     "(IIJ)V",
                     "(IIJ)V",
                     "(J)V",
                     "(J)Z",
-                    "(J)J",
-                    "(J)J",
-                    "(J)V",
                     "(JLandroid/graphics/Bitmap;)V",
                     "(FFFZIFI)J",
                     "(JFFFZI)V",
@@ -114,21 +116,24 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JJII)V",
                     "(JLandroid/view/Surface;II)J",
                     "(JLandroid/view/Surface;II)V"
-                ]
+                ];
+
+           //     #[cfg(feature = "vulkan")]{
+                    ret.push("(IILandroid/view/Surface;ZFIFI)J");
+               // }
+
+                ret
             } else {
-                [
-                    "!(Landroid/view/Surface;ZZZZIZZZZZIZ)J",
-                    "!(IIZZZZIZZZZZIZ)J",
-                    "!(JIIZFIIFI)J",
+                let mut ret = vec![
+                    "!(Landroid/view/Surface;ZZZZIZZZZZI)J",
+                    "!(IIZZZZIZZZZZI)J",
+                    "!(Landroid/view/Surface;ZFIFI)J",
                     "!(Landroid/view/Surface;J)V",
                     "!(Landroid/view/Surface;J)V",
                     "!(IIJ)V",
                     "!(IIJ)V",
                     "!(J)V",
                     "!(J)Z",
-                    "!(J)J",
-                    "!(J)J",
-                    "!(J)V",
                     "!(JLandroid/graphics/Bitmap;)V",
                     "!(FFFZIFI)J",
                     "!(JFFFZI)V",
@@ -139,24 +144,28 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JJII)V",
                     "!(JLandroid/view/Surface;II)J",
                     "!(JLandroid/view/Surface;II)V"
-                ]
+                ];
+
+             //  #[cfg(feature = "vulkan")]{
+                   ret.push("!(IILandroid/view/Surface;ZFIFI)J");
+             //  }
+                ret
             };
 
-            let canvas_methods = if ret >= ANDROID_O {
-                [
-                    nativeInitGL as *mut c_void,
-                    nativeInitGLNoSurface as *mut c_void,
+
+
+            let mut canvas_methods = if ret >= ANDROID_O {
+                vec![
+                    nativeInitWebGL as *mut c_void,
+                    nativeInitWebGLNoSurface as *mut c_void,
                     nativeCreate2DContext as *mut c_void,
-                    nativeUpdateGLSurface as *mut c_void,
+                    nativeUpdateWebGLSurface as *mut c_void,
                     nativeUpdate2DSurface as *mut c_void,
                     nativeUpdate2DSurfaceNoSurface as *mut c_void,
                     nativeUpdateGLNoSurface as *mut c_void,
-                    nativeReleaseGL as *mut c_void,
-                    nativeMakeGLCurrent as *mut c_void,
-                    nativeGLPointerRefCount as *mut c_void,
-                    nativeGetGLPointer as *mut c_void,
-                    nativeReleaseGLPointer as *mut c_void,
-                    nativeWriteCurrentGLContextToBitmap as *mut c_void,
+                    nativeReleaseWebGL as *mut c_void,
+                    nativeMakeWebGLCurrent as *mut c_void,
+                    nativeWriteCurrentWebGLContextToBitmap as *mut c_void,
                     nativeInitContextWithCustomSurface as *mut c_void,
                     nativeResizeCustomSurface as *mut c_void,
                     nativeCustomWithBitmapFlush as *mut c_void,
@@ -168,20 +177,17 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeResizeWebGPU as *mut c_void,
                 ]
             } else {
-                [
-                    nativeInitGL as *mut c_void,
-                    nativeInitGLNoSurface as *mut c_void,
-                    nativeCreate2DContextNormal as *mut c_void,
-                    nativeUpdateGLSurface as *mut c_void,
+                vec![
+                    nativeInitWebGL as *mut c_void,
+                    nativeInitWebGLNoSurface as *mut c_void,
+                    nativeCreate2DContext as *mut c_void,
+                    nativeUpdateWebGLSurface as *mut c_void,
                     nativeUpdate2DSurface as *mut c_void,
                     nativeUpdate2DSurfaceNoSurfaceNormal as *mut c_void,
-                    nativeUpdateGLNoSurfaceNormal as *mut c_void,
-                    nativeReleaseGLNormal as *mut c_void,
-                    nativeMakeGLCurrentNormal as *mut c_void,
-                    nativeGLPointerRefCountNormal as *mut c_void,
-                    nativeGetGLPointerNormal as *mut c_void,
-                    nativeReleaseGLPointerNormal as *mut c_void,
-                    nativeWriteCurrentGLContextToBitmap as *mut c_void,
+                    nativeUpdateWebGLNoSurfaceNormal as *mut c_void,
+                    nativeReleaseWebGLNormal as *mut c_void,
+                    nativeMakeWebGLCurrentNormal as *mut c_void,
+                    nativeWriteCurrentWebGLContextToBitmap as *mut c_void,
                     nativeInitContextWithCustomSurfaceNormal as *mut c_void,
                     nativeResizeCustomSurfaceNormal as *mut c_void,
                     nativeCustomWithBitmapFlush as *mut c_void,
@@ -193,6 +199,10 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     nativeResizeWebGPU as *mut c_void,
                 ]
             };
+
+          //  #[cfg(feature = "vulkan")] {
+                canvas_methods.push(nativeCreate2dContextVulkan as *mut c_void);
+         //   }
 
             let canvas_native_methods: Vec<NativeMethod> =
                 izip!(canvas_method_names, canvas_signatures, canvas_methods)

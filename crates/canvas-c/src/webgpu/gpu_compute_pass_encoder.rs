@@ -264,9 +264,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
     dynamic_offsets_start: usize,
     dynamic_offsets_length: usize,
 ) {
-    if compute_pass.is_null() || bind_group.is_null() {
+    if compute_pass.is_null() {
         return;
     }
+    
 
     let compute_pass = &*compute_pass;
     let global = compute_pass.instance.global();
@@ -274,8 +275,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_compute_pass_encoder_set_bind_grou
 
     let mut lock = compute_pass.pass.lock();
     if let Some(compute_pass) = lock.as_mut() {
-        let bind_group = &*bind_group;
-        let bind_group_id = bind_group.group;
+        let bind_group_id =  if bind_group.is_null() {
+            None
+        }else {
+            let bind_group = &*bind_group;
+            let bind_group_id = bind_group.group;
+            Some(bind_group_id)
+        };
+
 
         if !dynamic_offsets.is_null() && dynamic_offsets_size > 0 {
             let dynamic_offsets = std::slice::from_raw_parts(dynamic_offsets, dynamic_offsets_size);

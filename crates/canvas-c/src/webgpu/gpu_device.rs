@@ -1,16 +1,15 @@
+use std::cmp::PartialEq;
+use std::num::NonZeroU64;
+use std::sync::Arc;
 use std::{
     borrow::Cow,
     collections::HashMap,
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
 };
-use std::cmp::PartialEq;
-use std::num::NonZeroU64;
-use std::sync::Arc;
 
 use wgpu_core::binding_model::BufferBinding;
 use wgpu_core::command::RenderBundleEncoder;
-use wgpu_core::device::DeviceError;
 use wgpu_core::id::PipelineLayoutId;
 use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
 //use wgpu_core::gfx_select;
@@ -19,7 +18,7 @@ use wgt::Features;
 
 use crate::buffers::StringBuffer;
 use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasQueryType, SurfaceGetCurrentTextureStatus};
-use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error, handle_error_fatal};
+use crate::webgpu::error::{handle_error, handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
 use crate::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline;
@@ -239,7 +238,7 @@ impl CanvasGPUDevice {
     pub fn label(&self) -> Option<Cow<'static, str>> {
         self.label.clone()
     }
-    pub fn features(&self) -> Result<Features, DeviceError> {
+    pub fn features(&self) -> Features {
         let device_id = self.device;
         let global = self.instance.global();
         global.device_features(device_id)
@@ -440,7 +439,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_features(
         return std::ptr::null_mut();
     }
     let device = unsafe { &*device };
-    let features = device.features().unwrap_or_default();
+    let features = device.features();
     let features = build_features(features);
     let buffer = StringBuffer::from(features);
     Box::into_raw(Box::new(buffer))
@@ -456,16 +455,10 @@ pub extern "C" fn canvas_native_webgpu_device_get_limits(
     let device = unsafe { &*device };
     let device_id = device.device;
     let global = device.instance.global();
-    match global.device_limits(device_id) {
-        Ok(limits) => {
-            let limits: CanvasGPUSupportedLimits = limits.into();
-            Box::into_raw(Box::new(limits))
-        }
-        Err(err) => {
-            handle_error_fatal(global, err, "canvas_native_webgpu_device_get_limits");
-            std::ptr::null_mut()
-        }
-    }
+    let limits = global.device_limits(device_id);
+
+    let limits: CanvasGPUSupportedLimits = limits.into();
+    Box::into_raw(Box::new(limits))
 }
 
 #[no_mangle]
@@ -1498,7 +1491,7 @@ unsafe fn create_render_pipeline(
     descriptor: RenderPipelineDescriptor,
 ) -> (wgpu_core::id::RenderPipelineId, Option<CreateRenderPipelineError>) {
     let global = global.global();
-    global.device_create_render_pipeline(device_id, &descriptor,None, None)
+    global.device_create_render_pipeline(device_id, &descriptor, None, None)
 }
 
 #[no_mangle]
@@ -1801,7 +1794,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
         }
     };
 
-    let (sampler_id, error) =  global.device_create_sampler(device_id, &desc,None);
+    let (sampler_id, error) = global.device_create_sampler(device_id, &desc, None);
 
     let error_sink = device.error_sink.as_ref();
     if let Some(cause) = error {

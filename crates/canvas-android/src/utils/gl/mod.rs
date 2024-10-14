@@ -1,3 +1,4 @@
+use canvas_c::WebGLState;
 use jni::sys::{jboolean, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
@@ -20,15 +21,15 @@ pub unsafe extern "system" fn Java_org_nativescript_canvas_Utils_nativeMakeState
     }
 
     let state =
-        state as *mut crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
+        state as *mut WebGLState;
 
     if state.is_null() {
         return JNI_FALSE;
     }
     let state = &mut *state;
 
-    if state.gl_context.make_current() {
+    if state.get_inner().make_current() {
         return JNI_TRUE;
     }
-    return JNI_FALSE;
+    JNI_FALSE
 }

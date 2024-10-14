@@ -61,8 +61,7 @@ class MainActivity : AppCompatActivity() {
 		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
-					/*	canvas?.let { canvas ->
-					val params = canvas.layoutParams
+						canvas?.let { canvas ->
 					val context = canvas.create2DContext(
 						true,
 						true,
@@ -73,12 +72,12 @@ class MainActivity : AppCompatActivity() {
 						false,
 						false,
 						false,
-						false,
-						Color.BLACK
+						false
 					)
 //
 //					NSCCanvas.context2DImageTest(context)
-//					NSCCanvas.context2DPathTest(context)
+					NSCCanvas.context2DPathTest(context)
+				//			NSCCanvas.context2DTest(context)
 //
 //                    Log.d("com.test", "windows $context")
 
@@ -90,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 //                    canvas.requestLayout()
 
 
+							/*
 
 					executor.execute {
 						try {
@@ -128,9 +128,10 @@ class MainActivity : AppCompatActivity() {
 						}
 					}
 
+							*/
 
 				}
-				*/
+
 
 
 				//	draw2D()
@@ -170,6 +171,7 @@ class MainActivity : AppCompatActivity() {
 //
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
+				/*
 
 				val asset = NSCImageAsset.createImageAsset()
 				canvas?.let { canvas ->
@@ -185,7 +187,6 @@ class MainActivity : AppCompatActivity() {
 						stencil = true,
 						desynchronized = true,
 						xrCompatible = true,
-						fontColor = Color.BLACK
 					)
 					canvas.fit = CanvasFit.FitX
 					canvas.surfaceHeight = (canvas.height / resources.displayMetrics.density).toInt()
@@ -275,6 +276,8 @@ class MainActivity : AppCompatActivity() {
 //					NSCCanvasRenderingContext2D.drawImage(ctx, webp, 0F, 0F, canvas.surfaceWidth.toFloat(), canvas.surfaceHeight.toFloat())
 //					NSCCanvas.context2DRender(ctx)
 				}
+
+				*/
 
 			}
 
@@ -672,8 +675,8 @@ class MainActivity : AppCompatActivity() {
 
 	override fun onPostResume() {
 		super.onPostResume()
-		if (canvas?.native2DContext != 0L) {
-			NSCCanvas.context2DPathTest(canvas!!.native2DContext)
+		if (canvas?.nativeContext != 0L) {
+			NSCCanvas.context2DPathTest(canvas!!.nativeContext)
 		}
 	}
 

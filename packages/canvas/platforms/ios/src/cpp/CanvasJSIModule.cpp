@@ -232,19 +232,8 @@ void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = args[0].As<v8::BigInt>()->Int64Value();
-    auto width = (float) args[1]->NumberValue(context).ToChecked();
-    auto height = (float) args[2]->NumberValue(context).ToChecked();
-    auto density = (float) args[3]->NumberValue(context).ToChecked();
-    auto samples = (int) args[4]->NumberValue(context).ToChecked();
-    auto alpha = (bool) args[5]->BooleanValue(isolate);
-    auto font_color = (int) args[6]->NumberValue(context).ToChecked();
-    auto ppi = (float) args[7]->NumberValue(context).ToChecked();
-    auto direction = (int) args[8]->NumberValue(context).ToChecked();
 
-    auto context_2d = canvas_native_context_create_gl(width, height, density,
-                                                      ptr,
-                                                      samples, alpha,
-                                                      font_color, ppi, direction);
+    auto context_2d = static_cast<CanvasRenderingContext2D *>((void *)ptr);
 
     auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
             context_2d));
@@ -397,7 +386,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                             callback->Call(context, context->Global(),
                                            2,
                                            args);  // ignore JS return value
-                            
+
                             delete asset_data;
 
                         } else {
@@ -610,7 +599,7 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 struct FileData {
     char *error_;
     U8Buffer* data;
-    
+
     ~FileData() {
         if (error_ != nullptr) {
             canvas_native_string_destroy(error_);
@@ -623,8 +612,8 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto isolate = args.GetIsolate();
     auto file = ConvertFromV8String(isolate, args[0]);
     auto cbFunc = args[1].As<v8::Function>();
-    
-    
+
+
     auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
         if(data == nullptr){return;}
         auto async_data = static_cast<AsyncCallback *>(data);
@@ -638,10 +627,10 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                                                                    isolate);
             v8::Local<v8::Context> context = callback->GetCreationContextChecked();
             v8::Context::Scope context_scope(context);
-            
+
             if (func->data != nullptr) {
                 auto file_data = static_cast<FileData*>(func->data);
-                
+
                 v8::Local<v8::Value> args[2];
 
                 if (done) {
@@ -657,7 +646,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                                                                       if (deleter_data !=
                                                                           nullptr) {
                                                                           delete static_cast<FileData *>(deleter_data);
-                                                                          
+
                                                                       }
                                                                   },
                                                                   func->data);
@@ -698,13 +687,13 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                 }
 
                 delete async_data;
-                
+
             }
         }
     });
-    
+
     callback->prepare();
-    
+
     std::thread thread(
             [callback, file]() {
                 bool done = false;
@@ -723,8 +712,8 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
             });
 
     thread.detach();
-    
-    
+
+
 
 }
 
@@ -745,20 +734,7 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
     auto count = args.Length();
     if (count == 6) {
         auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-        auto webgl = canvas_native_webgl_create(
-                ctx,
-                options.version,
-                options.alpha,
-                options.antialias,
-                options.depth,
-                options.failIfMajorPerformanceCaveat,
-                options.powerPreference,
-                options.premultipliedAlpha,
-                options.preserveDrawingBuffer,
-                options.stencil,
-                options.desynchronized,
-                options.xrCompatible
-        );
+        auto webgl = static_cast<WebGLState*>((void *)ctx);
 
         auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
                                                                    new WebGLRenderingContext(
@@ -841,22 +817,8 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
 
     auto count = args.Length();
     if (count == 6) {
-        auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-        auto webgl = canvas_native_webgl_create(
-                ctx,
-                options.version,
-                options.alpha,
-                options.antialias,
-                options.depth,
-                options.failIfMajorPerformanceCaveat,
-                options.powerPreference,
-                options.premultipliedAlpha,
-                options.preserveDrawingBuffer,
-                options.stencil,
-                options.desynchronized,
-                options.xrCompatible
-        );
-
+        auto ctx = args[0].As<v8::BigInt>()->Int64Value();
+        auto webgl = static_cast<WebGLState*>((void *)ctx);
         auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
                                                                     new WebGL2RenderingContext(
                                                                             webgl,

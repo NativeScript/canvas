@@ -3,9 +3,9 @@ use std::ffi::c_uint;
 
 use base64::Engine;
 use regex::bytes::Replacer;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, Image, ImageInfo, IPoint, ISize, Point, Surface};
-use skia_safe::BlendMode;
 use skia_safe::image::CachingHint;
+use skia_safe::BlendMode;
+use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -19,6 +19,8 @@ use text_styles::{
 };
 
 use crate::context::drawing_text::typography::Font;
+
+use bitflags::bitflags;
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -47,8 +49,12 @@ pub mod text_decoder;
 pub mod text_encoder;
 pub mod transformations;
 
-#[cfg(feature = "vulkan")]
+// #[cfg(feature = "vulkan")]
 pub mod surface_vulkan;
+
+#[cfg(feature = "metal")]
+pub mod surface_metal;
+
 
 #[derive(Clone)]
 pub struct State {
@@ -136,11 +142,19 @@ pub enum SurfaceEngine {
     Metal,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum SurfaceState {
-    None,
-    Pending,
-    Invalidating,
+
+bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct SurfaceState: u8 {
+        const None = 0x00;
+        const Pending = 0x01;
+        const Invalidating = 0x02;
+    }
+}
+impl Default for SurfaceState {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -174,9 +188,15 @@ pub struct Context {
     pub(crate) surface: Surface,
     pub(crate) surface_state: SurfaceState,
     #[cfg(feature = "vulkan")]
-    pub(crate) ash_graphics: Option<surface_vulkan::AshGraphics>,
+    pub vulkan_context: Option<canvas_core::gpu::vulkan::VulkanContext>,
     #[cfg(feature = "vulkan")]
-    pub(crate) vk_surface: Option<ash::vk::SurfaceKHR>,
+    pub vulkan_texture: Option<skia_safe::gpu::BackendTexture>,
+    #[cfg(feature = "metal")]
+    pub metal_context: Option<canvas_core::gpu::metal::MetalContext>,
+    #[cfg(feature = "metal")]
+    pub metal_texture_info: Option<skia_safe::gpu::mtl::TextureInfo>,
+    #[cfg(feature = "gl")]
+    pub gl_context: Option<canvas_core::gpu::gl::GLContext>,
     #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
     pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     pub(crate) path: Path,
@@ -197,6 +217,17 @@ impl Context {
         }
     }
 
+
+    pub fn submit(&mut self) {
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        match self.direct_context.as_mut() {
+            Some(ctx) => {
+                ctx.submit(None);
+            }
+            _ => {}
+        }
+    }
+
     pub fn flush_and_render_to_surface(&mut self) {
         self.flush();
     }
@@ -211,12 +242,26 @@ impl Context {
         }
     }
 
+    pub fn flush_submit_and_sync_cpu(&mut self) {
+        #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
+        match self.direct_context.as_mut() {
+            Some(ctx) => {
+                ctx.flush_submit_and_sync_cpu();
+            }
+            _ => {}
+        }
+    }
+
     pub fn get_surface_engine(&self) -> SurfaceEngine {
         self.surface_data.engine
     }
 
     pub fn get_surface_data(&self) -> &SurfaceData {
         &self.surface_data
+    }
+
+    pub fn get_surface_state(&self) -> SurfaceState {
+        self.surface_state
     }
 
     pub fn with_matrix<F>(&mut self, f: F)
@@ -252,7 +297,7 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         f(self.surface.canvas());
-        self.surface_state = SurfaceState::Pending;
+        self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
 
@@ -267,19 +312,37 @@ impl Context {
         F: FnOnce(&skia_safe::Canvas),
     {
         f(self.surface.canvas());
-        self.surface_state = SurfaceState::Pending;
+        self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
 
     pub fn flush(&mut self) {
-        if self.surface_state == SurfaceState::Pending {
-            self.surface_state = SurfaceState::Invalidating;
+        let state = self.surface_state & SurfaceState::Pending;
+
+        if state == SurfaceState::Pending {
+            self.surface_state = self.surface_state | SurfaceState::Invalidating;
             self.flush_surface();
-            self.surface_state = SurfaceState::None;
+            self.surface_state = self.surface_state | SurfaceState::None;
+        }
+    }
+
+    pub fn flush_and_sync_cpu(&mut self) {
+        let state = self.surface_state & SurfaceState::Pending;
+
+        if state == SurfaceState::Pending {
+            self.surface_state = self.surface_state | SurfaceState::Invalidating;
+            self.flush_submit_and_sync_cpu();
+            self.surface_state = self.surface_state | SurfaceState::None;
         }
     }
 
     pub fn get_image(&mut self) -> Option<Image> {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         self.flush();
 
         let snapshot = self.surface.image_snapshot();
@@ -335,7 +398,7 @@ impl Context {
         let image = self.surface.image_snapshot();
 
         let mut quality = quality;
-        if quality > 100 || quality < 0 {
+        if quality > 100 {
             quality = 92;
         }
         let data_txt = "data:";
@@ -403,7 +466,7 @@ impl Context {
                     blend_paint.set_blend_mode(blend);
                     canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
                     canvas.restore();
-                    self.surface_state = SurfaceState::Pending;
+                    self.surface_state = self.surface_state | SurfaceState::Pending;
                 }
             }
             _ => {
@@ -428,7 +491,7 @@ impl Context {
                 layer_paint.set_blend_mode(BlendMode::SrcOver);
                 let mut layer_recorder = skia_safe::PictureRecorder::new();
                 layer_recorder.begin_recording(self.surface_data.bounds, None);
-                let current_matrix = self.surface.canvas().local_to_device();
+                let current_matrix = skia_safe::M44::from(&self.state.matrix);
                 if let Some(layer) = layer_recorder.recording_canvas() {
                     layer.set_matrix(&current_matrix);
                     f(layer, &layer_paint, &self.state.font_style);
@@ -442,12 +505,12 @@ impl Context {
                     blend_paint.set_blend_mode(blend);
                     canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
                     canvas.restore();
-                    self.surface_state = SurfaceState::Pending;
+                    self.surface_state = self.surface_state | SurfaceState::Pending;
                 }
             }
             _ => {
                 f(self.surface.canvas(), paint, &self.state.font_style);
-                self.surface_state = SurfaceState::Pending;
+                self.surface_state = self.surface_state | SurfaceState::Pending;
             }
         };
     }

@@ -78,14 +78,12 @@ export function circle_demo(view) {
 
 	canvas = canvas as Canvas;
 	ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-	// canvas.width = canvas.clientWidth * window.devicePixelRatio;
-	// canvas.height = canvas.clientHeight * window.devicePixelRatio;
+	//canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	//canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 	//const height = canvas.clientHeight * window.devicePixelRatio;
 	// canvas.style.width = `${width}px`;
 	// canvas.style.height = `${height}px`;
-
-	//ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	minRadius = Math.min(width, height) * 0.05;
 	maxRadius = Math.max(width, height) * 0.1;

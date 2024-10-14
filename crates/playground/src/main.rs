@@ -30,7 +30,6 @@ use canvas_c::webgpu::gpu_device::{
 use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
 use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageCopyImageAsset, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
-use canvas_core::gl::get_shader_info_log;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
 use canvas_webgl::webgl::{
@@ -2500,7 +2499,7 @@ fn swarm(ctx: &mut Context, particles: &mut Vec<Particle>, particle_count: i32) 
 */
 fn clock(ctx: &mut CanvasRenderingContext2D) {
     let pi = std::f32::consts::PI;
-    let now = chrono::offset::Local::now();
+    let now = chrono::Local::now();
     let mut ctx = ctx.get_context_mut();
     ctx.save();
     ctx.clear_rect(0., 0., 150., 150.);
@@ -2619,7 +2618,7 @@ fn solar(
     let pi = std::f32::consts::PI;
 
     // Earth
-    let time = chrono::offset::Local::now();
+    let time = chrono::Local::now();
     let seconds = time.second();
     let milliseconds = seconds * 1000;
     ctx.rotate(((2. * pi) / 60.) * seconds as f32 + ((2. * pi) / 60000.) * milliseconds as f32);
@@ -2666,7 +2665,7 @@ fn create_program_from_scripts(
                 WebGLResult::Boolean(compiled) => {
                     if !compiled {
                         // Something went wrong during compilation; get the error
-                        let last_error = get_shader_info_log(shader);
+                        let last_error = canvas_core::gpu::gl::get_shader_info_log(shader);
                         println!("*** Error compiling shader '{}': {:?}", shader, last_error);
                         canvas_native_webgl_delete_shader(shader, state);
                         return None;

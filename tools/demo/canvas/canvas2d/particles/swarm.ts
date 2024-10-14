@@ -11,8 +11,8 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 		// canvas.nativeView.handleInvalidationManually = true
 
 		// Set the canvas width and height to occupy full window
-		var W = width || canvas.getMeasuredWidth(),
-			H = height || canvas.getMeasuredHeight();
+		var W = width || canvas.clientWidth * window.devicePixelRatio,
+			H = height || canvas.clientHeight * window.devicePixelRatio;
 
 		canvas.width = W;
 		canvas.height = H;

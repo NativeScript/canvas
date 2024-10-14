@@ -20,40 +20,42 @@ class ViewController: UIViewController {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
+    
+    
+    @objc func linkTriggered(displaylink: CADisplayLink) {}
         
     
    // var svg: TNSSVG?
     override func viewDidLoad() {
        // super.viewDidLoad()
         canvas = NSCCanvas(frame: .zero)
+        NSCCanvas.forceGL = false
         view.addSubview(canvas!)
         canvas?.frame = view.frame
         view.backgroundColor = .white
-        let c = NSCCanvas(frame: .zero)
         
-        let cc = c.create2DContext(
-                                     true,
-                                     true,
-                                     true,
-                                     false,
-                                     0,
-                                     true,
-                                     false,
-                                     false,
-                                     false,
-                                     false,
-                                     -16777216
-         )
-        
-    
-        print(canvas?.subviews[0], canvas)
-        
+//        let c = NSCCanvas(frame: .zero)
+//        
+//        let cc = c.create2DContext(
+//                                     true,
+//                                     true,
+//                                     true,
+//                                     false,
+//                                     0,
+//                                     true,
+//                                     false,
+//                                     false,
+//                                     false,
+//                                     false,
+//                                     -16777216
+//         )
+//        
+            
       //  canvas?.forceLayout(view.bounds.width, view.bounds.height)
        // canvas = NSCCanvas(frame: view.bounds)
         //view.addSubview(canvas!)
 //        canvas?.frame = view.frame
 //        canvas?.layoutIfNeeded()
-        
        let ctx = canvas!.create2DContext(
                                     true,
                                     true,
@@ -68,52 +70,20 @@ class ViewController: UIViewController {
                                     -16777216
         )
         
-        let glView1 = canvas!.subviews.first as? GLKView
         
-
-
-        canvas?.context2DTest(ctx)
+        canvas?.context2DConic(ctx)
         
         
+//        let ss = canvas?.snapshot(false)
+//        
+//        let v = UIImageView(image: ss)
+//        view.addSubview(v)
+//        v.frame = CGRect(origin: CGPoint(x: v.frame.origin.x, y: 400), size: v.frame.size)
         
-        let canvas2 = NSCCanvas(frame: .zero)
+      //  canvas?.context2DTest(ctx)
+     
         
-        canvas2.forceLayout(300, 150)
-        
-
-        let ctx2 = canvas2.create2DContext(
-                                    true,
-                                    true,
-                                    true,
-                                    false,
-                                    0,
-                                    true,
-                                    false,
-                                    false,
-                                    false,
-                                    false,
-                                    -16777216
-        )
-            
-  
-      //  canvas2.forceLayout(300, 300)
-        
-        print(canvas2.subviews[0])
-
-            
-        
-         var vp = Array(repeating: GLint(), count: 4)
-
-         glGetIntegerv(GLenum(GL_VIEWPORT), &vp)
-
-        
-
-//       canvas2.context2DTest(ctx2)
-//
-       let glView = canvas2.subviews.first as? GLKView
-//
-        let data = glView?.snapshot.pngData()?.base64EncodedData()
-       
+      
 //        if(data != nil){
 //            print(String(data: data!, encoding: .utf8))
 //        }

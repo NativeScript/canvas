@@ -4,52 +4,51 @@ use std::ptr::NonNull;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
-use core_foundation::base::TCFType;
-use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
-use core_foundation::string::CFString;
 use icrate::objc2::ffi::BOOL;
 use icrate::objc2::{class, msg_send, msg_send_id, rc::Id, ClassType, Encode, Encoding};
 use objc2_foundation::{NSData, NSInteger, NSObject, NSUInteger};
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
-use skia_safe::wrapper::PointerWrapper;
+use parking_lot::RwLock;
 
 use crate::context_attributes::ContextAttributes;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
-#[derive(Debug, Default)]
-pub struct GLContextInner {
+#[derive(Debug, Default, Clone)]
+pub(crate) struct GLContextInner {
     context: Option<EAGLContext>,
     sharegroup: EAGLSharegroup,
     view: Option<GLKView>,
-    transfer_surface_info: crate::gl::TransferSurface,
 }
+
+#[derive(Debug, Clone)]
+pub struct GLContextRaw {
+    context: Option<EAGLContext>,
+    sharegroup: EAGLSharegroup,
+    view: Option<GLKView>,
+}
+
+impl GLContextRaw {
+    pub fn make_current(&self) -> bool {
+        if let Some(context) = self.context.as_ref() {
+            return EAGLContext::set_current_context(Some(context));
+        }
+        false
+    }
+
+    pub fn remove_if_current(&self) {
+        if let Some(context) = self.context.as_ref() {
+            context.remove_if_current();
+        }
+    }
+}
+
 
 unsafe impl Sync for GLContextInner {}
 
 unsafe impl Send for GLContextInner {}
 
 #[derive(Debug, Default)]
-pub struct GLContext(Arc<RwLock<GLContextInner>>);
-
-impl GLContext {
-    // pointer has to
-    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.0))
-    }
-
-    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
-        Self(unsafe { Arc::from_raw(raw) })
-    }
-}
-
-impl Clone for GLContext {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
+pub struct GLContext(GLContextInner);
 
 pub enum EAGLRenderingAPI {
     GLES1 = 1,
@@ -142,9 +141,6 @@ impl EAGLContext {
                 Some(current) => {
                     let is_equal: bool = unsafe { msg_send![&current, isEqual: &*self.0] };
                     if is_equal {
-                        // unsafe {
-                        //     gl_bindings::Flush();
-                        // }
                         let nil: *mut NSObject = std::ptr::null_mut();
                         return msg_send![cls, setCurrentContext: nil];
                     }
@@ -373,18 +369,17 @@ impl GLKView {
         let context: Option<Id<NSObject>> = unsafe { msg_send_id![&self.0, context] };
         context.map(EAGLContext)
     }
-
-    fn get_proc_address(&self, addr: &str) -> *const c_void {
-        let symbol_name = CFString::new(addr);
-        let framework_name = CFString::new("com.apple.opengles");
-        unsafe {
-            let framework = CFBundleGetBundleWithIdentifier(framework_name.as_concrete_TypeRef());
-            CFBundleGetFunctionPointerForName(framework, symbol_name.as_concrete_TypeRef()).cast()
-        }
-    }
 }
 
 impl GLContext {
+    pub fn as_raw(&self) -> GLContextRaw {
+        GLContextRaw {
+            context: self.0.context.clone(),
+            sharegroup: self.0.sharegroup.clone(),
+            view: self.0.view.clone(),
+        }
+    }
+
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
         match glview {
@@ -392,7 +387,7 @@ impl GLContext {
             Some(glview) => {
                 let id = glview.clone();
                 let glview = GLKView(id);
-                self.0.write().view = Some(glview);
+                self.0.view = Some(glview);
                 true
             }
         }
@@ -401,7 +396,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
         context: &GLContext,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match glview {
             None => None,
@@ -415,11 +410,11 @@ impl GLContext {
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match glview {
             None => None,
-            Some(glview) => {
+            Some(glview) =>{
                 let glview = GLKView(glview);
                 GLContext::create_window_context_with_gl_view(context_attrs, glview, None)
             }
@@ -430,10 +425,10 @@ impl GLContext {
         _context_attrs: &mut ContextAttributes,
         mut view: GLKView,
         shared_context: Option<&GLContext>,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let gl_view = view.clone();
-        IS_GL_SYMBOLS_LOADED.get_or_init(move || {
-            gl_bindings::load_with(|symbol| gl_view.get_proc_address(symbol).cast());
+        IS_GL_SYMBOLS_LOADED.get_or_init(||{
+            gl_bindings::load_with(|symbol| super::get_proc_address(symbol).cast());
             true
         });
 
@@ -441,8 +436,7 @@ impl GLContext {
 
         let share_group = match shared_context {
             Some(context) => {
-                let inner = context.0.read();
-                inner.sharegroup.clone()
+                context.0.sharegroup.clone()
             }
             _ => EAGLSharegroup::new(),
         };
@@ -450,7 +444,7 @@ impl GLContext {
         let context = EAGLContext::new_with_api_sharegroup(api, &share_group);
 
         if context.is_none() {
-            return None;
+            return None
         }
 
         view.set_context(context.as_ref());
@@ -464,10 +458,9 @@ impl GLContext {
             context,
             sharegroup: share_group,
             view: Some(view),
-            transfer_surface_info: Default::default(),
         };
 
-        Some(GLContext(Arc::new(RwLock::new(inner))))
+       Some(GLContext(inner))
     }
 
     pub fn create_offscreen_context(
@@ -499,8 +492,7 @@ impl GLContext {
     }
 
     pub fn snapshot(&self) -> Option<Vec<u8>> {
-        let inner = self.0.read();
-        inner.view.as_ref().map(|view| view.snapshot())
+        self.0.view.as_ref().map(|view| view.snapshot())
     }
 
     pub fn set_vsync(&self, _sync: bool) -> bool {
@@ -508,9 +500,7 @@ impl GLContext {
     }
 
     pub fn make_current(&self) -> bool {
-        let inner = self.0.read();
-
-        if let Some(context) = inner.context.as_ref() {
+        if let Some(context) = self.0.context.as_ref() {
             // unsafe {
             //     let cls = class!(EAGLContext);
             //     let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
@@ -549,23 +539,21 @@ impl GLContext {
         false
     }
 
-    pub fn remove_if_current(&self) {
-        let inner = self.0.read();
-        if let Some(context) = inner.context.as_ref() {
-            context.remove_if_current();
+    pub fn remove_if_current(&self) -> bool {
+        if let Some(context) = self.0.context.as_ref() {
+            return context.remove_if_current()
         }
+        false
     }
 
     pub fn bind_drawable(&self) {
-        let inner = self.0.read();
-        if let Some(view) = inner.view.as_ref() {
+        if let Some(view) = self.0.view.as_ref() {
             view.bind_drawable();
         }
     }
 
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.0.read();
-        if let Some(view) = inner.view.as_ref() {
+        if let Some(view) = self.0.view.as_ref() {
             view.display();
             // // Testing
             // unsafe {
@@ -578,7 +566,6 @@ impl GLContext {
 
     pub fn get_surface_width(&self) -> i32 {
         self.0
-            .read()
             .view
             .as_ref()
             .map(|v| v.drawable_width().try_into().unwrap_or_default())
@@ -587,7 +574,6 @@ impl GLContext {
 
     pub fn get_surface_height(&self) -> i32 {
         self.0
-            .read()
             .view
             .as_ref()
             .map(|v| v.drawable_height().try_into().unwrap_or_default())
@@ -596,7 +582,7 @@ impl GLContext {
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
         self.0
-            .read()
+
             .view
             .as_ref()
             .map(|v| {
@@ -606,15 +592,5 @@ impl GLContext {
                 )
             })
             .unwrap()
-    }
-
-    pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
-    }
-
-    pub fn get_transfer_surface_info_mut(
-        &self,
-    ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
     }
 }

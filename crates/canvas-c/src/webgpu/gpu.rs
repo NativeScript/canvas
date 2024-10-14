@@ -148,15 +148,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         let adapter = global.request_adapter(
             &opts,
-            wgpu_core::instance::AdapterInputs::Mask(backends, |_b| None),
+            backends,
+            None,
         );
 
         let adapter = adapter.map(|adapter_id| {
-            let features = global.adapter_features(adapter_id)
-                .map(build_features)
-                .unwrap_or_default();
+            let features = build_features(global.adapter_features(adapter_id));
 
-            let limits = global.adapter_limits(adapter_id).unwrap_or_default();
+            let limits = global.adapter_limits(adapter_id);
 
             let ret = CanvasGPUAdapter {
                 instance,

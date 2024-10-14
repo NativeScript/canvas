@@ -77,3 +77,87 @@ pub extern "C" fn canvas_native_font_add_family(
         );
     }
 }
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_test(context: i64) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    {
+        let ctx = context.get_context_mut();
+        ctx.set_fill_style_with_color("red");
+        ctx.fill_rect_xywh(0., 0., 300., 300.);
+    }
+    context.render();
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_path_test(context: i64) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    {
+        let ctx = context.get_context_mut();
+
+        // Create path
+        let mut region = canvas_2d::context::paths::path::Path::default();
+        region.move_to(30f32, 90f32);
+        region.line_to(110f32, 20f32);
+        region.line_to(240f32, 130f32);
+        region.line_to(60f32, 130f32);
+        region.line_to(190f32, 20f32);
+        region.line_to(270f32, 90f32);
+        region.close_path();
+
+        // Fill path
+        ctx.set_fill_style_with_color("green");
+        ctx.fill_rule(
+            Some(&mut region),
+            canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd,
+        );
+    }
+    context.render();
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_2d_conic_test(context: i64) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    {
+        let ctx = context.get_context_mut();
+        use canvas_2d::context::fill_and_stroke_styles::paint::Color;
+
+        // Create a conic gradient
+        // The start angle is 0
+        // The center position is 100, 100
+        let mut gradient = ctx.create_conic_gradient(0., 100., 100.);
+
+        // Add five color stops
+        gradient.add_color_stop(0., Color::RED);
+        gradient.add_color_stop(0.25, Color::from_rgb(255, 165, 0));
+        gradient.add_color_stop(0.5, Color::YELLOW);
+        gradient.add_color_stop(0.75, Color::GREEN);
+        gradient.add_color_stop(1., Color::BLUE);
+
+        // Set the fill style and draw a rectangle
+        ctx.set_fill_style(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient));
+        ctx.fill_rect_xywh(20., 20., 200., 200.);
+    }
+    context.render();
+}

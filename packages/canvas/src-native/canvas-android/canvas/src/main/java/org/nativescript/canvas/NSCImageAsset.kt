@@ -8,8 +8,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.Nullable
 import dalvik.annotation.optimization.FastNative
-import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGL
-import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGLPointer
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 

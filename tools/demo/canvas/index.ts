@@ -3,7 +3,7 @@ import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders,
 
 let Matter;
 declare const NSCCanvas;
-import { Canvas } from '@nativescript/canvas';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import {
 	arcToAnimation,
 	flappyBird,
@@ -61,7 +61,7 @@ import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotat
 import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
 // declare var com, java;
 let zen3d;
-import { drawChart, issue54, issue93 } from './issues';
+import { drawChart, issue127, issue54, issue93 } from './issues';
 import { subTest } from './webgl/test';
 import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
@@ -735,7 +735,7 @@ fn main() -> @location(0) vec4f {
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
-		// swarm(this.canvas);
+		//swarm(this.canvas);
 		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
@@ -759,7 +759,8 @@ fn main() -> @location(0) vec4f {
 		//globalCompositeOperation(this.canvas);
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
-		// circle_demo(this.canvas);
+		//issue127(this.canvas);
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -768,6 +769,7 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
+		//this.vulkan(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);
@@ -833,7 +835,7 @@ fn main() -> @location(0) vec4f {
 		//draw_instanced(this.canvas);
 		//draw_image_space(this.canvas);
 		//fog(this.canvas);
-		environmentMap(this.canvas);
+		//environmentMap(this.canvas);
 		//cubeRotationRotation(this.canvas);
 		//main(this.canvas);
 		//this.letterSpacing(this.canvas);
@@ -873,6 +875,23 @@ fn main() -> @location(0) vec4f {
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
 		//this.textBaseLine2(this.canvas);
+	}
+	vulkan(canvas: any) {
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+		ctx.font = '16px serif';
+		const size = ctx.measureText('NativeScript Canvas 2D Powered by Skia & Vulkan');
+		ctx.fillText('NativeScript Canvas 2D Powered by Skia & Vulkan', canvas.clientWidth / 2 - size.width / 2, 50);
+		const vk = new ImageAsset();
+		const ns = new ImageAsset();
+		const skia = new ImageAsset();
+		Promise.allSettled([skia.fromUrl('https://upload.wikimedia.org/wikipedia/en/thumb/3/33/Skia_Project_Logo.svg/1024px-Skia_Project_Logo.svg.png'), vk.fromUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Vulkan_logo.svg/1024px-Vulkan_logo.svg.png'), ns.fromUrl('https://upload.wikimedia.org/wikipedia/commons/8/86/NativeScript_Logo.png')]).then((res) => {
+			ctx.drawImage(ns as any, canvas.clientWidth / 2 - 50, 60, 100, 100);
+			ctx.drawImage(skia as any, canvas.clientWidth / 2 - 50, 150 + 20, 100, 100);
+			ctx.drawImage(vk as any, canvas.clientWidth / 2 - 50, 250 + 30, 100, 100);
+		});
 	}
 
 	drawSVG(canvas) {

@@ -25,9 +25,11 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/gfx-rs/wgpu"
-rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091"
+rev = "2021e7f29f0204a0b6b22bc59844af1e93984465"
 
 [workspace.dependencies]
+env_logger = "0.11.5"
+log = "0.4.22"
 parking_lot = "0.12.3"
 raw-window-handle = "0.6.2"
 canvas-2d = { path = "./crates/canvas-2d" }
@@ -35,7 +37,7 @@ canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { version = "0.73.0", features = ["textlayout"] }
+skia-safe = { version = "0.78.2", features = ["textlayout"] }
 itertools = "0.13.0"
-wgpu-core = { git = "https://github.com/gfx-rs/wgpu", rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-types = { git = "https://github.com/gfx-rs/wgpu", rev = "690a3fb3fb4c6652b6a1e0b9df9b40de5d6ba091" }
+wgpu-core = { git = "https://github.com/gfx-rs/wgpu", rev = "2021e7f29f0204a0b6b22bc59844af1e93984465", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
+wgpu-types = { git = "https://github.com/gfx-rs/wgpu", rev = "2021e7f29f0204a0b6b22bc59844af1e93984465" }

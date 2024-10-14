@@ -3,6 +3,7 @@ Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
+import { Canvas } from '@nativescript/canvas';
 // require('@nativescript/canvas-polyfill');
 // import { Svg } from '@nativescript/canvas-svg';
 // import { ImageAsset } from '@nativescript/canvas';
@@ -10,6 +11,8 @@ declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
 
+// Canvas.useSurface = true;
+Canvas.forceGL = false;
 Application.on('discardedError', (args) => {
 	console.log('discardedError', args.error, args);
 });
@@ -27,7 +30,7 @@ Application.on('uncaughtError', (args) => {
 
 Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');
-	/*if (global.isAndroid) {
+	if (global.isAndroid) {
 		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
 	} else {
 		monitor = GDPerformanceMonitor.new();
@@ -39,7 +42,6 @@ Application.on('launch', (args) => {
 		monitor.appVersionHidden = true;
 		monitor.deviceVersionHidden = true;
 	}
-	*/
 });
 
 // fetch('https://github.com/mrdoob/three.js/blob/dev/examples/models/gltf/DamagedHelmet/glTF/Default_metalRoughness.jpg?raw=true')

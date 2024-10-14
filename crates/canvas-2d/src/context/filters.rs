@@ -122,7 +122,7 @@ impl ImageFilter {
         let color_matrix = color_filters::matrix_row_major(&[
             amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt, 0.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0,
-        ]);
+        ],None);
 
         let input: Option<skia_safe::ImageFilter> = input.map(|i| i.clone().into()).flatten();
         image_filters::color_filter(color_matrix, input, None)
@@ -131,7 +131,7 @@ impl ImageFilter {
 
     pub fn color_matrix(value: &[f32], input: Option<&ImageFilter>) -> Self {
         if value.len() == 20 {
-            let color_matrix = color_filters::matrix_row_major(value.try_into().unwrap());
+            let color_matrix = color_filters::matrix_row_major(value.try_into().unwrap(),None);
 
             let input: Option<skia_safe::ImageFilter> = input.map(|i| i.clone().into()).flatten();
             return image_filters::color_filter(color_matrix, input, None)
@@ -181,6 +181,7 @@ impl ImageFilter {
                     Point::new(dx, dy),
                     (sigma, sigma),
                     color,
+                    None,
                     input,
                     None,
                 )
@@ -294,7 +295,7 @@ impl Context {
                             let color_matrix = color_filters::matrix_row_major(&[
                                 amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt, 0.0, 0.0, 0.0, 0.0, 0.0, amt,
                                 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -350,7 +351,7 @@ impl Context {
                                 0.0,
                                 1.0,
                                 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -393,7 +394,7 @@ impl Context {
                             let color_matrix = color_filters::matrix_row_major(&[
                                 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
                                 0.0, 0.0, 0.0, 0.0, 0.0, amt, 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -428,7 +429,7 @@ impl Context {
                                 0.0,
                                 1.0,
                                 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -463,7 +464,7 @@ impl Context {
                                 0.0,
                                 1.0,
                                 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -499,7 +500,7 @@ impl Context {
                                 0.0,
                                 1.0,
                                 0.0,
-                            ]);
+                            ],None);
                             image_filters::color_filter(color_matrix, chain, None)
                         } else {
                             chain
@@ -559,6 +560,7 @@ impl Context {
                             offset,
                             (sigma, sigma),
                             color,
+                            None,
                             chain,
                             None,
                         );

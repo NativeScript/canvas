@@ -5,16 +5,13 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
 import android.opengl.EGL14
-import android.opengl.GLES20
 import android.os.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
 import android.widget.FrameLayout
 import androidx.core.text.TextUtilsCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.drawToBitmap
 import dalvik.annotation.optimization.CriticalNative
 import dalvik.annotation.optimization.FastNative
@@ -23,9 +20,6 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import javax.microedition.khronos.egl.EGL
-import javax.microedition.khronos.egl.EGL10
-import kotlin.math.floor
 import kotlin.math.min
 
 
@@ -38,37 +32,37 @@ class NSCCanvas : FrameLayout {
 		None,
 		CPU,
 		GL,
-		Vulkan
+		GPU
 	}
 
-	var fit = CanvasFit.Fill
+	var fit = CanvasFit.FitX
 		set(value) {
 			field = value
-			scaleSurface()
+			invalidate()
+			//	scaleSurface()
 		}
+
+
+	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+		super.onSizeChanged(w, h, oldw, oldh)
+		resize()
+	}
 
 	private var engine = Engine.None
 	var surfaceWidth: Int = 300
 		set(value) {
 			field = value
 			layoutSurface(value, surfaceHeight, this)
-			resize()
 		}
 
 	var surfaceHeight: Int = 150
 		set(value) {
 			field = value
 			layoutSurface(surfaceWidth, value, this)
-			resize()
 		}
 
-	var nativeGL: Long = 0
-		private set
 
 	var nativeContext: Long = 0
-		private set
-
-	var native2DContext: Long = 0
 		private set
 
 	enum class SurfaceType {
@@ -127,7 +121,8 @@ class NSCCanvas : FrameLayout {
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
-					textureView, internalWidth,
+					textureView,
+					internalWidth,
 					internalHeight
 				)
 			}
@@ -140,6 +135,8 @@ class NSCCanvas : FrameLayout {
 				)
 			}
 		}
+
+//		layoutSurface(internalWidth, internalHeight, this)
 	}
 
 	val drawingBufferWidth: Int
@@ -169,7 +166,8 @@ class NSCCanvas : FrameLayout {
 		}
 
 	internal fun surfaceDestroyed() {
-		if (engine == Engine.GL && nativeGL != 0L) {
+		listener?.surfaceDestroyed()
+		if (engine == Engine.GL && nativeContext != 0L) {
 			makeContextCurrent()
 			val display = EGL14.eglGetCurrentDisplay()
 			EGL14.eglMakeCurrent(
@@ -184,17 +182,19 @@ class NSCCanvas : FrameLayout {
 	@Synchronized
 	@Throws(Throwable::class)
 	protected fun finalize() {
-		if (engine == Engine.GL) {
-			if (nativeContext != 0L) {
-				nativeReleaseGLPointer(nativeContext)
-				nativeContext = 0
+		when (engine) {
+			Engine.None -> {}
+			Engine.CPU -> {}
+			Engine.GL -> {
+				if (nativeContext != 0L) {
+					nativeReleaseWebGL(nativeContext)
+					nativeContext = 0
+				}
 			}
-			if (nativeGL != 0L) {
-				nativeReleaseGL(nativeGL)
-				nativeGL = 0
+
+			Engine.GPU -> {
 			}
 		}
-
 		textureView.surfaceTexture?.release()
 	}
 
@@ -218,7 +218,7 @@ class NSCCanvas : FrameLayout {
 			nativeContext = nativeInitWebGPU(instance, it, surfaceWidth, surfaceHeight)
 		}
 		if (nativeContext != 0L) {
-			engine = Engine.Vulkan
+			engine = Engine.GPU
 		}
 
 	}
@@ -253,7 +253,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	fun initContextWithJsonString(type: String, contextAttributes: String?) {
-		if (nativeGL != 0L) {
+		if (nativeContext != 0L) {
 			return
 		}
 		var alpha = true
@@ -364,9 +364,10 @@ class NSCCanvas : FrameLayout {
 		desynchronized: Boolean,
 		xrCompatible: Boolean
 	) {
-		if (nativeGL != 0L) {
+		if (nativeContext != 0L) {
 			return
 		}
+
 		var version = -1
 		when (type) {
 			"2d" -> {
@@ -400,22 +401,49 @@ class NSCCanvas : FrameLayout {
 		}
 
 		surface?.let {
-			nativeGL = nativeInitGL(
-				it,
-				alpha,
-				antialias,
-				depth,
-				failIfMajorPerformanceCaveat,
-				powerPreference,
-				premultipliedAlpha,
-				preserveDrawingBuffer,
-				stencil,
-				desynchronized,
-				xrCompatible,
-				version,
-				is2D
-			)
-			nativeContext = nativeGetGLPointer(nativeGL)
+			if (is2D) {
+				val density = resources.displayMetrics.density
+				if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+					nativeContext = nativeCreate2dContextVulkan(
+						surfaceWidth,
+						surfaceHeight,
+						it,
+						alpha,
+						density,
+						Color.BLACK,
+						resources.displayMetrics.densityDpi.toFloat(),
+						direction
+					)
+					engine = Engine.GPU
+				} else {
+					nativeContext = nativeCreate2DContext(
+						it,
+						alpha,
+						density,
+						Color.BLACK,
+						resources.displayMetrics.densityDpi.toFloat(),
+						direction
+					)
+					engine = Engine.GL
+				}
+
+			} else {
+				nativeContext = nativeInitWebGL(
+					it,
+					alpha,
+					antialias,
+					depth,
+					failIfMajorPerformanceCaveat,
+					powerPreference,
+					premultipliedAlpha,
+					preserveDrawingBuffer,
+					stencil,
+					desynchronized,
+					xrCompatible,
+					version
+				)
+				engine = Engine.GL
+			}
 
 		} ?: run {
 			if (surfaceWidth == 0 || surfaceHeight == 0) {
@@ -429,44 +457,98 @@ class NSCCanvas : FrameLayout {
 				if (height == 0) {
 					height = 1
 				}
-				nativeGL = nativeInitGLNoSurface(
-					width,
-					height,
-					alpha,
-					antialias,
-					depth,
-					failIfMajorPerformanceCaveat,
-					powerPreference,
-					premultipliedAlpha,
-					preserveDrawingBuffer,
-					stencil,
-					desynchronized,
-					xrCompatible,
-					version,
-					is2D
-				)
+				if (is2D) {
+					val density = resources.displayMetrics.density
+
+					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+						nativeContext = nativeCreate2dContextVulkan(
+							width,
+							height,
+							null,
+							alpha,
+							density,
+							Color.BLACK,
+							resources.displayMetrics.densityDpi.toFloat(),
+							direction
+						)
+						engine = Engine.GPU
+					} else {
+						nativeContext = nativeCreate2DContext(
+							null,
+							alpha,
+							density,
+							Color.BLACK,
+							resources.displayMetrics.densityDpi.toFloat(),
+							direction
+						)
+						engine = Engine.GL
+					}
+				} else {
+					nativeContext = nativeInitWebGLNoSurface(
+						width,
+						height,
+						alpha,
+						antialias,
+						depth,
+						failIfMajorPerformanceCaveat,
+						powerPreference,
+						premultipliedAlpha,
+						preserveDrawingBuffer,
+						stencil,
+						desynchronized,
+						xrCompatible,
+						version
+					)
+					engine = Engine.GL
+				}
+
 			} else {
-				nativeGL = nativeInitGLNoSurface(
-					surfaceWidth,
-					surfaceHeight,
-					alpha,
-					antialias,
-					depth,
-					failIfMajorPerformanceCaveat,
-					powerPreference,
-					premultipliedAlpha,
-					preserveDrawingBuffer,
-					stencil,
-					desynchronized,
-					xrCompatible,
-					version,
-					is2D
-				)
+				if (is2D) {
+					val density = resources.displayMetrics.density
+					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+						nativeContext = nativeCreate2dContextVulkan(
+							surfaceWidth,
+							surfaceHeight,
+							null,
+							alpha,
+							density,
+							Color.BLACK,
+							resources.displayMetrics.densityDpi.toFloat(),
+							direction
+						)
+						engine = Engine.GPU
+					} else {
+						nativeContext = nativeCreate2DContext(
+							null,
+							alpha,
+							density,
+							Color.BLACK,
+							resources.displayMetrics.densityDpi.toFloat(),
+							direction
+						)
+						engine = Engine.GL
+					}
+				} else {
+					nativeContext = nativeInitWebGLNoSurface(
+						surfaceWidth,
+						surfaceHeight,
+						alpha,
+						antialias,
+						depth,
+						failIfMajorPerformanceCaveat,
+						powerPreference,
+						premultipliedAlpha,
+						preserveDrawingBuffer,
+						stencil,
+						desynchronized,
+						xrCompatible,
+						version
+					)
+					engine = Engine.GL
+				}
 			}
-			nativeContext = nativeGetGLPointer(nativeGL)
 		}
 
-		engine = Engine.GL
 
 		this.isAlpha = alpha
 	}
@@ -483,12 +565,11 @@ class NSCCanvas : FrameLayout {
 		preserveDrawingBuffer: Boolean,
 		stencil: Boolean,
 		desynchronized: Boolean,
-		xrCompatible: Boolean,
-		fontColor: Int
+		xrCompatible: Boolean
 	): Long {
 
-		if (native2DContext != 0L) {
-			return native2DContext
+		if (nativeContext != 0L) {
+			return nativeContext
 		}
 
 		initContext(
@@ -505,27 +586,7 @@ class NSCCanvas : FrameLayout {
 			xrCompatible
 		)
 
-		val density = resources.displayMetrics.density
-
-		val samples = if (antialias) {
-			4
-		} else {
-			0
-		}
-
-		GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
-		native2DContext = nativeCreate2DContext(
-			nativeGL,
-			surfaceWidth,
-			surfaceHeight,
-			alpha,
-			density,
-			samples,
-			fontColor,
-			resources.displayMetrics.densityDpi.toFloat(),
-			direction
-		)
-		return native2DContext
+		return nativeContext
 	}
 
 	internal var isPaused = false
@@ -548,8 +609,8 @@ class NSCCanvas : FrameLayout {
 		val frameWidth: Int = width
 		val frameHeight: Int = height
 
-		var scaleX: Float = frameWidth.toFloat() / surfaceWidth.toFloat()
-		var scaleY: Float = frameHeight.toFloat() / surfaceHeight.toFloat()
+		var scaleX: Float = (frameWidth.toFloat() / surfaceWidth.toFloat())
+		var scaleY: Float = (frameHeight.toFloat() / surfaceHeight.toFloat())
 
 		var newWidth = 0
 		var newHeight = 0
@@ -607,43 +668,57 @@ class NSCCanvas : FrameLayout {
 	}
 
 	internal fun resize() {
-		if (nativeGL != 0L) {
-			val surface = if (surfaceType == SurfaceType.Surface) {
-				surfaceView.holder.surface
-			} else {
-				textureView.surface
+		scaleSurface()
+		if (nativeContext != 0L) {
+			when (engine) {
+				Engine.GL -> {
+					val surface = if (surfaceType == SurfaceType.Surface) {
+						surfaceView.holder.surface
+					} else {
+						textureView.surface
+					}
+
+					surface?.let {
+						if (is2D) {
+							nativeUpdate2DSurface(it, surfaceWidth,
+								surfaceHeight, nativeContext)
+						} else {
+							nativeUpdateWebGLSurface(it, nativeContext)
+						}
+					} ?: run {
+						if (is2D) {
+							//	GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
+							nativeUpdate2DSurfaceNoSurface(
+								surfaceWidth,
+								surfaceHeight,
+								nativeContext
+							)
+						} else {
+							nativeUpdateWebGLNoSurface(surfaceWidth, surfaceHeight, nativeContext)
+						}
+					}
+				}
+				Engine.GPU -> {
+					if (nativeContext != 0L && engine == Engine.GPU) {
+						val surface = if (surfaceType == SurfaceType.Surface) {
+							surfaceView.holder.surface
+						} else {
+							textureView.surface
+						}
+						surface?.let {
+							if (is2D) {
+								nativeUpdate2DSurface(surface, surfaceWidth,
+									surfaceHeight, nativeContext)
+							} else {
+								nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
+							}
+						}
+					}
+				}
+
+				else -> {}
 			}
 
-			scaleSurface()
-
-			surface?.let {
-				nativeUpdateGLSurface(it, nativeGL)
-				if (is2D) {
-					nativeUpdate2DSurface(it, native2DContext)
-				}
-			} ?: run {
-				nativeUpdateGLNoSurface(surfaceWidth, surfaceHeight, nativeGL)
-				if (is2D) {
-					GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
-					nativeUpdate2DSurfaceNoSurface(
-						surfaceWidth,
-						surfaceHeight,
-						native2DContext
-					)
-				}
-			}
-		} else {
-			if (nativeContext != 0L && engine == Engine.Vulkan) {
-				val surface = if (surfaceType == SurfaceType.Surface) {
-					surfaceView.holder.surface
-				} else {
-					textureView.surface
-				}
-				surface?.let {
-					nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
-				}
-			}
-			scaleSurface()
 		}
 		listener?.surfaceResize(surfaceWidth, surfaceHeight)
 	}
@@ -655,6 +730,8 @@ class NSCCanvas : FrameLayout {
 	interface Listener {
 		fun contextReady()
 		fun surfaceResize(width: Int, height: Int)
+		fun surfaceDestroyed()
+		fun surfaceCreated()
 	}
 
 	var listener: Listener? = null
@@ -670,7 +747,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	fun makeContextCurrent() {
-		nativeMakeGLCurrent(nativeGL)
+		nativeMakeWebGLCurrent(nativeContext)
 	}
 
 	@JvmOverloads
@@ -679,7 +756,7 @@ class NSCCanvas : FrameLayout {
 		var needsToFlip = false
 		if (is2D) {
 			bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-			nativeCustomWithBitmapFlush(native2DContext, bitmap)
+			nativeCustomWithBitmapFlush(nativeContext, bitmap)
 			return bitmap
 		} else {
 			if (surfaceType == SurfaceType.Surface) {
@@ -694,7 +771,7 @@ class NSCCanvas : FrameLayout {
 			if (bitmap == null) {
 				needsToFlip = true
 				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-				nativeWriteCurrentGLContextToBitmap(nativeGL, bitmap)
+				nativeWriteCurrentWebGLContextToBitmap(nativeContext, bitmap)
 			}
 		}
 
@@ -712,6 +789,9 @@ class NSCCanvas : FrameLayout {
 	}
 
 	companion object {
+		@JvmStatic
+		var forceGL = true
+
 		@JvmStatic
 		var views = ConcurrentHashMap<Any?, Any?>()
 
@@ -818,6 +898,7 @@ class NSCCanvas : FrameLayout {
 
 			view.measure(w, h)
 			view.layout(0, 0, width, height)
+
 		}
 
 		@JvmStatic
@@ -882,8 +963,8 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		@FastNative
-		external fun nativeInitGL(
-			surface: Surface,
+		external fun nativeInitWebGL(
+			surface: Surface?,
 			alpha: Boolean,
 			antialias: Boolean,
 			depth: Boolean,
@@ -894,13 +975,12 @@ class NSCCanvas : FrameLayout {
 			stencil: Boolean,
 			desynchronized: Boolean,
 			xrCompatible: Boolean,
-			version: Int,
-			isCanvas: Boolean,
+			version: Int
 		): Long
 
 		@JvmStatic
 		@FastNative
-		external fun nativeInitGLNoSurface(
+		external fun nativeInitWebGLNoSurface(
 			width: Int,
 			height: Int,
 			alpha: Boolean,
@@ -913,20 +993,29 @@ class NSCCanvas : FrameLayout {
 			stencil: Boolean,
 			desynchronized: Boolean,
 			xrCompatible: Boolean,
-			version: Int,
-			isCanvas: Boolean,
+			version: Int
+		): Long
+
+		@JvmStatic
+		@FastNative
+		external fun nativeCreate2DContext(
+			surface: Surface?,
+			alpha: Boolean,
+			density: Float,
+			fontColor: Int,
+			ppi: Float,
+			direction: Int
 		): Long
 
 
 		@JvmStatic
-		@CriticalNative
-		external fun nativeCreate2DContext(
-			context: Long,
+		@FastNative
+		external fun nativeCreate2dContextVulkan(
 			width: Int,
 			height: Int,
+			surface: Surface?,
 			alpha: Boolean,
 			density: Float,
-			samples: Int,
 			fontColor: Int,
 			ppi: Float,
 			direction: Int
@@ -934,7 +1023,7 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		@FastNative
-		external fun nativeUpdateGLSurface(
+		external fun nativeUpdateWebGLSurface(
 			surface: Surface,
 			context: Long
 		)
@@ -943,6 +1032,8 @@ class NSCCanvas : FrameLayout {
 		@FastNative
 		external fun nativeUpdate2DSurface(
 			surface: Surface,
+			width: Int,
+			height: Int,
 			context: Long
 		)
 
@@ -957,7 +1048,7 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		@CriticalNative
-		external fun nativeUpdateGLNoSurface(
+		external fun nativeUpdateWebGLNoSurface(
 			width: Int,
 			height: Int,
 			context: Long
@@ -965,37 +1056,19 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		@CriticalNative
-		external fun nativeReleaseGL(
+		external fun nativeReleaseWebGL(
 			context: Long
 		)
 
 		@JvmStatic
 		@CriticalNative
-		external fun nativeMakeGLCurrent(
+		external fun nativeMakeWebGLCurrent(
 			context: Long
 		): Boolean
 
 		@JvmStatic
-		@CriticalNative
-		external fun nativeGLPointerRefCount(
-			context: Long
-		): Long
-
-		@JvmStatic
-		@CriticalNative
-		external fun nativeGetGLPointer(
-			context: Long
-		): Long
-
-		@JvmStatic
-		@CriticalNative
-		external fun nativeReleaseGLPointer(
-			gl: Long
-		)
-
-		@JvmStatic
 		@FastNative
-		external fun nativeWriteCurrentGLContextToBitmap(context: Long, bitmap: Bitmap)
+		external fun nativeWriteCurrentWebGLContextToBitmap(context: Long, bitmap: Bitmap)
 
 		@JvmStatic
 		@CriticalNative
@@ -1054,10 +1127,10 @@ class NSCCanvas : FrameLayout {
 			nativeContext2DRender(context)
 		}
 
-
 		@JvmStatic
 		@FastNative
 		external fun nativeWebGLC2DRender(context: Long, c2d: Long, internalFormat: Int, format: Int)
+
 
 		@JvmStatic
 		fun WebGLContextRender(gl: Long, context: Long, internalFormat: Int, format: Int) {

@@ -43,10 +43,10 @@ public class CanvasGLKView: GLKView, GLKViewDelegate {
     }
     
     public func glkView(_ view: GLKView, drawIn rect: CGRect) {
-        guard let canvas = canvas else {return}
-        if(canvas.is2D){
-            CanvasHelpers.flush2DContext(canvas.native2DContext)
-        }
+//        guard let canvas = canvas else {return}
+//        if(canvas.is2D){
+//            CanvasHelpers.flush2DContext(canvas.nativeContext)
+//        }
     }
     
 }

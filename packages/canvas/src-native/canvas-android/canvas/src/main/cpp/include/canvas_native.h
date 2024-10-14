@@ -953,7 +953,7 @@ typedef enum CanvasGPUTextureFormat_Tag {
   /**
    * Red, green, and blue channels. 11 bit float with no sign bit for RG channels. 10 bit float with no sign bit for blue channel. Float in shader.
    */
-  CanvasGPUTextureFormatRg11b10Float,
+  CanvasGPUTextureFormatRg11b10UFloat,
   /**
    * Red and green channels. 32 bit integer per channel. Unsigned in shader.
    */
@@ -1844,6 +1844,12 @@ void canvas_native_font_add_family(const char *alias,
                                    const char *const *filenames,
                                    uintptr_t length);
 
+void canvas_native_context_2d_test(int64_t context);
+
+void canvas_native_context_2d_path_test(int64_t context);
+
+void canvas_native_context_2d_conic_test(int64_t context);
+
 void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
@@ -1879,11 +1885,10 @@ struct CanvasRenderingContext2D *canvas_native_context_create(float width,
                                                               float ppi,
                                                               uint32_t direction);
 
-struct CanvasRenderingContext2D *canvas_native_context_create_gl(float width,
+struct CanvasRenderingContext2D *canvas_native_context_create_gl(void *view,
+                                                                 float width,
                                                                  float height,
                                                                  float density,
-                                                                 int64_t gl_context,
-                                                                 int32_t samples,
                                                                  bool alpha,
                                                                  int32_t font_color,
                                                                  float ppi,
@@ -2953,10 +2958,12 @@ const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct 
                                                                          uint32_t height);
 #endif
 
+#if defined(TARGET_OS_ANDROID)
 void canvas_native_webgpu_context_resize(struct CanvasGPUCanvasContext *context,
                                          void *window,
                                          uint32_t width,
                                          uint32_t height);
+#endif
 
 #if (defined(TARGET_OS_IOS) || defined(TARGET_OS_MACOS))
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(const struct CanvasWebGPUInstance *instance,
@@ -3638,10 +3645,6 @@ struct U8Buffer *canvas_native_text_encoder_encode(const struct TextEncoder *enc
 
 const char *canvas_native_text_encoder_get_encoding(const struct TextEncoder *encoder);
 
-bool canvas_native_context_gl_make_current(const struct CanvasRenderingContext2D *context);
-
-bool canvas_native_context_gl_swap_buffers(const struct CanvasRenderingContext2D *context);
-
 struct PaintStyle *canvas_native_context_create_pattern_webgl(struct WebGLState *source,
                                                               struct CanvasRenderingContext2D *context,
                                                               enum CanvasRepetition repetition);
@@ -3863,7 +3866,10 @@ bool canvas_native_webgl_oes_vertex_array_object_is_vertex_array_oes(uint32_t ar
 void canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_oes(uint32_t array_object,
                                                                        const struct OES_vertex_array_object *object);
 
-struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
+#if defined(TARGET_OS_ANDROID)
+struct WebGLState *canvas_native_webgl_create(void *view,
+                                              int32_t width,
+                                              int32_t height,
                                               int32_t version,
                                               bool alpha,
                                               bool antialias,
@@ -3875,6 +3881,22 @@ struct WebGLState *canvas_native_webgl_create(int64_t gl_context,
                                               bool stencil,
                                               bool desynchronized,
                                               bool xr_compatible);
+#endif
+
+#if !defined(TARGET_OS_ANDROID)
+struct WebGLState *canvas_native_webgl_create(void *view,
+                                              int32_t version,
+                                              bool alpha,
+                                              bool antialias,
+                                              bool depth,
+                                              bool fail_if_major_performance_caveat,
+                                              int32_t power_preference,
+                                              bool premultiplied_alpha,
+                                              bool preserve_drawing_buffer,
+                                              bool stencil,
+                                              bool desynchronized,
+                                              bool xr_compatible);
+#endif
 
 struct WebGLState *canvas_native_webgl_create_no_window(int32_t width,
                                                         int32_t height,
@@ -5043,8 +5065,8 @@ void canvas_native_webgl2_tex_sub_image3d_canvas2d(uint32_t target,
                                                    int32_t xoffset,
                                                    int32_t yoffset,
                                                    int32_t zoffset,
-                                                   int32_t width,
-                                                   int32_t height,
+                                                   int32_t _width,
+                                                   int32_t _height,
                                                    int32_t depth,
                                                    uint32_t format,
                                                    uint32_t type_,

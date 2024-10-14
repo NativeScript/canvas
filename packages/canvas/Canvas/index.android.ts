@@ -26,7 +26,7 @@ const defaultOpts = {
 	xrCompatible: false,
 };
 
-declare const org;
+// declare const org;
 
 enum ContextType {
 	None,
@@ -71,7 +71,7 @@ function updateFit(canvas) {
 		// canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.None);
 		// canvas._canvas.getMeasuredHeight()
 	} else {
-		canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.Fill);
+		canvas._canvas.setFit(org.nativescript.canvas.CanvasFit.FitX);
 	}
 }
 
@@ -93,7 +93,7 @@ export class Canvas extends CanvasBase {
 	private _webglContext: WebGLRenderingContext;
 	private _webgl2Context: WebGL2RenderingContext;
 	private _gpuContext: GPUCanvasContext;
-	private _canvas;
+	private _canvas: org.nativescript.canvas.NSCCanvas;
 	private _didPause: boolean = false;
 
 	private _contextType = ContextType.None;
@@ -115,10 +115,6 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			// // default canvas size
-			// this._canvas.setSurfaceWidth(300);
-			// this._canvas.setSurfaceHeight(150);
-
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
 			this._canvas.setTouchEventListener(
@@ -133,6 +129,14 @@ export class Canvas extends CanvasBase {
 				})
 			);
 		}
+	}
+
+	static get forceGL() {
+		return org.nativescript.canvas.NSCCanvas.getForceGL();
+	}
+
+	static set forceGL(value) {
+		org.nativescript.canvas.NSCCanvas.setForceGL(value);
 	}
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
@@ -248,7 +252,6 @@ export class Canvas extends CanvasBase {
 					if (!view[viewRect_]) {
 						view[viewRect_] = new Float32Array(8);
 					}
-
 					if (!nativeView) {
 						return new DOMRect(0, 0, 0, 0);
 					}
@@ -339,7 +342,8 @@ export class Canvas extends CanvasBase {
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
 
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 					(this._2dContext as any)._canvas = this;
 					this._2dContext._type = '2d';
@@ -384,9 +388,7 @@ export class Canvas extends CanvasBase {
 				if (!this._gpuContext) {
 					const ptr = navigator.gpu.native.__getPointer();
 					this._canvas.initWebGPUContext(long(ptr));
-
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
-
 					(this._gpuContext as any)._canvas = this;
 					(this._gpuContext as any)._type = 'webgpu';
 					this._contextType = ContextType.WebGPU;
@@ -402,7 +404,7 @@ export class Canvas extends CanvasBase {
 	private get _boundingClientRect() {
 		if (this._jsBuffer === undefined) {
 			this._jsBuffer = new Float32Array(8);
-			this._canvas?.setBoundsBuffer?.(this._jsBuffer);
+			this._canvas?.setBoundsBuffer?.(this._jsBuffer as never);
 		}
 		return this._jsBuffer;
 	}

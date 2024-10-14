@@ -1,3 +1,4 @@
+import { Canvas } from '@nativescript/canvas';
 import { ImageSource } from '@nativescript/core';
 
 export function issue54(canvas) {
@@ -17,9 +18,31 @@ export function issue93(canvas) {
 	setTimeout(() => ctx.fillRect(0, 0, 150, 100), 2000);
 }
 
+export function issue127(canvas: Canvas) {
+	canvas.width = 300;
+	canvas.height = 300;
+	const ctx = canvas.getContext('2d');
+
+	const gradient = ctx.createConicGradient(90, canvas.width / 2, canvas.height / 2);
+
+	// Add five color stops
+	gradient.addColorStop(0, 'red');
+	gradient.addColorStop(0.25, 'orange');
+	gradient.addColorStop(0.5, 'yellow');
+	gradient.addColorStop(0.75, 'green');
+	gradient.addColorStop(1, 'blue');
+
+	ctx.fillStyle = gradient;
+	ctx.fillStyle = gradient;
+	ctx.fillRect(20, 20, canvas.width, canvas.width);
+}
+
 export function drawChart(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const { width, height } = canvas;
 	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+	ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	let centerX = width / 2;
 	let centerY = height / 2;

@@ -78,11 +78,6 @@ impl Path {
         Self(path.clone())
     }
 
-    fn scoot(&mut self, x: f32, y: f32) {
-        if self.0.is_empty() {
-            self.0.move_to(Point::new(x, y));
-        }
-    }
 
     pub fn set_fill_type(&mut self, fill_type: FillRule) {
         self.0.set_fill_type(fill_type.to_fill_type());

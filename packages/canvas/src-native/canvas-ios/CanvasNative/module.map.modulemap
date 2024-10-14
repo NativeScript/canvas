@@ -1,0 +1,12 @@
+//
+//  module.map.modulemap
+//  CanvasNative
+//
+//  Created by Osei Fortune on 08/10/2024.
+//
+
+module CanvasNative {
+    header "NSCMTLView.h"
+
+    export *
+}

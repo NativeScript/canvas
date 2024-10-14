@@ -346,23 +346,20 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (void)resizeWebGPUWithView:(int64_t)context :(int64_t)view :(uint32_t)width :(uint32_t)height;
-+ (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initSharedGLWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGPUWithView:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (void)resizeWebGPUWithView:(int64_t)context :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height;
++ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 + (void)flush2DContext:(int64_t)context;
-+ (BOOL)flushGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
-+ (void)releaseGL:(int64_t)context;
-+ (int64_t)getGLPointer:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
-+ (void)releaseGLPointer:(int64_t)context;
-+ (int64_t)create2DContext:(int64_t)context :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)samples :(int32_t)font_color :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
-+ (void)updateGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
-+ (void)test2D:(int64_t)context;
-+ (NSString * _Nonnull)testToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)flush2DContextAndSyncCPU:(int64_t)context;
++ (void)presentDrawable:(int64_t)context;
++ (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)releaseWebGL:(int64_t)context;
++ (int64_t)create2DContext:(NSCCanvas * _Nonnull)view :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)create2DContextMetal:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
++ (void)updateWebGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
 + (void)writeFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 + (void)readFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSData * _Nullable))callback;
 + (void)deleteFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSError * _Nullable, BOOL))callback;
@@ -383,15 +380,19 @@ enum CanvasFit : NSInteger;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
++ (BOOL)forceGL SWIFT_WARN_UNUSED_RESULT;
++ (void)setForceGL:(BOOL)value;
 @property (nonatomic) enum CanvasFit fit;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
-- (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
+- (void * _Nonnull)getGlViewPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlViewPtr SWIFT_WARN_UNUSED_RESULT;
+- (void * _Nonnull)getMtlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL autoScale;
-@property (nonatomic, readonly) int64_t nativeGL;
 @property (nonatomic, readonly) int64_t nativeContext;
+@property (nonatomic, readonly) BOOL is2D;
 @property (nonatomic, readonly) CGFloat drawingBufferWidth;
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
@@ -401,8 +402,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
 - (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)render;
-- (void)context2DTest:(int64_t)context;
-- (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, copy) void (^ _Nullable touchEventListener)(NSString * _Nonnull, UIGestureRecognizer * _Nonnull);
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
@@ -411,6 +410,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic) NSInteger surfaceWidth;
 @property (nonatomic) NSInteger surfaceHeight;
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
+- (void)context2DTest:(int64_t)context;
+- (void)context2DPathTest:(int64_t)context;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end
@@ -871,23 +872,20 @@ SWIFT_CLASS_NAMED("CanvasHelpers")
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawImageWithContext:(int64_t)context image:(UIImage * _Nonnull)image sx:(float)sx sy:(float)sy sw:(float)sw sh:(float)sh dx:(float)dx dy:(float)dy dw:(float)dw dh:(float)dh SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initWebGPUWithView:(int64_t)instance :(int64_t)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (void)resizeWebGPUWithView:(int64_t)context :(int64_t)view :(uint32_t)width :(uint32_t)height;
-+ (int64_t)initGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initSharedGLWithView:(int64_t)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
-+ (int64_t)initSharedGLWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version :(BOOL)is_canvas :(int64_t)shared_context SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGPUWithViewLayer:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGPUWithView:(int64_t)instance :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (void)resizeWebGPUWithView:(int64_t)context :(NSCCanvas * _Nonnull)view :(uint32_t)width :(uint32_t)height;
++ (int64_t)initWebGLWithView:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)initWebGLWithWidthAndHeight:(int32_t)width :(int32_t)height :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)fail_if_major_performance_caveat :(int32_t)power_preference :(BOOL)premultiplied_alpha :(BOOL)preserve_drawing_buffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xr_compatible :(int32_t)version SWIFT_METHOD_FAMILY(none) SWIFT_WARN_UNUSED_RESULT;
 + (void)resize2DContext:(int64_t)context :(float)width :(float)height;
 + (void)flush2DContext:(int64_t)context;
-+ (BOOL)flushGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
-+ (void)releaseGL:(int64_t)context;
-+ (int64_t)getGLPointer:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
-+ (void)releaseGLPointer:(int64_t)context;
-+ (int64_t)create2DContext:(int64_t)context :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)samples :(int32_t)font_color :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
-+ (void)updateGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
-+ (void)test2D:(int64_t)context;
-+ (NSString * _Nonnull)testToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)flush2DContextAndSyncCPU:(int64_t)context;
++ (void)presentDrawable:(int64_t)context;
++ (BOOL)flushWebGL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
++ (void)releaseWebGL:(int64_t)context;
++ (int64_t)create2DContext:(NSCCanvas * _Nonnull)view :(int32_t)width :(int32_t)height :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
++ (int64_t)create2DContextMetal:(NSCCanvas * _Nonnull)view :(BOOL)alpha :(float)density :(int32_t)fontColor :(float)ppi :(int32_t)direction SWIFT_WARN_UNUSED_RESULT;
++ (void)updateWebGLSurfaceWithView:(int64_t)view :(int32_t)width :(int32_t)height :(int64_t)context;
 + (void)writeFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSString * _Nullable))callback;
 + (void)readFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSString * _Nullable, NSData * _Nullable))callback;
 + (void)deleteFile:(NSString * _Nonnull)path :(void (^ _Nonnull)(NSError * _Nullable, BOOL))callback;
@@ -908,15 +906,19 @@ enum CanvasFit : NSInteger;
 
 SWIFT_CLASS_NAMED("NSCCanvas")
 @interface NSCCanvas : UIView
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
++ (BOOL)forceGL SWIFT_WARN_UNUSED_RESULT;
++ (void)setForceGL:(BOOL)value;
 @property (nonatomic) enum CanvasFit fit;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
-- (void * _Nonnull)getViewPtr SWIFT_WARN_UNUSED_RESULT;
+- (void * _Nonnull)getGlViewPtr SWIFT_WARN_UNUSED_RESULT;
 - (void * _Nonnull)getMtlViewPtr SWIFT_WARN_UNUSED_RESULT;
+- (void * _Nonnull)getMtlLayerPtr SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic) BOOL autoScale;
-@property (nonatomic, readonly) int64_t nativeGL;
 @property (nonatomic, readonly) int64_t nativeContext;
+@property (nonatomic, readonly) BOOL is2D;
 @property (nonatomic, readonly) CGFloat drawingBufferWidth;
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
@@ -926,8 +928,6 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;
 - (UIImage * _Nullable)snapshot:(BOOL)flip SWIFT_WARN_UNUSED_RESULT;
 - (BOOL)render;
-- (void)context2DTest:(int64_t)context;
-- (NSString * _Nonnull)context2DTestToDataURL:(int64_t)context SWIFT_WARN_UNUSED_RESULT;
 @property (nonatomic, copy) void (^ _Nullable touchEventListener)(NSString * _Nonnull, UIGestureRecognizer * _Nonnull);
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder SWIFT_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(CGRect)frame OBJC_DESIGNATED_INITIALIZER;
@@ -936,6 +936,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic) NSInteger surfaceWidth;
 @property (nonatomic) NSInteger surfaceHeight;
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
+- (void)context2DTest:(int64_t)context;
+- (void)context2DPathTest:(int64_t)context;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end

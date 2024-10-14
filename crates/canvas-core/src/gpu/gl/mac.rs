@@ -1,34 +1,48 @@
 use std::ffi::c_void;
 use std::ptr::NonNull;
-use std::sync::Arc;
 use std::sync::OnceLock;
 
-use core_foundation::base::TCFType;
-use core_foundation::bundle::{CFBundleGetBundleWithIdentifier, CFBundleGetFunctionPointerForName};
-use core_foundation::string::CFString;
 use icrate::objc2::rc::Id;
 use icrate::objc2::{class, msg_send, msg_send_id};
 use objc2_foundation::NSObject;
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
 use raw_window_handle::RawWindowHandle;
 
 use crate::context_attributes::ContextAttributes;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
-#[derive(Debug, Default)]
-pub struct GLContextInner {
+#[derive(Debug, Default, Clone)]
+pub(crate) struct GLContextInner {
     context: Option<NSOpenGLContext>,
-    sharegroup: NSOpenGLContext,
+    sharegroup: Option<NSOpenGLContext>,
     view: Option<NSOpenGLView>,
-    transfer_surface_info: crate::gl::TransferSurface,
 }
 
-unsafe impl Sync for GLContextInner {}
 
-unsafe impl Send for GLContextInner {}
+#[derive(Debug, Clone)]
+pub struct GLContextRaw {
+    context: Option<NSOpenGLContext>,
+    sharegroup: Option<NSOpenGLContext>,
+    view: Option<NSOpenGLView>,
+}
+
+impl GLContextRaw {
+    pub fn make_current(&self) -> bool {
+        self.view
+            .as_ref()
+            .map(|view| view.open_gl_context().make_current_context())
+            .unwrap_or_default()
+    }
+
+    pub fn remove_if_current(&self) -> bool {
+        self.view
+            .as_ref()
+            .map(|view| view.open_gl_context().remove_if_current())
+            .unwrap_or_default()
+    }
+}
+
+
 #[repr(u64)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum NSOpenGLPixelFormatAttribute {
@@ -86,27 +100,36 @@ pub enum NSOpenGLPFAOpenGLProfiles {
 pub struct NSOpenGLContext(Id<NSObject>);
 
 impl NSOpenGLContext {
-    pub fn new(format: NSOpenGLPixelFormat, share_context: Option<NSOpenGLContext>) -> Self {
+    pub fn new(format: NSOpenGLPixelFormat, share_context: Option<NSOpenGLContext>) -> Option<Self> {
         let cls = class!(NSOpenGLPixelFormat);
         let instance = unsafe { msg_send_id![cls, alloc] };
-        match share_context {
+        let context: Option<Id<NSObject>> = match share_context {
             None => {
                 let nil: *mut NSObject = std::ptr::null_mut();
-                NSOpenGLContext(unsafe {
+                unsafe {
                     msg_send_id![
                         instance,
                         initWithFormat: &*format.0,
                         shareContext: nil
                     ]
-                })
+                }
             }
-            Some(share_context) => NSOpenGLContext(unsafe {
-                msg_send_id![
+            Some(share_context) => {
+                unsafe {
+                    msg_send_id![
                     instance,
                     initWithFormat: &*format.0,
                     shareContext: &*share_context.0
                 ]
-            }),
+                }
+            }
+        };
+
+        match context {
+            None => None,
+            Some(context) => {
+                Some(NSOpenGLContext(context))
+            }
         }
     }
 
@@ -151,7 +174,7 @@ impl NSOpenGLContext {
 }
 
 impl Default for NSOpenGLContext {
-    fn default() -> Self {
+    fn default() -> Option<Self> {
         let format = NSOpenGLPixelFormat::init_with_attributes(&[
             NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
             NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
@@ -232,36 +255,10 @@ impl NSOpenGLView {
             }
         }
     }
-
-    fn get_proc_address(&self, addr: &str) -> *const c_void {
-        let symbol_name = CFString::new(addr);
-        let framework_name = CFString::new("com.apple.opengles");
-        unsafe {
-            let framework = CFBundleGetBundleWithIdentifier(framework_name.as_concrete_TypeRef());
-            CFBundleGetFunctionPointerForName(framework, symbol_name.as_concrete_TypeRef()).cast()
-        }
-    }
 }
 
 #[derive(Debug, Default)]
-pub struct GLContext(Arc<RwLock<GLContextInner>>);
-
-impl GLContext {
-    // pointer has to
-    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.0))
-    }
-
-    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
-        unsafe { Self(Arc::from_raw(raw)) }
-    }
-}
-
-impl Clone for GLContext {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
+pub struct GLContext(GLContextInner);
 
 fn parse_context_attributes(context_attrs: &ContextAttributes) -> NSOpenGLPixelFormat {
     let mut attributes = vec![
@@ -301,12 +298,20 @@ fn parse_context_attributes(context_attrs: &ContextAttributes) -> NSOpenGLPixelF
 
 #[cfg(target_os = "macos")]
 impl GLContext {
+    pub fn as_raw(&self) -> GLContextRaw {
+        GLContextRaw {
+            context: self.0.context.clone(),
+            sharegroup: self.0.sharegroup.clone(),
+            view: self.0.view.clone(),
+        }
+    }
+
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
         let view: Option<Id<NSObject>> = unsafe { Id::retain(view.as_ptr() as _) };
         match view {
             None => false,
             Some(id) => {
-                self.0.write().view = Some(NSOpenGLView(id));
+                self.0.view = Some(NSOpenGLView(id));
                 true
             }
         }
@@ -323,7 +328,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
         context: &GLContext,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match view {
             None => None,
@@ -337,7 +342,7 @@ impl GLContext {
     pub fn create_window_context(
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match view {
             None => None,
@@ -352,17 +357,15 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NSOpenGLView,
         shared_context: Option<&GLContext>,
-    ) -> Option<GLContext> {
-        let view_copy = view.clone();
-        IS_GL_SYMBOLS_LOADED.get_or_init(move || {
-            gl_bindings::load_with(|symbol| view_copy.get_proc_address(symbol).cast());
+    ) -> Option<Self> {
+        IS_GL_SYMBOLS_LOADED.get_or_init(|| {
+            gl_bindings::load_with(|symbol| super::get_proc_address(symbol).cast());
             true
         });
 
         let share_group = match shared_context {
             Some(context) => {
-                let inner = context.0.read();
-                inner.sharegroup.clone()
+                context.0.sharegroup.clone()
             }
             _ => {
                 let format = NSOpenGLPixelFormat::init_with_attributes(&[
@@ -386,29 +389,29 @@ impl GLContext {
 
         let format = parse_context_attributes(context_attrs);
 
-        let context = NSOpenGLContext::new(format, Some(share_group.clone()));
+        let context = NSOpenGLContext::new(format, share_group.clone());
 
-        // if context.is_none() {
-        //     return None;
-        // }
 
-        view.set_open_gl_context(Some(context.clone()));
+        if context.is_none() {
+            return None;
+        }
+
+        view.set_open_gl_context(context.clone());
 
         let inner = GLContextInner {
-            context: Some(context),
-            sharegroup: share_group,
+            context,
+            sharegroup,
             view: Some(view),
-            transfer_surface_info: Default::default(),
         };
 
-        Some(GLContext(Arc::new(RwLock::new(inner))))
+        Some(GLContext(inner))
     }
 
     pub fn create_offscreen_context(
         context_attrs: &mut ContextAttributes,
         width: i32,
         height: i32,
-    ) -> Option<GLContext> {
+    ) -> Option<Self> {
         let format = parse_context_attributes(context_attrs);
         let view =
             NSOpenGLView::new_with_frame_pixel_format(0., 0., width as f32, height as f32, format);
@@ -429,8 +432,7 @@ impl GLContext {
     }
 
     pub fn make_current(&self) -> bool {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| view.open_gl_context().make_current_context())
@@ -438,8 +440,7 @@ impl GLContext {
     }
 
     pub fn remove_if_current(&self) -> bool {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| view.open_gl_context().remove_if_current())
@@ -447,8 +448,7 @@ impl GLContext {
     }
 
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| {
@@ -459,8 +459,7 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| view.frame().size.width as i32)
@@ -468,8 +467,7 @@ impl GLContext {
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| view.frame().size.height as i32)
@@ -477,8 +475,7 @@ impl GLContext {
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        let inner = self.0.read();
-        inner
+        self.0
             .view
             .as_ref()
             .map(|view| {
@@ -486,15 +483,5 @@ impl GLContext {
                 (frame.size.width as i32, frame.size.height as i32)
             })
             .unwrap_or_default()
-    }
-
-    pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
-    }
-
-    pub fn get_transfer_surface_info_mut(
-        &self,
-    ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
     }
 }

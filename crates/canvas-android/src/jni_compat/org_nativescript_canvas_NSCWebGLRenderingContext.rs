@@ -1,10 +1,9 @@
 use std::os::raw::c_void;
 
+use canvas_c::WebGLState;
 use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jint, jlong, JNI_TRUE};
 use jni::JNIEnv;
-
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::AndroidGLContext;
 
 #[no_mangle]
 pub extern "system" fn nativeTexImage2D(
@@ -23,13 +22,13 @@ pub extern "system" fn nativeTexImage2D(
         return;
     }
 
-    let context = context as *mut AndroidGLContext;
+    let context = context as *mut WebGLState;
     let context = unsafe { &mut *context };
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, info)) = bytes {
-        context.gl_context.make_current();
+        context.get_inner().make_current();
         let width = info.width();
         let height = info.height();
         unsafe {
@@ -88,14 +87,14 @@ pub extern "system" fn nativeTexSubImage2D(
         return;
     }
 
-    let context = context as *mut AndroidGLContext;
+    let context = context as *mut WebGLState;
     let context = unsafe { &mut *context };
 
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
     if let Some((bytes, info)) = bytes {
         unsafe {
-            context.gl_context.make_current();
+            context.get_inner().make_current();
             let width = info.width();
             let height = info.height();
             if flip_y == JNI_TRUE {

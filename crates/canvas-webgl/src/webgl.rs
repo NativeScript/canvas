@@ -3,7 +3,7 @@
 
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_uchar, c_void};
-
+use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
 
 use crate::prelude::*;
@@ -69,8 +69,7 @@ pub fn canvas_native_webgl_bind_frame_buffer(
     state.make_current();
     // will bind to default buffer
     if framebuffer == 0 {
-        let inner = state.0.borrow();
-        inner.gl_context.bind_drawable();
+        state.context.bind_drawable();
         return;
     }
     unsafe {
@@ -1086,7 +1085,7 @@ pub fn canvas_native_webgl_get_extension(
     state: &mut WebGLState,
 ) -> Option<Box<dyn WebGLExtension>> {
     if name.eq("WEBGL_lose_context") {
-        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
+        return Some(Box::new(WEBGL_lose_context::new(state)));
     }
 
     state.make_current();
@@ -1116,7 +1115,7 @@ pub fn canvas_native_webgl_get_extension(
         && extensions.contains("GL_EXT_disjoint_timer_query")
     {
         return if get_sdk_version() >= JELLY_BEAN_MR2 {
-            Some(Box::new(EXT_disjoint_timer_query::new(state.clone())))
+            Some(Box::new(EXT_disjoint_timer_query::new(state)))
         } else {
             None
         };
@@ -1153,7 +1152,7 @@ pub fn canvas_native_webgl_get_extension(
         && extensions.contains("GL_OES_vertex_array_object")
     {
         return if get_sdk_version() >= JELLY_BEAN_MR2 {
-            Some(Box::new(OES_vertex_array_object::new(state.clone())))
+            Some(Box::new(OES_vertex_array_object::new(state)))
         } else {
             None
         };
@@ -1187,7 +1186,7 @@ pub fn canvas_native_webgl_get_extension(
     } else if name.eq("ANGLE_instanced_arrays") {
         if version == WebGLVersion::V2 {
             return if get_sdk_version() >= JELLY_BEAN_MR2 {
-                Some(Box::new(ANGLE_instanced_arrays::new(state.clone())))
+                Some(Box::new(ANGLE_instanced_arrays::new(state)))
             } else {
                 None
             };
@@ -1199,7 +1198,7 @@ pub fn canvas_native_webgl_get_extension(
     } else if name.eq("WEBGL_draw_buffers") {
         if get_sdk_version() >= JELLY_BEAN_MR2 {
             if version == WebGLVersion::V2 || extensions.contains("GL_EXT_draw_buffers") {
-                return Some(Box::new(WEBGL_draw_buffers::new(state.clone())));
+                return Some(Box::new(WEBGL_draw_buffers::new(state)));
             } else {
                 None
             }
@@ -1219,7 +1218,7 @@ pub fn canvas_native_webgl_get_extension(
     state: &mut WebGLState,
 ) -> Option<Box<dyn WebGLExtension>> {
     if name.eq("WEBGL_lose_context") {
-        return Some(Box::new(WEBGL_lose_context::new(state.clone())));
+        return Some(Box::new(WEBGL_lose_context::new(state)));
     }
     state.make_current();
     let version = state.get_webgl_version();
@@ -1279,14 +1278,14 @@ pub fn canvas_native_webgl_get_extension(
                 return Some(Box::new(WEBGL_depth_texture::new()));
             }
             "WEBGL_draw_buffers" => {
-                return Some(Box::new(WEBGL_draw_buffers::new(state.clone())));
+                return Some(Box::new(WEBGL_draw_buffers::new(state)));
             }
             _ => {}
         }
     }
 
     if name == "ANGLE_instanced_arrays" {
-        return Some(Box::new(ANGLE_instanced_arrays::new(state.clone())));
+        return Some(Box::new(ANGLE_instanced_arrays::new(state)));
     }
 
     if extensions.contains(name) {
@@ -1857,12 +1856,12 @@ pub fn canvas_native_webgl_get_vertex_attrib(
     match pname {
         gl_bindings::VERTEX_ATTRIB_ARRAY_ENABLED
         | gl_bindings::VERTEX_ATTRIB_ARRAY_NORMALIZED
-        | gl_bindings::VERTEX_ATTRIB_ARRAY_INTEGER => return WebGLResult::Boolean(params == 1),
+        | gl_bindings::VERTEX_ATTRIB_ARRAY_INTEGER => WebGLResult::Boolean(params == 1),
         gl_bindings::VERTEX_ATTRIB_ARRAY_BUFFER_BINDING => WebGLResult::U32(params as u32),
         gl_bindings::VERTEX_ATTRIB_ARRAY_SIZE
         | gl_bindings::VERTEX_ATTRIB_ARRAY_STRIDE
-        | gl_bindings::VERTEX_ATTRIB_ARRAY_DIVISOR => return WebGLResult::I32(params),
-        _ => return WebGLResult::None,
+        | gl_bindings::VERTEX_ATTRIB_ARRAY_DIVISOR => WebGLResult::I32(params),
+        _ => WebGLResult::None,
     }
 }
 
@@ -2174,7 +2173,7 @@ pub fn canvas_native_webgl_tex_image2d_asset(
     };
 
     if is_rgba {
-        asset.with_bytes_dimension(|bytes, dimension|{
+        asset.with_bytes_dimension(|bytes, dimension| {
             state.make_current();
             unsafe {
                 if state.get_flip_y() {
@@ -2435,7 +2434,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
     };
 
     if is_rgba {
-        asset.with_bytes_dimension(|bytes, dimension|{
+        asset.with_bytes_dimension(|bytes, dimension| {
             state.make_current();
             if state.get_flip_y() {
                 let mut buffer = bytes.to_vec();
@@ -2487,7 +2486,7 @@ pub fn canvas_native_webgl_tex_sub_image2d_asset(
             utils::gl::flip_in_place(
                 buffer.as_mut_ptr(),
                 buffer.len(),
-                (bytes_per_pixel(image_type as u32, format)  * dimension.0) as usize,
+                (bytes_per_pixel(image_type as u32, format) * dimension.0) as usize,
                 dimension.1 as usize,
             );
 

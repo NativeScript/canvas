@@ -2,10 +2,6 @@ use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
 
-//use wgpu_core::gfx_select;
-use crate::webgpu::error::{handle_error, handle_error_fatal};
-use crate::webgpu::prelude::label_to_ptr;
-use crate::webgpu::structs::CanvasImageCopyImageAsset;
 use super::{
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -13,6 +9,10 @@ use super::{
     gpu_command_encoder::CanvasImageCopyTexture,
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
+//use wgpu_core::gfx_select;
+use crate::webgpu::error::{handle_error, handle_error_fatal};
+use crate::webgpu::prelude::label_to_ptr;
+use crate::webgpu::structs::CanvasImageCopyImageAsset;
 
 pub struct QueueId {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -103,8 +103,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
         return;
     }
     let image_asset = &*source.source;
-    image_asset.with_bytes_dimension(|bytes, dimension|{
-        let ext_source = CanvasImageCopyExternalImage{
+    image_asset.with_bytes_dimension(|bytes, dimension| {
+        let ext_source = CanvasImageCopyExternalImage {
             source: bytes.as_ptr(),
             source_size: bytes.len(),
             origin: source.origin,
@@ -137,7 +137,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     if source.source.is_null() || source.source_size == 0 || source.width == 0 || source.height == 0
     {
-       return;
+        return;
     }
 
     let destination = &*destination;
@@ -220,14 +220,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
         callback(std::ptr::null_mut(), callback_data);
     }));
 
-    if let Err(cause) = global.queue_on_submitted_work_done(queue_id, done)
-    {
-        handle_error_fatal(
-            global,
-            cause,
-            "canvas_native_webgpu_queue_on_submitted_work_done",
-        );
-    }
+    global.queue_on_submitted_work_done(queue_id, done);
 }
 
 #[no_mangle]
@@ -257,7 +250,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         })
         .collect::<Vec<_>>();
 
-    if let Err(cause) = global.queue_submit(queue_id, &command_buffer_ids)
+    if let Err((_, cause)) = global.queue_submit(queue_id, &command_buffer_ids)
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }

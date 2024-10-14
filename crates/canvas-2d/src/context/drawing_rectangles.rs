@@ -23,6 +23,12 @@ impl Context {
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         let paint = self.state.paint.fill_paint().clone();
 
         let shadow_paint = self.state.paint.fill_shadow_paint(
@@ -44,6 +50,12 @@ impl Context {
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         let paint = self.state.paint.stroke_paint().clone();
         let shadow_paint = self.state.paint.stroke_shadow_paint(
             self.state.shadow_offset,

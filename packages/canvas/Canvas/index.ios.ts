@@ -66,6 +66,7 @@ export class Canvas extends CanvasBase {
 
 	constructor(nativeInstance?) {
 		super();
+		NSCCanvas.forceGL = false;
 		if (nativeInstance) {
 			// allows Worker usage
 			this._canvas = nativeInstance;
@@ -99,10 +100,6 @@ export class Canvas extends CanvasBase {
 				this.native.__stopRaf();
 			};
 
-			// default canvas size
-			this._canvas.surfaceWidth = 300;
-			this._canvas.surfaceHeight = 150;
-
 			(global as any).__canvasLoaded = true;
 
 			this._canvas.becomeActiveListener = () => {
@@ -118,6 +115,14 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	static get forceGL() {
+		return NSCCanvas.forceGL;
+	}
+
+	static set forceGL(value) {
+		NSCCanvas.forceGL = value;
+	}
+
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = value;
 	}
@@ -128,11 +133,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.getMeasuredWidth() / Screen.mainScreen.scale;
+		return Math.floor(this.getMeasuredWidth() / Screen.mainScreen.scale);
 	}
 
 	get clientHeight() {
-		return this.getMeasuredHeight() / Screen.mainScreen.scale;
+		return Math.floor(this.getMeasuredHeight() / Screen.mainScreen.scale);
 	}
 
 	get drawingBufferHeight() {
@@ -158,9 +163,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -181,9 +183,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -228,12 +227,12 @@ export class Canvas extends CanvasBase {
 			Object.defineProperties(this.parent, {
 				clientWidth: {
 					get: function () {
-						return this.getMeasuredWidth() / Screen.mainScreen.scale;
+						return Math.floor(this.getMeasuredWidth() / Screen.mainScreen.scale);
 					},
 				},
 				clientHeight: {
 					get: function () {
-						return this.getMeasuredHeight() / Screen.mainScreen.scale;
+						return Math.floor(this.getMeasuredHeight() / Screen.mainScreen.scale);
 					},
 				},
 			});

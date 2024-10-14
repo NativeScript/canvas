@@ -10,6 +10,13 @@ pub mod fill_rule;
 
 impl Context {
     fn fill_or_stroke(&mut self, is_fill: bool, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
+
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         let paint = if is_fill {
             self.state.paint.fill_paint().clone()
         } else {
@@ -107,7 +114,7 @@ impl Context {
 
 fn det(matrix: &Matrix) -> f32 {
     let transform = matrix.to_affine().unwrap();
-    return transform[0] * transform[3] - transform[1] * transform[2];
+    transform[0] * transform[3] - transform[1] * transform[2]
 }
 
 fn is_invertible(matrix: &Matrix) -> bool {

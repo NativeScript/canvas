@@ -1,6 +1,5 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use std::sync::Arc;
 
 use crate::buffers::U8Buffer;
 

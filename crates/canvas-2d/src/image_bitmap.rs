@@ -3,7 +3,7 @@
 use core::convert::{From, Into};
 use std::sync::Arc;
 
-use skia_safe::{EncodedImageFormat, surfaces};
+use skia_safe::{surfaces, EncodedImageFormat};
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -71,10 +71,10 @@ impl From<i32> for ImageBitmapColorSpaceConversion {
 
 impl ImageBitmapColorSpaceConversion {
     pub fn to_color_space(&self) -> Option<skia_safe::ColorSpace> {
-        return match self {
+        match self {
             ImageBitmapColorSpaceConversion::Default => Some(skia_safe::ColorSpace::new_srgb()),
             ImageBitmapColorSpaceConversion::None => None,
-        };
+        }
     }
 }
 
@@ -107,12 +107,12 @@ impl From<i32> for ImageBitmapResizeQuality {
 
 impl ImageBitmapResizeQuality {
     pub fn to_quality(&self) -> skia_safe::SamplingOptions {
-        return match self {
+        match self {
             ImageBitmapResizeQuality::Low => FilterQuality::Low.into(),
             ImageBitmapResizeQuality::Medium => FilterQuality::Medium.into(),
             ImageBitmapResizeQuality::High => FilterQuality::High.into(),
             ImageBitmapResizeQuality::Pixelated => FilterQuality::None.into(),
-        };
+        }
     }
 }
 
@@ -282,13 +282,11 @@ pub(crate) fn create_image_bitmap_internal(
                     };
                 }
             } else {
-
                 let encoded = image.encode(None, EncodedImageFormat::PNG, 75);
 
                 if let Some(encoded) = encoded {
                     output.load_from_bytes(encoded.as_bytes());
                 }
-
             }
         }
     }
@@ -411,7 +409,7 @@ pub fn create_from_image_asset_src_rect_raw(
     unsafe {
         let asset: *const ImageAsset = image_asset as _;
         let asset = &*asset;
-        return Arc::into_raw(Arc::new(create_from_image_asset_src_rect(
+        Arc::into_raw(Arc::new(create_from_image_asset_src_rect(
             asset,
             rect,
             flip_y,
@@ -420,7 +418,7 @@ pub fn create_from_image_asset_src_rect_raw(
             resize_quality,
             resize_width,
             resize_height,
-        ))) as i64;
+        ))) as i64
     }
 }
 

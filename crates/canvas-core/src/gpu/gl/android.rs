@@ -4,24 +4,22 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::sync::OnceLock;
 
+use crate::context_attributes::ContextAttributes;
 use glutin::api::egl::{
     context::{NotCurrentContext, PossiblyCurrentContext}, display::Display, surface::Surface,
 };
 use glutin::config::{
     Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder,
 };
-use glutin::context::{ContextApi, Version};
-use glutin::display::{GetGlDisplay, RawDisplay};
+use glutin::context::AsRawContext;
+use glutin::context::{ContextApi, RawContext, Version};
 use glutin::display::AsRawDisplay;
-use glutin::prelude::*;
+use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
-use glutin::surface::{PbufferSurface, PixmapSurface, SwapInterval, WindowSurface};
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
+use glutin::prelude::*;
+use glutin::surface::{AsRawSurface, PbufferSurface, PixmapSurface, RawSurface, SwapInterval, WindowSurface};
+use parking_lot::RwLock;
 use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
-
-use crate::context_attributes::ContextAttributes;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
@@ -31,20 +29,44 @@ pub(crate) enum SurfaceHelper {
     Pixmap(Surface<PixmapSurface>),
 }
 
+#[derive(Debug, Clone)]
+pub struct GLContextRaw {
+    surface: RawSurface,
+    context: RawContext,
+    display: RawDisplay,
+    dimensions: (i32, i32),
+}
+
+impl GLContextRaw {
+    pub fn make_current(&self) -> bool {
+        match (self.display, self.surface, self.context) {
+            (RawDisplay::Egl(display), RawSurface::Egl(surface), RawContext::Egl(context)) => {
+                egl::make_current(display as _, surface as _, surface as _, context as _)
+            }
+            _ => false
+        }
+    }
+
+    pub fn remove_if_current(&self) -> bool {
+        let current = egl::get_current_context();
+        if let (Some(current), RawContext::Egl(context)) = (current, self.context) {
+            return std::ptr::eq(current, context);
+        }
+        false
+    }
+}
+
 #[derive(Default)]
-pub struct GLContextInner {
+pub(crate) struct GLContextInner {
     surface: Option<SurfaceHelper>,
     context: Option<PossiblyCurrentContext>,
     display: Option<Display>,
-    transfer_surface_info: crate::gl::TransferSurface,
+    dimensions: (i32, i32),
 }
 
-unsafe impl Sync for GLContextInner {}
-
-unsafe impl Send for GLContextInner {}
-
 #[derive(Default)]
-pub struct GLContext(Arc<RwLock<GLContextInner>>);
+pub struct GLContext(GLContextInner);
+
 
 impl Debug for GLContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -54,37 +76,6 @@ impl Debug for GLContext {
     }
 }
 
-impl GLContext {
-    // pointer has to
-    pub fn as_raw_inner(&self) -> *const RwLock<GLContextInner> {
-        Arc::into_raw(Arc::clone(&self.0))
-    }
-
-    pub fn from_raw_inner(raw: *const RwLock<GLContextInner>) -> Self {
-        Self(unsafe { Arc::from_raw(raw) })
-    }
-
-    pub fn get_strong_count(&self) -> usize {
-        Arc::strong_count(&self.0)
-    }
-
-    pub fn increment_strong_count(self) {
-        let ptr = Arc::into_raw(self.0);
-        unsafe { Arc::increment_strong_count(ptr) }
-    }
-
-    pub fn decrement_strong_count(self) {
-        let ptr = Arc::into_raw(self.0);
-        unsafe { Arc::decrement_strong_count(ptr) }
-        let _ = unsafe { Arc::from_raw(ptr) };
-    }
-}
-
-impl Clone for GLContext {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
 
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
@@ -207,8 +198,42 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
 //     }
 // }
 
-#[cfg(target_os = "android")]
+
 impl GLContext {
+    pub fn as_raw(&self) -> GLContextRaw {
+        let surface = self.0.surface.as_ref().map(|surface| {
+            match surface {
+                SurfaceHelper::Window(window) => {
+                    window.raw_surface()
+                }
+                SurfaceHelper::Pbuffer(buffer) => {
+                    buffer.raw_surface()
+                }
+                SurfaceHelper::Pixmap(map) => {
+                    map.raw_surface()
+                }
+            }
+        }).unwrap_or_else(|| {
+            RawSurface::Egl(std::ptr::null())
+        });
+
+        let context = self.0.context.as_ref().map(|context| {
+            context.raw_context()
+        }).unwrap_or_else(|| {
+            RawContext::Egl(std::ptr::null())
+        });
+
+        let display = self.0.display.as_ref().map(|display| {
+            display.raw_display()
+        }).unwrap_or_else(|| {RawDisplay::Egl(std::ptr::null())});
+
+        GLContextRaw {
+            surface,
+            context,
+            display,
+            dimensions: self.0.dimensions,
+        }
+    }
     pub fn set_surface(
         &mut self,
         context_attrs: &mut ContextAttributes,
@@ -220,9 +245,8 @@ impl GLContext {
         let multi_sample = context_attrs.get_antialias();
         let cfg = context_attrs.clone().into();
 
-        let mut inner = self.0.write();
         unsafe {
-            if let Some(display) = inner.display.as_ref() {
+            if let Some(display) = self.0.display.as_ref() {
                 let mut config = display
                     .find_configs(cfg)
                     .map(|c| {
@@ -322,8 +346,6 @@ impl GLContext {
                             context_attrs.set_antialias(false);
                         }
 
-                        context_attrs.set_samples(config.num_samples());
-
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -339,9 +361,10 @@ impl GLContext {
 
                         let ret = surface.is_some();
 
-                        inner.surface = surface;
+                        self.0.surface = surface;
 
-                        drop(inner);
+                        self.0.dimensions = (width, height);
+
 
                         ret
                     }
@@ -498,8 +521,6 @@ impl GLContext {
                             context_attrs.set_antialias(false);
                         }
 
-                        context_attrs.set_samples(config.num_samples());
-
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
@@ -523,11 +544,9 @@ impl GLContext {
                             )));
 
                         if let Some(inner) = shared_context {
-                            let inner = inner.0.read();
-                            if let Some(context) = inner.context.as_ref() {
+                            if let Some(context) = inner.0.context.as_ref() {
                                 context_attrs = context_attrs.with_sharing(context);
                             }
-                            drop(inner);
                         }
 
                         let context_attrs = context_attrs.build(Some(window));
@@ -541,10 +560,10 @@ impl GLContext {
                             surface,
                             context,
                             display: Some(display),
-                            transfer_surface_info: Default::default(),
+                            dimensions: (width, height),
                         };
 
-                        let ret = GLContext(Arc::new(RwLock::new(gl_context)));
+                        let ret = GLContext(gl_context);
 
                         Some(ret)
                     }
@@ -563,11 +582,9 @@ impl GLContext {
         window: RawWindowHandle,
     ) {
         unsafe {
-            let mut inner = self.0.write();
-
             // remove current surface
-            let context = inner.context.take();
-            let surface = inner.surface.take();
+            let context = self.0.context.take();
+            let surface = self.0.surface.take();
             match context {
                 Some(context) => {
                     let context = context.make_not_current().ok();
@@ -575,7 +592,7 @@ impl GLContext {
 
                     drop(surface);
 
-                    if let Some(display) = inner.display.as_ref() {
+                    if let Some(display) = self.0.display.as_ref() {
                         let dsply = display.clone();
                         IS_GL_SYMBOLS_LOADED.get_or_init(move || {
                             gl_bindings::load_with(|symbol| {
@@ -686,7 +703,6 @@ impl GLContext {
                                 context_attrs.set_antialias(false);
                             }
 
-                            context_attrs.set_samples(config.num_samples());
 
                             let surface_attr =
                                 glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
@@ -701,8 +717,8 @@ impl GLContext {
                                 .map(SurfaceHelper::Window)
                                 .ok();
 
-                            inner.surface = surface;
-                            inner.context = match (context, inner.surface.as_ref()) {
+                            self.0.surface = surface;
+                           let ctx = match (context, self.0.surface.as_ref()) {
                                 (Some(context), Some(surface)) => {
                                     match surface {
                                         SurfaceHelper::Window(window) => {
@@ -714,6 +730,8 @@ impl GLContext {
                                 }
                                 _ => None
                             };
+                            self.0.context = ctx;
+                            self.0.dimensions = (width, height);
                         }
                     }
                 }
@@ -729,8 +747,7 @@ impl GLContext {
         height: i32,
     ) {
         unsafe {
-            let mut inner = self.0.write();
-            if let Some(display) = inner.display.as_ref() {
+            if let Some(display) = self.0.display.as_ref() {
                 let dsply = display.clone();
                 IS_GL_SYMBOLS_LOADED.get_or_init(move || {
                     gl_bindings::load_with(|symbol| {
@@ -784,7 +801,6 @@ impl GLContext {
                         context_attrs.set_antialias(false);
                     }
 
-                    context_attrs.set_samples(config.num_samples());
 
                     let surface_attr =
                         glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new().build(
@@ -797,8 +813,8 @@ impl GLContext {
                         .map(SurfaceHelper::Pbuffer)
                         .ok();
 
-                    inner.surface = surface;
-                    drop(inner);
+                    self.0.surface = surface;
+                    self.0.dimensions = (width, height);
                 }
             }
         }
@@ -941,8 +957,6 @@ impl GLContext {
                             context_attrs.set_antialias(false);
                         }
 
-                        context_attrs.set_samples(config.num_samples());
-
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new()
                                 .build(
@@ -970,12 +984,12 @@ impl GLContext {
                             .map(|v| v.treat_as_possibly_current())
                             .ok();
 
-                        Some(GLContext(Arc::new(RwLock::new(GLContextInner {
+                        Some(GLContext(GLContextInner {
                             surface,
                             context,
                             display: Some(display),
-                            transfer_surface_info: Default::default(),
-                        }))))
+                            dimensions: (width, height),
+                        }))
                     }
                     None => None,
                 }
@@ -1012,13 +1026,12 @@ impl GLContext {
     }
 
     pub fn set_vsync(&self, sync: bool) -> bool {
-        let inner = self.0.read();
         let vsync = if sync {
             SwapInterval::Wait(NonZeroU32::new(1).unwrap())
         } else {
             SwapInterval::DontWait
         };
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
+        match (self.0.context.as_ref(), self.0.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.set_swap_interval(context, vsync).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => buffer.set_swap_interval(context, vsync).is_ok(),
@@ -1029,8 +1042,7 @@ impl GLContext {
     }
 
     pub fn make_current(&self) -> bool {
-        let inner = self.0.read();
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
+        match (self.0.context.as_ref(), self.0.surface.as_ref()) {
             (Some(context), Some(surface)) => {
                 if context.is_current() {
                     return true;
@@ -1046,9 +1058,8 @@ impl GLContext {
         }
     }
 
-    pub fn remove_if_current(&self) {
-        let inner = self.0.read();
-        let is_current = match (inner.context.as_ref(), inner.surface.as_ref()) {
+    pub fn remove_if_current(&self) -> bool {
+        let is_current = match (self.0.context.as_ref(), self.0.surface.as_ref()) {
             (Some(context), Some(surface)) => {
                 if !context.is_current() {
                     false
@@ -1064,11 +1075,11 @@ impl GLContext {
         };
 
         if !is_current {
-            return;
+            return false;
         }
 
         {
-            let display = inner
+            let display = self.0
                 .display
                 .as_ref()
                 .map(|display| match display.raw_display() {
@@ -1077,7 +1088,7 @@ impl GLContext {
                 })
                 .unwrap_or(egl::EGL_NO_DISPLAY as _);
 
-            egl::make_current(
+            return egl::make_current(
                 display as _,
                 egl::EGL_NO_SURFACE,
                 egl::EGL_NO_SURFACE,
@@ -1087,8 +1098,7 @@ impl GLContext {
     }
 
     pub fn swap_buffers(&self) -> bool {
-        let inner = self.0.read();
-        match (inner.context.as_ref(), inner.surface.as_ref()) {
+        match (self.0.context.as_ref(), self.0.surface.as_ref()) {
             (Some(context), Some(surface)) => match surface {
                 SurfaceHelper::Window(window) => window.swap_buffers(context).is_ok(),
                 SurfaceHelper::Pbuffer(buffer) => buffer.swap_buffers(context).is_ok(),
@@ -1099,60 +1109,14 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        let inner = self.0.read();
-        inner
-            .surface
-            .as_ref()
-            .map(|v| match v {
-                SurfaceHelper::Window(window) => window.width().unwrap_or_default() as i32,
-                SurfaceHelper::Pbuffer(buffer) => buffer.width().unwrap_or_default() as i32,
-                SurfaceHelper::Pixmap(pixmap) => pixmap.width().unwrap_or_default() as i32,
-            })
-            .unwrap_or_default()
+        self.0.dimensions.0
     }
 
     pub fn get_surface_height(&self) -> i32 {
-        let inner = self.0.read();
-        inner
-            .surface
-            .as_ref()
-            .map(|v| match v {
-                SurfaceHelper::Window(window) => window.height().unwrap_or_default() as i32,
-                SurfaceHelper::Pbuffer(buffer) => buffer.height().unwrap_or_default() as i32,
-                SurfaceHelper::Pixmap(pixmap) => pixmap.height().unwrap_or_default() as i32,
-            })
-            .unwrap_or_default()
+        self.0.dimensions.1
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        let inner = self.0.read();
-        inner
-            .surface
-            .as_ref()
-            .map(|v| match v {
-                crate::gl::SurfaceHelper::Window(window) => (
-                    window.width().unwrap_or_default() as i32,
-                    window.height().unwrap_or_default() as i32,
-                ),
-                crate::gl::SurfaceHelper::Pbuffer(buffer) => (
-                    buffer.width().unwrap_or_default() as i32,
-                    buffer.height().unwrap_or_default() as i32,
-                ),
-                crate::gl::SurfaceHelper::Pixmap(pixmap) => (
-                    pixmap.width().unwrap_or_default() as i32,
-                    pixmap.height().unwrap_or_default() as i32,
-                ),
-            })
-            .unwrap_or_default()
-    }
-
-    pub fn get_transfer_surface_info(&self) -> MappedRwLockReadGuard<crate::gl::TransferSurface> {
-        RwLockReadGuard::map(self.0.read(), |v| &v.transfer_surface_info)
-    }
-
-    pub fn get_transfer_surface_info_mut(
-        &self,
-    ) -> MappedRwLockWriteGuard<crate::gl::TransferSurface> {
-        RwLockWriteGuard::map(self.0.write(), |v| &mut v.transfer_surface_info)
+        self.0.dimensions
     }
 }

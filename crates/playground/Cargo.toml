@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-canvas-core = { path = "../canvas-core", features = ["2d"] }
+canvas-core = { path = "../canvas-core", features = ["2d", "gl"] }
 canvas-webgl = { path = "../canvas-webgl" }
-canvas-2d = { path = "../canvas-2d", features = ["gl"] }
+canvas-2d = { path = "../canvas-2d", features = ["gl", "metal"] }
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.6.2"
 rand = "0.8.5"

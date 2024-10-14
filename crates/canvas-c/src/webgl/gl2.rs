@@ -1103,9 +1103,18 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
 
-    canvas.make_current();
-    let (width, height) = (canvas.context.width(), canvas.context.height());
-    let snapshot = canvas.context.as_data();
+
+
+    // let (width, height) = (canvas.context.width(), canvas.context.height());
+    // let snapshot = canvas.context.as_data();
+
+
+    let (width, height) = canvas.context.dimensions();
+
+    let mut bytes = vec![0u8; (width * height * 4.) as usize];
+
+    canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+
 
     // todo handle pre-multipied
     // let premultiply = state.get_inner().get_premultiplied_alpha();
@@ -1124,7 +1133,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
         border,
         format,
         type_,
-        snapshot.as_slice(),
+        bytes.as_slice(),
         state.get_inner_mut(),
     )
 }
@@ -1349,8 +1358,8 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
     xoffset: i32,
     yoffset: i32,
     zoffset: i32,
-    width: i32,
-    height: i32,
+    _width: i32,
+    _height: i32,
     depth: i32,
     format: u32,
     type_: u32,
@@ -1360,9 +1369,18 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
     assert!(!state.is_null());
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
-    canvas.make_current();
-    let (width, height) = (canvas.context.width(), canvas.context.height());
-    let data = canvas.context.as_data();
+
+    let (width, height) = canvas.context.dimensions();
+
+    let mut bytes = vec![0u8; (width * height * 4.) as usize];
+
+    canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+
+
+
+    // canvas.make_current();
+    // let (width, height) = (canvas.context.width(), canvas.context.height());
+    // let data = canvas.context.as_data();
 
     //  let premultiply = state.get_inner().get_premultiplied_alpha();
 
@@ -1381,7 +1399,7 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
         depth,
         format,
         type_,
-        data.as_slice(),
+        bytes.as_slice(),
         state.get_inner_mut(),
     );
 }
@@ -1932,7 +1950,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
 
-    canvas.make_current();
+    // canvas.make_current();
 
     let (source_width, source_height) = canvas.context.dimensions();
 
@@ -2041,7 +2059,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
         _ => None,
     };
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         unsafe {
             if state.0.get_flip_y() {
                 let mut buffer = bytes;
@@ -2208,7 +2226,7 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_image_data(
         _ => None,
     };
 
-    if let Some(mut bytes) = bytes {
+    if let Some(bytes) = bytes {
         unsafe {
             if state.0.get_flip_y() {
                 let mut buffer = bytes;

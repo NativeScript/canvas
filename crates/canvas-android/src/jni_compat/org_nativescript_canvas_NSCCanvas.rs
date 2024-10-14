@@ -272,6 +272,8 @@ pub extern "system" fn nativeUpdate2DSurface(
     env: JNIEnv,
     _: JClass,
     surface: jobject,
+    width: jint,
+    height: jint,
     context: jlong,
 ) {
     if context == 0 {
@@ -282,8 +284,8 @@ pub extern "system" fn nativeUpdate2DSurface(
 
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
-            let width = window.width() as f32;
-            let height = window.height() as f32;
+            let width = width as f32;
+            let height = height as f32;
 
             #[cfg(feature = "gl")]{
                 let context = context.get_context_mut();

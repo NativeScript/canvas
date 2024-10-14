@@ -34,6 +34,7 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 			isCreated = true
 		}
 		wasDestroyed = false
+		canvas?.listener?.surfaceCreated()
 	}
 
 	override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {

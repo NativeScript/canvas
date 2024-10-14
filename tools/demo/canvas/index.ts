@@ -3,7 +3,7 @@ import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders,
 
 let Matter;
 declare const NSCCanvas;
-import { Canvas } from '@nativescript/canvas';
+import { Canvas, ImageAsset } from '@nativescript/canvas';
 import {
 	arcToAnimation,
 	flappyBird,
@@ -735,7 +735,7 @@ fn main() -> @location(0) vec4f {
 		// worker.onerror = msg => {
 		//     console.log('error', msg);
 		// }
-		// swarm(this.canvas);
+		//swarm(this.canvas);
 		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
@@ -760,7 +760,7 @@ fn main() -> @location(0) vec4f {
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
 		//issue127(this.canvas);
-		//circle_demo(this.canvas);
+		circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -769,6 +769,7 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
+		//this.vulkan(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);
@@ -822,7 +823,7 @@ fn main() -> @location(0) vec4f {
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
-		createConicGradient(this.canvas);
+		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
 		//drawModes(this.canvas,'triangles');
@@ -874,6 +875,23 @@ fn main() -> @location(0) vec4f {
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
 		//this.textBaseLine2(this.canvas);
+	}
+	vulkan(canvas: any) {
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+		ctx.font = '16px serif';
+		const size = ctx.measureText('NativeScript Canvas 2D Powered by Skia & Vulkan');
+		ctx.fillText('NativeScript Canvas 2D Powered by Skia & Vulkan', canvas.clientWidth / 2 - size.width / 2, 50);
+		const vk = new ImageAsset();
+		const ns = new ImageAsset();
+		const skia = new ImageAsset();
+		Promise.allSettled([skia.fromUrl('https://upload.wikimedia.org/wikipedia/en/thumb/3/33/Skia_Project_Logo.svg/1024px-Skia_Project_Logo.svg.png'), vk.fromUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Vulkan_logo.svg/1024px-Vulkan_logo.svg.png'), ns.fromUrl('https://upload.wikimedia.org/wikipedia/commons/8/86/NativeScript_Logo.png')]).then((res) => {
+			ctx.drawImage(ns as any, canvas.clientWidth / 2 - 50, 60, 100, 100);
+			ctx.drawImage(skia as any, canvas.clientWidth / 2 - 50, 150 + 20, 100, 100);
+			ctx.drawImage(vk as any, canvas.clientWidth / 2 - 50, 250 + 30, 100, 100);
+		});
 	}
 
 	drawSVG(canvas) {

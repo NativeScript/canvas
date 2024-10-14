@@ -115,6 +115,14 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	static get forceGL() {
+		return NSCCanvas.forceGL;
+	}
+
+	static set forceGL(value) {
+		NSCCanvas.forceGL = value;
+	}
+
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = value;
 	}
@@ -155,9 +163,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -178,9 +183,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}

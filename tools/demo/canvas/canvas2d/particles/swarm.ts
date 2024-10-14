@@ -6,7 +6,6 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 	function init() {
 		//canvas.nativeView.setHandleInvalidationManually(true);
 		// Initialize the context of the canvas
-		var ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
 
 		// canvas.nativeView.handleInvalidationManually = true
 
@@ -17,10 +16,12 @@ export function swarm(canvas, width?, height?, nativeCanvas?) {
 		canvas.width = W;
 		canvas.height = H;
 
+		var ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
+
 		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 		// Some variables for later use
-		var particleCount = 1000,
+		var particleCount = 1500,
 			particles = [],
 			minDist = 50,
 			dist;

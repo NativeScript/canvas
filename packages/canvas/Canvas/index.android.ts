@@ -115,10 +115,6 @@ export class Canvas extends CanvasBase {
 				this._canvas = new org.nativescript.canvas.NSCCanvas(activity);
 			}
 
-			// // default canvas size
-			// this._canvas.setSurfaceWidth(300);
-			// this._canvas.setSurfaceHeight(150);
-
 			(global as any).__canvasLoaded = true;
 			const ref = new WeakRef(this);
 			this._canvas.setTouchEventListener(
@@ -133,6 +129,14 @@ export class Canvas extends CanvasBase {
 				})
 			);
 		}
+	}
+
+	static get forceGL() {
+		return org.nativescript.canvas.NSCCanvas.getForceGL();
+	}
+
+	static set forceGL(value) {
+		org.nativescript.canvas.NSCCanvas.setForceGL(value);
 	}
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
@@ -248,7 +252,6 @@ export class Canvas extends CanvasBase {
 					if (!view[viewRect_]) {
 						view[viewRect_] = new Float32Array(8);
 					}
-
 					if (!nativeView) {
 						return new DOMRect(0, 0, 0, 0);
 					}
@@ -385,9 +388,7 @@ export class Canvas extends CanvasBase {
 				if (!this._gpuContext) {
 					const ptr = navigator.gpu.native.__getPointer();
 					this._canvas.initWebGPUContext(long(ptr));
-
 					this._gpuContext = new (GPUCanvasContext as any)(this._canvas);
-
 					(this._gpuContext as any)._canvas = this;
 					(this._gpuContext as any)._type = 'webgpu';
 					this._contextType = ContextType.WebGPU;

@@ -26,6 +26,10 @@ class WebGLActivity : AppCompatActivity() {
 			override fun surfaceResize(width: Int, height: Int) {
 
 			}
+
+			override fun surfaceDestroyed() {}
+
+			override fun surfaceCreated() {}
 		}
 	}
 

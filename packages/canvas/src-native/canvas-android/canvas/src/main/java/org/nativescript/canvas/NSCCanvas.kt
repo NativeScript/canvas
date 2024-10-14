@@ -20,9 +20,6 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import javax.microedition.khronos.egl.EGL
-import javax.microedition.khronos.egl.EGL10
-import kotlin.math.floor
 import kotlin.math.min
 
 
@@ -38,13 +35,11 @@ class NSCCanvas : FrameLayout {
 		GPU
 	}
 
-	var forceGL = true
-
 	var fit = CanvasFit.FitX
 		set(value) {
 			field = value
 			invalidate()
-		//	scaleSurface()
+			//	scaleSurface()
 		}
 
 
@@ -126,7 +121,8 @@ class NSCCanvas : FrameLayout {
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
-					textureView, internalWidth,
+					textureView,
+					internalWidth,
 					internalHeight
 				)
 			}
@@ -139,6 +135,8 @@ class NSCCanvas : FrameLayout {
 				)
 			}
 		}
+
+//		layoutSurface(internalWidth, internalHeight, this)
 	}
 
 	val drawingBufferWidth: Int
@@ -168,6 +166,7 @@ class NSCCanvas : FrameLayout {
 		}
 
 	internal fun surfaceDestroyed() {
+		listener?.surfaceDestroyed()
 		if (engine == Engine.GL && nativeContext != 0L) {
 			makeContextCurrent()
 			val display = EGL14.eglGetCurrentDisplay()
@@ -508,8 +507,8 @@ class NSCCanvas : FrameLayout {
 					val density = resources.displayMetrics.density
 					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 						nativeContext = nativeCreate2dContextVulkan(
-							width,
-							height,
+							surfaceWidth,
+							surfaceHeight,
 							null,
 							alpha,
 							density,
@@ -681,13 +680,14 @@ class NSCCanvas : FrameLayout {
 
 					surface?.let {
 						if (is2D) {
-							nativeUpdate2DSurface(it, nativeContext)
+							nativeUpdate2DSurface(it, surfaceWidth,
+								surfaceHeight, nativeContext)
 						} else {
 							nativeUpdateWebGLSurface(it, nativeContext)
 						}
 					} ?: run {
 						if (is2D) {
-						//	GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
+							//	GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
 							nativeUpdate2DSurfaceNoSurface(
 								surfaceWidth,
 								surfaceHeight,
@@ -698,19 +698,24 @@ class NSCCanvas : FrameLayout {
 						}
 					}
 				}
-
 				Engine.GPU -> {
-					if (!is2D && nativeContext != 0L && engine == Engine.GPU) {
+					if (nativeContext != 0L && engine == Engine.GPU) {
 						val surface = if (surfaceType == SurfaceType.Surface) {
 							surfaceView.holder.surface
 						} else {
 							textureView.surface
 						}
 						surface?.let {
-							nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
+							if (is2D) {
+								nativeUpdate2DSurface(surface, surfaceWidth,
+									surfaceHeight, nativeContext)
+							} else {
+								nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
+							}
 						}
 					}
 				}
+
 				else -> {}
 			}
 
@@ -725,6 +730,8 @@ class NSCCanvas : FrameLayout {
 	interface Listener {
 		fun contextReady()
 		fun surfaceResize(width: Int, height: Int)
+		fun surfaceDestroyed()
+		fun surfaceCreated()
 	}
 
 	var listener: Listener? = null
@@ -782,6 +789,9 @@ class NSCCanvas : FrameLayout {
 	}
 
 	companion object {
+		@JvmStatic
+		var forceGL = true
+
 		@JvmStatic
 		var views = ConcurrentHashMap<Any?, Any?>()
 
@@ -1022,6 +1032,8 @@ class NSCCanvas : FrameLayout {
 		@FastNative
 		external fun nativeUpdate2DSurface(
 			surface: Surface,
+			width: Int,
+			height: Int,
 			context: Long
 		)
 

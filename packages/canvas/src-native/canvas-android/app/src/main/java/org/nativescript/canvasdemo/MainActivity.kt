@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
+		NSCCanvas.forceGL = false
 		//	svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
@@ -62,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
 						canvas?.let { canvas ->
+
 					val context = canvas.create2DContext(
 						true,
 						true,
@@ -74,6 +76,8 @@ class MainActivity : AppCompatActivity() {
 						false,
 						false
 					)
+						canvas.surfaceWidth = 600
+							canvas.surfaceHeight = 900
 //
 //					NSCCanvas.context2DImageTest(context)
 					NSCCanvas.context2DPathTest(context)
@@ -284,6 +288,10 @@ class MainActivity : AppCompatActivity() {
 			override fun surfaceResize(width: Int, height: Int) {
 				Log.d("com.test", "surfaceResize $width $height")
 			}
+
+			override fun surfaceDestroyed() {}
+
+			override fun surfaceCreated() {}
 		}
 
 //		val view = NSCCanvas(this)

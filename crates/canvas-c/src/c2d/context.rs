@@ -217,14 +217,8 @@ impl CanvasRenderingContext2D {
         }
 
         #[cfg(feature = "vulkan")]
-        if let Some(vulkan) = self.context.vulkan_context.as_mut() {
-            vulkan.record_command_buffer();
-        }
-
-        #[cfg(feature = "vulkan")]
         if self.engine == Engine::Vulkan {
-            self.context.
-                submit();
+            self.context.flush()
         }
 
         #[cfg(feature = "vulkan")]

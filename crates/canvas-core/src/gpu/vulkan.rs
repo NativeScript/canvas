@@ -1,13 +1,10 @@
-use ash::prelude::VkResult;
-use ash::vk::{Handle, ImageView, SwapchainCreateInfoKHR, SwapchainKHR};
+use ash::vk::{Extent2D, Handle, ImageView, SwapchainCreateInfoKHR, SwapchainKHR};
 use ash::{vk, Entry, Instance};
 use skia_safe::wrapper::NativeTransmutableWrapper;
-use skia_safe::Surface;
 use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
-use std::vec;
 
 pub struct AshGraphics {
     pub current_index: Option<u32>,
@@ -19,27 +16,21 @@ pub struct AshGraphics {
     pub physical_device: vk::PhysicalDevice,
     pub device: ash::Device,
     pub queue_and_index: (vk::Queue, usize),
-    pub command_buffers: Vec<vk::CommandBuffer>,
     pub entry: Entry,
     pub instance: Instance,
     pub image_available_semaphore: vk::Semaphore,
-    pub render_finished_semaphore: vk::Semaphore,
-    pub render_finished_fence: vk::Fence,
-    pub render_pass: Vec<vk::RenderPass>,
-    pub frame_buffers: Vec<vk::Framebuffer>,
     pub surface_size: vk::Extent2D,
     pub alpha: bool,
+    pub surface_loader: ash::khr::surface::Instance,
 }
 
 impl Drop for AshGraphics {
     fn drop(&mut self) {
-        use ash::khr::surface::Instance;
         unsafe {
             self.device.device_wait_idle().unwrap();
 
             if let Some(surface) = self.surface {
-                let instance = Instance::new(&self.entry, &self.instance);
-                instance.destroy_surface(surface, None);
+                self.surface_loader.destroy_surface(surface, None);
             }
 
             self.device.destroy_device(None);
@@ -66,7 +57,7 @@ impl AshGraphics {
     pub unsafe fn new(app_name: &str) -> Result<AshGraphics, String> {
         let entry = Entry::load().or(Err("Failed to load Vulkan entry"))?;
 
-        let minimum_version = vk::make_api_version(0, 1, 3, 0);
+        let minimum_version = vk::make_api_version(0, 1, 1, 0);
 
         let instance: Instance = {
             let api_version = Self::vulkan_version()
@@ -100,7 +91,7 @@ impl AshGraphics {
             //     .map(|raw_name| raw_name.as_ptr())
             //     .collect();
 
-            let create_flags = vk::InstanceCreateFlags::default();
+            let create_flags = vk::InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR;
 
             let create_info = vk::InstanceCreateInfo::default()
                 .application_info(&app_info)
@@ -161,38 +152,15 @@ impl AshGraphics {
         }
             .or(Err("Failed to create Device."))?;
 
-        log::info!("Created Vulkan device. {:?}", device.handle());
-
         let queue_index: usize = 0;
         let queue: vk::Queue = device.get_device_queue(queue_family_index as _, queue_index as _);
 
         let swap_chain_loader = ash::khr::swapchain::Device::new(&instance, &device);
 
         let semaphore_info = vk::SemaphoreCreateInfo::default();
-        let render_finished_fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
         let image_available_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
-        let render_finished_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
-        let render_finished_fence = unsafe { device.create_fence(&render_finished_fence_info, None).unwrap() };
 
-
-        let pool_info = vk::CommandPoolCreateInfo::default()
-            .queue_family_index(queue_family_index as _)
-            .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER);  // Allow buffers to be reset
-
-        let command_pool = unsafe {
-            device.create_command_pool(&pool_info, None)
-                .or(Err("Failed to create CommandPool."))?
-        };
-
-        let alloc_info = vk::CommandBufferAllocateInfo::default()
-            .command_pool(command_pool)
-            .level(vk::CommandBufferLevel::PRIMARY)  // Primary command buffers
-            .command_buffer_count(3);
-
-        let command_buffers = unsafe {
-            device.allocate_command_buffers(&alloc_info)
-                .or(Err("Failed to allocate CommandBuffers."))?
-        };
+        let surface_loader = ash::khr::surface::Instance::new(&entry, &instance);
 
         Ok(AshGraphics {
             current_index: None,
@@ -205,21 +173,18 @@ impl AshGraphics {
             instance,
             entry,
             image_available_semaphore,
-            render_finished_semaphore,
-            render_finished_fence,
             swap_chain: None,
             surface: None,
-            command_buffers,
-            render_pass: vec![],
-            frame_buffers: vec![],
             surface_size: vk::Extent2D { width: 0, height: 0 },
             swap_chain_images: None,
+            surface_loader
         })
     }
 }
 
 pub struct VulkanContext {
     ash: AshGraphics,
+    view: *mut c_void,
 }
 
 impl Debug for VulkanContext {
@@ -245,7 +210,7 @@ impl VulkanContext {
     pub fn new(app_name: &str) -> Result<VulkanContext, String> {
         unsafe {
             AshGraphics::new(app_name).map(|graphics| {
-                Self { ash: graphics }
+                Self { ash: graphics, view: std::ptr::null_mut() }
             })
         }
     }
@@ -268,6 +233,10 @@ impl VulkanContext {
 
     pub fn device_handle(&self) -> u64 {
         self.ash.device.handle().as_raw()
+    }
+
+    pub fn size(&self) -> Extent2D {
+        self.ash.surface_size
     }
 
     pub fn current_image(&mut self) -> Option<vk::Image> {
@@ -333,16 +302,20 @@ impl VulkanContext {
     }
 
     unsafe fn create_swap_chain(&mut self, surface: vk::SurfaceKHR, width: u32, height: u32) {
-        let surface_loader = ash::khr::surface::Instance::new(&self.ash.entry, &self.ash.instance);
+        unsafe { self.ash.device.device_wait_idle().unwrap(); }
+
+        self.ash.current_index = None;
+
         let formats = unsafe {
-            surface_loader.get_physical_device_surface_formats(self.ash.physical_device, surface).unwrap()
+            self.ash.surface_loader.get_physical_device_surface_formats(self.ash.physical_device, surface).unwrap()
         };
+
         let capabilities = unsafe {
-            surface_loader.get_physical_device_surface_capabilities(self.ash.physical_device, surface).unwrap()
+            self.ash.surface_loader.get_physical_device_surface_capabilities(self.ash.physical_device, surface).unwrap()
         };
 
         let present_modes = unsafe {
-            surface_loader.get_physical_device_surface_present_modes(self.ash.physical_device, surface).unwrap()
+            self.ash.surface_loader.get_physical_device_surface_present_modes(self.ash.physical_device, surface).unwrap()
         };
 
         let raw_flags = vk::SwapchainCreateFlagsKHR::empty();
@@ -351,6 +324,8 @@ impl VulkanContext {
                 vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED
             } else if (capabilities.supported_composite_alpha.contains(vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED)) {
                 vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED
+            } else if (capabilities.supported_composite_alpha.contains(vk::CompositeAlphaFlagsKHR::INHERIT)) {
+                vk::CompositeAlphaFlagsKHR::INHERIT
             } else {
                 vk::CompositeAlphaFlagsKHR::OPAQUE
             }
@@ -358,7 +333,18 @@ impl VulkanContext {
             vk::CompositeAlphaFlagsKHR::OPAQUE
         };
 
-        let old_swap_chain = self.ash.swap_chain.unwrap_or_else(|| SwapchainKHR::null());
+        if let Some(swap_chain) = self.ash.swap_chain.take() {
+            self.ash.swap_chain_loader.destroy_swapchain(swap_chain, None);
+        }
+
+
+        if let Some(views) = self.ash.swap_chain_image_view.as_mut() {
+            views.iter().for_each(|image| {
+                self.ash.device.destroy_image_view(*image, None);
+            });
+            views.clear();
+        }
+        //  let old_swap_chain = self.ash.swap_chain.unwrap_or_else(|| );
 
         let info = SwapchainCreateInfoKHR::default()
             .flags(raw_flags)
@@ -366,7 +352,7 @@ impl VulkanContext {
             .min_image_count(capabilities.min_image_count)
             .image_format(formats[0].format)
             .image_color_space(formats[0].color_space)
-            .image_extent(vk::Extent2D { width, height })
+            .image_extent(Extent2D { width, height })
             .image_array_layers(1)
             .image_usage(capabilities.supported_usage_flags)
             .image_sharing_mode(vk::SharingMode::EXCLUSIVE)
@@ -374,47 +360,8 @@ impl VulkanContext {
             .composite_alpha(composite_alpha)
             .present_mode(present_modes[0])
             .clipped(true)
-            .old_swapchain(old_swap_chain);
+            .old_swapchain(SwapchainKHR::null());
 
-
-        let color_attachment = vk::AttachmentDescription {
-            format: vk::Format::R8G8B8A8_UNORM,
-            samples: vk::SampleCountFlags::TYPE_1,
-            load_op: vk::AttachmentLoadOp::CLEAR,
-            store_op: vk::AttachmentStoreOp::STORE,
-            stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
-            stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
-            initial_layout: vk::ImageLayout::UNDEFINED,
-            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
-            ..Default::default()
-        };
-
-        let color_attachment_ref = vec![vk::AttachmentReference {
-            attachment: 0,
-            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-        }];
-
-        let subpass = vk::SubpassDescription {
-            pipeline_bind_point: vk::PipelineBindPoint::GRAPHICS,
-            p_color_attachments: color_attachment_ref.as_ptr(),
-            color_attachment_count: color_attachment_ref.len() as u32,
-            ..Default::default()
-        };
-
-        let render_pass_info = vk::RenderPassCreateInfo {
-            attachment_count: 1,
-            p_attachments: &color_attachment,
-            subpass_count: 1,
-            p_subpasses: &subpass,
-            dependency_count: 0,
-            p_dependencies: std::ptr::null(),
-            ..Default::default()
-        };
-
-
-        let render_pass = self.ash.device.create_render_pass(&render_pass_info, None).unwrap();
-
-        self.ash.render_pass = vec![render_pass];
 
         self.ash.swap_chain = self.ash.swap_chain_loader.create_swapchain(&info, None)
             .map(|swap_chain| {
@@ -441,44 +388,27 @@ impl VulkanContext {
                                 ..Default::default()
                             };
 
-                            let image_view = unsafe {
+                            unsafe {
                                 self.ash.device
                                     .create_image_view(&view_info, None).unwrap()
-                            };
-
-                            let attachments = [image_view];
-
-                            let framebuffer_info = vk::FramebufferCreateInfo::default()
-                                .render_pass(render_pass)
-                                .attachments(&attachments)
-                                .width(width)
-                                .height(height)
-                                .layers(1);
-
-                            let frame_buffer = unsafe {
-                                self.ash.device.create_framebuffer(&framebuffer_info, None).unwrap()
-                            };
-
-                            self.ash.frame_buffers.push(frame_buffer);
-
-                            image_view
+                            }
                         })
                         .collect::<Vec<ImageView>>();
                     self.ash.swap_chain_images = Some(images);
                     views
                 }).ok();
-                // self.ash.current_index = Some(0);
                 swap_chain
             })
             .ok();
 
-        self.ash.surface_size = vk::Extent2D {
+        self.ash.surface_size = Extent2D {
             width,
             height,
         };
     }
 
     pub fn set_view(&mut self, view: *mut c_void, width: u32, height: u32) {
+        self.view = view;
         self.ash.surface = match NonNull::new(view) {
             None => None,
             Some(view) => {
@@ -509,44 +439,13 @@ impl VulkanContext {
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        let surface = self.ash.surface.as_ref().map(|surface| *surface);
+        let mut surface = None;
+        if let Some(value) = self.ash.surface.as_ref() {
+          surface = Some(*value);
+        }
+
         if let Some(surface) = surface {
             unsafe { self.create_swap_chain(surface, width, height); }
-            self.ash.surface = Some(surface)
-        }
-    }
-
-    pub fn record_command_buffer(&mut self) {
-        let _ = self.current_image();
-        if let (Some(image_index), Some(swapchain)) = (self.ash.current_index, self.ash.swap_chain.as_ref()) {
-            unsafe {
-                let command_buffer_begin_info = vk::CommandBufferBeginInfo::default();
-                let _ = self.ash.device.begin_command_buffer(self.ash.command_buffers[image_index as usize], &command_buffer_begin_info);
-
-                let alpha = if self.alpha() {
-                    [0.0, 0.0, 0.0, 0f32]
-                }else {
-                    [0.0, 0.0, 0.0, 1.]
-                };
-
-                let clear  = [vk::ClearValue {
-                    color: vk::ClearColorValue {
-                        float32: alpha,
-                    },
-                }];
-                let render_pass_info = vk::RenderPassBeginInfo::default()
-                    .render_pass(self.ash.render_pass[0])
-                    .framebuffer(self.ash.frame_buffers[image_index as usize])
-                    .render_area(vk::Rect2D {
-                        offset: vk::Offset2D { x: 0, y: 0 },
-                        extent: self.ash.surface_size,
-                    })
-                    .clear_values(&clear);
-
-                unsafe {
-                    self.ash.device.cmd_begin_render_pass(self.ash.command_buffers[image_index as usize], &render_pass_info, vk::SubpassContents::INLINE);
-                }
-            }
         }
     }
 
@@ -554,34 +453,10 @@ impl VulkanContext {
         let _ = self.current_image();
         unsafe {
             if let (Some(image_index), Some(swapchain)) = (self.ash.current_index, self.ash.swap_chain.as_ref()) {
-
-                unsafe {
-                    self.ash.device.cmd_end_render_pass(self.ash.command_buffers[image_index as usize]);
-                    let _ = self.ash.device.end_command_buffer(self.ash.command_buffers[image_index as usize]);
-                    // .expect("End Command Buffer");
-                }
-
-                let command_buffers = [self.ash.command_buffers[image_index as usize]];
-                let image_available_semaphore = [self.ash.image_available_semaphore];
-                let render_finished_semaphore = [self.ash.render_finished_semaphore];
-                let submit_info = vk::SubmitInfo::default()
-                    .wait_semaphores(&image_available_semaphore)
-                    .wait_dst_stage_mask(&[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT])
-                    .command_buffers(&command_buffers)
-                    .signal_semaphores(&render_finished_semaphore);
-
-                unsafe {
-                    let _ = self.ash.device
-                        .queue_submit(self.ash.queue_and_index.0, &[submit_info], self.ash.render_finished_fence);
-
-                    // .expect("Queue Submit Failed.");
-                }
-
                 let swapchains = [*swapchain];
                 let image_indices = [image_index];
 
                 let present_info = vk::PresentInfoKHR::default()
-                    .wait_semaphores(&render_finished_semaphore)
                     .swapchains(&swapchains)
                     .image_indices(&image_indices);
 
@@ -590,11 +465,6 @@ impl VulkanContext {
                         .queue_present(self.ash.queue_and_index.0, &present_info)
                         .expect("Queue Present Failed.");
                 }
-
-
-                let _ = self.ash.device
-                    .wait_for_fences(&[self.ash.render_finished_fence], true, u64::MAX);
-                let _ = self.ash.device.reset_fences(&[self.ash.render_finished_fence]);
 
                 let _ = self.next_image();
             }

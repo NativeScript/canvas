@@ -63,7 +63,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 
 	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
 
-	context.scale(window.devicePixelRatio, window.devicePixelRatio);
+	//context.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	// const ptr = context.canvas.nativeView.getNativeContext();
 	// console.log('context.canvas.nativeView.getNativeContext()', ptr);

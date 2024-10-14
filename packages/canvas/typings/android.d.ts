@@ -296,6 +296,8 @@ declare module org {
 				public setFit(value: org.nativescript.canvas.CanvasFit): void;
 				public getDrawingBufferHeight(): number;
 				public static nativeResizeWebGPU(param0: number, param1: globalAndroid.view.Surface, param2: number, param3: number): void;
+				public static setForceGL(value: boolean): void;
+				public static getForceGL(): boolean;
 			}
 			export module NSCCanvas {
 				export class Companion {
@@ -347,6 +349,8 @@ declare module org {
 					public setEnableDebug(value: boolean): void;
 					public nativeContext2DRender(context: number): void;
 					public nativeUpdateWebGLNoSurface(width: number, height: number, context: number): void;
+					public static setForceGL(value: boolean): void;
+					public static getForceGL(): boolean;
 				}
 				export module Companion {
 					export class WhenMappings {

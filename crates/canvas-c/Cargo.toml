@@ -16,7 +16,7 @@ canvas-core = { workspace = true, features = ["2d"] }
 canvas-2d = { workspace = true, optional = true }
 canvas-webgl = { workspace = true, optional = true }
 parking_lot.workspace = true
-ureq = { version = "2.9.6", features = ["gzip"] }
+ureq.workspace = true
 bytes = "1.5.0"
 log.workspace = true
 wgt = { workspace = true, package = "wgpu-types" }

@@ -1,11 +1,11 @@
 use wgt::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
 
-use crate::buffers::StringBuffer;
-use crate::ImageAsset;
 use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat},
     gpu_texture_view::CanvasGPUTextureView,
 };
+use crate::buffers::StringBuffer;
+use crate::ImageAsset;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -869,7 +869,6 @@ pub struct CanvasSurfaceCapabilities {
 
 impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
     fn from(value: SurfaceCapabilities) -> Self {
-
         let formats = Box::into_raw(Box::new(StringBuffer::from(
             value
                 .formats

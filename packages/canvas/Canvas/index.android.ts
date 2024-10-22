@@ -149,11 +149,19 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.getMeasuredWidth() / Screen.mainScreen.scale;
+		const width = this.getMeasuredWidth();
+		if (width === 0) {
+			return 0;
+		}
+		return width / Screen.mainScreen.scale;
 	}
 
 	get clientHeight() {
-		return this.getMeasuredHeight() / Screen.mainScreen.scale;
+		const height = this.getMeasuredHeight();
+		if (height === 0) {
+			return 0;
+		}
+		return height / Screen.mainScreen.scale;
 	}
 
 	get drawingBufferHeight() {
@@ -279,6 +287,8 @@ export class Canvas extends CanvasBase {
 					}
 				},
 				surfaceResize(width, height) {},
+				surfaceDestroyed() {},
+				surfaceCreated() {},
 			})
 		);
 	}
@@ -341,9 +351,7 @@ export class Canvas extends CanvasBase {
 						...handleContextOptions(type, contextAttributes),
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
-
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
-
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 					(this._2dContext as any)._canvas = this;
 					this._2dContext._type = '2d';
@@ -364,7 +372,6 @@ export class Canvas extends CanvasBase {
 					this._webglContext._type = 'webgl';
 					this._contextType = ContextType.WebGL;
 				}
-
 				return this._webglContext;
 			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
 				if (this._2dContext || this._webglContext) {
@@ -373,6 +380,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 
 					(this._webgl2Context as any)._canvas = this;
@@ -384,7 +392,6 @@ export class Canvas extends CanvasBase {
 				if (this._2dContext || this._webglContext || this._webgl2Context) {
 					return null;
 				}
-
 				if (!this._gpuContext) {
 					const ptr = navigator.gpu.native.__getPointer();
 					this._canvas.initWebGPUContext(long(ptr));

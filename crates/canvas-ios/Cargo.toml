@@ -14,7 +14,6 @@ canvas-webgl = { workspace = true }
 canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "metal"] }
 gl-bindings.workspace = true
 raw-window-handle.workspace = true
-ureq = "2.9.1"
 parking_lot.workspace = true
 log.workspace = true
 env_logger.workspace = true

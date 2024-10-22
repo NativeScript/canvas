@@ -1848,6 +1848,8 @@ void canvas_native_context_2d_test(int64_t context);
 
 void canvas_native_context_2d_path_test(int64_t context);
 
+void canvas_native_context_2d_conic_test(int64_t context);
+
 void canvas_native_context_release(struct CanvasRenderingContext2D *value);
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))

@@ -131,6 +131,8 @@ impl Context {
                 scale: density,
                 ppi,
                 engine,
+                state: Default::default(),
+                is_opaque: !alpha
             },
             surface,
             path: Path::default(),
@@ -236,6 +238,7 @@ impl Context {
             context.surface_data.bounds = bounds;
             context.surface_data.scale = density;
             context.surface_data.ppi = ppi;
+            context.surface_data.is_opaque = !alpha;
             context.path = Path::default();
             context.reset_state();
             context.surface = surface;

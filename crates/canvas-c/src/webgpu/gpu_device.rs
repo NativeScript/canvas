@@ -7,7 +7,6 @@ use std::{
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
 };
-
 use wgpu_core::binding_model::BufferBinding;
 use wgpu_core::command::RenderBundleEncoder;
 use wgpu_core::id::PipelineLayoutId;
@@ -780,6 +779,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
     let error_sink = pipeline.error_sink.as_ref();
 
     if let Some(cause) = error {
+        println!("Can not create compute pipeline: {:?}", cause);
         if let wgpu_core::pipeline::CreateComputePipelineError::Internal(ref error) = cause {
             #[cfg(target_os = "android")]
             log::warn!(
@@ -1126,6 +1126,13 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let (module, error) = global.device_create_shader_module(device_id, &desc, source, None);
 
     if let Some(cause) = error {
+        // TODO handle validation errors GPUCompilationMessage
+        // match cause {
+        //     CreateShaderModuleError::Parsing(error) => {}
+        //     CreateShaderModuleError::Validation(error) => {}
+        //     _ => {}
+        // }
+
         handle_error(
             global,
             device.error_sink.as_ref(),
@@ -1512,7 +1519,21 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline(
     let global = device.instance.global();
 
     if let Some(cause) = error {
-        if let wgpu_core::pipeline::CreateRenderPipelineError::Internal { stage, ref error } = cause
+        // println!("Can not create render pipeline: {:?}\n", cause);
+        //
+        // println!("Can not create render pipeline: {:?}\n", cause.to_string());
+        //
+        // println!("Can not create render pipeline: {:?}\n", cause.source());
+        //
+        // todo improve error
+        // if let CreateRenderPipelineError::PipelineConstants {stage,  ref error} = cause {
+        //     println!("CreateRenderPipelineError::PipelineConstants {:?} {}", stage, error);
+        // }
+        //
+        // if let CreateRenderPipelineError::Stage {stage,  ref error} = cause {
+        //     println!("CreateRenderPipelineError::Stage {:?} {}", stage, error);
+        // }
+        if let CreateRenderPipelineError::Internal { stage, ref error } = cause
         {
             #[cfg(target_os = "android")]
             log::error!("Shader translation error for stage {:?}: {}", stage, error);

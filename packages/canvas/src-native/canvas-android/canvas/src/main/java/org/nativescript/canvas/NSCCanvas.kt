@@ -4,9 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.SurfaceTexture
 import android.opengl.EGL14
 import android.os.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
@@ -64,6 +66,19 @@ class NSCCanvas : FrameLayout {
 
 	var nativeContext: Long = 0
 		private set
+
+	val surface: Surface?
+		get() {
+			return when (surfaceType) {
+				SurfaceType.Texture -> textureView.surface
+				SurfaceType.Surface -> {
+					if (!surfaceView.isCreated && !surfaceView.isCreatedWithZeroSized) {
+						return null
+					}
+					return surfaceView.holder.surface
+				}
+			}
+		}
 
 	enum class SurfaceType {
 		Texture,
@@ -135,8 +150,6 @@ class NSCCanvas : FrameLayout {
 				)
 			}
 		}
-
-//		layoutSurface(internalWidth, internalHeight, this)
 	}
 
 	val drawingBufferWidth: Int
@@ -202,18 +215,6 @@ class NSCCanvas : FrameLayout {
 		if (engine != Engine.None) {
 			return
 		}
-		val surface = if (surfaceType == SurfaceType.Surface) {
-//			if (alpha) {
-//				surfaceView.setZOrderOnTop(true)
-//			} else {
-//				surfaceView.setZOrderOnTop(false)
-//			}
-			surfaceView.holder.surface
-		} else {
-			textureView.isOpaque = false
-			textureView.surface
-		}
-
 		surface?.let {
 			nativeContext = nativeInitWebGPU(instance, it, surfaceWidth, surfaceHeight)
 		}
@@ -394,7 +395,12 @@ class NSCCanvas : FrameLayout {
 			} else {
 				surfaceView.setZOrderOnTop(false)
 			}
-			surfaceView.holder.surface
+
+			if (!surfaceView.isCreated) {
+				null
+			} else {
+				surfaceView.holder.surface
+			}
 		} else {
 			textureView.isOpaque = !alpha
 			textureView.surface
@@ -403,7 +409,7 @@ class NSCCanvas : FrameLayout {
 		surface?.let {
 			if (is2D) {
 				val density = resources.displayMetrics.density
-				if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 					nativeContext = nativeCreate2dContextVulkan(
 						surfaceWidth,
 						surfaceHeight,
@@ -460,7 +466,7 @@ class NSCCanvas : FrameLayout {
 				if (is2D) {
 					val density = resources.displayMetrics.density
 
-					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 						nativeContext = nativeCreate2dContextVulkan(
 							width,
 							height,
@@ -505,7 +511,7 @@ class NSCCanvas : FrameLayout {
 			} else {
 				if (is2D) {
 					val density = resources.displayMetrics.density
-					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 						nativeContext = nativeCreate2dContextVulkan(
 							surfaceWidth,
 							surfaceHeight,
@@ -672,16 +678,12 @@ class NSCCanvas : FrameLayout {
 		if (nativeContext != 0L) {
 			when (engine) {
 				Engine.GL -> {
-					val surface = if (surfaceType == SurfaceType.Surface) {
-						surfaceView.holder.surface
-					} else {
-						textureView.surface
-					}
-
 					surface?.let {
 						if (is2D) {
-							nativeUpdate2DSurface(it, surfaceWidth,
-								surfaceHeight, nativeContext)
+							nativeUpdate2DSurface(
+								it, surfaceWidth,
+								surfaceHeight, nativeContext
+							)
 						} else {
 							nativeUpdateWebGLSurface(it, nativeContext)
 						}
@@ -698,19 +700,17 @@ class NSCCanvas : FrameLayout {
 						}
 					}
 				}
+
 				Engine.GPU -> {
-					if (nativeContext != 0L && engine == Engine.GPU) {
-						val surface = if (surfaceType == SurfaceType.Surface) {
-							surfaceView.holder.surface
-						} else {
-							textureView.surface
-						}
+					if (nativeContext != 0L) {
 						surface?.let {
 							if (is2D) {
-								nativeUpdate2DSurface(surface, surfaceWidth,
-									surfaceHeight, nativeContext)
+								nativeUpdate2DSurface(
+									it, surfaceWidth,
+									surfaceHeight, nativeContext
+								)
 							} else {
-								nativeResizeWebGPU(nativeContext, surface, surfaceWidth, surfaceHeight)
+								nativeResizeWebGPU(nativeContext, it, surfaceWidth, surfaceHeight)
 							}
 						}
 					}
@@ -841,6 +841,8 @@ class NSCCanvas : FrameLayout {
 		internal var isLibraryLoaded = false
 		const val TAG = "CanvasView"
 
+		internal var vulkanVersion: IntArray = intArrayOf(0,0,0)
+
 		init {
 			loadLib()
 		}
@@ -852,6 +854,7 @@ class NSCCanvas : FrameLayout {
 					System.loadLibrary("canvasnative")
 					System.loadLibrary("canvasnativev8")
 					isLibraryLoaded = true
+					nativeGetVulkanVersion(vulkanVersion)
 				} catch (_: Exception) {
 				}
 			}
@@ -869,7 +872,9 @@ class NSCCanvas : FrameLayout {
 		fun layoutSurface(width: Int, height: Int, canvas: NSCCanvas) {
 			val view = when (canvas.surfaceType) {
 				SurfaceType.Texture -> canvas.textureView
-				SurfaceType.Surface -> canvas.surfaceView
+				SurfaceType.Surface -> {
+					canvas.surfaceView
+				}
 			}
 
 			var rootParams = view.layoutParams
@@ -942,6 +947,9 @@ class NSCCanvas : FrameLayout {
 		internal fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
 			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
 		}
+
+		@JvmStatic
+		external fun nativeGetVulkanVersion(array: IntArray)
 
 		@JvmStatic
 		@FastNative

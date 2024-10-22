@@ -213,13 +213,12 @@ impl Gradient {
     ) -> Option<Shader> {
         let color_array = GradientShaderColors::Colors(colors);
 
-        let mut rotated = matrix
+        let rotated = matrix
             .map(|v| v.clone())
             .unwrap_or(skia_safe::Matrix::new_identity());
-        rotated
-            .pre_translate((center.x, center.y))
-            .pre_rotate(angle, None)
-            .pre_translate((-center.x, -center.y));
+
+
+     //   rotated
 
         Shader::sweep_gradient(
             center,

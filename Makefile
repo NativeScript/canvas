@@ -28,7 +28,7 @@ $(XCFRAMEWORK): $(ARCHS_IOS)
 
 .PHONY: $(ARCHS_ANDROID)
 $(ARCHS_ANDROID): %:
-	./tools/scripts/build-android.sh $@ && ./tools/scripts/copy-android.sh $@
+	./tools/scripts/build-android.sh $@
 
 .PHONY: GENERATE_ANDROID
 GENERATE_ANDROID: $(ARCHS_ANDROID)

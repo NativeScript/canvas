@@ -291,35 +291,36 @@ export class Canvas extends CanvasBase {
 	_setNativeViewFrame(nativeView: any, frame: CGRect): void {
 		const styleWidth = this.style.width;
 		const styleHeight = this.style.height;
+		let fit;
 		if (typeof styleWidth === 'object' && typeof styleHeight === 'object') {
 			if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
 				// const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 				//const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
-				nativeView.fit = 1;
+				fit = 1;
 				// nativeView.frame = frame;
 			} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
 				const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 				const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
 
 				if (frame.size.width > width || frame.size.height > height) {
-					nativeView.fit = 4;
+					fit = 4;
 				} else {
-					nativeView.fit = 1;
+					fit = 1;
 				}
 
 				// nativeView.frame = frame;
 			} else {
-				nativeView.fit = 1;
+				fit = 1;
 				//	nativeView.frame = frame;
 			}
 		} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
 			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip' || styleWidth?.unit === '%') {
-				nativeView.fit = 2;
+				fit = 2;
 				//	nativeView.frame = frame;
 			}
 		} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
 			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip' || styleHeight?.unit === '%') {
-				nativeView.fit = 3;
+				fit = 3;
 				//	nativeView.frame = frame;
 			}
 		} else if (styleWidth === 'auto' && styleHeight === 'auto') {
@@ -327,14 +328,16 @@ export class Canvas extends CanvasBase {
 			const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 			const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
 			const newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
-			nativeView.fit = 0;
+			fit = 0;
 			//nativeView.frame = newFrame;
 			frame = newFrame;
 		} else {
 			//	nativeView.frame = frame;
 		}
-
 		super._setNativeViewFrame(nativeView, frame);
+		setTimeout(() => {
+			nativeView.fit = fit;
+		});
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {

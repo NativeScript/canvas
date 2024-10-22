@@ -1,5 +1,4 @@
-import { TouchEvent, PointerEvent } from './Canvas';
-export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';
+import { TouchEvent, PointerEvent } from './Canvas/common';
 
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
@@ -134,3 +133,4 @@ export { ImageBitmap } from './ImageBitmap';
 export { CanvasRenderingContext2D } from './Canvas2D/CanvasRenderingContext2D';
 export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
+export { Canvas, createSVGMatrix, TouchEvent, PointerEvent } from './Canvas';

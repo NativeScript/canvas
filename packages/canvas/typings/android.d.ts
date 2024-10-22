@@ -372,10 +372,12 @@ declare module org {
 					/**
 					 * Constructs a new instance of the org.nativescript.canvas.NSCCanvas$Listener interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
 					 */
-					public constructor(implementation: { contextReady(): void; surfaceResize(param0: number, param1: number): void });
+					public constructor(implementation: { contextReady(): void; surfaceResize(param0: number, param1: number): void; surfaceDestroyed(): void; surfaceCreated(): void });
 					public constructor();
 					public contextReady(): void;
 					public surfaceResize(param0: number, param1: number): void;
+					public surfaceDestroyed(): void;
+					public surfaceCreated(): void;
 				}
 				export class SurfaceType {
 					public static class: java.lang.Class<org.nativescript.canvas.NSCCanvas.SurfaceType>;

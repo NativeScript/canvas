@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-
-use core::convert::{From, Into};
 use std::sync::Arc;
 
 use skia_safe::{surfaces, EncodedImageFormat};

@@ -1,5 +1,3 @@
-extern crate core;
-
 use std::ffi::c_uint;
 
 use base64::Engine;

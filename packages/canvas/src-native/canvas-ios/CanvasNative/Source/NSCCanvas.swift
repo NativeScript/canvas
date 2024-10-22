@@ -66,7 +66,7 @@ public class NSCCanvas: UIView {
     }
     
     public var fit = CanvasFit.FitX {
-        didSet {
+        willSet {
             scaleSurface()
         }
     }
@@ -490,16 +490,16 @@ public class NSCCanvas: UIView {
     
     
     public var surfaceWidth: Int = 300 {
-        didSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+        willSet {
+            forceLayout(CGFloat(newValue), CGFloat(surfaceHeight))
             resize()
         }
     }
     
     
     public var surfaceHeight: Int = 150 {
-        didSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
+        willSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(newValue))
             resize()
         }
     }
@@ -515,7 +515,7 @@ public class NSCCanvas: UIView {
         if(engine == .GL){
             EAGLContext.setCurrent(glkView.context)
         }
-        scaleSurface()
+        
         if(engine == .GL){
             glkView.deleteDrawable()
             glkView.bindDrawable()
@@ -523,6 +523,8 @@ public class NSCCanvas: UIView {
         if(is2D){
             CanvasHelpers.resize2DContext(nativeContext, Float(surfaceWidth), Float(surfaceHeight))
         }
+        
+        scaleSurface()
     }
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
@@ -567,18 +569,18 @@ public class NSCCanvas: UIView {
         if(surfaceWidth == 0 || surfaceHeight == 0){
             return
         }
-        /*
+        
          var density = UIScreen.main.nativeScale
          
          if(!autoScale){
-         density = 1
+             density = 1
          }
          
          let scaledInternalWidth = CGFloat(surfaceWidth) / density
          let scaledInternalHeight = CGFloat(surfaceHeight) / density
          
          if(scaledInternalWidth.isZero || scaledInternalHeight.isZero){
-         return
+             return
          }
          
          if(frame.size.width.isZero || frame.size.width.isNaN || frame.size.height.isZero || frame.size.height.isNaN){return}
@@ -591,47 +593,44 @@ public class NSCCanvas: UIView {
          return
          }
          
-         var transform = CGAffineTransform.identity
+        var transform: CATransform3D? = nil
          
-         switch(fit){
-         case .None:
-         // noop
-         break
-         case .Fill:
-         transform = CGAffineTransform.identity.scaledBy(x: scaleX , y: scaleY)
-         
-         case .FitX:
-         let dx = (frame.size.width - scaledInternalWidth) / 2
-         let  dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
-         
-         
-         transform = CGAffineTransform.identity.scaledBy(x: scaleX, y: scaleX).translatedBy(x: dx, y: dy)
-         break
-         case .FitY:
-         
-         
-         let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
-         let dy = (frame.size.height - scaledInternalHeight) / 2
-         
-         
-         transform = CGAffineTransform.identity.scaledBy(x: scaleY, y: scaleY).translatedBy(x: dx, y: dy)
-         break
-         case .ScaleDown:
-         let scale =  min(min(scaleX, scaleY), 1)
-         
-         transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale)
-         break
-         }
+        switch(fit){
+        case .None:
+            // noop
+            break
+        case .Fill:
+            transform = CATransform3DMakeScale(scaleX, scaleY, 1)
+        case .FitX:
+            let dx = (frame.size.width - scaledInternalWidth) / 2
+            let dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
+            
+            transform = CATransform3DMakeScale(scaleX, scaleX, 1)
+            
+            transform = CATransform3DConcat(transform!, CATransform3DMakeTranslation(dx, dy, 0))
+            break
+        case .FitY:
+            
+            
+            let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
+            let dy = (frame.size.height - scaledInternalHeight) / 2
+            
+            transform = CATransform3DMakeScale(scaleY, scaleY, 1)
+            
+            transform = CATransform3DConcat(transform!, CATransform3DMakeTranslation(dx, dy, 0))
+            break
+        case .ScaleDown:
+            let scale =  min(min(scaleX, scaleY), 1)
+            
+            transform = CATransform3DMakeScale(scale, scale, 1)
+            break
+        }
          
          
          // disable animation
-         
-         glkView.transform = transform
-         mtlView.transform = transform
-         
-         */
-        
-        
+        guard let transform = transform else {return}
+        glkView.layer.transform = transform
+        mtlView.layer.transform = transform
     }
     
     

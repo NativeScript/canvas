@@ -20,7 +20,7 @@ export function createConicGradient(canvas) {
 	// Create a conic gradient
 	// The start angle is 0
 	// The center position is 100, 100
-	const gradient = ctx.createConicGradient(0, 100, 100);
+	const gradient = ctx.createConicGradient(90, canvas.width / 2, canvas.height / 2);
 
 	// Add five color stops
 	gradient.addColorStop(0, 'red');
@@ -31,7 +31,7 @@ export function createConicGradient(canvas) {
 
 	// Set the fill style and draw a rectangle
 	ctx.fillStyle = gradient;
-	ctx.fillRect(20, 20, 200, 200);
+	ctx.fillRect(20, 20, canvas.width, canvas.height);
 }
 
 export function font(canvas: Canvas) {

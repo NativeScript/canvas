@@ -760,7 +760,7 @@ fn main() -> @location(0) vec4f {
 		//imageSmoothingEnabled(this.canvas);
 		//drawChart(this.canvas);
 		//issue127(this.canvas);
-		circle_demo(this.canvas);
+		//circle_demo(this.canvas);
 		//imageSmoothingQuality(this.canvas);
 		//lineCap(this.canvas);
 		//lineDashOffset(this.canvas);
@@ -822,7 +822,7 @@ fn main() -> @location(0) vec4f {
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)

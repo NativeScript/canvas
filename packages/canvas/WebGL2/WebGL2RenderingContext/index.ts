@@ -49,6 +49,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		}
 
 		const native = global.CanvasModule.createWebGL2Context(contextOptions, ctx, Screen.mainScreen.scale, -16777216, Screen.mainScreen.scale * 160, direction);
+
 		this._context = native;
 		this._contextPtr = nativeContext;
 	}

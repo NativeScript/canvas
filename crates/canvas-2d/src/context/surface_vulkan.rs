@@ -47,7 +47,6 @@ impl Context {
                         #[cfg(target_os = "android")]
                         log::info!("resolve of {} failed", name);
 
-
                         #[cfg(not(target_os = "android"))]
                         println!("resolve of {} failed", name);
                         std::ptr::null()
@@ -113,6 +112,8 @@ impl Context {
                 scale: density,
                 ppi,
                 engine: SurfaceEngine::Vulkan,
+                state: Default::default(),
+                is_opaque: !alpha,
             },
             vulkan_context: Some(vulkan_context),
             vulkan_texture: Some(bt),
@@ -204,6 +205,8 @@ impl Context {
                                                               None).unwrap();
 
             let bounds = skia_safe::Rect::from_wh(width, height);
+            context.surface_data.state = Default::default();
+            context.surface_data.is_opaque = !alpha;
             context.surface_data.bounds = bounds;
             context.surface = surface;
             context.vulkan_texture = Some(bt);

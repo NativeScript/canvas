@@ -412,6 +412,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (void)context2DTest:(int64_t)context;
 - (void)context2DPathTest:(int64_t)context;
+- (void)context2DConic:(int64_t)context;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end
@@ -938,6 +939,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 - (void)forceLayout:(CGFloat)width :(CGFloat)height;
 - (void)context2DTest:(int64_t)context;
 - (void)context2DPathTest:(int64_t)context;
+- (void)context2DConic:(int64_t)context;
 - (void)layoutSubviews;
 + (void)getBoundingClientRect:(UIView * _Nonnull)view :(void * _Nonnull)buffer;
 @end

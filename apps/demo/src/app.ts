@@ -4,6 +4,44 @@ require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
+// import { DomainDispatcher, initDevtools, ProtocolWrapper } from '@nativescript/devtools';
+// initDevtools();
+
+// @DomainDispatcher('Inspector')
+// class Inspector extends ProtocolWrapper {}
+
+// @DomainDispatcher('Runtime')
+// class Runtime extends ProtocolWrapper {
+// 	evaluate() {
+// 		console.log('evaluate', arguments);
+// 	}
+
+// 	runScript() {
+// 		console.log('runScript', arguments);
+// 	}
+// }
+/*
+
+@DomainDispatcher('Page')
+class CustomPage extends ProtocolWrapper {
+	addScriptToEvaluateOnNewDocument(params) {
+		if (params.worldName === 'DevTools Performance Metrics') {
+			this.emit('Runtime.executionContextCreated', {
+				context: {
+					id: 2,
+					name: params.worldName,
+					origin: '',
+					uniqueId: performance.now(),
+				},
+			});
+			return;
+		}
+
+		this.emit('Page.addScriptToEvaluateOnNewDocument', {});
+	}
+}
+*/
+
 // require('@nativescript/canvas-polyfill');
 // import { Svg } from '@nativescript/canvas-svg';
 // import { ImageAsset } from '@nativescript/canvas';
@@ -11,7 +49,8 @@ declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
 
-// Canvas.useSurface = true;
+//  Canvas.useSurface = true;
+
 Canvas.forceGL = false;
 Application.on('discardedError', (args) => {
 	console.log('discardedError', args.error, args);

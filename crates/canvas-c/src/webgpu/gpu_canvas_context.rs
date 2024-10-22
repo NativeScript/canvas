@@ -132,6 +132,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
             *surface = surface_id;
+            drop(surface);
             context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
             let mut view_data = context.view_data.lock();
             view_data.width = width;

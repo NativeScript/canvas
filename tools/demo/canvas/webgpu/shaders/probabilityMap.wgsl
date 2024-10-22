@@ -21,8 +21,10 @@ struct Buffer {
 ////////////////////////////////////////////////////////////////////////////////
 @compute @workgroup_size(64)
 fn import_level(@builtin(global_invocation_id) coord : vec3u) {
-  _ = &buf_in;
-  let offset = coord.x + coord.y * ubo.width;
+//  _ = &buf_in;
+  // noop required otherwise binding is stripped and shader fails
+  let noop = u32(buf_in.weights[0] * 0.0);
+  let offset = coord.x + coord.y * ubo.width + noop;
   buf_out.weights[offset] = textureLoad(tex_in, vec2i(coord.xy), 0).w;
 }
 

@@ -22,27 +22,30 @@ import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
 import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
 function fixup_shader_code(code: string) {
-	if (!code.includes('#storage')) {
-		if (code.includes('atomic_storage')) code = '#storage atomic_storage array<atomic<i32>>\n\n' + code;
-		if (code.includes('float_storage')) code = '#storage float_storage array<vec4<f32>>\n\n' + code;
+	let ret = `${code}`;
+	if (!ret.includes('#storage')) {
+		if (ret.includes('atomic_storage')) ret = '#storage atomic_storage array<atomic<i32>>\n\n' + ret;
+		if (ret.includes('float_storage')) ret = '#storage float_storage array<vec4<f32>>\n\n' + ret;
 	}
-	code = code.replace(/@stage\(compute\)/g, '@compute');
-	code = code.replace(/^type /gm, 'alias ');
-	code = code.replace(/^let /gm, 'const ');
-	code = code.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
-	code = code.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
-	// patch switch issue
-	code = code.replace(/case\s+(\d+)\s*:\s*{/g, 'case $1u: {');
+
+	ret = ret.replace(/@stage\(compute\)/g, '@compute');
+	ret = ret.replace(/^type /gm, 'alias ');
+	ret = ret.replace(/^let /gm, 'const ');
+	ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
+	ret = ret.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
 
 	// diagnostic is unsupport atm, remove after https://github.com/gfx-rs/wgpu/pull/6148
-	code = code.replace(/diagnostic\s*\([^)]*\)/g, '');
+	ret = ret.replace(/diagnostic\s*\([^)]*\)/g, '');
 
 	// todo: remove after wgpu adds support for textureLoad with u32
-	code = code.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
+	ret = ret.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
 		return match.replace(/0u/, '0');
 	});
 
-	return code;
+	// patch switch issue
+	ret = ret.replace(/case\s+(\d+)\s*:\s*\{/g, 'case $1u: {');
+
+	return ret;
 }
 
 // Doing so because :D
@@ -314,12 +317,9 @@ export class GPUDevice extends EventTarget {
 
 	createShaderModule(descriptor: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
 		const desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] } = {
+			...descriptor,
 			code: fixup_shader_code(descriptor.code),
 		};
-		if (typeof descriptor.label === 'string') {
-			desc.label = descriptor.label;
-		}
-
 		const module = this.native.createShaderModule(desc);
 		if (module) {
 			return GPUShaderModule.fromNative(module);

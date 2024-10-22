@@ -6,6 +6,7 @@ import { Application, Color, FillGradient, Graphics, Text, TextStyle } from 'pix
 import '@nativescript/canvas-pixi';
 import * as PIXI from 'pixi.js';
 import { device } from '@nativescript/core/platform';
+import { initDevtools } from '@pixi/devtools';
 
 // import { Viewport } from 'pixi-viewport';
 
@@ -100,12 +101,13 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 		//this.drawPatternWithCanvas(canvas);
 		//this.simpleWebGPU(canvas);
-		this.simplePlane(canvas);
+		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		//this.dynamicGraphics(canvas);
+
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -1099,6 +1101,8 @@ void main()
 	async dynamicGraphics(canvas) {
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		// canvas.width = canvas.clientWidth;
+		// canvas.height = canvas.clientHeight;
 		const app = new PIXI.Application();
 
 		await app.init({
@@ -1107,7 +1111,6 @@ void main()
 			canvas,
 			width: canvas.width,
 			height: canvas.height,
-			autoDensity: true,
 		});
 
 		app.stage.eventMode = 'static';
@@ -1147,6 +1150,7 @@ void main()
 		// Just click on the stage to draw random lines
 		window.app = app;
 		app.stage.on('pointerdown', () => {
+			console.log('click');
 			graphics.moveTo(Math.random() * 800, Math.random() * 600);
 			graphics.bezierCurveTo(Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600);
 			graphics.stroke({ width: Math.random() * 30, color: Math.random() * 0xffffff });
@@ -1740,6 +1744,16 @@ void main()
 		canvas.width = canvas.parent.clientWidth * Screen.mainScreen.scale;
 		canvas.height = canvas.parent.clientHeight * Screen.mainScreen.scale;
 		const app = new PIXI.Application();
+
+		await initDevtools({ app });
+
+		// (<any>global).window.__PIXI_DEVTOOLS__ = {
+		// 	app,
+		// 	PIXI
+		//   };
+
+		//   (<any>global).__PIXI_DEVTOOLS__ = (<any>global).window.__PIXI_DEVTOOLS__;
+
 		await app.init({
 			background: '#1099bb',
 			canvas,

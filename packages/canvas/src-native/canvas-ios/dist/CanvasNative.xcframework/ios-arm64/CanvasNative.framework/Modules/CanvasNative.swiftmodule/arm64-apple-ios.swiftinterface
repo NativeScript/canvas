@@ -160,6 +160,7 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor(unsafe) public func forceLayout(_ width: CoreFoundation.CGFloat, _ height: CoreFoundation.CGFloat)
   @objc @_Concurrency.MainActor(unsafe) public func context2DTest(_ context: Swift.Int64)
   @objc @_Concurrency.MainActor(unsafe) public func context2DPathTest(_ context: Swift.Int64)
+  @objc @_Concurrency.MainActor(unsafe) public func context2DConic(_ context: Swift.Int64)
   @_Concurrency.MainActor(unsafe) @objc override dynamic public func layoutSubviews()
   @objc deinit
   @objc @_Concurrency.MainActor(unsafe) public static func getBoundingClientRect(_ view: UIKit.UIView, _ buffer: Swift.UnsafeMutableRawPointer)

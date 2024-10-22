@@ -163,6 +163,8 @@ pub struct SurfaceData {
     pub(crate) scale: f32,
     pub(crate) ppi: f32,
     pub(crate) engine: SurfaceEngine,
+    pub(crate) state: SurfaceState,
+    pub(crate) is_opaque: bool,
 }
 
 impl SurfaceData {
@@ -180,6 +182,10 @@ impl SurfaceData {
 
     pub fn scale(&self) -> f32 {
         self.scale
+    }
+
+    pub fn is_opaque(&self) -> bool {
+        self.is_opaque
     }
 }
 
@@ -252,15 +258,15 @@ impl Context {
         }
     }
 
-    pub fn get_surface_engine(&self) -> SurfaceEngine {
+    pub fn surface_engine(&self) -> SurfaceEngine {
         self.surface_data.engine
     }
 
-    pub fn get_surface_data(&self) -> &SurfaceData {
+    pub fn surface_data(&self) -> &SurfaceData {
         &self.surface_data
     }
 
-    pub fn get_surface_state(&self) -> SurfaceState {
+    pub fn surface_state(&self) -> SurfaceState {
         self.surface_state
     }
 

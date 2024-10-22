@@ -1295,12 +1295,12 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     auto options = optionsVal.As<v8::Object>();
 
     v8::Local<v8::Value> stencilValue;
-    options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
+    auto hasDepthStencil = options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
             &stencilValue);
 
     CanvasDepthStencilState *stencil = nullptr;
 
-    if (!stencilValue.IsEmpty() && stencilValue->IsObject()) {
+    if (hasDepthStencil && stencilValue->IsObject()) {
         auto stencilObj = stencilValue.As<v8::Object>();
         stencil = new CanvasDepthStencilState{};
         stencil->depth_bias = 0;
@@ -1491,14 +1491,14 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     v8::Local<v8::Value> fragmentValue;
-    options->Get(context, ConvertToV8String(isolate, "fragment")).ToLocal(
+    auto hasFragment = options->Get(context, ConvertToV8String(isolate, "fragment")).ToLocal(
             &fragmentValue);
 
     CanvasFragmentState *fragment = nullptr;
 
     std::vector<CanvasColorTargetState> targets;
 
-    if (!fragmentValue.IsEmpty() && fragmentValue->IsObject()) {
+    if (hasFragment && fragmentValue->IsObject()) {
         auto fragmentValueObj = fragmentValue.As<v8::Object>();
         fragment = new CanvasFragmentState{};
 
@@ -1532,9 +1532,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
             v8::Local<v8::Value> writeMaskVal;
 
-            state->Get(context, ConvertToV8String(isolate, "writeMask")).ToLocal(&writeMaskVal);
+            auto hasWriteMask = state->Get(context, ConvertToV8String(isolate, "writeMask")).ToLocal(&writeMaskVal);
 
-            if (!writeMaskVal.IsEmpty() && writeMaskVal->IsUint32()) {
+            if (hasWriteMask && writeMaskVal->IsUint32()) {
                 writeMask = writeMaskVal->Uint32Value(context).FromJust();
             }
 
@@ -1544,9 +1544,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
             v8::Local<v8::Value> blendVal;
 
-            state->Get(context, ConvertToV8String(isolate, "blend")).ToLocal(&blendVal);
+            auto hasBlend = state->Get(context, ConvertToV8String(isolate, "blend")).ToLocal(&blendVal);
 
-            if (!blendVal.IsEmpty() && blendVal->IsObject()) {
+            if (hasBlend && blendVal->IsObject()) {
                 auto blendObj = blendVal.As<v8::Object>();
                 auto alpha = blendObj->Get(context, ConvertToV8String(isolate,
                                                                       "alpha")).ToLocalChecked().As<v8::Object>();
@@ -1638,10 +1638,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         v8::Local<v8::Value> constantsVal;
-        fragmentValueObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(
+        auto hasConstants = fragmentValueObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(
                 &constantsVal);
 
-        if (!constantsVal.IsEmpty() && constantsVal->IsMap()) {
+        if (hasConstants && constantsVal->IsMap()) {
             auto constants = constantsVal.As<v8::Map>();
             auto keyValues = constants->AsArray();
             auto length = keyValues->Length();
@@ -1675,11 +1675,11 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
         v8::Local<v8::Value> entryPoint;
-        fragmentValueObj->Get(context, ConvertToV8String(isolate, "entryPoint")).ToLocal(
+        auto hasEntryPoint = fragmentValueObj->Get(context, ConvertToV8String(isolate, "entryPoint")).ToLocal(
                 &entryPoint);
 
 
-        if (!entryPoint.IsEmpty() && entryPoint->IsString()) {
+        if (hasEntryPoint && entryPoint->IsString()) {
             auto ep = v8::String::Utf8Value(isolate, entryPoint);
             char *entry_point = (char *) malloc(ep.length());
             std::strcpy(entry_point, *ep);
@@ -1706,7 +1706,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     auto label = GPULabel(isolate, labelVal);
-
 
     descriptor.label = *label;
 
@@ -1738,13 +1737,13 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     v8::Local<v8::Value> multisampleValue;
-    options->Get(context, ConvertToV8String(isolate, "multisample")).ToLocal(
+    auto hasMultisample = options->Get(context, ConvertToV8String(isolate, "multisample")).ToLocal(
             &multisampleValue);
 
 
     CanvasMultisampleState *multisample = nullptr;
 
-    if (!multisampleValue.IsEmpty() && multisampleValue->IsObject()) {
+    if (hasMultisample && multisampleValue->IsObject()) {
         auto multisampleObj = multisampleValue.As<v8::Object>();
         multisample = new CanvasMultisampleState{};
         multisample->alpha_to_coverage_enabled = false;
@@ -1755,25 +1754,25 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> count;
         v8::Local<v8::Value> mask;
 
-        multisampleObj->Get(context, ConvertToV8String(isolate, "alphaToCoverageEnabled")).
+        auto hasAlphaToCoverageEnabled = multisampleObj->Get(context, ConvertToV8String(isolate, "alphaToCoverageEnabled")).
                 ToLocal(&alphaToCoverageEnabled);
 
-        if (!alphaToCoverageEnabled.IsEmpty() && alphaToCoverageEnabled->IsBoolean()) {
+        if (hasAlphaToCoverageEnabled && alphaToCoverageEnabled->IsBoolean()) {
             multisample->alpha_to_coverage_enabled = alphaToCoverageEnabled->BooleanValue(
                     isolate);
         }
 
-        multisampleObj->Get(context, ConvertToV8String(isolate, "count")).
+        auto hasCount = multisampleObj->Get(context, ConvertToV8String(isolate, "count")).
                 ToLocal(&count);
 
-        if (!count.IsEmpty() && count->IsUint32()) {
+        if (hasCount && count->IsUint32()) {
             multisample->count = count.As<v8::Uint32>()->Value();
         }
 
-        multisampleObj->Get(context, ConvertToV8String(isolate, "mask")).
+        auto hasMask = multisampleObj->Get(context, ConvertToV8String(isolate, "mask")).
                 ToLocal(&mask);
 
-        if (!mask.IsEmpty() && mask->IsNumber()) {
+        if (hasMask && mask->IsNumber()) {
             // todo verify mask
             auto maskValue = mask.As<v8::Number>()->Value();
             multisample->mask = (uint64_t) maskValue;
@@ -1786,13 +1785,13 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     v8::Local<v8::Value> primitiveValue;
-    options->Get(context, ConvertToV8String(isolate, "primitive")).ToLocal(
+    auto hasPrimitive = options->Get(context, ConvertToV8String(isolate, "primitive")).ToLocal(
             &primitiveValue);
 
 
     CanvasPrimitiveState *primitive = nullptr;
 
-    if (!primitiveValue.IsEmpty() && primitiveValue->IsObject()) {
+    if (hasPrimitive && primitiveValue->IsObject()) {
         auto primitiveObj = primitiveValue.As<v8::Object>();
         primitive = new CanvasPrimitiveState{};
 
@@ -1968,7 +1967,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     v8::Local<v8::Value> vertexValue;
-    options->Get(context, ConvertToV8String(isolate, "vertex")).ToLocal(
+   auto hasVertex = options->Get(context, ConvertToV8String(isolate, "vertex")).ToLocal(
             &vertexValue);
 
 
@@ -1978,7 +1977,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
     std::vector<std::vector<CanvasVertexAttribute>> attributes;
 
-    if (!vertexValue.IsEmpty() && vertexValue->IsObject()) {
+    if (hasVertex && vertexValue->IsObject()) {
         auto vertexObj = vertexValue.As<v8::Object>();
         vertex = new CanvasVertexState{};
 
@@ -1990,9 +1989,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         vertex->module = module->GetShaderModule();
 
         v8::Local<v8::Value> constantsVal;
-        vertexObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(&constantsVal);
+        auto hasConstants = vertexObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(&constantsVal);
 
-        if (!constantsVal.IsEmpty() && constantsVal->IsMap()) {
+        if (hasConstants && constantsVal->IsMap()) {
             auto constants = constantsVal.As<v8::Map>();
             auto keyValues = constants->AsArray();
             auto len = keyValues->Length();
@@ -2027,10 +2026,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         v8::Local<v8::Value> buffersVal;
-        vertexObj->Get(context, ConvertToV8String(isolate, "buffers")).ToLocal(&buffersVal);
+        auto hasBuffers = vertexObj->Get(context, ConvertToV8String(isolate, "buffers")).ToLocal(&buffersVal);
 
         uint64_t stride = 0;
-        if (!buffersVal.IsEmpty() && buffersVal->IsArray()) {
+        if (hasBuffers && buffersVal->IsArray()) {
             auto buffers = buffersVal.As<v8::Array>();
             auto len = buffers->Length();
 
@@ -2039,10 +2038,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
                 v8::Local<v8::Value> arrayStride;
 
-                buffer->Get(context, ConvertToV8String(isolate, "arrayStride")).ToLocal(
+                auto hasArrayStride = buffer->Get(context, ConvertToV8String(isolate, "arrayStride")).ToLocal(
                         &arrayStride);
 
-                if (!arrayStride.IsEmpty() && arrayStride->IsNumber()) {
+                if (hasArrayStride && arrayStride->IsNumber()) {
                     stride = (uint64_t) arrayStride.As<v8::Number>()->Value();
                 }
 
@@ -2050,10 +2049,10 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
                 v8::Local<v8::Value> attributesValue;
 
-                buffer->Get(context, ConvertToV8String(isolate, "attributes")).ToLocal(
+                auto hasAttributes = buffer->Get(context, ConvertToV8String(isolate, "attributes")).ToLocal(
                         &attributesValue);
 
-                if (!attributesValue.IsEmpty() && attributesValue->IsArray()) {
+                if (hasAttributes && attributesValue->IsArray()) {
                     auto attributes_array = attributesValue.As<v8::Array>();
                     auto attributes_len = attributes_array->Length();
 
@@ -2142,6 +2141,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         descriptor.vertex = vertex;
 
     }
+
 
 
     auto pipeline = canvas_native_webgpu_device_create_render_pipeline(ptr->GetGPUDevice(),

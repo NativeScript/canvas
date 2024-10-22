@@ -71,8 +71,8 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     let backends = wgt::Backends::METAL;
 
-    #[cfg(target_os = "android")]
-    let backends = wgt::Backends::VULKAN | wgt::Backends::GL;
+   #[cfg(target_os = "android")]
+    let backends = wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
 
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;

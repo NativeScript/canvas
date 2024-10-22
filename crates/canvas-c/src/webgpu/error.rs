@@ -3,6 +3,7 @@ use std::ffi::CString;
 use std::fmt::Display;
 use std::os::raw::c_char;
 use std::sync::Arc;
+use std::fmt::Write;
 
 fn format_error(_context: &Arc<wgpu_core::global::Global>, err: &(impl Error + 'static)) -> String {
     let mut output = String::new();
@@ -80,7 +81,7 @@ pub(crate) fn handle_error_fatal(
     // log::error!("Error in {operation}: {f}",
     //     f = error);
 
-    let error = cause.to_string();
+    let error = cause;
 
     #[cfg(target_os = "android")]
     log::error!("Error in {operation}: {error}");
@@ -129,8 +130,6 @@ fn fmt_err(err: &(dyn Error + 'static)) -> String {
     let mut level = 0;
 
     fn print_tree(output: &mut String, level: &mut usize, e: &(dyn Error + 'static)) {
-        use std::fmt::Write;
-
         let mut print = |e: &(dyn Error + 'static)| {
             writeln!(output, "{}{}", " ".repeat(*level * 2), e).unwrap();
 
@@ -140,15 +139,13 @@ fn fmt_err(err: &(dyn Error + 'static)) -> String {
                 *level -= 1;
             }
         };
-        /*if let Some(multi) = e.downcast_ref::<wgpu_core::error::MultiError>() {
+        if let Some(multi) = e.downcast_ref::<wgpu_core::error::MultiError>() {
             for e in multi.errors() {
                 print(e);
             }
         } else {
             print(e);
         }
-        */
-        print(e);
     }
 
     print_tree(&mut output, &mut level, err);

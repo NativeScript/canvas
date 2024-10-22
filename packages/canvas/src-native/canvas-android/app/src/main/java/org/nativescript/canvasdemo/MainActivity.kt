@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		NSCCanvas.forceGL = false
+		NSCCanvas.forceGL = true
 		//	svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
@@ -293,6 +293,46 @@ class MainActivity : AppCompatActivity() {
 
 			override fun surfaceCreated() {}
 		}
+
+	//	val offscreen  = NSCCanvas(this, NSCCanvas.SurfaceType.Surface)
+
+//		val a = offscreen.initContext("webgl")
+
+		/*
+
+		val c = offscreen.create2DContext(true,
+			true,
+			true,
+			false,
+			0,
+			true,
+			false,
+			false,
+			false,
+			false)
+
+		NSCCanvas.context2DTest(c)
+
+
+		val root = findViewById<ViewGroup>(android.R.id.content)
+
+		root.addView(offscreen)
+
+		val bm = Bitmap.createBitmap(1000,100, Bitmap.Config.ARGB_8888)
+
+		val canvas = Canvas(bm)
+
+		offscreen.draw(canvas)
+
+		val im = ImageView(this)
+		im.setImageBitmap(bm)
+
+
+		root.addView(im)
+
+		*/
+
+
 
 //		val view = NSCCanvas(this)
 //

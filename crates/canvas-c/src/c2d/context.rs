@@ -71,10 +71,10 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     let alpha = context.alpha;
     context.make_current();
     let context = &mut context.context;
-    let density = context.get_surface_data().scale();
-    let ppi = context.get_surface_data().ppi();
+    let density = context.surface_data().scale();
+    let ppi = context.surface_data().ppi();
 
-    if width.floor() == context.get_surface_data().width().floor() && height.floor() == context.get_surface_data().height().floor() {
+    if width.floor() == context.surface_data().width().floor() && height.floor() == context.surface_data().height().floor() {
         return;
     }
 
@@ -135,8 +135,8 @@ pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
 
     let alpha = context.alpha;
     let context = &mut context.context;
-    let density = context.get_surface_data().scale();
-    let ppi = context.get_surface_data().ppi();
+    let density = context.surface_data().scale();
+    let ppi = context.surface_data().ppi();
     Context::resize(context, width, height, density, alpha, ppi);
 }
 

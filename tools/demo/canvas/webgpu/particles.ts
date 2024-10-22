@@ -8,16 +8,15 @@ export async function run(canvas: Canvas) {
 	const particleWGSL = await File.fromPath(path + '/webgpu/shaders/particle.wgsl').readText();
 	const probabilityMapWGSL = await File.fromPath(path + '/webgpu/shaders/probabilityMap.wgsl').readText();
 
-	const numParticles = 50000;
+	const numParticles = 1000;
 	const particlePositionOffset = 0;
 	const particleColorOffset = 4 * 4;
 	const particleInstanceByteSize =
 		3 * 4 + // position
-		1 * 4 + // lifetime
+		4 + // lifetime
 		4 * 4 + // color
 		3 * 4 + // velocity
-		1 * 4 + // padding
-		0;
+		4; // padding
 
 	const adapter = await navigator.gpu.requestAdapter();
 	const device: GPUDevice = (await adapter.requestDevice()) as never;
@@ -132,8 +131,7 @@ export async function run(canvas: Canvas) {
 		3 * 4 + // right : vec3f
 		4 + // padding
 		3 * 4 + // up : vec3f
-		4 + // padding
-		0;
+		4; // padding
 	const uniformBuffer = device.createBuffer({
 		size: uniformBufferSize,
 		usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
@@ -238,9 +236,8 @@ export async function run(canvas: Canvas) {
 		});
 
 		const probabilityMapUBOBufferSize =
-			1 * 4 + // stride
-			3 * 4 + // padding
-			0;
+			4 + // stride
+			3 * 4; // padding
 		const probabilityMapUBOBuffer = device.createBuffer({
 			size: probabilityMapUBOBufferSize,
 			usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
@@ -261,13 +258,6 @@ export async function run(canvas: Canvas) {
 			const levelWidth = textureWidth >> level;
 			const levelHeight = textureHeight >> level;
 			const pipeline = level == 0 ? probabilityMapImportLevelPipeline.getBindGroupLayout(0) : probabilityMapExportLevelPipeline.getBindGroupLayout(0);
-
-			const view = texture.createView({
-				format: 'rgba8unorm',
-				dimension: '2d',
-				baseMipLevel: level,
-				mipLevelCount: 1,
-			});
 
 			const probabilityMapBindGroup = device.createBindGroup({
 				layout: pipeline,
@@ -290,12 +280,12 @@ export async function run(canvas: Canvas) {
 					{
 						// tex_in / tex_out
 						binding: 3,
-						resource: view,
-					},
-					{
-						// tex_in / tex_out
-						binding: 4,
-						resource: view,
+						resource: texture.createView({
+							format: 'rgba8unorm',
+							dimension: '2d',
+							baseMipLevel: level,
+							mipLevelCount: 1,
+						}),
 					},
 				],
 			});
@@ -326,10 +316,10 @@ export async function run(canvas: Canvas) {
 	};
 
 	const simulationUBOBufferSize =
-		1 * 4 + // deltaTime
+		4 + // deltaTime
+		4 + // brightnessFactor
 		3 * 4 + // padding
-		4 * 4 + // seed
-		0;
+		4 * 4; // seed
 	const simulationUBOBuffer = device.createBuffer({
 		size: simulationUBOBufferSize,
 		usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
@@ -368,10 +358,6 @@ export async function run(canvas: Canvas) {
 			},
 			{
 				binding: 2,
-				resource: tv,
-			},
-			{
-				binding: 3,
 				resource: tv,
 			},
 		],

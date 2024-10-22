@@ -59,6 +59,8 @@ impl Context {
                 scale: density,
                 ppi,
                 engine: SurfaceEngine::Metal,
+                state: Default::default(),
+                is_opaque: !alpha,
             },
             surface,
             surface_state: Default::default(),
@@ -128,6 +130,8 @@ impl Context {
                 scale: density,
                 ppi,
                 engine: SurfaceEngine::Metal,
+                state: Default::default(),
+                is_opaque: !alpha,
             },
             surface,
             surface_state: Default::default(),
@@ -183,6 +187,7 @@ impl Context {
         }
 
         if let Some(surface) = surface {
+            context.surface_data.state = Default::default();
             context.surface = surface;
             context.metal_texture_info = info;
         }

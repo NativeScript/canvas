@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 extern crate android_logger;
-extern crate core;
 extern crate log;
 
 use std::os::raw::c_void;
@@ -17,7 +16,7 @@ use jni::sys::{jfloat, jlong};
 use log::LevelFilter;
 
 // #[cfg(feature = "vulkan")]
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{ nativeCreate2dContextVulkan};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion};
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
@@ -93,6 +92,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
           //  #[cfg(feature = "vulkan")] {
                 canvas_method_names.push("nativeCreate2dContextVulkan");
+                canvas_method_names.push("nativeGetVulkanVersion");
           //  }
 
             let canvas_signatures = if ret >= ANDROID_O {
@@ -115,11 +115,12 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(JJII)V",
                     "(JLandroid/view/Surface;II)J",
-                    "(JLandroid/view/Surface;II)V"
+                    "(JLandroid/view/Surface;II)V",
                 ];
 
            //     #[cfg(feature = "vulkan")]{
                     ret.push("(IILandroid/view/Surface;ZFIFI)J");
+                    ret.push("([I)V");
                // }
 
                 ret
@@ -148,6 +149,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
              //  #[cfg(feature = "vulkan")]{
                    ret.push("!(IILandroid/view/Surface;ZFIFI)J");
+                    ret.push("!([I)V");
              //  }
                 ret
             };
@@ -202,6 +204,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
 
           //  #[cfg(feature = "vulkan")] {
                 canvas_methods.push(nativeCreate2dContextVulkan as *mut c_void);
+                canvas_methods.push(nativeGetVulkanVersion as *mut c_void);
          //   }
 
             let canvas_native_methods: Vec<NativeMethod> =

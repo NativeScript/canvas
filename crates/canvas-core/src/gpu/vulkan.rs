@@ -175,7 +175,7 @@ impl AshGraphics {
             image_available_semaphore,
             swap_chain: None,
             surface: None,
-            surface_size: vk::Extent2D { width: 0, height: 0 },
+            surface_size: Extent2D { width: 0, height: 0 },
             swap_chain_images: None,
             surface_loader
         })
@@ -346,10 +346,16 @@ impl VulkanContext {
         }
         //  let old_swap_chain = self.ash.swap_chain.unwrap_or_else(|| );
 
+        let min_image_count = if capabilities.min_image_count + 1 <= capabilities.max_image_count {
+            capabilities.min_image_count + 1
+        }else {
+            capabilities.max_image_count
+        };
+
         let info = SwapchainCreateInfoKHR::default()
             .flags(raw_flags)
             .surface(surface)
-            .min_image_count(capabilities.min_image_count)
+            .min_image_count(min_image_count)
             .image_format(formats[0].format)
             .image_color_space(formats[0].color_space)
             .image_extent(Extent2D { width, height })

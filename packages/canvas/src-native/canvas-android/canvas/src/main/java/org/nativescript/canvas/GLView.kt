@@ -33,7 +33,6 @@ class GLView : TextureView, SurfaceTextureListener {
 		surfaceTextureListener = this
 	}
 
-
 	private fun resize() {
 		canvas?.resize()
 	}
@@ -64,16 +63,12 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-		if (isReady) {
+		if (isReady || !isCreatedWithZeroSized) {
 			resize()
 			return
 		}
-		if (!isCreatedWithZeroSized) {
-			// resize
-			resize()
-			return
-		}
-		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
+
+		if (width != 0 || height != 0) {
 			this.surface = Surface(surface)
 			isCreatedWithZeroSized = false
 			canvas?.let {

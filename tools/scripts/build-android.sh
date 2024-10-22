@@ -45,6 +45,10 @@ fi
 
 RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
 
+
+
+# cargo build --target $TARGET -p canvas-android
+
 #pushd packages/canvas/src-native/canvas-android
 #./gradlew :canvas:assembleRelease
 #popd

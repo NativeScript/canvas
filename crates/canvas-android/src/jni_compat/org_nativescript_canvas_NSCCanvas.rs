@@ -1,5 +1,5 @@
-use jni::objects::{JClass, JObject};
-use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::objects::{JClass, JIntArray, JObject};
+use jni::sys::{jboolean, jfloat, jint, jintArray, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use raw_window_handle::RawWindowHandle;
@@ -13,12 +13,47 @@ use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
 use canvas_c::WebGLState;
 use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gpu::gl::GLContext;
+use canvas_core::gpu::vulkan::VulkanContext;
 
 fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
-    let handle = raw_window_handle::AndroidNdkWindowHandle::new(ptr::NonNull::new(window.ptr().as_ptr() as *mut c_void).unwrap());
+    let handle = raw_window_handle::AndroidNdkWindowHandle::new(
+        ptr::NonNull::new(window.ptr().as_ptr() as *mut c_void).unwrap(),
+    );
     RawWindowHandle::AndroidNdk(handle)
 }
 
+#[no_mangle]
+pub extern "system" fn nativeGetVulkanVersion(mut env: JNIEnv, _: JClass, array: JIntArray) {
+    #[cfg(feature = "vulkan")]
+    {
+        unsafe {
+            if let Some(version) = VulkanContext::version() {
+                if let Ok(elements) =
+                    env.get_array_elements_critical(&array, jni::objects::ReleaseMode::CopyBack)
+                {
+                    let size = elements.len();
+                    if size >= 3 {
+                        let buf = std::slice::from_raw_parts_mut(
+                            elements.as_ptr() as *mut jint,
+                            size * std::mem::size_of::<i32>(),
+                        );
+                        buf[0] = version.0 as jint;
+                        buf[1] = version.1 as jint;
+                        buf[2] = version.2 as jint;
+                    }
+                    drop(elements);
+                    return;
+                }
+
+                let _ = env.set_int_array_region(
+                    &array,
+                    0,
+                    &[version.0 as jint, version.1 as jint, version.2 as jint],
+                );
+            }
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "system" fn nativeInitWebGPU(
@@ -60,8 +95,9 @@ pub extern "system" fn nativeResizeWebGPU(
         let interface = env.get_native_interface();
         if let Some(window) = NativeWindow::from_surface(interface, surface) {
             let ptr = window.ptr().as_ptr();
-            let context: *mut canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext = context as _;
-            #[cfg(any(target_os = "android"))]
+            let context: *mut canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext =
+                context as _;
+            // #[cfg(any(target_os = "android"))]
             canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize(
                 context,
                 ptr as *mut c_void,
@@ -71,7 +107,6 @@ pub extern "system" fn nativeResizeWebGPU(
         }
     }
 }
-
 
 // #[cfg(feature = "vulkan")]
 #[no_mangle]
@@ -182,8 +217,7 @@ pub extern "system" fn nativeInitWebGLNoSurface(
     }
 
     if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
-        let context = canvas_c::canvas_native_webgl_create(
-            ptr::null_mut(),
+        let context = canvas_c::canvas_native_webgl_create_no_window(
             width,
             height,
             version as i32,
@@ -197,6 +231,7 @@ pub extern "system" fn nativeInitWebGLNoSurface(
             stencil == JNI_TRUE,
             desynchronized == JNI_TRUE,
             xr_compatible == JNI_TRUE,
+            false,
         );
         return Box::into_raw(Box::new(context)) as jlong;
     }
@@ -219,7 +254,6 @@ pub extern "system" fn nativeCreate2DContext(
             let width = window.width();
             let height = window.height();
 
-
             let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
                 canvas_2d::context::Context::new_gl(
                     window.ptr().as_ptr() as _,
@@ -229,7 +263,9 @@ pub extern "system" fn nativeCreate2DContext(
                     alpha == JNI_TRUE,
                     font_color,
                     ppi,
-                    canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
+                        direction as u32,
+                    ),
                 ),
                 alpha == JNI_TRUE,
             );
@@ -284,18 +320,35 @@ pub extern "system" fn nativeUpdate2DSurface(
 
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            {
+                let context = context.get_context_mut();
+                let alpha = !context.surface_data().is_opaque();
+                if let Some(context) = context.gl_context.as_mut() {
+                    let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+                        alpha,
+                        false,
+                        false,
+                        false,
+                        PowerPreference::Default,
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                    );
+
+                    let handle = raw_window_handle::AndroidNdkWindowHandle::new(
+                        NonNull::new(window.ptr().as_ptr() as _).unwrap(),
+                    );
+                    let handle = RawWindowHandle::AndroidNdk(handle);
+                    context.set_window_surface(&mut attr, width, height, handle);
+                    context.make_current();
+                }
+            }
+
             let width = width as f32;
             let height = height as f32;
-
-            #[cfg(feature = "gl")]{
-                let context = context.get_context_mut();
-                context.gl_context.set_window_surface(
-                    width,
-                    height,
-                    NonNull::new(window.ptr().as_ptr() as _).unwrap(),
-                );
-                context.make_current();
-            }
 
             context.resize(width, height)
         }
@@ -337,8 +390,8 @@ fn native_update_gl_no_surface(width: jint, height: jint, context: jlong) {
     }
     let context = context as *mut WebGLState;
     let context = unsafe { &mut *context };
-    context.get_inner_mut()
-        .resize_pbuffer(width, height);
+    context.get_inner().make_current();
+    context.get_inner_mut().resize_pbuffer(width, height);
 }
 
 #[no_mangle]
@@ -421,6 +474,11 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
     context.render();
+
+    log::info!(
+        "data {:?}",
+        context.get_context_mut().as_data_url("image/png", 100)
+    )
 }
 
 #[no_mangle]

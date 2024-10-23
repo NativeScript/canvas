@@ -48,11 +48,12 @@ void main() {
 `;
 
 	function main() {
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
 		var gl = canvas.getContext ? canvas.getContext('webgl2') : canvas;
 		if (!gl) {
 			return;
 		}
-
 		// Use our boilerplate utils to compile the shaders and link into a program
 		var program = createProgramFromScripts(gl, [
 			{ type: 'vertex', src: vertexShaderSource },
@@ -185,6 +186,8 @@ void main() {
 		requestAnimationFrame(drawScene);
 
 		const { drawingBufferWidth, drawingBufferHeight } = gl;
+
+		console.log('drawingBufferWidth', drawingBufferWidth, drawingBufferHeight);
 
 		// Draw the scene.
 		function drawScene(time) {

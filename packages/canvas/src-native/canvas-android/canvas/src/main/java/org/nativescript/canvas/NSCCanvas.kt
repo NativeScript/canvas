@@ -67,6 +67,11 @@ class NSCCanvas : FrameLayout {
 	var nativeContext: Long = 0
 		private set
 
+	val nativeContextString: String
+		get() {
+			return nativeContext.toString()
+		}
+
 	val surface: Surface?
 		get() {
 			return when (surfaceType) {
@@ -154,28 +159,12 @@ class NSCCanvas : FrameLayout {
 
 	val drawingBufferWidth: Int
 		get() {
-			return when (surfaceType) {
-				SurfaceType.Texture -> {
-					textureView.width
-				}
-
-				SurfaceType.Surface -> {
-					surfaceView.width
-				}
-			}
+			return surfaceWidth
 		}
 
 	val drawingBufferHeight: Int
 		get() {
-			return when (surfaceType) {
-				SurfaceType.Texture -> {
-					textureView.height
-				}
-
-				SurfaceType.Surface -> {
-					surfaceView.height
-				}
-			}
+			return surfaceHeight
 		}
 
 	internal fun surfaceDestroyed() {
@@ -841,7 +830,7 @@ class NSCCanvas : FrameLayout {
 		internal var isLibraryLoaded = false
 		const val TAG = "CanvasView"
 
-		internal var vulkanVersion: IntArray = intArrayOf(0,0,0)
+		internal var vulkanVersion: IntArray = intArrayOf(0, 0, 0)
 
 		init {
 			loadLib()
@@ -1115,6 +1104,9 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@CriticalNative
 		external fun nativeContext2DPathTest(context: Long)
+
+		@JvmStatic
+		external fun nativeContext2DConicTest(context: Long)
 
 		@JvmStatic
 		@CriticalNative

@@ -384,6 +384,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
 + (BOOL)forceGL SWIFT_WARN_UNUSED_RESULT;
 + (void)setForceGL:(BOOL)value;
 @property (nonatomic) enum CanvasFit fit;
+@property (nonatomic) BOOL weblikeScale;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;
@@ -911,6 +912,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class) BOOL forceGL;)
 + (BOOL)forceGL SWIFT_WARN_UNUSED_RESULT;
 + (void)setForceGL:(BOOL)value;
 @property (nonatomic) enum CanvasFit fit;
+@property (nonatomic) BOOL weblikeScale;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDictionary * _Nonnull store;)
 + (NSMutableDictionary * _Nonnull)store SWIFT_WARN_UNUSED_RESULT;
 + (NSMapTable<NSString *, NSCCanvas *> * _Nonnull)getViews SWIFT_WARN_UNUSED_RESULT;

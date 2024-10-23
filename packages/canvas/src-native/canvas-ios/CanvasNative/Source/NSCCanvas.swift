@@ -66,8 +66,15 @@ public class NSCCanvas: UIView {
     }
     
     public var fit = CanvasFit.FitX {
-        willSet {
+        didSet {
             scaleSurface()
+        }
+    }
+    
+    public var weblikeScale = false {
+        didSet {
+            glkView.layer.transform = CATransform3DIdentity
+            mtlView.layer.transform = CATransform3DIdentity
         }
     }
         
@@ -505,11 +512,15 @@ public class NSCCanvas: UIView {
     }
     
     private func resize(){
-        if(nativeContext == 0){return}
+        if(nativeContext == 0){
+            scaleSurface()
+            return
+        }
         if(!is2D && engine == .GPU){
             let width = UInt32(surfaceWidth)
             let height =  UInt32(surfaceHeight)
             CanvasHelpers.resizeWebGPUWithView(nativeContext, self, width, height)
+            scaleSurface()
             return
         }
         if(engine == .GL){
@@ -566,6 +577,9 @@ public class NSCCanvas: UIView {
     }
     
     private func scaleSurface(){
+        if(!weblikeScale == false){
+            return
+        }
         if(surfaceWidth == 0 || surfaceHeight == 0){
             return
         }

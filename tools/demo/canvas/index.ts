@@ -801,7 +801,7 @@ fn main() -> @location(0) vec4f {
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
-		//this.coloredParticles(this.canvas);
+		this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
 		//swarm(this.canvas);
 		//this.drawHouse(this.canvas);
@@ -822,7 +822,7 @@ fn main() -> @location(0) vec4f {
 		//rainbowOctopus(this.canvas);
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
@@ -1292,6 +1292,8 @@ fn main() -> @location(0) vec4f {
 	}
 
 	coloredParticles(canvas) {
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
 		var ctx = canvas.getContext('2d'),
 			particles = [],
 			patriclesNum = 100,

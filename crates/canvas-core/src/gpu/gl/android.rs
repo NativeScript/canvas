@@ -34,7 +34,7 @@ pub struct GLContextRaw {
     surface: RawSurface,
     context: RawContext,
     display: RawDisplay,
-    dimensions: (i32, i32),
+    dimensions: Arc<RwLock<Dimensions>>,
 }
 
 impl GLContextRaw {
@@ -56,12 +56,19 @@ impl GLContextRaw {
     }
 }
 
+
+#[derive(Debug, Copy, Clone, Default)]
+struct Dimensions {
+    width: i32,
+    height: i32,
+}
+
 #[derive(Default)]
 pub(crate) struct GLContextInner {
     surface: Option<SurfaceHelper>,
     context: Option<PossiblyCurrentContext>,
     display: Option<Display>,
-    dimensions: (i32, i32),
+    dimensions: Arc<RwLock<Dimensions>>,
 }
 
 #[derive(Default)]
@@ -225,13 +232,13 @@ impl GLContext {
 
         let display = self.0.display.as_ref().map(|display| {
             display.raw_display()
-        }).unwrap_or_else(|| {RawDisplay::Egl(std::ptr::null())});
+        }).unwrap_or_else(|| { RawDisplay::Egl(std::ptr::null()) });
 
         GLContextRaw {
             surface,
             context,
             display,
-            dimensions: self.0.dimensions,
+            dimensions: Arc::clone(&self.0.dimensions),
         }
     }
     pub fn set_surface(
@@ -363,8 +370,9 @@ impl GLContext {
 
                         self.0.surface = surface;
 
-                        self.0.dimensions = (width, height);
-
+                        {
+                            *self.0.dimensions.write() = Dimensions { width, height };
+                        }
 
                         ret
                     }
@@ -560,7 +568,7 @@ impl GLContext {
                             surface,
                             context,
                             display: Some(display),
-                            dimensions: (width, height),
+                            dimensions: Arc::new(RwLock::new(Dimensions { width, height })),
                         };
 
                         let ret = GLContext(gl_context);
@@ -718,7 +726,7 @@ impl GLContext {
                                 .ok();
 
                             self.0.surface = surface;
-                           let ctx = match (context, self.0.surface.as_ref()) {
+                            let ctx = match (context, self.0.surface.as_ref()) {
                                 (Some(context), Some(surface)) => {
                                     match surface {
                                         SurfaceHelper::Window(window) => {
@@ -731,7 +739,9 @@ impl GLContext {
                                 _ => None
                             };
                             self.0.context = ctx;
-                            self.0.dimensions = (width, height);
+                            {
+                                *self.0.dimensions.write() = Dimensions { width, height }
+                            }
                         }
                     }
                 }
@@ -813,8 +823,12 @@ impl GLContext {
                         .map(SurfaceHelper::Pbuffer)
                         .ok();
 
+                    {
+                        *self.0.dimensions.write() = Dimensions { width, height }
+                    }
+
                     self.0.surface = surface;
-                    self.0.dimensions = (width, height);
+
                 }
             }
         }
@@ -988,7 +1002,7 @@ impl GLContext {
                             surface,
                             context,
                             display: Some(display),
-                            dimensions: (width, height),
+                            dimensions: Arc::new(RwLock::new(Dimensions { width, height })),
                         }))
                     }
                     None => None,
@@ -1109,14 +1123,14 @@ impl GLContext {
     }
 
     pub fn get_surface_width(&self) -> i32 {
-        self.0.dimensions.0
+        self.0.dimensions.read().width
     }
 
-    pub fn get_surface_height(&self) -> i32 {
-        self.0.dimensions.1
+    pub fn get_surface_height(&self) -> i32 {self.0.dimensions.read().height
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
-        self.0.dimensions
+        let lock = self.0.dimensions.read();
+        (lock.width as i32, lock.height as i32)
     }
 }

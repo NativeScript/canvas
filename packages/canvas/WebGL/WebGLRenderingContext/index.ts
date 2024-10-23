@@ -65,7 +65,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		if (contextOptions) {
 			let nativeContext = '0';
 			if (global.isAndroid) {
-				nativeContext = context.getNativeContext().toString();
+				nativeContext = context.getNativeContextString();
 			}
 
 			if (global.isIOS) {

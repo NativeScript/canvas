@@ -16,6 +16,8 @@ export function createChaosLines(canvas: HTMLCanvasElement) {
 	}
 
 	function initWebGL(canvas) {
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
 		const gl = canvas.getContext('webgl2');
 
 		if (!gl) {

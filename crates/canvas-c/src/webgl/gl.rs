@@ -277,7 +277,7 @@ pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
 }
 
 impl WebGLState {
-    #[cfg(target_os = "android")]
+   #[cfg(target_os = "android")]
     pub fn new_with_view(
         view: *mut c_void,
         width: i32,
@@ -299,7 +299,7 @@ impl WebGLState {
             alpha, antialias, depth, fail_if_major_performance_caveat, power_preference.into(), premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, false,
         );
 
-        let context = if view.is_null() {
+        let context = if !view.is_null() {
             let handle = raw_window_handle::AndroidNdkWindowHandle::new(NonNull::new(view).unwrap());
             let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
             GLContext::create_window_context(

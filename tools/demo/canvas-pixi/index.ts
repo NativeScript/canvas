@@ -7,6 +7,7 @@ import '@nativescript/canvas-pixi';
 import * as PIXI from 'pixi.js';
 import { device } from '@nativescript/core/platform';
 import { initDevtools } from '@pixi/devtools';
+import { context } from '@nativescript/canvas-three';
 
 // import { Viewport } from 'pixi-viewport';
 
@@ -1099,14 +1100,15 @@ void main()
 	}
 
 	async dynamicGraphics(canvas) {
-		canvas.width = canvas.clientWidth * window.devicePixelRatio;
-		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
+		canvas.height = canvas.clientHeight; // * window.devicePixelRatio;
 		// canvas.width = canvas.clientWidth;
 		// canvas.height = canvas.clientHeight;
 		const app = new PIXI.Application();
 
 		await app.init({
 			backgroundColor: 0x1099bb,
+			//preferWebGLVersion: 2,
 			preference: 'webgpu',
 			canvas,
 			width: canvas.width,

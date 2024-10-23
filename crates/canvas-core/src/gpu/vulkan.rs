@@ -19,6 +19,7 @@ pub struct AshGraphics {
     pub entry: Entry,
     pub instance: Instance,
     pub image_available_semaphore: vk::Semaphore,
+    pub present_semaphore: vk::Semaphore,
     pub surface_size: vk::Extent2D,
     pub alpha: bool,
     pub surface_loader: ash::khr::surface::Instance,
@@ -160,6 +161,8 @@ impl AshGraphics {
         let semaphore_info = vk::SemaphoreCreateInfo::default();
         let image_available_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
 
+        let present_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
+
         let surface_loader = ash::khr::surface::Instance::new(&entry, &instance);
 
         Ok(AshGraphics {
@@ -173,6 +176,7 @@ impl AshGraphics {
             instance,
             entry,
             image_available_semaphore,
+            present_semaphore,
             swap_chain: None,
             surface: None,
             surface_size: Extent2D { width: 0, height: 0 },
@@ -333,17 +337,17 @@ impl VulkanContext {
             vk::CompositeAlphaFlagsKHR::OPAQUE
         };
 
-        if let Some(swap_chain) = self.ash.swap_chain.take() {
-            self.ash.swap_chain_loader.destroy_swapchain(swap_chain, None);
-        }
-
-
         if let Some(views) = self.ash.swap_chain_image_view.as_mut() {
             views.iter().for_each(|image| {
                 self.ash.device.destroy_image_view(*image, None);
             });
             views.clear();
         }
+
+        if let Some(swap_chain) = self.ash.swap_chain.take() {
+            self.ash.swap_chain_loader.destroy_swapchain(swap_chain, None);
+        }
+
         //  let old_swap_chain = self.ash.swap_chain.unwrap_or_else(|| );
 
         let min_image_count = if capabilities.min_image_count + 1 <= capabilities.max_image_count {
@@ -458,11 +462,13 @@ impl VulkanContext {
     pub fn present(&mut self) {
         let _ = self.current_image();
         unsafe {
+            let wait_semaphores = [self.ash.present_semaphore];
             if let (Some(image_index), Some(swapchain)) = (self.ash.current_index, self.ash.swap_chain.as_ref()) {
                 let swapchains = [*swapchain];
                 let image_indices = [image_index];
 
                 let present_info = vk::PresentInfoKHR::default()
+                    .wait_semaphores(&wait_semaphores)
                     .swapchains(&swapchains)
                     .image_indices(&image_indices);
 

@@ -1,3 +1,10 @@
+use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
+use canvas_2d::context::paths::path::Path;
+use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
+use canvas_c::WebGLState;
+use canvas_core::context_attributes::PowerPreference;
+use canvas_core::gpu::gl::GLContext;
+use canvas_core::gpu::vulkan::VulkanContext;
 use jni::objects::{JClass, JIntArray, JObject};
 use jni::sys::{jboolean, jfloat, jint, jintArray, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
@@ -7,13 +14,6 @@ use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect};
 use std::ffi::c_void;
 use std::ptr;
 use std::ptr::NonNull;
-
-use canvas_2d::context::paths::path::Path;
-use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
-use canvas_c::WebGLState;
-use canvas_core::context_attributes::PowerPreference;
-use canvas_core::gpu::gl::GLContext;
-use canvas_core::gpu::vulkan::VulkanContext;
 
 fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
     let handle = raw_window_handle::AndroidNdkWindowHandle::new(
@@ -97,7 +97,7 @@ pub extern "system" fn nativeResizeWebGPU(
             let ptr = window.ptr().as_ptr();
             let context: *mut canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext =
                 context as _;
-            // #[cfg(any(target_os = "android"))]
+            #[cfg(any(target_os = "android"))]
             canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize(
                 context,
                 ptr as *mut c_void,
@@ -187,7 +187,11 @@ pub extern "system" fn nativeInitWebGL(
 
                 drop(env);
 
-                return Box::into_raw(Box::new(context)) as jlong;
+                if context.is_null() {
+                    return 0;
+                }
+
+                return context as jlong;
             }
         }
     }
@@ -233,7 +237,11 @@ pub extern "system" fn nativeInitWebGLNoSurface(
             xr_compatible == JNI_TRUE,
             false,
         );
-        return Box::into_raw(Box::new(context)) as jlong;
+
+        if context.is_null() {
+            return 0;
+        }
+        return context as jlong;
     }
     0
 }
@@ -474,11 +482,6 @@ pub extern "system" fn nativeContext2DTest(context: jlong) {
         ctx.fill_rect_xywh(0., 0., 300., 300.);
     }
     context.render();
-
-    log::info!(
-        "data {:?}",
-        context.get_context_mut().as_data_url("image/png", 100)
-    )
 }
 
 #[no_mangle]
@@ -561,6 +564,33 @@ pub extern "system" fn nativeContext2DPathTestNormal(_env: JNIEnv, _: JClass, co
             Some(&mut region),
             canvas_2d::context::drawing_paths::fill_rule::FillRule::EvenOdd,
         );
+    }
+    context.render();
+}
+
+
+#[no_mangle]
+pub extern "system" fn nativeContext2DConicTest(_env: JNIEnv, _: JClass, context: jlong) {
+    if context == 0 {
+        return;
+    }
+
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+
+    context.make_current();
+    {
+        let ctx = context.get_context_mut();
+
+        let (width, height) = ctx.dimensions();
+        let mut gradient = ctx.create_conic_gradient(90., width / 2., height / 2.);
+        gradient.add_color_stop_str(0., "red");
+        gradient.add_color_stop_str(0.25, "orange");
+        gradient.add_color_stop_str(0.5, "yellow");
+        gradient.add_color_stop_str(0.75, "green");
+        gradient.add_color_stop_str(1., "blue");
+        ctx.set_fill_style(PaintStyle::Gradient(gradient));
+        ctx.fill_rect_xywh(20., 20., width, height);
     }
     context.render();
 }

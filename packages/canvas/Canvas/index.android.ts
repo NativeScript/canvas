@@ -339,6 +339,7 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
+
 		if (typeof type === 'string') {
 			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context) {
@@ -380,9 +381,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, contextAttributes) };
 					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
-
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
-
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';
 					this._contextType = ContextType.WebGL2;

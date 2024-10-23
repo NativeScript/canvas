@@ -171,6 +171,8 @@ export class Canvas extends CanvasBase {
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
 			this._canvas.surfaceWidth = newValue;
+			const { fit, transform } = this._getFit(this._canvas.frame);
+			this._updateScale(fit, transform ?? CATransform3DIdentity);
 		}
 	}
 
@@ -191,6 +193,8 @@ export class Canvas extends CanvasBase {
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
 			this._canvas.surfaceHeight = newValue;
+			const { fit, transform } = this._getFit(this._canvas.frame);
+			this._updateScale(fit, transform ?? CATransform3DIdentity);
 		}
 	}
 
@@ -288,16 +292,15 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	_setNativeViewFrame(nativeView: any, frame: CGRect): void {
+	_getFit(frame: CGRect): { fit: number; frame: CGRect; transform?: CATransform3D } {
 		const styleWidth = this.style.width;
 		const styleHeight = this.style.height;
-		let fit;
+		let fit = 1;
+		let newFrame = frame;
+
 		if (typeof styleWidth === 'object' && typeof styleHeight === 'object') {
 			if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
-				// const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
-				//const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
 				fit = 1;
-				// nativeView.frame = frame;
 			} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
 				const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 				const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
@@ -307,37 +310,86 @@ export class Canvas extends CanvasBase {
 				} else {
 					fit = 1;
 				}
-
-				// nativeView.frame = frame;
 			} else {
 				fit = 1;
-				//	nativeView.frame = frame;
 			}
 		} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
 			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip' || styleWidth?.unit === '%') {
 				fit = 2;
-				//	nativeView.frame = frame;
 			}
 		} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
 			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip' || styleHeight?.unit === '%') {
 				fit = 3;
-				//	nativeView.frame = frame;
 			}
 		} else if (styleWidth === 'auto' && styleHeight === 'auto') {
 			// when auto/auto is set force the frame size to be the same as the canvas
 			const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 			const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
-			const newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
+			newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
 			fit = 0;
-			//nativeView.frame = newFrame;
-			frame = newFrame;
 		} else {
-			//	nativeView.frame = frame;
+			fit = 1;
 		}
+
+		let transform: CATransform3D | undefined;
+
+		const scaledInternalWidth = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
+		const scaledInternalHeight = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
+
+		let scaleX = frame.size.width / scaledInternalWidth;
+		let scaleY = frame.size.height / scaledInternalHeight;
+
+		switch (fit) {
+			case 0:
+				transform = CATransform3DIdentity;
+				break;
+			case 1:
+				transform = CATransform3DMakeScale(scaleX, scaleY, 0);
+				break;
+			case 2:
+				{
+					const dx = (frame.size.width - scaledInternalWidth) / 2;
+					const dy = (scaledInternalHeight * scaleX - scaledInternalHeight) / 2;
+
+					transform = CATransform3DMakeScale(scaleX, scaleX, 0);
+
+					transform = CATransform3DConcat(transform, CATransform3DMakeTranslation(dx, dy, 0));
+				}
+				break;
+			case 3:
+				{
+					const dx = (scaledInternalWidth * scaleY - scaledInternalWidth) / 2;
+					const dy = (frame.size.height - scaledInternalHeight) / 2;
+
+					transform = CATransform3DMakeScale(scaleY, scaleY, 0);
+
+					transform = CATransform3DConcat(transform, CATransform3DMakeTranslation(dx, dy, 0));
+				}
+				break;
+			case 4:
+				{
+					const scale = Math.min(Math.min(scaleX, scaleY), 1);
+
+					transform = CATransform3DMakeScale(scale, scale, 1);
+				}
+				break;
+		}
+
+		return { fit, frame: newFrame, transform };
+	}
+
+	_updateScale(fit: number, transform: CATransform3D) {
+		CATransaction.begin();
+		CATransaction.setDisableActions(true);
+		this._canvas.subviews.objectAtIndex(0).layer.transform = transform;
+		this._canvas.subviews.objectAtIndex(1).layer.transform = transform;
+		CATransaction.commit();
+	}
+
+	_setNativeViewFrame(nativeView: any, currentFrame: CGRect): void {
+		const { fit, frame, transform } = this._getFit(currentFrame);
 		super._setNativeViewFrame(nativeView, frame);
-		setTimeout(() => {
-			nativeView.fit = fit;
-		});
+		this._updateScale(fit, transform ?? CATransform3DIdentity);
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {

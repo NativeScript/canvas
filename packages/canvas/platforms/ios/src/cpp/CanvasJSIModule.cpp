@@ -233,7 +233,7 @@ void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> 
     auto context = isolate->GetCurrentContext();
     auto ptr = args[0].As<v8::BigInt>()->Int64Value();
 
-    auto context_2d = static_cast<CanvasRenderingContext2D *>((void *)ptr);
+    auto context_2d = static_cast<CanvasRenderingContext2D *>((void *) ptr);
 
     auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
             context_2d));
@@ -358,7 +358,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                         isolate, ta);
 
                 auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
-                    if(data == nullptr){return;}
+                    if (data == nullptr) { return; }
                     auto async_data = static_cast<AsyncCallback *>(data);
                     auto func = async_data->inner_.get();
                     if (func != nullptr && func->isolate_ != nullptr) {
@@ -598,7 +598,7 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 
 struct FileData {
     char *error_;
-    U8Buffer* data;
+    U8Buffer *data;
 
     ~FileData() {
         if (error_ != nullptr) {
@@ -615,7 +615,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
 
     auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
-        if(data == nullptr){return;}
+        if (data == nullptr) { return; }
         auto async_data = static_cast<AsyncCallback *>(data);
         auto func = async_data->inner_.get();
         if (func != nullptr && func->isolate_ != nullptr) {
@@ -624,12 +624,12 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
             v8::Isolate::Scope isolate_scope(isolate);
             v8::HandleScope handle_scope(isolate);
             v8::Local<v8::Function> callback = func->callback_.Get(
-                                                                   isolate);
+                    isolate);
             v8::Local<v8::Context> context = callback->GetCreationContextChecked();
             v8::Context::Scope context_scope(context);
 
             if (func->data != nullptr) {
-                auto file_data = static_cast<FileData*>(func->data);
+                auto file_data = static_cast<FileData *>(func->data);
 
                 v8::Local<v8::Value> args[2];
 
@@ -701,18 +701,17 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                 if (!canvas_native_helper_read_file_has_error(ret)) {
                     auto buf = canvas_native_helper_read_file_take_data(ret);
-                    callback->inner_->data = new FileData {nullptr, buf};
+                    callback->inner_->data = new FileData{nullptr, buf};
                     done = true;
                 } else {
                     auto error = canvas_native_helper_read_file_get_error(ret);
-                    callback->inner_->data = new FileData {const_cast<char *>(error), nullptr};
+                    callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
                 }
                 canvas_native_helper_release(ret);
                 callback->execute(done);
             });
 
     thread.detach();
-
 
 
 }
@@ -734,7 +733,7 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
     auto count = args.Length();
     if (count == 6) {
         auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-        auto webgl = static_cast<WebGLState*>((void *)ctx);
+        auto webgl = (WebGLState *) ctx;
 
         auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
                                                                    new WebGLRenderingContext(
@@ -817,8 +816,8 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
 
     auto count = args.Length();
     if (count == 6) {
-        auto ctx = args[0].As<v8::BigInt>()->Int64Value();
-        auto webgl = static_cast<WebGLState*>((void *)ctx);
+        auto ctx = args[1].As<v8::BigInt>()->Int64Value();
+        auto webgl = (WebGLState *) ctx;
         auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
                                                                     new WebGL2RenderingContext(
                                                                             webgl,

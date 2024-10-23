@@ -428,30 +428,34 @@ void GPURenderPassEncoderImpl::SetBindGroup(const v8::FunctionCallbackInfo<v8::V
     auto dynamicOffsetsStart = args[3];
     auto dynamicOffsetsLength = args[4];
 
+    const CanvasGPUBindGroup *bindGroup = nullptr;
+
     auto type = GetNativeType(bindGroupVal);
 
-    if (type == NativeType::GPUBindGroup) {
-        auto index = indexVal->Uint32Value(context).FromJust();
-        auto bindgroup = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
+    auto index = indexVal->Uint32Value(context).FromJust();
 
-        if (dynamicOffsets->IsUint32Array()) {
-            auto buf = dynamicOffsets.As<v8::Uint32Array>();
-            auto buffer = buf->Buffer();
-            auto store = buffer->GetBackingStore();
-            auto offset = buf->ByteOffset();
-            auto data = static_cast<uint8_t *>(buffer->GetBackingStore()->Data()) + offset;
-            auto size = buf->Length();
-            auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
-            auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
-            canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
-                                                                    bindgroup->GetBindGroup(),
-                                                                    static_cast<const uint32_t *>(static_cast<void *>(data)),
-                                                                    size, start, offset_length);
-        } else {
-            canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
-                                                                    bindgroup->GetBindGroup(),
-                                                                    nullptr, 0, 0, 0);
-        }
+    if (type == NativeType::GPUBindGroup) {
+        auto group = GPUBindGroupImpl::GetPointer(bindGroupVal.As<v8::Object>());
+        bindGroup = group->GetBindGroup();
+    }
+
+    if (dynamicOffsets->IsUint32Array()) {
+        auto buf = dynamicOffsets.As<v8::Uint32Array>();
+        auto buffer = buf->Buffer();
+        auto store = buffer->GetBackingStore();
+        auto offset = buf->ByteOffset();
+        auto data = static_cast<uint8_t *>(buffer->GetBackingStore()->Data()) + offset;
+        auto size = buf->Length();
+        auto start = (size_t) dynamicOffsetsStart->NumberValue(context).FromJust();
+        auto offset_length = (size_t) dynamicOffsetsLength->NumberValue(context).FromJust();
+        canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
+                                                                bindGroup,
+                                                                static_cast<const uint32_t *>(static_cast<void *>(data)),
+                                                                size, start, offset_length);
+    } else {
+        canvas_native_webgpu_render_pass_encoder_set_bind_group(ptr->GetPass(), index,
+                                                                bindGroup,
+                                                                nullptr, 0, 0, 0);
     }
 }
 
@@ -596,8 +600,7 @@ void GPURenderPassEncoderImpl::SetVertexBuffer(const v8::FunctionCallbackInfo<v8
     if (type == NativeType::GPUBuffer) {
         auto context = isolate->GetCurrentContext();
         auto slot = slotVal->ToUint32(context).ToLocalChecked();
-        
-    
+
 
         auto buffer = GPUBufferImpl::GetPointer(bufferVal.As<v8::Object>());
 

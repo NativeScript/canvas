@@ -64,23 +64,34 @@ class MainActivity : AppCompatActivity() {
 				Log.d("com.test", "Is Ready")
 						canvas?.let { canvas ->
 
-					val context = canvas.create2DContext(
-						true,
-						true,
-						true,
-						false,
-						0,
-						true,
-						false,
-						false,
-						false,
-						false
-					)
-						canvas.surfaceWidth = 600
-							canvas.surfaceHeight = 900
+							canvas.initContext("webgl2", true)
+
+//				val gl = canvas!!.nativeContext
+//
+//
+//				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
+
+
+
+//					val context = canvas.create2DContext(
+//						true,
+//						true,
+//						true,
+//						false,
+//						0,
+//						true,
+//						false,
+//						false,
+//						false,
+//						false
+//					)
+//						canvas.surfaceWidth = 600
+//							canvas.surfaceHeight = 900
+//
+//							NSCCanvas.nativeContext2DConicTest(context)
 //
 //					NSCCanvas.context2DImageTest(context)
-					NSCCanvas.context2DPathTest(context)
+				//	NSCCanvas.context2DPathTest(context)
 				//			NSCCanvas.context2DTest(context)
 //
 //                    Log.d("com.test", "windows $context")

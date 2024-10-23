@@ -2945,6 +2945,90 @@
 					},
 					{
 						"kind": "Var",
+						"name": "weblikeScale",
+						"printedName": "weblikeScale",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)weblikeScale",
+						"mangledName": "$s12CanvasNative9NSCCanvasC12weblikeScaleSbvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)weblikeScale",
+								"mangledName": "$s12CanvasNative9NSCCanvasC12weblikeScaleSbvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)setWeblikeScale:",
+								"mangledName": "$s12CanvasNative9NSCCanvasC12weblikeScaleSbvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative9NSCCanvasC12weblikeScaleSbvM",
+								"mangledName": "$s12CanvasNative9NSCCanvasC12weblikeScaleSbvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
 						"name": "store",
 						"printedName": "store",
 						"children": [
@@ -6956,127 +7040,134 @@
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
+			"kind": "BooleanLiteral",
+			"offset": 1519,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 2672,
+			"offset": 2867,
 			"length": 1,
 			"value": "1"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 2575,
+			"offset": 2770,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 2851,
+			"offset": 3046,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 2893,
+			"offset": 3088,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4162,
+			"offset": 4357,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4196,
+			"offset": 4391,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4226,
+			"offset": 4421,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4279,
+			"offset": 4474,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 4321,
+			"offset": 4516,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4361,
+			"offset": 4556,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4407,
+			"offset": 4602,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4440,
+			"offset": 4635,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4480,
+			"offset": 4675,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 4518,
+			"offset": 4713,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 13797,
+			"offset": 13992,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 14232,
+			"offset": 14427,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 14283,
+			"offset": 14478,
 			"length": 3,
 			"value": "300"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 14457,
+			"offset": 14652,
 			"length": 3,
 			"value": "150"
 		},

@@ -22,7 +22,8 @@
 		"paths": {
 			"@demo/shared": ["tools/demo/index.ts"],
 			"@nativescript/*": ["packages/*"],
-			"@nativescript/canvas": ["packages/canvas/index.ts"],
+			"@nativescript/canvas": ["packages/canvas"],
+			"@nativescript/canvas/*": ["packages/canvas/*"],
 			"@nativescript/canvas-babylon": ["packages/canvas-babylon/index.ts"],
 			"@nativescript/canvas-chartjs": ["packages/canvas-chartjs/index.d.ts"],
 			"@nativescript/canvas-media": ["packages/canvas-media/index.ts"],

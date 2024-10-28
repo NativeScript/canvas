@@ -29,18 +29,6 @@ impl Context {
         let (width, height) = mtl_context.drawable_size();
 
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
-        // let surface_holder = unsafe {
-        //     gpu::surfaces::wrap_mtk_view(
-        //         &mut context,
-        //         view as gpu::mtl::Handle,
-        //         gpu::SurfaceOrigin::TopLeft,
-        //         Some(samples),
-        //         ColorType::BGRA8888,
-        //         None,
-        //         None,
-        //     )
-        // }.unwrap();
-
 
         let drawable = mtl_context.drawable().unwrap();
         let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
@@ -101,17 +89,6 @@ impl Context {
         let (width, height) = mtl_context.drawable_size();
 
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
-        // let surface = unsafe {
-        //     gpu::surfaces::wrap_mtk_view(
-        //         &mut context,
-        //         view as gpu::mtl::Handle,
-        //         gpu::SurfaceOrigin::TopLeft,
-        //         Some(samples),
-        //         ColorType::BGRA8888,
-        //         None,
-        //         None,
-        //     )
-        // }.unwrap();
         let drawable = mtl_context.current_drawable().unwrap();
         let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
         let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, &info, "") };
@@ -200,6 +177,9 @@ impl Context {
         let mut height = 0;
         if let Some(context) = context.metal_context.as_mut() {
             context.present_drawable();
+        }
+
+        if let Some(context) = context.metal_context.as_mut() {
             if let Some(drawable) = context.next_drawable() {
                 let texture = drawable.texture();
                 width = texture.width();

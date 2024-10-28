@@ -326,7 +326,6 @@ impl Context {
 
     pub fn flush(&mut self) {
         let state = self.surface_state & SurfaceState::Pending;
-
         if state == SurfaceState::Pending {
             self.surface_state = self.surface_state | SurfaceState::Invalidating;
             self.flush_surface();

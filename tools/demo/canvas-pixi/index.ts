@@ -108,7 +108,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
 
-		//this.dynamicGraphics(canvas);
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -124,7 +124,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
 		//this.viewPort(canvas);
-		this.svg(canvas);
+		//this.svg(canvas);
 	}
 
 	/* Graphics */

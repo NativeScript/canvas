@@ -66,11 +66,7 @@
 }
 
 -(void) present {
-    if([self canvasView] == nil || !self.canvasView.is2D){
-        return;
-    }
-    
-    if(self.canvas != nil){
+    if(self.canvasView != nil && self.canvasView.is2D){
         [NSSCanvasHelpers flush2DContext: self.canvasView.nativeContext];
         [NSSCanvasHelpers presentDrawable: self.canvasView.nativeContext];
     }

@@ -1,5 +1,5 @@
-import { CSSType, View, Property, booleanConverter, widthProperty, heightProperty } from '@nativescript/core';
-import { CanvasRenderingContext } from '../common';
+import { CSSType, View, Property, booleanConverter } from '@nativescript/core';
+import type { CanvasRenderingContext } from '../common';
 import { removeItemFromArray } from './utils';
 
 export interface ICanvasBase {

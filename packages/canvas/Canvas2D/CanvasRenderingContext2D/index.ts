@@ -9,6 +9,7 @@ import { Canvas } from '../../Canvas';
 
 import { Helpers } from '../../helpers';
 import { DOMMatrix } from '../DOMMatrix';
+import type { CanvasRenderingContext } from '../../common';
 declare const NSCCanvasRenderingContext2D;
 
 function ruleToEnum(rule: string): number {
@@ -153,7 +154,7 @@ function drawNativeImage(args: any[], image, context: any) {
 	}
 }
 
-export class CanvasRenderingContext2D {
+export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	public static isDebug = true;
 	private context;
 	private contextPtr: any;

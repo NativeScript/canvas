@@ -34,8 +34,8 @@
 	"bootstrapper": "nativescript-plugin-seed",
 	"dependencies": {
 		"@nativescript/canvas-polyfill": "webgpu",
-		"pixi.js": "~7.3.1",
-		"pixi.js-legacy": "~7.3.1",
-		"pixi-filters": "~5.3.0"
+		"pixi.js": "~8.5.2",
+		"pixi.js-legacy": "~7.4.2",
+		"pixi-filters": "~6.0.5"
 	}
 }

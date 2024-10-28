@@ -4,7 +4,8 @@ import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
 import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
-export class GPUCanvasContext {
+import type { CanvasRenderingContext } from '../common';
+export class GPUCanvasContext implements CanvasRenderingContext {
 	_type;
 	_canvas: any;
 	static {

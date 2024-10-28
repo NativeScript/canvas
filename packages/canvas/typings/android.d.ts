@@ -94,16 +94,23 @@ declare module org {
 		export module canvas {
 			export class GLViewSV {
 				public static class: java.lang.Class<org.nativescript.canvas.GLViewSV>;
+				public control: globalAndroid.view.SurfaceControl;
 				public setReady$canvas_release(value: boolean): void;
-				public constructor(context: globalAndroid.content.Context, attrs: globalAndroid.util.AttributeSet);
+				public setControl$canvas_release(value: globalAndroid.view.SurfaceControl): void;
 				public constructor(context: globalAndroid.content.Context);
+				public getControl$canvas_release(): globalAndroid.view.SurfaceControl;
+				public isCreated(): boolean;
 				public getCanvas$canvas_release(): org.nativescript.canvas.NSCCanvas;
+				public isCreatedWithZeroSized$canvas_release(): boolean;
 				public isReady$canvas_release(): boolean;
 				public surfaceCreated(holder: globalAndroid.view.SurfaceHolder): void;
+				public init(): void;
+				public constructor(context: globalAndroid.content.Context, attrs: globalAndroid.util.AttributeSet);
+				public setCreated(value: boolean): void;
 				public surfaceChanged(it: globalAndroid.view.SurfaceHolder, this_: number, holder: number, format: number): void;
 				public surfaceDestroyed(holder: globalAndroid.view.SurfaceHolder): void;
+				public setCreatedWithZeroSized$canvas_release(value: boolean): void;
 				public setCanvas$canvas_release(value: org.nativescript.canvas.NSCCanvas): void;
-				public init(): void;
 			}
 		}
 	}
@@ -202,7 +209,7 @@ declare module org {
 				public makeContextCurrent(): void;
 				public setSurfaceView(value: org.nativescript.canvas.GLViewSV): void;
 				public static context2DTest(context: number): void;
-				//public initContextWithContextAttributes($i$a$-let-NSCCanvas$initContextWithContextAttributes$1: string, it: boolean, density: boolean, width: boolean, height: boolean, density: number, $i$a$-run-NSCCanvas$initContextWithContextAttributes$2: boolean, $this$initContextWithContextAttributes_u24lambda_u244: boolean, version: boolean, surface: boolean, this_: boolean): void;
+				public initContextWithContextAttributes(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean): void;
 				public static nativeUpdateWebGLSurface(param0: globalAndroid.view.Surface, param1: number): void;
 				public static setStore(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;
 				public getTextureView(): org.nativescript.canvas.GLView;
@@ -210,6 +217,7 @@ declare module org {
 				public getTouchEventListener(): org.nativescript.canvas.NSCCanvas.TouchEvents;
 				public static getStore(): java.util.concurrent.ConcurrentHashMap<any, any>;
 				public setSurfaceWidth(value: number): void;
+				public getSurface(): globalAndroid.view.Surface;
 				public static nativeInitWebGPU(param0: number, param1: globalAndroid.view.Surface, param2: number, param3: number): number;
 				public snapshot(): globalAndroid.graphics.Bitmap;
 				public isPaused$canvas_release(): boolean;
@@ -227,30 +235,33 @@ declare module org {
 				public static storeBuffer(key: number, buffer: java.nio.ByteBuffer): void;
 				public static nativeInitWebGL(param0: globalAndroid.view.Surface, param1: boolean, param2: boolean, param3: boolean, param4: boolean, param5: number, param6: boolean, param7: boolean, param8: boolean, param9: boolean, param10: boolean, param11: number): number;
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean): void;
+				public static nativeUpdate2DSurface(param0: globalAndroid.view.Surface, param1: number, param2: number, param3: number): void;
 				public static nativeCreate2dContextVulkan(param0: number, param1: number, param2: globalAndroid.view.Surface, param3: boolean, param4: number, param5: number, param6: number, param7: number): number;
 				public onTouchEvent(event: globalAndroid.view.MotionEvent): boolean;
 				public static getDirection(): number;
 				public static nativeUpdate2DSurfaceNoSurface(param0: number, param1: number, param2: number): void;
+				public onSizeChanged(w: number, h: number, oldw: number, oldh: number): void;
 				public initContext(type: string, alpha: boolean): void;
 				public onAttachedToWindow(): void;
 				public surfaceDestroyed$canvas_release(): void;
 				public static storeBuffer(key: string, buffer: java.nio.ByteBuffer): void;
 				public constructor(context: globalAndroid.content.Context);
-				public static nativeCreate2DContext(param0: globalAndroid.view.Surface, param1: boolean, param2: number, param3: number, param4: number, param5: number): number;
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean): void;
 				public static nativeCustomWithBitmapFlush(param0: number, param1: globalAndroid.graphics.Bitmap): void;
 				public getSurfaceHeight(): number;
 				public static nativeContext2DTest(param0: number): void;
-				public setForceGL(value: boolean): void;
+				public static nativeContext2DConicTest(param0: number): void;
 				public getSurfaceWidth(): number;
 				public constructor(context: globalAndroid.content.Context, attrs: globalAndroid.util.AttributeSet);
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean): void;
+				public static getForceGL(): boolean;
 				public getDrawingBufferWidth(): number;
 				public static removeBuffer(key: number): void;
 				public static nativeContext2DPathTest(param0: number): void;
 				public static nativeResizeCustomSurface(param0: number, param1: number, param2: number, param3: number, param4: boolean, param5: number): void;
 				public static getBuffer(key: number): java.nio.ByteBuffer;
 				public getNativeContext(): number;
+				public getNativeContextString(): string;
 				public getIgnoreTouchEvents(): boolean;
 				public static context2DRender(context: number): void;
 				public setTouchEventListener(value: org.nativescript.canvas.NSCCanvas.TouchEvents): void;
@@ -268,7 +279,7 @@ declare module org {
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean): void;
 				public setAttachedToWindow$canvas_release(value: boolean): void;
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean): void;
-				public static nativeUpdate2DSurface(param0: globalAndroid.view.Surface, param1: number): void;
+				public static nativeGetVulkanVersion(param0: androidNative.Array<number>): void;
 				public finalize(): void;
 				public static getBoundingClientRect(canvas: org.nativescript.canvas.NSCCanvas): void;
 				public initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number): void;
@@ -287,57 +298,65 @@ declare module org {
 				public initContextWithJsonString(value: string, key: string): void;
 				public setIgnoreTouchEvents(value: boolean): void;
 				public getListener(): org.nativescript.canvas.NSCCanvas.Listener;
+				public static setForceGL(value: boolean): void;
 				public static loadLib(): void;
-				public getForceGL(): boolean;
 				public static setEnableDebug(value: boolean): void;
 				public static nativeInitWebGLNoSurface(param0: number, param1: number, param2: boolean, param3: boolean, param4: boolean, param5: boolean, param6: number, param7: boolean, param8: boolean, param9: boolean, param10: boolean, param11: boolean, param12: number): number;
 				public static getBuffer(key: string): java.nio.ByteBuffer;
 				public initWebGPUContext(it: number): void;
+				public static nativeCreate2DContext(param0: number, param1: number, param2: globalAndroid.view.Surface, param3: boolean, param4: number, param5: number, param6: number, param7: number): number;
 				public setFit(value: org.nativescript.canvas.CanvasFit): void;
 				public getDrawingBufferHeight(): number;
 				public static nativeResizeWebGPU(param0: number, param1: globalAndroid.view.Surface, param2: number, param3: number): void;
-				public static setForceGL(value: boolean): void;
-				public static getForceGL(): boolean;
 			}
 			export module NSCCanvas {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.NSCCanvas.Companion>;
+					public nativeContext2DConicTest(context: number): void;
 					public removeBuffer(key: number): void;
 					public getDirection(): number;
-					public nativeWebGLC2DRender(context: number, c2d: number, internalFormat: number, format: number): void;
+					public nativeGetVulkanVersion(array: androidNative.Array<number>): void;
 					public layoutSurface(width: number, height: number, canvas: org.nativescript.canvas.NSCCanvas): void;
 					public append$canvas_release(key: string, value: number, sb: java.lang.StringBuilder, isLast: boolean): void;
 					public context2DRender(context: number): void;
-					public storeBuffers(key: string, buffer: androidNative.Array<java.nio.ByteBuffer>): void;
 					public storeBuffer(key: number, buffer: java.nio.ByteBuffer): void;
 					public nativeInitWebGPU(instance: number, surface: globalAndroid.view.Surface, width: number, height: number): number;
 					public nativeContext2DTest(context: number): void;
-					public setLibraryLoaded$canvas_release(value: boolean): void;
 					public getBuffer(key: number): java.nio.ByteBuffer;
-					public nativeReleaseWebGL(context: number): void;
 					public WebGLContextRender(gl: number, context: number, internalFormat: number, format: number): void;
 					public storeBuffer(key: string, buffer: java.nio.ByteBuffer): void;
 					public removeBuffer(key: string): void;
+					public getBoundingClientRectJSON(sb: org.nativescript.canvas.NSCCanvas): string;
+					public context2DTest(context: number): void;
+					public nativeCreate2DContext(width: number, height: number, surface: globalAndroid.view.Surface, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
+					public loadLib(): void;
+					public nativeCustomWithBitmapFlush(context: number, view: globalAndroid.graphics.Bitmap): void;
+					public getStore(): java.util.concurrent.ConcurrentHashMap<any, any>;
+					public nativeMakeWebGLCurrent(context: number): boolean;
+					public setVulkanVersion$canvas_release(value: androidNative.Array<number>): void;
+					public isLibraryLoaded$canvas_release(): boolean;
+					public setViews(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;
+					public getForceGL(): boolean;
+					public setEnableDebug(value: boolean): void;
+					public nativeContext2DRender(context: number): void;
+					public nativeUpdateWebGLNoSurface(width: number, height: number, context: number): void;
+					public nativeWebGLC2DRender(context: number, c2d: number, internalFormat: number, format: number): void;
+					public storeBuffers(key: string, buffer: androidNative.Array<java.nio.ByteBuffer>): void;
+					public getVulkanVersion$canvas_release(): androidNative.Array<number>;
+					public setLibraryLoaded$canvas_release(value: boolean): void;
+					public nativeUpdate2DSurface(surface: globalAndroid.view.Surface, width: number, height: number, context: number): void;
+					public nativeReleaseWebGL(context: number): void;
 					public getBoundingClientRect(density: org.nativescript.canvas.NSCCanvas): void;
 					public nativeInitWebGL(surface: globalAndroid.view.Surface, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, version: number): number;
-					public getBoundingClientRectJSON(sb: org.nativescript.canvas.NSCCanvas): string;
-					public nativeUpdate2DSurface(surface: globalAndroid.view.Surface, context: number): void;
-					public context2DTest(context: number): void;
 					public nativeInitWebGLNoSurface(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, version: number): number;
 					public nativeResizeWebGPU(context: number, surface: globalAndroid.view.Surface, width: number, height: number): void;
 					public getViews(): java.util.concurrent.ConcurrentHashMap<any, any>;
-					public loadLib(): void;
-					public nativeCustomWithBitmapFlush(context: number, view: globalAndroid.graphics.Bitmap): void;
 					public context2DPathTest(context: number): void;
-					public getStore(): java.util.concurrent.ConcurrentHashMap<any, any>;
 					public getEnableDebug(): boolean;
 					public nativeCreate2dContextVulkan(width: number, height: number, surface: globalAndroid.view.Surface, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
 					public layoutSurface(rootParams: number, w: number, h: org.nativescript.canvas.NSCCanvas): void;
-					public nativeCreate2DContext(surface: globalAndroid.view.Surface, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
-					public nativeMakeWebGLCurrent(context: number): boolean;
+					public setForceGL(value: boolean): void;
 					public nativeWriteCurrentWebGLContextToBitmap(context: number, bitmap: globalAndroid.graphics.Bitmap): void;
-					public isLibraryLoaded$canvas_release(): boolean;
-					public setViews(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;
 					public setStore(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;
 					public nativeContext2DPathTest(context: number): void;
 					public getBuffers(key: number): androidNative.Array<any>;
@@ -346,11 +365,6 @@ declare module org {
 					public nativeUpdateWebGLSurface(surface: globalAndroid.view.Surface, context: number): void;
 					public nativeUpdate2DSurfaceNoSurface(width: number, height: number, context: number): void;
 					public nativeInitContextWithCustomSurface(width: number, height: number, density: number, alpha: boolean, fontColor: number, ppi: number, direction: number): number;
-					public setEnableDebug(value: boolean): void;
-					public nativeContext2DRender(context: number): void;
-					public nativeUpdateWebGLNoSurface(width: number, height: number, context: number): void;
-					public static setForceGL(value: boolean): void;
-					public static getForceGL(): boolean;
 				}
 				export module Companion {
 					export class WhenMappings {
@@ -374,10 +388,10 @@ declare module org {
 					 */
 					public constructor(implementation: { contextReady(): void; surfaceResize(param0: number, param1: number): void; surfaceDestroyed(): void; surfaceCreated(): void });
 					public constructor();
+					public surfaceCreated(): void;
 					public contextReady(): void;
 					public surfaceResize(param0: number, param1: number): void;
 					public surfaceDestroyed(): void;
-					public surfaceCreated(): void;
 				}
 				export class SurfaceType {
 					public static class: java.lang.Class<org.nativescript.canvas.NSCCanvas.SurfaceType>;
@@ -444,21 +458,24 @@ declare module org {
 			export class NSCImageAsset {
 				public static class: java.lang.Class<org.nativescript.canvas.NSCImageAsset>;
 				public static loadImageFromBitmapAsync(asset: number, bitmap: globalAndroid.graphics.Bitmap, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
+				public static loadImageFromBufferAsync(asset: number, width: number, height: number, buffer: java.nio.ByteBuffer, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
+				public static loadImageFromBytesAsync(asset: number, width: number, height: number, bytes: androidNative.Array<number>, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static loadImageFromBytesAsync(asset: number, bitmap: globalAndroid.graphics.Bitmap, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
+				public static loadImageFromEncodedBytesAsync(asset: number, bitmap: globalAndroid.graphics.Bitmap, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
+				public static loadImageFromEncodedBufferAsync(asset: number, buffer: java.nio.ByteBuffer, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public finalize(): void;
 				public static nativeDestroyImageAsset(param0: number): void;
 				public static loadImageFromPathAsync(asset: number, path: string, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static createImageAsset(): number;
 				public static destroyImageAsset(asset: number): void;
 				public static loadImageFromResourceAsync(resources: globalAndroid.content.res.Resources, asset: number, image: number, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
-				public static loadImageFromBytesAsync(asset: number, bytes: androidNative.Array<number>, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static loadImageFromUrlAsync(asset: number, url: string, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
+				public static loadImageFromEncodedBytesAsync(asset: number, bytes: androidNative.Array<number>, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static loadWebPAsync(asset: number, path: string, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static loadWebP(asset: number, path: string): boolean;
 				public static getDimensions(asset: number): androidNative.Array<number>;
 				public constructor(asset: number);
 				public static loadImageFromResource(resources: globalAndroid.content.res.Resources, asset: number, image: number): boolean;
-				public static loadImageFromBufferAsync(asset: number, buffer: java.nio.ByteBuffer, callback: org.nativescript.canvas.NSCImageAsset.Callback): void;
 				public static loadImageFromBitmap(asset: number, bitmap: globalAndroid.graphics.Bitmap): boolean;
 				public static getError(asset: number): string;
 				public static loadFromPath(asset: number, path: string): boolean;
@@ -477,20 +494,23 @@ declare module org {
 				export class Companion {
 					public static class: java.lang.Class<org.nativescript.canvas.NSCImageAsset.Companion>;
 					public loadImageFromResource(canvas: globalAndroid.content.res.Resources, bitmap: number, this_: number): boolean;
-					public loadImageFromBufferAsync(this_: number, asset: java.nio.ByteBuffer, buffer: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public loadImageFromBytesAsync(this_: number, asset: globalAndroid.graphics.Bitmap, bitmap: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public getError(asset: number): string;
 					public loadImageFromPathAsync(this_: number, asset: string, path: org.nativescript.canvas.NSCImageAsset.Callback): void;
+					public loadImageFromBytesAsync(this_: number, asset: number, width: number, height: androidNative.Array<number>, bytes: org.nativescript.canvas.NSCImageAsset.Callback): void;
+					public loadImageFromEncodedBytesAsync(this_: number, asset: androidNative.Array<number>, bytes: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public nativeDestroyImageAsset(asset: number): void;
 					public loadImageFromBitmap(canvas: number, this_: globalAndroid.graphics.Bitmap): boolean;
 					public loadWebPAsync(this_: number, asset: string, path: org.nativescript.canvas.NSCImageAsset.Callback): void;
-					public loadImageFromBytesAsync(this_: number, asset: androidNative.Array<number>, bytes: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public loadImageFromResourceAsync(this_: globalAndroid.content.res.Resources, resources: number, asset: number, image: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public loadWebP(this_: number, asset: string): boolean;
 					public loadFromPath(asset: number, path: string): boolean;
 					public loadImageFromUrlAsync(this_: number, asset: string, url: org.nativescript.canvas.NSCImageAsset.Callback): void;
+					public loadImageFromEncodedBytesAsync(this_: number, asset: globalAndroid.graphics.Bitmap, bitmap: org.nativescript.canvas.NSCImageAsset.Callback): void;
+					public loadImageFromBufferAsync(this_: number, asset: number, width: number, height: java.nio.ByteBuffer, buffer: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public createImageAsset(): number;
 					public loadImageFromBitmapAsync(this_: number, asset: globalAndroid.graphics.Bitmap, bitmap: org.nativescript.canvas.NSCImageAsset.Callback): void;
+					public loadImageFromEncodedBufferAsync(this_: number, asset: java.nio.ByteBuffer, buffer: org.nativescript.canvas.NSCImageAsset.Callback): void;
 					public destroyImageAsset(asset: number): void;
 					public getDimensions(this_: number): androidNative.Array<number>;
 				}

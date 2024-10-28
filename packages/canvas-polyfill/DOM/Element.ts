@@ -3,7 +3,7 @@ import { eachDescendant, Frame, StackLayout, View, ViewBase } from '@nativescrip
 import setValue from 'set-value';
 import querySelector from 'query-selector';
 import { HTMLCollection } from './HTMLCollection';
-import { Canvas } from '@nativescript/canvas/Canvas';
+import { Canvas } from '@nativescript/canvas';
 declare const NSCanvas;
 
 export class DOMRectReadOnly {

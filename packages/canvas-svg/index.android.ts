@@ -7,58 +7,40 @@ declare const org;
 
 function parseSVGDimensions(svgString) {
 	const svgRegex = /<svg([^>]*)>/i;
-
 	const match = svgString.match(svgRegex);
-
 	if (!match) {
 		return { width: 0, height: 0 };
 	}
-
 	const svgAttributes = match[1];
+	const regex = /\b(width|height|viewBox)\s*=\s*"([^"]+)"/g;
 
-	const regex = /\b(?:width|height|viewBox)\s*=\s*"([^"]*(?:"[^"]*")*[^"]*)"/g;
-
-	const matches = svgAttributes.match(regex);
 	let width, height, viewBox;
 
-	if (matches) {
-		matches.forEach((match) => {
-			const split = match.split(' ');
+	let attributeMatch;
+	while ((attributeMatch = regex.exec(svgAttributes)) !== null) {
+		const attributeName = attributeMatch[1];
+		const attributeValue = attributeMatch[2];
 
-			for (const part of split) {
-				const parts = part.split('=');
-
-				const attributeName = parts[0].trim() as string;
-				const attributeValue = parts[1].trim().replace(/"/g, '') as string;
-				if (attributeName === 'width') {
-					if (width === undefined) {
-						width = parseFloat(attributeValue) ?? 0;
-					}
-				} else if (attributeName === 'height') {
-					if (height === undefined) {
-						height = parseFloat(attributeValue) ?? 0;
-					}
-				} else if (attributeName === 'viewBox') {
-					if (viewBox === undefined) {
-						viewBox = attributeValue.split(' ').map(parseFloat).splice(0, 4);
-					}
-				}
-			}
-		});
+		if (attributeName === 'width') {
+			width = parseFloat(attributeValue) || undefined;
+		} else if (attributeName === 'height') {
+			height = parseFloat(attributeValue) || undefined;
+		} else if (attributeName === 'viewBox') {
+			viewBox = attributeValue.split(' ').map(Number);
+		}
 	}
 
 	if (!width && viewBox && viewBox.length === 4) {
 		const viewBoxWidth = viewBox[2];
 		const viewBoxHeight = viewBox[3];
 		const aspectRatio = viewBoxWidth / viewBoxHeight;
-		width = (height ?? Screen.mainScreen.widthDIPs) * aspectRatio;
+		width = height ? height * aspectRatio : 150 * aspectRatio;
 	}
-
 	if (!height && viewBox && viewBox.length === 4) {
 		const viewBoxWidth = viewBox[2];
 		const viewBoxHeight = viewBox[3];
 		const aspectRatio = viewBoxWidth / viewBoxHeight;
-		height = (width ?? Screen.mainScreen.heightDIPs) / aspectRatio;
+		height = width ? width / aspectRatio : 300 / aspectRatio;
 	}
 
 	return { width: width ?? 0, height: height ?? 0 };

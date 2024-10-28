@@ -121,7 +121,6 @@ export class HTMLImageElement extends HTMLElement {
 		if (!this._loading && !this.complete) {
 			return new Promise<void>((resolve, reject) => {
 				this._decodingQueue.push({ resolve, reject });
-				console.log('??');
 				this._load();
 			});
 		} else if (this._loading) {
@@ -174,9 +173,23 @@ export class HTMLImageElement extends HTMLElement {
 			if (this.src.startsWith('blob:nativescript/')) {
 				const data = (<any>URL).InternalAccessor.getData(this.src);
 				const buffer = (<any>Blob).InternalAccessor.getBuffer(data.blob);
-				if (data?.type?.indexOf('svg') > -1) {
-					const d = new TextDecoder();
-					const src = d.decode(buffer);
+
+				let isSvg = data?.type?.indexOf('svg') > -1;
+				let src;
+				let d;
+				if (!isSvg) {
+					try {
+						d = new TextDecoder();
+						src = d.decode(buffer);
+						if (typeof src === 'string') {
+							isSvg = src.indexOf('<svg') > -1;
+						}
+					} catch (error) {}
+				}
+
+				if (isSvg) {
+					d = d ?? new TextDecoder();
+					src = src ?? d.decode(buffer);
 					try {
 						const svg = await Svg.fromSrc(src);
 						const data = svg.data;
@@ -355,7 +368,6 @@ export class HTMLImageElement extends HTMLElement {
 					this._asset
 						.fromFile(src)
 						.then((done) => {
-							console.log(this.src, 'done', done, this._asset.width, this._asset.height);
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;

@@ -21,6 +21,7 @@ use text_styles::{
 use crate::context::drawing_text::typography::Font;
 
 use bitflags::bitflags;
+use bytes::Buf;
 
 pub mod drawing_images;
 pub mod drawing_text;
@@ -216,10 +217,11 @@ impl Context {
     pub fn get_pixels(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>) {
         let origin = origin.into();
         let size = size.into();
-        let info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+        let mut info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
 
         if let Some(img) = self.get_image() {
-            img.read_pixels(&info, buffer, info.min_row_bytes(), origin, CachingHint::Allow);
+            let row_bytes = (info.width() * 4) as usize;
+            img.read_pixels(&info, buffer, row_bytes, origin, CachingHint::Allow);
         }
     }
 
@@ -352,7 +354,7 @@ impl Context {
         self.flush();
 
         let snapshot = self.surface.image_snapshot();
-        if self.surface_data.engine == SurfaceEngine::GL {
+        if self.surface_data.engine == SurfaceEngine::GL || self.surface_data.engine == SurfaceEngine::Vulkan || self.surface_data.engine == SurfaceEngine::Metal {
             snapshot.make_raster_image(
                 self.direct_context.as_mut(),
                 Some(CachingHint::Allow),
@@ -361,6 +363,25 @@ impl Context {
             Some(snapshot)
         }
     }
+
+    pub fn get_image_no_flush(&mut self) -> Option<Image> {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
+        let snapshot = self.surface.image_snapshot();
+        if self.surface_data.engine == SurfaceEngine::GL || self.surface_data.engine == SurfaceEngine::Vulkan || self.surface_data.engine == SurfaceEngine::Metal {
+            snapshot.make_raster_image(
+                self.direct_context.as_mut(),
+                Some(CachingHint::Allow),
+            )
+        } else {
+            Some(snapshot)
+        }
+    }
+
     pub fn as_data(&mut self) -> Vec<u8> {
         let bounds = self.surface_data.bounds;
         if bounds.is_empty() {
@@ -384,6 +405,11 @@ impl Context {
                 IPoint::new(0, 0),
                 CachingHint::Allow,
             );
+
+            if image.image_info().color_type() == ColorType::BGRA8888 {
+                canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(pixels.as_mut_slice());
+            }
+
             pixels
         };
 
@@ -427,7 +453,7 @@ impl Context {
             },
             quality,
         );
-        return match data {
+        match data {
             Some(data) => {
                 let encoded_data =
                     base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
@@ -441,7 +467,7 @@ impl Context {
                 encoded
             }
             _ => "data:,".to_string(),
-        };
+        }
     }
 
     pub fn render_to_canvas<F>(&mut self, paint: &skia_safe::Paint, f: F)

@@ -37,6 +37,8 @@ public:
 
     static void ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void GetMime(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Value> &args);

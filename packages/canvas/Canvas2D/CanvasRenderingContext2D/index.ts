@@ -9,7 +9,6 @@ import { Canvas } from '../../Canvas';
 
 import { Helpers } from '../../helpers';
 import { DOMMatrix } from '../DOMMatrix';
-let ctor;
 declare const NSCCanvasRenderingContext2D;
 
 function ruleToEnum(rule: string): number {
@@ -161,14 +160,12 @@ export class CanvasRenderingContext2D {
 	_type: string;
 	static {
 		Helpers.initialize();
-		//ctor = global.CanvasJSIModule.create2DContext;
-		ctor = global.CanvasModule.create2DContextWithPointer;
 	}
 
 	constructor(context: any, contextOptions) {
 		this.contextPtr = context;
 		const ctxPtr = BigInt(context.toString());
-		this.context = ctor(ctxPtr);
+		this.context = global.CanvasModule.create2DContextWithPointer(ctxPtr);
 		this._type = '2d';
 	}
 

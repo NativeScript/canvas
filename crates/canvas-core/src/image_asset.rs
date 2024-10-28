@@ -5,6 +5,7 @@ use std::io::{BufRead, Read, Seek};
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null;
 use std::sync::Arc;
+use gl_bindings::RGBA;
 
 enum CanvasImage {
     #[cfg(not(feature = "2d"))]
@@ -120,7 +121,8 @@ impl CanvasImage {
 
             #[cfg(feature = "2d")]
             CanvasImage::Skia(image, _, _) => {
-                (image.width() as u32, image.height() as u32)
+                let dimensions = image.dimensions();
+                (dimensions.width as u32, dimensions.height as u32)
             }
         }
     }
@@ -928,6 +930,13 @@ impl ImageAsset {
             }
         })
     }
+
+    pub fn bgra_to_rgba_in_place(data: &mut [u8]) {
+        for chunk in data.chunks_exact_mut(4) {
+            chunk.swap(0, 2);
+        }
+    }
+
 
     pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {
         let mut rgba_data = Vec::with_capacity(data.len() * 2);

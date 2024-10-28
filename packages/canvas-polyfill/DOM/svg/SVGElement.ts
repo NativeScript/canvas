@@ -60,7 +60,7 @@ export class SVGElement extends Element {
 	removeChild(view) {}
 
 	setAttribute(key, value) {
-		const dom = this.nativeElement.__domElement;
+		const dom = this.__domElement ?? this.nativeElement.__domElement;
 		if (dom) {
 			dom.setAttribute?.(key, value);
 		} else {
@@ -69,7 +69,7 @@ export class SVGElement extends Element {
 	}
 
 	getAttribute(key): string | null {
-		const dom = this.nativeElement.__domElement;
+		const dom = this.__domElement ?? this.nativeElement.__domElement;
 		if (dom) {
 			return (dom.getAttribute?.(key) as never) ?? null;
 		}
@@ -77,7 +77,7 @@ export class SVGElement extends Element {
 	}
 
 	removeAttribute(key) {
-		const dom = this.nativeElement.__domElement;
+		const dom = this.__domElement ?? this.nativeElement.__domElement;
 		if (dom) {
 			return dom.removeAttribute?.(key);
 		}

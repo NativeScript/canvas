@@ -4,9 +4,8 @@ use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
 use canvas_c::WebGLState;
 use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gpu::gl::GLContext;
-use canvas_core::gpu::vulkan::VulkanContext;
 use jni::objects::{JClass, JIntArray, JObject};
-use jni::sys::{jboolean, jfloat, jint, jintArray, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::native_window::NativeWindow;
 use raw_window_handle::RawWindowHandle;
@@ -250,6 +249,8 @@ pub extern "system" fn nativeInitWebGLNoSurface(
 pub extern "system" fn nativeCreate2DContext(
     env: JNIEnv,
     _: JClass,
+    width: jint,
+    height: jint,
     surface: jobject,
     alpha: jboolean,
     density: jfloat,
@@ -258,7 +259,27 @@ pub extern "system" fn nativeCreate2DContext(
     direction: jint,
 ) -> jlong {
     unsafe {
-        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+        if surface.is_null() {
+            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
+                canvas_2d::context::Context::new_gl(
+                    ptr::null_mut(),
+                    width as f32,
+                    height as f32,
+                    density,
+                    alpha == JNI_TRUE,
+                    font_color,
+                    ppi,
+                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
+                        direction as u32,
+                    ),
+                ),
+                alpha == JNI_TRUE,
+            );
+
+            drop(env);
+            return Box::into_raw(Box::new(ctx_2d)) as jlong;
+        }
+        return if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let width = window.width();
             let height = window.height();
 
@@ -279,7 +300,26 @@ pub extern "system" fn nativeCreate2DContext(
             );
 
             drop(env);
-            return Box::into_raw(Box::new(ctx_2d)) as jlong;
+            Box::into_raw(Box::new(ctx_2d)) as jlong
+        } else {
+            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
+                canvas_2d::context::Context::new_gl(
+                    ptr::null_mut(),
+                    width as f32,
+                    height as f32,
+                    density,
+                    alpha == JNI_TRUE,
+                    font_color,
+                    ppi,
+                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
+                        direction as u32,
+                    ),
+                ),
+                alpha == JNI_TRUE,
+            );
+
+            drop(env);
+            Box::into_raw(Box::new(ctx_2d)) as jlong
         }
     }
 

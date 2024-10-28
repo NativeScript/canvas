@@ -16,7 +16,7 @@ NDK_TARGET=$TARGET
  fi
 
 API_VERSION="21"
-NDK_VERSION="23.2.8568313"
+NDK_VERSION="26.3.11579264"
 
 # needed so we can overwrite it in the CI
 if [ -z "$NDK" ]; then

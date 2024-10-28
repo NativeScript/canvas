@@ -41,7 +41,7 @@ pub fn bytes_to_data_url(
     encoded_prefix.push_str("data:");
     encoded_prefix.push_str(format);
     encoded_prefix.push_str(";base64,");
-    let image_info = ImageInfo::new((width, height), ColorType::N32, AlphaType::Unpremul, None);
+    let image_info = ImageInfo::new((width, height), ColorType::RGBA8888, AlphaType::Unpremul, None);
     if let Some(image) = images::raster_from_data(&image_info, data, (width * 4) as usize) {
         let mut quality = quality;
         if quality > 100 {

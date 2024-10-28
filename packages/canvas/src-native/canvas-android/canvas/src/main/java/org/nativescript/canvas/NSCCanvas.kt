@@ -384,7 +384,6 @@ class NSCCanvas : FrameLayout {
 			} else {
 				surfaceView.setZOrderOnTop(false)
 			}
-
 			if (!surfaceView.isCreated) {
 				null
 			} else {
@@ -412,6 +411,8 @@ class NSCCanvas : FrameLayout {
 					engine = Engine.GPU
 				} else {
 					nativeContext = nativeCreate2DContext(
+						surfaceWidth,
+						surfaceHeight,
 						it,
 						alpha,
 						density,
@@ -469,6 +470,8 @@ class NSCCanvas : FrameLayout {
 						engine = Engine.GPU
 					} else {
 						nativeContext = nativeCreate2DContext(
+							surfaceWidth,
+							surfaceHeight,
 							null,
 							alpha,
 							density,
@@ -514,6 +517,8 @@ class NSCCanvas : FrameLayout {
 						engine = Engine.GPU
 					} else {
 						nativeContext = nativeCreate2DContext(
+							surfaceWidth,
+							surfaceHeight,
 							null,
 							alpha,
 							density,
@@ -996,6 +1001,8 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeCreate2DContext(
+			width: Int,
+			height: Int,
 			surface: Surface?,
 			alpha: Boolean,
 			density: Float,

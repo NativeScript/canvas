@@ -352,6 +352,7 @@ export class Canvas extends CanvasBase {
 						...handleContextOptions(type, contextAttributes),
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
+
 					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 					(this._2dContext as any)._canvas = this;

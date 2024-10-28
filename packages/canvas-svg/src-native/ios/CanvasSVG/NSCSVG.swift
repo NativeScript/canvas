@@ -8,16 +8,84 @@
 import Foundation
 import UIKit
 
+@objcMembers
+@objc(NSCSVGData)
+public class NSCSVGData: NSObject {
+    var data_ptr: UnsafeMutableRawPointer? = nil
+    var data_size: CGSize = .zero
+    var buf_size: UInt = 0
+    var data_data: NSMutableData? = nil
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    var image: UIImage? = nil
+    
+    
+    func resize(_ width: CGFloat, _ height: CGFloat){
+        if(!width.isZero && !width.isNaN && !height.isZero && !height.isNaN){
+            data_ptr?.deallocate()
+            data_data = nil
+            image = nil
+            data_ptr = calloc(Int(width * height), 4)
+            buf_size = UInt(width * height * 4)
+            data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
+        }
+    }
+    
+    public var width: CGFloat {
+        get {
+            return data_size.width
+        }
+    }
+    
+    public var height: CGFloat {
+        get {
+            return data_size.height
+        }
+    }
+    
+    public var rawData: UnsafeMutableRawPointer? {
+        get {
+            return data_ptr
+        }
+    }
+    
+    public var data: NSMutableData? {
+        get {
+            if(data_data != nil){
+                return data_data
+            }
+            guard let data = data_ptr else {return nil}
+            let ptr = Unmanaged.passRetained(self)
+            data_data = NSMutableData(bytesNoCopy: data, length: Int(buf_size)) { _, _ in
+                let _ = Unmanaged.toOpaque(ptr)
+            }
+            return data_data
+        }
+    }
+    
+    public func getImage() -> UIImage? {
+        if(image != nil){
+            return image
+        }
+        guard let data = data_ptr else {return nil}
+        
+        let width = Int(self.data_size.width)
+        let height = Int(self.data_size.height)
+        let ctx = CGContext(data: data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+        
+        guard let cgImage = ctx?.makeImage() else {return nil}
+        self.image = UIImage(cgImage: cgImage)
+        return self.image
+    }
+}
+
 
 @objcMembers
 @objc(NSCSVG)
 public class NSCSVG: UIView {
-    public internal(set) var data: UnsafeMutableRawPointer? = nil
-    public internal(set) var data_size: CGSize = .zero
-    public internal(set) var buf_size: UInt = 0
     var didInitDrawing = false
     var forceResize = false
     var sync = false
+    var data: NSCSVGData? = nil
     public var autoScale = true {
         didSet {
             forceResize = true
@@ -35,9 +103,9 @@ public class NSCSVG: UIView {
         }
     }
     
-    func deviceScale() -> Float32 {
+    func deviceScale() -> CGFloat {
         if autoScale  {
-            return Float32(UIScreen.main.nativeScale)
+            return UIScreen.main.nativeScale
         }
         return 1
     }
@@ -52,11 +120,11 @@ public class NSCSVG: UIView {
                 guard let srcPath = self.srcPath else{return}
                 let source = srcPath as NSString
                 
-                guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+                guard let data = self.data else {return}
                 
-                CanvasSVGHelper.draw(fromPath: buf, size: self.buf_size, width: Float(self.data_size.width), height: Float(self.data_size.height), path: source as String)
+                guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {return}
                 
-                
+                CanvasSVGHelper.draw(fromPath: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), path: source as String)
                 
                 self.didInitDrawing = true
                 self.setNeedsDisplay()
@@ -66,10 +134,12 @@ public class NSCSVG: UIView {
             guard let src = self.src else{return}
             let source = src as NSString
             
-            guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+            guard let data = self.data else {return}
+            
+            guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {return}
             
             
-            CanvasSVGHelper.draw(fromString: buf, size: self.buf_size, width: Float(self.data_size.width), height: Float(self.data_size.height), svg: source as String)
+            CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: source as String)
             
             self.didInitDrawing = true
             self.setNeedsDisplay()
@@ -85,12 +155,12 @@ public class NSCSVG: UIView {
             if(self.srcPath != nil){
                 guard let srcPath = self.srcPath else{return}
                 let source = srcPath as NSString
+                guard let data = self.data else {return}
+                
+                guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {return}
                 
                 
-                guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
-                
-                
-                CanvasSVGHelper.draw(fromPath: buf, size: self.buf_size, width: Float(self.data_size.width), height: Float(self.data_size.height), path: source as String)
+                CanvasSVGHelper.draw(fromPath: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), path: source as String)
                 
                 
                 DispatchQueue.main.async { [self] in
@@ -108,11 +178,13 @@ public class NSCSVG: UIView {
             guard let src = self.src else{return}
             let source = src as NSString
             
-            guard let buf = self.data?.assumingMemoryBound(to: UInt8.self) else {return}
+            guard let data = self.data else {return}
+            
+            guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {return}
             
             
             
-            CanvasSVGHelper.draw(fromString: buf, size: self.buf_size, width: Float(self.data_size.width), height: Float(self.data_size.height), svg: source as String)
+            CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: source as String)
             
             
             DispatchQueue.main.async {
@@ -131,13 +203,12 @@ public class NSCSVG: UIView {
     
     public func update(){
         let size = layer.frame.size
-        let width = Float(size.width) * deviceScale()
-        let height = Float(size.height) * deviceScale()
-        if (CGFloat(width) != data_size.width && CGFloat(height) != data_size.height) || forceResize {
-            data?.deallocate()
-            data = calloc(Int(width * height), 4)
-            buf_size = UInt(width * height * 4)
-            data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
+        let scale = deviceScale()
+        let width = size.width * scale
+        let height = size.height * scale
+        guard let data = data else {return}
+        if (width != data.data_size.width && height != data.data_size.height) || forceResize {
+            data.resize(width, height)
             doDraw()
             
             if forceResize {
@@ -165,12 +236,10 @@ public class NSCSVG: UIView {
     }
     
     private func drawImage(_ rect: CGRect){
-        let width = Int(self.data_size.width)
-        let height = Int(self.data_size.height)
-        let ctx = CGContext(data: self.data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: self.colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-        
-        guard let cgImage = ctx?.makeImage() else {return}
-        let image = UIImage(cgImage: cgImage)
+        guard let data = self.data else {return}
+        let width = Int(data.data_size.width)
+        let height = Int(data.data_size.height)
+        guard let image = data.getImage() else {return}
         image.draw(in: rect)
     }
     
@@ -182,45 +251,35 @@ public class NSCSVG: UIView {
     
     public func toImage() -> UIImage? {
         if didInitDrawing {
-            let width = Int(self.data_size.width)
-            let height = Int(self.data_size.height)
-            let ctx = CGContext(data: self.data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: self.colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-            
-            guard let cgImage = ctx?.makeImage() else {return nil}
-            return UIImage(cgImage: cgImage)
-            
+            return self.data?.getImage()
         }
         return nil
     }
     
     public func toData() -> NSData? {
-        return NSMutableData(bytes: data, length: Int(buf_size))
+        return self.data?.data
     }
     
-    public static func fromStringSync(_ source: String) -> NSCSVG? {
-        var view = NSCSVG()
+    public static func fromStringSync(_ source: String) -> NSCSVGData? {
         let dim = parseSVGDimensions(source)
         if(dim.width.isZero || dim.height.isZero){
             return nil
         }
-        view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
         let width = dim.width
         let height = dim.height
-        view.data = calloc(Int(width * height), 4)
-        view.buf_size = UInt(width * height * 4)
-        view.data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
         
+        let data = NSCSVGData()
+        data.resize(CGFloat(width), CGFloat(height))
+       
+        guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {return nil}
+        CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: source as String)
         
-        guard let buf = view.data?.assumingMemoryBound(to: UInt8.self) else {return nil}
-        CanvasSVGHelper.draw(fromString: buf, size: view.buf_size, width: Float(view.data_size.width), height: Float(view.data_size.height), svg: source as String)
-    
-        
-        return view
+        return data
     }
     
     
-    public static func fromPathSync(_ path: String) -> NSCSVG? {
-        var view = NSCSVG()
+    public static func fromPathSync(_ path: String) -> NSCSVGData? {
+        var data: NSCSVGData? = nil
         if(!FileManager.default.fileExists(atPath: path)){return nil}
         do {
             let text = try String(contentsOfFile: path)
@@ -232,26 +291,26 @@ public class NSCSVG: UIView {
             if(dim.width.isZero || dim.height.isZero){
                 return nil
             }
-            view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
-            let width = dim.width
-            let height = dim.height
-            view.data = calloc(Int(width * height), 4)
-            view.buf_size = UInt(width * height * 4)
-            view.data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
-        
             
-            guard let buf = view.data?.assumingMemoryBound(to: UInt8.self) else {return nil}
-            CanvasSVGHelper.draw(fromString: buf, size: view.buf_size, width: Float(view.data_size.width), height: Float(view.data_size.height), svg: text as String)
+            let ret = NSCSVGData()
+            
+            ret.resize(CGFloat(dim.width), CGFloat(dim.height))
+           
+            guard let buf = ret.rawData?.assumingMemoryBound(to: UInt8.self) else {return nil}
+            
+            CanvasSVGHelper.draw(fromString: buf, size: ret.buf_size, width: Float(ret.data_size.width), height: Float(ret.data_size.height), svg: text as String)
+            
+            data = ret
             
         }catch{
             return nil
         }
-        return view
+        return data
     }
     
     
-    public static func fromRemoteSync(_ path: String) -> NSCSVG? {
-        var view = NSCSVG()
+    public static func fromRemoteSync(_ path: String) -> NSCSVGData? {
+        var data: NSCSVGData? = nil
         guard let url = URL(string: path) else {
             return nil
         }
@@ -262,169 +321,161 @@ public class NSCSVG: UIView {
             }
             
             let dim = parseSVGDimensions(text)
+            
             if(dim.width.isZero || dim.height.isZero){
                 return nil
             }
-            view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
-            let width = dim.width
-            let height = dim.height
-            view.data = calloc(Int(width * height), 4)
-            view.buf_size = UInt(width * height * 4)
-            view.data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
             
+         
+            let ret = NSCSVGData()
             
-            guard let buf = view.data?.assumingMemoryBound(to: UInt8.self) else {return nil}
-            CanvasSVGHelper.draw(fromString: buf, size: view.buf_size, width: Float(view.data_size.width), height: Float(view.data_size.height), svg: text as String)
+            ret.resize(CGFloat(dim.width), CGFloat(dim.height))
+           
+            guard let buf = ret.rawData?.assumingMemoryBound(to: UInt8.self) else {return nil}
+            
+            CanvasSVGHelper.draw(fromString: buf, size: ret.buf_size, width: Float(ret.data_size.width), height: Float(ret.data_size.height), svg: text as String)
+            
+            data = ret
+            
             
         }catch{
             return nil
         }
-        return view
+        return data
+    }
+    
+    static func emitEvent(_ loop: RunLoop, _ event: Timer){
+        loop.add(event, forMode: .common)
     }
     
     
-    public static func fromString(_ source: String, _ callback:@escaping ((NSCSVG?)-> Void)) {
+    public static func fromString(_ source: String, _ callback:@escaping ((NSCSVGData?)-> Void)) {
+        let current = RunLoop.current
         DispatchQueue.global(qos: .utility).async {
-            var view = NSCSVG()
+            let nilEvent = Timer(timeInterval: 0, repeats: false) { _ in
+                callback(nil)
+            }
+     
             let dim = parseSVGDimensions(source)
+            
+            
             if(dim.width.isZero || dim.height.isZero){
-                callback(nil)
+                emitEvent(current, nilEvent)
                 return
             }
             
-            let width = dim.width
-            let height = dim.height
-            var data = calloc(Int(width * height), 4)
-            var buf_size = UInt(width * height * 4)
-            var data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
+            var data = NSCSVGData()
+            data.resize(CGFloat(dim.width), CGFloat(dim.height))
             
             
-            guard let buf = view.data?.assumingMemoryBound(to: UInt8.self) else {
-                callback(nil)
+            guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {
+                emitEvent(current, nilEvent)
                 return
             }
             
-            CanvasSVGHelper.draw(fromString: buf, size: buf_size, width: Float(data_size.width), height: Float(data_size.height), svg: source as String)
-            DispatchQueue.main.async {
-                var view = NSCSVG()
-                view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
-                view.data = data
-                view.data_size = data_size
-                view.buf_size = buf_size
-                callback(view)
+            CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: source as String)
+       
+            
+            let event = Timer(timeInterval: 0, repeats: false) { _ in
+                callback(data)
             }
+            
+            emitEvent(current, event)
+        
         }
     }
     
     
-    public static func fromPath(_ path: String, _ callback:@escaping ((NSCSVG?)-> Void)) {
+    public static func fromPath(_ path: String, _ callback:@escaping ((NSCSVGData?)-> Void)) {
+        let current = RunLoop.current
         DispatchQueue.global(qos: .utility).async {
-            var view = NSCSVG()
+            let nilEvent = Timer(timeInterval: 0, repeats: false) { _ in
+                callback(nil)
+            }
+            
             if(!FileManager.default.fileExists(atPath: path)){
-                DispatchQueue.main.async {
-                    callback(nil)
-                }
+                emitEvent(current, nilEvent)
                 return
             }
             do {
                 let text = try String(contentsOfFile: path)
                 if (text.isEmpty) {
-                    DispatchQueue.main.async {
-                        callback(nil)
-                    }
+                    emitEvent(current, nilEvent)
                     return
                 }
                 
-                let dim = parseSVGDimensions(text)
+                var dim = parseSVGDimensions(text)
                 if(dim.width.isZero || dim.height.isZero){
-                    callback(nil)
+                    emitEvent(current, nilEvent)
                     return
                 }
-                let width = dim.width
-                let height = dim.height
-                var data = calloc(Int(width * height), 4)
-                var buf_size = UInt(width * height * 4)
-                var data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
+                
+                let data = NSCSVGData()
+                data.resize(CGFloat(dim.width), CGFloat(dim.height))
                 
                 
-                guard let buf = data?.assumingMemoryBound(to: UInt8.self) else {
-                    callback(nil)
+                guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {
+                    emitEvent(current, nilEvent)
                     return
                 }
-                CanvasSVGHelper.draw(fromString: buf, size: buf_size, width: Float(data_size.width), height: Float(data_size.height), svg: text as String)
                 
-                DispatchQueue.main.async {
-                    var view = NSCSVG()
-                    view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
-                    view.data = data
-                    view.data_size = data_size
-                    view.buf_size = buf_size
-                    callback(view)
+                CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: text as String)
+                
+                
+                let event = Timer(timeInterval: 0, repeats: false) { _ in
+                    callback(data)
                 }
+                
+                emitEvent(current, event)
                 
             }catch{
-                DispatchQueue.main.async {
-                    callback(nil)
-                }
+                emitEvent(current, nilEvent)
             }
-           
+            
         }
     }
     
     
-    public static func fromRemote(_ path: String, _ callback:@escaping ((NSCSVG?)-> Void)) {
+    public static func fromRemote(_ path: String, _ callback:@escaping ((NSCSVGData?)-> Void)) {
+        let current = RunLoop.current
         DispatchQueue.global(qos: .utility).async {
+            let nilEvent = Timer(timeInterval: 0, repeats: false) { _ in
+                callback(nil)
+            }
+            
             guard let url = URL(string: path) else {
-                DispatchQueue.main.async {
-                    callback(nil)
-                }
+                emitEvent(current, nilEvent)
                 return
             }
             do {
                 let text = try String(contentsOf: url, encoding: .utf8)
                 if (text.isEmpty) {
-                    DispatchQueue.main.async {
-                        callback(nil)
-                    }
+                    emitEvent(current, nilEvent)
                     return
                 }
                 
-                let dim = parseSVGDimensions(text)
-                if(dim.width.isZero || dim.height.isZero){
-                    DispatchQueue.main.async {
-                        callback(nil)
-                    }
+                var dim = parseSVGDimensions(text)
+                
+                let data = NSCSVGData()
+                data.resize(CGFloat(dim.width), CGFloat(dim.height))
+                
+                
+                guard let buf = data.rawData?.assumingMemoryBound(to: UInt8.self) else {
+                    emitEvent(current, nilEvent)
                     return
                 }
-                let width = dim.width
-                let height = dim.height
-                var data = calloc(Int(width * height), 4)
-                var buf_size = UInt(width * height * 4)
-                var data_size = CGSize(width: CGFloat(width), height: CGFloat(height))
+                CanvasSVGHelper.draw(fromString: buf, size: data.buf_size, width: Float(data.data_size.width), height: Float(data.data_size.height), svg: text as String)
                 
                 
-                guard let buf = data?.assumingMemoryBound(to: UInt8.self) else {
-                    DispatchQueue.main.async {
-                        callback(nil)
-                    }
-                    return
+                let event = Timer(timeInterval: 0, repeats: false) { _ in
+                    callback(data)
                 }
-                CanvasSVGHelper.draw(fromString: buf, size: buf_size, width: Float(data_size.width), height: Float(data_size.height), svg: text as String)
                 
-                DispatchQueue.main.async {
-                    var view = NSCSVG()
-                    view.frame = CGRect(x: 0, y: 0, width: dim.width, height: dim.height)
-                    view.data = data
-                    view.data_size = data_size
-                    view.buf_size = buf_size
-                    callback(view)
-                }
+                emitEvent(current, event)
                 
                 
             }catch{
-                DispatchQueue.main.async {
-                    callback(nil)
-                }
+                emitEvent(current, nilEvent)
             }
         }
     }
@@ -458,55 +509,59 @@ public class NSCSVG: UIView {
         
         for match in matchesAttributes {
             let attributePair = (svgAttributes as NSString).substring(with: match.range)
-            let parts = attributePair.components(separatedBy: "=").map { $0.trimmingCharacters(in: .whitespaces) }
+            let split = attributePair.components(separatedBy: " ").map { $0.trimmingCharacters(in: .whitespaces) }
             
-            if parts.count == 2 {
-                let attributeName = parts[0]
-                var attributeValue = parts[1].replacingOccurrences(of: "\"", with: "")
+            for part in split {
+                let parts = part.components(separatedBy: "=").map { $0.trimmingCharacters(in: .whitespaces) }
                 
-                let stringLiteralPattern = try! NSRegularExpression(pattern: "\\\\\"(\\d*\\.?\\d+)\\\\\"")
-                let stringLiteralMatches = stringLiteralPattern.matches(in: attributeValue, options: [], range: NSRange(location: 0, length: attributeValue.utf16.count))
-                
-                if let stringLiteralMatch = stringLiteralMatches.first {
-                    attributeValue = (attributeValue as NSString).substring(with: stringLiteralMatch.range(at: 1))
-                }
-                
-                if attributeName == "width" {
-                    width = (attributeValue as NSString).doubleValue
-                    widthDefined = true
-                } else if attributeName == "height" {
-                    height = (attributeValue as NSString).doubleValue
-                    heightDefined = true
-                } else if attributeName == "viewBox" {
-                    let viewBoxValues = attributeValue.components(separatedBy: .whitespaces)
-                    for i in 0..<min(4, viewBoxValues.count) {
-                        var value = viewBoxValues[i].replacingOccurrences(of: "\"", with: "")
-                        let stringLiteralMatches = stringLiteralPattern.matches(in: value, options: [], range: NSRange(location: 0, length: value.utf16.count))
-                        if let stringLiteralMatch = stringLiteralMatches.first {
-                            value = (value as NSString).substring(with: stringLiteralMatch.range(at: 1))
+                if parts.count == 2 {
+                    let attributeName = parts[0]
+                    var attributeValue = parts[1].replacingOccurrences(of: "\"", with: "")
+                    
+                    let stringLiteralPattern = try! NSRegularExpression(pattern: "\\\\\"(\\d*\\.?\\d+)\\\\\"")
+                    let stringLiteralMatches = stringLiteralPattern.matches(in: attributeValue, options: [], range: NSRange(location: 0, length: attributeValue.utf16.count))
+                    
+                    if let stringLiteralMatch = stringLiteralMatches.first {
+                        attributeValue = (attributeValue as NSString).substring(with: stringLiteralMatch.range(at: 1))
+                    }
+                    
+                    if attributeName == "width" {
+                        width = (attributeValue as NSString).doubleValue
+                        widthDefined = true
+                    } else if attributeName == "height" {
+                        height = (attributeValue as NSString).doubleValue
+                        heightDefined = true
+                    } else if attributeName == "viewBox" {
+                        let viewBoxValues = attributeValue.components(separatedBy: .whitespaces)
+                        for i in 0..<min(4, viewBoxValues.count) {
+                            var value = viewBoxValues[i].replacingOccurrences(of: "\"", with: "")
+                            let stringLiteralMatches = stringLiteralPattern.matches(in: value, options: [], range: NSRange(location: 0, length: value.utf16.count))
+                            if let stringLiteralMatch = stringLiteralMatches.first {
+                                value = (value as NSString).substring(with: stringLiteralMatch.range(at: 1))
+                            }
+                            viewBox[i] = (value as NSString).doubleValue
                         }
-                        viewBox[i] = (value as NSString).doubleValue
                     }
                 }
             }
-        }
-        
-        if width == 0.0 && viewBox.count == 4 {
-            let aspectRatio = viewBox[2] / viewBox[3]
-            width = UIScreen.main.bounds.width * aspectRatio
-        }
-        
-        if height == 0.0 && viewBox.count == 4 {
-            let aspectRatio = viewBox[2] / viewBox[3]
-            height = UIScreen.main.bounds.height / aspectRatio
-        }
-        
-        if (width == 0.0 || width.isNaN) && !widthDefined {
-            width = UIScreen.main.bounds.width
-        }
-        
-        if (height == 0.0 || height.isNaN) && !heightDefined {
-            height = UIScreen.main.bounds.height
+            
+            if (width == 0.0 || width.isNaN) && viewBox.count == 4 {
+                let aspectRatio = viewBox[2] / viewBox[3]
+                width = 150 * aspectRatio
+            }
+            
+            if (height == 0.0 || height.isNaN)  && viewBox.count == 4 {
+                let aspectRatio = viewBox[2] / viewBox[3]
+                height = 300 / aspectRatio
+            }
+            
+            if (width == 0.0 || width.isNaN) && !widthDefined {
+                width = 300
+            }
+            
+            if (height == 0.0 || height.isNaN) && !heightDefined {
+                height = 150
+            }
         }
         
         dimensions.width = width

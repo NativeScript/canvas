@@ -235,7 +235,7 @@ pub(crate) fn create_image_bitmap_internal(
 
     let image_info = skia_safe::ImageInfo::new(
         (source_rect.width() as i32, source_rect.height() as i32),
-        skia_safe::ColorType::N32,
+        skia_safe::ColorType::RGBA8888,
         ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
         ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
     );

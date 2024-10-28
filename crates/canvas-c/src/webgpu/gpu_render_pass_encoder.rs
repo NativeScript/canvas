@@ -159,6 +159,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed(
     }
 }
 
+
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(
     render_pass: *const CanvasGPURenderPassEncoder,
@@ -194,6 +195,43 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indexed_i
     }
 }
 
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_indexed_indirect(
+    render_pass: *const CanvasGPURenderPassEncoder,
+    indirect_buffer: *const CanvasGPUBuffer,
+    indirect_offset: u64,
+    count: u32,
+) {
+    if render_pass.is_null() || indirect_buffer.is_null() {
+        return;
+    }
+
+    let render_pass = &*render_pass;
+    let global = render_pass.instance.global();
+    let label = render_pass.label.clone();
+    let error_sink = render_pass.error_sink.as_ref();
+
+    let indirect_buffer = &*indirect_buffer;
+
+    let buffer_id = indirect_buffer.buffer;
+
+    let mut pass = render_pass.pass.lock();
+
+    if let Some(pass) = pass.as_mut() {
+        if let Err(cause) = global.render_pass_multi_draw_indexed_indirect(pass, buffer_id, indirect_offset, count) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                label,
+                "canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect",
+            );
+        }
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indirect(
     render_pass: *const CanvasGPURenderPassEncoder,
@@ -216,6 +254,41 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_draw_indirect(
 
     if let Some(pass) = pass.as_mut() {
         if let Err(cause) = global.render_pass_draw_indirect(pass, buffer_id, indirect_offset) {
+            handle_error(
+                global,
+                error_sink,
+                cause,
+                "encoder",
+                label,
+                "canvas_native_webgpu_render_pass_encoder_draw_indirect",
+            );
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_multi_draw_indirect(
+    render_pass: *const CanvasGPURenderPassEncoder,
+    indirect_buffer: *const CanvasGPUBuffer,
+    indirect_offset: u64,
+    count: u32,
+) {
+    if render_pass.is_null() || indirect_buffer.is_null() {
+        return;
+    }
+
+    let render_pass = &*render_pass;
+    let global = render_pass.instance.global();
+    let label = render_pass.label.clone();
+    let error_sink = render_pass.error_sink.as_ref();
+
+    let indirect_buffer = &*indirect_buffer;
+
+    let buffer_id = indirect_buffer.buffer;
+    let mut pass = render_pass.pass.lock();
+
+    if let Some(pass) = pass.as_mut() {
+        if let Err(cause) = global.render_pass_multi_draw_indirect(pass, buffer_id, indirect_offset, count) {
             handle_error(
                 global,
                 error_sink,

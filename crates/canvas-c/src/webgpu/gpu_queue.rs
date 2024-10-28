@@ -1,7 +1,3 @@
-use std::borrow::Cow;
-use std::os::raw::{c_char, c_void};
-use std::sync::Arc;
-
 use super::{
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -12,7 +8,11 @@ use super::{
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
-use crate::webgpu::structs::CanvasImageCopyImageAsset;
+use crate::webgpu::structs::{CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyImageAsset, CanvasImageCopyWebGL};
+use canvas_webgl::utils::gl::bytes_per_pixel;
+use std::borrow::Cow;
+use std::os::raw::{c_char, c_void};
+use std::sync::Arc;
 
 pub struct QueueId {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
@@ -86,6 +86,94 @@ fn get_offset_image(
 
     result
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyWebGL,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if source.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    if source.source.is_null() {
+        return;
+    }
+    let webgl = &*source.source;
+
+
+    webgl.0.make_current();
+    let width = webgl.0.get_drawing_buffer_width();
+    let height = webgl.0.get_drawing_buffer_height();
+
+
+    let row_size = bytes_per_pixel(gl_bindings::RGBA as u32, gl_bindings::RGBA as u32) as i32;
+
+    let mut bytes = vec![0u8; (width * height * row_size) as usize];
+    unsafe {
+        gl_bindings::Flush();
+        gl_bindings::ReadPixels(
+            0,
+            0,
+            width,
+            height,
+            gl_bindings::RGBA as u32,
+            gl_bindings::RGBA as u32,
+            bytes.as_mut_ptr() as *mut c_void,
+        );
+    }
+
+
+    let ext_source = CanvasImageCopyExternalImage {
+        source: bytes.as_ptr(),
+        source_size: bytes.len(),
+        origin: source.origin,
+        flip_y: source.flip_y,
+        width: width as u32,
+        height: height as u32,
+    };
+
+    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyCanvasRenderingContext2D,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if source.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    if source.source.is_null() {
+        return;
+    }
+    let context = &mut *(source.source as *mut crate::c2d::CanvasRenderingContext2D);
+
+    let (width, height) = context.context.dimensions();
+
+    let mut bytes = vec![0u8; (width * height * 4.) as usize];
+
+    context.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+
+    let ext_source = CanvasImageCopyExternalImage {
+        source: bytes.as_ptr(),
+        source_size: bytes.len(),
+        origin: source.origin,
+        flip_y: source.flip_y,
+        width: width as u32,
+        height: height as u32,
+    };
+
+    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+}
+
 
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(

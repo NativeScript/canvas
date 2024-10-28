@@ -20,7 +20,7 @@ use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContext
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
-use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromPath, nativeLoadFromUrl};
+use crate::jni_compat::org_nativescript_canvas_NSCImageAsset::{nativeCreateImageAsset, nativeDestroyImageAsset, nativeGetDimensions, nativeGetError, nativeLoadFromBitmap, nativeLoadFromBuffer, nativeLoadFromBytes, nativeLoadFromEncodedBuffer, nativeLoadFromEncodedBytes, nativeLoadFromPath, nativeLoadFromUrl};
 use crate::jni_compat::org_nativescript_canvas_NSCImageBitmap::{nativeLoadBitmapFromBuffer, nativeLoadBitmapFromBufferOptions, nativeLoadBitmapFromBufferRectOptions, nativeLoadBitmapFromBytes, nativeLoadBitmapFromBytesOptions, nativeLoadBitmapFromBytesRectOptions};
 use crate::jni_compat::org_nativescript_canvas_NSCWebGLRenderingContext::{
     nativeTexImage2D, nativeTexSubImage2D,
@@ -100,7 +100,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 let mut ret = vec![
                     "(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "(IIZZZZIZZZZZI)J",
-                    "(Landroid/view/Surface;ZFIFI)J",
+                    "(IILandroid/view/Surface;ZFIFI)J",
                     "(Landroid/view/Surface;J)V",
                     "(Landroid/view/Surface;IIJ)V",
                     "(IIJ)V",
@@ -130,7 +130,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 let mut ret = vec![
                     "!(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "!(IIZZZZIZZZZZI)J",
-                    "!(Landroid/view/Surface;ZFIFI)J",
+                    "!(IILandroid/view/Surface;ZFIFI)J",
                     "!(Landroid/view/Surface;J)V",
                     "!(Landroid/view/Surface;IIJ)V",
                     "!(IIJ)V",
@@ -327,6 +327,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "nativeLoadFromUrl",
                 "nativeLoadFromBytes",
                 "nativeLoadFromBuffer",
+                "nativeLoadFromEncodedBytes",
+                "nativeLoadFromEncodedBuffer",
             ];
 
             let image_asset_signatures = if ret >= ANDROID_O {
@@ -338,6 +340,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(JLjava/lang/String;)Z",
                     "(J)Ljava/lang/String;",
                     "(JLjava/lang/String;)Z",
+                    "(JII[B)Z",
+                    "(JIILjava/nio/ByteBuffer;)Z",
                     "(J[B)Z",
                     "(JLjava/nio/ByteBuffer;)Z",
                 ]
@@ -350,6 +354,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(JLjava/lang/String;)Z",
                     "!(J)Ljava/lang/String;",
                     "!(JLjava/lang/String;)Z",
+                    "!(JII[B)Z",
+                    "!(JIILjava/nio/ByteBuffer;)Z",
                     "!(J[B)Z",
                     "!(JLjava/nio/ByteBuffer;)Z",
                 ]
@@ -365,6 +371,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 nativeLoadFromUrl as *mut c_void,
                 nativeLoadFromBytes as *mut c_void,
                 nativeLoadFromBuffer as *mut c_void,
+                nativeLoadFromEncodedBytes as *mut c_void,
+                nativeLoadFromEncodedBuffer as *mut c_void,
             ];
 
             let image_asset_native_methods: Vec<NativeMethod> = izip!(

@@ -482,7 +482,7 @@ export class Canvas extends CanvasBase {
 			case ContextType.WebGL2:
 				return this._webgl2Context.native;
 			case ContextType.WebGPU:
-				return this._gpuContext;
+				return this._gpuContext.native;
 			default:
 				return null;
 		}

@@ -1,8 +1,9 @@
 import { Node } from './Node';
-import { View, ViewBase } from '@nativescript/core';
+import { eachDescendant, Frame, StackLayout, View, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 import querySelector from 'query-selector';
 import { HTMLCollection } from './HTMLCollection';
+import { Canvas } from '@nativescript/canvas/Canvas';
 declare const NSCanvas;
 
 export class DOMRectReadOnly {
@@ -41,6 +42,13 @@ export function parseChildren(element, children) {
 			const node = element.childNodes.item(i);
 			if (node) {
 				switch (node.nodeName) {
+					case 'circle':
+						{
+							const circle = new SVGCircleElement() as unknown as Element;
+							circle.nativeElement.__domElement = node;
+							children.push(circle);
+						}
+						break;
 					case 'image': {
 						const image = new SVGImageElement() as unknown as Element;
 						image.nativeElement.__domElement = node;
@@ -109,6 +117,96 @@ export function parseChildren(element, children) {
 			}
 		}
 	}
+}
+
+function getElementsByClassName(v, clsName) {
+	var retVal = [];
+	if (!v) {
+		return retVal;
+	}
+
+	if (v.classList.contains(clsName)) {
+		retVal.push(v);
+	}
+
+	const classNameCallback = function (child) {
+		if (child.classList.contains(clsName)) {
+			retVal.push(child);
+		}
+
+		// Android patch for ListView
+		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
+			for (var key in child._realizedItems) {
+				if (child._realizedItems.hasOwnProperty(key)) {
+					classNameCallback(child._realizedItems[key]);
+				}
+			}
+		}
+
+		return true;
+	};
+
+	eachDescendant(v, classNameCallback);
+
+	// Android patch for ListView
+	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
+		for (var key in v._realizedItems) {
+			if (v._realizedItems.hasOwnProperty(key)) {
+				classNameCallback(v._realizedItems[key]);
+			}
+		}
+	}
+
+	return retVal;
+}
+
+function getElementsByTagName(v, tagName) {
+	// TagName is case-Insensitive
+	var tagNameLC = tagName.toLowerCase();
+
+	var retVal = [],
+		allTags = false;
+	if (!v) {
+		return retVal;
+	}
+
+	if (tagName === '*') {
+		allTags = true;
+	}
+
+	if ((v.typeName && v.typeName.toLowerCase() === tagNameLC) || allTags) {
+		retVal.push(v);
+	}
+
+	const tagNameCallback = function (child) {
+		if ((child.typeName && child.typeName.toLowerCase() === tagNameLC) || allTags) {
+			retVal.push(child);
+		}
+
+		// Android patch for ListView
+		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
+			for (var key in child._realizedItems) {
+				if (child._realizedItems.hasOwnProperty(key)) {
+					tagNameCallback(child._realizedItems[key]);
+				}
+			}
+		}
+
+		return true;
+	};
+
+	eachDescendant(v, tagNameCallback);
+
+	// Android patch for ListView
+	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
+		for (var key in v._realizedItems) {
+			if (v._realizedItems.hasOwnProperty(key)) {
+				tagNameCallback(v._realizedItems[key]);
+			}
+		}
+	}
+
+	return retVal;
 }
 
 type NativeElement = View & { __domElement?: Element };
@@ -181,7 +279,7 @@ export class Element extends Node {
 			this._children.push(document.head);
 			this._children.push(document.body);
 		}
-		const element = (<any>this).nativeElement?.__domElement;
+		const element = (<any>this)?.__domElement ?? (<any>this).nativeElement?.__domElement;
 		if (element) {
 			parseChildren(element, this._children);
 			return this._children;
@@ -235,8 +333,81 @@ export class Element extends Node {
 
 	removeAttributeNS() {}
 
+	getElementById(id: string) {
+		if (this.__instance) {
+			return this.__instance.getElementById(id);
+		}
+		const topmost = Frame.topmost();
+		if (topmost) {
+			let nativeElement;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				nativeElement = topmost.getViewById(id);
+			} else {
+				nativeElement = topmost.currentPage.modal.getViewById(id);
+			}
+
+			if (nativeElement) {
+				if (nativeElement instanceof Canvas) {
+					const canvas = new HTMLCanvasElement();
+					(<any>canvas).nativeElement = nativeElement;
+					return canvas;
+				} else if (nativeElement instanceof StackLayout) {
+					const div = new HTMLDivElement();
+					(<any>div).nativeElement = nativeElement;
+					return div;
+				}
+				const element = new HTMLElement();
+				(<any>element).nativeElement = nativeElement;
+				return element;
+			}
+		}
+		return null;
+	}
+
+	getElementsByTagName(tagname: string) {
+		if (this.__instance) {
+			return this.__instance.getElementsByTagName(tagname);
+		}
+		const topmost = Frame.topmost();
+		if (topmost) {
+			let view;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				view = topmost;
+			} else {
+				view = topmost.currentPage.modal;
+			}
+			const elements = getElementsByTagName(view, tagname);
+
+			return elements;
+		}
+		return [];
+	}
+
+	get __instance() {
+		return (<any>this.nativeElement?.__domElement?.ownerDocument)?.__instance;
+	}
+
+	getElementsByClassName(className: string) {
+		if (this.__instance) {
+			return this.__instance.getElementsByClassName(className);
+		}
+		const topmost = Frame.topmost();
+		if (topmost) {
+			let view;
+			if (topmost.currentPage && topmost.currentPage.modal) {
+				view = topmost;
+			} else {
+				view = topmost.currentPage.modal;
+			}
+			const elements = getElementsByClassName(view, className);
+
+			return elements;
+		}
+		return [];
+	}
+
 	querySelector(selector: string) {
-		const context = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom;
+		const context = (<any>this)._xmlDom?.documentElement ?? (<any>this)._xmlDom ?? this.__instance ?? this.nativeElement?.__domElement;
 		const selection = querySelector(selector, context);
 		if (Array.isArray(selection)) {
 			const item = selection[0];
@@ -245,6 +416,11 @@ export class Element extends Node {
 					case 'linearGradient': {
 						const ret = new SVGLinearGradientElement() as any;
 						ret.__instance = item;
+						return ret;
+					}
+					case 'svg': {
+						const ret = new SVGSVGElement() as any;
+						ret.__domElement = item;
 						return ret;
 					}
 				}

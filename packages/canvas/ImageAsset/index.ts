@@ -214,18 +214,18 @@ export class ImageAsset extends Observable {
 
     */
 
-	loadFromBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
-		return this.native.fromBytesSync(bytes);
+	loadFromEncodedBytesSync(bytes: Uint8Array | Uint8ClampedArray) {
+		return this.native.fromEncodedBytesSync(bytes);
 	}
 
-	loadFromBytes(bytes: Uint8Array | Uint8ClampedArray) {
+	loadFromEncodedBytes(bytes: Uint8Array | Uint8ClampedArray) {
 		return new Promise((resolve, reject) => {
 			if (__ANDROID__) {
 				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
 
 				if (!ArrayBuffer.isView(bytes)) {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBytesAsync(
 						asset,
 						bytes,
 						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
@@ -247,7 +247,7 @@ export class ImageAsset extends Observable {
 						})
 					);
 				} else {
-					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBufferAsync(
 						asset,
 						bytes,
 						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
@@ -273,7 +273,90 @@ export class ImageAsset extends Observable {
 			}
 
 			this._incrementStrongRef();
-			this.native.fromBytesCb(bytes, (success, error) => {
+			this.native.fromEncodedBytesCb(bytes, (success, error) => {
+				this.emitComplete(success, error);
+				if (error) {
+					reject(error);
+				} else {
+					resolve(success);
+				}
+
+				this._decrementStrongRefAndRemove();
+			});
+		});
+	}
+
+	loadFromBytesSync(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray) {
+		return this.native.fromBytesSync(width, height, bytes);
+	}
+
+	loadFromBytes(width: number, height: number, bytes: Uint8Array | Uint8ClampedArray) {
+		return new Promise((resolve, reject) => {
+			if (__ANDROID__) {
+				const ref = new WeakRef(this);
+				const asset = this._android.getAsset();
+
+				if (Array.isArray(bytes)) {
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBytesAsync(
+						asset,
+						width,
+						height,
+						bytes,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
+								}
+							},
+						})
+					);
+				} else {
+					let buffer: ArrayBuffer = bytes as never;
+					if (ArrayBuffer.isView(bytes)) {
+						buffer = bytes.buffer;
+					} else if (buffer && 'nativeObject' in buffer) {
+						buffer = buffer.nativeObject as never;
+					}
+
+					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromBufferAsync(
+						asset,
+						width,
+						height,
+						buffer,
+						new (<any>org).nativescript.canvas.NSCImageAsset.Callback({
+							onComplete(success) {
+								const owner = ref.get();
+								if (!success) {
+									const error = (<any>org).nativescript.canvas.NSCImageAsset.getError(asset);
+									if (owner) {
+										owner.emitComplete(success, error);
+									}
+									reject(error);
+								} else {
+									if (owner) {
+										owner.emitComplete(success, undefined);
+									}
+									resolve(success);
+								}
+							},
+						})
+					);
+				}
+				return;
+			}
+
+			this._incrementStrongRef();
+			this.native.fromBytesCb(width, height, bytes, (success, error) => {
 				this.emitComplete(success, error);
 				if (error) {
 					reject(error);

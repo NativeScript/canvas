@@ -1770,6 +1770,52 @@ typedef struct CanvasOrigin2d {
   uint32_t y;
 } CanvasOrigin2d;
 
+typedef struct CanvasImageCopyWebGL {
+  /**
+   * The texture to be copied from. The copy source data is captured at the moment
+   * the copy is issued.
+   */
+  const struct WebGLState *source;
+  /**
+   * The base texel used for copying from the external image. Together
+   * with the `copy_size` argument to copy functions, defines the
+   * sub-region of the image to copy.
+   *
+   * Relative to the top left of the image.
+   *
+   * Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+   */
+  struct CanvasOrigin2d origin;
+  /**
+   * If the Y coordinate of the image should be flipped. Even if this is
+   * true, `origin` is still relative to the top left.
+   */
+  bool flip_y;
+} CanvasImageCopyWebGL;
+
+typedef struct CanvasImageCopyCanvasRenderingContext2D {
+  /**
+   * The texture to be copied from. The copy source data is captured at the moment
+   * the copy is issued.
+   */
+  const struct CanvasRenderingContext2D *source;
+  /**
+   * The base texel used for copying from the external image. Together
+   * with the `copy_size` argument to copy functions, defines the
+   * sub-region of the image to copy.
+   *
+   * Relative to the top left of the image.
+   *
+   * Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+   */
+  struct CanvasOrigin2d origin;
+  /**
+   * If the Y coordinate of the image should be flipped. Even if this is
+   * true, `origin` is still relative to the top left.
+   */
+  bool flip_y;
+} CanvasImageCopyCanvasRenderingContext2D;
+
 typedef struct CanvasImageCopyImageAsset {
   /**
    * The texture to be copied from. The copy source data is captured at the moment
@@ -1839,6 +1885,11 @@ typedef struct CanvasCreateTextureViewDescriptor {
   enum CanvasOptionalTextureViewDimension dimension;
   const struct CanvasImageSubresourceRange *range;
 } CanvasCreateTextureViewDescriptor;
+
+typedef struct FileHelperMime {
+  const char *mime_type;
+  const char *extension;
+} FileHelperMime;
 
 void canvas_native_font_add_family(const char *alias,
                                    const char *const *filenames,
@@ -3274,6 +3325,16 @@ void canvas_native_webgpu_queue_reference(const struct CanvasGPUQueue *queue);
 
 void canvas_native_webgpu_queue_release(const struct CanvasGPUQueue *queue);
 
+void canvas_native_webgpu_queue_copy_webgl_to_texture(const struct CanvasGPUQueue *queue,
+                                                      const struct CanvasImageCopyWebGL *source,
+                                                      const struct CanvasImageCopyTexture *destination,
+                                                      const struct CanvasExtent3d *size);
+
+void canvas_native_webgpu_queue_copy_context_to_texture(const struct CanvasGPUQueue *queue,
+                                                        const struct CanvasImageCopyCanvasRenderingContext2D *source,
+                                                        const struct CanvasImageCopyTexture *destination,
+                                                        const struct CanvasExtent3d *size);
+
 void canvas_native_webgpu_queue_copy_image_asset_to_texture(const struct CanvasGPUQueue *queue,
                                                             const struct CanvasImageCopyImageAsset *source,
                                                             const struct CanvasImageCopyTexture *destination,
@@ -3396,9 +3457,19 @@ void canvas_native_webgpu_render_pass_encoder_draw_indexed_indirect(const struct
                                                                     const struct CanvasGPUBuffer *indirect_buffer,
                                                                     uint64_t indirect_offset);
 
+void canvas_native_webgpu_render_pass_encoder_multi_draw_indexed_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                          const struct CanvasGPUBuffer *indirect_buffer,
+                                                                          uint64_t indirect_offset,
+                                                                          uint32_t count);
+
 void canvas_native_webgpu_render_pass_encoder_draw_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
                                                             const struct CanvasGPUBuffer *indirect_buffer,
                                                             uint64_t indirect_offset);
+
+void canvas_native_webgpu_render_pass_encoder_multi_draw_indirect(const struct CanvasGPURenderPassEncoder *render_pass,
+                                                                  const struct CanvasGPUBuffer *indirect_buffer,
+                                                                  uint64_t indirect_offset,
+                                                                  uint32_t count);
 
 void canvas_native_webgpu_render_pass_encoder_end(const struct CanvasGPURenderPassEncoder *render_pass);
 
@@ -3573,9 +3644,17 @@ char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer
 
 void canvas_native_string_buffer_release(struct StringBuffer *buffer);
 
+struct FileHelperMime *canvas_native_helper_get_mime(const uint8_t *data, uintptr_t size);
+
+void canvas_native_helper_release_mime(struct FileHelperMime *mime);
+
 void canvas_native_helper_release(struct FileHelper *value);
 
 struct FileHelper *canvas_native_helper_read_file(const char *path);
+
+char *canvas_native_helper_read_file_get_mime(struct FileHelper *file);
+
+char *canvas_native_helper_read_file_get_extension(struct FileHelper *file);
 
 bool canvas_native_helper_read_file_has_error(const struct FileHelper *file);
 
@@ -3600,8 +3679,14 @@ bool canvas_native_image_asset_load_from_fd(const struct ImageAsset *asset, int 
 bool canvas_native_image_asset_load_from_path(const struct ImageAsset *asset, const char *path);
 
 bool canvas_native_image_asset_load_from_raw(const struct ImageAsset *asset,
+                                             uint32_t width,
+                                             uint32_t height,
                                              const uint8_t *array,
                                              uintptr_t size);
+
+bool canvas_native_image_asset_load_from_raw_encoded(const struct ImageAsset *asset,
+                                                     const uint8_t *array,
+                                                     uintptr_t size);
 
 bool canvas_native_image_asset_load_from_url(const struct ImageAsset *asset, const char *url);
 

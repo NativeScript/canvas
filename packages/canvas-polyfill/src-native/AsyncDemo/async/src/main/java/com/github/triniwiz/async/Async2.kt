@@ -1,6 +1,5 @@
 package com.github.triniwiz.async
 
-import android.os.Build
 import android.os.Handler
 import okhttp3.*
 import okhttp3.internal.http2.ErrorCode
@@ -16,7 +15,6 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -24,7 +22,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 
-public class Async2 {
+class Async2 {
 
 	private var handler: Handler? = null
 
@@ -55,8 +53,7 @@ public class Async2 {
 			@JvmStatic
 			fun base64ToFile(base64: String, path: String, callback: Callback) {
 				executor.execute {
-					val MIME: String
-					MIME = try {
+					val MIME: String = try {
 						getMIMEForBase64String(base64)
 					} catch (e: Exception) {
 						callback.error(e, e.message)
@@ -85,7 +82,7 @@ public class Async2 {
 						try {
 							os?.flush()
 							os?.close()
-						} catch (_: java.lang.Exception) {}
+						} catch (_: Exception) {}
 
 						if (!isError) {
 							callback.success(file.absolutePath)
@@ -822,7 +819,7 @@ public class Async2 {
 							try {
 								stream.flush()
 								stream.close()
-							} catch (e: IOException) {
+							} catch (_: IOException) {
 							}
 						}
 						if (!isError) {
@@ -883,7 +880,6 @@ public class Async2 {
 					} catch (e: FileNotFoundException) {
 						isError = true
 						callback.onError(e.message, e)
-						isError = true
 					} catch (e: IOException) {
 						callback.onError(e.message, e)
 					} finally {

@@ -14,7 +14,7 @@ export class HTMLCanvasElement extends HTMLElement {
 		if (canvas instanceof Canvas) {
 			this.nativeElement = canvas;
 		} else {
-			this.nativeElement = (Canvas as any).createCustomView();
+			this.nativeElement = Canvas.createCustomView();
 		}
 
 		if (!this.nativeElement.__domElement) {

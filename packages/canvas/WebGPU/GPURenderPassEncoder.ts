@@ -32,6 +32,18 @@ export class GPURenderPassEncoder {
 		this[native_].drawIndirect(indirectBuffer[native_], indirectOffset);
 	}
 
+	multiDrawIndexed(indexCount: number, instanceCount: number = 1, firstVertex: number = 0, firstInstance: number = 0, count = 0) {
+		this[native_].multiDrawIndexed(indexCount, instanceCount ?? 1, firstVertex ?? 0, firstInstance ?? 0, count ?? 0);
+	}
+
+	multiDrawIndexedIndirect(indirectBuffer: GPUBuffer, indirectOffset: number, count = 0) {
+		this[native_].multiDrawIndexedIndirect(indirectBuffer[native_], indirectOffset, count ?? 0);
+	}
+
+	multiDrawIndirect(indirectBuffer: GPUBuffer, indirectOffset: number, count = 0) {
+		this[native_].multiDrawIndirect(indirectBuffer[native_], indirectOffset, count ?? 0);
+	}
+
 	end() {
 		this[native_].end();
 	}

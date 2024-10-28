@@ -61,6 +61,10 @@ public:
 
     static void FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void FromEncodedBytesSync(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     /* static void SaveSync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
      static void SaveCb(const v8::FunctionCallbackInfo<v8::Value> &args);*/

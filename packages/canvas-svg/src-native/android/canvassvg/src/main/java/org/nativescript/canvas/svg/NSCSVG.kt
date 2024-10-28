@@ -5,25 +5,79 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.os.Build
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
-import android.view.ViewGroup
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
-import java.util.concurrent.CountDownLatch
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.math.min
 
 
+class NSCSVGData {
+	internal var mData: ByteBuffer? = null
+	internal var mWidth: Int = 0
+	internal var mHeight: Int = 0
+	internal var mSize: Int = 0
+	internal var mBitmap: Bitmap? = null
+
+
+	fun resize(width: Int, height: Int) {
+		if (width > 0 && height > 0) {
+			mData = null
+			mBitmap = null
+			val size = (width * height * 4)
+			mData = ByteBuffer.allocateDirect(size)
+			mSize = size
+			this.mWidth = width
+			this.mHeight = height
+		} else {
+			mData = null
+			mBitmap = null
+			this.mWidth = 0
+			this.mHeight = 0
+		}
+	}
+
+	val data: ByteBuffer?
+		get() {
+			return this.mData
+		}
+
+	val width: Int
+		get() {
+			return this.mWidth
+		}
+
+	val height: Int
+		get() {
+			return this.mHeight
+		}
+
+	fun toImage(): Bitmap? {
+		if (mBitmap == null) {
+			if (mWidth > 0 && mHeight > 0) {
+				mData?.let { data ->
+					val bitmap = Bitmap.createBitmap(mWidth.toInt(), mHeight.toInt(), Bitmap.Config.ARGB_8888)
+					data.rewind()
+					bitmap.copyPixelsFromBuffer(data)
+				}
+			}
+		}
+		return mBitmap
+	}
+}
+
+
 class NSCSVG : View {
-	var bitmap: Bitmap? = null
+	var data: NSCSVGData? = null
 		internal set
 	internal val lock = Any()
 	private var pendingInvalidate: Boolean = false
@@ -46,6 +100,7 @@ class NSCSVG : View {
 		if (isInEditMode) {
 			return
 		}
+		data = NSCSVGData()
 		setBackgroundColor(Color.TRANSPARENT)
 	}
 
@@ -59,20 +114,20 @@ class NSCSVG : View {
 
 		if ((w != 0 && h != 0) && w != layoutParams.width && h != layoutParams.height) {
 
-			bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+			data?.resize(w, h)
 
 			resize(w, h)
 		}
 	}
 
 	override fun onDraw(canvas: Canvas) {
-		bitmap?.let {
+		data?.toImage()?.let {
 			canvas.drawBitmap(it, mMatrix, null)
 		}
 	}
 
 	private fun doDraw() {
-		bitmap?.let {
+		data?.toImage()?.let {
 			currentTask?.cancel(true)
 			if (sync) {
 				if (srcPath.isNotEmpty()) {
@@ -120,7 +175,7 @@ class NSCSVG : View {
 
 
 	interface Callback {
-		fun onSuccess(view: NSCSVG?)
+		fun onSuccess(view: NSCSVGData?)
 	}
 
 	companion object {
@@ -141,25 +196,59 @@ class NSCSVG : View {
 		private external fun nativeDrawSVGFromBytes(bitmap: Bitmap, scale: Float, bytes: ByteBuffer)
 
 		@JvmStatic
-		fun fromPathSync(context: Context, path: String): NSCSVG? {
-			val view = NSCSVG(context)
+		private external fun nativeDrawSVGWithBuffer(
+			buffer: ByteBuffer,
+			width: Int,
+			height: Int,
+			scale: Float,
+			svg: String
+		)
+
+		@JvmStatic
+		private external fun nativeDrawSVGFromPathWithBuffer(
+			buffer: ByteBuffer,
+			width: Int,
+			height: Int,
+			scale: Float,
+			svg: String
+		)
+
+		@JvmStatic
+		private external fun nativeDrawSVGFromBytesWithBuffer(
+			buffer: ByteBuffer,
+			width: Int,
+			height: Int,
+			scale: Float,
+			bytes: ByteBuffer
+		)
+
+		@JvmStatic
+		fun fromPathSync(context: Context, path: String): NSCSVGData? {
+			val ret = NSCSVGData()
 			val file = File(path)
 			if (file.length() == 0L) {
 				return null
 			}
 			val text = file.readText()
 			val dim = parseSVGDimensions(context, text)
-			view.layoutParams = ViewGroup.LayoutParams(dim.width, dim.height)
-			val bitmap = Bitmap.createBitmap(dim.width, dim.height, Bitmap.Config.ARGB_8888)
-			nativeDrawSVGFromPath(bitmap, context.resources.displayMetrics.density, path)
-			return view
+			ret.resize(dim.width, dim.height)
+			return ret.mData?.let { data ->
+				nativeDrawSVGFromPathWithBuffer(
+					data,
+					ret.width,
+					ret.height,
+					context.resources.displayMetrics.density,
+					path
+				)
+				ret
+			}
 		}
 
 		@JvmStatic
 		fun fromPath(context: Context, path: String, callback: Callback) {
 			val executor = Executors.newSingleThreadExecutor()
 			executor.execute {
-				val view = NSCSVG(context)
+				val ret = NSCSVGData()
 				val file = File(path)
 				if (file.length() == 0L) {
 					callback.onSuccess(null)
@@ -167,33 +256,53 @@ class NSCSVG : View {
 				}
 				val text = file.readText()
 				val dim = parseSVGDimensions(context, text)
-				view.layoutParams = ViewGroup.LayoutParams(dim.width, dim.height)
-				val bitmap = Bitmap.createBitmap(dim.width, dim.height, Bitmap.Config.ARGB_8888)
-				nativeDrawSVGFromPath(bitmap, context.resources.displayMetrics.density, path)
-				callback.onSuccess(view)
+				ret.resize(dim.width, dim.height)
+				ret.mData?.let { data ->
+					nativeDrawSVGFromPathWithBuffer(
+						data,
+						dim.width,
+						dim.height,
+						context.resources.displayMetrics.density,
+						path
+					)
+					callback.onSuccess(ret)
+				} ?: callback.onSuccess(null)
+
 			}
 		}
 
 		@JvmStatic
-		fun fromStringSync(context: Context, width: Int, height: Int, string: String): NSCSVG {
-			val view = NSCSVG(context)
-			view.layoutParams = ViewGroup.LayoutParams(width, height)
-			val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-			nativeDrawSVG(bitmap, context.resources.displayMetrics.density, string)
-			view.bitmap = bitmap
-			return view
+		fun fromStringSync(context: Context, width: Int, height: Int, string: String): NSCSVGData {
+			val ret = NSCSVGData()
+			ret.resize(width, height)
+			ret.mData?.let { data ->
+				nativeDrawSVGWithBuffer(
+					data,
+					width,
+					height,
+					context.resources.displayMetrics.density,
+					string
+				)
+			}
+			return ret
 		}
 
 		@JvmStatic
 		fun fromString(context: Context, width: Int, height: Int, string: String, callback: Callback) {
 			val executor = Executors.newSingleThreadExecutor()
 			executor.execute {
-				val view = NSCSVG(context)
-				view.layoutParams = ViewGroup.LayoutParams(width, height)
-				val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-				nativeDrawSVG(bitmap, context.resources.displayMetrics.density, string)
-				view.bitmap = bitmap
-				callback.onSuccess(view)
+				val ret = NSCSVGData()
+				ret.resize(width, height)
+				ret.mData?.let { data ->
+					nativeDrawSVGWithBuffer(
+						data,
+						width,
+						height,
+						context.resources.displayMetrics.density,
+						string
+					)
+					callback.onSuccess(ret)
+				} ?: callback.onSuccess(null)
 			}
 		}
 
@@ -206,15 +315,20 @@ class NSCSVG : View {
 					val connection = url.openConnection() as HttpURLConnection
 					val br = BufferedReader(InputStreamReader(connection.inputStream))
 					val svg = br.readText()
-					val view = NSCSVG(context)
+					val ret = NSCSVGData()
 					val dim = parseSVGDimensions(context, svg)
-					view.layoutParams = ViewGroup.LayoutParams(dim.width, dim.height)
-					val bitmap = Bitmap.createBitmap(dim.width, dim.height, Bitmap.Config.ARGB_8888)
-					nativeDrawSVG(bitmap, context.resources.displayMetrics.density, svg)
-					view.bitmap = bitmap
-					callback.onSuccess(view)
+					ret.resize(dim.width, dim.height)
+					ret.mData?.let { data ->
+						nativeDrawSVGWithBuffer(
+							data,
+							dim.width,
+							dim.height,
+							context.resources.displayMetrics.density,
+							svg
+						)
+						callback.onSuccess(ret)
+					} ?: callback.onSuccess(null)
 				} catch (e: Exception) {
-					e.printStackTrace()
 					callback.onSuccess(null)
 				}
 			}
@@ -224,24 +338,104 @@ class NSCSVG : View {
 		fun fromRemoteSync(
 			context: Context,
 			path: String
-		): NSCSVG? {
-			var view: NSCSVG? = null
+		): NSCSVGData? {
+			var ret: NSCSVGData? = null
 			val thread = Thread {
-				view = NSCSVG(context)
+				ret = NSCSVGData()
 				val url = URL(path)
 				val connection = url.openConnection() as HttpURLConnection
 				val br = BufferedReader(InputStreamReader(connection.inputStream))
 				val svg = br.readText()
 				val dim = parseSVGDimensions(context, svg)
-				view?.layoutParams = ViewGroup.LayoutParams(dim.width, dim.height)
-				val bitmap = Bitmap.createBitmap(dim.width, dim.height, Bitmap.Config.ARGB_8888)
-				nativeDrawSVG(bitmap, context.resources.displayMetrics.density, svg)
-				view?.bitmap = bitmap
+				ret?.resize(dim.width, dim.height)
+				ret = ret?.mData?.let { data ->
+					nativeDrawSVGWithBuffer(
+						data,
+						dim.width,
+						dim.height,
+						context.resources.displayMetrics.density,
+						svg
+					)
+					ret
+				}
 			}
 			thread.start()
 			thread.join()
 
-			return view
+			return ret
+		}
+
+
+		@JvmStatic
+		fun fromBytesSync(context: Context, bytes: ByteBuffer): NSCSVGData? {
+			val ret = NSCSVGData()
+			bytes.rewind()
+			var svg: String? = null
+			try {
+				svg = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+					StandardCharsets.UTF_8.decode(bytes).toString()
+				} else {
+					Charset.forName("UTF-8").decode(bytes).toString()
+				}
+			} catch (_: Exception) {
+			} finally {
+				bytes.rewind()
+			}
+			if (svg == null) {
+				return null
+			}
+			val dim = parseSVGDimensions(context, svg)
+			ret.resize(dim.width, dim.height)
+			return ret.mData?.let { data ->
+				nativeDrawSVGWithBuffer(
+					data,
+					ret.width,
+					ret.height,
+					context.resources.displayMetrics.density,
+					svg
+				)
+				ret
+			}
+		}
+
+		@JvmStatic
+		fun fromBytes(context: Context, bytes: ByteBuffer, callback: Callback) {
+			val executor = Executors.newSingleThreadExecutor()
+			executor.execute {
+				val ret = NSCSVGData()
+				bytes.rewind()
+
+				var svg: String? = null
+				try {
+					svg = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+						StandardCharsets.UTF_8.decode(bytes).toString()
+					} else {
+						Charset.forName("UTF-8").decode(bytes).toString()
+					}
+				} catch (_: Exception) {
+				} finally {
+					bytes.rewind()
+				}
+
+				if (svg == null) {
+					callback.onSuccess(null)
+					return@execute
+				}
+
+				val dim = parseSVGDimensions(context, svg)
+				ret.resize(dim.width, dim.height)
+				ret.mData?.let { data ->
+					nativeDrawSVGWithBuffer(
+						data,
+						dim.width,
+						dim.height,
+						context.resources.displayMetrics.density,
+						svg
+					)
+					callback.onSuccess(ret)
+				} ?: callback.onSuccess(null)
+
+			}
 		}
 
 
@@ -272,42 +466,45 @@ class NSCSVG : View {
 				while (attributesMatcher.find()) {
 
 					val attributePair = attributesMatcher.group(0)?.trim()
-					attributePair?.split("=")?.let { parts ->
-						if (parts.size == 2) {
-							val attributeName = parts[0].trim()
-							var attributeValue = parts[1].trim().replace("\"", "")
+					attributePair?.split(" ")?.let { attributes ->
+						for (attr in attributes) {
+							attr.split("=").let { parts ->
+								if (parts.size == 2) {
+									val attributeName = parts[0].trim()
+									var attributeValue = parts[1].trim().replace("\"", "")
 
 
-							val stringLiteralPattern = Pattern.compile("\\\\\"(\\d*\\.?\\d+)\\\\\"")
-							val stringLiteralMatcher = stringLiteralPattern.matcher(attributeValue)
-							if (stringLiteralMatcher.matches()) {
-								stringLiteralMatcher.group(1)?.let {
-									attributeValue = it
-								}
-							}
-							if (attributeName == "width") {
-								width = attributeValue.toDouble() * context.resources.displayMetrics.density
-								widthDefined = true
-							} else if (attributeName == "height") {
-								height = attributeValue.toDouble() * context.resources.displayMetrics.density
-								heightDefined = true
-							} else if (attributeName == "viewBox") {
-								val viewBoxValues = parts[1].trim { it <= ' ' }
-									.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-								for (i in 0 until min(4.0, viewBoxValues.size.toDouble()).toInt()) {
-									var value = viewBoxValues[i].trim().replace("\"", "");
-									val slm = stringLiteralPattern.matcher(value)
-									if (slm.matches()) {
-										slm.group(1)?.let {
-											value = it
+									val stringLiteralPattern = Pattern.compile("\\\\\"(\\d*\\.?\\d+)\\\\\"")
+									val stringLiteralMatcher = stringLiteralPattern.matcher(attributeValue)
+									if (stringLiteralMatcher.matches()) {
+										stringLiteralMatcher.group(1)?.let {
+											attributeValue = it
 										}
 									}
-									viewBox[i] = value.toDouble()
+									if (attributeName == "width") {
+										width = attributeValue.toDouble() * context.resources.displayMetrics.density
+										widthDefined = true
+									} else if (attributeName == "height") {
+										height = attributeValue.toDouble() * context.resources.displayMetrics.density
+										heightDefined = true
+									} else if (attributeName == "viewBox") {
+										val viewBoxValues = parts[1].trim { it <= ' ' }
+											.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+										for (i in 0 until min(4.0, viewBoxValues.size.toDouble()).toInt()) {
+											var value = viewBoxValues[i].trim().replace("\"", "");
+											val slm = stringLiteralPattern.matcher(value)
+											if (slm.matches()) {
+												slm.group(1)?.let {
+													value = it
+												}
+											}
+											viewBox[i] = value.toDouble()
+										}
+									}
 								}
 							}
 						}
 					}
-
 				}
 
 				if (width == 0.0 && viewBox.size == 4) {

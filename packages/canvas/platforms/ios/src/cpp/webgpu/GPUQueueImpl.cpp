@@ -91,7 +91,7 @@ v8::Local<v8::FunctionTemplate> GPUQueueImpl::GetCtor(v8::Isolate *isolate) {
 
 void
 GPUQueueImpl::GetLabel(v8::Local<v8::Name> name,
-                                const v8::PropertyCallbackInfo<v8::Value> &info) {
+                       const v8::PropertyCallbackInfo<v8::Value> &info) {
     auto ptr = GetPointer(info.This());
     if (ptr != nullptr) {
         auto label = canvas_native_webgpu_queue_get_label(ptr->queue_);
@@ -136,7 +136,9 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
         U8Buffer *buffer = nullptr;
         uint32_t width = 0;
         uint32_t height = 0;
-        const ImageAsset* imageAsset = nullptr;
+        const ImageAsset *imageAsset = nullptr;
+        const WebGLState *gl = nullptr;
+        const CanvasRenderingContext2D *c2d = nullptr;
         if (sourceType == NativeType::ImageBitmap) {
             auto bitmap = ImageBitmapImpl::GetPointer(sourceSourceValue.As<v8::Object>());
             imageAsset = bitmap->GetImageAsset();
@@ -149,12 +151,14 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
             width = canvas_native_image_data_get_width(imageData->GetImageData());
             height = canvas_native_image_data_get_height(imageData->GetImageData());
         } else if (sourceType == NativeType::CanvasRenderingContext2D) {
-            auto c2d = CanvasRenderingContext2DImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            auto ctx = CanvasRenderingContext2DImpl::GetPointer(sourceSourceValue.As<v8::Object>());
+            c2d = ctx->GetContext();
         } else if (sourceType == NativeType::WebGLRenderingContextBase) {
             auto webgl = WebGLRenderingContextBase::GetPointer(sourceSourceValue.As<v8::Object>());
+            gl = webgl->GetState();
         }
 
-        if (buffer == nullptr && imageAsset == nullptr) {
+        if (buffer == nullptr && imageAsset == nullptr && gl == nullptr && c2d == nullptr) {
             // todo error ??
             return;
         }
@@ -260,7 +264,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
         CanvasExtent3d extent3D = ParseExtent3d(isolate, sizeVal);
 
-        if (imageAsset != nullptr){
+        if (imageAsset != nullptr) {
             CanvasImageCopyImageAsset source{
                     imageAsset,
                     sourceOrigin,
@@ -269,15 +273,43 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
 
 
             canvas_native_webgpu_queue_copy_image_asset_to_texture(ptr->GetGPUQueue(), &source,
-                                                                      &destination,
-                                                                      &extent3D);
+                                                                   &destination,
+                                                                   &extent3D);
+            return;
+        }
+
+
+        if (c2d != nullptr) {
+            CanvasImageCopyCanvasRenderingContext2D source{
+                    c2d,
+                    sourceOrigin,
+                    flipY,
+            };
+
+
+            canvas_native_webgpu_queue_copy_context_to_texture(ptr->GetGPUQueue(), &source,
+                                                               &destination,
+                                                               &extent3D);
+            return;
+        }
+
+        if (gl != nullptr) {
+            CanvasImageCopyWebGL source{
+                    gl,
+                    sourceOrigin,
+                    flipY,
+            };
+
+
+            canvas_native_webgpu_queue_copy_webgl_to_texture(ptr->GetGPUQueue(), &source,
+                                                             &destination,
+                                                             &extent3D);
             return;
         }
 
 
         auto data = canvas_native_u8_buffer_get_bytes(buffer);
         auto size = canvas_native_u8_buffer_get_length(buffer);
-
 
 
         if (data == nullptr || size == 0) {

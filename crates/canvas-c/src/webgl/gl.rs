@@ -2,7 +2,7 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
-
+use canvas_2d::context::SurfaceEngine::CPU;
 use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gpu::gl::GLContext;
@@ -3391,6 +3391,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
+
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,

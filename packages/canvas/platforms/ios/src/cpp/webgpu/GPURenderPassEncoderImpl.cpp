@@ -80,6 +80,14 @@ v8::Local<v8::FunctionTemplate> GPURenderPassEncoderImpl::GetCtor(v8::Isolate *i
             v8::FunctionTemplate::New(isolate, &DrawIndirect));
 
     tmpl->Set(
+            ConvertToV8String(isolate, "multiDrawIndexedIndirect"),
+            v8::FunctionTemplate::New(isolate, &MultiDrawIndexedIndirect));
+
+    tmpl->Set(
+            ConvertToV8String(isolate, "multiDrawIndirect"),
+            v8::FunctionTemplate::New(isolate, &MultiDrawIndirect));
+
+    tmpl->Set(
             ConvertToV8String(isolate, "end"),
             v8::FunctionTemplate::New(isolate, &End));
 
@@ -294,6 +302,36 @@ GPURenderPassEncoderImpl::DrawIndexedIndirect(const v8::FunctionCallbackInfo<v8:
 }
 
 void
+GPURenderPassEncoderImpl::MultiDrawIndexedIndirect(
+        const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto indirectBufferVal = args[0];
+    auto indirectOffsetVal = args[1];
+    auto countVal = args[2];
+
+
+    auto indirectBufferType = GetNativeType(indirectBufferVal);
+
+    if (indirectBufferType == NativeType::GPUBuffer) {
+        auto indirectBuffer = GPUBufferImpl::GetPointer(indirectBufferVal.As<v8::Object>());
+        uint64_t offset = (uint64_t) indirectOffsetVal->NumberValue(context).FromJust();
+        uint32_t count = countVal->Uint32Value(context).FromJust();
+        canvas_native_webgpu_render_pass_encoder_multi_draw_indexed_indirect(ptr->GetPass(),
+                                                                             indirectBuffer->GetGPUBuffer(),
+                                                                             offset, count);
+    }
+
+
+}
+
+void
 GPURenderPassEncoderImpl::DrawIndirect(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
@@ -315,6 +353,35 @@ GPURenderPassEncoderImpl::DrawIndirect(const v8::FunctionCallbackInfo<v8::Value>
         canvas_native_webgpu_render_pass_encoder_draw_indirect(ptr->GetPass(),
                                                                indirectBuffer->GetGPUBuffer(),
                                                                offset);
+    }
+
+
+}
+
+void
+GPURenderPassEncoderImpl::MultiDrawIndirect(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        return;
+    }
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    auto indirectBufferVal = args[0];
+    auto indirectOffsetVal = args[1];
+    auto countVal = args[2];
+
+
+    auto indirectBufferType = GetNativeType(indirectBufferVal);
+
+    if (indirectBufferType == NativeType::GPUBuffer) {
+        auto indirectBuffer = GPUBufferImpl::GetPointer(indirectBufferVal.As<v8::Object>());
+        uint64_t offset = (uint64_t) indirectOffsetVal->NumberValue(context).FromJust();
+        uint32_t count = countVal->Uint32Value(context).FromJust();
+        canvas_native_webgpu_render_pass_encoder_multi_draw_indirect(ptr->GetPass(),
+                                                                     indirectBuffer->GetGPUBuffer(),
+                                                                     offset, count);
     }
 
 

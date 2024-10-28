@@ -23,21 +23,25 @@ function parseSVGDimensions(svgString) {
 
 	if (matches) {
 		matches.forEach((match) => {
-			const parts = match.split('=');
-			const attributeName = parts[0].trim() as string;
-			const attributeValue = parts[1].trim().replace(/"/g, '') as string;
+			const split = match.split(' ');
 
-			if (attributeName === 'width') {
-				if (width === undefined) {
-					width = parseFloat(attributeValue) ?? 0;
-				}
-			} else if (attributeName === 'height') {
-				if (height === undefined) {
-					height = parseFloat(attributeValue) ?? 0;
-				}
-			} else if (attributeName === 'viewBox') {
-				if (viewBox === undefined) {
-					viewBox = attributeValue.split(' ').map(parseFloat).splice(0, 4);
+			for (const part of split) {
+				const parts = part.split('=');
+
+				const attributeName = parts[0].trim() as string;
+				const attributeValue = parts[1].trim().replace(/"/g, '') as string;
+				if (attributeName === 'width') {
+					if (width === undefined) {
+						width = parseFloat(attributeValue) ?? 0;
+					}
+				} else if (attributeName === 'height') {
+					if (height === undefined) {
+						height = parseFloat(attributeValue) ?? 0;
+					}
+				} else if (attributeName === 'viewBox') {
+					if (viewBox === undefined) {
+						viewBox = attributeValue.split(' ').map(parseFloat).splice(0, 4);
+					}
 				}
 			}
 		});
@@ -58,6 +62,35 @@ function parseSVGDimensions(svgString) {
 	}
 
 	return { width: width ?? 0, height: height ?? 0 };
+}
+
+export class SvgData {
+	native: any;
+
+	static fromNative(value) {
+		if (value) {
+			const data = new SvgData();
+			data.native = value;
+			return data;
+		}
+		return null;
+	}
+
+	get width(): number {
+		return this.native?.getWidth?.() ?? 0;
+	}
+
+	get height(): number {
+		return this.native?.getHeight?.() ?? 0;
+	}
+
+	get data(): ArrayBuffer | null {
+		const data = this.native?.getData?.();
+		if (data) {
+			return (<any>ArrayBuffer).from(data);
+		}
+		return null;
+	}
 }
 
 export class Svg extends SVGBase {
@@ -109,18 +142,18 @@ export class Svg extends SVGBase {
 	__redraw() {
 		if (this._attachedToDom) {
 			const domCopy = this.__domElement.valueOf() as Element;
-			// const width = domCopy.documentElement.getAttribute('width');
-			// const height = domCopy.documentElement.getAttribute('height');
+			const width = domCopy.getAttribute('width');
+			const height = domCopy.getAttribute('height');
 			const viewBox = domCopy.getAttribute('viewBox');
-			// if (!width) {
-			// 	domCopy.documentElement.setAttribute('width', `${this.getMeasuredWidth()}`);
-			// }
-			// if (!height) {
-			// 	domCopy.documentElement.setAttribute('height', `${this.getMeasuredHeight()}`);
-			// }
+			if (!width) {
+				domCopy.setAttribute('width', `300`);
+			}
+			if (!height) {
+				domCopy.setAttribute('height', `150`);
+			}
 
 			if (!viewBox) {
-				domCopy.setAttribute('viewBox', '0 0 0 0');
+				domCopy.setAttribute('viewBox', '0 0 100 100');
 			}
 
 			const serialized = this._serializer.serializeToString(domCopy);
@@ -155,18 +188,14 @@ export class Svg extends SVGBase {
 		}
 	}
 
-	static fromSrcSync(value: string): Svg | null {
+	static fromSrcSync(value: string): SvgData | null {
 		if (typeof value === 'string') {
 			const context = Utils.android.getApplicationContext();
 			if (value.indexOf('<svg') > -1) {
 				const { width, height } = parseSVGDimensions(value);
 				if (width > 0 && height > 0) {
-					const svg = org.nativescript.canvas.svg.NSCSVG.fromStringSync(context, width * Screen.mainScreen.scale, height * Screen.mainScreen.scale, value);
-					const view = new Svg();
-					view._svg = svg;
-					view.width = width;
-					view.height = height;
-					return view;
+					const svg = org.nativescript.canvas.svg.NSCSVG.fromStringSync(context, width, height, value);
+					return SvgData.fromNative(svg);
 				}
 			} else {
 				let nativeSvg;
@@ -180,19 +209,14 @@ export class Svg extends SVGBase {
 					}
 				} catch (error) {}
 				if (nativeSvg) {
-					const view = new Svg();
-					view._svg = nativeSvg;
-					const lp = nativeSvg.getLayoutParams();
-					view.width = lp.width / Screen.mainScreen.scale;
-					view.height = lp.height / Screen.mainScreen.scale;
-					return view;
+					return SvgData.fromNative(nativeSvg);
 				}
 			}
 		}
 		return null;
 	}
 
-	static fromSrc(value: string): Promise<Svg> {
+	static fromSrc(value: string): Promise<SvgData> {
 		return new Promise((resolve, reject) => {
 			if (typeof value === 'string') {
 				const context = Utils.android.getApplicationContext();
@@ -201,16 +225,13 @@ export class Svg extends SVGBase {
 					if (width > 0 && height > 0) {
 						org.nativescript.canvas.svg.NSCSVG.fromString(
 							context,
-							width * Screen.mainScreen.scale,
-							height * Screen.mainScreen.scale,
+							width,
+							height,
 							value,
 							new org.nativescript.canvas.svg.NSCSVG.Callback({
 								onSuccess(svg) {
-									const view = new Svg();
-									view._svg = svg;
-									view.width = width;
-									view.height = height;
-									resolve(view);
+									const ret = SvgData.fromNative(svg);
+									resolve(ret);
 								},
 							})
 						);
@@ -220,12 +241,8 @@ export class Svg extends SVGBase {
 					const cb = new org.nativescript.canvas.svg.NSCSVG.Callback({
 						onSuccess(nativeSvg) {
 							if (nativeSvg) {
-								const view = new Svg();
-								const lp = nativeSvg.getLayoutParams();
-								view._svg = nativeSvg;
-								view.width = lp.width / Screen.mainScreen.scale;
-								view.height = lp.height / Screen.mainScreen.scale;
-								resolve(view);
+								const ret = SvgData.fromNative(nativeSvg);
+								resolve(ret);
 							} else {
 								reject(new Error('Failed to parse SVG'));
 							}

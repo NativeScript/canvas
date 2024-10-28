@@ -2,6 +2,7 @@ import { knownFolders, path, File, Utils, Image, Screen } from '@nativescript/co
 // @ts-ignore
 import { ImageAsset } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
+import { Svg } from '@nativescript/canvas-svg';
 
 declare const NSSCanvasHelpers;
 // declare var NSUUID, java, NSData, android;
@@ -54,8 +55,19 @@ export class HTMLImageElement extends HTMLElement {
 
 	decoding = 'auto';
 
+	private _loading = false;
+	private _decodingQueue: { resolve: () => void; reject: (reason?: any) => void }[] = [];
+
 	get src() {
 		return this.localUri;
+	}
+
+	get naturalWidth() {
+		return this.width;
+	}
+
+	get naturalHeight() {
+		return this.height;
 	}
 
 	set src(value) {
@@ -89,6 +101,35 @@ export class HTMLImageElement extends HTMLElement {
 			this.dispatchEvent({ type: 'load', target: this });
 			this.onload();
 		}
+	}
+
+	private _dispatchDecode(success = false) {
+		for (const promise of this._decodingQueue) {
+			if (success) {
+				promise.resolve();
+			} else {
+				promise.reject();
+			}
+		}
+		this._decodingQueue = [];
+	}
+
+	decode() {
+		if (!this.src) {
+			return Promise.reject(new Error('Invalid image request.'));
+		}
+		if (!this._loading && !this.complete) {
+			return new Promise<void>((resolve, reject) => {
+				this._decodingQueue.push({ resolve, reject });
+				console.log('??');
+				this._load();
+			});
+		} else if (this._loading) {
+			return new Promise<void>((resolve, reject) => {
+				this._decodingQueue.push({ resolve, reject });
+			});
+		}
+		return Promise.resolve();
 	}
 
 	// we're {N} :D
@@ -128,12 +169,70 @@ export class HTMLImageElement extends HTMLElement {
 	}
 
 	async _load() {
-		if (this.src) {
-			if (typeof this.src === 'string' && this.src.startsWith && this.src.startsWith('data:')) {
+		this._loading = true;
+		if (this.src && typeof this.src === 'string') {
+			if (this.src.startsWith('blob:nativescript/')) {
+				const data = (<any>URL).InternalAccessor.getData(this.src);
+				const buffer = (<any>Blob).InternalAccessor.getBuffer(data.blob);
+				if (data?.type?.indexOf('svg') > -1) {
+					const d = new TextDecoder();
+					const src = d.decode(buffer);
+					try {
+						const svg = await Svg.fromSrc(src);
+						const data = svg.data;
+						this._asset
+							.loadFromBytes(svg.width, svg.height, data as any)
+							.then((done: boolean) => {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = done;
+								this._loading = false;
+								this._dispatchDecode(done);
+							})
+							.catch((e) => {
+								this.dispatchEvent({ type: 'error', target: this, e });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							});
+						return;
+					} catch (e) {
+						this.dispatchEvent({ type: 'error', target: this, error: e });
+						this._onerror?.();
+						this._loading = false;
+						this._dispatchDecode();
+						return;
+					}
+				} else {
+					this._asset
+						.loadFromEncodedBytes(buffer)
+						.then((done: boolean) => {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = done;
+							this._loading = false;
+							this._dispatchDecode(done);
+						})
+						.catch((e) => {
+							this.dispatchEvent({ type: 'error', target: this, e });
+							this._onerror?.();
+							this._loading = false;
+							this._dispatchDecode();
+						});
+					return;
+				}
+			}
+
+			if (this.src.startsWith && this.src.startsWith('data:')) {
 				// is base64 - convert and try again;
 				this._base64 = this.src;
 				const base64result = this.src.split(',')[1];
+
 				if (!base64result) {
+					this.dispatchEvent({ type: 'error', target: this, error: new Error('Invalid image request.') });
+					this._onerror?.();
+					this._loading = false;
+					this._dispatchDecode();
 					return;
 				}
 				(async () => {
@@ -148,6 +247,8 @@ export class HTMLImageElement extends HTMLElement {
 									}
 									this.dispatchEvent({ type: 'error', target: this, error });
 									this._onerror?.();
+									this._loading = false;
+									this._dispatchDecode();
 								} else {
 									this.localUri = localUri;
 									this._load();
@@ -175,6 +276,8 @@ export class HTMLImageElement extends HTMLElement {
 										if (owner) {
 											owner.dispatchEvent({ type: 'error', target: ref.get(), message });
 											owner._onerror?.();
+											owner._loading = false;
+											owner._dispatchDecode?.();
 										}
 									},
 								})
@@ -187,73 +290,89 @@ export class HTMLImageElement extends HTMLElement {
 						}
 						this.dispatchEvent({ type: 'error', target: this, error });
 						this._onerror?.();
+						this._loading = false;
+						this._dispatchDecode?.();
 					}
 				})();
 				return;
 			}
 
-			if (typeof this.src === 'string') {
-				this.dispatchEvent({ type: 'loading', target: this });
-				let async = this.decoding !== 'sync';
-				if (this.src.startsWith('http')) {
-					if (!async) {
-						const loaded = this._asset.fromUrlSync(this.src);
-						if (loaded) {
+			this.dispatchEvent({ type: 'loading', target: this });
+			let async = this.decoding !== 'sync';
+			if (this.src.startsWith('http')) {
+				if (!async) {
+					const loaded = this._asset.fromUrlSync(this.src);
+					let success = false;
+					if (loaded) {
+						this.width = this._asset.width;
+						this.height = this._asset.height;
+						this.complete = true;
+						success = true;
+					} else {
+						this.dispatchEvent({ type: 'error', target: this });
+						this._onerror?.();
+					}
+					this._loading = false;
+					this._dispatchDecode(success);
+				} else {
+					this._asset
+						.fromUrl(this.src)
+						.then(() => {
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;
-							this._onload?.();
-						} else {
-							this.dispatchEvent({ type: 'error', target: this });
+							this._loading = false;
+							this._dispatchDecode(true);
+						})
+						.catch((e) => {
+							this.dispatchEvent({ type: 'error', target: this, error: e });
 							this._onerror?.();
-						}
+							this._loading = false;
+							this._dispatchDecode();
+						});
+				}
+			} else {
+				this.complete = false;
+				let src = this.src;
+				if (src.startsWith('~')) {
+					src = knownFolders.currentApp().path + src.replace('~', '');
+				}
+				if (!async) {
+					const loaded = this._asset.fromFileSync(src);
+					if (loaded) {
+						this.width = this._asset.width;
+						this.height = this._asset.height;
+						this.complete = true;
+						this._loading = false;
+						this._dispatchDecode(true);
 					} else {
-						this._asset
-							.fromUrl(this.src)
-							.then(() => {
-								this.width = this._asset.width;
-								this.height = this._asset.height;
-								this.complete = true;
-								this._onload?.();
-							})
-							.catch((e) => {
-								this.dispatchEvent({ type: 'error', target: this, e });
-								this._onerror?.();
-							});
+						this.dispatchEvent({ type: 'error', target: this });
+						this._onerror?.();
+						this._loading = false;
+						this._dispatchDecode();
 					}
 				} else {
-					this.complete = false;
-					let src = this.src;
-					if (src.startsWith('~')) {
-						src = knownFolders.currentApp().path + src.replace('~', '');
-					}
-					if (!async) {
-						const loaded = this._asset.fromFileSync(src);
-						if (loaded) {
+					this._asset
+						.fromFile(src)
+						.then((done) => {
+							console.log(this.src, 'done', done, this._asset.width, this._asset.height);
 							this.width = this._asset.width;
 							this.height = this._asset.height;
 							this.complete = true;
-							this._onload?.();
-						} else {
-							this.dispatchEvent({ type: 'error', target: this });
+							this._loading = false;
+							this._dispatchDecode(true);
+						})
+						.catch((e) => {
+							this.dispatchEvent({ type: 'error', target: this, e });
 							this._onerror?.();
-						}
-					} else {
-						this._asset
-							.fromFile(src)
-							.then((done) => {
-								this.width = this._asset.width;
-								this.height = this._asset.height;
-								this.complete = true;
-								this._onload?.();
-							})
-							.catch((e) => {
-								this.dispatchEvent({ type: 'error', target: this, e });
-								this._onerror?.();
-							});
-					}
+							this._loading = false;
+							this._dispatchDecode();
+						});
 				}
 			}
+		} else {
+			this._loading = false;
+			this._dispatchDecode();
 		}
 	}
 }

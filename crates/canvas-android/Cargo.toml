@@ -15,7 +15,7 @@ canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "vulkan"] }
 gl-bindings.workspace = true
 raw-window-handle.workspace = true
 parking_lot.workspace = true
-jni = "0.21.1"
+jni = { workspace = true }
 ndk = { version = "0.7.0", features = ["bitmap"] }
 libloading = "0.8.5"
 log.workspace = true

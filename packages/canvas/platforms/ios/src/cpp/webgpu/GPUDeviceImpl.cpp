@@ -1501,6 +1501,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     if (hasFragment && fragmentValue->IsObject()) {
         auto fragmentValueObj = fragmentValue.As<v8::Object>();
         fragment = new CanvasFragmentState{};
+        fragment->entry_point = nullptr;
 
         v8::Local<v8::Value> targetsVal;
         fragmentValueObj->Get(context, ConvertToV8String(isolate, "targets")).ToLocal(&targetsVal);
@@ -2143,7 +2144,6 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     }
 
 
-
     auto pipeline = canvas_native_webgpu_device_create_render_pipeline(ptr->GetGPUDevice(),
                                                                        &descriptor);
 
@@ -2420,6 +2420,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     if (!fragmentValue.IsEmpty() && fragmentValue->IsObject()) {
         auto fragmentValueObj = fragmentValue.As<v8::Object>();
         fragment = new CanvasFragmentState{};
+        fragment->entry_point = nullptr;
 
         v8::Local<v8::Value> targetsVal;
         fragmentValueObj->Get(context, ConvertToV8String(isolate, "targets")).ToLocal(&targetsVal);
@@ -2899,6 +2900,7 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     if (!vertexValue.IsEmpty() && vertexValue->IsObject()) {
         auto vertexObj = vertexValue.As<v8::Object>();
         vertex = new CanvasVertexState{};
+        vertex->entry_point = nullptr;
 
         v8::Local<v8::Value> moduleVal;
         vertexObj->Get(context, ConvertToV8String(isolate, "module")).ToLocal(&moduleVal);

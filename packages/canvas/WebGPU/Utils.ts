@@ -281,10 +281,12 @@ export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor
 	};
 
 	if (Array.isArray(value.vertex?.buffers)) {
-		desc.vertex.buffers = value.vertex.buffers.map((buffer) => {
-			buffer.attributes = buffer.attributes.map((attr) => {
-				attr.format = parseVertexFormat(attr.format) as never;
-				return attr;
+		desc.vertex.buffers = [...value.vertex.buffers].map((source) => {
+			const buffer = { ...source };
+			buffer.attributes = [...buffer.attributes].map((attr) => {
+				const ret = { ...attr };
+				ret.format = parseVertexFormat(ret.format) as never;
+				return ret;
 			});
 
 			return buffer;

@@ -249,19 +249,20 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
     }
     let context = &*context;
 
-    let mut surface_data_lock = context.data.lock();
+
+    let mut surface = context.surface.lock();
 
     let global = context.instance.global();
+
+    global.surface_drop(*surface);
+
+    let mut surface_data_lock = context.data.lock();
 
     let display_handle = RawDisplayHandle::UiKit(raw_window_handle::UiKitDisplayHandle::new());
 
     let handle = raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
 
     let window_handle = RawWindowHandle::UiKit(handle);
-
-    let mut surface = context.surface.lock();
-
-    global.surface_drop(*surface);
 
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
@@ -333,7 +334,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
         }
     }
 }
-
 
 
 #[cfg(any(target_os = "macos"))]
@@ -526,7 +526,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
 
     let usage = wgt::TextureUsages::from_bits_truncate(config.usage);
 
-    let view_data = if !config.size.is_null() {
+    let (width, height) = if !config.size.is_null() {
         let size = &*config.size;
         (size.width, size.height)
     } else {
@@ -538,8 +538,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         desired_maximum_frame_latency: 2,
         usage,
         format,
-        width: view_data.0,
-        height: view_data.1,
+        width,
+        height,
         present_mode: config.presentMode.into(),
         alpha_mode: config.alphaMode.into(),
         view_formats,
@@ -559,8 +559,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 usage,
                 dimension: wgt::TextureDimension::D2,
                 size: wgt::Extent3d {
-                    width: view_data.0,
-                    height: view_data.1,
+                    width,
+                    height,
                     depth_or_array_layers: 1,
                 },
                 format,

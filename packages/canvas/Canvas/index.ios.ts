@@ -496,6 +496,12 @@ export class Canvas extends CanvasBase {
 		if (this.width === 0 || this.height === 0) {
 			return 'data:,';
 		}
+		if (!this.native) {
+			return this._canvas.toDataURL(type, encoderOptions);
+		}
+		if (this._contextType === ContextType.WebGPU) {
+			return this._gpuContext.__toDataURL(type, encoderOptions);
+		}
 		return this.native?.__toDataURL?.(type, encoderOptions);
 	}
 

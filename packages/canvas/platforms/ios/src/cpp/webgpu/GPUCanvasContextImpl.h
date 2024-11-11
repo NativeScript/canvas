@@ -22,6 +22,8 @@ public:
 
     static void Init(v8::Local<v8::Object> canvasModule, v8::Isolate *isolate);
 
+    static void __ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static GPUCanvasContextImpl *GetPointer(const v8::Local<v8::Object> &object);
 
     static v8::Local<v8::FunctionTemplate> GetCtor(v8::Isolate *isolate);

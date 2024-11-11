@@ -1,6 +1,5 @@
 use std::{os::raw::c_void, sync::Arc};
-
-
+use std::fmt::{Debug, Formatter};
 ////use wgpu_core::gfx_select;
 use wgpu_core::global::Global;
 
@@ -47,6 +46,15 @@ struct CanvasWebGPUInstanceInner {
     pub(crate) global: Arc<Global>,
 }
 
+impl Debug for CanvasWebGPUInstanceInner  {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CanvasWebGPUInstanceInner")
+            .finish()
+    }
+}
+
+
+#[derive(Debug)]
 pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
 impl Clone for CanvasWebGPUInstance {
     fn clone(&self) -> Self {

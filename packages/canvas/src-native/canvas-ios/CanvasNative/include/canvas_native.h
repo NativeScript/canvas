@@ -3002,6 +3002,17 @@ void canvas_native_webgpu_buffer_map_async(const struct CanvasGPUBuffer *buffer,
                                            void (*callback)(enum CanvasGPUErrorType, char*, void*),
                                            void *callback_data);
 
+char *canvas_native_webgpu_to_data_url(const struct CanvasGPUCanvasContext *context,
+                                       const struct CanvasGPUDevice *device,
+                                       const char *format,
+                                       uint32_t quality);
+
+char *canvas_native_webgpu_to_data_url_with_texture(const struct CanvasGPUCanvasContext *context,
+                                                    const struct CanvasGPUDevice *device,
+                                                    const struct CanvasGPUTexture *texture,
+                                                    const char *format,
+                                                    uint32_t quality);
+
 #if defined(TARGET_OS_ANDROID)
 const struct CanvasGPUCanvasContext *canvas_native_webgpu_context_create(struct CanvasWebGPUInstance *instance,
                                                                          void *window,

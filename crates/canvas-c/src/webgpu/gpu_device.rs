@@ -59,11 +59,13 @@ pub enum CanvasGPUErrorFilter {
 
 pub(crate) type ErrorSink = Arc<parking_lot::Mutex<ErrorSinkRaw>>;
 
+#[derive(Debug)]
 struct ErrorScope {
     error: Option<CanvasGPUError>,
     filter: CanvasGPUErrorFilter,
 }
 
+#[derive(Debug)]
 pub struct DeviceCallback<T> {
     callback: T,
     userdata: *mut c_void,
@@ -121,6 +123,7 @@ pub const DEFAULT_DEVICE_LOST_HANDLER: DeviceLostCallback = DeviceLostCallback {
     userdata: std::ptr::null_mut(),
 };
 
+#[derive(Debug)]
 pub struct ErrorSinkRaw {
     scopes: Vec<ErrorScope>,
     uncaptured_handler: UncapturedErrorCallback,
@@ -209,6 +212,8 @@ impl ErrorSinkRaw {
     }
 }
 
+
+#[derive(Debug)]
 pub struct CanvasGPUDevice {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,

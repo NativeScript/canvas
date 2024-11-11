@@ -398,6 +398,7 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSMutableDic
 @property (nonatomic, readonly) CGFloat drawingBufferHeight;
 @property (nonatomic, readonly) float width;
 @property (nonatomic, readonly) float height;
+- (NSString * _Nonnull)toDataURL:(NSString * _Nonnull)format :(float)quality SWIFT_WARN_UNUSED_RESULT;
 - (void)initContext:(NSString * _Nonnull)type :(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible SWIFT_METHOD_FAMILY(none);
 - (void)initWebGPUContext:(int64_t)instance SWIFT_METHOD_FAMILY(none);
 - (int64_t)create2DContext:(BOOL)alpha :(BOOL)antialias :(BOOL)depth :(BOOL)failIfMajorPerformanceCaveat :(int32_t)powerPreference :(BOOL)premultipliedAlpha :(BOOL)preserveDrawingBuffer :(BOOL)stencil :(BOOL)desynchronized :(BOOL)xrCompatible :(int32_t)fontColor SWIFT_WARN_UNUSED_RESULT;

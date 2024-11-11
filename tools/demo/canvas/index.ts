@@ -491,7 +491,9 @@ fn main() -> @location(0) vec4f {
 			const devicePixelRatio = window.devicePixelRatio;
 			this.canvas.width = this.canvas.clientWidth * devicePixelRatio;
 			this.canvas.height = this.canvas.clientHeight * devicePixelRatio;
+
 			const context = this.canvas.getContext('webgpu') as GPUCanvasContext;
+			const thiz = this;
 
 			const capabilities = (context as any).getCapabilities(adapter);
 			const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
@@ -552,8 +554,10 @@ fn main() -> @location(0) vec4f {
 				passEncoder.end();
 
 				device.queue.submit([commandEncoder.finish()]);
+				console.log('1', thiz.canvas.toDataURL());
 				(<any>context).presentSurface();
-				requestAnimationFrame(frame);
+				console.log('2', thiz.canvas.toDataURL());
+				//	requestAnimationFrame(frame);
 			}
 			requestAnimationFrame(frame);
 		}
@@ -561,7 +565,7 @@ fn main() -> @location(0) vec4f {
 
 	draw() {
 		//this.webgpuTest();
-		//this.webgpuTriangle();
+		this.webgpuTriangle();
 		// const rc = require('./webgpu/rotatingCube');
 		// rc.run(this.canvas);
 
@@ -801,7 +805,7 @@ fn main() -> @location(0) vec4f {
 		//this.clock(this.canvas);
 		//this.solar(this.canvas);
 		//console.log('ready ??');
-		this.coloredParticles(this.canvas);
+		//this.coloredParticles(this.canvas);
 		//this.ball(this.canvas)
 		//swarm(this.canvas);
 		//this.drawHouse(this.canvas);

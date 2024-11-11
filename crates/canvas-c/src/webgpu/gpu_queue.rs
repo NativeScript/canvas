@@ -14,6 +14,7 @@ use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct QueueId {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) id: wgpu_core::id::QueueId,
@@ -28,7 +29,7 @@ impl Drop for QueueId {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CanvasGPUQueue {
     pub(super) label: Option<Cow<'static, str>>,
     pub(crate) queue: Arc<QueueId>,

@@ -1,7 +1,7 @@
 use icrate::objc2::__framework_prelude::Retained;
 use icrate::objc2::msg_send;
 use metal::foreign_types::ForeignType;
-use metal::{MetalDrawable, MetalDrawableRef};
+use metal::{MTLResourceOptions, MetalDrawable, MetalDrawableRef};
 use objc2_foundation::{NSAutoreleasePool, NSObject};
 use std::os::raw::c_void;
 
@@ -23,7 +23,7 @@ impl MetalContext {
         let pool = unsafe { NSAutoreleasePool::new() };
         let device = metal::Device::system_default().expect("no Metal device");
         let queue = device.new_command_queue();
-        let view = unsafe { icrate::objc2::rc::Retained::from_raw(view as _).unwrap() };
+        let view = unsafe { Retained::from_raw(view as _).unwrap() };
         let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
         let layer = unsafe { metal::MetalLayer::from_ptr(layer as _) };
         let current_drawable = layer.next_drawable().map(|drawable| {
@@ -124,7 +124,6 @@ impl MetalContext {
         self.layer.next_drawable()
     }
 
-
     pub fn drawable_size(&self) -> (f64, f64) {
         let size = self.layer.drawable_size();
         (size.width, size.height)
@@ -135,5 +134,46 @@ impl MetalContext {
         size.width = width;
         size.height = height;
         self.layer.set_drawable_size(size)
+    }
+
+    fn blit(device: metal::Device, queue: metal::CommandQueue, drawable: &MetalDrawable) -> Option<Vec<u8>> {
+        unsafe {
+            if drawable.presented_time() == 0.0 {
+                let texture = drawable.texture();
+                let length = 4 * texture.width() * texture.height();
+                let buffer = device.new_buffer(length, MTLResourceOptions::StorageModeShared);
+                let command_buffer = queue.new_command_buffer();
+                let blit_encoder = command_buffer.new_blit_command_encoder();
+                let region = metal::MTLRegion::new_2d(0, 0, texture.width(), texture.height());
+                blit_encoder.copy_from_texture_to_buffer(
+                    texture, 0, 0, region.origin, region.size, &buffer,
+                    0, 4 * texture.width(), 0, metal::MTLBlitOption::empty(),
+                );
+                blit_encoder.end_encoding();
+                command_buffer.commit();
+                command_buffer.wait_until_completed();
+
+                let ret = std::slice::from_raw_parts(buffer.contents().cast(), length as usize);
+
+                return Some(ret.to_vec());
+            }
+        }
+        None
+    }
+
+    pub fn snapshot(&mut self) -> Option<Vec<u8>> {
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        match self.current_drawable.as_ref() {
+            None => match self.next_drawable() {
+                Some(drawable) => {
+                    Self::blit(device, queue, drawable)
+                }
+                _ => None
+            }
+            Some(drawable) => {
+                Self::blit(device, queue, drawable)
+            }
+        }
     }
 }

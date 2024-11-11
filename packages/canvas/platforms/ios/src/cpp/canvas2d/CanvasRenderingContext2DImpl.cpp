@@ -3106,7 +3106,7 @@ CanvasRenderingContext2DImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Val
 
 
     if (args[1]->IsNumber()) {
-        quality = (int) args[1]->NumberValue(context).ToChecked();
+        quality = (int) (args[1]->NumberValue(context).ToChecked() * 100);
     }
 
 

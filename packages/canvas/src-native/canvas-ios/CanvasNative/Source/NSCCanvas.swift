@@ -173,6 +173,48 @@ public class NSCCanvas: UIView {
         }
     }
     
+    
+    
+    @objc public func toDataURL(_ format: String, _ quality: Float) -> String {
+        if(engine == .None){
+            let rect = CGRect(x: 0, y: 0, width: surfaceWidth, height: surfaceHeight)
+            let renderer = UIGraphicsImageRenderer(bounds: rect)
+
+            let image = renderer.image { context in
+                UIColor.white.setFill()
+                context.fill(rect)
+            }
+
+            let base64ImageString: String
+
+            switch format {
+            case "image/jpeg", "image/jpg":
+                if let data = image.jpegData(compressionQuality: CGFloat(quality)) {
+                    base64ImageString = data.base64EncodedString()
+                } else if let data = image.pngData() {
+                    base64ImageString = data.base64EncodedString()
+                } else {
+                    return "data:,"
+                }
+            case "image/heic", "image/heic-sequence":
+                if #available(iOS 17.0, *), let data = image.heicData() {
+                    base64ImageString = data.base64EncodedString()
+                } else {
+                    return "data:,"
+                }
+            default:
+                if let data = image.pngData() {
+                    base64ImageString = data.base64EncodedString()
+                } else {
+                    return "data:,"
+                }
+            }
+
+            return "data:\(format);base64,\(base64ImageString)"
+        }
+        return "data:,"
+    }
+    
     @objc public func initContext(
         _ type: String,
         _ alpha: Bool = true,

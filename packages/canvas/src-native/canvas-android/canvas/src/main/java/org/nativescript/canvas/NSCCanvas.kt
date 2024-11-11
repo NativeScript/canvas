@@ -4,11 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
-import android.graphics.SurfaceTexture
 import android.opengl.EGL14
 import android.os.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
@@ -18,6 +16,7 @@ import androidx.core.view.drawToBitmap
 import dalvik.annotation.optimization.CriticalNative
 import dalvik.annotation.optimization.FastNative
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
@@ -780,6 +779,33 @@ class NSCCanvas : FrameLayout {
 		}
 
 		return bitmap
+	}
+
+	fun toDataURL(type: String, quality: Float): String {
+		var bitmap: Bitmap? = null
+		var format = Bitmap.CompressFormat.PNG
+		var retType = "image/png"
+		when (type) {
+			"image/jpg", "image/jpeg" -> {
+				format = Bitmap.CompressFormat.JPEG
+				retType = type
+			}
+
+			"image/webp" -> {
+				format = Bitmap.CompressFormat.WEBP
+				retType = type
+			}
+		}
+
+		if (surfaceType == SurfaceType.Texture) {
+			bitmap = textureView.bitmap
+		}
+		val bm = bitmap ?: Bitmap.createBitmap(surfaceWidth, surfaceHeight, Bitmap.Config.ARGB_8888)
+		val byteArrayOutputStream = ByteArrayOutputStream()
+		bm.compress(format, (quality * 100).toInt(), byteArrayOutputStream)
+		val byteArray = byteArrayOutputStream.toByteArray()
+		val encoded: String = android.util.Base64.encodeToString(byteArray, android.util.Base64.NO_WRAP)
+		return "data:${retType};base64,${encoded}"
 	}
 
 	companion object {

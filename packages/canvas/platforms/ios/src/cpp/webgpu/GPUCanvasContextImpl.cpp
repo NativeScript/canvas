@@ -6,6 +6,7 @@
 #include "Caches.h"
 #include "GPUAdapterImpl.h"
 #include "GPUUtils.h"
+#include "GPUQueueImpl.h"
 
 GPUCanvasContextImpl::GPUCanvasContextImpl(const CanvasGPUCanvasContext *context) : context_(
         context) {}
@@ -70,6 +71,9 @@ v8::Local<v8::FunctionTemplate> GPUCanvasContextImpl::GetCtor(v8::Isolate *isola
             ConvertToV8String(isolate, "getCapabilities"),
             v8::FunctionTemplate::New(isolate, &GetCapabilities));
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "__toDataURL"),
+            v8::FunctionTemplate::New(isolate, &__ToDataURL));
 
     cache->GPUCanvasContextTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
@@ -211,6 +215,57 @@ void GPUCanvasContextImpl::UnConfigure(const v8::FunctionCallbackInfo<v8::Value>
 
 }
 
+void GPUCanvasContextImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    GPUCanvasContextImpl *ptr = GetPointer(args.This());
+
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+
+    std::string type("image/png");
+    int quality = 92;
+    if (args[0]->IsString()) {
+        type = ConvertFromV8String(isolate, args[0]);
+    }
+
+    if (args[1]->IsNumber()) {
+        quality = (int) (args[1]->NumberValue(context).ToChecked() * 100);
+    }
+
+    auto deviceType = GetNativeType(args[2]);
+    auto textureType = GetNativeType(args[3]);
+
+    if (deviceType == NativeType::GPUDevice) {
+        auto device = GPUDeviceImpl::GetPointer(args[2].As<v8::Object>());
+        char* data = nullptr;
+        if(textureType == NativeType::GPUTexture){
+            auto texture = GPUTextureImpl::GetPointer(args[3].As<v8::Object>());
+            data = canvas_native_webgpu_to_data_url_with_texture(
+                    ptr->GetContext(), device->GetGPUDevice(), texture->GetTexture(),
+                                                                 type.c_str(),
+                    quality);
+        }else {
+            data = canvas_native_webgpu_to_data_url(
+                    ptr->GetContext(), device->GetGPUDevice(), type.c_str(),
+                    quality);
+            
+        }
+        
+        if(data == nullptr){
+            args.GetReturnValue().Set(ConvertToV8String(isolate, "data:,"));
+            return;
+        }
+
+        auto value = new OneByteStringResource((char *) data);
+        auto ret = v8::String::NewExternalOneByte(isolate, value);
+        args.GetReturnValue().Set(ret.ToLocalChecked());
+    } else {
+        args.GetReturnValue().Set(ConvertToV8String(isolate, "data:,"));
+    }
+
+
+}
+
 void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::Value> &args) {
     GPUCanvasContextImpl *ptr = GetPointer(args.This());
     auto isolate = args.GetIsolate();
@@ -225,11 +280,11 @@ void GPUCanvasContextImpl::GetCurrentTexture(const v8::FunctionCallbackInfo<v8::
 
     if (texture != nullptr) {
         auto status = canvas_native_webgpu_texture_get_status(texture);
-        if(status == SurfaceGetCurrentTextureStatusSuccess){
+        if (status == SurfaceGetCurrentTextureStatusSuccess) {
             auto textureImpl = new GPUTextureImpl(texture);
             auto ret = GPUTextureImpl::NewInstance(isolate, textureImpl);
             args.GetReturnValue().Set(ret);
-        }else {
+        } else {
             canvas_native_webgpu_texture_release(texture);
             args.GetReturnValue().SetNull();
         }
@@ -316,7 +371,8 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
     }
 
     ret->Set(context, ConvertToV8String(isolate, "format"), v8::Array::New(isolate)).FromJust();
-    ret->Set(context, ConvertToV8String(isolate, "presentModes"), v8::Array::New(isolate)).FromJust();
+    ret->Set(context, ConvertToV8String(isolate, "presentModes"),
+             v8::Array::New(isolate)).FromJust();
     ret->Set(context, ConvertToV8String(isolate, "alphaModes"), v8::Array::New(isolate)).FromJust();
     ret->Set(context, ConvertToV8String(isolate, "usages"), v8::Uint32::New(isolate, 0)).FromJust();
     args.GetReturnValue().Set(ret);

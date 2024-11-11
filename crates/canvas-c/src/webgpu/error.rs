@@ -105,6 +105,8 @@ pub enum CanvasGPUErrorType {
     Internal,
 }
 
+
+#[derive(Clone, Debug)]
 pub enum CanvasGPUError {
     None,
     Lost,

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["dep:image"]
 2d = ["dep:canvas-2d"]
 webgl = ["dep:canvas-webgl"]
 gl = ["canvas-2d/gl"]
@@ -11,6 +12,7 @@ vulkan = ["canvas-2d/vulkan"]
 metal = ["canvas-2d/metal"]
 
 [dependencies]
+base64 = "0.22.1"
 gl-bindings.workspace = true
 canvas-core = { workspace = true, features = ["2d"] }
 canvas-2d = { workspace = true, optional = true }
@@ -24,7 +26,7 @@ futures = "0.3"
 raw-window-handle.workspace = true
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
 infer = "0.16.0"
-
+image = {version = "0.25.5", optional = true}
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal", "raw-window-handle"] }

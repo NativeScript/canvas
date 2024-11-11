@@ -173,26 +173,6 @@ impl NSOpenGLContext {
     }
 }
 
-impl Default for NSOpenGLContext {
-    fn default() -> Option<Self> {
-        let format = NSOpenGLPixelFormat::init_with_attributes(&[
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFADepthSize as u32,
-            24,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFAColorSize as u32,
-            24,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFAAlphaSize as u32,
-            8,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFAStencilSize as u32,
-            8,
-            NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
-            NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
-            0,
-        ]);
-        NSOpenGLContext::new(format, None)
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct NSOpenGLPixelFormat(Id<NSObject>);
@@ -400,7 +380,7 @@ impl GLContext {
 
         let inner = GLContextInner {
             context,
-            sharegroup,
+            sharegroup: share_group,
             view: Some(view),
         };
 

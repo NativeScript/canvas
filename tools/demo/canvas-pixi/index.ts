@@ -1232,6 +1232,8 @@ void main()
 			if (texture) {
 				ctx.presentSurface();
 			}
+
+			console.log('??', canvas.toDataURL());
 		});
 	}
 

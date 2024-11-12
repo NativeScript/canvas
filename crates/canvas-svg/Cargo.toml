@@ -5,12 +5,12 @@ edition = "2021"
 
 [lib]
 name = "canvassvg"
-crate-type = ["staticlib"]
+crate-type = ["cdylib"]
 
 
 [dependencies]
-skia-safe = { workspace = true, features = ["gl","svg", "textlayout"] }
+skia-safe = { workspace = true, features = ["svg", "textlayout"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
-jni = "0.21.1"
+jni = { workspace = true }
 ndk = { version = "0.7.0", features = ["bitmap"] }

@@ -29,7 +29,7 @@ class Circle {
 	}
 }
 
-let circlesNum = 1200;
+let circlesNum = 500;
 let minRadius = 100;
 let maxRadius = 1200;
 let speed = 0.01;
@@ -43,6 +43,12 @@ let raf;
 
 export function circle_demo(view) {
 	canvas = view;
+
+	const width = canvas.clientWidth * window.devicePixelRatio;
+	const height = canvas.clientHeight * window.devicePixelRatio;
+
+	canvas.width = width;
+	canvas.height = height;
 
 	view.on('unloaded', (args) => {
 		cancelled = true;
@@ -62,30 +68,22 @@ export function circle_demo(view) {
 
 	circles.forEach((circle) => {
 		if (canvas) {
-			circle.width = canvas.width;
-			circle.height = canvas.height;
+			circle.width = canvas.width * 0.25;
+			circle.height = canvas.height * 0.25;
 		}
 	});
-
-	const width = canvas.width;
-	const height = canvas.height;
-
-	//const width = canvas.clientWidth * window.devicePixelRatio;
-	//const height = canvas.clientHeight * window.devicePixelRatio;
 
 	// canvas.width = width;
 	// canvas.height = height;
 
 	canvas = canvas as Canvas;
 	ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-	// canvas.width = canvas.clientWidth * window.devicePixelRatio;
-	// canvas.height = canvas.clientHeight * window.devicePixelRatio;
+	//canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	//canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 	//const height = canvas.clientHeight * window.devicePixelRatio;
 	// canvas.style.width = `${width}px`;
 	// canvas.style.height = `${height}px`;
-
-	//ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 	minRadius = Math.min(width, height) * 0.05;
 	maxRadius = Math.max(width, height) * 0.1;

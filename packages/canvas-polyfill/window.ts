@@ -190,3 +190,39 @@ if (!global.ontouchstart) {
 	};
 	return obj;
 };
+(global as any).postMessage = global.window.postMessage = (message, targetOrigin) => {
+	(global as any).window.emitter.notify({
+		eventName: 'message',
+		data: message,
+	});
+};
+
+global.chrome = (<any>global.window).chrome = (<any>global.window).chrome || {};
+
+global.chrome.runtime = (<any>global.window).chrome.runtime = (<any>global.window).chrome.runtime || {};
+
+declare const __inspectorSendEvent;
+global.chrome.runtime.sendMessage = (
+	extensionId?: string,
+	message?: Record<any, any>, // any
+	options?
+) => {
+	try {
+		if (typeof extensionId === 'string') {
+			__inspectorSendEvent(
+				JSON.stringify({
+					extensionId,
+					message,
+				})
+			);
+		} else if (typeof extensionId === 'object') {
+			__inspectorSendEvent(JSON.stringify(message));
+		}
+	} catch (err) {
+		console.error(err);
+	}
+};
+
+global.chrome.runtime.getURL = (path: string) => {
+	console.log('chrome.runtime.getURL', path);
+};

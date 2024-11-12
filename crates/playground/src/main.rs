@@ -15,7 +15,6 @@ use winit::window::WindowBuilder;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_c::CanvasRenderingContext2D;
 use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
 use canvas_c::webgpu::error::CanvasGPUErrorType;
 use canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter;
@@ -29,8 +28,8 @@ use canvas_c::webgpu::gpu_device::{
 };
 use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
-use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageCopyImageAsset, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
-use canvas_core::gl::get_shader_info_log;
+use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyImageAsset, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
+use canvas_c::CanvasRenderingContext2D;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
 use canvas_webgl::webgl::{
@@ -611,6 +610,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
     };
 
     let RENDER_ATTACHMENT = 1 << 4 as u32;
+    let COPY_SRC = 1 << 0 as u32;
 
     let size = CanvasExtent3d {
         width: data.width,
@@ -620,7 +620,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
 
     let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration {
         alphaMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::PostMultiplied,
-        usage: RENDER_ATTACHMENT,
+        usage: RENDER_ATTACHMENT | COPY_SRC,
         presentMode: canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
         view_formats: ptr::null(),
         view_formats_size: 0,
@@ -792,7 +792,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
     let exe = unsafe {
         canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(
             command_encoder,
-            std::ptr::null(),
+            ptr::null(),
         )
     };
 
@@ -811,6 +811,21 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
             context, texture,
         )
     }
+
+
+    let format = c"image/png";
+    let data = unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_to_data_url(context, device, format.as_ptr(), 50) };
+
+
+
+    if !data.is_null() {
+        unsafe { println!("data {:?}", CStr::from_ptr(data).to_string_lossy()); }
+
+        let _ = unsafe { CString::from_raw(data) };
+    }
+
+
+
 }
 
 struct BlurSettings {
@@ -993,7 +1008,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let image_bitmap = canvas_c::canvas_native_image_asset_create();
     {
-        canvas_c::canvas_native_image_asset_load_from_raw(image_bitmap, di_3d.as_ptr(), di_3d.len());
+        canvas_c::canvas_native_image_asset_load_from_raw_encoded(image_bitmap, di_3d.as_ptr(), di_3d.len());
     }
 
     let srcWidth = canvas_c::canvas_native_image_asset_width(image_bitmap);
@@ -1396,7 +1411,7 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-  //  let raw_window_handle = window.raw_window_handle();
+    //  let raw_window_handle = window.raw_window_handle();
 
     /*let mut attrs = ContextAttributes::default();
     attrs.set_antialias(false);
@@ -1582,11 +1597,10 @@ fn main() {
 
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
-
-                                //  webgpu_triangle(data, window);
-                                unsafe {
-                                    webgpu_blur(data, window);
-                                }
+                                webgpu_triangle(data, window);
+                                // unsafe {
+                                //     webgpu_blur(data, window);
+                                // }
                             }
                             _ => {}
                         }
@@ -2366,7 +2380,7 @@ impl Particle {
     //     }
     // }
     pub fn draw(&self) {
-        let mut context = ( unsafe { &mut*self.context }).get_context_mut();
+        let mut context = (unsafe { &mut *self.context }).get_context_mut();
         context.set_fill_style(PaintStyle::white());
         context.begin_path();
 
@@ -2500,7 +2514,7 @@ fn swarm(ctx: &mut Context, particles: &mut Vec<Particle>, particle_count: i32) 
 */
 fn clock(ctx: &mut CanvasRenderingContext2D) {
     let pi = std::f32::consts::PI;
-    let now = chrono::offset::Local::now();
+    let now = chrono::Local::now();
     let mut ctx = ctx.get_context_mut();
     ctx.save();
     ctx.clear_rect(0., 0., 150., 150.);
@@ -2619,7 +2633,7 @@ fn solar(
     let pi = std::f32::consts::PI;
 
     // Earth
-    let time = chrono::offset::Local::now();
+    let time = chrono::Local::now();
     let seconds = time.second();
     let milliseconds = seconds * 1000;
     ctx.rotate(((2. * pi) / 60.) * seconds as f32 + ((2. * pi) / 60000.) * milliseconds as f32);
@@ -2666,7 +2680,7 @@ fn create_program_from_scripts(
                 WebGLResult::Boolean(compiled) => {
                     if !compiled {
                         // Something went wrong during compilation; get the error
-                        let last_error = get_shader_info_log(shader);
+                        let last_error = canvas_core::gpu::gl::get_shader_info_log(shader);
                         println!("*** Error compiling shader '{}': {:?}", shader, last_error);
                         canvas_native_webgl_delete_shader(shader, state);
                         return None;

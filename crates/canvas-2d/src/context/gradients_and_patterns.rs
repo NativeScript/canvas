@@ -36,7 +36,7 @@ impl Context {
     }
 
     pub fn create_conic_gradient(&self, start_angle: f32, x: f32, y: f32) -> Gradient {
-        let angle = crate::utils::geometry::to_degrees(start_angle) - 90.0;
+        let angle = crate::utils::geometry::to_degrees(start_angle);
         Gradient::Conic {
             center: Point::new(x, y),
             angle,
@@ -54,6 +54,7 @@ impl Context {
         y: f32,
         matrix: Matrix,
     ) -> Gradient {
+        let angle = crate::utils::geometry::to_degrees(start_angle);
         Gradient::Conic {
             center: Point::new(x, y),
             angle: start_angle,

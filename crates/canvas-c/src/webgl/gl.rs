@@ -1,12 +1,12 @@
 /* GL */
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
-
-use parking_lot::RwLock;
-
-use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
+use std::ptr::NonNull;
+use canvas_2d::context::SurfaceEngine::CPU;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_webgl::prelude::{WebGLPowerPreference, WebGLVersion};
+use canvas_core::context_attributes::PowerPreference;
+use canvas_core::gpu::gl::GLContext;
+use canvas_webgl::prelude::WebGLVersion;
 
 use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
 use crate::c2d::CanvasRenderingContext2D;
@@ -15,27 +15,7 @@ use crate::enums::CanvasRepetition;
 use crate::image_asset::ImageAsset;
 use crate::webgl::result::WebGLResultType;
 
-#[no_mangle]
-pub extern "C" fn canvas_native_context_gl_make_current(
-    context: *const CanvasRenderingContext2D,
-) -> bool {
-    assert!(!context.is_null());
-    let context = unsafe { &*context };
-    context.make_current()
-}
-
-#[no_mangle]
-pub extern "C" fn canvas_native_context_gl_swap_buffers(
-    context: *const CanvasRenderingContext2D,
-) -> bool {
-    assert!(!context.is_null());
-    let context = unsafe { &*context };
-    context.swap_buffers()
-}
 /* GL */
-
-#[derive(Clone)]
-pub struct GLContext(pub(crate) canvas_core::gl::GLContext);
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
@@ -188,7 +168,10 @@ pub extern "C" fn canvas_native_context_create_pattern_webgl(
         );
     }
 
-    context.make_current();
+    #[cfg(feature = "gl")]{
+        context.make_current();
+    }
+
     let ret = from_image_slice(buf.as_slice(), width, height).map(|image| {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
             context.context.create_pattern(image, repetition.into()),
@@ -294,14 +277,103 @@ pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
 }
 
 impl WebGLState {
-    pub fn new_with_context(
-        context: canvas_core::gl::GLContext,
+   #[cfg(target_os = "android")]
+    pub fn new_with_view(
+        view: *mut c_void,
+        width: i32,
+        height: i32,
         version: WebGLVersion,
         alpha: bool,
         antialias: bool,
         depth: bool,
         fail_if_major_performance_caveat: bool,
-        power_preference: WebGLPowerPreference,
+        power_preference: PowerPreference,
+        premultiplied_alpha: bool,
+        preserve_drawing_buffer: bool,
+        stencil: bool,
+        desynchronized: bool,
+        xr_compatible: bool,
+        is_canvas: bool,
+    ) -> Option<Self> {
+        let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+            alpha, antialias, depth, fail_if_major_performance_caveat, power_preference.into(), premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, false,
+        );
+
+        let context = if !view.is_null() {
+            let handle = raw_window_handle::AndroidNdkWindowHandle::new(NonNull::new(view).unwrap());
+            let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
+            GLContext::create_window_context(
+                &mut attr, width, height, handle,
+            )
+        } else {
+            GLContext::create_offscreen_context(&mut attr, width, height)
+        }?;
+
+        Some(Self(
+            canvas_webgl::prelude::WebGLState::new_with_context_attributes(
+                context,
+                version,
+                attr.get_alpha(),
+                attr.get_antialias(),
+                attr.get_depth(),
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                attr.get_preserve_drawing_buffer(),
+                attr.get_stencil(),
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+            )))
+    }
+
+    #[cfg(not(target_os = "android"))]
+    pub fn new_with_view(
+        view: *mut c_void,
+        version: WebGLVersion,
+        alpha: bool,
+        antialias: bool,
+        depth: bool,
+        fail_if_major_performance_caveat: bool,
+        power_preference: PowerPreference,
+        premultiplied_alpha: bool,
+        preserve_drawing_buffer: bool,
+        stencil: bool,
+        desynchronized: bool,
+        xr_compatible: bool,
+        is_canvas: bool,
+    ) -> Option<Self> {
+        let mut attr = canvas_core::context_attributes::ContextAttributes::new(
+            alpha, antialias, depth, fail_if_major_performance_caveat, power_preference.into(), premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, false,
+        );
+        let context = GLContext::create_window_context(
+            &mut attr, NonNull::new(view)?,
+        );
+        Some(Self(
+            canvas_webgl::prelude::WebGLState::new_with_context_attributes(
+                context?,
+                version,
+                attr.get_alpha(),
+                attr.get_antialias(),
+                attr.get_depth(),
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                attr.get_preserve_drawing_buffer(),
+                attr.get_stencil(),
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+            )))
+    }
+    pub fn new_with_context(
+        context: GLContext,
+        version: WebGLVersion,
+        alpha: bool,
+        antialias: bool,
+        depth: bool,
+        fail_if_major_performance_caveat: bool,
+        power_preference: PowerPreference,
         premultiplied_alpha: bool,
         preserve_drawing_buffer: bool,
         stencil: bool,
@@ -324,8 +396,7 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
-            ),
-        )
+            ))
     }
     pub fn get_inner(&self) -> &canvas_webgl::prelude::WebGLState {
         &self.0
@@ -364,7 +435,7 @@ impl WebGLActiveInfo {
     }
 }
 
-pub struct ContextAttributes(canvas_webgl::prelude::ContextAttributes);
+pub struct ContextAttributes(canvas_core::context_attributes::ContextAttributes);
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_attributes_destroy(attr: *mut ContextAttributes) {
@@ -387,7 +458,7 @@ impl ContextAttributes {
     pub fn get_fail_if_major_performance_caveat(&self) -> bool {
         self.0.get_fail_if_major_performance_caveat()
     }
-    pub fn get_power_preference(&self) -> WebGLPowerPreference {
+    pub fn get_power_preference(&self) -> PowerPreference {
         self.0.get_power_preference()
     }
     pub fn get_premultiplied_alpha(&self) -> bool {
@@ -518,7 +589,7 @@ impl WebGLExtension {
 }
 
 #[allow(non_camel_case_types)]
-pub struct EXT_blend_minmax(canvas_webgl::prelude::EXT_blend_minmax);
+pub struct EXT_blend_minmax;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_EXT_blend_minmax_destroy(value: *mut EXT_blend_minmax) {
@@ -529,7 +600,7 @@ pub extern "C" fn canvas_native_webgl_EXT_blend_minmax_destroy(value: *mut EXT_b
 }
 
 #[allow(non_camel_case_types)]
-pub struct EXT_color_buffer_half_float(canvas_webgl::prelude::EXT_color_buffer_half_float);
+pub struct EXT_color_buffer_half_float;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_EXT_color_buffer_half_float_destroy(
@@ -555,7 +626,7 @@ pub extern "C" fn canvas_native_webgl_EXT_disjoint_timer_query_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct EXT_sRGB(canvas_webgl::prelude::EXT_sRGB);
+pub struct EXT_sRGB;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_EXT_sRGB_destroy(value: *mut EXT_disjoint_timer_query) {
@@ -579,7 +650,7 @@ pub extern "C" fn canvas_native_webgl_EXT_shader_texture_lod_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct EXT_texture_filter_anisotropic(canvas_webgl::prelude::EXT_texture_filter_anisotropic);
+pub struct EXT_texture_filter_anisotropic;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_EXT_texture_filter_anisotropic_destroy(
@@ -592,7 +663,7 @@ pub extern "C" fn canvas_native_webgl_EXT_texture_filter_anisotropic_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct OES_element_index_uint(canvas_webgl::prelude::OES_element_index_uint);
+pub struct OES_element_index_uint;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_OES_element_index_uint_destroy(
@@ -605,7 +676,7 @@ pub extern "C" fn canvas_native_webgl_OES_element_index_uint_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct OES_standard_derivatives(canvas_webgl::prelude::OES_standard_derivatives);
+pub struct OES_standard_derivatives;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_OES_standard_derivatives_destroy(
@@ -642,7 +713,7 @@ pub extern "C" fn canvas_native_webgl_OES_texture_float_linear_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct OES_texture_half_float(canvas_webgl::prelude::OES_texture_half_float);
+pub struct OES_texture_half_float;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_OES_texture_half_float_destroy(
@@ -681,7 +752,7 @@ pub extern "C" fn canvas_native_webgl_OES_vertex_array_object_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_color_buffer_float(canvas_webgl::prelude::WEBGL_color_buffer_float);
+pub struct WEBGL_color_buffer_float;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_color_buffer_float_destroy(
@@ -694,7 +765,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_color_buffer_float_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_atc(canvas_webgl::prelude::WEBGL_compressed_texture_atc);
+pub struct WEBGL_compressed_texture_atc;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_atc_destroy(
@@ -707,7 +778,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_atc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_etc1(canvas_webgl::prelude::WEBGL_compressed_texture_etc1);
+pub struct WEBGL_compressed_texture_etc1;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc1_destroy(
@@ -720,7 +791,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc1_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_s3tc(canvas_webgl::prelude::WEBGL_compressed_texture_s3tc);
+pub struct WEBGL_compressed_texture_s3tc;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_destroy(
@@ -733,9 +804,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_s3tc_srgb(
-    canvas_webgl::prelude::WEBGL_compressed_texture_s3tc_srgb,
-);
+pub struct WEBGL_compressed_texture_s3tc_srgb;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_srgb_destroy(
@@ -748,7 +817,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_s3tc_srgb_destroy
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_etc(canvas_webgl::prelude::WEBGL_compressed_texture_etc);
+pub struct WEBGL_compressed_texture_etc;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc_destroy(
@@ -761,7 +830,7 @@ pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_etc_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_compressed_texture_pvrtc(canvas_webgl::prelude::WEBGL_compressed_texture_pvrtc);
+pub struct WEBGL_compressed_texture_pvrtc;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_compressed_texture_pvrtc_destroy(
@@ -798,7 +867,7 @@ pub extern "C" fn canvas_native_webgl_ANGLE_instanced_arrays_destroy(
 }
 
 #[allow(non_camel_case_types)]
-pub struct WEBGL_depth_texture(canvas_webgl::prelude::WEBGL_depth_texture);
+pub struct WEBGL_depth_texture;
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_WEBGL_depth_texture_destroy(value: *mut WEBGL_depth_texture) {
@@ -1460,9 +1529,13 @@ pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_
 
 /* OES_vertex_array_object */
 
+
+#[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create(
-    gl_context: i64,
+    view: *mut c_void,
+    width: i32,
+    height: i32,
     version: i32,
     alpha: bool,
     antialias: bool,
@@ -1477,14 +1550,13 @@ pub extern "C" fn canvas_native_webgl_create(
 ) -> *mut WebGLState {
     match (
         WebGLVersion::try_from(version).ok(),
-        WebGLPowerPreference::try_from(power_preference).ok(),
+        PowerPreference::try_from(power_preference).ok(),
     ) {
         (Some(version), Some(power_preference)) => {
-            let gl_context = gl_context as *const RwLock<canvas_core::gl::GLContextInner>;
-            let gl_context = canvas_core::gl::GLContext::from_raw_inner(gl_context);
-
-            let inner = WebGLState::new_with_context(
-                gl_context,
+            match WebGLState::new_with_view(
+                view,
+                width,
+                height,
                 version,
                 alpha,
                 antialias,
@@ -1497,8 +1569,59 @@ pub extern "C" fn canvas_native_webgl_create(
                 desynchronized,
                 xr_compatible,
                 false,
-            );
-            Box::into_raw(Box::new(inner))
+            ) {
+                None => std::ptr::null_mut(),
+                Some(state) => {
+                    Box::into_raw(Box::new(state))
+                }
+            }
+        }
+        _ => std::ptr::null_mut(),
+    }
+}
+
+
+#[cfg(not(target_os = "android"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_create(
+    view: *mut c_void,
+    version: i32,
+    alpha: bool,
+    antialias: bool,
+    depth: bool,
+    fail_if_major_performance_caveat: bool,
+    power_preference: i32,
+    premultiplied_alpha: bool,
+    preserve_drawing_buffer: bool,
+    stencil: bool,
+    desynchronized: bool,
+    xr_compatible: bool,
+) -> *mut WebGLState {
+    match (
+        WebGLVersion::try_from(version).ok(),
+        PowerPreference::try_from(power_preference).ok(),
+    ) {
+        (Some(version), Some(power_preference)) => {
+            match WebGLState::new_with_view(
+                view,
+                version,
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                false,
+            ) {
+                None => std::ptr::null_mut(),
+                Some(state) => {
+                    Box::into_raw(Box::new(state))
+                }
+            }
         }
         _ => std::ptr::null_mut(),
     }
@@ -1523,10 +1646,10 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
 ) -> *mut WebGLState {
     match (
         WebGLVersion::try_from(version).ok(),
-        WebGLPowerPreference::try_from(power_preference).ok(),
+        PowerPreference::try_from(power_preference).ok(),
     ) {
         (Some(version), Some(power_preference)) => {
-            Box::into_raw(Box::new(canvas_native_webgl_create_no_window_internal(
+            match canvas_native_webgl_create_no_window_internal(
                 width,
                 height,
                 version,
@@ -1541,7 +1664,12 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
                 desynchronized,
                 xr_compatible,
                 is_canvas,
-            )))
+            ) {
+                None => std::ptr::null_mut(),
+                Some(state) => {
+                    Box::into_raw(Box::new(state))
+                }
+            }
         }
         _ => std::ptr::null_mut(),
     }
@@ -1555,14 +1683,14 @@ pub(crate) fn canvas_native_webgl_create_no_window_internal(
     antialias: bool,
     depth: bool,
     fail_if_major_performance_caveat: bool,
-    power_preference: WebGLPowerPreference,
+    power_preference: PowerPreference,
     premultiplied_alpha: bool,
     preserve_drawing_buffer: bool,
     stencil: bool,
     desynchronized: bool,
     xr_compatible: bool,
     is_canvas: bool,
-) -> WebGLState {
+) -> Option<WebGLState> {
     let mut attrs = canvas_core::context_attributes::ContextAttributes::new(
         alpha,
         antialias,
@@ -1577,23 +1705,24 @@ pub(crate) fn canvas_native_webgl_create_no_window_internal(
         is_canvas,
     );
 
-    let ctx = canvas_core::gl::GLContext::create_offscreen_context(&mut attrs, width, height)
-        .unwrap_or_default();
+    let ctx = GLContext::create_offscreen_context(&mut attrs, width, height)?;
 
-    WebGLState::new_with_context(
-        ctx,
-        version,
-        attrs.get_alpha(),
-        attrs.get_antialias(),
-        attrs.get_depth(),
-        attrs.get_fail_if_major_performance_caveat(),
-        WebGLPowerPreference::from(attrs.get_power_preference()),
-        attrs.get_premultiplied_alpha(),
-        attrs.get_preserve_drawing_buffer(),
-        attrs.get_stencil(),
-        attrs.get_desynchronized(),
-        attrs.get_xr_compatible(),
-        attrs.get_is_canvas(),
+    Some(
+        WebGLState::new_with_context(
+            ctx,
+            version,
+            attrs.get_alpha(),
+            attrs.get_antialias(),
+            attrs.get_depth(),
+            attrs.get_fail_if_major_performance_caveat(),
+            PowerPreference::from(attrs.get_power_preference()),
+            attrs.get_premultiplied_alpha(),
+            attrs.get_preserve_drawing_buffer(),
+            attrs.get_stencil(),
+            attrs.get_desynchronized(),
+            attrs.get_xr_compatible(),
+            attrs.get_is_canvas(),
+        )
     )
 }
 
@@ -3255,8 +3384,6 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     let canvas = unsafe { &mut *canvas };
     let state = unsafe { &mut *state };
 
-    canvas.make_current();
-
     let (width, height) = canvas.context.dimensions();
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
@@ -3264,6 +3391,7 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
     canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
+
     canvas_webgl::webgl::canvas_native_webgl_tex_image2d(
         target,
         level,
@@ -3462,14 +3590,11 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
     let state = unsafe { &mut *state };
     let canvas = unsafe { &mut *canvas };
 
-    canvas.make_current();
-
     let (width, height) = canvas.context.dimensions();
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
 
     canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
-
 
     state.0.make_current();
 

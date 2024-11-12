@@ -1,14 +1,11 @@
 package org.nativescript.canvas
 
 import android.content.Context
-import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
-import androidx.core.view.postDelayed
 
 /**
  * Created by triniwiz on 6/9/20
@@ -36,14 +33,12 @@ class GLView : TextureView, SurfaceTextureListener {
 		surfaceTextureListener = this
 	}
 
-
 	private fun resize() {
 		canvas?.resize()
 	}
 
 
 	override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-//			Log.d("JS", "onSurfaceTextureAvailable $surface $width $height")
 		if (isReady) {
 			return
 		}
@@ -68,17 +63,12 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-//			Log.d("JS", "onSurfaceTextureSizeChanged $surface $width $height")
-		if (isReady) {
+		if (isReady || !isCreatedWithZeroSized) {
 			resize()
 			return
 		}
-		if (!isCreatedWithZeroSized) {
-			// resize
-			resize()
-			return
-		}
-		if (isCreatedWithZeroSized && (width != 0 || height != 0)) {
+
+		if (width != 0 || height != 0) {
 			this.surface = Surface(surface)
 			isCreatedWithZeroSized = false
 			canvas?.let {
@@ -94,15 +84,12 @@ class GLView : TextureView, SurfaceTextureListener {
 
 
 	override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-//		Log.d("JS", "onSurfaceTextureDestroyed $surface")
 		this.surface?.release()
 		isCreated = false
 		return false
 	}
 
 
-	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-//		Log.d("JS", "onSurfaceTextureUpdated $surface")
-	}
+	override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {}
 
 }

@@ -26,7 +26,7 @@ impl PaintStyle {
     }
 
     pub fn style_type(&self) -> PaintStyleType {
-        return match &self.0 {
+        match &self.0 {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
                 PaintStyleType::Color
             }
@@ -36,7 +36,7 @@ impl PaintStyle {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
                 PaintStyleType::Pattern
             }
-        };
+        }
     }
 }
 

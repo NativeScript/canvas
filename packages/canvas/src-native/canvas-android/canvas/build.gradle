@@ -58,7 +58,7 @@ android {
 			cmake {
 				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
-					"-DANDROID_STL=c++_static",
+					"-DANDROID_STL=c++_shared",
 					"-DANDROID_NDK_ROOT=${NDK_PATH}",
 				"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
 			}

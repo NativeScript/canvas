@@ -1,3 +1,4 @@
+import { Canvas } from '../Canvas';
 import { ImageAsset } from '../ImageAsset';
 import { native_ } from './Constants';
 import { GPUBuffer } from './GPUBuffer';
@@ -24,7 +25,6 @@ export class GPUQueue {
 		const src: GPUImageCopyExternalImage = {
 			source: undefined,
 		};
-
 		if (source.source) {
 			if (source.source instanceof ImageBitmap) {
 				src.source = (source.source as any).native;
@@ -35,6 +35,12 @@ export class GPUQueue {
 			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'IMG' || source.source.tagName === 'IMAGE')) {
 				if (source.source._asset instanceof ImageAsset) {
 					src.source = source.source._asset.native;
+				}
+			} else if (source.source instanceof Canvas) {
+				src.source = source.source.native;
+			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {
+				if (source.source._canvas instanceof Canvas) {
+					src.source = source.source._canvas._canvas.native;
 				}
 			}
 		}

@@ -1,5 +1,3 @@
-use ::core::{convert::TryInto, mem};
-
 const GL_UNSIGNED_BYTE: u32 = 0x1401;
 const GL_FLOAT: u32 = 0x1406;
 const GL_HALF_FLOAT: u32 = 0x140B;
@@ -80,13 +78,13 @@ fn flip_pixels(pixels: &'_ mut [u8], rows: usize) {
             type SwapBlock = [u8; SWAP_SIZE];
             let i_top: &mut SwapBlock = i_top.try_into().unwrap();
             let i_bot: &mut SwapBlock = i_bot.try_into().unwrap();
-            mem::swap(i_top, i_bot);
+            std::mem::swap(i_top, i_bot);
         }
         for (b_top, b_bot) in Iterator::zip(
             i_tops.into_remainder().iter_mut(),
             i_bots.into_remainder().iter_mut(),
         ) {
-            mem::swap(b_top, b_bot);
+            std::mem::swap(b_top, b_bot);
         }
     }
 }
@@ -100,7 +98,7 @@ fn flip_pixels_integer(pixels: &'_ mut [u32], rows: usize) {
 
     for (top, bot) in top_rows.zip(bot_rows) {
         for (i_top, i_bot) in Iterator::zip(top.iter_mut(), bot.iter_mut()) {
-            mem::swap(i_top, i_bot);
+            std::mem::swap(i_top, i_bot);
         }
     }
 }

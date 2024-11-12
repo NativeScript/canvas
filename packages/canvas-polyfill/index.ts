@@ -1,6 +1,6 @@
 require('globals');
 
-if (global.android && !(global as any).__canvasLoaded) {
+if (__ANDROID__ && !(global as any).__canvasLoaded) {
 	try {
 		// load canvas lib if polyfill is called before
 		java.lang.System.loadLibrary('canvasnative');

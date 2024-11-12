@@ -1,15 +1,16 @@
-use std::os::raw::c_void;
-use std::sync::Arc;
-
-use parking_lot::lock_api::Mutex;
-use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
-use wgt::SurfaceStatus;
-
 use crate::webgpu::enums::{CanvasOptionalGPUTextureFormat, SurfaceGetCurrentTextureStatus};
 use crate::webgpu::error::handle_error_fatal;
 use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
 use crate::webgpu::structs::{CanvasExtent3d, CanvasSurfaceCapabilities};
+use base64::Engine;
+use parking_lot::lock_api::Mutex;
+use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
+use std::borrow::Cow;
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_void};
+use std::sync::Arc;
+use wgt::{SurfaceStatus, TextureFormat};
 
 use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
@@ -18,7 +19,7 @@ use super::{
 
 //use wgpu_core::gfx_select;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct TextureData {
     usage: wgt::TextureUsages,
     dimension: wgt::TextureDimension,
@@ -28,8 +29,9 @@ struct TextureData {
     sample_count: u32,
 }
 
+#[derive(Debug)]
 pub struct SurfaceData {
-    device_id: wgpu_core::id::DeviceId,
+    device: Arc<CanvasGPUDevice>,
     error_sink: ErrorSink,
     texture_data: TextureData,
     previous_configuration: wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
@@ -41,9 +43,16 @@ pub struct ViewData {
     pub height: u32,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct ReadBackTexture {
+    texture: wgpu_core::id::TextureId,
+    data: TextureData,
+}
+
 pub struct CanvasGPUCanvasContext {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) surface: parking_lot::Mutex<wgpu_core::id::SurfaceId>,
+    pub(crate) read_back_texture: parking_lot::Mutex<Option<ReadBackTexture>>,
     pub(crate) has_surface_presented: Arc<std::sync::atomic::AtomicBool>,
     pub(crate) data: parking_lot::Mutex<Option<SurfaceData>>,
     pub(crate) view_data: parking_lot::Mutex<ViewData>,
@@ -58,6 +67,271 @@ impl Drop for CanvasGPUCanvasContext {
         }
     }
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_to_data_url(
+    context: *const CanvasGPUCanvasContext,
+    device: *const CanvasGPUDevice,
+    format: *const c_char,
+    quality: u32,
+) -> *mut c_char {
+    if context.is_null() || device.is_null() {
+        return std::ptr::null_mut();
+    }
+    let context = &*context;
+    let device = &*device;
+    if format.is_null() {
+        return std::ptr::null_mut();
+    }
+    let format = CStr::from_ptr(format as *const c_char).to_string_lossy();
+    if let Some(data) = to_data_url(context, device, format.as_ref(), quality) {
+        return CString::new(data).unwrap().into_raw();
+    }
+    std::ptr::null_mut()
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_texture(
+    context: *const CanvasGPUCanvasContext,
+    device: *const CanvasGPUDevice,
+    texture: *const CanvasGPUTexture,
+    format: *const c_char,
+    quality: u32,
+) -> *mut c_char {
+    if context.is_null() || device.is_null() || texture.is_null() {
+        return std::ptr::null_mut();
+    }
+    let context = &*context;
+    let device = &*device;
+    let texture = &*texture;
+    if format.is_null() {
+        return std::ptr::null_mut();
+    }
+    let format = CStr::from_ptr(format as *const c_char).to_string_lossy();
+
+    if let Some(data) = to_data_url_with_texture(context, device, texture.texture, texture.width, texture.height, format.as_ref(), quality) {
+        return CString::new(data).unwrap().into_raw();
+    }
+    std::ptr::null_mut()
+}
+
+
+fn to_data_url(
+    context: &CanvasGPUCanvasContext,
+    device: &CanvasGPUDevice,
+    format: &str,
+    quality: u32,
+) -> Option<String> {
+    let context = &*context;
+    let read_back_texture_lock = context.read_back_texture.lock();
+    match read_back_texture_lock.as_ref() {
+        None => None,
+        Some(texture) => {
+            to_data_url_with_texture(context, device, texture.texture, texture.data.size.width, texture.data.size.height, format, quality)
+        }
+    }
+}
+
+
+fn round_up_to_256(value: u32) -> u32 {
+    (value + 255) & !255
+}
+
+fn round_up_to_256_u64(value: u64) -> u64 {
+    (value + 255) & !255
+}
+
+
+fn to_data_url_with_texture(
+    context: &CanvasGPUCanvasContext,
+    device: &CanvasGPUDevice,
+    texture: wgpu_core::id::TextureId,
+    width: u32,
+    height: u32,
+    format: &str,
+    quality: u32,
+) -> Option<String> {
+    let context = &*context;
+    let global = context.instance.global();
+    let queue = &device.queue;
+    let mut invalid = false;
+    let mut is_bgra = false;
+    {
+        let lock = context.data.lock();
+        if let Some(data) = lock.as_ref() {
+            match data.texture_data.format {
+                TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb => {
+                    is_bgra = false;
+                }
+                TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb => {
+                    is_bgra = true
+                }
+                _ => {
+                    invalid = true;
+                }
+            }
+        }
+    }
+    if invalid {
+        return None;
+    }
+
+
+    unsafe {
+        let output_buffer_size = round_up_to_256_u64((width as u64) * 4) * (height as u64);
+        let label = Cow::Borrowed("ToDataURL:Buffer");
+        let (output_buffer, error) = global.device_create_buffer(device.device, &wgt::BufferDescriptor {
+            label: wgpu_core::Label::from(label),
+            size: output_buffer_size,
+            usage: wgt::BufferUsages::COPY_DST | wgt::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        }, None);
+
+        if let Some(_) = error {
+            return None;
+        }
+
+        let texture_extent = wgt::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture_copy = wgt::ImageCopyTexture {
+            texture,
+            mip_level: 0,
+            origin: wgt::Origin3d::ZERO,
+            aspect: wgt::TextureAspect::All,
+        };
+
+        let buffer_copy = wgt::ImageCopyBuffer {
+            buffer: output_buffer,
+            layout: wgt::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(round_up_to_256(4 * width)),
+                rows_per_image: Some(height),
+            },
+        };
+
+        let label = Cow::Borrowed("ToDataURL:Encoder");
+
+        let (encoder, error) = global.device_create_command_encoder(device.device, &wgt::CommandEncoderDescriptor {
+            label: wgpu_core::Label::from(label),
+        }, None);
+
+        if let Some(_) = error {
+            return None;
+        }
+
+        if let Err(_) = global.command_encoder_copy_texture_to_buffer(encoder, &texture_copy, &buffer_copy, &texture_extent) {
+            return None;
+        }
+
+        let desc = wgt::CommandBufferDescriptor { label: None };
+
+        let (id, error) = global.command_encoder_finish(encoder, &desc);
+
+        if let Some(_) = error {
+            return None;
+        }
+
+        global.queue_submit(queue.queue.id, &[id]).ok()?;
+
+        let op = wgpu_core::resource::BufferMapOperation {
+            host: wgpu_core::device::HostMap::Read,
+            callback: None,
+        };
+
+
+        if let Err(_) = global.buffer_map_async(output_buffer, 0, None, op) {
+            return None;
+        }
+
+        if let Err(_) = global.device_poll(device.device, wgt::Maintain::Wait) {
+            return None;
+        }
+
+        match global.buffer_get_mapped_range(output_buffer, 0, None) {
+            Ok((ptr, size)) => {
+                let bytes = std::slice::from_raw_parts(ptr.as_ptr(), size as usize);
+
+                if cfg!(feature = "2d") {
+                    return Some(canvas_2d::bytes_to_data_n32_url(width as i32, height as i32, bytes, round_up_to_256_u64((4 * width) as u64) as usize, format, quality));
+                }
+
+                if cfg!(not(feature = "2d"))
+                {
+                    let mut buffer = None;
+
+                    if is_bgra {
+                        let mut bytes = bytes.to_vec();
+                        canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut bytes);
+                        buffer = image::ImageBuffer::from_raw(width, height, bytes)
+                    } else {
+                        buffer = image::ImageBuffer::from_raw(width, height, bytes.to_vec());
+                    }
+
+                    return match buffer {
+                        Some(image) => {
+                            let buffer = image::DynamicImage::ImageRgb8(
+                                image,
+                            );
+
+
+                            let mut output = std::io::Cursor::new(Vec::new());
+
+                            let fmt = match format {
+                                "image/jpg" | "image/jpeg" => {
+                                    buffer.write_to(&mut output, image::ImageFormat::Jpeg);
+                                    "image/jpg"
+                                }
+                                "image/webp" => {
+                                    buffer.write_to(&mut output, image::ImageFormat::WebP);
+                                    "image/webp"
+                                }
+                                "image/gif" => {
+                                    buffer.write_to(&mut output, image::ImageFormat::Gif);
+                                    "image/gif"
+                                }
+                                "image/heif" | "image/heif-sequence" | "image/heic" | "image/heic-sequence" => {
+                                    buffer.write_to(&mut output, image::ImageFormat::Avif);
+                                    "image/heif"
+                                }
+                                "image/png" => {
+                                    buffer.write_to(&mut output, image::ImageFormat::Png);
+                                    "image/png"
+                                }
+                                _ => {
+                                    ""
+                                }
+                            };
+
+
+                            let mut data: Option<String> = None;
+                            let encoded = base64::engine::general_purpose::STANDARD.encode(output.get_ref());
+                            data = Some(format!("data:{};base64,{}", fmt, encoded));
+
+
+                            if let Err(_) = global.buffer_unmap(output_buffer) {
+                                return None;
+                            }
+
+                            data
+                        }
+                        None => None,
+                    };
+                }
+
+                None
+            }
+            Err(_) => {
+                None
+            }
+        }
+    }
+}
+
 
 #[cfg(any(target_os = "android"))]
 #[no_mangle]
@@ -89,6 +363,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 has_surface_presented: Arc::default(),
                 data: Default::default(),
                 view_data: Mutex::new(ViewData { width, height }),
+                read_back_texture: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -132,6 +407,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
             *surface = surface_id;
+            drop(surface);
             context.has_surface_presented.store(false, std::sync::atomic::Ordering::SeqCst);
             let mut view_data = context.view_data.lock();
             view_data.width = width;
@@ -146,7 +422,54 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) = global.surface_configure(surface_id, surface_data.device_id, &new_config)
+                let mut read_back_texture_lock = context.read_back_texture.lock();
+                if let Some(texture) = read_back_texture_lock.take() {
+                    global.texture_drop(texture.texture);
+                }
+
+                let ((read_back, error), texture_data) = {
+                    #[cfg(any(target_os = "ios", target_os = "macos"))]
+                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+
+                    #[cfg(any(target_os = "android"))]
+                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+
+
+                    let desc = wgt::TextureDescriptor {
+                        label: Some(Cow::Borrowed("ContextReadBack")),
+                        size: wgt::Extent3d {
+                            width,
+                            height,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgt::TextureDimension::D2,
+                        format,
+                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        view_formats: vec![],
+                    };
+                    let texture_data = TextureData {
+                        usage: desc.usage,
+                        dimension: desc.dimension,
+                        size: desc.size,
+                        format: desc.format,
+                        mip_level_count: desc.mip_level_count,
+                        sample_count: desc.sample_count,
+                    };
+                    (global.device_create_texture(surface_data.device.device, &desc, None), texture_data)
+                };
+
+                if let Some(cause) = error {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize: create readback texture");
+                } else {
+                    *read_back_texture_lock = Some(ReadBackTexture {
+                        texture: read_back,
+                        data: texture_data,
+                    });
+                }
+
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize");
                 } else {
@@ -183,6 +506,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
                 data: Mutex::default(),
                 has_surface_presented: Arc::default(),
                 view_data: Mutex::new(ViewData { width, height }),
+                read_back_texture: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -221,6 +545,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
             let ctx = CanvasGPUCanvasContext {
                 instance,
                 surface: Mutex::new(surface_id),
+                read_back_texture: Default::default(),
                 has_surface_presented: Arc::default(),
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
@@ -238,7 +563,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
 #[cfg(any(target_os = "ios"))]
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
-    context: *const CanvasGPUCanvasContext,
+    context: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
     view: *mut c_void,
     width: u32,
     height: u32,
@@ -248,19 +573,20 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
     }
     let context = &*context;
 
-    let mut surface_data_lock = context.data.lock();
+
+    let mut surface = context.surface.lock();
 
     let global = context.instance.global();
+
+    global.surface_drop(*surface);
+
+    let mut surface_data_lock = context.data.lock();
 
     let display_handle = RawDisplayHandle::UiKit(raw_window_handle::UiKitDisplayHandle::new());
 
     let handle = raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
 
     let window_handle = RawWindowHandle::UiKit(handle);
-
-    let mut surface = context.surface.lock();
-
-    global.surface_drop(*surface);
 
     match global.instance_create_surface(display_handle, window_handle, None) {
         Ok(surface_id) => {
@@ -278,7 +604,57 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) = global.surface_configure(surface_id, surface_data.device_id, &new_config)
+
+                let mut read_back_texture_lock = context.read_back_texture.lock();
+                if let Some(texture) = read_back_texture_lock.take() {
+                    global.texture_drop(texture.texture);
+                }
+
+                let ((read_back, error), texture_data) = {
+                    #[cfg(any(target_os = "ios", target_os = "macos"))]
+                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+
+                    #[cfg(any(target_os = "android"))]
+                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+
+
+                    let desc = wgt::TextureDescriptor {
+                        label: Some(Cow::Borrowed("ContextReadBack")),
+                        size: wgt::Extent3d {
+                            width,
+                            height,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgt::TextureDimension::D2,
+                        format,
+                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        view_formats: vec![],
+                    };
+
+                    let texture_data = TextureData {
+                        usage: desc.usage,
+                        dimension: desc.dimension,
+                        size: desc.size,
+                        format: desc.format,
+                        mip_level_count: desc.mip_level_count,
+                        sample_count: desc.sample_count,
+                    };
+
+                    (global.device_create_texture(surface_data.device.device, &desc, None), texture_data)
+                };
+
+                if let Some(cause) = error {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview: create readback texture");
+                } else {
+                    *read_back_texture_lock = Some(ReadBackTexture {
+                        texture: read_back,
+                        data: texture_data,
+                    });
+                }
+
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_uiview");
                 } else {
@@ -322,6 +698,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
                 has_surface_presented: Arc::default(),
                 data: Mutex::default(),
                 view_data: Mutex::new(ViewData { width, height }),
+                read_back_texture: Mutex::default(),
             };
 
             Arc::into_raw(Arc::new(ctx))
@@ -332,7 +709,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
         }
     }
 }
-
 
 
 #[cfg(any(target_os = "macos"))]
@@ -378,8 +754,55 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                 new_config.width = width;
                 new_config.height = height;
 
-                if let Some(cause) =
-                    gfx_select!(surface_id => global.surface_configure(surface_id, surface_data.device_id, &new_config))
+                let mut read_back_texture_lock = context.read_back_texture.lock();
+                if let Some(texture) = read_back_texture_lock.take() {
+                    global.texture_drop(texture.texture);
+                }
+
+                let ((read_back, error), texture_data) = {
+                    #[cfg(any(target_os = "ios", target_os = "macos"))]
+                    let mut format = wgt::TextureFormat::Bgra8Unorm;
+
+                    #[cfg(any(target_os = "android"))]
+                    let mut format = wgt::TextureFormat::Rgba8Unorm;
+
+
+                    let desc = wgt::TextureDescriptor {
+                        label: Some(Cow::Borrowed("ContextReadBack")),
+                        size: wgt::Extent3d {
+                            width,
+                            height,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgt::TextureDimension::D2,
+                        format,
+                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        view_formats: vec![],
+                    };
+                    let texture_data = TextureData {
+                        usage: desc.usage,
+                        dimension: desc.dimension,
+                        size: desc.size,
+                        format: desc.format,
+                        mip_level_count: desc.mip_level_count,
+                        sample_count: desc.sample_count,
+                    };
+
+                    (global.device_create_texture(surface_data.device.device, &desc, None), texture_data)
+                };
+
+                if let Some(cause) = error {
+                    handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview: create readback texture");
+                } else {
+                    *read_back_texture_lock = Some(ReadBackTexture {
+                        texture: read_back,
+                        data: texture_data,
+                    });
+                }
+
+                if let Some(cause) = global.surface_configure(surface_id, surface_data.device.device, &new_config)
                 {
                     handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize_nsview");
                 } else {
@@ -526,7 +949,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
 
     let usage = wgt::TextureUsages::from_bits_truncate(config.usage);
 
-    let view_data = if !config.size.is_null() {
+    let (width, height) = if !config.size.is_null() {
         let size = &*config.size;
         (size.width, size.height)
     } else {
@@ -538,12 +961,61 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         desired_maximum_frame_latency: 2,
         usage,
         format,
-        width: view_data.0,
-        height: view_data.1,
+        width,
+        height,
         present_mode: config.presentMode.into(),
         alpha_mode: config.alphaMode.into(),
         view_formats,
     };
+
+
+    let mut read_back_texture_lock = context.read_back_texture.lock();
+    if let Some(texture) = read_back_texture_lock.take() {
+        global.texture_drop(texture.texture);
+    }
+
+    let ((read_back, error), texture_data) = {
+        #[cfg(any(target_os = "ios", target_os = "macos"))]
+        let mut format = wgt::TextureFormat::Bgra8Unorm;
+
+        #[cfg(any(target_os = "android"))]
+        let mut format = wgt::TextureFormat::Rgba8Unorm;
+
+        let desc = wgt::TextureDescriptor {
+            label: Some(Cow::Borrowed("ContextReadBack")),
+            size: wgt::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgt::TextureDimension::D2,
+            format,
+            usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+            view_formats: vec![],
+        };
+
+        let texture_data = TextureData {
+            usage: desc.usage,
+            dimension: desc.dimension,
+            size: desc.size,
+            format: desc.format,
+            mip_level_count: desc.mip_level_count,
+            sample_count: desc.sample_count,
+        };
+
+        (global.device_create_texture(device_id, &desc, None), texture_data)
+    };
+
+    if let Some(cause) = error {
+        handle_error_fatal(global, cause, "canvas_native_webgpu_context_resize: create readback texture");
+    } else {
+        *read_back_texture_lock = Some(ReadBackTexture {
+            texture: read_back,
+            data: texture_data,
+        });
+    }
 
     if let Some(cause) = global.surface_configure(*surface_id, device_id, &config)
     {
@@ -552,15 +1024,19 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
         *lock = None;
     } else {
         let mut lock = context.data.lock();
+
+        Arc::increment_strong_count(device);
+        let device = Arc::from_raw(device);
+        let error_sink = device.error_sink.clone();
         *lock = Some(SurfaceData {
-            device_id,
-            error_sink: device.error_sink.clone(),
+            device,
+            error_sink,
             texture_data: TextureData {
                 usage,
                 dimension: wgt::TextureDimension::D2,
                 size: wgt::Extent3d {
-                    width: view_data.0,
-                    height: view_data.1,
+                    width,
+                    height,
                     depth_or_array_layers: 1,
                 },
                 format,
@@ -676,6 +1152,59 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
 
     let surface_id = context.surface.lock();
     let texture = unsafe { &*texture };
+
+
+    {
+        let lock = context.read_back_texture.lock();
+        let surface_lock = context.data.lock();
+        if let (Some(dst_texture), Some(data)) = (lock.as_ref(), surface_lock.as_ref()) {
+            unsafe {
+                let texture_extent = wgt::Extent3d {
+                    width: dst_texture.data.size.width,
+                    height: dst_texture.data.size.height,
+                    depth_or_array_layers: 1,
+                };
+
+                let texture_src_copy = wgpu_core::command::ImageCopyTexture {
+                    texture: texture.texture,
+                    mip_level: 0,
+                    origin: wgt::Origin3d::ZERO,
+                    aspect: wgt::TextureAspect::All,
+                };
+
+                let texture_dst_copy = wgpu_core::command::ImageCopyTexture {
+                    texture: dst_texture.texture,
+                    mip_level: 0,
+                    origin: wgt::Origin3d::ZERO,
+                    aspect: wgt::TextureAspect::All,
+                };
+
+                let device = data.device.device;
+
+                let label = Cow::Borrowed("PresentSurface:Encoder");
+
+                let (encoder, error) = global.device_create_command_encoder(device, &wgt::CommandEncoderDescriptor {
+                    label: wgpu_core::Label::from(label),
+                }, None);
+
+                if error.is_none() {
+                    match global.command_encoder_copy_texture_to_texture(encoder, &texture_src_copy, &texture_dst_copy, &texture_extent) {
+                        Ok(_) => {
+                            let desc = wgt::CommandBufferDescriptor { label: None };
+
+                            let (id, error) = global.command_encoder_finish(encoder, &desc);
+
+                            if error.is_none() {
+                                global.queue_submit(data.device.queue.queue.id, &[id]).ok();
+                            }
+                        }
+                        Err(_) => {}
+                    }
+                }
+            }
+        };
+    }
+
 
     if let Err(cause) = global.surface_present(*surface_id) {
         handle_error_fatal(

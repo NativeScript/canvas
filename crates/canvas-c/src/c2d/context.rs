@@ -3,7 +3,6 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
-use canvas_2d::context::Context;
 use canvas_2d::context::fill_and_stroke_styles::paint::paint_style_set_color_with_string;
 use canvas_2d::context::fill_and_stroke_styles::pattern::Repetition;
 use canvas_2d::context::image_smoothing::ImageSmoothingQuality;
@@ -11,11 +10,11 @@ use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_2d::context::line_styles::line_join::LineJoin;
 use canvas_2d::context::text_styles::text_align::TextAlign;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
+use canvas_2d::context::Context;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{
     from_bitmap_slice, from_image_slice, from_image_slice_encoded,
 };
-use canvas_core::context_attributes::PowerPreference;
 use canvas_webgl::utils::gl::bytes_per_pixel;
 
 use crate::buffers::{F32Buffer, U8Buffer};
@@ -27,7 +26,7 @@ use crate::c2d::path::Path;
 use crate::c2d::text_base_line::TextBaseLine;
 use crate::c2d::text_metrics::TextMetrics;
 use crate::image_asset::ImageAsset;
-use crate::webgl::{GLContext, WebGLState};
+use crate::webgl::WebGLState;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Engine {
@@ -37,10 +36,10 @@ pub enum Engine {
     Metal,
 }
 
+
 #[allow(dead_code)]
 pub struct CanvasRenderingContext2D {
     pub(crate) context: Context,
-    gl_context: canvas_core::gl::GLContext,
     alpha: bool,
     engine: Engine,
 }
@@ -72,10 +71,10 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
     let alpha = context.alpha;
     context.make_current();
     let context = &mut context.context;
-    let density = context.get_surface_data().scale();
-    let ppi = context.get_surface_data().ppi();
+    let density = context.surface_data().scale();
+    let ppi = context.surface_data().ppi();
 
-    if width.floor() == context.get_surface_data().width().floor() && height.floor() == context.get_surface_data().height().floor() {
+    if width.floor() == context.surface_data().width().floor() && height.floor() == context.surface_data().height().floor() {
         return;
     }
 
@@ -95,7 +94,7 @@ pub fn resize_gl(context: &mut CanvasRenderingContext2D, width: f32, height: f32
 pub fn resize_vulkan(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     let alpha = context.alpha;
     let context = &mut context.context;
-    Context::resize_vulkan(context, width, height, 0, alpha)
+    Context::resize_vulkan(context, width, height, alpha)
 }
 
 #[cfg(feature = "metal")]
@@ -103,7 +102,6 @@ pub fn resize_metal(context: &mut CanvasRenderingContext2D, width: f32, height: 
     let context = &mut context.context;
     Context::resize_metal(context, width, height);
 }
-
 
 pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
     #[cfg(feature = "gl")]
@@ -137,8 +135,8 @@ pub fn resize(context: &mut CanvasRenderingContext2D, width: f32, height: f32) {
 
     let alpha = context.alpha;
     let context = &mut context.context;
-    let density = context.get_surface_data().scale();
-    let ppi = context.get_surface_data().ppi();
+    let density = context.surface_data().scale();
+    let ppi = context.surface_data().ppi();
     Context::resize(context, width, height, density, alpha, ppi);
 }
 
@@ -146,17 +144,15 @@ impl CanvasRenderingContext2D {
     pub fn new(context: Context, alpha: bool) -> Self {
         Self {
             context,
-            gl_context: canvas_core::gl::GLContext::default(),
             alpha,
             engine: Engine::CPU,
         }
     }
 
     #[cfg(feature = "gl")]
-    pub fn new_gl(context: Context, gl_context: canvas_core::gl::GLContext, alpha: bool) -> Self {
+    pub fn new_gl(context: Context, alpha: bool) -> Self {
         Self {
             context,
-            gl_context,
             alpha,
             engine: Engine::GL,
         }
@@ -167,7 +163,6 @@ impl CanvasRenderingContext2D {
     pub fn new_vulkan(context: Context, alpha: bool) -> Self {
         Self {
             context,
-            gl_context: canvas_core::gl::GLContext::default(),
             alpha,
             engine: Engine::Vulkan,
         }
@@ -178,33 +173,62 @@ impl CanvasRenderingContext2D {
     pub fn new_metal(context: Context, alpha: bool) -> Self {
         Self {
             context,
-            gl_context: canvas_core::gl::GLContext::default(),
             alpha,
             engine: Engine::Metal,
         }
     }
 
+
     pub fn render(&mut self) {
-        if self.engine == Engine::GL {
-            self.gl_context.make_current();
+        #[cfg(feature = "gl")]
+        if let Some(context) = self.context.gl_context.as_ref() {
+            context.make_current();
         }
 
-        {
-            self.context.flush_and_render_to_surface();
-        }
+        let mut flush = true;
 
-        #[cfg(target_os = "ios")]
-        {
-            if self.engine == Engine::GL {
-                self.gl_context.swap_buffers();
+        // metal will execute the flush_and_render_to_surface in the draw call
+        #[cfg(feature = "metal")]{
+            if self.engine == Engine::Metal {
+                flush = false;
             }
         }
 
-        #[cfg(not(target_os = "ios"))]
+        #[cfg(feature = "vulkan")]
+        if self.engine == Engine::Vulkan {
+            flush = false;
+        }
+
         {
-            if self.engine == Engine::GL {
-                self.gl_context.swap_buffers();
+            if flush {
+                self.context.flush_and_render_to_surface();
             }
+        }
+
+
+        #[cfg(feature = "metal")]
+        if let Some(context) = self.context.metal_context.as_mut() {
+            context.present();
+        }
+
+        #[cfg(feature = "gl")]
+        if let Some(context) = self.context.gl_context.as_ref() {
+            context.swap_buffers();
+        }
+
+        #[cfg(feature = "vulkan")]
+        if self.engine == Engine::Vulkan {
+            self.context.flush()
+        }
+
+        #[cfg(feature = "vulkan")]
+        if let Some(vulkan) = self.context.vulkan_context.as_mut() {
+            vulkan.present();
+        }
+
+        #[cfg(feature = "vulkan")]
+        if self.engine == Engine::Vulkan {
+            self.context.replace_backend_texture()
         }
     }
 
@@ -212,16 +236,28 @@ impl CanvasRenderingContext2D {
         resize(self, width, height);
     }
 
+    #[cfg(feature = "gl")]
     pub fn make_current(&self) -> bool {
-        self.gl_context.make_current()
+        if let Some(ref context) = self.context.gl_context {
+            return context.make_current();
+        }
+        false
     }
 
+
+    #[cfg(feature = "gl")]
     pub fn swap_buffers(&self) -> bool {
-        self.gl_context.swap_buffers()
+        if let Some(ref context) = self.context.gl_context {
+            return context.swap_buffers();
+        }
+        false
     }
+
 
     pub fn remove_if_current(&self) {
-        self.gl_context.remove_if_current();
+        if let Some(ref context) = self.context.gl_context {
+            context.remove_if_current();
+        }
     }
 }
 
@@ -312,7 +348,6 @@ pub extern "C" fn canvas_native_context_create(
             ppi,
             TextDirection::from(direction),
         ),
-        gl_context: canvas_core::gl::GLContext::default(),
         alpha,
         engine: Engine::CPU,
     }))
@@ -320,39 +355,26 @@ pub extern "C" fn canvas_native_context_create(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_create_gl(
+    view: *mut c_void,
     width: f32,
     height: f32,
     density: f32,
-    gl_context: i64,
-    samples: i32,
     alpha: bool,
     font_color: i32,
     ppi: f32,
     direction: u32,
 ) -> *mut CanvasRenderingContext2D {
-    let gl_context = gl_context as *const GLContext;
-    let gl_context = unsafe { &*gl_context };
-
-    gl_context.0.make_current();
-    let gl_context = gl_context.0.clone();
-    let mut frame_buffers = [0];
-    unsafe {
-        gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, frame_buffers.as_mut_ptr())
-    };
-
     Box::into_raw(Box::new(CanvasRenderingContext2D {
         context: Context::new_gl(
+            view,
             width,
             height,
             density,
-            frame_buffers[0],
-            samples,
             alpha,
             font_color,
             ppi,
             TextDirection::from(direction),
         ),
-        gl_context,
         alpha,
         engine: Engine::GL,
     }))
@@ -380,66 +402,19 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
     direction: u32,
     alpha: bool,
 ) -> *mut CanvasRenderingContext2D {
-    // canvas_native_webgl_create_no_window_internal(
-    //     width as i32,
-    //     height as i32,
-    //     WebGLVersion::V1,
-    //     alpha,
-    //     false,
-    //     false,
-    //     false,
-    //     WebGLPowerPreference::Default,
-    //     true,
-    //     false,
-    //     false,
-    //     false,
-    //     false,
-    //     true,
-    // );
-
-    let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-        alpha,
-        false,
-        false,
-        false,
-        PowerPreference::Default,
-        true,
-        false,
-        false,
-        false,
-        false,
-        true,
-    );
-
-    let gl_context = canvas_core::gl::GLContext::create_offscreen_context(
-        &mut attr,
-        width as i32,
-        height as i32,
-    )
-        .unwrap();
-
-    gl_context.make_current();
-
-    let mut buffer_id = [0i32];
-
-    unsafe { gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr()) }
-
     let context = Context::new_gl(
+        std::ptr::null_mut(),
         width,
         height,
         density,
-        buffer_id[0],
-        0,
         alpha,
         font_color,
         ppi,
         TextDirection::from(direction),
     );
-    gl_context.remove_if_current();
 
     Box::into_raw(Box::new(CanvasRenderingContext2D {
         context,
-        gl_context,
         alpha,
         engine: Engine::GL,
     }))
@@ -1402,7 +1377,9 @@ pub extern "C" fn canvas_native_context_clear_rect(
     height: f32,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
+    #[cfg(feature = "gl")]{
+        context.make_current();
+    }
     context.context.clear_rect(x, y, width, height);
 }
 
@@ -1528,8 +1505,8 @@ pub extern "C" fn canvas_native_context_create_pattern_asset(
     let has_alpha = asset.has_alpha();
     let mut ret = std::ptr::null_mut();
     // todo use bitmap directly ??
-    asset.with_bytes_dimension(|bytes, (width, height)|{
-       ret = if has_alpha {
+    asset.with_bytes_dimension(|bytes, (width, height)| {
+        ret = if has_alpha {
             from_image_slice(bytes, width as i32, height as i32).map(
                 |image| {
                     Box::into_raw(Box::new(PaintStyle(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(
@@ -1581,7 +1558,9 @@ pub extern "C" fn canvas_native_context_create_pattern_canvas2d(
     let source = unsafe { &mut *source };
     let context = unsafe { &*context };
     let repetition: Repetition = repetition.into();
-    source.make_current();
+    #[cfg(feature = "gl")]{
+        source.make_current();
+    }
     match source.context.get_image() {
         None => std::ptr::null_mut(),
         Some(image) => {
@@ -1620,7 +1599,6 @@ pub extern "C" fn canvas_native_context_draw_paint(
     let color = unsafe { CStr::from_ptr(color) };
     let color = color.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.draw_paint(color.as_ref());
 }
 
@@ -1632,7 +1610,6 @@ pub extern "C" fn canvas_native_context_draw_point(
 ) {
     assert!(!context.is_null());
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.draw_point(x, y);
 }
 
@@ -1646,7 +1623,6 @@ pub extern "C" fn canvas_native_context_draw_points(
     assert!(!context.is_null());
     let points = unsafe { std::slice::from_raw_parts(points, size) };
     let context = unsafe { &mut *context };
-    context.make_current();
     context
         .context
         .draw_points(mode.try_into().unwrap(), points);
@@ -1666,7 +1642,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy(
 
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
-        context.make_current();
         context.context.draw_image_dx_dy(&image, dx, dy);
     }
 }
@@ -1687,7 +1662,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh(
 
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
-        context.make_current();
         context
             .context
             .draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
@@ -1713,7 +1687,6 @@ pub extern "C" fn canvas_native_context_draw_image(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
         let context = unsafe { &mut *context };
-        context.make_current();
         context.context.draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         );
@@ -1731,7 +1704,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
-        context.make_current();
         let width = image.width() as f32;
         let height = image.height() as f32;
         context
@@ -1753,7 +1725,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded_dx_dy_dw_dh(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
-        context.make_current();
         let width = image.width() as f32;
         let height = image.height() as f32;
         context.context.draw_image_src_xywh_dst_xywh(
@@ -1779,7 +1750,6 @@ pub extern "C" fn canvas_native_context_draw_image_encoded(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
-        context.make_current();
         context.context.draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         );
@@ -1797,8 +1767,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_asset(
     assert!(!asset.is_null());
     let context = unsafe { &mut *context };
     let asset = unsafe { &*asset };
-
-    context.make_current();
     context.context.draw_image_asset_dx_dy(&asset.0, dx, dy);
 }
 
@@ -1815,8 +1783,6 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_asset(
     assert!(!asset.is_null());
     let context = unsafe { &mut *context };
     let asset = unsafe { &*asset };
-
-    context.make_current();
     context.context.draw_image_asset_dx_dy_dw_dh(&asset.0, dx, dy, d_width, d_height);
 }
 
@@ -1838,7 +1804,6 @@ pub extern "C" fn canvas_native_context_draw_image_asset(
     let context = unsafe { &mut *context };
     let asset = unsafe { &*asset };
 
-    context.make_current();
     context.context.draw_image_asset_src_xywh_dst_xywh(
         &asset.0, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
     );
@@ -1855,9 +1820,7 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_context(
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
-    source.make_current();
     if let Some(image) = source.context.get_image() {
-        context.make_current();
         context.context.draw_image_dx_dy(&image, dx, dy);
     }
 }
@@ -1875,10 +1838,8 @@ pub extern "C" fn canvas_native_context_draw_image_dx_dy_dw_dh_context(
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
-    source.make_current();
 
     if let Some(image) = source.context.get_image() {
-        context.make_current();
         context.context.draw_image_dx_dy_dw_dh(&image, dx, dy, d_width, d_height);
     }
 }
@@ -1900,10 +1861,7 @@ pub extern "C" fn canvas_native_context_draw_image_context(
     assert!(!source.is_null());
     let context = unsafe { &mut *context };
     let source = unsafe { &mut *source };
-    source.make_current();
-
     if let Some(image) = source.context.get_image() {
-        context.make_current();
         context.context.draw_image_src_xywh_dst_xywh(
             &image, sx, sy, s_width, s_height, dx, dy, d_width, d_height,
         );
@@ -2061,7 +2019,7 @@ pub extern "C" fn canvas_native_context_draw_atlas(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice(data, width as i32, height as i32) {
         let context = unsafe { &mut *context };
-        context.make_current();
+
 
         let xform = unsafe { std::slice::from_raw_parts(xform, xform_size) };
         let tex = unsafe { std::slice::from_raw_parts(tex, tex_size) };
@@ -2104,7 +2062,6 @@ pub extern "C" fn canvas_native_context_draw_atlas_encoded(
     let data = unsafe { std::slice::from_raw_parts(data, size) };
     if let Some(image) = from_image_slice_encoded(data) {
         let context = unsafe { &mut *context };
-        context.make_current();
 
         let xform = unsafe { std::slice::from_raw_parts(xform, xform_size) };
         let tex = unsafe { std::slice::from_raw_parts(tex, tex_size) };
@@ -2145,7 +2102,6 @@ pub extern "C" fn canvas_native_context_draw_atlas_asset(
 
     let asset = unsafe { &*asset };
     let context = unsafe { &mut *context };
-    context.make_current();
     let xform = unsafe { std::slice::from_raw_parts(xform, xform_size) };
     let tex = unsafe { std::slice::from_raw_parts(tex, tex_size) };
     let mut colors_value: Option<Vec<&CStr>> = None;
@@ -2241,7 +2197,6 @@ pub extern "C" fn canvas_native_context_ellipse(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill(context: *mut CanvasRenderingContext2D, rule: CanvasFillRule) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_rule(None, rule.into());
 }
 
@@ -2252,7 +2207,6 @@ pub extern "C" fn canvas_native_context_fill_with_path(
     rule: CanvasFillRule,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_rule(Some(&mut path.0), rule.into());
 }
 
@@ -2265,7 +2219,6 @@ pub extern "C" fn canvas_native_context_fill_rect(
     height: f32,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_rect_xywh(x, y, width, height);
 }
 
@@ -2282,7 +2235,6 @@ pub extern "C" fn canvas_native_context_fill_text(
     let text = unsafe { CStr::from_ptr(text) };
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_text(text.as_ref(), x, y, None);
 }
 
@@ -2300,7 +2252,6 @@ pub extern "C" fn canvas_native_context_fill_text_width(
     let text = unsafe { CStr::from_ptr(text) };
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_text(text.as_ref(), x, y, Some(width));
 }
 
@@ -2313,7 +2264,6 @@ pub extern "C" fn canvas_native_context_fill_oval(
     height: f32,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.fill_oval(x, y, width, height);
 }
 
@@ -2326,7 +2276,6 @@ pub extern "C" fn canvas_native_context_get_image_data(
     sh: f32,
 ) -> *mut ImageData {
     let context = unsafe { &mut *context };
-    context.make_current();
     Box::into_raw(Box::new(ImageData(
         context.context.get_image_data(sx, sy, sw, sh),
     )))
@@ -2461,7 +2410,6 @@ pub extern "C" fn canvas_native_context_put_image_data(
 ) {
     let context = unsafe { &mut *context };
     let image_data = unsafe { &*image_data };
-    context.make_current();
     context.context.put_image_data(
         &image_data.0,
         dx,
@@ -2596,7 +2544,6 @@ pub extern "C" fn canvas_native_context_set_transform_matrix(
     matrix: *const Matrix,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     let matrix = unsafe { &*matrix };
     context.context.set_transform_matrix(&matrix.0);
 }
@@ -2604,7 +2551,6 @@ pub extern "C" fn canvas_native_context_set_transform_matrix(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.stroke(None);
 }
 
@@ -2614,7 +2560,6 @@ pub extern "C" fn canvas_native_context_stroke_with_path(
     path: &mut Path,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.stroke(Some(&mut path.0));
 }
 
@@ -2627,7 +2572,6 @@ pub extern "C" fn canvas_native_context_stroke_rect(
     height: f32,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.stroke_rect_xywh(x, y, width, height);
 }
 
@@ -2644,7 +2588,6 @@ pub extern "C" fn canvas_native_context_stroke_text(
     let text = unsafe { CStr::from_ptr(text) };
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.stroke_text(text.as_ref(), x, y, None);
 }
 
@@ -2662,7 +2605,6 @@ pub extern "C" fn canvas_native_context_stroke_text_width(
     let text = unsafe { CStr::from_ptr(text) };
     let text = text.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
     context
         .context
         .stroke_text(text.as_ref(), x, y, Some(width));
@@ -2677,7 +2619,6 @@ pub extern "C" fn canvas_native_context_stroke_oval(
     height: f32,
 ) {
     let context = unsafe { &mut *context };
-    context.make_current();
     context.context.stroke_oval(x, y, width, height);
 }
 
@@ -2708,7 +2649,11 @@ pub extern "C" fn canvas_native_context_translate(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_flush(context: *mut CanvasRenderingContext2D) {
     let context = unsafe { &mut *context };
-    context.make_current();
+    #[cfg(feature = "gl")]{
+        if let Some(ref context) = context.context.gl_context {
+            context.make_current();
+        }
+    }
     context.context.flush();
 }
 
@@ -2718,6 +2663,7 @@ pub extern "C" fn canvas_native_context_render(context: *mut CanvasRenderingCont
         return;
     }
     let context = unsafe { &mut *context };
+
     context.render();
 }
 
@@ -2733,7 +2679,14 @@ pub extern "C" fn canvas_native_to_data_url(
     let format = unsafe { CStr::from_ptr(format) };
     let format = format.to_string_lossy();
     let context = unsafe { &mut *context };
-    context.make_current();
+
+
+    #[cfg(feature = "gl")]{
+        if let Some(ref context) = context.context.gl_context {
+            context.make_current();
+        }
+    }
+
     CString::new(to_data_url(context, format.as_ref(), quality))
         .unwrap()
         .into_raw()

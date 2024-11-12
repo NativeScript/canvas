@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
+		NSCCanvas.forceGL = true
 		//	svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
@@ -61,24 +62,37 @@ class MainActivity : AppCompatActivity() {
 		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
-					/*	canvas?.let { canvas ->
-					val params = canvas.layoutParams
-					val context = canvas.create2DContext(
-						true,
-						true,
-						true,
-						false,
-						0,
-						true,
-						false,
-						false,
-						false,
-						false,
-						Color.BLACK
-					)
+						canvas?.let { canvas ->
+
+							canvas.initContext("webgl2", true)
+
+//				val gl = canvas!!.nativeContext
+//
+//
+//				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
+
+
+
+//					val context = canvas.create2DContext(
+//						true,
+//						true,
+//						true,
+//						false,
+//						0,
+//						true,
+//						false,
+//						false,
+//						false,
+//						false
+//					)
+//						canvas.surfaceWidth = 600
+//							canvas.surfaceHeight = 900
+//
+//							NSCCanvas.nativeContext2DConicTest(context)
 //
 //					NSCCanvas.context2DImageTest(context)
-//					NSCCanvas.context2DPathTest(context)
+				//	NSCCanvas.context2DPathTest(context)
+				//			NSCCanvas.context2DTest(context)
 //
 //                    Log.d("com.test", "windows $context")
 
@@ -90,6 +104,7 @@ class MainActivity : AppCompatActivity() {
 //                    canvas.requestLayout()
 
 
+							/*
 
 					executor.execute {
 						try {
@@ -128,9 +143,10 @@ class MainActivity : AppCompatActivity() {
 						}
 					}
 
+							*/
 
 				}
-				*/
+
 
 
 				//	draw2D()
@@ -170,6 +186,7 @@ class MainActivity : AppCompatActivity() {
 //
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
+				/*
 
 				val asset = NSCImageAsset.createImageAsset()
 				canvas?.let { canvas ->
@@ -185,7 +202,6 @@ class MainActivity : AppCompatActivity() {
 						stencil = true,
 						desynchronized = true,
 						xrCompatible = true,
-						fontColor = Color.BLACK
 					)
 					canvas.fit = CanvasFit.FitX
 					canvas.surfaceHeight = (canvas.height / resources.displayMetrics.density).toInt()
@@ -276,12 +292,58 @@ class MainActivity : AppCompatActivity() {
 //					NSCCanvas.context2DRender(ctx)
 				}
 
+				*/
+
 			}
 
 			override fun surfaceResize(width: Int, height: Int) {
 				Log.d("com.test", "surfaceResize $width $height")
 			}
+
+			override fun surfaceDestroyed() {}
+
+			override fun surfaceCreated() {}
 		}
+
+	//	val offscreen  = NSCCanvas(this, NSCCanvas.SurfaceType.Surface)
+
+//		val a = offscreen.initContext("webgl")
+
+		/*
+
+		val c = offscreen.create2DContext(true,
+			true,
+			true,
+			false,
+			0,
+			true,
+			false,
+			false,
+			false,
+			false)
+
+		NSCCanvas.context2DTest(c)
+
+
+		val root = findViewById<ViewGroup>(android.R.id.content)
+
+		root.addView(offscreen)
+
+		val bm = Bitmap.createBitmap(1000,100, Bitmap.Config.ARGB_8888)
+
+		val canvas = Canvas(bm)
+
+		offscreen.draw(canvas)
+
+		val im = ImageView(this)
+		im.setImageBitmap(bm)
+
+
+		root.addView(im)
+
+		*/
+
+
 
 //		val view = NSCCanvas(this)
 //
@@ -672,8 +734,8 @@ class MainActivity : AppCompatActivity() {
 
 	override fun onPostResume() {
 		super.onPostResume()
-		if (canvas?.native2DContext != 0L) {
-			NSCCanvas.context2DPathTest(canvas!!.native2DContext)
+		if (canvas?.nativeContext != 0L) {
+			NSCCanvas.context2DPathTest(canvas!!.nativeContext)
 		}
 	}
 

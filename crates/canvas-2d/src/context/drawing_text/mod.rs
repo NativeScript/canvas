@@ -21,6 +21,11 @@ const HANGING_AS_PERCENT_OF_ASCENT: f32 = 80.;
 
 impl Context {
     pub fn fill_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
         let shadow_paint = self.state.paint.fill_shadow_paint(
             (0., 0.).into(),
@@ -57,6 +62,11 @@ impl Context {
     }
 
     pub fn stroke_text(&mut self, text: &str, x: c_float, y: c_float, width: Option<c_float>) {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
         let width = width.unwrap_or(MAX_TEXT_WIDTH);
         let shadow_paint = self.state.paint.stroke_shadow_paint(
             (0., 0.).into(),

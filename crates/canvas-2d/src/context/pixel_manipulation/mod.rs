@@ -20,6 +20,12 @@ impl Context {
         sw: c_float,
         sh: c_float,
     ) -> ImageData {
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         let info = ImageInfo::new(
             ISize::new(sw as i32, sh as i32),
             ColorType::RGBA8888,
@@ -52,6 +58,13 @@ impl Context {
         sw: c_float,
         sh: c_float,
     ) {
+
+        #[cfg(feature = "gl")]{
+            if let Some(ref context) = self.gl_context {
+                context.make_current();
+            }
+        }
+
         let mut dx = dx;
         let mut dy = dy;
         let mut sx = sx;

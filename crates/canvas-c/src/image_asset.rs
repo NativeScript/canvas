@@ -58,7 +58,7 @@ impl ImageAsset {
         &self,
         width: u32,
         height: u32,
-        depth: u32,
+        _depth: u32,
         data: Vec<u8>,
     ) -> bool {
         self.0
@@ -219,6 +219,19 @@ pub extern "C" fn canvas_native_image_asset_load_from_path(
 
 #[no_mangle]
 pub extern "C" fn canvas_native_image_asset_load_from_raw(
+    asset: *const ImageAsset,
+    width: u32,
+    height: u32,
+    array: *const u8,
+    size: usize,
+) -> bool {
+    let array = unsafe { std::slice::from_raw_parts(array, size) };
+    let asset = unsafe { &*asset };
+    asset.load_from_raw_bytes(width, height,4, array.to_vec())
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_image_asset_load_from_raw_encoded(
     asset: *const ImageAsset,
     array: *const u8,
     size: usize,

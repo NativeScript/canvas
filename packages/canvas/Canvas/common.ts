@@ -1,5 +1,5 @@
-import { CSSType, View, Property, booleanConverter, widthProperty, heightProperty } from '@nativescript/core';
-import { CanvasRenderingContext } from '../common';
+import { CSSType, View, Property, booleanConverter } from '@nativescript/core';
+import type { CanvasRenderingContext } from '../common';
 import { removeItemFromArray } from './utils';
 
 export interface ICanvasBase {
@@ -561,9 +561,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						button: -1,
 					});
 
-					for (const callback of this._mouseMoveCallbacks) {
-						callback(event);
-					}
+					// todo emit mousemove when desktop is supported
+					// for (const callback of this._mouseMoveCallbacks) {
+					// 	callback(event);
+					// }
 				}
 
 				if (index > -1) {
@@ -668,9 +669,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageY: y,
 				});
 
-				for (const callback of this._mouseUpCallbacks) {
-					callback(event);
-				}
+				// todo emit mouseup when desktop is supported
+				// for (const callback of this._mouseUpCallbacks) {
+				// 	callback(event);
+				// }
 			}
 
 			const index = this._lastPointerEventById.findIndex((item) => {
@@ -751,9 +753,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageY: y,
 				});
 
-				for (const callback of this._mouseDownCallbacks) {
-					callback(event);
-				}
+				// todo emit mousedown when desktop is supported
+				// for (const callback of this._mouseDownCallbacks) {
+				// 	callback(event);
+				// }
 			}
 
 			this._lastPointerEventById.push({ pointerId, x, y });
@@ -819,9 +822,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageY: y,
 				});
 
-				for (const callback of this._mouseCancelCallbacks) {
-					callback(event);
-				}
+				// todo emit mouseout when desktop is supported
+				// for (const callback of this._mouseCancelCallbacks) {
+				// 	callback(event);
+				// }
 			}
 		}
 
@@ -906,9 +910,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						button: -1,
 					});
 
-					for (const callback of this._mouseMoveCallbacks) {
-						callback(event);
-					}
+					// todo emit mousemove when desktop is supported
+					// for (const callback of this._mouseMoveCallbacks) {
+					// 	callback(event);
+					// }
 				}
 
 				if (hasMouseWheel) {
@@ -919,9 +924,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						deltaMode: data.deltaMode,
 					});
 
-					for (const callback of this._mouseWheelCallbacks) {
-						callback(event);
-					}
+					// todo emit wheel when desktop is supported
+					// for (const callback of this._mouseWheelCallbacks) {
+					// 	callback(event);
+					// }
 				}
 
 				if (index > -1) {

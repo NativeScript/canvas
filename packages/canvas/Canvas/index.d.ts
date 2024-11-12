@@ -41,6 +41,8 @@ export declare class Canvas extends CanvasBase {
 
 	static useSurface: boolean;
 
+	static forceGL: boolean;
+
 	static createCustomView(): Canvas;
 
 	createNativeView(): any;

@@ -1,4 +1,4 @@
-import { CanvasRenderingContext } from '../../common';
+import type { CanvasRenderingContext } from '../../common';
 import { WebGLShader } from '../WebGLShader';
 import { WebGLFramebuffer } from '../WebGLFramebuffer';
 import { WebGLTexture } from '../WebGLTexture';

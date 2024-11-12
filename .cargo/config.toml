@@ -18,7 +18,6 @@
 rustflags = [
   "-C", "link-arg=-undefined",
   "-C", "link-arg=dynamic_lookup",
-  "-C", "target-cpu=native",
   "-C", "panic=abort"
 ]
 
@@ -26,7 +25,6 @@ rustflags = [
 rustflags = [
   "-C", "link-arg=-undefined",
   "-C", "link-arg=dynamic_lookup",
-  "-C", "target-cpu=native",
   "-C", "panic=abort"
 ]
 
@@ -42,34 +40,27 @@ rustflags = [
 rustflags = [
   "-C", "link-arg=-undefined",
   "-C", "link-arg=dynamic_lookup",
-  "-C", "target-cpu=native",
   "-C", "panic=abort"
 ]
 
 [target.armv7-linux-androideabi]
 rustflags = [
-  "-C", "target-cpu=native",
   "-C", "panic=abort",
   "-C", "target-feature=-outline-atomics"
 ]
 
 [target.aarch64-linux-android]
 rustflags = [
-  "-C", "target-cpu=native",
   "-C", "panic=abort",
   "-C", "target-feature=-outline-atomics"
 ]
 
 [target.i686-linux-android]
 rustflags = [
-  "-C", "target-cpu=native",
   "-C", "panic=abort",
-  "-C", "target-feature=-outline-atomics"
 ]
 
 [target.x86_64-linux-android]
 rustflags = [
-  "-C", "target-cpu=native",
   "-C", "panic=abort",
-  "-C", "target-feature=-outline-atomics"
 ]

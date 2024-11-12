@@ -4,33 +4,38 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["dep:image"]
 2d = ["dep:canvas-2d"]
 webgl = ["dep:canvas-webgl"]
 gl = ["canvas-2d/gl"]
-vulkan = []
+vulkan = ["canvas-2d/vulkan"]
 metal = ["canvas-2d/metal"]
 
 [dependencies]
+base64 = "0.22.1"
 gl-bindings.workspace = true
 canvas-core = { workspace = true, features = ["2d"] }
-canvas-2d = { workspace = true, optional = true, features = ["gl"] }
+canvas-2d = { workspace = true, optional = true }
 canvas-webgl = { workspace = true, optional = true }
 parking_lot.workspace = true
-ureq = { version = "2.9.6", features = ["gzip"] }
+ureq.workspace = true
 bytes = "1.5.0"
-log = { version = "0.4.20" }
+log.workspace = true
 wgt = { workspace = true, package = "wgpu-types" }
 futures = "0.3"
 raw-window-handle.workspace = true
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-
+infer = "0.16.0"
+image = {version = "0.25.5", optional = true}
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal", "raw-window-handle"] }
+objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
 
-#[target.'cfg(target_os="macos")'.dependencies]
+[target.'cfg(target_os="macos")'.dependencies]
 #display-link = { git = "https://github.com/servo/display-link", branch = "no-transmute" }
 #wgpu-core = { version = "22.0.0", features = ["wgsl", "metal", "raw-window-handle"] }
+#objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }

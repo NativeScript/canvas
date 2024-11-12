@@ -70,12 +70,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		//x jet game
-
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
-		this.webGPUGtlfLoader(this.canvas);
-		//this.webgpu_tsl_galaxy(this.canvas);
+		//this.webGPUGtlfLoader(this.canvas);
+		this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -285,10 +284,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		}
 
 		function onWindowResize() {
-			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
-
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		}
 
 		async function animate() {

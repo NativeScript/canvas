@@ -10,6 +10,8 @@ module.exports = (env) => {
 		config.resolve.alias.set('@demo/shared', resolve(__dirname, '..', '..', 'tools', 'demo'));
 		// config.resolve.alias.set('three', 'three/webgpu');
 		// config.resolve.alias.set('three/tsl', 'three/tsl');
+
+		config.resolve.alias.set('three', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.webgpu.js'));
 	});
 
 	webpack.Utils.addCopyRule('**/*.svg');

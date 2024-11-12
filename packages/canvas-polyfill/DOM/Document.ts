@@ -119,9 +119,12 @@ export class Document extends Node {
 	constructor() {
 		super('#document');
 		this.body = new Element('BODY');
+		this.body._ownerDocument = this as never;
 		this._documentElement = new Element('HTML');
+		this._documentElement._ownerDocument = this as never;
 		this.readyState = 'complete';
 		this.head = new Element('HEAD');
+		this.head._ownerDocument = this as never;
 		this.baseURI = knownFolders.currentApp().path;
 	}
 

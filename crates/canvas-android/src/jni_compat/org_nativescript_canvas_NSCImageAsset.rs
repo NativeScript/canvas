@@ -1,5 +1,5 @@
 use jni::objects::{JByteArray, JByteBuffer, JClass, JIntArray, JObject, JString, ReleaseMode};
-use jni::sys::{jboolean, jlong, jobject, JNI_FALSE, JNI_TRUE};
+use jni::sys::{jboolean, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use ndk::bitmap::BitmapFormat;
 
@@ -111,7 +111,7 @@ pub extern "system" fn nativeLoadFromUrl(
             JNI_FALSE
         }
         Err(error) => {
-            let asset = unsafe {  &*asset };
+            let asset = unsafe { &*asset };
             let error = error.to_string();
             asset.set_error(error.as_str());
             JNI_FALSE
@@ -121,6 +121,64 @@ pub extern "system" fn nativeLoadFromUrl(
 
 #[no_mangle]
 pub unsafe extern "system" fn nativeLoadFromBytes(
+    mut env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    width: jint,
+    height: jint,
+    byteArray: JByteArray,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let asset = asset as *const ImageAsset;
+
+    match env.get_array_elements_critical(&byteArray, ReleaseMode::NoCopyBack) {
+        Ok(bytes) => {
+            let size = bytes.len();
+            let slice = std::slice::from_raw_parts_mut(bytes.as_ptr() as *mut u8, size);
+            let asset = unsafe { &*asset };
+            if asset.load_from_raw_bytes(width as u32, height as u32, 4, slice.to_vec()) {
+                return JNI_TRUE;
+            }
+            JNI_FALSE
+        }
+        Err(_) => JNI_FALSE,
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeLoadFromBuffer(
+    env: JNIEnv,
+    _: JClass,
+    asset: jlong,
+    width: jint,
+    height: jint,
+    buffer: JByteBuffer,
+) -> jboolean {
+    if asset == 0 {
+        return JNI_FALSE;
+    }
+
+    let asset = asset as *const ImageAsset;
+
+    if let (Ok(buf), Ok(size)) = (
+        env.get_direct_buffer_address(&buffer),
+        env.get_direct_buffer_capacity(&buffer),
+    ) {
+        let slice = unsafe { std::slice::from_raw_parts(buf, size) };
+        let asset = unsafe { &*asset };
+        if asset.load_from_raw_bytes(width as u32, height as u32, 4, slice.to_vec()) {
+            return JNI_TRUE;
+        }
+    }
+    JNI_FALSE
+}
+
+
+#[no_mangle]
+pub unsafe extern "system" fn nativeLoadFromEncodedBytes(
     mut env: JNIEnv,
     _: JClass,
     asset: jlong,
@@ -147,7 +205,7 @@ pub unsafe extern "system" fn nativeLoadFromBytes(
 }
 
 #[no_mangle]
-pub extern "system" fn nativeLoadFromBuffer(
+pub extern "system" fn nativeLoadFromEncodedBuffer(
     env: JNIEnv,
     _: JClass,
     asset: jlong,

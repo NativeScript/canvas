@@ -296,18 +296,20 @@ export class TNSXMLHttpRequest {
 			return ret;
 		} catch (error) {}
 
-		for (let i = 0; i < count; i++) {
-			let encodingType = encodings[i];
-			// let java decide :D
-			if (encodingType === null) {
-				value = java.nio.charset.Charset.defaultCharset().decode(data).toString();
-				break;
+		if (__ANDROID__) {
+			for (let i = 0; i < count; i++) {
+				let encodingType = encodings[i];
+				// let java decide :D
+				if (encodingType === null) {
+					value = java.nio.charset.Charset.defaultCharset().decode(data).toString();
+					break;
+				}
+				try {
+					const encoding = java.nio.charset.Charset.forName(encodingType);
+					value = encoding.decode(data).toString();
+					break;
+				} catch (e) {}
 			}
-			try {
-				const encoding = java.nio.charset.Charset.forName(encodingType);
-				value = encoding.decode(data).toString();
-				break;
-			} catch (e) {}
 		}
 		return value;
 	}
@@ -500,7 +502,7 @@ export class TNSXMLHttpRequest {
 
 			this._updateReadyStateChange(this.LOADING);
 
-			FileManager.readFile(path, {}, (error, data) => {
+			FileManager.readFile(path, {}, (error, data: { buffer: ArrayBuffer; mime?: string; extension?: string }) => {
 				if (error) {
 					const errorEvent = new ProgressEvent('error', this._lastProgress);
 					this._responseText = error.message;
@@ -521,6 +523,11 @@ export class TNSXMLHttpRequest {
 
 					this._updateReadyStateChange(this.DONE);
 				} else {
+					const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
+					const contentType = header && header.toLowerCase();
+					if (!contentType && data.mime) {
+						this._headers['Content-Type'] = data.mime;
+					}
 					if (!this._didUserSetResponseType) {
 						this._setResponseType();
 					}
@@ -540,9 +547,9 @@ export class TNSXMLHttpRequest {
 									this._responseText = this._toJSString(data);
 									this._response = JSON.parse(this._responseText);
 								} else {
-									this._responseText = NSString.alloc().initWithDataEncoding(data, NSUTF8StringEncoding);
+									this._responseText = NSString.alloc().initWithDataEncoding(data.buffer as never, NSUTF8StringEncoding);
 									if (!this._responseText) {
-										this._responseText = NSString.alloc().initWithDataEncoding(data, NSISOLatin1StringEncoding);
+										this._responseText = NSString.alloc().initWithDataEncoding(data.buffer as never, NSISOLatin1StringEncoding);
 									}
 									this._response = JSON.parse(this._responseText);
 								}
@@ -558,12 +565,12 @@ export class TNSXMLHttpRequest {
 						} else {
 							if ((global as any).isIOS) {
 								let code = NSUTF8StringEncoding; // long:4
-								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								let encodedString = NSString.alloc().initWithDataEncoding(data.buffer as never, code);
 
 								// If UTF8 string encoding fails try with ISO-8859-1
 								if (!encodedString) {
 									code = NSISOLatin1StringEncoding; // long:5
-									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+									encodedString = NSString.alloc().initWithDataEncoding(data.buffer as never, code);
 								}
 								this._responseText = this._response = encodedString.toString();
 							} else {
@@ -578,12 +585,12 @@ export class TNSXMLHttpRequest {
 						} else {
 							if ((global as any).isIOS) {
 								let code = NSUTF8StringEncoding; // long:4
-								let encodedString = NSString.alloc().initWithDataEncoding(data, code);
+								let encodedString = NSString.alloc().initWithDataEncoding(data.buffer as never, code);
 
 								// If UTF8 string encoding fails try with ISO-8859-1
 								if (!encodedString) {
 									code = NSISOLatin1StringEncoding; // long:5
-									encodedString = NSString.alloc().initWithDataEncoding(data, code);
+									encodedString = NSString.alloc().initWithDataEncoding(data.buffer as never, code);
 								}
 
 								this._responseText = this._response = encodedString.toString();
@@ -595,7 +602,8 @@ export class TNSXMLHttpRequest {
 					} else if (this.responseType === XMLHttpRequestResponseType.arraybuffer) {
 						this._response = data;
 					} else if (this.responseType === XMLHttpRequestResponseType.blob) {
-						this._response = new Blob([data]);
+						const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
+						this._response = new Blob([data.buffer], { type: header ?? 'application/octet-stream' });
 					}
 
 					let size = 0;
@@ -603,8 +611,10 @@ export class TNSXMLHttpRequest {
 						if (data instanceof NSData) {
 							size = data.length;
 						}
-					} else {
-						size = data?.length ?? data?.byteLength ?? 0;
+					}
+
+					if (size === 0) {
+						size = (data?.buffer as any)?.length ?? data?.buffer?.byteLength ?? 0;
 					}
 
 					this._lastProgress = {
@@ -817,32 +827,34 @@ export class TNSXMLHttpRequest {
 						this._response = (ArrayBuffer as any).from(res.content);
 					}
 				} else if (this.responseType === XMLHttpRequestResponseType.blob) {
+					const header = this.getResponseHeader('Content-Type') || this.getResponseHeader('content-type');
+					const type = { type: header ?? 'application/octet-stream' };
 					if (__IOS__) {
 						if (typeof res.content === 'string') {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content);
-							this._response = new Blob([buffer]);
+							this._response = new Blob([buffer], type);
 						} else if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
 							const buffer = interop.bufferFromData(res.content);
-							this._response = new Blob([buffer]);
+							this._response = new Blob([buffer], type);
 						} else {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content.toString());
-							this._response = new Blob([buffer]);
+							this._response = new Blob([buffer], type);
 						}
 					} else {
 						if (typeof res.content === 'string') {
 							const encoder = new TextEncoder();
 							const buffer = encoder.encode(res.content);
-							this._response = new Blob([buffer]);
+							this._response = new Blob([buffer], type);
 						} else {
 							if (res.content !== null && res.content !== undefined && res.content instanceof NSData) {
 								const buffer = (ArrayBuffer as any).from(res.content);
-								this._response = new Blob([buffer]);
+								this._response = new Blob([buffer], type);
 							} else {
 								const encoder = new TextEncoder();
 								const buffer = encoder.encode(res.content.toString());
-								this._response = new Blob([buffer]);
+								this._response = new Blob([buffer], type);
 							}
 						}
 					}

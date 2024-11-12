@@ -16,13 +16,11 @@ export function fillStyle(canvas) {
 
 export function createConicGradient(canvas) {
 	const ctx = canvas.getContext('2d');
-	canvas.width = canvas.clientWidth;
-	canvas.height = canvas.clientHeight;
 
 	// Create a conic gradient
 	// The start angle is 0
 	// The center position is 100, 100
-	const gradient = ctx.createConicGradient(0, 100, 100);
+	const gradient = ctx.createConicGradient(90, canvas.width / 2, canvas.height / 2);
 
 	// Add five color stops
 	gradient.addColorStop(0, 'red');
@@ -33,7 +31,7 @@ export function createConicGradient(canvas) {
 
 	// Set the fill style and draw a rectangle
 	ctx.fillStyle = gradient;
-	ctx.fillRect(20, 20, 200, 200);
+	ctx.fillRect(20, 20, canvas.width, canvas.height);
 }
 
 export function font(canvas: Canvas) {
@@ -107,7 +105,7 @@ export function imageBlock(canvas) {
 	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	ctx.save();
 	const asset = new global.ImageAsset();
-	asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
+	asset.fromUrl('https://mdn.github.io/shared-assets/images/examples/rhino.jpg').then((done) => {
 		for (var i = 0; i < 4; i++) {
 			for (var j = 0; j < 3; j++) {
 				ctx.drawImage(asset, j * 50, i * 38, 50, 38);
@@ -368,9 +366,9 @@ export function arcTo(canvas) {
 }
 
 export function arcToAnimation(canvas) {
+	const ctx = canvas.getContext('2d');
 	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
 	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
-	const ctx = canvas.getContext('2d');
 	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	const mouse = { x: 0, y: 0 };
 
@@ -413,7 +411,6 @@ export function arcToAnimation(canvas) {
 		t0 = t / 1000;
 		a = t0 % PI2;
 		rr = Math.abs(Math.cos(a) * r);
-
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		drawArc([p1, p2, p3], rr);
@@ -687,7 +684,6 @@ export function march(canvas) {
 	const ctx = canvas.getContext('2d');
 	ctx.scale(Screen.mainScreen.scale);
 
-	console.log(ctx.canvas.width, ctx.canvas.height, canvas._canvas, canvas._canvas.subviews[0]);
 	var offset = 0;
 	function draw() {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);

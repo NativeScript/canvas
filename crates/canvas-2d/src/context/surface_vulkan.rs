@@ -1,152 +1,215 @@
-use std::ffi::CString;
+use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use skia_safe::wrapper::PointerWrapper;
+use skia_safe::{gpu, ColorType};
+use std::ffi::CStr;
+use std::os::raw::c_void;
 
-use ash::vk::Handle;
-use ash::{vk, Entry, Instance};
-use skia_safe::gpu;
+#[cfg(feature = "vulkan")]
+impl Context {
+    pub fn new_vulkan(
+        width: f32,
+        height: f32,
+        view: *mut c_void,
+        density: f32,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: u8,
+    ) -> Self {
+        let mut vulkan_context = canvas_core::gpu::vulkan::VulkanContext::new("ns-app").unwrap();
+        vulkan_context.set_alpha(alpha);
+        let mut context = {
+            let get_proc = |of| unsafe {
+                let ret = match of {
+                    gpu::vk::GetProcOf::Instance(instance, name) => {
+                        if let Some(ret) = vulkan_context.get_instance_proc_addr(instance as _, name) {
+                            (Some(ret), None)
+                        } else {
+                            let name = unsafe { CStr::from_ptr(name) };
+                            let name = name.to_string_lossy();
+                            (None, Some(name.to_string()))
+                        }
+                    }
+                    gpu::vk::GetProcOf::Device(device, name) => {
+                        if let Some(ret) = vulkan_context.get_device_proc_addr(device as _, name) {
+                            (Some(ret), None)
+                        } else {
+                            let name = unsafe { CStr::from_ptr(name) };
+                            let name = name.to_string_lossy();
+                            (None, Some(name.to_string()))
+                        }
+                    }
+                };
+                match ret {
+                    (Some(f), None) => f as _,
+                    (None, Some(name)) => {
+                        #[cfg(target_os = "android")]
+                        log::info!("resolve of {} failed", name);
 
-pub struct AshGraphics {
-    pub entry: Entry,
-    pub instance: Instance,
-    pub physical_device: vk::PhysicalDevice,
-    pub device: ash::Device,
-    pub queue_and_index: (vk::Queue, usize),
-}
+                        #[cfg(not(target_os = "android"))]
+                        println!("resolve of {} failed", name);
+                        std::ptr::null()
+                    }
+                    (_, _) => {
+                        std::ptr::null()
+                    }
+                }
+            };
 
-impl Drop for AshGraphics {
-    fn drop(&mut self) {
-        unsafe {
-            self.device.device_wait_idle().unwrap();
-            self.device.destroy_device(None);
-            self.instance.destroy_instance(None);
+            let backend_context = unsafe {
+                gpu::vk::BackendContext::new(
+                    vulkan_context.instance_handle() as _,
+                    vulkan_context.physical_device() as _,
+                    vulkan_context.device_handle() as _,
+                    (
+                        vulkan_context.queue() as _,
+                        vulkan_context.index(),
+                    ),
+                    &get_proc,
+                )
+            };
+
+            gpu::direct_contexts::make_vulkan(&backend_context, None)
         }
-    }
-}
+            .unwrap();
 
-impl AshGraphics {
-    pub fn vulkan_version() -> Option<(usize, usize, usize)> {
-        let entry = unsafe { Entry::load() }.unwrap();
+        vulkan_context.set_view(view, width as u32, height as u32);
 
-        let detected_version = unsafe { entry.try_enumerate_instance_version().unwrap_or(None) };
+        let image = vulkan_context.current_image_raw();
 
-        detected_version.map(|ver| {
-            (
-                vk::api_version_major(ver).try_into().unwrap(),
-                vk::api_version_minor(ver).try_into().unwrap(),
-                vk::api_version_patch(ver).try_into().unwrap(),
+        let alloc = gpu::vk::Alloc::default();
+        let image_info = unsafe {
+            gpu::vk::ImageInfo::new(
+                image.unwrap() as gpu::vk::Image,
+                alloc,
+                gpu::vk::ImageTiling::OPTIMAL,
+                gpu::vk::ImageLayout::UNDEFINED,
+                gpu::vk::Format::R8G8B8A8_UNORM,
+                1,
+                None,
+                None,
+                None,
+                None,
             )
-        })
+        };
+
+        let bt = unsafe { gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "") };
+
+
+        let mut surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, None, ColorType::N32,
+                                                              None,
+                                                              None).unwrap();
+
+        let mut state = State::default();
+        state.direction = TextDirection::from(direction as u32);
+
+        let bounds = skia_safe::Rect::from_wh(width, height);
+        Context {
+            direct_context: Some(context),
+            surface_data: SurfaceData {
+                bounds,
+                scale: density,
+                ppi,
+                engine: SurfaceEngine::Vulkan,
+                state: Default::default(),
+                is_opaque: !alpha,
+            },
+            vulkan_context: Some(vulkan_context),
+            vulkan_texture: Some(bt),
+            #[cfg(feature = "gl")]
+            gl_context: None,
+            #[cfg(feature = "metal")]
+            metal_context: None,
+            #[cfg(feature = "metal")]
+            metal_texture_info: None,
+            surface,
+            path: Default::default(),
+            state,
+            state_stack: vec![],
+            font_color: skia_safe::Color::new(font_color as u32),
+            surface_state: crate::context::SurfaceState::None,
+        }
     }
 
-    pub unsafe fn new(app_name: &str) -> Result<AshGraphics, String> {
-        let entry = Entry::load().or(Err("Failed to load Vulkan entry"))?;
 
-        let minimum_version = vk::make_api_version(0, 1, 0, 0);
-
-        let instance: Instance = {
-            let api_version = Self::vulkan_version()
-                .map(|(major, minor, patch)| {
-                    vk::make_api_version(
-                        0,
-                        major.try_into().unwrap(),
-                        minor.try_into().unwrap(),
-                        patch.try_into().unwrap(),
+    pub fn replace_backend_texture(&mut self) {
+        let size = self.surface_data.bounds;
+        let mut texture = None;
+        if let Some(context) = self.vulkan_context.as_mut() {
+            let image = context.current_image_raw();
+            if let Some(image) = image {
+                let alloc = gpu::vk::Alloc::default();
+                let image_info = unsafe {
+                    gpu::vk::ImageInfo::new(
+                        image as gpu::vk::Image,
+                        alloc,
+                        gpu::vk::ImageTiling::OPTIMAL,
+                        gpu::vk::ImageLayout::UNDEFINED,
+                        gpu::vk::Format::R8G8B8A8_UNORM,
+                        1,
+                        None,
+                        None,
+                        None,
+                        None,
                     )
-                })
-                .unwrap_or(minimum_version);
+                };
 
-            let app_name = CString::new(app_name).unwrap();
-            let layer_names: [&CString; 0] = []; // [CString::new("VK_LAYER_LUNARG_standard_validation").unwrap()];
-            let extension_names_raw = []; // extension_names();
-
-            let app_info = vk::ApplicationInfo::default()
-                .application_name(&app_name)
-                .application_version(0)
-                .engine_name(&app_name)
-                .engine_version(0)
-                .api_version(api_version);
-
-            let layers_names_raw: Vec<*const std::os::raw::c_char> = layer_names
-                .iter()
-                .map(|raw_name| raw_name.as_ptr())
-                .collect();
-
-            let create_info = vk::InstanceCreateInfo::default()
-                .application_info(&app_info)
-                .enabled_layer_names(&layers_names_raw)
-                .enabled_extension_names(&extension_names_raw);
-
-            entry.create_instance(&create_info, None)
+                texture = Some(unsafe { gpu::backend_textures::make_vk((size.width() as i32, size.height() as i32), &image_info, "") });
+            }
         }
-        .or(Err("Failed to create a Vulkan instance."))?;
 
-        let (physical_device, queue_family_index) = {
-            let physical_devices = instance
-                .enumerate_physical_devices()
-                .expect("Failed to enumerate Vulkan physical devices.");
-
-            physical_devices
-                .iter()
-                .map(|physical_device| {
-                    instance
-                        .get_physical_device_queue_family_properties(*physical_device)
-                        .iter()
-                        .enumerate()
-                        .find_map(|(index, info)| {
-                            let supports_graphic =
-                                info.queue_flags.contains(vk::QueueFlags::GRAPHICS);
-                            if supports_graphic {
-                                Some((*physical_device, index))
-                            } else {
-                                None
-                            }
-                        })
-                })
-                .find_map(|v| v)
+        if let Some(texture) = texture {
+            self.surface.replace_backend_texture(&texture, gpu::SurfaceOrigin::TopLeft);
+            self.vulkan_texture = Some(texture);
         }
-        .ok_or("Failed to find a Vulkan physical device.")?;
-
-        let device: ash::Device = {
-            let features = vk::PhysicalDeviceFeatures::default();
-
-            let priorities = [1.0];
-
-            let queue_info = [vk::DeviceQueueCreateInfo::default()
-                .queue_family_index(queue_family_index as _)
-                .queue_priorities(&priorities)];
-
-            let device_extension_names_raw = [];
-
-            let device_create_info = vk::DeviceCreateInfo::default()
-                .queue_create_infos(&queue_info)
-                .enabled_extension_names(&device_extension_names_raw)
-                .enabled_features(&features);
-
-            instance.create_device(physical_device, &device_create_info, None)
-        }
-        .or(Err("Failed to create Device."))?;
-
-        let queue_index: usize = 0;
-        let queue: vk::Queue = device.get_device_queue(queue_family_index as _, queue_index as _);
-
-        Ok(AshGraphics {
-            queue_and_index: (queue, queue_index),
-            device,
-            physical_device,
-            instance,
-            entry,
-        })
     }
 
-    pub unsafe fn get_proc(&self, of: gpu::vk::GetProcOf) -> Option<unsafe extern "system" fn()> {
-        match of {
-            gpu::vk::GetProcOf::Instance(instance, name) => {
-                let ash_instance = vk::Instance::from_raw(instance as _);
-                self.entry.get_instance_proc_addr(ash_instance, name)
-            }
-            gpu::vk::GetProcOf::Device(device, name) => {
-                let ash_device = vk::Device::from_raw(device as _);
-                self.instance.get_device_proc_addr(ash_device, name)
-            }
+
+    pub fn resize_vulkan(
+        context: &mut Context,
+        width: f32,
+        height: f32,
+        alpha: bool,
+    ) {
+        let mut image = None;
+        let mut queue = None;
+        if let Some(vulkan_context) = context.vulkan_context.as_mut() {
+            vulkan_context.resize(width as u32, height as u32);
+            image = vulkan_context.current_image_raw();
+            queue = Some(vulkan_context.index() as u32);
+        }
+
+        if let Some(direct_context) = context.direct_context.as_mut() {
+            let alloc = gpu::vk::Alloc::default();
+            let image_info = unsafe {
+                gpu::vk::ImageInfo::new(
+                    image.unwrap() as gpu::vk::Image,
+                    alloc,
+                    gpu::vk::ImageTiling::OPTIMAL,
+                    gpu::vk::ImageLayout::UNDEFINED,
+                    gpu::vk::Format::R8G8B8A8_UNORM,
+                    1,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            };
+
+            let bt = unsafe { gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "") };
+
+
+            let surface = gpu::surfaces::wrap_backend_texture(direct_context, &bt, gpu::SurfaceOrigin::TopLeft, None, ColorType::N32,
+                                                              None,
+                                                              None).unwrap();
+
+            let bounds = skia_safe::Rect::from_wh(width, height);
+            context.surface_data.state = Default::default();
+            context.surface_data.is_opaque = !alpha;
+            context.surface_data.bounds = bounds;
+            context.surface = surface;
+            context.vulkan_texture = Some(bt);
         }
     }
 }

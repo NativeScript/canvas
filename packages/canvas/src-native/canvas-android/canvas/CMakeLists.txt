@@ -39,8 +39,6 @@ set(CARGO_TARGET_DIR ${PROJECT_NATIVE_ROOT_DIR}/target)
 set(CURRENT_TARGET_DIR ${CARGO_TARGET_DIR}/${RUST_BUILD_TARGET})
 
 
-message(PROJECT_NATIVE_ROOT_DIR ${PROJECT_NATIVE_ROOT_DIR})
-
 set(COMMON_CMAKE_ARGUMENTS "-std=c++17 -pthread -Werror -Wno-unused-result -mstackrealign -fexceptions -fno-builtin-stpcpy -DV8_31BIT_SMIS_ON_64BIT_ARCH -Wno-vla-extension -Wno-deprecated")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -55,7 +53,6 @@ endif ()
 
 set(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB}/${CMAKE_STATIC_LIBRARY_PREFIX}canvasnative${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-message(CANVAS_ANDROID_LIB ${CANVAS_ANDROID_LIB})
 
 if ("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
   # Enable pointer compression on 64 bit platforms
@@ -201,8 +198,12 @@ find_library(system-log log)
 find_library(system-z z)
 find_library(egl EGL)
 
-add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)
-
+add_custom_command(TARGET canvasnativev8
+        PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CANVAS_ANDROID_LIB}
+        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasnative.so
+)
 
 target_link_libraries(canvasnativev8
         ${system-log}
@@ -210,7 +211,7 @@ target_link_libraries(canvasnativev8
         ${egl}
         ${OPENGL_LIB}
         ${graphics}
-        ${PROJECT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/libNativeScript.so
+        ${PROJECT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libNativeScript.so
         ${CANVAS_ANDROID_LIB}
         android
 )
@@ -221,10 +222,4 @@ if("${ANDROID_ABI}" MATCHES "arm64-v8a$" OR "${ANDROID_ABI}" MATCHES "x86_64$")
 endif()
 
 
-add_custom_command(TARGET canvasnativev8
-        PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CANVAS_ANDROID_LIB}
-        ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcanvasnative.so
-        )
-
+add_custom_command(TARGET canvasnativev8 POST_BUILD COMMAND ${CMAKE_STRIP} --strip-unneeded $<TARGET_FILE:canvasnativev8>)

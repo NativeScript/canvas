@@ -1,11 +1,11 @@
 use wgt::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
 
-use crate::buffers::StringBuffer;
-use crate::ImageAsset;
 use super::{
     enums::{CanvasGPUTextureFormat, CanvasTextureAspect, CanvasVertexFormat},
     gpu_texture_view::CanvasGPUTextureView,
 };
+use crate::buffers::StringBuffer;
+use crate::ImageAsset;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -220,6 +220,48 @@ pub struct CanvasImageCopyExternalImage {
 
     pub height: u32,
 }
+
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct CanvasImageCopyCanvasRenderingContext2D {
+    /// The texture to be copied from. The copy source data is captured at the moment
+    /// the copy is issued.
+    pub source: *const crate::c2d::CanvasRenderingContext2D,
+    /// The base texel used for copying from the external image. Together
+    /// with the `copy_size` argument to copy functions, defines the
+    /// sub-region of the image to copy.
+    ///
+    /// Relative to the top left of the image.
+    ///
+    /// Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+    pub origin: CanvasOrigin2d,
+    /// If the Y coordinate of the image should be flipped. Even if this is
+    /// true, `origin` is still relative to the top left.
+    pub flip_y: bool,
+}
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct CanvasImageCopyWebGL {
+    /// The texture to be copied from. The copy source data is captured at the moment
+    /// the copy is issued.
+    pub source: *const crate::webgl::WebGLState,
+    /// The base texel used for copying from the external image. Together
+    /// with the `copy_size` argument to copy functions, defines the
+    /// sub-region of the image to copy.
+    ///
+    /// Relative to the top left of the image.
+    ///
+    /// Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+    pub origin: CanvasOrigin2d,
+    /// If the Y coordinate of the image should be flipped. Even if this is
+    /// true, `origin` is still relative to the top left.
+    pub flip_y: bool,
+}
+
 
 
 #[repr(C)]
@@ -869,7 +911,6 @@ pub struct CanvasSurfaceCapabilities {
 
 impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
     fn from(value: SurfaceCapabilities) -> Self {
-
         let formats = Box::into_raw(Box::new(StringBuffer::from(
             value
                 .formats

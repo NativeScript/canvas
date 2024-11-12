@@ -16,7 +16,7 @@ NDK_TARGET=$TARGET
  fi
 
 API_VERSION="21"
-NDK_VERSION="23.2.8568313"
+NDK_VERSION="26.3.11579264"
 
 # needed so we can overwrite it in the CI
 if [ -z "$NDK" ]; then
@@ -44,6 +44,8 @@ if [ "$TARGET" = "aarch64-linux-android" ]; then
 fi
 
 RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
+
+#RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-android
 
 #pushd packages/canvas/src-native/canvas-android
 #./gradlew :canvas:assembleRelease

@@ -51,6 +51,10 @@ public:
 
     static void DrawIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+    static void MultiDrawIndexedIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void MultiDrawIndirect(const v8::FunctionCallbackInfo<v8::Value> &args);
+
     static void End(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void EndOcclusionQuery(const v8::FunctionCallbackInfo<v8::Value> &args);

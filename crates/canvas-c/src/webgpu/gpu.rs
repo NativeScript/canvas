@@ -1,6 +1,5 @@
 use std::{os::raw::c_void, sync::Arc};
-
-
+use std::fmt::{Debug, Formatter};
 ////use wgpu_core::gfx_select;
 use wgpu_core::global::Global;
 
@@ -47,6 +46,15 @@ struct CanvasWebGPUInstanceInner {
     pub(crate) global: Arc<Global>,
 }
 
+impl Debug for CanvasWebGPUInstanceInner  {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CanvasWebGPUInstanceInner")
+            .finish()
+    }
+}
+
+
+#[derive(Debug)]
 pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
 impl Clone for CanvasWebGPUInstance {
     fn clone(&self) -> Self {
@@ -71,8 +79,8 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     let backends = wgt::Backends::METAL;
 
-    #[cfg(target_os = "android")]
-    let backends = wgt::Backends::VULKAN | wgt::Backends::GL;
+   #[cfg(target_os = "android")]
+    let backends = wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
 
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;
@@ -148,15 +156,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         let adapter = global.request_adapter(
             &opts,
-            wgpu_core::instance::AdapterInputs::Mask(backends, |_b| None),
+            backends,
+            None,
         );
 
         let adapter = adapter.map(|adapter_id| {
-            let features = global.adapter_features(adapter_id)
-                .map(build_features)
-                .unwrap_or_default();
+            let features = build_features(global.adapter_features(adapter_id));
 
-            let limits = global.adapter_limits(adapter_id).unwrap_or_default();
+            let limits = global.adapter_limits(adapter_id);
 
             let ret = CanvasGPUAdapter {
                 instance,

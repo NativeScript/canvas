@@ -4,9 +4,14 @@ import type { GPUDevice } from './GPUDevice';
 import { GPUTexture } from './GPUTexture';
 import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
-export class GPUCanvasContext {
+import type { CanvasRenderingContext } from '../common';
+import { GPU } from './GPU';
+import type { Canvas } from '../Canvas';
+const device_ = Symbol('[[device]]');
+export class GPUCanvasContext implements CanvasRenderingContext {
 	_type;
-	_canvas: any;
+	_canvas: Canvas;
+	[device_]: GPUDevice;
 	static {
 		Helpers.initialize();
 	}
@@ -98,6 +103,27 @@ export class GPUCanvasContext {
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
 			}
 
+			// always force copy_src and copy_dst
+			switch (typeof opts.usage) {
+				case 'number':
+					{
+						const has_copy_src = (opts.usage & GPUTextureUsage.COPY_SRC) !== 0;
+						const has_copy_dst = (opts.usage & GPUTextureUsage.COPY_DST) !== 0;
+						if (!has_copy_dst && !has_copy_src) {
+							opts.usage = opts.usage | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST;
+						} else if (!has_copy_dst) {
+							opts.usage = opts.usage | GPUTextureUsage.COPY_DST;
+						} else if (!has_copy_src) {
+							opts.usage = opts.usage | GPUTextureUsage.COPY_SRC;
+						}
+					}
+					break;
+				default:
+					opts.usage = GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST;
+
+					break;
+			}
+
 			if (__IOS__ && opts.usage > capabilities.usages) {
 				opts.usage = capabilities.usages;
 				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
@@ -105,6 +131,7 @@ export class GPUCanvasContext {
 		}
 
 		opts.device = options?.device?.[native_];
+		this[device_] = options.device;
 		this[native_].configure(opts);
 	}
 
@@ -144,5 +171,12 @@ export class GPUCanvasContext {
 		usages: number;
 	} {
 		return this[native_].getCapabilities(adapter[native_]);
+	}
+	__toDataURL(type: string, quality: number) {
+		if (this[device_]) {
+			return this.native.__toDataURL(type, quality, this[device_]?.[native_], this._currentTexture?.[native_]);
+		} else {
+			return (<any>this.canvas)._canvas.toDataURL(type, quality);
+		}
 	}
 }

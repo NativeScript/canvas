@@ -6,6 +6,8 @@ import { Application, Color, FillGradient, Graphics, Text, TextStyle } from 'pix
 import '@nativescript/canvas-pixi';
 import * as PIXI from 'pixi.js';
 import { device } from '@nativescript/core/platform';
+import { initDevtools } from '@pixi/devtools';
+import { Canvas } from '@nativescript/canvas';
 
 // import { Viewport } from 'pixi-viewport';
 
@@ -100,12 +102,13 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 		//this.drawPatternWithCanvas(canvas);
 		//this.simpleWebGPU(canvas);
-		this.simplePlane(canvas);
+		//this.simplePlane(canvas);
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
-		//this.dynamicGraphics(canvas);
+
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -229,45 +232,96 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 	async svg(canvas) {
 		const app = new PIXI.Application();
 
-		canvas.width = canvas.clientWidth * window.devicePixelRatio;
-		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
+		canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
 
 		await app.init({
-			antialias: true,
+			//	antialias: true,
 			backgroundColor: 'white',
 			//resizeTo: window,
 			canvas,
-			preference: 'webgpu',
+			//preference: 'webgpu',
+			preferWebGLVersion: 2,
 			width: canvas.width,
 			height: canvas.height,
 		});
+		try {
+			const encoder = new TextEncoder();
+			const encoded = encoder.encode(`<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
+				<!-- Draw the paths -->
+				<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
+				<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
+				<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
+				<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
 
-		const graphics = new Graphics().svg(`
+				<!-- Mark relevant points -->
+				<g stroke="black" stroke-width="3" fill="black">
+					<circle id="pointA" cx="100" cy="350" r="4" />
+					<circle id="pointB" cx="250" cy="50" r="4" />
+					<circle id="pointC" cx="400" cy="350" r="4" />
+				</g>
+			</svg>
+		`);
+			const blob = new Blob([encoded], { type: 'image/svg+xml' });
+			const url = URL.createObjectURL(blob);
+			const img = new Image();
+			img.src = url;
+			await img.decode();
+			const c = document.createElement('canvas') as any;
+			c.width = img.width;
+			c.height = img.height;
+			const cctx = c.getContext('2d');
+			cctx.fillStyle = 'white';
+			cctx.fillRect(0, 0, c.width, c.height);
+			cctx.drawImage(img, 0, 0);
+
+			//const source = PIXI.ImageSource.from(img);
+
+			const source = new PIXI.CanvasSource({ resource: c as never });
+
+			const texture = new PIXI.Texture(source);
+
+			const sprite = new PIXI.Sprite(texture);
+
+			const graphics = new Graphics().svg(`
 				<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
-					<!-- Draw the paths -->
-					<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
-					<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
-					<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
-					<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
-	
-					<!-- Mark relevant points -->
-					<g stroke="black" stroke-width="3" fill="black">
-						<circle id="pointA" cx="100" cy="350" r="4" />
-						<circle id="pointB" cx="250" cy="50" r="4" />
-						<circle id="pointC" cx="400" cy="350" r="4" />
-					</g>
-				</svg>
-			`);
+						<!-- Draw the paths -->
+						<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
+						<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
+						<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
+						<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
 
-		app.stage.addChild(graphics);
+						<!-- Mark relevant points -->
+						<g stroke="black" stroke-width="3" fill="black">
+							<circle id="pointA" cx="100" cy="350" r="4" />
+							<circle id="pointB" cx="250" cy="50" r="4" />
+							<circle id="pointC" cx="400" cy="350" r="4" />
+						</g>
+					</svg>
+				`);
 
-		const ctx = canvas.getContext('webgpu');
+			const other = new Graphics();
 
-		app.ticker.add((delta) => {
-			if (ctx) {
-				ctx.presentSurface();
-			}
-		});
+			other.rect(100, 100, 100, 100);
+			other.fill(0xde3249);
+
+			// const ctx = canvas.getContext('webgpu');
+
+			// app.ticker.add((delta) => {
+			// 	const texture = ctx.getCurrentTexture();
+			// 	if (texture) {
+			// 		ctx.presentSurface();
+			// 	}
+			// });
+
+			//app.stage.addChild(graphics);
+
+			app.stage.addChild(sprite);
+
+			//	app.stage.addChild(other);
+		} catch (error) {
+			console.log(error);
+		}
 	}
 
 	async viewPort(canvas) {
@@ -1097,17 +1151,19 @@ void main()
 	}
 
 	async dynamicGraphics(canvas) {
-		canvas.width = canvas.clientWidth * window.devicePixelRatio;
-		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
+		canvas.height = canvas.clientHeight; // * window.devicePixelRatio;
+		// canvas.width = canvas.clientWidth;
+		// canvas.height = canvas.clientHeight;
 		const app = new PIXI.Application();
 
 		await app.init({
 			backgroundColor: 0x1099bb,
+			//preferWebGLVersion: 2,
 			preference: 'webgpu',
 			canvas,
 			width: canvas.width,
 			height: canvas.height,
-			autoDensity: true,
 		});
 
 		app.stage.eventMode = 'static';
@@ -1147,6 +1203,7 @@ void main()
 		// Just click on the stage to draw random lines
 		window.app = app;
 		app.stage.on('pointerdown', () => {
+			console.log('click');
 			graphics.moveTo(Math.random() * 800, Math.random() * 600);
 			graphics.bezierCurveTo(Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600, Math.random() * 800, Math.random() * 600);
 			graphics.stroke({ width: Math.random() * 30, color: Math.random() * 0xffffff });
@@ -1171,7 +1228,12 @@ void main()
 
 			thing.rotation = count * 0.1;
 
-			ctx.presentSurface();
+			const texture = ctx.getCurrentTexture();
+			if (texture) {
+				ctx.presentSurface();
+			}
+
+			console.log('??', canvas.toDataURL());
 		});
 	}
 
@@ -1209,14 +1271,15 @@ void main()
 
 	async explosion(canvas) {
 		const app = new PIXI.Application();
-		canvas.width = canvas.clientWidth * window.devicePixelRatio;
-		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
+		canvas.height = canvas.clientHeight; //* window.devicePixelRatio;
 		await app.init({
 			backgroundColor: 0x1099bb,
 			autoStart: false,
 			canvas,
 			width: canvas.width,
 			height: canvas.height,
+			preference: 'webgpu',
 		});
 
 		// app.stop();
@@ -1250,7 +1313,12 @@ void main()
 		// app.loader.add('spritesheet', this.root + '/spritesheet/mc.json').load(onAssetsLoaded);
 
 		//const texture = await PIXI.Assets.load('https://pixijs.com/assets/spritesheet/mc.json');
-		const texture = await PIXI.Assets.load(this.root + '/spritesheet/mc.json');
+		try {
+			await PIXI.Assets.load(this.root + '/spritesheet/mc.json');
+		} catch (error) {
+			console.log(error);
+		}
+		console.log('??');
 		// Create an array to store the textures
 		const explosionTextures = [];
 		let i;
@@ -1274,6 +1342,15 @@ void main()
 			explosion.gotoAndPlay((Math.random() * 26) | 0);
 			app.stage.addChild(explosion);
 		}
+
+		const ctx = canvas.getContext('webgpu');
+
+		app.ticker.add(() => {
+			const texture = ctx.getCurrentTexture();
+			if (texture) {
+				ctx.presentSurface();
+			}
+		});
 
 		app.start();
 	}
@@ -1740,6 +1817,16 @@ void main()
 		canvas.width = canvas.parent.clientWidth * Screen.mainScreen.scale;
 		canvas.height = canvas.parent.clientHeight * Screen.mainScreen.scale;
 		const app = new PIXI.Application();
+
+		await initDevtools({ app });
+
+		// (<any>global).window.__PIXI_DEVTOOLS__ = {
+		// 	app,
+		// 	PIXI
+		//   };
+
+		//   (<any>global).__PIXI_DEVTOOLS__ = (<any>global).window.__PIXI_DEVTOOLS__;
+
 		await app.init({
 			background: '#1099bb',
 			canvas,

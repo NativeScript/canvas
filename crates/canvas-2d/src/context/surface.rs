@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use skia_safe::{AlphaType, Color, ColorType, ImageInfo, ISize, Rect, surfaces};
+use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect};
 
-use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -46,15 +46,23 @@ impl Context {
 
         Context {
             direct_context: None,
+            #[cfg(feature = "gl")]
+            gl_context: None,
+            #[cfg(feature = "metal")]
+            metal_context: None,
+            #[cfg(feature = "metal")]
+            metal_texture_info: None,
             #[cfg(feature = "vulkan")]
-            ash_graphics: None,
+            vulkan_context: None,
             #[cfg(feature = "vulkan")]
-            vk_surface: None,
+            vulkan_texture: None,
             surface_data: SurfaceData {
                 bounds,
                 ppi,
                 scale: density,
                 engine: SurfaceEngine::CPU,
+                state: Default::default(),
+                is_opaque: !alpha,
             },
             surface,
             path: Path::default(),
@@ -97,7 +105,6 @@ impl Context {
                 height = 1.
             }
 
-
             ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None)
         } else {
             ImageInfo::new(
@@ -110,6 +117,8 @@ impl Context {
 
         if let Some(surface) = surfaces::raster(&info, None, None) {
             context.surface = surface;
+            context.surface_data.is_opaque = !alpha;
+            context.surface_data.state = Default::default();
             context.surface_data.bounds = bounds;
             context.surface_data.scale = density;
             context.surface_data.ppi = ppi;

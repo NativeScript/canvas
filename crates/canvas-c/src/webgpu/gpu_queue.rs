@@ -1,11 +1,3 @@
-use std::borrow::Cow;
-use std::os::raw::{c_char, c_void};
-use std::sync::Arc;
-
-//use wgpu_core::gfx_select;
-use crate::webgpu::error::{handle_error, handle_error_fatal};
-use crate::webgpu::prelude::label_to_ptr;
-use crate::webgpu::structs::CanvasImageCopyImageAsset;
 use super::{
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -13,7 +5,16 @@ use super::{
     gpu_command_encoder::CanvasImageCopyTexture,
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
+//use wgpu_core::gfx_select;
+use crate::webgpu::error::{handle_error, handle_error_fatal};
+use crate::webgpu::prelude::label_to_ptr;
+use crate::webgpu::structs::{CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyImageAsset, CanvasImageCopyWebGL};
+use canvas_webgl::utils::gl::bytes_per_pixel;
+use std::borrow::Cow;
+use std::os::raw::{c_char, c_void};
+use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct QueueId {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) id: wgpu_core::id::QueueId,
@@ -28,7 +29,7 @@ impl Drop for QueueId {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CanvasGPUQueue {
     pub(super) label: Option<Cow<'static, str>>,
     pub(crate) queue: Arc<QueueId>,
@@ -88,6 +89,94 @@ fn get_offset_image(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyWebGL,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if source.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    if source.source.is_null() {
+        return;
+    }
+    let webgl = &*source.source;
+
+
+    webgl.0.make_current();
+    let width = webgl.0.get_drawing_buffer_width();
+    let height = webgl.0.get_drawing_buffer_height();
+
+
+    let row_size = bytes_per_pixel(gl_bindings::RGBA as u32, gl_bindings::RGBA as u32) as i32;
+
+    let mut bytes = vec![0u8; (width * height * row_size) as usize];
+    unsafe {
+        gl_bindings::Flush();
+        gl_bindings::ReadPixels(
+            0,
+            0,
+            width,
+            height,
+            gl_bindings::RGBA as u32,
+            gl_bindings::RGBA as u32,
+            bytes.as_mut_ptr() as *mut c_void,
+        );
+    }
+
+
+    let ext_source = CanvasImageCopyExternalImage {
+        source: bytes.as_ptr(),
+        source_size: bytes.len(),
+        origin: source.origin,
+        flip_y: source.flip_y,
+        width: width as u32,
+        height: height as u32,
+    };
+
+    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyCanvasRenderingContext2D,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if source.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    if source.source.is_null() {
+        return;
+    }
+    let context = &mut *(source.source as *mut crate::c2d::CanvasRenderingContext2D);
+
+    let (width, height) = context.context.dimensions();
+
+    let mut bytes = vec![0u8; (width * height * 4.) as usize];
+
+    context.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+
+    let ext_source = CanvasImageCopyExternalImage {
+        source: bytes.as_ptr(),
+        source_size: bytes.len(),
+        origin: source.origin,
+        flip_y: source.flip_y,
+        width: width as u32,
+        height: height as u32,
+    };
+
+    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+}
+
+
+#[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
     queue: *const CanvasGPUQueue,
     source: *const CanvasImageCopyImageAsset,
@@ -103,8 +192,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
         return;
     }
     let image_asset = &*source.source;
-    image_asset.with_bytes_dimension(|bytes, dimension|{
-        let ext_source = CanvasImageCopyExternalImage{
+    image_asset.with_bytes_dimension(|bytes, dimension| {
+        let ext_source = CanvasImageCopyExternalImage {
             source: bytes.as_ptr(),
             source_size: bytes.len(),
             origin: source.origin,
@@ -137,7 +226,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     if source.source.is_null() || source.source_size == 0 || source.width == 0 || source.height == 0
     {
-       return;
+        return;
     }
 
     let destination = &*destination;
@@ -220,14 +309,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
         callback(std::ptr::null_mut(), callback_data);
     }));
 
-    if let Err(cause) = global.queue_on_submitted_work_done(queue_id, done)
-    {
-        handle_error_fatal(
-            global,
-            cause,
-            "canvas_native_webgpu_queue_on_submitted_work_done",
-        );
-    }
+    global.queue_on_submitted_work_done(queue_id, done);
 }
 
 #[no_mangle]
@@ -257,7 +339,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         })
         .collect::<Vec<_>>();
 
-    if let Err(cause) = global.queue_submit(queue_id, &command_buffer_ids)
+    if let Err((_, cause)) = global.queue_submit(queue_id, &command_buffer_ids)
     {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }

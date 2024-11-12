@@ -23,7 +23,7 @@ public class NSCWebGLRenderingContext: NSObject {
             _ dimensions: CGSize,
             _ flipY: Bool
         ) {
-            canvas_native_webgl_tex_image_2d(context, target, level, internalformat, format, type, data, size, Float(dimensions.width), Float(dimensions.height), flipY)
+            canvas_native_ios_webgl_tex_image_2d(context, target, level, internalformat, format, type, data, size, Float(dimensions.width), Float(dimensions.height), flipY)
           }
 
 
@@ -40,7 +40,7 @@ public class NSCWebGLRenderingContext: NSObject {
             _ dimensions: CGSize,
             _ flipY: Bool
         ) {
-            canvas_native_webgl_tex_sub_image_2d(context, target, level, xoffset, yoffset, format, type, data, size, Float(dimensions.width), Float(dimensions.height), flipY)
+            canvas_native_ios_webgl_tex_sub_image_2d(context, target, level, xoffset, yoffset, format, type, data, size, Float(dimensions.width), Float(dimensions.height), flipY)
         }
     
 

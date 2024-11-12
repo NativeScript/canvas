@@ -66,6 +66,7 @@ export class Canvas extends CanvasBase {
 
 	constructor(nativeInstance?) {
 		super();
+		NSCCanvas.forceGL = false;
 		if (nativeInstance) {
 			// allows Worker usage
 			this._canvas = nativeInstance;
@@ -99,10 +100,6 @@ export class Canvas extends CanvasBase {
 				this.native.__stopRaf();
 			};
 
-			// default canvas size
-			this._canvas.surfaceWidth = 300;
-			this._canvas.surfaceHeight = 150;
-
 			(global as any).__canvasLoaded = true;
 
 			this._canvas.becomeActiveListener = () => {
@@ -118,6 +115,14 @@ export class Canvas extends CanvasBase {
 		}
 	}
 
+	static get forceGL() {
+		return NSCCanvas.forceGL;
+	}
+
+	static set forceGL(value) {
+		NSCCanvas.forceGL = value;
+	}
+
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = value;
 	}
@@ -128,11 +133,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return this.getMeasuredWidth() / Screen.mainScreen.scale;
+		return Math.floor(this.getMeasuredWidth() / Screen.mainScreen.scale);
 	}
 
 	get clientHeight() {
-		return this.getMeasuredHeight() / Screen.mainScreen.scale;
+		return Math.floor(this.getMeasuredHeight() / Screen.mainScreen.scale);
 	}
 
 	get drawingBufferHeight() {
@@ -158,9 +163,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set width(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -169,6 +171,8 @@ export class Canvas extends CanvasBase {
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
 			this._canvas.surfaceWidth = newValue;
+			const { fit, transform } = this._getFit(this._canvas.frame);
+			this._updateScale(fit, transform ?? CATransform3DIdentity);
 		}
 	}
 
@@ -181,9 +185,6 @@ export class Canvas extends CanvasBase {
 	}
 
 	set height(value: number) {
-		if (value === undefined || value === null) {
-			return;
-		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
@@ -192,6 +193,8 @@ export class Canvas extends CanvasBase {
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
 			this._canvas.surfaceHeight = newValue;
+			const { fit, transform } = this._getFit(this._canvas.frame);
+			this._updateScale(fit, transform ?? CATransform3DIdentity);
 		}
 	}
 
@@ -228,12 +231,12 @@ export class Canvas extends CanvasBase {
 			Object.defineProperties(this.parent, {
 				clientWidth: {
 					get: function () {
-						return this.getMeasuredWidth() / Screen.mainScreen.scale;
+						return Math.floor(this.getMeasuredWidth() / Screen.mainScreen.scale);
 					},
 				},
 				clientHeight: {
 					get: function () {
-						return this.getMeasuredHeight() / Screen.mainScreen.scale;
+						return Math.floor(this.getMeasuredHeight() / Screen.mainScreen.scale);
 					},
 				},
 			});
@@ -289,53 +292,104 @@ export class Canvas extends CanvasBase {
 		super.disposeNativeView();
 	}
 
-	_setNativeViewFrame(nativeView: any, frame: CGRect): void {
+	_getFit(frame: CGRect): { fit: number; frame: CGRect; transform?: CATransform3D } {
 		const styleWidth = this.style.width;
 		const styleHeight = this.style.height;
+		let fit = 1;
+		let newFrame = frame;
+
 		if (typeof styleWidth === 'object' && typeof styleHeight === 'object') {
 			if (styleWidth?.unit === '%' && styleWidth.value >= 1 && styleHeight?.unit === '%' && styleHeight.value >= 1) {
-				// const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
-				//const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
-				nativeView.fit = 1;
-				// nativeView.frame = frame;
+				fit = 1;
 			} else if ((styleWidth?.unit === 'px' || styleWidth?.unit === 'dip') && (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip')) {
 				const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 				const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
 
 				if (frame.size.width > width || frame.size.height > height) {
-					nativeView.fit = 4;
+					fit = 4;
 				} else {
-					nativeView.fit = 1;
+					fit = 1;
 				}
-
-				// nativeView.frame = frame;
 			} else {
-				nativeView.fit = 1;
-				//	nativeView.frame = frame;
+				fit = 1;
 			}
 		} else if (typeof styleWidth === 'object' && styleHeight === 'auto') {
 			if (styleWidth?.unit === 'px' || styleWidth?.unit === 'dip' || styleWidth?.unit === '%') {
-				nativeView.fit = 2;
-				//	nativeView.frame = frame;
+				fit = 2;
 			}
 		} else if (styleWidth === 'auto' && typeof styleHeight === 'object') {
 			if (styleHeight?.unit === 'px' || styleHeight?.unit === 'dip' || styleHeight?.unit === '%') {
-				nativeView.fit = 3;
-				//	nativeView.frame = frame;
+				fit = 3;
 			}
 		} else if (styleWidth === 'auto' && styleHeight === 'auto') {
 			// when auto/auto is set force the frame size to be the same as the canvas
 			const width = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
 			const height = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
-			const newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
-			nativeView.fit = 0;
-			//nativeView.frame = newFrame;
-			frame = newFrame;
+			newFrame = CGRectMake(frame.origin.x, frame.origin.y, width, height);
+			fit = 0;
 		} else {
-			//	nativeView.frame = frame;
+			fit = 1;
 		}
 
+		let transform: CATransform3D | undefined;
+
+		const scaledInternalWidth = Math.floor(this._canvas.surfaceWidth / Screen.mainScreen.scale);
+		const scaledInternalHeight = Math.floor(this._canvas.surfaceHeight / Screen.mainScreen.scale);
+
+		let scaleX = frame.size.width / scaledInternalWidth;
+		let scaleY = frame.size.height / scaledInternalHeight;
+
+		switch (fit) {
+			case 0:
+				transform = CATransform3DIdentity;
+				break;
+			case 1:
+				transform = CATransform3DMakeScale(scaleX, scaleY, 0);
+				break;
+			case 2:
+				{
+					const dx = (frame.size.width - scaledInternalWidth) / 2;
+					const dy = (scaledInternalHeight * scaleX - scaledInternalHeight) / 2;
+
+					transform = CATransform3DMakeScale(scaleX, scaleX, 0);
+
+					transform = CATransform3DConcat(transform, CATransform3DMakeTranslation(dx, dy, 0));
+				}
+				break;
+			case 3:
+				{
+					const dx = (scaledInternalWidth * scaleY - scaledInternalWidth) / 2;
+					const dy = (frame.size.height - scaledInternalHeight) / 2;
+
+					transform = CATransform3DMakeScale(scaleY, scaleY, 0);
+
+					transform = CATransform3DConcat(transform, CATransform3DMakeTranslation(dx, dy, 0));
+				}
+				break;
+			case 4:
+				{
+					const scale = Math.min(Math.min(scaleX, scaleY), 1);
+
+					transform = CATransform3DMakeScale(scale, scale, 1);
+				}
+				break;
+		}
+
+		return { fit, frame: newFrame, transform };
+	}
+
+	_updateScale(fit: number, transform: CATransform3D) {
+		CATransaction.begin();
+		CATransaction.setDisableActions(true);
+		this._canvas.subviews.objectAtIndex(0).layer.transform = transform;
+		this._canvas.subviews.objectAtIndex(1).layer.transform = transform;
+		CATransaction.commit();
+	}
+
+	_setNativeViewFrame(nativeView: any, currentFrame: CGRect): void {
+		const { fit, frame, transform } = this._getFit(currentFrame);
 		super._setNativeViewFrame(nativeView, frame);
+		this._updateScale(fit, transform ?? CATransform3DIdentity);
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {
@@ -428,7 +482,7 @@ export class Canvas extends CanvasBase {
 			case ContextType.WebGL2:
 				return this._webgl2Context.native;
 			case ContextType.WebGPU:
-				return this._gpuContext;
+				return this._gpuContext.native;
 			default:
 				return null;
 		}
@@ -441,6 +495,12 @@ export class Canvas extends CanvasBase {
 	toDataURL(type = 'image/png', encoderOptions = 0.92) {
 		if (this.width === 0 || this.height === 0) {
 			return 'data:,';
+		}
+		if (!this.native) {
+			return this._canvas.toDataURL(type, encoderOptions);
+		}
+		if (this._contextType === ContextType.WebGPU) {
+			return this._gpuContext.__toDataURL(type, encoderOptions);
 		}
 		return this.native?.__toDataURL?.(type, encoderOptions);
 	}

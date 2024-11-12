@@ -8,8 +8,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.Nullable
 import dalvik.annotation.optimization.FastNative
-import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGL
-import org.nativescript.canvas.NSCCanvas.Companion.nativeReleaseGLPointer
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
@@ -183,13 +181,13 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
-		fun loadImageFromBufferAsync(asset: Long, buffer: ByteBuffer, callback: Callback) {
+		fun loadImageFromEncodedBufferAsync(asset: Long, buffer: ByteBuffer, callback: Callback) {
 			val looper = Looper.myLooper()
 			executorService.execute {
 				val done: Boolean = if (buffer.isDirect) {
-					nativeLoadFromBuffer(asset, buffer)
+					nativeLoadFromEncodedBuffer(asset, buffer)
 				} else {
-					nativeLoadFromBytes(asset, buffer.array())
+					nativeLoadFromEncodedBytes(asset, buffer.array())
 				}
 				if (looper != null) {
 					val handle = Handler(looper)
@@ -203,10 +201,69 @@ class NSCImageAsset(asset: Long) {
 		}
 
 		@JvmStatic
-		fun loadImageFromBytesAsync(asset: Long, bytes: ByteArray, callback: Callback) {
+		fun loadImageFromEncodedBytesAsync(asset: Long, bytes: ByteArray, callback: Callback) {
 			val looper = Looper.myLooper()
 			executorService.execute {
-				val done = nativeLoadFromBytes(asset, bytes)
+				val done = nativeLoadFromEncodedBytes(asset, bytes)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromEncodedBytesAsync(asset: Long, bitmap: Bitmap, callback: Callback) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val done = nativeLoadFromBitmap(asset, bitmap)
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
+			}
+		}
+
+
+		@JvmStatic
+		fun loadImageFromBufferAsync(
+			asset: Long, width: Int,
+			height: Int, buffer: ByteBuffer, callback: Callback
+		) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val done: Boolean = if (buffer.isDirect) {
+					nativeLoadFromBuffer(asset, width, height, buffer)
+				} else {
+					nativeLoadFromBytes(asset, width, height, buffer.array())
+				}
+				if (looper != null) {
+					val handle = Handler(looper)
+					handle.post {
+						callback.onComplete(done)
+					}
+				} else {
+					callback.onComplete(done)
+				}
+			}
+		}
+
+		@JvmStatic
+		fun loadImageFromBytesAsync(
+			asset: Long, width: Int,
+			height: Int, bytes: ByteArray, callback: Callback
+		) {
+			val looper = Looper.myLooper()
+			executorService.execute {
+				val done = nativeLoadFromBytes(asset, width, height, bytes)
 				if (looper != null) {
 					val handle = Handler(looper)
 					handle.post {
@@ -257,10 +314,22 @@ class NSCImageAsset(asset: Long) {
 		private external fun nativeLoadFromUrl(asset: Long, path: String): Boolean
 
 		@JvmStatic
-		private external fun nativeLoadFromBuffer(asset: Long, buffer: ByteBuffer): Boolean
+		private external fun nativeLoadFromEncodedBuffer(asset: Long, buffer: ByteBuffer): Boolean
 
 		@JvmStatic
-		private external fun nativeLoadFromBytes(asset: Long, bytes: ByteArray): Boolean
+		private external fun nativeLoadFromEncodedBytes(asset: Long, bytes: ByteArray): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadFromBuffer(
+			asset: Long, width: Int,
+			height: Int, buffer: ByteBuffer
+		): Boolean
+
+		@JvmStatic
+		private external fun nativeLoadFromBytes(
+			asset: Long, width: Int,
+			height: Int, bytes: ByteArray
+		): Boolean
 
 
 		@JvmStatic

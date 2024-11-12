@@ -1,12 +1,11 @@
+use crate::buffers::StringBuffer;
+use crate::webgpu::gpu_device::{ErrorSinkRaw, DEFAULT_DEVICE_LOST_HANDLER};
+use crate::webgpu::gpu_queue::QueueId;
+use std::sync::Arc;
 use std::{
     ffi::CString,
     os::raw::{c_char, c_void},
 };
-use std::sync::Arc;
-
-use crate::buffers::StringBuffer;
-use crate::webgpu::gpu_device::{DEFAULT_DEVICE_LOST_HANDLER, ErrorSinkRaw};
-use crate::webgpu::gpu_queue::QueueId;
 
 use super::{
     gpu::CanvasWebGPUInstance, gpu_adapter_info::CanvasGPUAdapterInfo, gpu_device::CanvasGPUDevice,
@@ -96,10 +95,9 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_adapter_info(
     let adapter_id = adapter.adapter;
     let global = adapter.instance.global();
 
-    global.adapter_get_info(adapter_id)
-        .map(|info| Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info))))
-        .ok()
-        .unwrap_or_else(|| std::ptr::null())
+    let info = global.adapter_get_info(adapter_id);
+
+    Arc::into_raw(Arc::new(CanvasGPUAdapterInfo::new(info)))
 }
 
 #[no_mangle]
@@ -144,14 +142,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
         let global = instance.global();
 
-        let (device, queue, error) = global.adapter_request_device(
-            adapter_id,
-            &descriptor,
-            None,
-            None,
-            None,
-        );
-
         let callback = unsafe {
             std::mem::transmute::<*const i64, fn(*mut c_char, *const CanvasGPUDevice, *mut c_void)>(
                 callback as _,
@@ -159,33 +149,42 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         };
         let callback_data = callback_data as *mut c_void;
 
-        if let Some(error) = error {
-            let error = error.to_string();
-            let ret = CString::new(error).unwrap().into_raw();
-            callback(ret, std::ptr::null_mut(), callback_data);
-        } else {
-            let error_sink = Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
-                DEFAULT_DEVICE_LOST_HANDLER,
-            )));
+        match global.adapter_request_device(
+            adapter_id,
+            &descriptor,
+            None,
+            None,
+            None,
+        ) {
+            Ok((device, queue)) => {
+                let error_sink = Arc::new(parking_lot::Mutex::new(ErrorSinkRaw::new(
+                    DEFAULT_DEVICE_LOST_HANDLER,
+                )));
 
-            let queue = Arc::new(CanvasGPUQueue {
-                label: descriptor.label,
-                queue: Arc::new(QueueId {
-                    id: queue,
-                    instance: Arc::clone(&instance_copy),
-                }),
-                error_sink: error_sink.clone(),
-            });
+                let queue = Arc::new(CanvasGPUQueue {
+                    label: descriptor.label,
+                    queue: Arc::new(QueueId {
+                        id: queue,
+                        instance: Arc::clone(&instance_copy),
+                    }),
+                    error_sink: error_sink.clone(),
+                });
 
-            let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
-                label,
-                device,
-                queue,
-                user_data: std::ptr::null_mut(),
-                instance: instance_copy,
-                error_sink,
-            }));
-            callback(std::ptr::null_mut(), ret, callback_data);
+                let ret = Arc::into_raw(Arc::new(CanvasGPUDevice {
+                    label,
+                    device,
+                    queue,
+                    user_data: std::ptr::null_mut(),
+                    instance: instance_copy,
+                    error_sink,
+                }));
+                callback(std::ptr::null_mut(), ret, callback_data);
+            }
+            Err(error) => {
+                let error = error.to_string();
+                let ret = CString::new(error).unwrap().into_raw();
+                callback(ret, std::ptr::null_mut(), callback_data);
+            }
         }
     });
 }

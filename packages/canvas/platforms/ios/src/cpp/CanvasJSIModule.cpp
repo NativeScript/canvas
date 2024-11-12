@@ -178,6 +178,10 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
                        v8::FunctionTemplate::New(isolate, &ReadFile)->GetFunction(
                                context).ToLocalChecked()).FromJust();
 
+        canvasMod->Set(context, ConvertToV8String(isolate, "getMime"),
+                       v8::FunctionTemplate::New(isolate, &GetMime)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
         canvasMod->Set(context, ConvertToV8String(isolate, "createWebGLContext"),
                        v8::FunctionTemplate::New(isolate, &CreateWebGLContext)->GetFunction(
                                context).ToLocalChecked()).FromJust();
@@ -232,19 +236,8 @@ void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
     auto ptr = args[0].As<v8::BigInt>()->Int64Value();
-    auto width = (float) args[1]->NumberValue(context).ToChecked();
-    auto height = (float) args[2]->NumberValue(context).ToChecked();
-    auto density = (float) args[3]->NumberValue(context).ToChecked();
-    auto samples = (int) args[4]->NumberValue(context).ToChecked();
-    auto alpha = (bool) args[5]->BooleanValue(isolate);
-    auto font_color = (int) args[6]->NumberValue(context).ToChecked();
-    auto ppi = (float) args[7]->NumberValue(context).ToChecked();
-    auto direction = (int) args[8]->NumberValue(context).ToChecked();
 
-    auto context_2d = canvas_native_context_create_gl(width, height, density,
-                                                      ptr,
-                                                      samples, alpha,
-                                                      font_color, ppi, direction);
+    auto context_2d = static_cast<CanvasRenderingContext2D *>((void *) ptr);
 
     auto ret = CanvasRenderingContext2DImpl::NewInstance(isolate, new CanvasRenderingContext2DImpl(
             context_2d));
@@ -369,7 +362,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                         isolate, ta);
 
                 auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
-                    if(data == nullptr){return;}
+                    if (data == nullptr) { return; }
                     auto async_data = static_cast<AsyncCallback *>(data);
                     auto func = async_data->inner_.get();
                     if (func != nullptr && func->isolate_ != nullptr) {
@@ -397,7 +390,7 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
                             callback->Call(context, context->Global(),
                                            2,
                                            args);  // ignore JS return value
-                            
+
                             delete asset_data;
 
                         } else {
@@ -609,8 +602,8 @@ void CanvasJSIModule::Create2DContextWithPointer(const v8::FunctionCallbackInfo<
 
 struct FileData {
     char *error_;
-    U8Buffer* data;
-    
+    U8Buffer *data;
+
     ~FileData() {
         if (error_ != nullptr) {
             canvas_native_string_destroy(error_);
@@ -623,10 +616,9 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
     auto isolate = args.GetIsolate();
     auto file = ConvertFromV8String(isolate, args[0]);
     auto cbFunc = args[1].As<v8::Function>();
-    
-    
+
     auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
-        if(data == nullptr){return;}
+        if (data == nullptr) { return; }
         auto async_data = static_cast<AsyncCallback *>(data);
         auto func = async_data->inner_.get();
         if (func != nullptr && func->isolate_ != nullptr) {
@@ -635,13 +627,138 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
             v8::Isolate::Scope isolate_scope(isolate);
             v8::HandleScope handle_scope(isolate);
             v8::Local<v8::Function> callback = func->callback_.Get(
-                                                                   isolate);
+                    isolate);
             v8::Local<v8::Context> context = callback->GetCreationContextChecked();
             v8::Context::Scope context_scope(context);
-            
+
             if (func->data != nullptr) {
-                auto file_data = static_cast<FileData*>(func->data);
-                
+                auto file_data = static_cast<FileData *>(func->data);
+
+                v8::Local<v8::Value> args[2];
+
+                if (done) {
+                    args[0] = v8::Null(isolate);
+
+                    auto buf = canvas_native_u8_buffer_get_bytes_mut(file_data->data);
+                    auto size = (size_t) canvas_native_u8_buffer_get_length(file_data->data);
+
+                    auto store = v8::ArrayBuffer::NewBackingStore((void *) buf, size,
+                                                                  [](void *data,
+                                                                     size_t length,
+                                                                     void *deleter_data) {
+                                                                      if (deleter_data !=
+                                                                          nullptr) {
+                                                                          delete static_cast<FileData *>(deleter_data);
+
+                                                                      }
+                                                                  },
+                                                                  func->data);
+
+                    auto ret = v8::Object::New(isolate);
+                    auto buffer = v8::ArrayBuffer::New(isolate, std::move(store));
+                    ret->Set(context, ConvertToV8String(isolate, "buffer"), buffer);
+                    auto mime = canvas_native_helper_get_mime(buf, size);
+                    if (mime != nullptr) {
+                        if (mime->mime_type != nullptr) {
+                            ret->Set(context, ConvertToV8String(isolate, "mime"),
+                                     ConvertToV8String(isolate, mime->mime_type));
+                        }
+                        if (mime->extension != nullptr) {
+                            ret->Set(context, ConvertToV8String(isolate, "extension"),
+                                     ConvertToV8String(isolate, mime->extension));
+                        }
+                        canvas_native_helper_release_mime(mime);
+                    }
+
+                    args[1] = ret;
+                } else {
+                    auto error = file_data->error_;
+                    args[0] = v8::Exception::Error(ConvertToV8String(isolate, error));
+                    args[1] = v8::Null(isolate);
+                    delete file_data;
+                }
+
+                v8::TryCatch tc(isolate);
+                v8::Local<v8::Value> result;
+                if (!callback->Call(context, context->Global(), 2, args).ToLocal(
+                        &result)) {
+                    if (tc.HasCaught()) {
+
+//                        v8::Local<v8::Value> stack;
+//                        bool success = tc.StackTrace(context).ToLocal(&stack);
+//                        if (!success || stack.IsEmpty()) {
+//                            if (!done) {
+//                                delete async_data;
+//                            }
+//                            return;
+//                        }
+//
+//                        v8::Local<v8::String> stackV8Str;
+//                        success = stack->ToDetailString(context).ToLocal(&stackV8Str);
+//                        if (!success || stackV8Str.IsEmpty()) {
+//                            if (!done) {
+//                                delete async_data;
+//                            }
+//                            return;
+//                        }
+
+                    }
+                }
+
+                delete async_data;
+
+            }
+        }
+    });
+
+    callback->prepare();
+
+    std::thread thread(
+            [callback, file]() {
+                bool done = false;
+                auto ret = canvas_native_helper_read_file(file.c_str());
+
+                if (!canvas_native_helper_read_file_has_error(ret)) {
+                    auto buf = canvas_native_helper_read_file_take_data(ret);
+                    callback->inner_->data = new FileData{nullptr, buf};
+                    done = true;
+                } else {
+                    auto error = canvas_native_helper_read_file_get_error(ret);
+                    callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
+                }
+                canvas_native_helper_release(ret);
+                callback->execute(done);
+            });
+
+    thread.detach();
+
+
+}
+
+
+void CanvasJSIModule::GetMime(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto file = ConvertFromV8String(isolate, args[0]);
+    auto cbFunc = args[1].As<v8::Function>();
+
+
+    auto callback = new AsyncCallback(isolate, cbFunc, [](bool done, void *data) {
+        if (data == nullptr) { return; }
+        auto async_data = static_cast<AsyncCallback *>(data);
+        auto func = async_data->inner_.get();
+        if (func != nullptr && func->isolate_ != nullptr) {
+            v8::Isolate *isolate = func->isolate_;
+            v8::Locker locker(isolate);
+            v8::Isolate::Scope isolate_scope(isolate);
+            v8::HandleScope handle_scope(isolate);
+            v8::Local<v8::Function> callback = func->callback_.Get(
+                    isolate);
+            v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+            v8::Context::Scope context_scope(context);
+
+            if (func->data != nullptr) {
+                auto file_data = static_cast<FileData *>(func->data);
+
                 v8::Local<v8::Value> args[2];
 
                 if (done) {
@@ -657,7 +774,7 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                                                                       if (deleter_data !=
                                                                           nullptr) {
                                                                           delete static_cast<FileData *>(deleter_data);
-                                                                          
+
                                                                       }
                                                                   },
                                                                   func->data);
@@ -698,13 +815,13 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
                 }
 
                 delete async_data;
-                
+
             }
         }
     });
-    
+
     callback->prepare();
-    
+
     std::thread thread(
             [callback, file]() {
                 bool done = false;
@@ -712,21 +829,21 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 
                 if (!canvas_native_helper_read_file_has_error(ret)) {
                     auto buf = canvas_native_helper_read_file_take_data(ret);
-                    callback->inner_->data = new FileData {nullptr, buf};
+                    callback->inner_->data = new FileData{nullptr, buf};
                     done = true;
                 } else {
                     auto error = canvas_native_helper_read_file_get_error(ret);
-                    callback->inner_->data = new FileData {const_cast<char *>(error), nullptr};
+                    callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
                 }
                 canvas_native_helper_release(ret);
                 callback->execute(done);
             });
 
     thread.detach();
-    
-    
+
 
 }
+
 
 void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
@@ -745,20 +862,7 @@ void CanvasJSIModule::CreateWebGLContext(const v8::FunctionCallbackInfo<v8::Valu
     auto count = args.Length();
     if (count == 6) {
         auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-        auto webgl = canvas_native_webgl_create(
-                ctx,
-                options.version,
-                options.alpha,
-                options.antialias,
-                options.depth,
-                options.failIfMajorPerformanceCaveat,
-                options.powerPreference,
-                options.premultipliedAlpha,
-                options.preserveDrawingBuffer,
-                options.stencil,
-                options.desynchronized,
-                options.xrCompatible
-        );
+        auto webgl = (WebGLState *) ctx;
 
         auto renderingContext = WebGLRenderingContext::NewInstance(isolate,
                                                                    new WebGLRenderingContext(
@@ -842,21 +946,7 @@ void CanvasJSIModule::CreateWebGL2Context(const v8::FunctionCallbackInfo<v8::Val
     auto count = args.Length();
     if (count == 6) {
         auto ctx = args[1].As<v8::BigInt>()->Int64Value();
-        auto webgl = canvas_native_webgl_create(
-                ctx,
-                options.version,
-                options.alpha,
-                options.antialias,
-                options.depth,
-                options.failIfMajorPerformanceCaveat,
-                options.powerPreference,
-                options.premultipliedAlpha,
-                options.preserveDrawingBuffer,
-                options.stencil,
-                options.desynchronized,
-                options.xrCompatible
-        );
-
+        auto webgl = (WebGLState *) ctx;
         auto renderingContext = WebGL2RenderingContext::NewInstance(isolate,
                                                                     new WebGL2RenderingContext(
                                                                             webgl,

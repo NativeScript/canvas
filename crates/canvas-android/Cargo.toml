@@ -8,17 +8,17 @@ name = "canvasnative"
 crate-type = ["cdylib"]
 
 [dependencies]
-canvas-core = { workspace = true, features = ["2d"] }
-canvas-2d = { workspace = true, features = ["gl"] }
+canvas-core = { workspace = true, features = ["2d", "gl", "vulkan"] }
+canvas-2d = { workspace = true, features = ["gl", "vulkan"] }
 canvas-webgl.workspace = true
-canvas-c = { workspace = true, features = ["2d", "webgl", "gl"] }
+canvas-c = { workspace = true, features = ["2d", "webgl", "gl", "vulkan"] }
 gl-bindings.workspace = true
 raw-window-handle.workspace = true
 parking_lot.workspace = true
-jni = "0.21.1"
+jni = { workspace = true }
 ndk = { version = "0.7.0", features = ["bitmap"] }
-libloading = "0.8.3"
-log = "0.4.20"
+libloading = "0.8.5"
+log.workspace = true
 android_logger = "0.14.1"
-skia-safe = { workspace = true, features = ["gl", "textlayout"] }
+skia-safe = { workspace = true, features = ["gl", "vulkan", "textlayout"] }
 itertools.workspace = true

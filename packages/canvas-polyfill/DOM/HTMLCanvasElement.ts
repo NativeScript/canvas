@@ -20,6 +20,10 @@ export class HTMLCanvasElement extends HTMLElement {
 		if (!this.nativeElement.__domElement) {
 			this.nativeElement.__domElement = new DOMParser().parseFromString('<canvas></canvas>', 'text/html').documentElement as never;
 		}
+
+		if (this.nativeElement && '__target' in this.nativeElement) {
+			(this.nativeElement as Canvas).__target = this;
+		}
 	}
 
 	static [Symbol.hasInstance](obj) {

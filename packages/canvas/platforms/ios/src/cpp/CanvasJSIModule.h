@@ -46,5 +46,7 @@ public:
     static void CreateWebGPUContextWithPointer(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void AddFontData(const v8::FunctionCallbackInfo<v8::Value> &args);
 };
 

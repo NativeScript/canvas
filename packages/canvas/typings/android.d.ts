@@ -209,7 +209,7 @@ declare module org {
 				public makeContextCurrent(): void;
 				public setSurfaceView(value: org.nativescript.canvas.GLViewSV): void;
 				public static context2DTest(context: number): void;
-				public initContextWithContextAttributes(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean): void;
+				// public initContextWithContextAttributes($i$a$-let-NSCCanvas$initContextWithContextAttributes$1: string, it: boolean, density: boolean, width: boolean, height: boolean, density: number, $i$a$-run-NSCCanvas$initContextWithContextAttributes$2: boolean, $this$initContextWithContextAttributes_u24lambda_u244: boolean, version: boolean, surface: boolean, this_: boolean): void;
 				public static nativeUpdateWebGLSurface(param0: globalAndroid.view.Surface, param1: number): void;
 				public static setStore(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;
 				public getTextureView(): org.nativescript.canvas.GLView;
@@ -224,6 +224,7 @@ declare module org {
 				public static getEnableDebug(): boolean;
 				public static getBoundingClientRectJSON(canvas: org.nativescript.canvas.NSCCanvas): string;
 				public getFit(): org.nativescript.canvas.CanvasFit;
+				public toDataURL(format: string, retType: number): string;
 				public constructor(context: globalAndroid.content.Context, type: org.nativescript.canvas.NSCCanvas.SurfaceType);
 				public static removeBuffer(key: string): void;
 				public getBoundsBuffer(): java.nio.FloatBuffer;
@@ -446,6 +447,200 @@ declare module org {
 					public drawImage(height: number, this_: globalAndroid.graphics.Bitmap, context: number, image: number, sx: number, sy: number, sWidth: number, sHeight: number, dx: number, dy: number): boolean;
 					public drawImage(context: number, image: number, dx: number, dy: number, dWidth: number, dHeight: number): boolean;
 					public createPattern(context: number, bitmap: globalAndroid.graphics.Bitmap, repetition: string): number;
+				}
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
+			export class NSCFontFace {
+				public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace>;
+				public setStyle(value: org.nativescript.canvas.NSCFontFace.NSCFontStyle): void;
+				public constructor(family: string, source: androidNative.Array<number>);
+				public constructor(family: string);
+				public constructor(family: string, source: java.nio.ByteBuffer);
+				public getStyle(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+				public getStatus(): org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+				public updateDescriptor(value: string): void;
+				public setDisplay(value: org.nativescript.canvas.NSCFontFace.NSCFontDisplay): void;
+				public constructor(family: string, source: java.nio.ByteBuffer, descriptors: org.nativescript.canvas.NSCFontFace.NSCFontDescriptors);
+				public constructor(family: string, source: androidNative.Array<number>, descriptors: org.nativescript.canvas.NSCFontFace.NSCFontDescriptors);
+				public getFont(): globalAndroid.graphics.Typeface;
+				public constructor(family: string, source: string, descriptors: org.nativescript.canvas.NSCFontFace.NSCFontDescriptors);
+				public setWeight(value: org.nativescript.canvas.NSCFontFace.NSCFontWeight): void;
+				public static clearFontCache(context: globalAndroid.content.Context): void;
+				public getWeight(): org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+				public setFontWeight(value: string): org.nativescript.canvas.NSCFontFace;
+				public static importFromRemote(context: globalAndroid.content.Context, url: string, load: boolean, callback: any): void;
+				public setFontDisplay(value: string): org.nativescript.canvas.NSCFontFace;
+				public setStatus(value: org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus): void;
+				public load(context: globalAndroid.content.Context, callback: any): void;
+				public getFontPath(): string;
+				public loadSync$canvas_release(font: globalAndroid.content.Context, style: any): void;
+				public getFontFamily(): string;
+				public getDisplay(): org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+				public setFontStyle(value: string): org.nativescript.canvas.NSCFontFace;
+			}
+			export module NSCFontFace {
+				export class Callback {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.Callback>;
+					/**
+					 * Constructs a new instance of the org.nativescript.canvas.NSCFontFace$Callback interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+					 */
+					public constructor(implementation: { onSuccess(): void; onError(param0: string): void });
+					public constructor();
+					public onError(param0: string): void;
+					public onSuccess(): void;
+				}
+				export class Companion {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.Companion>;
+					public clearFontCache(context: globalAndroid.content.Context): void;
+					public importFromRemote(e: globalAndroid.content.Context, result: string, this_: boolean, context: any): void;
+				}
+				export class NSCFontDescriptors {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontDescriptors>;
+					public getFeatureSettings(): string;
+					public getVariationSettings(): string;
+					public constructor(family: string);
+					public setFontWeight(value: string): void;
+					public getStretch(): string;
+					public getLineGapOverride(): string;
+					public setAscentOverride(value: string): void;
+					public setFamily(value: string): void;
+					public setDescentOverride(value: string): void;
+					public getAscentOverride(): string;
+					public setLineGapOverride(value: string): void;
+					public setVariationSettings(value: string): void;
+					public update$canvas_release(it: string): void;
+					public getWeight(): org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public setDisplay(value: org.nativescript.canvas.NSCFontFace.NSCFontDisplay): void;
+					public getFamily(): string;
+					public setStyle(value: org.nativescript.canvas.NSCFontFace.NSCFontStyle): void;
+					public setFontStyle(angle: string): void;
+					public setUnicodeRange(value: string): void;
+					public getDisplay(): org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public getUnicodeRange(): string;
+					public setFontDisplay(value: string): void;
+					public getDescentOverride(): string;
+					public getStyle(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+					public setStretch(value: string): void;
+					public setWeight(value: org.nativescript.canvas.NSCFontFace.NSCFontWeight): void;
+					public setFeatureSettings(value: string): void;
+				}
+				export class NSCFontDisplay {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontDisplay>;
+					public static Auto: org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static Block: org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static Fallback: org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static Optional: org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static Swap: org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static valueOf(value: string): org.nativescript.canvas.NSCFontFace.NSCFontDisplay;
+					public static getEntries(): any;
+					public static values(): androidNative.Array<org.nativescript.canvas.NSCFontFace.NSCFontDisplay>;
+				}
+				export class NSCFontFaceStatus {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus>;
+					public static unloaded: org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+					public static loading: org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+					public static loaded: org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+					public static error: org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+					public static valueOf(value: string): org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus;
+					public static values(): androidNative.Array<org.nativescript.canvas.NSCFontFace.NSCFontFaceStatus>;
+					public static getEntries(): any;
+				}
+				export class NSCFontStyle {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontStyle>;
+					public toString(): string;
+					public static getNormal(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+					public static getItalic(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+					public getFontStyle(): number;
+					public static Oblique(angle: number): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+					public static Oblique(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+				}
+				export module NSCFontStyle {
+					export class Companion {
+						public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontStyle.Companion>;
+						public Oblique(this_: number): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+						public Oblique(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+						public getItalic(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+						public getNormal(): org.nativescript.canvas.NSCFontFace.NSCFontStyle;
+					}
+					export class Style {
+						public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style>;
+						public static Normal: org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style;
+						public static Italic: org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style;
+						public static Oblique: org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style;
+						public static valueOf(value: string): org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style;
+						public static values(): androidNative.Array<org.nativescript.canvas.NSCFontFace.NSCFontStyle.Style>;
+						public static getEntries(): any;
+					}
+					export class WhenMappings {
+						public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontStyle.WhenMappings>;
+					}
+				}
+				export class NSCFontWeight {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontWeight>;
+					public static Thin: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static ExtraLight: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static Light: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static Normal: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static Medium: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static SemiBold: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static Bold: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static ExtraBold: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static Black: org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public getRaw(): number;
+					public static values(): androidNative.Array<org.nativescript.canvas.NSCFontFace.NSCFontWeight>;
+					public getWeight(): number;
+					public static getEntries(): any;
+					public static from(value: number): org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					public static valueOf(value: string): org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+				}
+				export module NSCFontWeight {
+					export class Companion {
+						public static class: java.lang.Class<org.nativescript.canvas.NSCFontFace.NSCFontWeight.Companion>;
+						public from(value: number): org.nativescript.canvas.NSCFontFace.NSCFontWeight;
+					}
+				}
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module canvas {
+			export class NSCFontFaceSet {
+				public static class: java.lang.Class<org.nativescript.canvas.NSCFontFaceSet>;
+				public getIter(): java.util.Iterator<org.nativescript.canvas.NSCFontFace>;
+				public delete(font: org.nativescript.canvas.NSCFontFace): void;
+				public load(context: globalAndroid.content.Context, font: string, text: string, callback: any): void;
+				public constructor();
+				public static getInstance(): org.nativescript.canvas.NSCFontFaceSet;
+				public getOnStatus(): any;
+				public getSize(): number;
+				public setOnStatus(value: any): void;
+				public clear(): void;
+				public getArray(): androidNative.Array<org.nativescript.canvas.NSCFontFace>;
+				public check(font: string, text?: string): boolean;
+				public getStatus(): org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus;
+				public add(font: org.nativescript.canvas.NSCFontFace): void;
+			}
+			export module NSCFontFaceSet {
+				export class Companion {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFaceSet.Companion>;
+					public getInstance(): org.nativescript.canvas.NSCFontFaceSet;
+				}
+				export class NSCFontFaceSetStatus {
+					public static class: java.lang.Class<org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus>;
+					public static loading: org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus;
+					public static loaded: org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus;
+					public static values(): androidNative.Array<org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus>;
+					public static valueOf(value: string): org.nativescript.canvas.NSCFontFaceSet.NSCFontFaceSetStatus;
+					public static getEntries(): any;
 				}
 			}
 		}

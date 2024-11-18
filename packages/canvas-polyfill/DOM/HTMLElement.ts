@@ -64,4 +64,8 @@ export class HTMLElement extends Element {
 	get nativeElement() {
 		return this._nativeElement;
 	}
+
+	get isConnected() {
+		return this.nativeElement?.isConnected ?? !!this.nativeElement?.parent ?? false;
+	}
 }

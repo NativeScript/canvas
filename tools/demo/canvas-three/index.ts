@@ -36,12 +36,16 @@ import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
-const THREE = require('@nativescript/canvas-three');
+import * as THREE from 'three';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise';
 
-import { RGBELoader, GLTFLoader, OrbitControls, SimplexNoise, DRACOLoader } from 'three-stdlib';
+// import { RGBELoader, GLTFLoader, OrbitControls, SimplexNoise, DRACOLoader } from 'three-stdlib';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { tiny_poly_world_webgpu } from './games/tiny_poly_world_webgpu';
-import { context } from '@nativescript/canvas-three';
 
 //import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 

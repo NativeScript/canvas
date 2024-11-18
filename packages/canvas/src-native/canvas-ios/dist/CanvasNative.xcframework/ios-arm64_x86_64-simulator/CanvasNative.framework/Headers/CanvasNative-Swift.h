@@ -278,6 +278,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
 @import CoreFoundation;
+@import CoreGraphics;
 @import CoreVideo;
 @import Dispatch;
 @import Foundation;
@@ -462,6 +463,99 @@ SWIFT_CLASS_NAMED("NSCCanvasUtils")
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
+
+
+SWIFT_CLASS_NAMED("NSCFontDescriptors")
+@interface NSCFontDescriptors : NSObject
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family OBJC_DESIGNATED_INITIALIZER;
+- (void)update:(NSString * _Nonnull)value;
+- (void)setFontWeight:(NSString * _Nonnull)value;
+- (void)setFontStyle:(NSString * _Nonnull)value;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontDisplay, "NSCFontDisplay", open) {
+  NSCFontDisplayAuto = 0,
+  NSCFontDisplayBlock = 1,
+  NSCFontDisplayFallback = 2,
+  NSCFontDisplayOptional = 3,
+  NSCFontDisplaySwap = 4,
+};
+
+enum NSCFontFaceStatus : NSInteger;
+enum NSCFontWeight : NSInteger;
+
+SWIFT_CLASS_NAMED("NSCFontFace")
+@interface NSCFontFace : NSObject
+@property (nonatomic, readonly) CGFontRef _Nullable font;
+@property (nonatomic, readonly, strong) NSData * _Nullable fontData;
+- (void)updateDescriptorWithValue:(NSString * _Nonnull)value;
++ (NSCFontFace * _Nullable)loadFromStyleWithStyle:(NSString * _Nonnull)style SWIFT_WARN_UNUSED_RESULT;
++ (void)importFromRemoteWithUrl:(NSString * _Nonnull)url load:(BOOL)load callback:(void (^ _Nonnull)(NSArray<NSCFontFace *> * _Nullable, NSString * _Nullable))callback;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family source:(NSString * _Nonnull)source OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family data:(NSData * _Nonnull)source OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init:(NSString * _Nonnull)family :(NSString * _Nullable)source :(NSCFontDescriptors * _Nullable)descriptors OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init:(NSString * _Nonnull)family data:(NSData * _Nullable)data :(NSCFontDescriptors * _Nullable)descriptors OBJC_DESIGNATED_INITIALIZER;
+@property (nonatomic) enum NSCFontFaceStatus status;
+@property (nonatomic) enum NSCFontDisplay display;
+- (void)setFontDisplayWithValue:(NSString * _Nonnull)value;
+@property (nonatomic, copy) NSString * _Nonnull style;
+- (void)setFontStyleWithValue:(NSString * _Nonnull)value angle:(NSString * _Nullable)angle;
+@property (nonatomic) enum NSCFontWeight weight;
+- (void)setFontWeightWithValue:(NSString * _Nonnull)value;
+@property (nonatomic, readonly, copy) NSString * _Nonnull family;
+@property (nonatomic, readonly, copy) NSString * _Nonnull ascentOverride;
+@property (nonatomic, readonly, copy) NSString * _Nonnull descentOverride;
+- (void)load:(void (^ _Nonnull)(NSString * _Nullable))callback;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+enum NSCFontFaceSetStatus : NSInteger;
+@class NSEnumerator;
+
+SWIFT_CLASS_NAMED("NSCFontFaceSet")
+@interface NSCFontFaceSet : NSObject
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSCFontFaceSet * _Nonnull instance;)
++ (NSCFontFaceSet * _Nonnull)instance SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic) enum NSCFontFaceSetStatus status;
+@property (nonatomic, copy) void (^ _Nullable onStatus)(enum NSCFontFaceSetStatus);
+- (NSEnumerator * _Nonnull)iter SWIFT_WARN_UNUSED_RESULT;
+- (NSArray * _Nonnull)array SWIFT_WARN_UNUSED_RESULT;
+- (void)add:(NSCFontFace * _Nonnull)font;
+- (void)clear;
+- (void)delete:(NSCFontFace * _Nonnull)font;
+- (BOOL)check:(NSString * _Nonnull)font :(NSString * _Nullable)text SWIFT_WARN_UNUSED_RESULT;
+- (void)load:(NSString * _Nonnull)font :(NSString * _Nullable)text :(void (^ _Nonnull)(NSArray<NSCFontFace *> * _Nonnull, NSString * _Nullable))callback;
+@property (nonatomic, readonly) NSInteger size;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontFaceSetStatus, "NSCFontFaceSetStatus", open) {
+  NSCFontFaceSetStatusLoading = 0,
+  NSCFontFaceSetStatusLoaded = 1,
+};
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontFaceStatus, "NSCFontFaceStatus", open) {
+  NSCFontFaceStatusUnloaded = 0,
+  NSCFontFaceStatusLoading = 1,
+  NSCFontFaceStatusLoaded = 2,
+  NSCFontFaceStatusError = 3,
+};
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontWeight, "NSCFontWeight", open) {
+  NSCFontWeightThin = 0,
+  NSCFontWeightExtraLight = 1,
+  NSCFontWeightLight = 2,
+  NSCFontWeightNormal = 3,
+  NSCFontWeightMedium = 4,
+  NSCFontWeightSemiBold = 5,
+  NSCFontWeightBold = 6,
+  NSCFontWeightExtraBold = 7,
+  NSCFontWeightBlack = 8,
+};
 
 
 SWIFT_CLASS_NAMED("NSCImageAsset")
@@ -807,6 +901,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #pragma clang diagnostic ignored "-Watimport-in-framework-header"
 #endif
 @import CoreFoundation;
+@import CoreGraphics;
 @import CoreVideo;
 @import Dispatch;
 @import Foundation;
@@ -991,6 +1086,99 @@ SWIFT_CLASS_NAMED("NSCCanvasUtils")
 + (BOOL)writeToFile:(NSData * _Nonnull)data :(NSString * _Nonnull)path error:(NSError * _Nullable * _Nullable)error;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
+
+
+SWIFT_CLASS_NAMED("NSCFontDescriptors")
+@interface NSCFontDescriptors : NSObject
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family OBJC_DESIGNATED_INITIALIZER;
+- (void)update:(NSString * _Nonnull)value;
+- (void)setFontWeight:(NSString * _Nonnull)value;
+- (void)setFontStyle:(NSString * _Nonnull)value;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontDisplay, "NSCFontDisplay", open) {
+  NSCFontDisplayAuto = 0,
+  NSCFontDisplayBlock = 1,
+  NSCFontDisplayFallback = 2,
+  NSCFontDisplayOptional = 3,
+  NSCFontDisplaySwap = 4,
+};
+
+enum NSCFontFaceStatus : NSInteger;
+enum NSCFontWeight : NSInteger;
+
+SWIFT_CLASS_NAMED("NSCFontFace")
+@interface NSCFontFace : NSObject
+@property (nonatomic, readonly) CGFontRef _Nullable font;
+@property (nonatomic, readonly, strong) NSData * _Nullable fontData;
+- (void)updateDescriptorWithValue:(NSString * _Nonnull)value;
++ (NSCFontFace * _Nullable)loadFromStyleWithStyle:(NSString * _Nonnull)style SWIFT_WARN_UNUSED_RESULT;
++ (void)importFromRemoteWithUrl:(NSString * _Nonnull)url load:(BOOL)load callback:(void (^ _Nonnull)(NSArray<NSCFontFace *> * _Nullable, NSString * _Nullable))callback;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family source:(NSString * _Nonnull)source OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)initWithFamily:(NSString * _Nonnull)family data:(NSData * _Nonnull)source OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init:(NSString * _Nonnull)family :(NSString * _Nullable)source :(NSCFontDescriptors * _Nullable)descriptors OBJC_DESIGNATED_INITIALIZER;
+- (nonnull instancetype)init:(NSString * _Nonnull)family data:(NSData * _Nullable)data :(NSCFontDescriptors * _Nullable)descriptors OBJC_DESIGNATED_INITIALIZER;
+@property (nonatomic) enum NSCFontFaceStatus status;
+@property (nonatomic) enum NSCFontDisplay display;
+- (void)setFontDisplayWithValue:(NSString * _Nonnull)value;
+@property (nonatomic, copy) NSString * _Nonnull style;
+- (void)setFontStyleWithValue:(NSString * _Nonnull)value angle:(NSString * _Nullable)angle;
+@property (nonatomic) enum NSCFontWeight weight;
+- (void)setFontWeightWithValue:(NSString * _Nonnull)value;
+@property (nonatomic, readonly, copy) NSString * _Nonnull family;
+@property (nonatomic, readonly, copy) NSString * _Nonnull ascentOverride;
+@property (nonatomic, readonly, copy) NSString * _Nonnull descentOverride;
+- (void)load:(void (^ _Nonnull)(NSString * _Nullable))callback;
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+enum NSCFontFaceSetStatus : NSInteger;
+@class NSEnumerator;
+
+SWIFT_CLASS_NAMED("NSCFontFaceSet")
+@interface NSCFontFaceSet : NSObject
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) NSCFontFaceSet * _Nonnull instance;)
++ (NSCFontFaceSet * _Nonnull)instance SWIFT_WARN_UNUSED_RESULT;
+@property (nonatomic) enum NSCFontFaceSetStatus status;
+@property (nonatomic, copy) void (^ _Nullable onStatus)(enum NSCFontFaceSetStatus);
+- (NSEnumerator * _Nonnull)iter SWIFT_WARN_UNUSED_RESULT;
+- (NSArray * _Nonnull)array SWIFT_WARN_UNUSED_RESULT;
+- (void)add:(NSCFontFace * _Nonnull)font;
+- (void)clear;
+- (void)delete:(NSCFontFace * _Nonnull)font;
+- (BOOL)check:(NSString * _Nonnull)font :(NSString * _Nullable)text SWIFT_WARN_UNUSED_RESULT;
+- (void)load:(NSString * _Nonnull)font :(NSString * _Nullable)text :(void (^ _Nonnull)(NSArray<NSCFontFace *> * _Nonnull, NSString * _Nullable))callback;
+@property (nonatomic, readonly) NSInteger size;
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontFaceSetStatus, "NSCFontFaceSetStatus", open) {
+  NSCFontFaceSetStatusLoading = 0,
+  NSCFontFaceSetStatusLoaded = 1,
+};
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontFaceStatus, "NSCFontFaceStatus", open) {
+  NSCFontFaceStatusUnloaded = 0,
+  NSCFontFaceStatusLoading = 1,
+  NSCFontFaceStatusLoaded = 2,
+  NSCFontFaceStatusError = 3,
+};
+
+typedef SWIFT_ENUM_NAMED(NSInteger, NSCFontWeight, "NSCFontWeight", open) {
+  NSCFontWeightThin = 0,
+  NSCFontWeightExtraLight = 1,
+  NSCFontWeightLight = 2,
+  NSCFontWeightNormal = 3,
+  NSCFontWeightMedium = 4,
+  NSCFontWeightSemiBold = 5,
+  NSCFontWeightBold = 6,
+  NSCFontWeightExtraBold = 7,
+  NSCFontWeightBlack = 8,
+};
 
 
 SWIFT_CLASS_NAMED("NSCImageAsset")

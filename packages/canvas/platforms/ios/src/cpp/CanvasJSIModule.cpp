@@ -195,6 +195,10 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
                        v8::FunctionTemplate::New(isolate, &AddFontFamily)->GetFunction(
                                context).ToLocalChecked()).FromJust();
 
+        canvasMod->Set(context, ConvertToV8String(isolate, "__addFontData"),
+                       v8::FunctionTemplate::New(isolate, &AddFontData)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
         global->Set(context,
                     ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
 
@@ -226,6 +230,49 @@ void CanvasJSIModule::AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &a
             canvas_native_font_add_family(alias.c_str(), buffer.data(), buffer.size());
         } else {
             canvas_native_font_add_family(nullptr, buffer.data(), buffer.size());
+        }
+
+    }
+
+}
+
+void CanvasJSIModule::AddFontData(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    auto aliasValue = args[0];
+    auto dataValue = args[1];
+
+    // todo improve
+    if (dataValue->IsArrayBuffer()) {
+
+        if (aliasValue->IsString()) {
+            auto alias = ConvertFromV8String(isolate, aliasValue);
+            auto data = dataValue.As<v8::ArrayBuffer>();
+            auto store = data->GetBackingStore();
+            canvas_native_font_add_family_with_bytes(alias.c_str(), (uint8_t *) store->Data(),
+                                                     store->ByteLength());
+        } else {
+            auto data = dataValue.As<v8::ArrayBuffer>();
+            auto store = data->GetBackingStore();
+            canvas_native_font_add_family_with_bytes(nullptr, (uint8_t *) store->Data(),
+                                                     store->ByteLength());
+        }
+
+    } else if (dataValue->IsTypedArray()) {
+
+        if (aliasValue->IsString()) {
+            auto alias = ConvertFromV8String(isolate, aliasValue);
+            auto data = dataValue.As<v8::TypedArray>();
+            auto buffer = data->Buffer();
+            auto store = buffer->GetBackingStore();
+            canvas_native_font_add_family_with_bytes(alias.c_str(), (uint8_t *) store->Data(),
+                                                     store->ByteLength());
+        } else {
+            auto data = dataValue.As<v8::TypedArray>();
+            auto buffer = data->Buffer();
+            auto store = buffer->GetBackingStore();
+            canvas_native_font_add_family_with_bytes(nullptr, (uint8_t *) store->Data(),
+                                                     store->ByteLength());
         }
 
     }

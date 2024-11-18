@@ -45,6 +45,41 @@ unsafe impl Send for FontLibrary {
     // famous last words: this ‘should’ be safe in practice because the singleton is behind a mutex
 }
 
+pub enum CanvasFontWeight {
+    Thin,
+    ExtraLight,
+    Light,
+    Normal,
+    Medium,
+    SemiBold,
+    Bold,
+    ExtraBold,
+    Black,
+}
+
+pub enum CanvasFontDisplay {
+    Auto,
+    Block,
+    Fallback,
+    Optional,
+    Swap,
+}
+
+pub struct FontDescriptors {
+    weight: CanvasFontWeight,
+    family: String,
+    ascent_override: String,
+    descent_override: String,
+    display: CanvasFontDisplay,
+    style: String,
+    stretch: String,
+    unicode_range: String,
+    feature_settings: String,
+    line_gap_override: String,
+    variation_settings: String,
+}
+
+
 impl FontLibrary {
     pub fn shared() -> Mutex<Self> {
         let fonts = vec![];
@@ -58,18 +93,7 @@ impl FontLibrary {
         })
     }
 
-    fn add_typeface(&mut self, font: Typeface, alias: Option<String>) {
-        // replace any previously added font with the same metadata/alias
-        if let Some(idx) = self.fonts.iter().position(|(old_font, old_alias)|
-            match alias.is_some(){
-                true => old_alias == &alias,
-                false => old_font.family_name() == font.family_name()
-            } && old_font.font_style() == font.font_style()
-        ){
-            self.fonts.remove(idx);
-        }
-        self.fonts.push((font, alias));
-
+    fn register_fonts(&mut self) {
         let mut assets = TypefaceFontProvider::new();
         for (font, alias) in &self.fonts {
             assets.register_typeface(font.clone(), alias.as_deref());
@@ -80,6 +104,33 @@ impl FontLibrary {
         collection.set_asset_font_manager(Some(assets.into()));
         self.collection = collection;
         self.collection_cache.drain();
+    }
+
+    fn add_typeface(&mut self, font: Typeface, alias: Option<String>) {
+        if let Some(idx) = self.fonts.iter().position(|(old_font, old_alias)|
+            match alias.is_some() {
+                true => old_alias.as_deref() == alias.as_deref(),
+                false => old_font.family_name() == font.family_name()
+            } && old_font.font_style() == font.font_style()
+        ) {
+            self.fonts.remove(idx);
+        }
+
+        self.fonts.push((font, alias));
+        self.register_fonts();
+    }
+
+    fn remove_typeface(&mut self, font: &Typeface, alias: Option<&str>) {
+        if let Some(idx) = self.fonts.iter().position(|(old_font, old_alias)|
+            match alias.is_some() {
+                true => old_alias.as_deref() == alias,
+                false => old_font.family_name() == font.family_name()
+            } && old_font.font_style() == font.font_style()
+        ) {
+            self.fonts.remove(idx);
+        }
+
+        self.register_fonts();
     }
 
     pub fn collect_fonts(&mut self, style: &TextStyle) -> FontCollection {
@@ -152,7 +203,7 @@ impl FontLibrary {
             let path = std::path::Path::new(&filename);
             let typeface = match std::fs::read(path) {
                 Err(why) => return Err(format!("{}: \"{}\"", why, path.display())),
-                Ok(bytes) => Typeface::make_deserialize(std::io::Cursor::new(&bytes), None),
+                Ok(bytes) => FontMgr::new().new_from_data(bytes.as_slice(), None),
             };
 
             match typeface {
@@ -163,6 +214,23 @@ impl FontLibrary {
                     library.add_typeface(font, alias);
                 }
                 None => return Err(format!("Could not decode font data in {}", path.display())),
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn add_family_bytes(alias: Option<&str>, data: &[&[u8]]) -> Result<(), String> {
+        let mgr = FontMgr::new();
+        for bytes in data.iter() {
+            match mgr.new_from_data(bytes, None) {
+                Some(font) => {
+                    // register the typeface
+                    let mut library = FONT_LIBRARY.lock();
+                    let alias = alias.map(|v| v.to_owned());
+                    library.add_typeface(font, alias);
+                }
+                None => return Err("Could not decode font data".to_string()),
             }
         }
 

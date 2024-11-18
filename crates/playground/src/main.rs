@@ -15,6 +15,7 @@ use winit::window::WindowBuilder;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
+use canvas_2d::context::Context;
 use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
 use canvas_c::webgpu::error::CanvasGPUErrorType;
 use canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter;
@@ -813,18 +814,16 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
     }
 
 
-    let format = c"image/png";
-    let data = unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_to_data_url(context, device, format.as_ptr(), 50) };
-
-
-
-    if !data.is_null() {
-        unsafe { println!("data {:?}", CStr::from_ptr(data).to_string_lossy()); }
-
-        let _ = unsafe { CString::from_raw(data) };
-    }
-
-
+    // let format = c"image/png";
+    // let data = unsafe { canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_to_data_url(context, device, format.as_ptr(), 50) };
+    //
+    //
+    //
+    // if !data.is_null() {
+    //     unsafe { println!("data {:?}", CStr::from_ptr(data).to_string_lossy()); }
+    //
+    //     let _ = unsafe { CString::from_raw(data) };
+    // }
 
 }
 
@@ -1587,6 +1586,10 @@ fn main() {
     let _ = rx.recv();
     let _ = rx.recv();
 
+    let ChaChicle = include_bytes!("./ChaChicle.ttf");
+
+    canvas_c::canvas_native_font_add_family_with_bytes(c"ChaChicle".as_ptr(), ChaChicle.as_ptr(), ChaChicle.len());
+
     event_loop.run(move |event, target| {
         match event {
             Event::NewEvents(_) => {}
@@ -1597,10 +1600,30 @@ fn main() {
 
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
-                                webgpu_triangle(data, window);
+                                // webgpu_triangle(data, window);
                                 // unsafe {
                                 //     webgpu_blur(data, window);
                                 // }
+
+                                let mut ctx_2d = Context::new_metal(
+                                    window.ns_view.as_ptr(),
+                                    2.,
+                                    1,
+                                    true,
+                                    0,
+                                    90.,
+                                    canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
+                                );
+
+                                ctx_2d.set_fill_style_with_color("white");
+                                ctx_2d.fill_rect_xywh(0., 0., resized.width as f32, resized.height as f32);
+                                ctx_2d.set_font("50px ChaChicle");
+                                ctx_2d.set_fill_style_with_color("blue");
+                                ctx_2d.fill_text("NativeScript Canvas 2D Powered by Skia & Vulkan", 0., 0., None);
+                                ctx_2d.flush_and_sync_cpu();
+                                if let Some(ctx) = ctx_2d.metal_context.as_mut() {
+                                    ctx.present_drawable()
+                                }
                             }
                             _ => {}
                         }

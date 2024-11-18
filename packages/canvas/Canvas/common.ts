@@ -10,6 +10,7 @@ interface EventOptions {
 	bubbles?: boolean;
 	cancelable?: boolean;
 	composed?: boolean;
+	target?: any;
 }
 
 export class DOMRectReadOnly {
@@ -376,6 +377,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		this.style.height = 'auto';
 	}
 
+	get isConnected() {
+		return this.parent !== null && this.parent !== undefined;
+	}
+
 	get ownerDocument() {
 		//return window?.document ?? doc;
 		return this;
@@ -386,6 +391,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	dispatchEvent(event) {
 		return true;
 	}
+
+	__target = null;
 
 	public addEventListener(arg: string, callback: any, thisArg?: any) {
 		if (typeof thisArg === 'boolean') {
@@ -541,6 +548,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementY: pointer.y - previousEvent.y,
 						isPrimary: pointer.isPrimary,
 						button: -1,
+						target: this.__target ?? this,
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -559,6 +567,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
+						target: this.__target ?? this,
 					});
 
 					// todo emit mousemove when desktop is supported
@@ -580,7 +589,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				changedTouches.push(
 					new Touch({
 						identifier: pointer.ptrId,
-						target: null,
+						target: this.__target ?? this,
 						clientX: pointer.x,
 						clientY: pointer.y,
 						screenX: pointer.x,
@@ -597,6 +606,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				touches,
 				targetTouches: touches,
 				changedTouches,
+				target: this.__target ?? this,
 			});
 
 			for (const callback of this._touchMoveCallbacks) {
@@ -622,6 +632,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 				const out = new PointerEvent('pointerout', {
 					pointerType: 'touch',
@@ -633,6 +644,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 				const leave = new PointerEvent('pointerleave', {
 					pointerType: 'touch',
@@ -644,6 +656,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 
 				for (const callback of this._pointerUpCallbacks) {
@@ -667,6 +680,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 
 				// todo emit mouseup when desktop is supported
@@ -697,7 +711,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			const changedTouches = TouchList.fromList([
 				new Touch({
 					identifier: ptrId,
-					target: null,
+					target: this.__target ?? this,
 					clientX: x,
 					clientY: y,
 					screenX: x,
@@ -736,6 +750,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					isPrimary,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 
 				for (const callback of this._pointerDownCallbacks) {
@@ -751,6 +766,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 
 				// todo emit mousedown when desktop is supported
@@ -765,7 +781,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (this._touchStartCallbacks.length > 0) {
 			const touch = new Touch({
 				identifier: ptrId,
-				target: this,
+				target: this.__target ?? this,
 				clientX: x,
 				clientY: y,
 				screenX: x,
@@ -781,6 +797,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				touches,
 				targetTouches: touches,
 				changedTouches: this._touches,
+				target: this.__target ?? this,
 			});
 
 			for (const callback of this._touchStartCallbacks) {
@@ -805,6 +822,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					isPrimary,
+					target: this.__target ?? this,
 				});
 
 				for (const callback of this._pointerCancelCallbacks) {
@@ -820,6 +838,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					screenY: y,
 					pageX: x,
 					pageY: y,
+					target: this.__target ?? this,
 				});
 
 				// todo emit mouseout when desktop is supported
@@ -832,7 +851,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		if (this._touchCancelCallbacks.length > 0) {
 			const touch = new Touch({
 				identifier: ptrId,
-				target: this,
+				target: this.__target ?? this,
 				clientX: x,
 				clientY: y,
 				screenX: x,
@@ -848,6 +867,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				touches,
 				targetTouches: touches,
 				changedTouches: touchesList,
+				target: this.__target ?? this,
 			});
 
 			for (const callback of this._touchCancelCallbacks) {
@@ -890,6 +910,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
+						target: this.__target ?? this,
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -908,6 +929,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementX: pointer.x - previousEvent.x,
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
+						target: this.__target ?? this,
 					});
 
 					// todo emit mousemove when desktop is supported
@@ -922,6 +944,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						deltaY: data.deltaY,
 						deltaZ: 0,
 						deltaMode: data.deltaMode,
+						target: this.__target ?? this,
 					});
 
 					// todo emit wheel when desktop is supported
@@ -943,7 +966,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				changedTouches.push(
 					new Touch({
 						identifier: pointer.ptrId,
-						target: this,
+						target: this.__target ?? this,
 						clientX: pointer.x,
 						clientY: pointer.y,
 						screenX: pointer.x,
@@ -960,6 +983,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				touches,
 				targetTouches: touches,
 				changedTouches,
+				target: this.__target ?? this,
 			});
 
 			for (const callback of this._touchMoveCallbacks) {

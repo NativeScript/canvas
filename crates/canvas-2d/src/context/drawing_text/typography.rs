@@ -53,6 +53,7 @@ impl Font {
     pub fn new(font_rules: &str) -> Result<Font, String> {
         let font_regexp = FONT_REGEXP.get_or_init(init_font_regexp);
         let default_font = Font::default();
+
         if let Some(cap) = font_regexp.captures(font_rules) {
             let size_str = cap.get(7).or_else(|| cap.get(5)).unwrap().as_str();
             let size = if size_str.ends_with('%') {

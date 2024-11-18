@@ -7,7 +7,7 @@ import '@nativescript/canvas-pixi';
 import * as PIXI from 'pixi.js';
 import { device } from '@nativescript/core/platform';
 import { initDevtools } from '@pixi/devtools';
-import { Canvas } from '@nativescript/canvas';
+import { Canvas, importFontsFromCSS, loadFontsFromCSS } from '@nativescript/canvas';
 
 // import { Viewport } from 'pixi-viewport';
 
@@ -106,9 +106,9 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
-		//this.bitmapFont(canvas);
+		this.bitmapFont(canvas);
 
-		this.dynamicGraphics(canvas);
+		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
@@ -755,7 +755,7 @@ void main()
 	}
 
 	meshSharingGeo(canvas) {
-		const context = canvas.getContext('webgl2');
+		/*	const context = canvas.getContext('webgl2');
 		const app = new PIXI.Application({ context });
 		const geometry = new PIXI.Geometry()
 			.addAttribute(
@@ -854,6 +854,7 @@ void main()
 			triangle2.rotation -= 0.01;
 			triangle3.rotation -= 0.005;
 		});
+		*/
 	}
 
 	meshShader(canvas) {
@@ -1151,8 +1152,8 @@ void main()
 	}
 
 	async dynamicGraphics(canvas) {
-		canvas.width = canvas.clientWidth; //* window.devicePixelRatio;
-		canvas.height = canvas.clientHeight; // * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 		// canvas.width = canvas.clientWidth;
 		// canvas.height = canvas.clientHeight;
 		const app = new PIXI.Application();
@@ -1162,8 +1163,10 @@ void main()
 			//preferWebGLVersion: 2,
 			preference: 'webgpu',
 			canvas,
-			width: canvas.width,
-			height: canvas.height,
+			autoDensity: false,
+			resolution: window.devicePixelRatio,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
 		});
 
 		app.stage.eventMode = 'static';
@@ -1201,7 +1204,7 @@ void main()
 		let count = 0;
 
 		// Just click on the stage to draw random lines
-		window.app = app;
+		//window.app = app;
 		app.stage.on('pointerdown', () => {
 			console.log('click');
 			graphics.moveTo(Math.random() * 800, Math.random() * 600);
@@ -1232,14 +1235,26 @@ void main()
 			if (texture) {
 				ctx.presentSurface();
 			}
-
-			console.log('??', canvas.toDataURL());
 		});
 	}
 
 	async bitmapFont(canvas) {
-		const context = canvas.getContext('webgl2');
-		const app = new PIXI.Application({ context, backgroundColor: 0x1099bb });
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		// canvas.width = canvas.clientWidth;
+		// canvas.height = canvas.clientHeight;
+		const app = new PIXI.Application();
+
+		await app.init({
+			backgroundColor: 0x1099bb,
+			//preferWebGLVersion: 2,
+			preference: 'webgpu',
+			canvas,
+			resolution: window.devicePixelRatio,
+			width: canvas.clientWidth,
+			height: canvas.clientHeight,
+		});
+
 		// app.loader.add('desyrel', this.root + '/bitmap-font/desyrel.xml').load(onAssetsLoaded);
 		// function onAssetsLoaded() {
 		// 	const bitmapFontText = new (PIXI as any).BitmapText('bitmap fonts are supported!\nWoo yay!', { font: '55px Desyrel', align: 'left' });
@@ -1248,25 +1263,38 @@ void main()
 		// 	app.stage.addChild(bitmapFontText);
 		// }
 
-		await PIXI.Assets.load(this.root + '/bitmap-font/desyrel.xml');
+		PIXI.Assets.addBundle('fonts', [
+			{ alias: 'ChaChicle', src: 'https://pixijs.com/assets/webfont-loader/ChaChicle.ttf' },
+			{ alias: 'Lineal', src: 'https://pixijs.com/assets/webfont-loader/Lineal.otf' },
+			{ alias: 'Dotrice Regular', src: 'https://pixijs.com/assets/webfont-loader/Dotrice-Regular.woff' },
+			{ alias: 'Crosterian', src: 'https://pixijs.com/assets/webfont-loader/Crosterian.woff2' },
+		]);
 
-		const bitmapFontText = new PIXI.BitmapText('bitmap fonts are supported!\nWoo yay!', {
-			fontFamily: 'Desyrel',
-			fontSize: 16,
-			align: 'left',
+		await PIXI.Assets.loadBundle('fonts');
+
+		const text1 = new Text({ text: 'ChaChicle.ttf', style: { fontFamily: 'ChaChicle', fontSize: 50 } });
+		const text2 = new Text({ text: 'Lineal.otf', style: { fontFamily: 'Lineal', fontSize: 50 } });
+		const text3 = new Text({ text: 'Dotrice Regular.woff', style: { fontFamily: 'Dotrice Regular', fontSize: 50 } });
+		const text4 = new Text({ text: 'Crosterian.woff2', style: { fontFamily: 'Crosterian', fontSize: 50 } });
+
+		text2.y = 150;
+		text3.y = 300;
+		text4.y = 450;
+
+		app.stage.addChild(text1);
+		app.stage.addChild(text2);
+		app.stage.addChild(text3);
+		app.stage.addChild(text4);
+
+		const ctx = canvas.getContext('webgpu');
+
+		// Animate the moving shape
+		app.ticker.add(() => {
+			const texture = ctx.getCurrentTexture();
+			if (texture) {
+				ctx.presentSurface();
+			}
 		});
-
-		// const nameText = new (PIXI.BitmapText as typeof BitmapText)(options.nameInfo?.text ?? '', {
-		// 	fontName: 'Desyrel',
-		// 	tint: info?.nameInfo?.textColor ?? 'black',
-		// 	fontSize: 16,
-		// 	align: (info?.nameInfo?.textAlignment as never) ?? 'left',
-		//   });
-
-		bitmapFontText.x = 50;
-		bitmapFontText.y = 200;
-
-		app.stage.addChild(bitmapFontText);
 	}
 
 	async explosion(canvas) {

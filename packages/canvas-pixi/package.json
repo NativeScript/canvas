@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-pixi",
-	"version": "2.0.0-webgpu.42",
+	"version": "2.0.0-rc.0",
 	"description": "Plugin for using pixi.js in NativeScript",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -33,7 +33,7 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "nativescript-plugin-seed",
 	"dependencies": {
-		"@nativescript/canvas-polyfill": "webgpu",
+		"@nativescript/canvas-polyfill": "rc",
 		"pixi.js": "~8.5.2",
 		"pixi.js-legacy": "~7.4.2",
 		"pixi-filters": "~6.0.5"

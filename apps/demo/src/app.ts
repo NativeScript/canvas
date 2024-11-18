@@ -3,7 +3,48 @@ Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
-import { Canvas } from '@nativescript/canvas';
+/*
+import { Canvas, importFontsFromCSS } from '@nativescript/canvas';
+
+const font = new FontFace('Roboto', 'url(https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxP.ttf)');
+
+importFontsFromCSS('https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+TC:wght@200..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap')
+	.then((fonts) => {
+		for (const font of fonts) {
+			console.log('status', font.status);
+		}
+	})
+	.catch((err) => {
+		console.log('error', err);
+	});
+
+document.fonts.add(font);
+
+document.fonts.addEventListener('loading', (event) => {
+	console.log('loading');
+});
+document.fonts.addEventListener('loadingerror', (event) => {
+	console.log('loadingerror');
+});
+document.fonts.addEventListener('loadingdone', (event) => {
+	console.log('loadingdone', event.fontfaces);
+});
+
+document.fonts.forEach((font) => {
+	console.log('font', font);
+});
+
+document.fonts
+	.load('12px Roboto')
+	.then(() => {
+		console.log('loaded', font.status);
+	})
+	.catch(() => {
+		console.log('error');
+	});
+
+	*/
+
 // import { DomainDispatcher, initDevtools, ProtocolWrapper } from '@nativescript/devtools';
 // initDevtools();
 

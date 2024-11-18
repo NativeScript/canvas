@@ -237,6 +237,18 @@ declare const enum CanvasFilterMode {
 	Linear = 1,
 }
 
+declare const enum CanvasFit {
+	None = 0,
+
+	Fill = 1,
+
+	FitX = 2,
+
+	FitY = 3,
+
+	ScaleDown = 4,
+}
+
 declare const enum CanvasFrontFace {
 	Ccw = 0,
 
@@ -493,7 +505,7 @@ declare const enum CanvasGPUTextureFormat_Tag {
 
 	Rgb10a2Unorm = 30,
 
-	Rg11b10Float = 31,
+	Rg11b10UFloat = 31,
 
 	Rg32Uint = 32,
 
@@ -590,6 +602,13 @@ interface CanvasImageCopyBuffer {
 }
 declare var CanvasImageCopyBuffer: interop.StructType<CanvasImageCopyBuffer>;
 
+interface CanvasImageCopyCanvasRenderingContext2D {
+	source: interop.Pointer | interop.Reference<any>;
+	origin: CanvasOrigin2d;
+	flip_y: boolean;
+}
+declare var CanvasImageCopyCanvasRenderingContext2D: interop.StructType<CanvasImageCopyCanvasRenderingContext2D>;
+
 interface CanvasImageCopyExternalImage {
 	source: interop.Pointer | interop.Reference<any>;
 	source_size: number;
@@ -600,6 +619,13 @@ interface CanvasImageCopyExternalImage {
 }
 declare var CanvasImageCopyExternalImage: interop.StructType<CanvasImageCopyExternalImage>;
 
+interface CanvasImageCopyImageAsset {
+	source: interop.Pointer | interop.Reference<any>;
+	origin: CanvasOrigin2d;
+	flip_y: boolean;
+}
+declare var CanvasImageCopyImageAsset: interop.StructType<CanvasImageCopyImageAsset>;
+
 interface CanvasImageCopyTexture {
 	texture: interop.Pointer | interop.Reference<any>;
 	mip_level: number;
@@ -607,6 +633,13 @@ interface CanvasImageCopyTexture {
 	aspect: CanvasTextureAspect;
 }
 declare var CanvasImageCopyTexture: interop.StructType<CanvasImageCopyTexture>;
+
+interface CanvasImageCopyWebGL {
+	source: interop.Pointer | interop.Reference<any>;
+	origin: CanvasOrigin2d;
+	flip_y: boolean;
+}
+declare var CanvasImageCopyWebGL: interop.StructType<CanvasImageCopyWebGL>;
 
 interface CanvasImageDataLayout {
 	offset: number;
@@ -980,6 +1013,12 @@ declare const enum CanvasVertexStepMode {
 	Instance = 1,
 }
 
+interface FileHelperMime {
+	mime_type: interop.Pointer | interop.Reference<any>;
+	extension: interop.Pointer | interop.Reference<any>;
+}
+declare var FileHelperMime: interop.StructType<FileHelperMime>;
+
 declare const enum GLConstants {
 	UnPackFlipYWebGL = 37440,
 
@@ -1064,17 +1103,23 @@ declare class NSCCanvas extends UIView {
 
 	static new(): NSCCanvas; // inherited from NSObject
 
+	static setForceGL(value: boolean): void;
+
 	autoScale: boolean;
 
 	readonly drawingBufferHeight: number;
 
 	readonly drawingBufferWidth: number;
 
+	fit: CanvasFit;
+
 	readonly height: number;
 
-	readonly nativeContext: number;
+	ignoreTouchEvents: boolean;
 
-	readonly nativeGL: number;
+	readonly is2D: boolean;
+
+	readonly nativeContext: number;
 
 	surfaceHeight: number;
 
@@ -1082,21 +1127,29 @@ declare class NSCCanvas extends UIView {
 
 	touchEventListener: (p1: string, p2: UIGestureRecognizer) => void;
 
+	weblikeScale: boolean;
+
 	readonly width: number;
+
+	static forceGL: boolean;
 
 	static readonly store: NSMutableDictionary<any, any>;
 
-	context2DTest(context: number): void;
+	context2DConic(context: number): void;
 
-	context2DTestToDataURL(context: number): string;
+	context2DPathTest(context: number): void;
+
+	context2DTest(context: number): void;
 
 	create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, fontColor: number): number;
 
 	forceLayout(width: number, height: number): void;
 
-	getMtlViewPtr(): interop.Pointer | interop.Reference<any>;
+	getGlViewPtr(): interop.Pointer | interop.Reference<any>;
 
-	getViewPtr(): interop.Pointer | interop.Reference<any>;
+	getMtlLayerPtr(): interop.Pointer | interop.Reference<any>;
+
+	getMtlViewPtr(): interop.Pointer | interop.Reference<any>;
 
 	initContext(type: string, alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean): void;
 
@@ -1107,6 +1160,8 @@ declare class NSCCanvas extends UIView {
 	setListener(listener: NSCCanvasListener): void;
 
 	snapshot(flip: boolean): UIImage;
+
+	toDataURL(format: string, quality: number): string;
 }
 
 interface NSCCanvasListener {
@@ -1127,9 +1182,175 @@ declare class NSCCanvasRenderingContext2D extends NSCCanvasRenderingContext {
 
 	static createPattern(context: number, src: UIImage, repetition: string): number;
 
-	static drawImage(context: number, image: UIImage, dx: number, dy: number): void;
+	static drawImage(context: number, image: UIImage, dx: number, dy: number): boolean;
 
 	static new(): NSCCanvasRenderingContext2D; // inherited from NSObject
+}
+
+declare class NSCCanvasUtils extends NSObject {
+	static alloc(): NSCCanvasUtils; // inherited from NSObject
+
+	static createImage(texturecache: any, buffer: any, textureAttributes: NSDictionary<any, any>, target: number, internalFormat: number, width: number, height: number, format: number, type: number, planeIndex: number): any;
+
+	static createTextureCache(): any;
+
+	static drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, internalFormat: number, format: number, flipYWebGL: boolean): void;
+
+	static new(): NSCCanvasUtils; // inherited from NSObject
+
+	static setupRender(): NSCRender;
+
+	static writeToFileError(data: NSData, path: string): boolean;
+}
+
+declare class NSCFontDescriptors extends NSObject {
+	static alloc(): NSCFontDescriptors; // inherited from NSObject
+
+	static new(): NSCFontDescriptors; // inherited from NSObject
+
+	constructor(o: { family: string });
+
+	initWithFamily(family: string): this;
+
+	setFontStyle(value: string): void;
+
+	setFontWeight(value: string): void;
+
+	update(value: string): void;
+}
+
+declare const enum NSCFontDisplay {
+	Auto = 0,
+
+	Block = 1,
+
+	Fallback = 2,
+
+	Optional = 3,
+
+	Swap = 4,
+}
+
+declare class NSCFontFace extends NSObject {
+	static alloc(): NSCFontFace; // inherited from NSObject
+
+	static importFromRemoteWithUrlLoadCallback(url: string, load: boolean, callback: (p1: NSArray<NSCFontFace>, p2: string) => void): void;
+
+	static loadFromStyleWithStyle(style: string): NSCFontFace;
+
+	static new(): NSCFontFace; // inherited from NSObject
+
+	readonly ascentOverride: string;
+
+	readonly descentOverride: string;
+
+	display: NSCFontDisplay;
+
+	readonly family: string;
+
+	readonly font: any;
+
+	readonly fontData: NSData;
+
+	status: NSCFontFaceStatus;
+
+	style: string;
+
+	weight: NSCFontWeight;
+
+	constructor();
+
+	constructor(o: { data: string });
+
+	constructor(o: { family: string });
+
+	constructor(o: { family: string; data: NSData });
+
+	constructor(o: { family: string; source: string });
+
+	init(family: string, source: string, descriptors: NSCFontDescriptors): this;
+
+	initData(family: string, data: NSData, descriptors: NSCFontDescriptors): this;
+
+	initWithFamily(family: string): this;
+
+	initWithFamilyData(family: string, source: NSData): this;
+
+	initWithFamilySource(family: string, source: string): this;
+
+	load(callback: (p1: string) => void): void;
+
+	setFontDisplayWithValue(value: string): void;
+
+	setFontStyleWithValueAngle(value: string, angle: string): void;
+
+	setFontWeightWithValue(value: string): void;
+
+	updateDescriptorWithValue(value: string): void;
+}
+
+declare class NSCFontFaceSet extends NSObject {
+	static alloc(): NSCFontFaceSet; // inherited from NSObject
+
+	static new(): NSCFontFaceSet; // inherited from NSObject
+
+	onStatus: (p1: NSCFontFaceSetStatus) => void;
+
+	readonly size: number;
+
+	status: NSCFontFaceSetStatus;
+
+	static readonly instance: NSCFontFaceSet;
+
+	add(font: NSCFontFace): void;
+
+	array(): NSArray<any>;
+
+	check(font: string, text: string): boolean;
+
+	clear(): void;
+
+	delete(font: NSCFontFace): void;
+
+	iter(): NSEnumerator<any>;
+
+	load(font: string, text: string, callback: (p1: NSArray<NSCFontFace>, p2: string) => void): void;
+}
+
+declare const enum NSCFontFaceSetStatus {
+	Loading = 0,
+
+	Loaded = 1,
+}
+
+declare const enum NSCFontFaceStatus {
+	Unloaded = 0,
+
+	Loading = 1,
+
+	Loaded = 2,
+
+	Error = 3,
+}
+
+declare const enum NSCFontWeight {
+	Thin = 0,
+
+	ExtraLight = 1,
+
+	Light = 2,
+
+	Normal = 3,
+
+	Medium = 4,
+
+	SemiBold = 5,
+
+	Bold = 6,
+
+	ExtraBold = 7,
+
+	Black = 8,
 }
 
 declare class NSCImageAsset extends NSObject {
@@ -1138,6 +1359,10 @@ declare class NSCImageAsset extends NSObject {
 	static loadImageFromImage(context: number, image: UIImage, callback: (p1: boolean) => void): void;
 
 	static loadImageFromImageSync(context: number, image: UIImage): boolean;
+
+	static loadImageFromPath(asset: number, path: string, callback: (p1: boolean) => void): void;
+
+	static loadImageFromPathSync(asset: number, path: string): boolean;
 
 	static new(): NSCImageAsset; // inherited from NSObject
 }
@@ -1150,14 +1375,97 @@ declare class NSCImageBitmap extends NSObject {
 	static readonly queue: NSObject & OS_dispatch_queue;
 }
 
+declare class NSCMTLView extends UIView {
+	static alloc(): NSCMTLView; // inherited from NSObject
+
+	static appearance(): NSCMTLView; // inherited from UIAppearance
+
+	/**
+	 * @since 8.0
+	 */
+	static appearanceForTraitCollection(trait: UITraitCollection): NSCMTLView; // inherited from UIAppearance
+
+	/**
+	 * @since 8.0
+	 * @deprecated 9.0
+	 */
+	static appearanceForTraitCollectionWhenContainedIn(trait: UITraitCollection, ContainerClass: typeof NSObject): NSCMTLView; // inherited from UIAppearance
+
+	/**
+	 * @since 9.0
+	 */
+	static appearanceForTraitCollectionWhenContainedInInstancesOfClasses(trait: UITraitCollection, containerTypes: NSArray<typeof NSObject> | (typeof NSObject)[]): NSCMTLView; // inherited from UIAppearance
+
+	/**
+	 * @since 5.0
+	 * @deprecated 9.0
+	 */
+	static appearanceWhenContainedIn(ContainerClass: typeof NSObject): NSCMTLView; // inherited from UIAppearance
+
+	/**
+	 * @since 9.0
+	 */
+	static appearanceWhenContainedInInstancesOfClasses(containerTypes: NSArray<typeof NSObject> | (typeof NSObject)[]): NSCMTLView; // inherited from UIAppearance
+
+	static new(): NSCMTLView; // inherited from NSObject
+
+	canvas: UIView;
+
+	drawableSize: CGSize;
+
+	queue: MTLCommandQueue;
+
+	sampleCount: number;
+
+	state: number;
+
+	getDevicePtr(): interop.Pointer | interop.Reference<any>;
+
+	getQueuePtr(): interop.Pointer | interop.Reference<any>;
+
+	present(): void;
+
+	setup(): void;
+}
+
 declare class NSCRender extends NSObject {
 	static alloc(): NSCRender; // inherited from NSObject
 
 	static new(): NSCRender; // inherited from NSObject
+}
 
-	createSurface(): void;
+declare const enum NSCSurfaceState {
+	kNone = 0,
 
-	texImage2D(target: number, level: number, internalFormat: number, format: number, type: number, source: NSCCanvas, dest: NSCCanvas, flipYWebGL: boolean): void;
+	kPending = 1,
+
+	kInvalidating = 2,
+}
+
+declare class NSCVideoFrame extends NSObject {
+	static alloc(): NSCVideoFrame; // inherited from NSObject
+
+	static new(): NSCVideoFrame; // inherited from NSObject
+}
+
+declare const enum NSCVideoFrameFormat {
+	I420 = 0,
+
+	I420A = 1,
+
+	I422 = 2,
+
+	I444 = 3,
+
+	NV12 = 4,
+
+	RGBA = 5,
+
+	RGBX = 6,
+
+	BGRA = 7,
+
+	BGRX = 8,
 }
 
 declare class NSCWebGLRenderingContext extends NSObject {
@@ -1173,59 +1481,57 @@ declare class NSCWebGLRenderingContext extends NSObject {
 declare class NSSCanvasHelpers extends NSObject {
 	static alloc(): NSSCanvasHelpers; // inherited from NSObject
 
-	static create2DContext(context: number, width: number, height: number, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+	static create2DContext(view: NSCCanvas, width: number, height: number, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
+
+	static create2DContextMetal(view: NSCCanvas, alpha: boolean, density: number, fontColor: number, ppi: number, direction: number): number;
 
 	static createPattern(context: number, image: UIImage, repetition: string): number;
 
 	static deleteFile(path: string, callback: (p1: NSError, p2: boolean) => void): void;
 
-	static drawImageWithContextImageDxDy(context: number, image: UIImage, dx: number, dy: number): void;
+	static drawImageWithContextImageDxDy(context: number, image: UIImage, dx: number, dy: number): boolean;
 
-	static drawImageWithContextImageDxDyDwDh(context: number, image: UIImage, dx: number, dy: number, dw: number, dh: number): void;
+	static drawImageWithContextImageDxDyDwDh(context: number, image: UIImage, dx: number, dy: number, dw: number, dh: number): boolean;
 
-	static drawImageWithContextImageSxSySwShDxDyDwDh(context: number, image: UIImage, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+	static drawImageWithContextImageSxSySwShDxDyDwDh(context: number, image: UIImage, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): boolean;
 
 	static flush2DContext(context: number): void;
 
-	static flushGL(context: number): boolean;
+	static flush2DContextAndSyncCPU(context: number): void;
+
+	static flushWebGL(context: number): boolean;
 
 	static getBytesFromUIImage(image: UIImage): NSMutableData;
-
-	static getGLPointer(context: number): number;
 
 	static getPixelsPerInchForCurrentDevice(): string;
 
 	static handleBase64Image(mime: string, dir: string, base64: string, callback: (p1: string, p2: string) => void): void;
 
-	static initGLWithView(view: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean): number;
+	static initWebGLWithView(view: NSCCanvas, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number): number;
 
-	static initGLWithWidthAndHeight(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean): number;
+	static initWebGLWithWidthAndHeight(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number): number;
 
-	static initSharedGLWidthAndHeight(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean, shared_context: number): number;
+	static initWebGPUWithView(instance: number, view: NSCCanvas, width: number, height: number): number;
 
-	static initSharedGLWithView(view: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean, shared_context: number): number;
-
-	static initWebGPUWithView(instance: number, view: number, width: number, height: number): number;
-
-	static initWebGPUWithViewLayer(instance: number, view: number, width: number, height: number): number;
+	static initWebGPUWithViewLayer(instance: number, view: NSCCanvas, width: number, height: number): number;
 
 	static loadImageAssetWithContext(asset: number, image: UIImage): boolean;
 
+	static loadImageAssetWithPath(asset: number, path: string): boolean;
+
 	static new(): NSSCanvasHelpers; // inherited from NSObject
+
+	static presentDrawable(context: number): void;
 
 	static readFile(path: string, callback: (p1: string, p2: NSData) => void): void;
 
-	static releaseGL(context: number): void;
-
-	static releaseGLPointer(context: number): void;
+	static releaseWebGL(context: number): void;
 
 	static resize2DContext(context: number, width: number, height: number): void;
 
-	static test2D(context: number): void;
+	static resizeWebGPUWithView(context: number, view: NSCCanvas, width: number, height: number): void;
 
-	static testToDataURL(context: number): string;
-
-	static updateGLSurfaceWithView(view: number, width: number, height: number, context: number): void;
+	static updateWebGLSurfaceWithView(view: number, width: number, height: number, context: number): void;
 
 	static writeFile(data: NSData, path: string, callback: (p1: string, p2: string) => void): void;
 }
@@ -1236,6 +1542,22 @@ declare const enum PaintStyleType {
 	Gradient = 1,
 
 	Pattern = 2,
+}
+
+declare const enum SurfaceGetCurrentTextureStatus {
+	Success = 0,
+
+	Timeout = 1,
+
+	Outdated = 2,
+
+	Lost = 3,
+
+	OutOfMemory = 4,
+
+	DeviceLost = 5,
+
+	Force32 = 2147483647,
 }
 
 declare const enum TextBaseLine {
@@ -1250,22 +1572,6 @@ declare const enum TextBaseLine {
 	IDEOGRAPHIC = 4,
 
 	BOTTOM = 5,
-}
-
-declare class Utils extends NSObject {
-	static alloc(): Utils; // inherited from NSObject
-
-	static createImage(texturecache: any, buffer: any, textureAttributes: NSDictionary<any, any>, target: number, internalFormat: number, width: number, height: number, format: number, type: number, planeIndex: number): any;
-
-	static createTextureCache(): any;
-
-	static drawFrame(player: AVPlayer, output: AVPlayerItemVideoOutput, videoSize: CGSize, render: NSCRender, internalFormat: number, format: number, flipYWebGL: boolean): void;
-
-	static new(): Utils; // inherited from NSObject
-
-	static setupRender(): NSCRender;
-
-	static writeToFileError(data: NSData, path: string): boolean;
 }
 
 declare const enum WebGLExtensionType {
@@ -1350,21 +1656,17 @@ declare function canvas_native_ccow_get_length(cow: interop.Pointer | interop.Re
 
 declare function canvas_native_ccow_release(cow: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_context_2d_destroy_string(string: string | interop.Pointer | interop.Reference<any>): void;
+declare function canvas_native_context_2d_conic_test(context: number): void;
+
+declare function canvas_native_context_2d_path_test(context: number): void;
 
 declare function canvas_native_context_2d_test(context: number): void;
-
-declare function canvas_native_context_2d_test_to_data_url(context: number): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_arc(context: interop.Pointer | interop.Reference<any>, x: number, y: number, radius: number, start_angle: number, end_angle: number, anticlockwise: boolean): void;
 
 declare function canvas_native_context_arc_to(context: interop.Pointer | interop.Reference<any>, x1: number, y1: number, x2: number, y2: number, radius: number): void;
 
 declare function canvas_native_context_attributes_destroy(attr: interop.Pointer | interop.Reference<any>): void;
-
-declare function canvas_native_context_backend_texture_destroy(texture: number): void;
-
-declare function canvas_native_context_backend_texture_get_id(texture: number): number;
 
 declare function canvas_native_context_begin_path(context: interop.Pointer | interop.Reference<any>): void;
 
@@ -1382,7 +1684,7 @@ declare function canvas_native_context_create(width: number, height: number, den
 
 declare function canvas_native_context_create_conic_gradient(context: interop.Pointer | interop.Reference<any>, start_angle: number, x: number, y: number): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_context_create_gl(width: number, height: number, density: number, gl_context: number, samples: number, alpha: boolean, font_color: number, ppi: number, direction: number): interop.Pointer | interop.Reference<any>;
+declare function canvas_native_context_create_gl(view: interop.Pointer | interop.Reference<any>, width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_create_gl_no_window(width: number, height: number, density: number, font_color: number, ppi: number, direction: number, alpha: boolean): interop.Pointer | interop.Reference<any>;
 
@@ -1400,15 +1702,11 @@ declare function canvas_native_context_create_pattern_canvas2d(source: interop.P
 
 declare function canvas_native_context_create_pattern_encoded(context: interop.Pointer | interop.Reference<any>, data: string | interop.Pointer | interop.Reference<any>, size: number, repetition: CanvasRepetition): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_context_create_pattern_raw(context: number, width: number, height: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, repetition: string | interop.Pointer | interop.Reference<any>): number;
-
 declare function canvas_native_context_create_pattern_webgl(source: interop.Pointer | interop.Reference<any>, context: interop.Pointer | interop.Reference<any>, repetition: CanvasRepetition): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_create_radial_gradient(context: interop.Pointer | interop.Reference<any>, x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_create_with_pointer(pointer: number): interop.Pointer | interop.Reference<any>;
-
-declare function canvas_native_context_custom_with_buffer_flush(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, alpha: boolean): void;
 
 declare function canvas_native_context_draw_atlas(context: interop.Pointer | interop.Reference<any>, data: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, xform: interop.Pointer | interop.Reference<number>, xform_size: number, tex: interop.Pointer | interop.Reference<number>, tex_size: number, colors: interop.Pointer | interop.Reference<interop.Pointer | interop.Reference<any>>, colors_size: number, blend_mode: number): void;
 
@@ -1436,11 +1734,7 @@ declare function canvas_native_context_draw_image_dx_dy_dw_dh_context(context: i
 
 declare function canvas_native_context_draw_image_dx_dy_dw_dh_webgl(context: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<any>, dx: number, dy: number, d_width: number, d_height: number): void;
 
-declare function canvas_native_context_draw_image_dx_dy_dw_dh_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
-
 declare function canvas_native_context_draw_image_dx_dy_webgl(context: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<any>, dx: number, dy: number): void;
-
-declare function canvas_native_context_draw_image_dx_dy_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number): boolean;
 
 declare function canvas_native_context_draw_image_encoded(context: interop.Pointer | interop.Reference<any>, data: string | interop.Pointer | interop.Reference<any>, size: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
@@ -1449,8 +1743,6 @@ declare function canvas_native_context_draw_image_encoded_dx_dy(context: interop
 declare function canvas_native_context_draw_image_encoded_dx_dy_dw_dh(context: interop.Pointer | interop.Reference<any>, data: string | interop.Pointer | interop.Reference<any>, size: number, dx: number, dy: number, d_width: number, d_height: number): void;
 
 declare function canvas_native_context_draw_image_webgl(context: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<any>, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): void;
-
-declare function canvas_native_context_draw_image_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
 declare function canvas_native_context_draw_paint(context: interop.Pointer | interop.Reference<any>, color: string | interop.Pointer | interop.Reference<any>): void;
 
@@ -1530,17 +1822,9 @@ declare function canvas_native_context_get_text_baseline(context: interop.Pointe
 
 declare function canvas_native_context_get_text_baseline_str(context: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_context_get_texture_from_2d(context: number): number;
-
 declare function canvas_native_context_get_transform(context: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_context_get_word_spacing(context: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
-
-declare function canvas_native_context_gl_make_current(context: interop.Pointer | interop.Reference<any>): boolean;
-
-declare function canvas_native_context_gl_swap_buffers(context: interop.Pointer | interop.Reference<any>): boolean;
-
-declare function canvas_native_context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): number;
 
 declare function canvas_native_context_is_point_in_path(context: interop.Pointer | interop.Reference<any>, x: number, y: number, rule: CanvasFillRule): boolean;
 
@@ -1654,8 +1938,6 @@ declare function canvas_native_context_transform(context: interop.Pointer | inte
 
 declare function canvas_native_context_translate(context: interop.Pointer | interop.Reference<any>, x: number, y: number): void;
 
-declare function canvas_native_create_2d_context(context: number, width: number, height: number, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
-
 declare function canvas_native_f32_buffer_get_bytes(buffer: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<number>;
 
 declare function canvas_native_f32_buffer_get_bytes_mut(buffer: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<number>;
@@ -1666,11 +1948,13 @@ declare function canvas_native_f32_buffer_release(buffer: interop.Pointer | inte
 
 declare function canvas_native_font_add_family(alias: string | interop.Pointer | interop.Reference<any>, filenames: interop.Pointer | interop.Reference<interop.Pointer | interop.Reference<any>>, length: number): void;
 
-declare function canvas_native_get_gl_pointer(gl_context: number): number;
+declare function canvas_native_font_add_family_with_bytes(alias: string | interop.Pointer | interop.Reference<any>, bytes: string | interop.Pointer | interop.Reference<any>, length: number): void;
 
-declare function canvas_native_gl_make_current(gl_context: number): void;
+declare function canvas_native_font_clear(): void;
 
 declare function canvas_native_gradient_add_color_stop(style: interop.Pointer | interop.Reference<any>, stop: number, color: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_helper_get_mime(data: string | interop.Pointer | interop.Reference<any>, size: number): interop.Pointer | interop.Reference<FileHelperMime>;
 
 declare function canvas_native_helper_read_file(path: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
@@ -1678,9 +1962,17 @@ declare function canvas_native_helper_read_file_get_data(file: interop.Pointer |
 
 declare function canvas_native_helper_read_file_get_error(file: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
+declare function canvas_native_helper_read_file_get_extension(file: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_helper_read_file_get_mime(file: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_helper_read_file_has_error(file: interop.Pointer | interop.Reference<any>): boolean;
 
+declare function canvas_native_helper_read_file_take_data(file: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_helper_release(value: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_helper_release_mime(mime: interop.Pointer | interop.Reference<FileHelperMime>): void;
 
 declare function canvas_native_i32_buffer_get_bytes(buffer: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<number>;
 
@@ -1692,11 +1984,11 @@ declare function canvas_native_i32_buffer_release(buffer: interop.Pointer | inte
 
 declare function canvas_native_image_asset_addr(asset: interop.Pointer | interop.Reference<any>): number;
 
+declare function canvas_native_image_asset_close(asset: interop.Pointer | interop.Reference<any>): void;
+
 declare function canvas_native_image_asset_create(): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_image_asset_get_addr(asset: interop.Pointer | interop.Reference<any>): number;
-
-declare function canvas_native_image_asset_get_data(asset: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_image_asset_get_error(asset: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
@@ -1708,7 +2000,9 @@ declare function canvas_native_image_asset_load_from_fd(asset: interop.Pointer |
 
 declare function canvas_native_image_asset_load_from_path(asset: interop.Pointer | interop.Reference<any>, path: string | interop.Pointer | interop.Reference<any>): boolean;
 
-declare function canvas_native_image_asset_load_from_raw(asset: interop.Pointer | interop.Reference<any>, array: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
+declare function canvas_native_image_asset_load_from_raw(asset: interop.Pointer | interop.Reference<any>, width: number, height: number, array: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
+
+declare function canvas_native_image_asset_load_from_raw_encoded(asset: interop.Pointer | interop.Reference<any>, array: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
 
 declare function canvas_native_image_asset_load_from_url(asset: interop.Pointer | interop.Reference<any>, url: string | interop.Pointer | interop.Reference<any>): boolean;
 
@@ -1746,23 +2040,49 @@ declare function canvas_native_image_filter_reference(value: interop.Pointer | i
 
 declare function canvas_native_image_filter_release(value: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_imageasset_load_from_bytes(asset: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
+declare function canvas_native_init_ios_webgpu(instance: number, view: interop.Pointer | interop.Reference<any>, width: number, height: number): number;
 
-declare function canvas_native_init_ios_gl(view: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean): number;
+declare function canvas_native_ios_context_create_pattern_raw(context: number, width: number, height: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, repetition: string | interop.Pointer | interop.Reference<any>): number;
 
-declare function canvas_native_init_ios_gl_with_shared_gl(view: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean, shared_context: number): number;
+declare function canvas_native_ios_context_custom_with_buffer_flush(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, alpha: boolean): void;
 
-declare function canvas_native_init_ios_webgpu(instance: number, view: number, width: number, height: number): number;
+declare function canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
-declare function canvas_native_init_ios_webgpu_uiview(instance: number, view: number, width: number, height: number): number;
+declare function canvas_native_ios_context_draw_image_dx_dy_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, dx: number, dy: number): boolean;
 
-declare function canvas_native_init_offscreen_ios_gl(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean): number;
+declare function canvas_native_ios_context_draw_image_with_bytes(context: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, sx: number, sy: number, s_width: number, s_height: number, dx: number, dy: number, d_width: number, d_height: number): boolean;
 
-declare function canvas_native_init_offscreen_ios_gl_with_shared_gl(width: number, height: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number, is_canvas: boolean, shared_context: number): number;
+declare function canvas_native_ios_context_init_context_with_custom_surface(width: number, height: number, density: number, alpha: boolean, font_color: number, ppi: number, direction: number): number;
+
+declare function canvas_native_ios_create_2d_context(view: interop.Pointer | interop.Reference<any>, width: number, height: number, alpha: boolean, density: number, font_color: number, ppi: number, direction: number): number;
+
+declare function canvas_native_ios_create_2d_context_metal(view: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+
+declare function canvas_native_ios_create_2d_context_metal_device_queue(view: interop.Pointer | interop.Reference<any>, device: interop.Pointer | interop.Reference<any>, queue: interop.Pointer | interop.Reference<any>, alpha: boolean, density: number, samples: number, font_color: number, ppi: number, direction: number): number;
+
+declare function canvas_native_ios_create_webgl_context(view: interop.Pointer | interop.Reference<any>, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean, version: number): number;
 
 declare function canvas_native_ios_flush_2d_context(context: number): void;
 
-declare function canvas_native_ios_flush_gl(context: number): boolean;
+declare function canvas_native_ios_flush_2d_context_and_sync_cpu(context: number): void;
+
+declare function canvas_native_ios_flush_webgl(context: number): boolean;
+
+declare function canvas_native_ios_gl_make_current(context: number): void;
+
+declare function canvas_native_ios_image_asset_load_from_bytes(asset: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number): boolean;
+
+declare function canvas_native_ios_present_drawable(context: number): void;
+
+declare function canvas_native_ios_release_webgl(context: number): void;
+
+declare function canvas_native_ios_resize_context_2d(context: number, width: number, height: number): void;
+
+declare function canvas_native_ios_update_webgl_surface(view: number, _width: number, _height: number, context: number): void;
+
+declare function canvas_native_ios_webgl_tex_image_2d(context: number, target: number, level: number, internalformat: number, format: number, type_: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, flip_y: boolean): void;
+
+declare function canvas_native_ios_webgl_tex_sub_image_2d(context: number, target: number, level: number, xoffset: number, yoffset: number, format: number, type_: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, flip_y: boolean): void;
 
 declare function canvas_native_matrix_clone(matrix: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
@@ -1964,11 +2284,7 @@ declare function canvas_native_raf_start(raf: interop.Pointer | interop.Referenc
 
 declare function canvas_native_raf_stop(raf: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_release_gl_pointer(gl_context: number): void;
-
-declare function canvas_native_release_ios_gl(context: number): void;
-
-declare function canvas_native_resize_context_2d(context: number, width: number, height: number): void;
+declare function canvas_native_resize_ios_webgpu_uiview(context: number, view: interop.Pointer | interop.Reference<any>, width: number, height: number): void;
 
 declare function canvas_native_string_buffer_get_length(buffer: interop.Pointer | interop.Reference<any>): number;
 
@@ -2051,8 +2367,6 @@ declare function canvas_native_u8_buffer_get_bytes_mut(buffer: interop.Pointer |
 declare function canvas_native_u8_buffer_get_length(buffer: interop.Pointer | interop.Reference<any>): number;
 
 declare function canvas_native_u8_buffer_release(buffer: interop.Pointer | interop.Reference<any>): void;
-
-declare function canvas_native_update_gl_surface(view: number, width: number, height: number, context: number): void;
 
 declare function canvas_native_webgl2_begin_query(target: number, id: number, state: interop.Pointer | interop.Reference<any>): void;
 
@@ -2184,6 +2498,18 @@ declare function canvas_native_webgl2_sampler_parameterf(sampler: number, pname:
 
 declare function canvas_native_webgl2_sampler_parameteri(sampler: number, pname: number, param: number, state: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgl2_tex_image2d_canvas2d(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, canvas: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgl2_tex_image2d_image_asset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, image_asset: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgl2_tex_image2d_image_data(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, image_data: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgl2_tex_image2d_offset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, offset: number, state: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgl2_tex_image2d_src_data_offset(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, src_data: string | interop.Pointer | interop.Reference<any>, src_data_size: number, offset: number, state: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgl2_tex_image2d_webgl(target: number, level: number, internalformat: number, width: number, height: number, border: number, format: number, type_: number, webgl: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
+
 declare function canvas_native_webgl2_tex_image3d(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type_: number, buf: string | interop.Pointer | interop.Reference<any>, size: number, state: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgl2_tex_image3d_asset(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type_: number, asset: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
@@ -2202,7 +2528,7 @@ declare function canvas_native_webgl2_tex_sub_image3d(target: number, level: num
 
 declare function canvas_native_webgl2_tex_sub_image3d_asset(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type_: number, asset: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_webgl2_tex_sub_image3d_canvas2d(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type_: number, canvas: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
+declare function canvas_native_webgl2_tex_sub_image3d_canvas2d(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, _width: number, _height: number, depth: number, format: number, type_: number, canvas: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgl2_tex_sub_image3d_none(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type_: number, offset: number, state: interop.Pointer | interop.Reference<any>): void;
 
@@ -2436,7 +2762,7 @@ declare function canvas_native_webgl_copy_tex_image2d(target: number, level: num
 
 declare function canvas_native_webgl_copy_tex_sub_image2d(target: number, level: number, xoffset: number, yoffset: number, x: number, y: number, width: number, height: number, state: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_webgl_create(gl_context: number, version: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean): interop.Pointer | interop.Reference<any>;
+declare function canvas_native_webgl_create(view: interop.Pointer | interop.Reference<any>, version: number, alpha: boolean, antialias: boolean, depth: boolean, fail_if_major_performance_caveat: boolean, power_preference: number, premultiplied_alpha: boolean, preserve_drawing_buffer: boolean, stencil: boolean, desynchronized: boolean, xr_compatible: boolean): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgl_create_buffer(state: interop.Pointer | interop.Reference<any>): number;
 
@@ -2700,8 +3026,6 @@ declare function canvas_native_webgl_tex_image2d_none(target: number, level: num
 
 declare function canvas_native_webgl_tex_image2d_webgl(target: number, level: number, internalformat: number, format: number, image_type: number, webgl: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
 
-declare function canvas_native_webgl_tex_image_2d(context: number, target: number, level: number, internalformat: number, format: number, type_: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, flip_y: boolean): void;
-
 declare function canvas_native_webgl_tex_parameterf(target: number, pname: number, param: number, state: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgl_tex_parameteri(target: number, pname: number, param: number, state: interop.Pointer | interop.Reference<any>): void;
@@ -2713,8 +3037,6 @@ declare function canvas_native_webgl_tex_sub_image2d_asset(target: number, level
 declare function canvas_native_webgl_tex_sub_image2d_canvas2d(target: number, level: number, xoffset: number, yoffset: number, format: number, image_type: number, canvas: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgl_tex_sub_image2d_webgl(target: number, level: number, xoffset: number, yoffset: number, format: number, image_type: number, webgl: interop.Pointer | interop.Reference<any>, state: interop.Pointer | interop.Reference<any>): void;
-
-declare function canvas_native_webgl_tex_sub_image_2d(context: number, target: number, level: number, xoffset: number, yoffset: number, format: number, type_: number, bytes: string | interop.Pointer | interop.Reference<any>, size: number, width: number, height: number, flip_y: boolean): void;
 
 declare function canvas_native_webgl_to_data_url(state: interop.Pointer | interop.Reference<any>, format: string | interop.Pointer | interop.Reference<any>, quality: number): interop.Pointer | interop.Reference<any>;
 
@@ -2814,6 +3136,10 @@ declare function canvas_native_webgpu_adapter_request_device(
 	callback_data: interop.Pointer | interop.Reference<any>
 ): void;
 
+declare function canvas_native_webgpu_bind_group_get_label(bind_group: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_webgpu_bind_group_layout_get_label(bind_group_layout: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_bind_group_layout_reference(bind_group_layout: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_bind_group_layout_release(bind_group_layout: interop.Pointer | interop.Reference<any>): void;
@@ -2824,9 +3150,11 @@ declare function canvas_native_webgpu_bind_group_release(bind_group: interop.Poi
 
 declare function canvas_native_webgpu_buffer_destroy(buffer: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_buffer_get_label(buffer: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_buffer_get_mapped_range(buffer: interop.Pointer | interop.Reference<any>, offset: number, size: number): interop.Pointer | interop.Reference<any>;
 
-declare function canvas_native_webgpu_buffer_map_async(buffer: interop.Pointer | interop.Reference<any>, mode: GPUMapMode, offset: number, size: number, callback: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<any>, p2: interop.Pointer | interop.Reference<any>) => void>, callback_data: interop.Pointer | interop.Reference<any>): void;
+declare function canvas_native_webgpu_buffer_map_async(buffer: interop.Pointer | interop.Reference<any>, mode: GPUMapMode, offset: number, size: number, callback: interop.FunctionReference<(p1: CanvasGPUErrorType, p2: interop.Pointer | interop.Reference<any>, p3: interop.Pointer | interop.Reference<any>) => void>, callback_data: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_buffer_reference(buffer: interop.Pointer | interop.Reference<any>): void;
 
@@ -2837,6 +3165,8 @@ declare function canvas_native_webgpu_buffer_size(buffer: interop.Pointer | inte
 declare function canvas_native_webgpu_buffer_unmap(buffer: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_buffer_usage(buffer: interop.Pointer | interop.Reference<any>): number;
+
+declare function canvas_native_webgpu_command_buffer_get_label(command_buffer: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_command_buffer_reference(command_buffer: interop.Pointer | interop.Reference<any>): void;
 
@@ -2855,6 +3185,8 @@ declare function canvas_native_webgpu_command_encoder_copy_texture_to_buffer(com
 declare function canvas_native_webgpu_command_encoder_copy_texture_to_texture(command_encoder: interop.Pointer | interop.Reference<any>, src: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, dst: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, copy_size: interop.Pointer | interop.Reference<CanvasExtent3d>): void;
 
 declare function canvas_native_webgpu_command_encoder_finish(command_encoder: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_webgpu_command_encoder_get_label(command_encoder: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_command_encoder_insert_debug_marker(command_encoder: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>): void;
 
@@ -2876,6 +3208,8 @@ declare function canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups_i
 
 declare function canvas_native_webgpu_compute_pass_encoder_end(compute_pass: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_compute_pass_encoder_get_label(compute_pass: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_compute_pass_encoder_insert_debug_marker(compute_pass: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_compute_pass_encoder_pop_debug_group(compute_pass: interop.Pointer | interop.Reference<any>): void;
@@ -2891,6 +3225,8 @@ declare function canvas_native_webgpu_compute_pass_encoder_set_bind_group(comput
 declare function canvas_native_webgpu_compute_pass_encoder_set_pipeline(compute_pass: interop.Pointer | interop.Reference<any>, pipeline: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_compute_pipeline_get_bind_group_layout(pipeline: interop.Pointer | interop.Reference<any>, index: number): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_webgpu_compute_pipeline_get_label(pipeline: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_compute_pipeline_reference(pipeline: interop.Pointer | interop.Reference<any>): void;
 
@@ -2916,6 +3252,10 @@ declare function canvas_native_webgpu_context_reference(context: interop.Pointer
 
 declare function canvas_native_webgpu_context_release(context: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_context_resize_uiview(context: interop.Pointer | interop.Reference<any>, view: interop.Pointer | interop.Reference<any>, width: number, height: number): void;
+
+declare function canvas_native_webgpu_context_unconfigure(context: interop.Pointer | interop.Reference<any>): void;
+
 declare function canvas_native_webgpu_create_limits(): interop.Pointer | interop.Reference<CanvasGPUSupportedLimits>;
 
 declare function canvas_native_webgpu_device_create_buffer(device: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>, size: number, usage: number, mapped_at_creation: boolean): interop.Pointer | interop.Reference<any>;
@@ -2931,6 +3271,8 @@ declare function canvas_native_webgpu_device_create_shader_module(device: intero
 declare function canvas_native_webgpu_device_destroy(device: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_device_get_features(device: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_webgpu_device_get_label(device: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_device_get_limits(device: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<CanvasGPUSupportedLimits>;
 
@@ -2952,11 +3294,15 @@ declare function canvas_native_webgpu_error_get_message(error: interop.Pointer |
 
 declare function canvas_native_webgpu_error_get_type(error: interop.Pointer | interop.Reference<any>): CanvasGPUErrorType;
 
+declare function canvas_native_webgpu_get_pointer_addr(instance: interop.Pointer | interop.Reference<any>): number;
+
 declare function canvas_native_webgpu_instance_create(): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_instance_release(instance: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_limits_release(limits: interop.Pointer | interop.Reference<CanvasGPUSupportedLimits>): void;
+
+declare function canvas_native_webgpu_pipeline_layout_get_label(pipeline_layout: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_pipeline_layout_reference(pipeline_layout: interop.Pointer | interop.Reference<any>): void;
 
@@ -2974,7 +3320,15 @@ declare function canvas_native_webgpu_query_set_reference(query_set: interop.Poi
 
 declare function canvas_native_webgpu_query_set_release(query_set: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_queue_copy_context_to_texture(queue: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<CanvasImageCopyCanvasRenderingContext2D>, destination: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, size: interop.Pointer | interop.Reference<CanvasExtent3d>): void;
+
 declare function canvas_native_webgpu_queue_copy_external_image_to_texture(queue: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<CanvasImageCopyExternalImage>, destination: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, size: interop.Pointer | interop.Reference<CanvasExtent3d>): void;
+
+declare function canvas_native_webgpu_queue_copy_image_asset_to_texture(queue: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<CanvasImageCopyImageAsset>, destination: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, size: interop.Pointer | interop.Reference<CanvasExtent3d>): void;
+
+declare function canvas_native_webgpu_queue_copy_webgl_to_texture(queue: interop.Pointer | interop.Reference<any>, source: interop.Pointer | interop.Reference<CanvasImageCopyWebGL>, destination: interop.Pointer | interop.Reference<CanvasImageCopyTexture>, size: interop.Pointer | interop.Reference<CanvasExtent3d>): void;
+
+declare function canvas_native_webgpu_queue_get_label(queue: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_queue_on_submitted_work_done(queue: interop.Pointer | interop.Reference<any>, callback: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<any>, p2: interop.Pointer | interop.Reference<any>) => void>, callback_data: interop.Pointer | interop.Reference<any>): void;
 
@@ -2998,6 +3352,8 @@ declare function canvas_native_webgpu_render_bundle_encoder_draw_indirect(render
 
 declare function canvas_native_webgpu_render_bundle_encoder_finish(render_bundle: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
+declare function canvas_native_webgpu_render_bundle_encoder_get_label(render_bundle: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_render_bundle_encoder_insert_debug_marker(render_bundle: interop.Pointer | interop.Reference<any>, label: string | interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_render_bundle_encoder_pop_debug_group(render_bundle: interop.Pointer | interop.Reference<any>): void;
@@ -3015,6 +3371,8 @@ declare function canvas_native_webgpu_render_bundle_encoder_set_index_buffer(ren
 declare function canvas_native_webgpu_render_bundle_encoder_set_pipeline(render_bundle: interop.Pointer | interop.Reference<any>, pipeline: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_render_bundle_encoder_set_vertex_buffer(render_bundle: interop.Pointer | interop.Reference<any>, slot: number, buffer: interop.Pointer | interop.Reference<any>, offset: number, size: number): void;
+
+declare function canvas_native_webgpu_render_bundle_get_label(bundle: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_render_bundle_reference(bundle: interop.Pointer | interop.Reference<any>): void;
 
@@ -3036,7 +3394,13 @@ declare function canvas_native_webgpu_render_pass_encoder_end_occlusion_query(re
 
 declare function canvas_native_webgpu_render_pass_encoder_execute_bundles(render_pass: interop.Pointer | interop.Reference<any>, bundles: interop.Pointer | interop.Reference<interop.Pointer | interop.Reference<any>>, bundles_size: number): void;
 
+declare function canvas_native_webgpu_render_pass_encoder_get_label(render_pass: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_render_pass_encoder_insert_debug_marker(render_pass: interop.Pointer | interop.Reference<any>, marker_label: string | interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgpu_render_pass_encoder_multi_draw_indexed_indirect(render_pass: interop.Pointer | interop.Reference<any>, indirect_buffer: interop.Pointer | interop.Reference<any>, indirect_offset: number, count: number): void;
+
+declare function canvas_native_webgpu_render_pass_encoder_multi_draw_indirect(render_pass: interop.Pointer | interop.Reference<any>, indirect_buffer: interop.Pointer | interop.Reference<any>, indirect_offset: number, count: number): void;
 
 declare function canvas_native_webgpu_render_pass_encoder_pop_debug_group(render_pass: interop.Pointer | interop.Reference<any>): void;
 
@@ -3064,15 +3428,21 @@ declare function canvas_native_webgpu_render_pass_encoder_set_viewport(pass: int
 
 declare function canvas_native_webgpu_render_pipeline_get_bind_group_layout(pipeline: interop.Pointer | interop.Reference<any>, index: number): interop.Pointer | interop.Reference<any>;
 
+declare function canvas_native_webgpu_render_pipeline_get_label(pipeline: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_render_pipeline_reference(pipeline: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_render_pipeline_release(pipeline: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_request_adapter(instance: interop.Pointer | interop.Reference<any>, options: interop.Pointer | interop.Reference<CanvasGPURequestAdapterOptions>, callback: interop.FunctionReference<(p1: interop.Pointer | interop.Reference<any>, p2: interop.Pointer | interop.Reference<any>) => void>, callback_data: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_sampler_get_label(sampler: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_sampler_reference(sampler: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_sampler_release(sampler: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgpu_shader_module_get_label(shader_module: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_shader_module_reference(shader_module: interop.Pointer | interop.Reference<any>): void;
 
@@ -3088,11 +3458,15 @@ declare function canvas_native_webgpu_texture_get_dimension(texture: interop.Poi
 
 declare function canvas_native_webgpu_texture_get_height(texture: interop.Pointer | interop.Reference<any>): number;
 
-declare function canvas_native_webgpu_texture_get_label(_texture: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+declare function canvas_native_webgpu_texture_get_label(texture: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
 
 declare function canvas_native_webgpu_texture_get_mip_level_count(texture: interop.Pointer | interop.Reference<any>): number;
 
 declare function canvas_native_webgpu_texture_get_sample_count(texture: interop.Pointer | interop.Reference<any>): number;
+
+declare function canvas_native_webgpu_texture_get_status(texture: interop.Pointer | interop.Reference<any>): SurfaceGetCurrentTextureStatus;
+
+declare function canvas_native_webgpu_texture_get_suboptimal(texture: interop.Pointer | interop.Reference<any>): boolean;
 
 declare function canvas_native_webgpu_texture_get_usage(texture: interop.Pointer | interop.Reference<any>): number;
 
@@ -3102,6 +3476,12 @@ declare function canvas_native_webgpu_texture_reference(texture: interop.Pointer
 
 declare function canvas_native_webgpu_texture_release(texture: interop.Pointer | interop.Reference<any>): void;
 
+declare function canvas_native_webgpu_texture_view_get_label(texture_view: interop.Pointer | interop.Reference<any>): interop.Pointer | interop.Reference<any>;
+
 declare function canvas_native_webgpu_texture_view_reference(texture_view: interop.Pointer | interop.Reference<any>): void;
 
 declare function canvas_native_webgpu_texture_view_release(texture_view: interop.Pointer | interop.Reference<any>): void;
+
+declare function canvas_native_webgpu_to_data_url(context: interop.Pointer | interop.Reference<any>, device: interop.Pointer | interop.Reference<any>, format: string | interop.Pointer | interop.Reference<any>, quality: number): interop.Pointer | interop.Reference<any>;
+
+declare function canvas_native_webgpu_to_data_url_with_texture(context: interop.Pointer | interop.Reference<any>, device: interop.Pointer | interop.Reference<any>, texture: interop.Pointer | interop.Reference<any>, format: string | interop.Pointer | interop.Reference<any>, quality: number): interop.Pointer | interop.Reference<any>;

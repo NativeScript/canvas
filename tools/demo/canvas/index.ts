@@ -564,8 +564,9 @@ fn main() -> @location(0) vec4f {
 	}
 
 	draw() {
+		//this.remoteFont(this.canvas);
 		//this.webgpuTest();
-		this.webgpuTriangle();
+		//this.webgpuTriangle();
 		// const rc = require('./webgpu/rotatingCube');
 		// rc.run(this.canvas);
 
@@ -676,7 +677,7 @@ fn main() -> @location(0) vec4f {
 		//this.clearIssue(this.canvas);
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
-		//breathe(this.canvas);
+		breathe(this.canvas);
 		//this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
@@ -879,6 +880,20 @@ fn main() -> @location(0) vec4f {
 		// console.timeEnd('getBoundingClientRect');
 		// this.textBaseLine(this.canvas);
 		//this.textBaseLine2(this.canvas);
+	}
+	async remoteFont(canvas: any) {
+		const font = new FontFace('ChaChicle', 'url(https://pixijs.com/assets/webfont-loader/ChaChicle.ttf)');
+		document.fonts.add(font);
+		await font.load();
+
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+		ctx.font = '25px ChaChicle';
+		const size = ctx.measureText('NativeScript FontFace');
+		ctx.fillText('NativeScript FontFace', canvas.clientWidth / 2 - size.width / 2, 50);
 	}
 	vulkan(canvas: any) {
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;

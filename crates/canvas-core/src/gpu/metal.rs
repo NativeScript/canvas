@@ -1,5 +1,8 @@
+use foreign_types_shared::ForeignTypeRef;
+use icrate::objc2;
 use icrate::objc2::__framework_prelude::Retained;
-use icrate::objc2::msg_send;
+use icrate::objc2::ffi::BOOL;
+use icrate::objc2::{msg_send, msg_send_id};
 use metal::foreign_types::ForeignType;
 use metal::{MTLResourceOptions, MetalDrawable, MetalDrawableRef};
 use objc2_foundation::{NSAutoreleasePool, NSObject};
@@ -24,8 +27,37 @@ impl MetalContext {
         let device = metal::Device::system_default().expect("no Metal device");
         let queue = device.new_command_queue();
         let view = unsafe { Retained::from_raw(view as _).unwrap() };
-        let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
-        let layer = unsafe { metal::MetalLayer::from_ptr(layer as _) };
+
+        let layer = if cfg!(target_os = "macos") {
+            let mut layer: *mut NSObject = unsafe { msg_send![&view, layer] };
+
+            if let Some(clazz) = objc2::runtime::AnyClass::get("CAMetalLayer") {
+                let is_metal: BOOL = unsafe { msg_send![layer, isKindOfClass: clazz] };
+                if (!is_metal) {
+                    let _: () = unsafe {
+                        msg_send![&view,  setWantsLayer: objc2::ffi::YES]
+                    };
+                    let mtl_layer = metal::MetalLayer::new();
+                    mtl_layer.set_device(&device);
+                    mtl_layer.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
+                    mtl_layer.set_presents_with_transaction(false);
+                    mtl_layer.set_opaque(false);
+
+                    let _: () = unsafe {
+                        msg_send![&view, setLayer: mtl_layer.as_ptr() as *mut NSObject ]
+                    };
+
+                    mtl_layer
+                } else {
+                    unsafe { metal::MetalLayer::from_ptr(layer as _) }
+                }
+            } else {
+                unsafe { metal::MetalLayer::from_ptr(layer as _) }
+            }
+        } else {
+            let mut layer: *mut NSObject = unsafe { msg_send![&view, layer] };
+            unsafe { metal::MetalLayer::from_ptr(layer as _) }
+        };
         let current_drawable = layer.next_drawable().map(|drawable| {
             drawable.to_owned()
         });

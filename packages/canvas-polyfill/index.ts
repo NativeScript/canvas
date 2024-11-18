@@ -16,6 +16,7 @@ import './process';
 import './localStorage';
 import { TextDecoder, TextEncoder, ImageBitmap } from '@nativescript/canvas';
 import './workerPatch';
+import { FontFaceSet } from '@nativescript/canvas';
 
 if (!global.Document) {
 	Object.defineProperty(global, 'Document', {
@@ -26,6 +27,8 @@ if (!global.Document) {
 }
 
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
+
+(global as any).document.fonts = global.fonts || new FontFaceSet();
 
 (global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
 	const image = args[0];

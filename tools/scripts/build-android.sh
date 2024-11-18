@@ -36,7 +36,7 @@ CXX=$TOOLS/bin/${NDK_TARGET}${API_VERSION}-clang++ \
 RANLIB=$TOOLS/bin/llvm-ranlib \
 CXXFLAGS="--target=$NDK_TARGET" \
 
-RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
+# RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
 
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
@@ -45,7 +45,7 @@ fi
 
 RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
 
-#RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-android
+# RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-android
 
 #pushd packages/canvas/src-native/canvas-android
 #./gradlew :canvas:assembleRelease

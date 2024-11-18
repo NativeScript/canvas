@@ -1891,9 +1891,15 @@ typedef struct FileHelperMime {
   const char *extension;
 } FileHelperMime;
 
+void canvas_native_font_clear(void);
+
 void canvas_native_font_add_family(const char *alias,
                                    const char *const *filenames,
                                    uintptr_t length);
+
+void canvas_native_font_add_family_with_bytes(const char *alias,
+                                              const uint8_t *bytes,
+                                              uintptr_t length);
 
 void canvas_native_context_2d_test(int64_t context);
 

@@ -4519,6 +4519,2529 @@
 			},
 			{
 				"kind": "Import",
+				"name": "UIKit",
+				"printedName": "UIKit",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontDisplay",
+				"printedName": "NSCFontDisplay",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "auto",
+						"printedName": "auto",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontDisplay.Type) -> CanvasNative.NSCFontDisplay",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontDisplay.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontDisplay",
+												"printedName": "CanvasNative.NSCFontDisplay",
+												"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontDisplay@NSCFontDisplayAuto",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO4autoyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 0
+					},
+					{
+						"kind": "Var",
+						"name": "block",
+						"printedName": "block",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontDisplay.Type) -> CanvasNative.NSCFontDisplay",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontDisplay.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontDisplay",
+												"printedName": "CanvasNative.NSCFontDisplay",
+												"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontDisplay@NSCFontDisplayBlock",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO5blockyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 1
+					},
+					{
+						"kind": "Var",
+						"name": "fallback",
+						"printedName": "fallback",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontDisplay.Type) -> CanvasNative.NSCFontDisplay",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontDisplay.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontDisplay",
+												"printedName": "CanvasNative.NSCFontDisplay",
+												"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontDisplay@NSCFontDisplayFallback",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO8fallbackyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 2
+					},
+					{
+						"kind": "Var",
+						"name": "optional",
+						"printedName": "optional",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontDisplay.Type) -> CanvasNative.NSCFontDisplay",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontDisplay.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontDisplay",
+												"printedName": "CanvasNative.NSCFontDisplay",
+												"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontDisplay@NSCFontDisplayOptional",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO8optionalyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 3
+					},
+					{
+						"kind": "Var",
+						"name": "swap",
+						"printedName": "swap",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontDisplay.Type) -> CanvasNative.NSCFontDisplay",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontDisplay.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontDisplay",
+												"printedName": "CanvasNative.NSCFontDisplay",
+												"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontDisplay@NSCFontDisplaySwap",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO4swapyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 4
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(rawValue:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontDisplay?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative14NSCFontDisplayO8rawValueACSgSi_tcfc",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO8rawValueACSgSi_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Var",
+						"name": "rawValue",
+						"printedName": "rawValue",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative14NSCFontDisplayO8rawValueSivp",
+						"mangledName": "$s12CanvasNative14NSCFontDisplayO8rawValueSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative14NSCFontDisplayO8rawValueSivg",
+								"mangledName": "$s12CanvasNative14NSCFontDisplayO8rawValueSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					}
+				],
+				"declKind": "Enum",
+				"usr": "c:@M@CanvasNative@E@NSCFontDisplay",
+				"mangledName": "$s12CanvasNative14NSCFontDisplayO",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontDisplay",
+				"declAttributes": ["AccessControl", "ObjC"],
+				"enumRawTypeName": "Int",
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "RawRepresentable",
+						"printedName": "RawRepresentable",
+						"children": [
+							{
+								"kind": "TypeWitness",
+								"name": "RawValue",
+								"printedName": "RawValue",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								]
+							}
+						],
+						"usr": "s:SY",
+						"mangledName": "$sSY"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Decodable",
+						"printedName": "Decodable",
+						"usr": "s:Se",
+						"mangledName": "$sSe"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Encodable",
+						"printedName": "Encodable",
+						"usr": "s:SE",
+						"mangledName": "$sSE"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontWeight",
+				"printedName": "NSCFontWeight",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "thin",
+						"printedName": "thin",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightThin",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO4thinyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 0
+					},
+					{
+						"kind": "Var",
+						"name": "extraLight",
+						"printedName": "extraLight",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightExtraLight",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO10extraLightyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 1
+					},
+					{
+						"kind": "Var",
+						"name": "light",
+						"printedName": "light",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightLight",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO5lightyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 2
+					},
+					{
+						"kind": "Var",
+						"name": "normal",
+						"printedName": "normal",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightNormal",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO6normalyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 3
+					},
+					{
+						"kind": "Var",
+						"name": "medium",
+						"printedName": "medium",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightMedium",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO6mediumyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 4
+					},
+					{
+						"kind": "Var",
+						"name": "semiBold",
+						"printedName": "semiBold",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightSemiBold",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO8semiBoldyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 5
+					},
+					{
+						"kind": "Var",
+						"name": "bold",
+						"printedName": "bold",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightBold",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO4boldyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 6
+					},
+					{
+						"kind": "Var",
+						"name": "extraBold",
+						"printedName": "extraBold",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightExtraBold",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO9extraBoldyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 7
+					},
+					{
+						"kind": "Var",
+						"name": "black",
+						"printedName": "black",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontWeight.Type) -> CanvasNative.NSCFontWeight",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontWeight.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontWeight",
+												"printedName": "CanvasNative.NSCFontWeight",
+												"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontWeight@NSCFontWeightBlack",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO5blackyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 8
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(rawValue:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontWeight?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative13NSCFontWeightO8rawValueACSgSi_tcfc",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO8rawValueACSgSi_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Var",
+						"name": "rawValue",
+						"printedName": "rawValue",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCFontWeightO8rawValueSivp",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO8rawValueSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCFontWeightO8rawValueSivg",
+								"mangledName": "$s12CanvasNative13NSCFontWeightO8rawValueSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "uiFontWeight",
+						"printedName": "uiFontWeight",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Weight",
+								"printedName": "UIKit.UIFont.Weight",
+								"usr": "c:@T@UIFontWeight"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative13NSCFontWeightO06uiFontD0So06UIFontD0avp",
+						"mangledName": "$s12CanvasNative13NSCFontWeightO06uiFontD0So06UIFontD0avp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Weight",
+										"printedName": "UIKit.UIFont.Weight",
+										"usr": "c:@T@UIFontWeight"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative13NSCFontWeightO06uiFontD0So06UIFontD0avg",
+								"mangledName": "$s12CanvasNative13NSCFontWeightO06uiFontD0So06UIFontD0avg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					}
+				],
+				"declKind": "Enum",
+				"usr": "c:@M@CanvasNative@E@NSCFontWeight",
+				"mangledName": "$s12CanvasNative13NSCFontWeightO",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontWeight",
+				"declAttributes": ["AccessControl", "ObjC"],
+				"enumRawTypeName": "Int",
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "RawRepresentable",
+						"printedName": "RawRepresentable",
+						"children": [
+							{
+								"kind": "TypeWitness",
+								"name": "RawValue",
+								"printedName": "RawValue",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								]
+							}
+						],
+						"usr": "s:SY",
+						"mangledName": "$sSY"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Decodable",
+						"printedName": "Decodable",
+						"usr": "s:Se",
+						"mangledName": "$sSe"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Encodable",
+						"printedName": "Encodable",
+						"usr": "s:SE",
+						"mangledName": "$sSE"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontDescriptors",
+				"printedName": "NSCFontDescriptors",
+				"children": [
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(family:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontDescriptors",
+								"printedName": "CanvasNative.NSCFontDescriptors",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors(im)initWithFamily:",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC6familyACSS_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Function",
+						"name": "update",
+						"printedName": "update(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors(im)update:",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC6updateyySSF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "setFontWeight",
+						"printedName": "setFontWeight(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors(im)setFontWeight:",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC13setFontWeightyySSF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "setFontStyle",
+						"printedName": "setFontStyle(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors(im)setFontStyle:",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC12setFontStyleyySSF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontDescriptors",
+								"printedName": "CanvasNative.NSCFontDescriptors",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors(im)init",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(from:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontDescriptors",
+								"printedName": "CanvasNative.NSCFontDescriptors",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Decoder",
+								"printedName": "any Swift.Decoder",
+								"usr": "s:s7DecoderP"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative18NSCFontDescriptorsC4fromACs7Decoder_p_tKcfc",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC4fromACs7Decoder_p_tKcfc",
+						"moduleName": "CanvasNative",
+						"implicit": true,
+						"declAttributes": ["Required"],
+						"throwing": true,
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Function",
+						"name": "encode",
+						"printedName": "encode(to:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Encoder",
+								"printedName": "any Swift.Encoder",
+								"usr": "s:s7EncoderP"
+							}
+						],
+						"declKind": "Func",
+						"usr": "s:12CanvasNative18NSCFontDescriptorsC6encode2toys7Encoder_p_tKF",
+						"mangledName": "$s12CanvasNative18NSCFontDescriptorsC6encode2toys7Encoder_p_tKF",
+						"moduleName": "CanvasNative",
+						"implicit": true,
+						"throwing": true,
+						"funcSelfKind": "NonMutating"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors",
+				"mangledName": "$s12CanvasNative18NSCFontDescriptorsC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontDescriptors",
+				"declAttributes": ["AccessControl", "ObjC", "ObjCMembers"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Decodable",
+						"printedName": "Decodable",
+						"usr": "s:Se",
+						"mangledName": "$sSe"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Encodable",
+						"printedName": "Encodable",
+						"usr": "s:SE",
+						"mangledName": "$sSE"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontFaceStatus",
+				"printedName": "NSCFontFaceStatus",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "unloaded",
+						"printedName": "unloaded",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceStatus.Type) -> CanvasNative.NSCFontFaceStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceStatus",
+												"printedName": "CanvasNative.NSCFontFaceStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus@NSCFontFaceStatusUnloaded",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO8unloadedyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 0
+					},
+					{
+						"kind": "Var",
+						"name": "loading",
+						"printedName": "loading",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceStatus.Type) -> CanvasNative.NSCFontFaceStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceStatus",
+												"printedName": "CanvasNative.NSCFontFaceStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus@NSCFontFaceStatusLoading",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO7loadingyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 1
+					},
+					{
+						"kind": "Var",
+						"name": "loaded",
+						"printedName": "loaded",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceStatus.Type) -> CanvasNative.NSCFontFaceStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceStatus",
+												"printedName": "CanvasNative.NSCFontFaceStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus@NSCFontFaceStatusLoaded",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO6loadedyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 2
+					},
+					{
+						"kind": "Var",
+						"name": "error",
+						"printedName": "error",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceStatus.Type) -> CanvasNative.NSCFontFaceStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceStatus",
+												"printedName": "CanvasNative.NSCFontFaceStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus@NSCFontFaceStatusError",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO5erroryA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 3
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(rawValue:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontFaceStatus?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative17NSCFontFaceStatusO8rawValueACSgSi_tcfc",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO8rawValueACSgSi_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Var",
+						"name": "rawValue",
+						"printedName": "rawValue",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative17NSCFontFaceStatusO8rawValueSivp",
+						"mangledName": "$s12CanvasNative17NSCFontFaceStatusO8rawValueSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative17NSCFontFaceStatusO8rawValueSivg",
+								"mangledName": "$s12CanvasNative17NSCFontFaceStatusO8rawValueSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					}
+				],
+				"declKind": "Enum",
+				"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus",
+				"mangledName": "$s12CanvasNative17NSCFontFaceStatusO",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontFaceStatus",
+				"declAttributes": ["AccessControl", "ObjC"],
+				"enumRawTypeName": "Int",
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "RawRepresentable",
+						"printedName": "RawRepresentable",
+						"children": [
+							{
+								"kind": "TypeWitness",
+								"name": "RawValue",
+								"printedName": "RawValue",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								]
+							}
+						],
+						"usr": "s:SY",
+						"mangledName": "$sSY"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontFace",
+				"printedName": "NSCFontFace",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "font",
+						"printedName": "font",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CoreGraphics.CGFont?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "CGFont",
+										"printedName": "CoreGraphics.CGFont",
+										"usr": "c:@T@CGFontRef"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)font",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC4fontSo9CGFontRefaSgvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "SetterAccess", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "CoreGraphics.CGFont?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "CGFont",
+												"printedName": "CoreGraphics.CGFont",
+												"usr": "c:@T@CGFontRef"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)font",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC4fontSo9CGFontRefaSgvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "fontData",
+						"printedName": "fontData",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Foundation.NSData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSData",
+										"printedName": "Foundation.NSData",
+										"usr": "c:objc(cs)NSData"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)fontData",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC8fontDataSo6NSDataCSgvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "SetterAccess", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Foundation.NSData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSData",
+												"printedName": "Foundation.NSData",
+												"usr": "c:objc(cs)NSData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)fontData",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC8fontDataSo6NSDataCSgvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "updateDescriptor",
+						"printedName": "updateDescriptor(value:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)updateDescriptorWithValue:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC16updateDescriptor5valueySS_tF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "loadFromStyle",
+						"printedName": "loadFromStyle(style:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontFace?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFace",
+										"printedName": "CanvasNative.NSCFontFace",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(cm)loadFromStyleWithStyle:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC13loadFromStyle5styleACSgSS_tFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "importFromRemote",
+						"printedName": "importFromRemote(url:load:callback:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "([CanvasNative.NSCFontFace]?, Swift.String?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Tuple",
+										"printedName": "([CanvasNative.NSCFontFace]?, Swift.String?)",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "Optional",
+												"printedName": "[CanvasNative.NSCFontFace]?",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "Array",
+														"printedName": "[CanvasNative.NSCFontFace]",
+														"children": [
+															{
+																"kind": "TypeNominal",
+																"name": "NSCFontFace",
+																"printedName": "CanvasNative.NSCFontFace",
+																"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+															}
+														],
+														"usr": "s:Sa"
+													}
+												],
+												"usr": "s:Sq"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Optional",
+												"printedName": "Swift.String?",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "String",
+														"printedName": "Swift.String",
+														"usr": "s:SS"
+													}
+												],
+												"usr": "s:Sq"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(cm)importFromRemoteWithUrl:load:callback:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC16importFromRemote3url4load8callbackySS_SbySayACGSg_SSSgtctFZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(family:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)initWithFamily:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6familyACSS_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(family:source:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)initWithFamily:source:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6family6sourceACSS_SStcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(family:data:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "NSData",
+								"printedName": "Foundation.NSData",
+								"usr": "c:objc(cs)NSData"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)initWithFamily:data:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6family4dataACSS_So6NSDataCtcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(_:_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"hasDefaultArg": true,
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontDescriptors?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDescriptors",
+										"printedName": "CanvasNative.NSCFontDescriptors",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors"
+									}
+								],
+								"hasDefaultArg": true,
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)init:::",
+						"mangledName": "$s12CanvasNative11NSCFontFaceCyACSS_SSSgAA0C11DescriptorsCSgtcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(_:data:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Foundation.NSData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSData",
+										"printedName": "Foundation.NSData",
+										"usr": "c:objc(cs)NSData"
+									}
+								],
+								"hasDefaultArg": true,
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontDescriptors?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDescriptors",
+										"printedName": "CanvasNative.NSCFontDescriptors",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCFontDescriptors"
+									}
+								],
+								"hasDefaultArg": true,
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)init:data::",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC_4data_ACSS_So6NSDataCSgAA0C11DescriptorsCSgtcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Var",
+						"name": "status",
+						"printedName": "status",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFaceStatus",
+								"printedName": "CanvasNative.NSCFontFaceStatus",
+								"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)status",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6statusAA0cD6StatusOvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)status",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6statusAA0cD6StatusOvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceStatus",
+										"printedName": "CanvasNative.NSCFontFaceStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceStatus"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setStatus:",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6statusAA0cD6StatusOvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative11NSCFontFaceC6statusAA0cD6StatusOvM",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6statusAA0cD6StatusOvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "display",
+						"printedName": "display",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontDisplay",
+								"printedName": "CanvasNative.NSCFontDisplay",
+								"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)display",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC7displayAA0C7DisplayOvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)display",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC7displayAA0C7DisplayOvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontDisplay",
+										"printedName": "CanvasNative.NSCFontDisplay",
+										"usr": "c:@M@CanvasNative@E@NSCFontDisplay"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setDisplay:",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC7displayAA0C7DisplayOvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative11NSCFontFaceC7displayAA0C7DisplayOvM",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC7displayAA0C7DisplayOvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "setFontDisplay",
+						"printedName": "setFontDisplay(value:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setFontDisplayWithValue:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC14setFontDisplay5valueySS_tF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Var",
+						"name": "style",
+						"printedName": "style",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)style",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC5styleSSvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)style",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC5styleSSvg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setStyle:",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC5styleSSvs",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative11NSCFontFaceC5styleSSvM",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC5styleSSvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "setFontStyle",
+						"printedName": "setFontStyle(value:angle:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setFontStyleWithValue:angle:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC12setFontStyle5value5angleySS_SSSgtF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Var",
+						"name": "weight",
+						"printedName": "weight",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontWeight",
+								"printedName": "CanvasNative.NSCFontWeight",
+								"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)weight",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6weightAA0C6WeightOvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)weight",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6weightAA0C6WeightOvg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontWeight",
+										"printedName": "CanvasNative.NSCFontWeight",
+										"usr": "c:@M@CanvasNative@E@NSCFontWeight"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setWeight:",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6weightAA0C6WeightOvs",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative11NSCFontFaceC6weightAA0C6WeightOvM",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6weightAA0C6WeightOvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "setFontWeight",
+						"printedName": "setFontWeight(value:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)setFontWeightWithValue:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC13setFontWeight5valueySS_tF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Var",
+						"name": "family",
+						"printedName": "family",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)family",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC6familySSvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)family",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC6familySSvg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "ascentOverride",
+						"printedName": "ascentOverride",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)ascentOverride",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC14ascentOverrideSSvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)ascentOverride",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC14ascentOverrideSSvg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "descentOverride",
+						"printedName": "descentOverride",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(py)descentOverride",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC15descentOverrideSSvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)descentOverride",
+								"mangledName": "$s12CanvasNative11NSCFontFaceC15descentOverrideSSvg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "load",
+						"printedName": "load(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(Swift.String?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Swift.String?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "String",
+												"printedName": "Swift.String",
+												"usr": "s:SS"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)load:",
+						"mangledName": "$s12CanvasNative11NSCFontFaceC4loadyyySSSgcF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace(im)init",
+						"mangledName": "$s12CanvasNative11NSCFontFaceCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace",
+				"mangledName": "$s12CanvasNative11NSCFontFaceC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontFace",
+				"declAttributes": ["AccessControl", "ObjC", "ObjCMembers"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					}
+				]
+			},
+			{
+				"kind": "Import",
+				"name": "Foundation",
+				"printedName": "Foundation",
+				"declKind": "Import",
+				"moduleName": "CanvasNative",
+				"declAttributes": ["RawDocComment"]
+			},
+			{
+				"kind": "Import",
 				"name": "OpenGLES",
 				"printedName": "OpenGLES",
 				"declKind": "Import",
@@ -4571,6 +7094,850 @@
 				"mangledName": "$s12CanvasNative9NSCRenderC",
 				"moduleName": "CanvasNative",
 				"objc_name": "NSCRender",
+				"declAttributes": ["AccessControl", "ObjC", "ObjCMembers"],
+				"superclassUsr": "c:objc(cs)NSObject",
+				"inheritsConvenienceInitializers": true,
+				"superclassNames": ["ObjectiveC.NSObject"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CVarArg",
+						"printedName": "CVarArg",
+						"usr": "s:s7CVarArgP",
+						"mangledName": "$ss7CVarArgP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObservingPublishing",
+						"printedName": "_KeyValueCodingAndObservingPublishing",
+						"usr": "s:10Foundation37_KeyValueCodingAndObservingPublishingP",
+						"mangledName": "$s10Foundation37_KeyValueCodingAndObservingPublishingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "_KeyValueCodingAndObserving",
+						"printedName": "_KeyValueCodingAndObserving",
+						"usr": "s:10Foundation27_KeyValueCodingAndObservingP",
+						"mangledName": "$s10Foundation27_KeyValueCodingAndObservingP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomStringConvertible",
+						"printedName": "CustomStringConvertible",
+						"usr": "s:s23CustomStringConvertibleP",
+						"mangledName": "$ss23CustomStringConvertibleP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "CustomDebugStringConvertible",
+						"printedName": "CustomDebugStringConvertible",
+						"usr": "s:s28CustomDebugStringConvertibleP",
+						"mangledName": "$ss28CustomDebugStringConvertibleP"
+					}
+				]
+			},
+			{
+				"kind": "Import",
+				"name": "Foundation",
+				"printedName": "Foundation",
+				"declKind": "Import",
+				"moduleName": "CanvasNative",
+				"declAttributes": ["RawDocComment"]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontFaceSetStatus",
+				"printedName": "NSCFontFaceSetStatus",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "loading",
+						"printedName": "loading",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceSetStatus.Type) -> CanvasNative.NSCFontFaceSetStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSetStatus",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceSetStatus",
+												"printedName": "CanvasNative.NSCFontFaceSetStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus@NSCFontFaceSetStatusLoading",
+						"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO7loadingyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 0
+					},
+					{
+						"kind": "Var",
+						"name": "loaded",
+						"printedName": "loaded",
+						"children": [
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "(CanvasNative.NSCFontFaceSetStatus.Type) -> CanvasNative.NSCFontFaceSetStatus",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSetStatus",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Metatype",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus.Type",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceSetStatus",
+												"printedName": "CanvasNative.NSCFontFaceSetStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "EnumElement",
+						"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus@NSCFontFaceSetStatusLoaded",
+						"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO6loadedyA2CmF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["ObjC"],
+						"fixedbinaryorder": 1
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init(rawValue:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "CanvasNative.NSCFontFaceSetStatus?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSetStatus",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "s:12CanvasNative20NSCFontFaceSetStatusO8rawValueACSgSi_tcfc",
+						"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO8rawValueACSgSi_tcfc",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"init_kind": "Designated"
+					},
+					{
+						"kind": "Var",
+						"name": "rawValue",
+						"printedName": "rawValue",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "s:12CanvasNative20NSCFontFaceSetStatusO8rawValueSivp",
+						"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO8rawValueSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative20NSCFontFaceSetStatusO8rawValueSivg",
+								"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO8rawValueSivg",
+								"moduleName": "CanvasNative",
+								"accessorKind": "get"
+							}
+						]
+					}
+				],
+				"declKind": "Enum",
+				"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus",
+				"mangledName": "$s12CanvasNative20NSCFontFaceSetStatusO",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontFaceSetStatus",
+				"declAttributes": ["AccessControl", "ObjC"],
+				"enumRawTypeName": "Int",
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Equatable",
+						"printedName": "Equatable",
+						"usr": "s:SQ",
+						"mangledName": "$sSQ"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Hashable",
+						"printedName": "Hashable",
+						"usr": "s:SH",
+						"mangledName": "$sSH"
+					},
+					{
+						"kind": "Conformance",
+						"name": "RawRepresentable",
+						"printedName": "RawRepresentable",
+						"children": [
+							{
+								"kind": "TypeWitness",
+								"name": "RawValue",
+								"printedName": "RawValue",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								]
+							}
+						],
+						"usr": "s:SY",
+						"mangledName": "$sSY"
+					}
+				]
+			},
+			{
+				"kind": "TypeDecl",
+				"name": "NSCFontFaceSet",
+				"printedName": "NSCFontFaceSet",
+				"children": [
+					{
+						"kind": "Var",
+						"name": "instance",
+						"printedName": "instance",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFaceSet",
+								"printedName": "CanvasNative.NSCFontFaceSet",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(cpy)instance",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC8instanceACvpZ",
+						"moduleName": "CanvasNative",
+						"static": true,
+						"declAttributes": ["HasInitialValue", "Final", "HasStorage", "AccessControl", "ObjC"],
+						"isLet": true,
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSet",
+										"printedName": "CanvasNative.NSCFontFaceSet",
+										"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(cm)instance",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC8instanceACvgZ",
+								"moduleName": "CanvasNative",
+								"static": true,
+								"implicit": true,
+								"declAttributes": ["Final", "ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "status",
+						"printedName": "status",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFaceSetStatus",
+								"printedName": "CanvasNative.NSCFontFaceSetStatus",
+								"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(py)status",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC6statusAA0cdE6StatusOvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSetStatus",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)status",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC6statusAA0cdE6StatusOvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "NSCFontFaceSetStatus",
+										"printedName": "CanvasNative.NSCFontFaceSetStatus",
+										"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)setStatus:",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC6statusAA0cdE6StatusOvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative14NSCFontFaceSetC6statusAA0cdE6StatusOvM",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC6statusAA0cdE6StatusOvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Var",
+						"name": "onStatus",
+						"printedName": "onStatus",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "((CanvasNative.NSCFontFaceSetStatus) -> ())?",
+								"children": [
+									{
+										"kind": "TypeFunc",
+										"name": "Function",
+										"printedName": "(CanvasNative.NSCFontFaceSetStatus) -> ()",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "Void",
+												"printedName": "()"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "NSCFontFaceSetStatus",
+												"printedName": "CanvasNative.NSCFontFaceSetStatus",
+												"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+											}
+										]
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(py)onStatus",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC8onStatusyAA0cdeG0OcSgvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "HasStorage", "AccessControl", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "((CanvasNative.NSCFontFaceSetStatus) -> ())?",
+										"children": [
+											{
+												"kind": "TypeFunc",
+												"name": "Function",
+												"printedName": "(CanvasNative.NSCFontFaceSetStatus) -> ()",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "Void",
+														"printedName": "()"
+													},
+													{
+														"kind": "TypeNominal",
+														"name": "NSCFontFaceSetStatus",
+														"printedName": "CanvasNative.NSCFontFaceSetStatus",
+														"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+													}
+												]
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)onStatus",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC8onStatusyAA0cdeG0OcSgvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Set",
+								"printedName": "Set()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "((CanvasNative.NSCFontFaceSetStatus) -> ())?",
+										"children": [
+											{
+												"kind": "TypeFunc",
+												"name": "Function",
+												"printedName": "(CanvasNative.NSCFontFaceSetStatus) -> ()",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "Void",
+														"printedName": "()"
+													},
+													{
+														"kind": "TypeNominal",
+														"name": "NSCFontFaceSetStatus",
+														"printedName": "CanvasNative.NSCFontFaceSetStatus",
+														"usr": "c:@M@CanvasNative@E@NSCFontFaceSetStatus"
+													}
+												]
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)setOnStatus:",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC8onStatusyAA0cdeG0OcSgvs",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "set"
+							},
+							{
+								"kind": "Accessor",
+								"name": "Modify",
+								"printedName": "Modify()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "s:12CanvasNative14NSCFontFaceSetC8onStatusyAA0cdeG0OcSgvM",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC8onStatusyAA0cdeG0OcSgvM",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"accessorKind": "_modify"
+							}
+						]
+					},
+					{
+						"kind": "Function",
+						"name": "iter",
+						"printedName": "iter()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSEnumerator",
+								"printedName": "Foundation.NSEnumerator",
+								"usr": "c:objc(cs)NSEnumerator"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)iter",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC4iterSo12NSEnumeratorCyF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "array",
+						"printedName": "array()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Array",
+								"printedName": "[Any]",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "ProtocolComposition",
+										"printedName": "Any"
+									}
+								],
+								"usr": "s:Sa"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)array",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC5arraySayypGyF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "add",
+						"printedName": "add(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)add:",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC3addyyAA0cD0CF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "clear",
+						"printedName": "clear()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)clear",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC5clearyyF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "delete",
+						"printedName": "delete(_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFace",
+								"printedName": "CanvasNative.NSCFontFace",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)delete:",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC6deleteyyAA0cD0CF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "check",
+						"printedName": "check(_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)check::",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC5checkySbSS_SSSgtF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "load",
+						"printedName": "load(_:_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "String",
+								"printedName": "Swift.String",
+								"usr": "s:SS"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Swift.String?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "String",
+										"printedName": "Swift.String",
+										"usr": "s:SS"
+									}
+								],
+								"usr": "s:Sq"
+							},
+							{
+								"kind": "TypeFunc",
+								"name": "Function",
+								"printedName": "([CanvasNative.NSCFontFace], Swift.String?) -> ()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Void",
+										"printedName": "()"
+									},
+									{
+										"kind": "TypeNominal",
+										"name": "Tuple",
+										"printedName": "([CanvasNative.NSCFontFace], Swift.String?)",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "Array",
+												"printedName": "[CanvasNative.NSCFontFace]",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "NSCFontFace",
+														"printedName": "CanvasNative.NSCFontFace",
+														"usr": "c:@M@CanvasNative@objc(cs)NSCFontFace"
+													}
+												],
+												"usr": "s:Sa"
+											},
+											{
+												"kind": "TypeNominal",
+												"name": "Optional",
+												"printedName": "Swift.String?",
+												"children": [
+													{
+														"kind": "TypeNominal",
+														"name": "String",
+														"printedName": "Swift.String",
+														"usr": "s:SS"
+													}
+												],
+												"usr": "s:Sq"
+											}
+										]
+									}
+								]
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)load:::",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC4loadyySS_SSSgySayAA0cD0CG_AEtctF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Var",
+						"name": "size",
+						"printedName": "size",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Int",
+								"printedName": "Swift.Int",
+								"usr": "s:Si"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(py)size",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetC4sizeSivp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Int",
+										"printedName": "Swift.Int",
+										"usr": "s:Si"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)size",
+								"mangledName": "$s12CanvasNative14NSCFontFaceSetC4sizeSivg",
+								"moduleName": "CanvasNative",
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Constructor",
+						"name": "init",
+						"printedName": "init()",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "NSCFontFaceSet",
+								"printedName": "CanvasNative.NSCFontFaceSet",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet"
+							}
+						],
+						"declKind": "Constructor",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet(im)init",
+						"mangledName": "$s12CanvasNative14NSCFontFaceSetCACycfc",
+						"moduleName": "CanvasNative",
+						"overriding": true,
+						"implicit": true,
+						"objc_name": "init",
+						"declAttributes": ["Dynamic", "ObjC", "Override"],
+						"init_kind": "Designated"
+					}
+				],
+				"declKind": "Class",
+				"usr": "c:@M@CanvasNative@objc(cs)NSCFontFaceSet",
+				"mangledName": "$s12CanvasNative14NSCFontFaceSetC",
+				"moduleName": "CanvasNative",
+				"objc_name": "NSCFontFaceSet",
 				"declAttributes": ["AccessControl", "ObjC", "ObjCMembers"],
 				"superclassUsr": "c:objc(cs)NSObject",
 				"inheritsConvenienceInitializers": true,
@@ -7201,6 +10568,216 @@
 			"offset": 16146,
 			"length": 3,
 			"value": "150"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 307,
+			"length": 5,
+			"value": "1"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 322,
+			"length": 8,
+			"value": "2"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 340,
+			"length": 8,
+			"value": "3"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 358,
+			"length": 4,
+			"value": "4"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1129,
+			"length": 10,
+			"value": "1"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1149,
+			"length": 5,
+			"value": "2"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1164,
+			"length": 6,
+			"value": "3"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1180,
+			"length": 6,
+			"value": "4"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1196,
+			"length": 8,
+			"value": "5"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1214,
+			"length": 4,
+			"value": "6"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1228,
+			"length": 9,
+			"value": "7"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 1247,
+			"length": 5,
+			"value": "8"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 2878,
+			"length": 18,
+			"value": "\"CanvasNative.NSCFontDescriptors\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 5759,
+			"length": 7,
+			"value": "1"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 5776,
+			"length": 6,
+			"value": "2"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "IntegerLiteral",
+			"offset": 5792,
+			"length": 5,
+			"value": "3"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6404,
+			"length": 29,
+			"value": "\"font-family:\\s*'([^']+)';\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6457,
+			"length": 70,
+			"value": "\"font-style:\\s*(normal|italic|oblique(?:\\s+([-]?\\d+(\\.\\d+)?deg))?);\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6552,
+			"length": 27,
+			"value": "\"font-weight:\\s*([^;]+);\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6605,
+			"length": 28,
+			"value": "\"font-display:\\s*([^;]+);\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6651,
+			"length": 48,
+			"value": "\"src:\\s*url\\(([^)]+)\\)\\s*format\\('([^']+)'\\);\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 7063,
+			"length": 26,
+			"value": "\"NSCFontFace Loader Queue\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 7142,
+			"length": 34,
+			"value": "\"com.github.triniwiz.CanvasNative\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "Dictionary",
+			"offset": 7215,
+			"length": 404,
+			"value": "[(\"serif\", \"Times New Roman\"), (\"sans-serif\", \"Helvetica\"), (\"monospace\", \"Courier\"), (\"cursive\", \"Snell Roundhand\"), (\"fantasy\", \"Papyrus\"), (\"system-ui\", \"San Francisco\"), (\"ui-serif\", \"Times New Roman\"), (\"ui-sans-serif\", \"San Francisco\"), (\"ui-monospace\", \"Menlo\"), (\"ui-rounded\", \"SF Rounded\"), (\"emoji\", \"Apple Color Emoji\")]"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "BooleanLiteral",
+			"offset": 14968,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "BooleanLiteral",
+			"offset": 16225,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
+			"kind": "StringLiteral",
+			"offset": 6746,
+			"length": 11,
+			"value": "\"CanvasNative.NSCFontFace\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFaceSet.swift",
+			"kind": "IntegerLiteral",
+			"offset": 227,
+			"length": 6,
+			"value": "1"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFaceSet.swift",
+			"kind": "StringLiteral",
+			"offset": 666,
+			"length": 36,
+			"value": "\"(?:\\d+px\\s+)(['\"]?[\\w\\s]+['\"]?)$\""
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFaceSet.swift",
+			"kind": "StringLiteral",
+			"offset": 1068,
+			"length": 29,
+			"value": "\"NSCFontFaceSet Loader Queue\""
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",

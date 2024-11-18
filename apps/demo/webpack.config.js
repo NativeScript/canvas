@@ -11,6 +11,7 @@ module.exports = (env) => {
 		// config.resolve.alias.set('three', 'three/webgpu');
 		// config.resolve.alias.set('three/tsl', 'three/tsl');
 
+		config.resolve.alias.set('three/examples', resolve(__dirname, '..', '..', 'node_modules', 'three', 'examples'));
 		config.resolve.alias.set('three', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.webgpu.js'));
 	});
 

@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Typeface
 import android.opengl.GLES20
 import android.os.Bundle
 import android.os.Environment
@@ -39,6 +40,34 @@ class MainActivity : AppCompatActivity() {
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
 		NSCCanvas.forceGL = true
+
+
+		NSCFontFace.importFromRemote(this,"https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+TC:wght@200..900&family=Pinyon+Script&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap", true) { fonts, error ->
+			if (error != null) {
+				Log.d("com.test", "Font Failed $error")
+			} else {
+				val checked = NSCFontFaceSet.instance.check("16px \"Pinyon Script\"", null)
+				Log.d("com.test", "checked $checked")
+				for (font in fonts) {
+					if (font.font != null) {
+						Log.d("com.test", "Font loaded $font ${font.fontFamily}")
+					} else {
+						Log.d("com.test", "Font Failed $font")
+					}
+				}
+			}
+		}
+
+		val font = NSCFontFace("serif")
+			.setFontWeight("700")
+		font.load(this) {
+			if (it != null) {
+				Log.d("com.test", "Font Failed $it")
+			} else {
+				Log.d("com.test", "Font loaded $font ${font.font?.weight}")
+			}
+		}
+
 		//	svg = findViewById(R.id.svgView)
 		//  svg?.ignorePixelScaling = false
 //		findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.parent)
@@ -59,6 +88,7 @@ class MainActivity : AppCompatActivity() {
 			}
 		}
 
+		/*
 		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
@@ -305,7 +335,9 @@ class MainActivity : AppCompatActivity() {
 			override fun surfaceCreated() {}
 		}
 
-	//	val offscreen  = NSCCanvas(this, NSCCanvas.SurfaceType.Surface)
+		*/
+
+		//	val offscreen  = NSCCanvas(this, NSCCanvas.SurfaceType.Surface)
 
 //		val a = offscreen.initContext("webgl")
 
@@ -344,7 +376,6 @@ class MainActivity : AppCompatActivity() {
 		*/
 
 
-
 //		val view = NSCCanvas(this)
 //
 //		val ctx = view.create2DContext(
@@ -364,7 +395,6 @@ class MainActivity : AppCompatActivity() {
 //		Log.d("com.test", "ctx $ctx ${view.drawingBufferWidth} ${view.drawingBufferHeight}")
 
 		//NSCCanvas.context2DPathTest(ctx)
-
 
 
 		/*

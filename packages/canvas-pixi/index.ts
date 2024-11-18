@@ -26,8 +26,7 @@ const NSCAdapter: Pixii.Adapter = {
 		return knownFolders.currentApp().path;
 	},
 	getFontFaceSet() {
-		// todo FontFaceSet
-		return null;
+		return document.fonts;
 	},
 	fetch(url: RequestInfo, options?: RequestInit) {
 		return fetch(url, options);
@@ -43,5 +42,3 @@ Pixii.DOMAdapter.set(NSCAdapter);
 Pixii.Assets.setPreferences({ preferWorkers: false });
 
 (global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || Pixii;
-
-export default Pixii;

@@ -21,6 +21,20 @@ export * from './WebGL';
 export * from './WebGL2';
 export * from './WebGPU';
 
+import { FontFace, FontFaceSet } from './Fonts';
+
+Object.defineProperty(global, 'fonts', {
+	value: new FontFaceSet(),
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'FontFace', {
+	value: FontFace,
+	configurable: true,
+	writable: true,
+});
+
 Object.defineProperty(global, 'CanvasRenderingContext2D', {
 	value: CanvasRenderingContext2D,
 	configurable: true,
@@ -135,3 +149,4 @@ export { WebGLRenderingContext } from './WebGL/WebGLRenderingContext';
 export { WebGL2RenderingContext } from './WebGL2/WebGL2RenderingContext';
 export { Canvas, createSVGMatrix } from './Canvas';
 export { TouchEvent, PointerEvent } from './Canvas/common';
+export { FontFace, FontFaceSet, importFontsFromCSS, loadFontsFromCSS } from './Fonts';

@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-chartjs",
-	"version": "2.0.0-beta.2",
+	"version": "2.0.0-rc.0",
 	"description": "ChartJS",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -33,7 +33,7 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
-		"@nativescript/canvas-polyfill": "webgpu",
+		"@nativescript/canvas-polyfill": "rc",
 		"chart.js": "~4.4.0"
 	}
 }

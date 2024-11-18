@@ -52,6 +52,11 @@ pub enum InvalidateState {
 /* Helpers */
 
 #[no_mangle]
+pub extern "C" fn canvas_native_font_clear() {
+    canvas_2d::context::drawing_text::global_fonts::FontLibrary::reset()
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_font_add_family(
     alias: *const c_char,
     filenames: *const *const c_char,
@@ -74,6 +79,29 @@ pub extern "C" fn canvas_native_font_add_family(
         let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family(
             Some(alias.as_ref()),
             tmp.as_slice(),
+        );
+    }
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_font_add_family_with_bytes(
+    alias: *const c_char,
+    bytes: *const u8,
+    length: usize,
+) {
+    let font = unsafe { std::slice::from_raw_parts(bytes, length) };
+    if alias.is_null() {
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family_bytes(
+            None,
+            &[font],
+        );
+    } else {
+        let alias = unsafe { CStr::from_ptr(alias) };
+        let alias = alias.to_string_lossy();
+        let _ = canvas_2d::context::drawing_text::global_fonts::FontLibrary::add_family_bytes(
+            Some(alias.as_ref()),
+            &[font],
         );
     }
 }

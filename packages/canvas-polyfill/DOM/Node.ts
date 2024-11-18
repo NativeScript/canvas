@@ -29,6 +29,10 @@ export class Node extends EventTarget {
 
 	_ownerDocument: Document;
 
+	get isConnected() {
+		return false;
+	}
+
 	get ownerDocument() {
 		return this._ownerDocument;
 	}

@@ -209,7 +209,7 @@ function getElementsByTagName(v, tagName) {
 	return retVal;
 }
 
-type NativeElement = View & { __domElement?: Element };
+type NativeElement = View & { __domElement?: Element; isConnected?: boolean };
 export class Element extends Node {
 	private _classList = new Set();
 	_nativeElement: NativeElement;

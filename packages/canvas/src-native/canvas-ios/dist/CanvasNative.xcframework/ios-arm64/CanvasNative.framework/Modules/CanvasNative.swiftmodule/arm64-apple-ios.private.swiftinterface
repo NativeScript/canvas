@@ -173,7 +173,124 @@ import _SwiftConcurrencyShims
 extension UIKit.UIView {
   @objc @_Concurrency.MainActor(unsafe) dynamic public func getBoundingClientRect(_ buffer: Swift.UnsafeMutableRawPointer)
 }
+@objc(NSCFontDisplay) public enum NSCFontDisplay : Swift.Int, Swift.RawRepresentable, Swift.Codable {
+  case auto
+  case block
+  case fallback
+  case optional
+  case swap
+  public typealias RawValue = Swift.Int
+  public init?(rawValue: Swift.Int)
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objc(NSCFontWeight) public enum NSCFontWeight : Swift.Int, Swift.RawRepresentable, Swift.Codable {
+  case thin
+  case extraLight
+  case light
+  case normal
+  case medium
+  case semiBold
+  case bold
+  case extraBold
+  case black
+  public typealias RawValue = Swift.Int
+  public init?(rawValue: Swift.Int)
+  public var rawValue: Swift.Int {
+    get
+  }
+  public var uiFontWeight: UIKit.UIFont.Weight {
+    get
+  }
+}
+@objcMembers @objc(NSCFontDescriptors) public class NSCFontDescriptors : ObjectiveC.NSObject, Swift.Codable {
+  @objc public init(family: Swift.String)
+  @objc public func update(_ value: Swift.String)
+  @objc public func setFontWeight(_ value: Swift.String)
+  @objc public func setFontStyle(_ value: Swift.String)
+  @objc deinit
+  public func encode(to encoder: any Swift.Encoder) throws
+  required public init(from decoder: any Swift.Decoder) throws
+}
+@objc(NSCFontFaceStatus) public enum NSCFontFaceStatus : Swift.Int, Swift.RawRepresentable {
+  case unloaded
+  case loading
+  case loaded
+  case error
+  public typealias RawValue = Swift.Int
+  public init?(rawValue: Swift.Int)
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objcMembers @objc(NSCFontFace) public class NSCFontFace : ObjectiveC.NSObject {
+  @objc public var font: CoreGraphics.CGFont? {
+    get
+  }
+  @objc public var fontData: Foundation.NSData? {
+    get
+  }
+  @objc public func updateDescriptor(value: Swift.String)
+  @objc public static func loadFromStyle(style: Swift.String) -> CanvasNative.NSCFontFace?
+  @objc public static func importFromRemote(url: Swift.String, load: Swift.Bool, callback: @escaping ([CanvasNative.NSCFontFace]?, Swift.String?) -> Swift.Void)
+  @objc public init(family: Swift.String)
+  @objc public init(family: Swift.String, source: Swift.String)
+  @objc public init(family: Swift.String, data source: Foundation.NSData)
+  @objc public init(_ family: Swift.String, _ source: Swift.String? = nil, _ descriptors: CanvasNative.NSCFontDescriptors? = nil)
+  @objc public init(_ family: Swift.String, data: Foundation.NSData? = nil, _ descriptors: CanvasNative.NSCFontDescriptors? = nil)
+  @objc public var status: CanvasNative.NSCFontFaceStatus
+  @objc public var display: CanvasNative.NSCFontDisplay
+  @objc public func setFontDisplay(value: Swift.String)
+  @objc public var style: Swift.String {
+    @objc get
+    @objc set
+  }
+  @objc public func setFontStyle(value: Swift.String, angle: Swift.String?)
+  @objc public var weight: CanvasNative.NSCFontWeight {
+    @objc get
+    @objc set
+  }
+  @objc public func setFontWeight(value: Swift.String)
+  @objc public var family: Swift.String {
+    @objc get
+  }
+  @objc public var ascentOverride: Swift.String {
+    @objc get
+  }
+  @objc public var descentOverride: Swift.String {
+    @objc get
+  }
+  @objc public func load(_ callback: @escaping (Swift.String?) -> Swift.Void)
+  @objc deinit
+}
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
+  @objc override dynamic public init()
+  @objc deinit
+}
+@objc(NSCFontFaceSetStatus) public enum NSCFontFaceSetStatus : Swift.Int, Swift.RawRepresentable {
+  case loading
+  case loaded
+  public typealias RawValue = Swift.Int
+  public init?(rawValue: Swift.Int)
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@_inheritsConvenienceInitializers @objcMembers @objc(NSCFontFaceSet) public class NSCFontFaceSet : ObjectiveC.NSObject {
+  @objc public static let instance: CanvasNative.NSCFontFaceSet
+  @objc public var status: CanvasNative.NSCFontFaceSetStatus
+  @objc public var onStatus: ((CanvasNative.NSCFontFaceSetStatus) -> Swift.Void)?
+  @objc public func iter() -> Foundation.NSEnumerator
+  @objc public func array() -> [Any]
+  @objc public func add(_ font: CanvasNative.NSCFontFace)
+  @objc public func clear()
+  @objc public func delete(_ font: CanvasNative.NSCFontFace)
+  @objc public func check(_ font: Swift.String, _ text: Swift.String?) -> Swift.Bool
+  @objc public func load(_ font: Swift.String, _ text: Swift.String?, _ callback: @escaping ([CanvasNative.NSCFontFace], Swift.String?) -> Swift.Void)
+  @objc public var size: Swift.Int {
+    @objc get
+  }
   @objc override dynamic public init()
   @objc deinit
 }
@@ -245,3 +362,11 @@ extension CanvasNative.NSCVideoFrame.NSCVideoFrameFormat : Swift.Equatable {}
 extension CanvasNative.NSCVideoFrame.NSCVideoFrameFormat : Swift.Hashable {}
 extension CanvasNative.NSCCanvas.CanvasFit : Swift.Equatable {}
 extension CanvasNative.NSCCanvas.CanvasFit : Swift.Hashable {}
+extension CanvasNative.NSCFontDisplay : Swift.Equatable {}
+extension CanvasNative.NSCFontDisplay : Swift.Hashable {}
+extension CanvasNative.NSCFontWeight : Swift.Equatable {}
+extension CanvasNative.NSCFontWeight : Swift.Hashable {}
+extension CanvasNative.NSCFontFaceStatus : Swift.Equatable {}
+extension CanvasNative.NSCFontFaceStatus : Swift.Hashable {}
+extension CanvasNative.NSCFontFaceSetStatus : Swift.Equatable {}
+extension CanvasNative.NSCFontFaceSetStatus : Swift.Hashable {}

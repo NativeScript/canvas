@@ -47,6 +47,7 @@ export class Event {
 	readonly cancelable: boolean = false;
 	readonly composed: boolean = false;
 	readonly timeStamp: number;
+	readonly target: any;
 
 	constructor(type: string, options: EventOptions) {
 		this.type = type;
@@ -54,6 +55,7 @@ export class Event {
 		this.cancelable = options?.cancelable ?? false;
 		this.cancelable = options?.cancelable ?? false;
 		this.composed = options?.composed ?? false;
+		this.target = options?.target ?? null;
 	}
 
 	preventDefault() {}
@@ -725,6 +727,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				touches,
 				targetTouches: touches,
 				changedTouches,
+				target: this.__target ?? this,
 			});
 
 			for (const callback of this._touchEndCallbacks) {

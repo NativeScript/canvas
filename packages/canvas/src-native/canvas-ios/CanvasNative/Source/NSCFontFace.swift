@@ -514,7 +514,12 @@ public class NSCFontFace: NSObject {
     public init(family: String, source: String) {
         fontFamily = family
         fontDescriptors = NSCFontDescriptors(family: family)
-        localOrRemoteSource = source
+        if(source.starts(with: "/")){
+            localOrRemoteSource = "file://" + source
+        }else {
+            localOrRemoteSource = source
+        }
+      
         super.init()
     }
     
@@ -528,7 +533,13 @@ public class NSCFontFace: NSObject {
     public init(_ family: String, _ source: String? = nil, _ descriptors: NSCFontDescriptors? = nil) {
         fontFamily = family
         fontDescriptors = descriptors ?? NSCFontDescriptors(family: family)
-        localOrRemoteSource = source
+        if let source = source {
+            if(source.starts(with: "/")){
+                localOrRemoteSource = "file://" + source
+            }else {
+                localOrRemoteSource = source
+            }
+        }
         super.init()
     }
     

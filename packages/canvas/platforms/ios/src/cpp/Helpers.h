@@ -113,29 +113,6 @@ ConvertFromV8String(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
 }
 
 
-inline static std::string_view
-ConvertFromV8StringView(v8::Isolate *isolate, const v8::Local<v8::Value> &value) {
-    if (value.IsEmpty()) {
-        return {};
-    }
-
-    if (value->IsStringObject()) {
-        v8::Local<v8::String> obj = value.As<v8::StringObject>()->ValueOf();
-        return ConvertFromV8String(isolate, obj);
-    }
-
-    v8::String::Utf8Value result(isolate, value);
-
-    const char *val = *result;
-
-    if (val == nullptr) {
-        return {};
-    }
-
-    return {*result};
-}
-
-
 static void SetFastMethod(v8::Isolate *isolate,
                           v8::Local<v8::Template> that,
                           const char *name,

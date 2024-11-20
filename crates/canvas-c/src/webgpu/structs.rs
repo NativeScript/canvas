@@ -8,7 +8,7 @@ use crate::buffers::StringBuffer;
 use crate::ImageAsset;
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash,Debug)]
 pub struct CanvasOrigin3d {
     /// X position of the origin
     pub x: u32,

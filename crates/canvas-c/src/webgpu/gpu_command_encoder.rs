@@ -82,6 +82,7 @@ pub struct CanvasImageCopyBuffer {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasImageCopyTexture {
     pub texture: *const CanvasGPUTexture,
     pub mip_level: u32,

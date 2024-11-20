@@ -40,7 +40,7 @@ export class GPUQueue {
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {
 				if (source.source._canvas instanceof Canvas) {
-					src.source = source.source._canvas._canvas.native;
+					src.source = source.source._canvas.native;
 				}
 			}
 		}

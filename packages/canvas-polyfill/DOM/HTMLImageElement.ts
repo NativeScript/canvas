@@ -167,7 +167,7 @@ export class HTMLImageElement extends HTMLElement {
 		}
 	}
 
-	async _load() {
+	_load() {
 		this._loading = true;
 		if (this.src && typeof this.src === 'string') {
 			if (this.src.startsWith('blob:nativescript/')) {
@@ -190,32 +190,25 @@ export class HTMLImageElement extends HTMLElement {
 				if (isSvg) {
 					d = d ?? new TextDecoder();
 					src = src ?? d.decode(buffer);
-					try {
-						const svg = await Svg.fromSrc(src);
-						const data = svg.data;
-						this._asset
-							.loadFromBytes(svg.width, svg.height, data as any)
-							.then((done: boolean) => {
-								this.width = this._asset.width;
-								this.height = this._asset.height;
-								this.complete = done;
-								this._loading = false;
-								this._dispatchDecode(done);
-							})
-							.catch((e) => {
-								this.dispatchEvent({ type: 'error', target: this, e });
-								this._onerror?.();
-								this._loading = false;
-								this._dispatchDecode();
-							});
-						return;
-					} catch (e) {
-						this.dispatchEvent({ type: 'error', target: this, error: e });
-						this._onerror?.();
-						this._loading = false;
-						this._dispatchDecode();
-						return;
-					}
+					Svg.fromSrc(src)
+						.then((svg) => {
+							const data = svg.data;
+							return this._asset.loadFromBytes(svg.width, svg.height, data as any);
+						})
+						.then((done: boolean) => {
+							this.width = this._asset.width;
+							this.height = this._asset.height;
+							this.complete = done;
+							this._loading = false;
+							this._dispatchDecode(done);
+						})
+						.catch((e) => {
+							this.dispatchEvent({ type: 'error', target: this, e });
+							this._onerror?.();
+							this._loading = false;
+							this._dispatchDecode();
+						});
+					return;
 				} else {
 					this._asset
 						.loadFromEncodedBytes(buffer)
@@ -248,65 +241,65 @@ export class HTMLImageElement extends HTMLElement {
 					this._dispatchDecode();
 					return;
 				}
-				(async () => {
-					try {
-						const MIME = getMIMEforBase64String(base64result);
-						const dir = knownFolders.temp().path;
-						if (global.isIOS) {
-							NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
-								if (error) {
-									if ((global as any).__debug_browser_polyfill_image) {
-										console.log(`nativescript-browser-polyfill: Error:`, error.message);
-									}
-									this.dispatchEvent({ type: 'error', target: this, error });
-									this._onerror?.();
-									this._loading = false;
-									this._dispatchDecode();
-								} else {
-									this.localUri = localUri;
-									this._load();
+
+				try {
+					const MIME = getMIMEforBase64String(base64result);
+					const dir = knownFolders.temp().path;
+					if (__IOS__) {
+						NSSCanvasHelpers.handleBase64Image(MIME, dir, base64result, (error, localUri) => {
+							if (error) {
+								if ((global as any).__debug_browser_polyfill_image) {
+									console.log(`nativescript-browser-polyfill: Error:`, error.message);
 								}
-							});
-						}
-						if (global.isAndroid) {
-							const ref = new WeakRef(this);
-							(com as any).github.triniwiz.async.Async2.Base64.base64ToFile(
-								base64result,
-								dir + '/',
-								new (com as any).github.triniwiz.async.Async2.Base64.Callback({
-									success(response) {
-										const owner = ref.get();
-										if (owner) {
-											owner.localUri = response.toString();
-											owner._load();
-										}
-									},
-									error(error, message) {
-										if ((global as any).__debug_browser_polyfill_image) {
-											console.log(`nativescript-browser-polyfill: Error:`, message);
-										}
-										const owner = ref.get();
-										if (owner) {
-											owner.dispatchEvent({ type: 'error', target: ref.get(), message });
-											owner._onerror?.();
-											owner._loading = false;
-											owner._dispatchDecode?.();
-										}
-									},
-								})
-							);
-						}
-					} catch (error) {
-						//	this.dispatchEvent({type: 'loading', target: this });
-						if ((global as any).__debug_browser_polyfill_image) {
-							console.log(`nativescript-browser-polyfill: Error:`, error.message);
-						}
-						this.dispatchEvent({ type: 'error', target: this, error });
-						this._onerror?.();
-						this._loading = false;
-						this._dispatchDecode?.();
+								this.dispatchEvent({ type: 'error', target: this, error });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							} else {
+								this.localUri = localUri;
+								this._load();
+							}
+						});
 					}
-				})();
+					if (__ANDROID__) {
+						const ref = new WeakRef(this);
+						(com as any).github.triniwiz.async.Async2.Base64.base64ToFile(
+							base64result,
+							dir + '/',
+							new (com as any).github.triniwiz.async.Async2.Base64.Callback({
+								success(response) {
+									const owner = ref.get();
+									if (owner) {
+										owner.localUri = response.toString();
+										owner._load();
+									}
+								},
+								error(error, message) {
+									if ((global as any).__debug_browser_polyfill_image) {
+										console.log(`nativescript-browser-polyfill: Error:`, message);
+									}
+									const owner = ref.get();
+									if (owner) {
+										owner.dispatchEvent({ type: 'error', target: ref.get(), message });
+										owner._onerror?.();
+										owner._loading = false;
+										owner._dispatchDecode?.();
+									}
+								},
+							})
+						);
+					}
+				} catch (error) {
+					//	this.dispatchEvent({type: 'loading', target: this });
+					if ((global as any).__debug_browser_polyfill_image) {
+						console.log(`nativescript-browser-polyfill: Error:`, error.message);
+					}
+					this.dispatchEvent({ type: 'error', target: this, error });
+					this._onerror?.();
+					this._loading = false;
+					this._dispatchDecode?.();
+				}
+
 				return;
 			}
 

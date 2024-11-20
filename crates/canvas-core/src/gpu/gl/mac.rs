@@ -101,7 +101,7 @@ pub struct NSOpenGLContext(Id<NSObject>);
 
 impl NSOpenGLContext {
     pub fn new(format: NSOpenGLPixelFormat, share_context: Option<NSOpenGLContext>) -> Option<Self> {
-        let cls = class!(NSOpenGLPixelFormat);
+        let cls = class!(NSOpenGLContext);
         let instance = unsafe { msg_send_id![cls, alloc] };
         let context: Option<Id<NSObject>> = match share_context {
             None => {

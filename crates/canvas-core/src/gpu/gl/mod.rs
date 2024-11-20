@@ -47,7 +47,11 @@ pub(crate) fn get_proc_address(addr: &str) -> *const std::os::raw::c_void {
     use core_foundation::string::CFString;
     use core_foundation::base::TCFType;
     let symbol_name = CFString::new(addr);
+    #[cfg(target_os = "ios")]
     let framework_name = CFString::new("com.apple.opengles");
+
+    #[cfg(target_os = "macos")]
+    let framework_name = CFString::new("com.apple.opengl");
     unsafe {
         let framework = CFBundleGetBundleWithIdentifier(framework_name.as_concrete_TypeRef());
         CFBundleGetFunctionPointerForName(framework, symbol_name.as_concrete_TypeRef()).cast()

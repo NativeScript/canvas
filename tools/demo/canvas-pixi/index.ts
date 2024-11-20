@@ -106,7 +106,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
-		this.bitmapFont(canvas);
+		//this.bitmapFont(canvas);
 
 		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
@@ -124,7 +124,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
 		//this.viewPort(canvas);
-		//this.svg(canvas);
+		this.svg(canvas);
 	}
 
 	/* Graphics */
@@ -240,37 +240,71 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 			backgroundColor: 'white',
 			//resizeTo: window,
 			canvas,
-			//preference: 'webgpu',
-			preferWebGLVersion: 2,
+			preference: 'webgpu',
+			//preferWebGLVersion: 2,
 			width: canvas.width,
 			height: canvas.height,
 		});
 		try {
-			const encoder = new TextEncoder();
-			const encoded = encoder.encode(`<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
-				<!-- Draw the paths -->
-				<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
-				<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
-				<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
-				<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
+			// 	const encoder = new TextEncoder();
+			// 	const encoded = encoder.encode(`<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
+			// 		<!-- Draw the paths -->
+			// 		<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
+			// 		<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
+			// 		<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
+			// 		<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
 
-				<!-- Mark relevant points -->
-				<g stroke="black" stroke-width="3" fill="black">
-					<circle id="pointA" cx="100" cy="350" r="4" />
-					<circle id="pointB" cx="250" cy="50" r="4" />
-					<circle id="pointC" cx="400" cy="350" r="4" />
-				</g>
-			</svg>
-		`);
-			const blob = new Blob([encoded], { type: 'image/svg+xml' });
-			const url = URL.createObjectURL(blob);
+			// 		<!-- Mark relevant points -->
+			// 		<g stroke="black" stroke-width="3" fill="black">
+			// 			<circle id="pointA" cx="100" cy="350" r="4" />
+			// 			<circle id="pointB" cx="250" cy="50" r="4" />
+			// 			<circle id="pointC" cx="400" cy="350" r="4" />
+			// 		</g>
+			// 	</svg>
+			// `);
+
+			// const blob = new Blob([encoded], { type: 'image/svg+xml' });
+			// const url = URL.createObjectURL(blob);
+
+			const graphics = new Graphics().svg(`
+				<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
+						<!-- Draw the paths -->
+						<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
+						<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
+						<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
+						<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
+
+						<!-- Mark relevant points -->
+						<g stroke="black" stroke-width="3" fill="black">
+							<circle id="pointA" cx="100" cy="350" r="4" />
+							<circle id="pointB" cx="250" cy="50" r="4" />
+							<circle id="pointC" cx="400" cy="350" r="4" />
+						</g>
+					</svg>
+				`);
+
+			PIXI.Assets.load(this.root + '/images/test.svg').then((texture) => {
+				const sprite = PIXI.Sprite.from(texture);
+				// app.stage.addChild(graphics);
+				app.stage.addChild(sprite);
+			});
+
+			const ctx = canvas.getContext('webgpu');
+			app.ticker.add((delta) => {
+				const texture = ctx.getCurrentTexture();
+				if (texture) {
+					ctx.presentSurface();
+				}
+			});
+
+			/*
 			const img = new Image();
 			img.src = url;
 			await img.decode();
 			const c = document.createElement('canvas') as any;
+			const cctx = c.getContext('2d');
 			c.width = img.width;
 			c.height = img.height;
-			const cctx = c.getContext('2d');
 			cctx.fillStyle = 'white';
 			cctx.fillRect(0, 0, c.width, c.height);
 			cctx.drawImage(img, 0, 0);
@@ -305,18 +339,21 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 			other.rect(100, 100, 100, 100);
 			other.fill(0xde3249);
 
-			// const ctx = canvas.getContext('webgpu');
-
-			// app.ticker.add((delta) => {
-			// 	const texture = ctx.getCurrentTexture();
-			// 	if (texture) {
-			// 		ctx.presentSurface();
-			// 	}
-			// });
-
+		
 			//app.stage.addChild(graphics);
 
-			app.stage.addChild(sprite);
+			//app.stage.addChild(sprite);
+
+			const ctx = canvas.getContext('webgpu');
+
+			app.ticker.add((delta) => {
+				const texture = ctx.getCurrentTexture();
+				if (texture) {
+					ctx.presentSurface();
+				}
+			});
+
+			*/
 
 			//	app.stage.addChild(other);
 		} catch (error) {

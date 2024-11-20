@@ -142,6 +142,30 @@ pub extern "C" fn canvas_native_ios_create_2d_context(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_ios_update_2d_webgpu_surface(
+    view: i64,
+    width: f32,
+    height: f32,
+    context: i64,
+) {
+    if context == 0 {
+        return;
+    }
+
+    if let Some(ios_view) = NonNull::new(view as *mut c_void) {
+        let context = context as *mut CanvasRenderingContext2D;
+        let context = unsafe { &mut *context };
+        let context = context.get_context_mut();
+        if let Some(context) = context.metal_context.as_mut() {
+            unsafe {
+                context.set_view(width, height, ios_view.as_ptr())
+            }
+        }
+    }
+}
+
+
+#[no_mangle]
 pub extern "C" fn canvas_native_ios_update_webgl_surface(
     view: i64,
     _width: i32,
@@ -160,6 +184,7 @@ pub extern "C" fn canvas_native_ios_update_webgl_surface(
         context.set_surface(ios_view);
     }
 }
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_ios_release_webgl(context: i64) {

@@ -190,7 +190,11 @@ impl CanvasRenderingContext2D {
         // metal will execute the flush_and_render_to_surface in the draw call
         #[cfg(feature = "metal")]{
             if self.engine == Engine::Metal {
-                flush = false;
+                if let Some(context) = self.context.metal_context.as_ref() {
+                    flush = context.is_offscreen()
+                } else {
+                    flush = false;
+                }
             }
         }
 
@@ -208,7 +212,11 @@ impl CanvasRenderingContext2D {
 
         #[cfg(feature = "metal")]
         if let Some(context) = self.context.metal_context.as_mut() {
-            context.present();
+            if context.is_offscreen() {
+                context.present_drawable();
+            } else {
+                context.present();
+            }
         }
 
         #[cfg(feature = "gl")]

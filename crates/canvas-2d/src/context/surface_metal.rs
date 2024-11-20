@@ -128,6 +128,67 @@ impl Context {
         }
     }
 
+
+    pub fn new_metal_offscreen(
+        width: f32,
+        height: f32,
+        density: f32,
+        samples: usize,
+        alpha: bool,
+        font_color: i32,
+        ppi: f32,
+        direction: TextDirection,
+    ) -> Self {
+        let mtl_context = MetalContext::new_offscreen(width, height);
+        let backend = unsafe {
+            gpu::mtl::BackendContext::new(
+                mtl_context.device() as gpu::mtl::Handle,
+                mtl_context.queue() as gpu::mtl::Handle,
+            )
+        };
+
+        let (width, height) = mtl_context.drawable_size();
+
+        let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
+
+        let drawable = mtl_context.drawable().unwrap();
+        let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
+        let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, &info, "") };
+        let surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, Some(samples), ColorType::BGRA8888,
+                                                          None,
+                                                          None).unwrap();
+
+        let mut state = State::default();
+        state.direction = TextDirection::from(direction as u32);
+
+        let bounds = skia_safe::Rect::from_wh(width as f32, height as f32);
+        Context {
+            surface_data: SurfaceData {
+                bounds,
+                scale: density,
+                ppi,
+                engine: SurfaceEngine::Metal,
+                state: Default::default(),
+                is_opaque: !alpha,
+            },
+            surface,
+            surface_state: Default::default(),
+            #[cfg(feature = "vulkan")]
+            vulkan_context: None,
+            #[cfg(feature = "vulkan")]
+            vulkan_texture: None,
+            metal_context: Some(mtl_context),
+            metal_texture_info: Some(info),
+            #[cfg(feature = "gl")]
+            gl_context: None,
+            direct_context: Some(context),
+            path: Path::default(),
+            state,
+            state_stack: vec![],
+            font_color: Color::new(font_color as u32),
+        }
+    }
+
     pub fn resize_metal(context: &mut Context, width: f32, height: f32) {
         let _ = MetalContext::new_release_pool();
         let bounds = skia_safe::Rect::from_wh(width, height);
@@ -136,6 +197,10 @@ impl Context {
         let mut info: Option<TextureInfo> = None;
         if let Some(context) = context.metal_context.as_mut() {
             samples = context.sample_count();
+            if context.is_offscreen() {
+                context.set_drawable_size(width as f64, height as f64)
+            }
+
             if let Some(drawable) = context.next_drawable() {
                 info = unsafe { Some(TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle)) };
             }

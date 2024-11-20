@@ -37,6 +37,35 @@ pub extern "C" fn canvas_native_ios_create_2d_context_metal(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_ios_create_2d_context_metal_offscreen(
+    width: f32,
+    height: f32,
+    alpha: bool,
+    density: f32,
+    samples: usize,
+    font_color: i32,
+    ppi: f32,
+    direction: i32,
+) -> i64 {
+    let ctx_2d = CanvasRenderingContext2D::new_metal(
+        canvas_2d::context::Context::new_metal_offscreen(
+            width,
+            height,
+            density,
+            samples,
+            alpha,
+            font_color,
+            ppi,
+            canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+        ),
+        alpha,
+    );
+
+    Box::into_raw(Box::new(ctx_2d)) as i64
+}
+
+
+#[no_mangle]
 pub extern "C" fn canvas_native_ios_create_2d_context_metal_device_queue(
     view: *mut c_void,
     device: *mut c_void,

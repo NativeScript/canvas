@@ -70,19 +70,36 @@ fn get_offset_image(
     buffer: &[u8],
     img_width: usize,
     img_height: usize,
-    x: usize,
-    y: usize,
+    x_offset: usize,
+    y_offset: usize,
     width: usize,
     height: usize,
 ) -> Vec<u8> {
     // todo pass bytes per pixel
-    let bytes_per_pixel = buffer.len() / img_width * img_height;
-    let mut result = Vec::with_capacity(width * height * bytes_per_pixel);
+    let bytes_per_pixel = buffer.len() / (img_width * img_height);
+
+    let mut result = vec![0u8; width * height * bytes_per_pixel];
+
+    let src_bytes_per_row = img_width * bytes_per_pixel;
 
     for row in 0..height {
-        let start = ((y + row) * img_width + x) * bytes_per_pixel;
-        let end = start + width * bytes_per_pixel;
-        result.extend_from_slice(&buffer[start..end]);
+        let src_y = y_offset + row;
+        if src_y >= img_height {
+            break;
+        }
+
+
+        let src_start = (src_y * img_width + x_offset) * bytes_per_pixel;
+        let src_end = src_start + width * bytes_per_pixel;
+
+        let src_row_end = std::cmp::min(src_end, (src_y + 1) * src_bytes_per_row);
+        let src_row_data = &buffer[src_start..src_row_end];
+
+        let dst_start = row * width * bytes_per_pixel;
+        let copy_len = src_row_data.len().min(width * bytes_per_pixel);
+
+        result[dst_start..dst_start + copy_len]
+            .copy_from_slice(&src_row_data[0..copy_len]);
     }
 
     result
@@ -147,32 +164,87 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     destination: *const CanvasImageCopyTexture,
     size: *const CanvasExtent3d,
 ) {
-    if source.is_null() {
+    if queue.is_null() || source.is_null() || destination.is_null() || size.is_null() {
         return;
     }
 
+
     let source = &*source;
-    if source.source.is_null() {
+    let destination = &*destination;
+
+    if source.source.is_null() || destination.texture.is_null() {
         return;
     }
     let context = &mut *(source.source as *mut crate::c2d::CanvasRenderingContext2D);
 
     let (width, height) = context.context.dimensions();
 
-    let mut bytes = vec![0u8; (width * height * 4.) as usize];
+    let mut data = vec![0u8; (width * height * 4.) as usize];
 
-    context.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    context.context.get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
-    let ext_source = CanvasImageCopyExternalImage {
-        source: bytes.as_ptr(),
-        source_size: bytes.len(),
-        origin: source.origin,
-        flip_y: source.flip_y,
-        width: width as u32,
-        height: height as u32,
+    let queue = &*queue;
+    let queue_id = queue.queue.id;
+
+    let global = queue.queue.instance.global();
+
+    let destination_texture = &*destination.texture;
+
+    let destination_texture_id = destination_texture.texture;
+
+    let size = *size;
+
+    let size: wgt::Extent3d = size.into();
+
+    let source_width = width as u32;
+
+    let source_height = height as u32;
+
+    let bytes_per_row = data.len() / (width as usize * height as usize);
+
+    let data_layout = wgt::ImageDataLayout {
+        offset: 0,
+        bytes_per_row: Some(size.width * bytes_per_row as u32),
+        rows_per_image: Some(size.height),
     };
 
-    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+    let destination = wgt::ImageCopyTexture {
+        texture: destination_texture_id,
+        mip_level: destination.mip_level,
+        origin: destination.origin.into(),
+        aspect: destination.aspect.into(),
+    };
+
+    let ret = if source.origin.x > 0
+        || source.origin.y > 0
+        || (size.width > source_width || size.height > source_height)
+    {
+        // todo use current vec
+        let data = get_offset_image(
+            data.as_slice(),
+            source_width as usize,
+            source_height as usize,
+            source.origin.x as usize,
+            source.origin.y as usize,
+            size.width as usize,
+            size.height as usize,
+        );
+
+        global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
+    } else {
+        global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
+    };
+
+    if let Err(cause) = ret {
+        handle_error(
+            global,
+            queue.error_sink.as_ref(),
+            cause,
+            "",
+            None,
+            "canvas_native_webgpu_queue_copy_context_to_texture",
+        );
+    }
 }
 
 

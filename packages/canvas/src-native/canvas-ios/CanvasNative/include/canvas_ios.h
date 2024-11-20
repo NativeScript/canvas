@@ -40,6 +40,11 @@ int64_t canvas_native_ios_create_2d_context(void *view,
                                             float ppi,
                                             int32_t direction);
 
+void canvas_native_ios_update_2d_webgpu_surface(int64_t view,
+                                                float width,
+                                                float height,
+                                                int64_t context);
+
 void canvas_native_ios_update_webgl_surface(int64_t view,
                                             int32_t _width,
                                             int32_t _height,
@@ -137,6 +142,15 @@ int64_t canvas_native_ios_create_2d_context_metal(void *view,
                                                   int32_t font_color,
                                                   float ppi,
                                                   int32_t direction);
+
+int64_t canvas_native_ios_create_2d_context_metal_offscreen(float width,
+                                                            float height,
+                                                            bool alpha,
+                                                            float density,
+                                                            uintptr_t samples,
+                                                            int32_t font_color,
+                                                            float ppi,
+                                                            int32_t direction);
 
 int64_t canvas_native_ios_create_2d_context_metal_device_queue(void *view,
                                                                void *device,

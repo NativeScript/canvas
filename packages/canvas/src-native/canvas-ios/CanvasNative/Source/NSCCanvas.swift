@@ -539,16 +539,16 @@ public class NSCCanvas: UIView {
     
     
     public var surfaceWidth: Int = 300 {
-        willSet {
-            forceLayout(CGFloat(newValue), CGFloat(surfaceHeight))
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
             resize()
         }
     }
     
     
     public var surfaceHeight: Int = 150 {
-        willSet {
-            forceLayout(CGFloat(surfaceWidth), CGFloat(newValue))
+        didSet {
+            forceLayout(CGFloat(surfaceWidth), CGFloat(surfaceHeight))
             resize()
         }
     }

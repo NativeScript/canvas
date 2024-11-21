@@ -90,8 +90,8 @@ declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
 
-Canvas.useSurface = false;
-Canvas.forceGL = false;
+// Canvas.useSurface = false;
+// Canvas.forceGL = false;
 Application.on('discardedError', (args) => {
 	console.log('discardedError', args.error, args);
 });

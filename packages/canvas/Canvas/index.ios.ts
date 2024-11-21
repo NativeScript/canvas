@@ -123,6 +123,14 @@ export class Canvas extends CanvasBase {
 		NSCCanvas.forceGL = value;
 	}
 
+	get lang() {
+		return NSLocale.currentLocale.languageCode;
+	}
+
+	set lang(value: string) {
+		// todo
+	}
+
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = value;
 	}

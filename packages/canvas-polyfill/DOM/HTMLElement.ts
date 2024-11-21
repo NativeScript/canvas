@@ -1,5 +1,5 @@
 import { Element } from './Element';
-import { ViewBase } from '@nativescript/core';
+import { Utils, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 
 export class Style {
@@ -67,5 +67,27 @@ export class HTMLElement extends Element {
 
 	get isConnected() {
 		return this.nativeElement?.isConnected ?? !!this.nativeElement?.parent ?? false;
+	}
+
+	get lang() {
+		if (__ANDROID__) {
+			const ctx = Utils.android.getApplicationContext();
+			return androidx.core.os.ConfigurationCompat.getLocales(ctx.getResources().getConfiguration()).get(0).getLanguage();
+		}
+
+		if (__IOS__) {
+			return NSLocale.currentLocale.languageCode;
+		}
+
+		return 'unknown';
+	}
+
+	set lang(value: string) {
+		if (__ANDROID__) {
+			try {
+				const ctx = Utils.android.getApplicationContext();
+				ctx.getResources().getConfiguration().setLocale(new java.util.Locale(value));
+			} catch (error) {}
+		}
 	}
 }

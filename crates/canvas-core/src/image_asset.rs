@@ -5,7 +5,6 @@ use std::io::{BufRead, Read, Seek};
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr::null;
 use std::sync::Arc;
-use gl_bindings::RGBA;
 
 enum CanvasImage {
     #[cfg(not(feature = "2d"))]
@@ -553,6 +552,47 @@ impl ImageAsset {
                 false
             }
             Some(image) => {
+
+                /*
+
+                // todo
+
+                use core_foundation::base::TCFType;
+use core_foundation::dictionary::CFDictionary;
+use core_foundation::string::CFString;
+
+                  unsafe {
+                    let width = core_foundation::number::CFNumber::from(image.width());
+                    let height = core_foundation::number::CFNumber::from(image.height());
+                    let bytes_per_element = core_foundation::number::CFNumber::from(4);
+                    let is_global = core_foundation::number::CFNumber::from(1);
+
+                    let surface_width = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceWidth);
+                    let surface_height = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceHeight);
+                    let surface_bytes_per_element = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceBytesPerElement);
+                    let surface_is_global = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceIsGlobal);
+
+                    let dict = CFDictionary::from_CFType_pairs(&[
+                        (
+                            surface_width, width.as_CFType()
+                        ),
+                        (
+                            surface_height, height.as_CFType()
+                        ),
+                        (
+                            surface_bytes_per_element, bytes_per_element.as_CFType()
+                        ),
+                        (
+                            surface_is_global, is_global.as_CFType()
+                        )
+                    ]);
+
+                    let surface = crate::io_surface::new(&dict);
+                    surface.upload(buf);
+
+                }
+
+                 */
                 let info = skia_safe::ImageInfo::new(
                     image.dimensions(),
                     skia_safe::ColorType::RGBA8888,

@@ -139,6 +139,18 @@ export class Canvas extends CanvasBase {
 		org.nativescript.canvas.NSCCanvas.setForceGL(value);
 	}
 
+	get lang() {
+		const ctx = Utils.android.getApplicationContext();
+		return androidx.core.os.ConfigurationCompat.getLocales(ctx.getResources().getConfiguration()).get(0).getLanguage();
+	}
+
+	set lang(value: string) {
+		try {
+			const ctx = Utils.android.getApplicationContext();
+			ctx.getResources().getConfiguration().setLocale(new java.util.Locale(value));
+		} catch (error) {}
+	}
+
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.setIgnoreTouchEvents(value);
 	}

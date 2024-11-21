@@ -34,6 +34,7 @@ export declare class Canvas extends CanvasBase {
 	get width(): number;
 	set height(value: LengthPercentage | number | string);
 	get height(): number;
+	lang: string;
 
 	constructor();
 

@@ -12,6 +12,7 @@ import { SVGSVGElement } from './svg/SVGSVGElement';
 import { SVGElement } from './svg/SVGElement';
 import { HTMLUnknownElement } from './HTMLUnknownElement';
 import { HTMLCollection } from './HTMLCollection';
+import { HTMLHtmlElement } from './HTMLHtmlElement';
 
 function getElementsByClassName(v, clsName) {
 	var retVal = [];
@@ -120,7 +121,7 @@ export class Document extends Node {
 		super('#document');
 		this.body = new Element('BODY');
 		this.body._ownerDocument = this as never;
-		this._documentElement = new Element('HTML');
+		this._documentElement = new HTMLHtmlElement('HTML');
 		this._documentElement._ownerDocument = this as never;
 		this.readyState = 'complete';
 		this.head = new Element('HEAD');

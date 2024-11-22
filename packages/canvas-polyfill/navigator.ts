@@ -8,11 +8,19 @@ export class Navigator {
 	userAgent = 'NativeScript';
 	vendor = '';
 	vendorSub = '';
-	platform = [];
 	appVersion = Device.osVersion;
 	maxTouchPoints = 5;
 	standalone = true;
 	get gpu() {
 		return gpu;
+	}
+	get platform() {
+		if (global.isIOS) {
+			if (Device.os === 'iPadOS') {
+				return 'MacIntel';
+			}
+			return Device.deviceType === 'Tablet' ? 'iPad' : 'iPhone';
+		}
+		return Device.os;
 	}
 }

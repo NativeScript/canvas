@@ -1,6 +1,9 @@
+import { DOMMatrix } from '@nativescript/canvas';
 import { Element } from './Element';
 import { Utils, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
+
+const transformRegex = /(?:(translate(?:3d|X|Y|Z)?)\s*\(\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*(?:,\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*(?:,\s*(-?\d*\.?\d+(?:px|%|em|rem|vw|vh)?)\s*)?)?\))/g;
 
 export class Style {
 	private _values: Map<string, any>;
@@ -20,6 +23,10 @@ export class Style {
 		return undefined;
 	}
 
+	__item(index: number) {
+		return Array.from(this._values.values())[index];
+	}
+
 	get width() {
 		return this._values.get('width');
 	}
@@ -32,6 +39,62 @@ export class Style {
 	}
 	set height(value) {
 		this._values.set('height', value);
+	}
+
+	private _transform: DOMMatrix = new DOMMatrix();
+	private _transformString: string = '';
+
+	get transform() {
+		return this._transformString;
+	}
+
+	set transform(value) {
+		if (!value) {
+			this._transform = new DOMMatrix();
+			this._transformString = '';
+			this._values.delete('transform');
+		} else {
+			const matches = value.matchAll(transformRegex);
+			for (const match of matches) {
+				switch (match[1]) {
+					case 'translate':
+						this._transform = this._transform.translate(parseFloat(match[2]), parseFloat(match[3]));
+						this._transformString = value;
+						this._values.set('transform', value);
+						break;
+					case 'translate3d':
+						{
+							const matrix = new DOMMatrix();
+							matrix.m41 = parseFloat(match[2]);
+							matrix.m42 = parseFloat(match[3]);
+							matrix.m43 = parseFloat(match[4]);
+							this._transform.multiplySelf(matrix);
+							this._transformString = value;
+							this._values.set('transform', value);
+						}
+						break;
+					case 'translateX':
+						this._transform = this._transform.translate(parseFloat(match[2]), 0);
+						this._transformString = value;
+						this._values.set('transform', value);
+						break;
+					case 'translateY':
+						this._transform = this._transform.translate(0, parseFloat(match[2]));
+						this._transformString = value;
+						this._values.set('transform', value);
+						break;
+					case 'translateZ':
+						{
+							const matrix = new DOMMatrix();
+							matrix.m43 = parseFloat(match[2]);
+							this._transform.multiplySelf(matrix);
+							this._transformString = value;
+							this._values.set('transform', value);
+						}
+						break;
+				}
+			}
+		}
 	}
 }
 

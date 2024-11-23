@@ -186,7 +186,7 @@ if (!global.ontouchstart) {
 			}
 			return val;
 		}
-		return null;
+		return '';
 	};
 	return obj;
 };

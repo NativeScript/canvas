@@ -4,7 +4,7 @@ import { HTMLImageElement } from './HTMLImageElement';
 import { HTMLCanvasElement } from './HTMLCanvasElement';
 import { HTMLDivElement } from './HTMLDivElement';
 import { Text } from './Text';
-import { Canvas } from '@nativescript/canvas';
+import { Canvas, FontFaceSet } from '@nativescript/canvas';
 import { ContentView, Frame, StackLayout, eachDescendant, knownFolders } from '@nativescript/core';
 import { Node } from './Node';
 import { Element, parseChildren } from './Element';
@@ -13,6 +13,8 @@ import { SVGElement } from './svg/SVGElement';
 import { HTMLUnknownElement } from './HTMLUnknownElement';
 import { HTMLCollection } from './HTMLCollection';
 import { HTMLHtmlElement } from './HTMLHtmlElement';
+import { HTMLHeadElement } from './HTMLHeadElement';
+import { HTMLBodyElement } from './HTMLBodyElement';
 
 function getElementsByClassName(v, clsName) {
 	var retVal = [];
@@ -116,19 +118,19 @@ export class Document extends Node {
 
 	// set as app root
 	baseURI: string;
-
+	readonly fonts: FontFaceSet;
 	constructor() {
 		super('#document');
-		this.body = new Element('BODY');
+		this.body = new HTMLBodyElement('BODY');
 		this.body._ownerDocument = this as never;
 		this._documentElement = new HTMLHtmlElement('HTML');
 		this._documentElement._ownerDocument = this as never;
 		this.readyState = 'complete';
-		this.head = new Element('HEAD');
+		this.head = new HTMLHeadElement('HEAD');
 		this.head._ownerDocument = this as never;
 		this.baseURI = knownFolders.currentApp().path;
+		this.fonts = new FontFaceSet();
 	}
-
 	get children() {
 		const children = new HTMLCollection();
 		children.push(this._documentElement);

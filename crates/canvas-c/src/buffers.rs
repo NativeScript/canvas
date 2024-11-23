@@ -1,10 +1,9 @@
 use std::ffi::{c_char, CString};
 use std::sync::Arc;
 
+use crate::c2d::ImageData;
 use bytes::BytesMut;
 use parking_lot::Mutex;
-use crate::c2d::ImageData;
-use crate::image_asset::ImageAsset;
 
 #[derive(Clone)]
 enum U8BufferInner {
@@ -245,6 +244,13 @@ impl<'a> StringRefBuffer<'a> {
     pub fn length(&self) -> usize {
         self.0.len()
     }
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_u8_buffer_clone(buffer: *const U8Buffer) -> *const U8Buffer {
+    assert!(!buffer.is_null());
+    let buffer = unsafe { &*buffer };
+    Box::into_raw(Box::new(U8Buffer::from(buffer.clone())))
 }
 
 #[no_mangle]

@@ -1,8 +1,9 @@
 use crate::buffers::U8Buffer;
+use base64::Engine;
+use bytes::{Buf, Bytes};
 use std::ffi::{CStr, CString};
 use std::io::Read;
 use std::os::raw::c_char;
-
 #[derive(Clone, Default)]
 pub struct FileHelper {
     data: Option<U8Buffer>,
@@ -29,6 +30,70 @@ impl Drop for FileHelperMime {
         }
     }
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_helper_base64_encode(data: *const u8, size: usize) -> *const c_char {
+    if data.is_null() || size == 0 {
+        return std::ptr::null();
+    }
+    let bytes = std::slice::from_raw_parts(data, size);
+    let ret = base64::engine::general_purpose::STANDARD.encode(bytes);
+    if ret.is_empty() {
+        return std::ptr::null();
+    }
+    CString::new(ret).unwrap().into_raw()
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_helper_base64_encode_c_str(data: *const c_char) -> *const c_char {
+    if data.is_null() {
+        return std::ptr::null();
+    }
+    let data = CStr::from_ptr(data);
+    let ret = base64::engine::general_purpose::STANDARD.encode(data.to_bytes());
+    if ret.is_empty() {
+        return std::ptr::null();
+    }
+    CString::new(ret).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_helper_base64_decode(data: *const u8, size: usize) -> *mut U8Buffer {
+    if size == 0 {
+        return std::ptr::null_mut();
+    }
+    let slice = std::slice::from_raw_parts(data, size);
+    base64::engine::general_purpose::STANDARD.decode(slice).map(|buf| {
+        match Bytes::from(buf).try_into_mut() {
+            Ok(bytes) => {
+                Box::into_raw(Box::new(U8Buffer::from(bytes)))
+            }
+            Err(_) => std::ptr::null_mut(),
+        }
+    })
+
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_helper_base64_decode_c_str(data: *const c_char) -> *mut U8Buffer {
+    if data.is_null() {
+        return std::ptr::null_mut();
+    }
+    let str = CStr::from_ptr(data);
+    base64::engine::general_purpose::STANDARD.decode(str.to_bytes()).map(|buf| {
+        match Bytes::from(buf).try_into_mut() {
+            Ok(bytes) => {
+                Box::into_raw(Box::new(U8Buffer::from(bytes)))
+            }
+            Err(_) => std::ptr::null_mut(),
+        }
+    })
+
+        .unwrap_or(std::ptr::null_mut())
+}
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_helper_get_mime(data: *const u8, size: usize) -> *mut FileHelperMime {

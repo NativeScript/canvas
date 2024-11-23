@@ -21,4 +21,16 @@ export class Helpers {
 			this._initialized = true;
 		}
 	}
+
+	static base64Encode(value: string): string {
+		return global.CanvasModule.__base64Encode(value);
+	}
+
+	static base64Decode(value: string): [string, ArrayBuffer] {
+		return global.CanvasModule.__base64Decode(value);
+	}
+
+	static base64DecodeAsync(value: string): Promise<[string, ArrayBuffer]> {
+		return global.CanvasModule.__base64DecodeAsync(value);
+	}
 }

@@ -1,6 +1,6 @@
 import { knownFolders, path, File, Utils, Image, Screen } from '@nativescript/core';
 // @ts-ignore
-import { ImageAsset } from '@nativescript/canvas';
+import { ImageAsset, TextDecoder } from '@nativescript/canvas';
 import { HTMLElement } from './HTMLElement';
 import { Svg } from '@nativescript/canvas-svg';
 
@@ -169,64 +169,102 @@ export class HTMLImageElement extends HTMLElement {
 
 	_load() {
 		this._loading = true;
+		const async = this.decoding !== 'sync';
 		if (this.src && typeof this.src === 'string') {
 			if (this.src.startsWith('blob:nativescript/')) {
 				const data = (<any>URL).InternalAccessor.getData(this.src);
 				const buffer = (<any>Blob).InternalAccessor.getBuffer(data.blob);
 
 				let isSvg = data?.type?.indexOf('svg') > -1;
-				let src;
-				let d;
-				if (!isSvg) {
+				const d = new TextDecoder();
+
+				if (async) {
+					d.decodeAsync(buffer)
+						.then((res) => {
+							if (typeof res === 'string') {
+								isSvg = res.indexOf('<svg') > -1;
+							}
+							return isSvg ? res : null;
+						})
+						.then((res) => {
+							if (typeof res === 'string') {
+								return Svg.fromSrc(res)
+									.then((svg) => {
+										const data = svg.data;
+										return this._asset.loadFromBytes(svg.width, svg.height, data as any);
+									})
+									.then((done: boolean) => {
+										this.width = this._asset.width;
+										this.height = this._asset.height;
+										this.complete = done;
+										this._loading = false;
+										this._dispatchDecode(done);
+									});
+							}
+						})
+						.catch((e) => {
+							this._asset
+								.loadFromEncodedBytes(buffer)
+								.then((done: boolean) => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = done;
+									this._loading = false;
+									this._dispatchDecode(done);
+								})
+								.catch((e) => {
+									this.dispatchEvent({ type: 'error', target: this, error: e, e });
+									this._onerror?.();
+									this._loading = false;
+									this._dispatchDecode();
+								});
+						});
+				} else {
 					try {
-						d = new TextDecoder();
-						src = d.decode(buffer);
+						const src = d.decode(buffer);
 						if (typeof src === 'string') {
 							isSvg = src.indexOf('<svg') > -1;
 						}
-					} catch (error) {}
+
+						const svg = Svg.fromSrcSync(this.src);
+
+						if (svg) {
+							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+								this._loading = false;
+								this._dispatchDecode(true);
+							} else {
+								this.dispatchEvent({ type: 'error', target: this });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							}
+						} else {
+							const loaded = this._asset.fromFileSync(src);
+							if (loaded) {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+								this._loading = false;
+								this._dispatchDecode(true);
+							} else {
+								this.dispatchEvent({ type: 'error', target: this });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							}
+						}
+					} catch (e) {
+						this.dispatchEvent({ type: 'error', target: this, error: e, e });
+						this._onerror?.();
+						this._loading = false;
+						this._dispatchDecode();
+					}
 				}
 
-				if (isSvg) {
-					d = d ?? new TextDecoder();
-					src = src ?? d.decode(buffer);
-					Svg.fromSrc(src)
-						.then((svg) => {
-							const data = svg.data;
-							return this._asset.loadFromBytes(svg.width, svg.height, data as any);
-						})
-						.then((done: boolean) => {
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = done;
-							this._loading = false;
-							this._dispatchDecode(done);
-						})
-						.catch((e) => {
-							this.dispatchEvent({ type: 'error', target: this, e });
-							this._onerror?.();
-							this._loading = false;
-							this._dispatchDecode();
-						});
-					return;
-				} else {
-					this._asset
-						.loadFromEncodedBytes(buffer)
-						.then((done: boolean) => {
-							this.width = this._asset.width;
-							this.height = this._asset.height;
-							this.complete = done;
-							this._loading = false;
-							this._dispatchDecode(done);
-						})
-						.catch((e) => {
-							this.dispatchEvent({ type: 'error', target: this, e });
-							this._onerror?.();
-							this._loading = false;
-							this._dispatchDecode();
-						});
-					return;
-				}
+				return;
 			}
 
 			if (this.src.startsWith && this.src.startsWith('data:')) {
@@ -304,7 +342,6 @@ export class HTMLImageElement extends HTMLElement {
 			}
 
 			this.dispatchEvent({ type: 'loading', target: this });
-			let async = this.decoding !== 'sync';
 			if (this.src.startsWith('http')) {
 				if (!async) {
 					const loaded = this._asset.fromUrlSync(this.src);
@@ -315,11 +352,29 @@ export class HTMLImageElement extends HTMLElement {
 						this.complete = true;
 						success = true;
 					} else {
-						this.dispatchEvent({ type: 'error', target: this });
-						this._onerror?.();
+						// try svg ?
+						const svg = Svg.fromSrcSync(this.src);
+
+						if (svg) {
+							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+								this._loading = false;
+								this._dispatchDecode(true);
+							} else {
+								this.dispatchEvent({ type: 'error', target: this });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode(success);
+							}
+						} else {
+							this.dispatchEvent({ type: 'error', target: this });
+							this._onerror?.();
+							this._loading = false;
+							this._dispatchDecode(success);
+						}
 					}
-					this._loading = false;
-					this._dispatchDecode(success);
 				} else {
 					this._asset
 						.fromUrl(this.src)
@@ -331,10 +386,24 @@ export class HTMLImageElement extends HTMLElement {
 							this._dispatchDecode(true);
 						})
 						.catch((e) => {
-							this.dispatchEvent({ type: 'error', target: this, error: e });
-							this._onerror?.();
-							this._loading = false;
-							this._dispatchDecode();
+							Svg.fromSrc(this.src)
+								.then((svg) => {
+									const data = svg.data;
+									return this._asset.loadFromBytes(svg.width, svg.height, data as any);
+								})
+								.then((done: boolean) => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = done;
+									this._loading = false;
+									this._dispatchDecode(done);
+								})
+								.catch((_) => {
+									this.dispatchEvent({ type: 'error', target: this, error: e });
+									this._onerror?.();
+									this._loading = false;
+									this._dispatchDecode();
+								});
 						});
 				}
 			} else {
@@ -352,10 +421,28 @@ export class HTMLImageElement extends HTMLElement {
 						this._loading = false;
 						this._dispatchDecode(true);
 					} else {
-						this.dispatchEvent({ type: 'error', target: this });
-						this._onerror?.();
-						this._loading = false;
-						this._dispatchDecode();
+						// try svg ?
+						const svg = Svg.fromSrcSync(this.src);
+
+						if (svg) {
+							if (this._asset.loadFromBytesSync(svg.width, svg.height, svg.data as any)) {
+								this.width = this._asset.width;
+								this.height = this._asset.height;
+								this.complete = true;
+								this._loading = false;
+								this._dispatchDecode(true);
+							} else {
+								this.dispatchEvent({ type: 'error', target: this });
+								this._onerror?.();
+								this._loading = false;
+								this._dispatchDecode();
+							}
+						} else {
+							this.dispatchEvent({ type: 'error', target: this });
+							this._onerror?.();
+							this._loading = false;
+							this._dispatchDecode();
+						}
 					}
 				} else {
 					this._asset
@@ -368,10 +455,24 @@ export class HTMLImageElement extends HTMLElement {
 							this._dispatchDecode(true);
 						})
 						.catch((e) => {
-							this.dispatchEvent({ type: 'error', target: this, e });
-							this._onerror?.();
-							this._loading = false;
-							this._dispatchDecode();
+							Svg.fromSrc(this.src)
+								.then((svg) => {
+									const data = svg.data;
+									return this._asset.loadFromBytes(svg.width, svg.height, data as any);
+								})
+								.then((done: boolean) => {
+									this.width = this._asset.width;
+									this.height = this._asset.height;
+									this.complete = done;
+									this._loading = false;
+									this._dispatchDecode(done);
+								})
+								.catch((_) => {
+									this.dispatchEvent({ type: 'error', target: this, e });
+									this._onerror?.();
+									this._loading = false;
+									this._dispatchDecode();
+								});
 						});
 				}
 			}

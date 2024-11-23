@@ -94,6 +94,10 @@ export class HTMLCanvasElement extends HTMLElement {
 	getRootNode() {
 		return this;
 	}
+
+	get ownerDocument() {
+		return this as any;
+	}
 }
 
 (<any>Canvas.prototype).toHTMLCanvas = function () {

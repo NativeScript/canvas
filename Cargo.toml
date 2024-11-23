@@ -10,7 +10,9 @@ members = [
     "crates/canvas-ios",
     "crates/playground",
     "crates/canvas-c",
-    "crates/canvas-svg"]
+    "crates/canvas-svg",
+    "napi/canvas-napi",
+    ]
 
 [profile.release]
 panic = "abort"

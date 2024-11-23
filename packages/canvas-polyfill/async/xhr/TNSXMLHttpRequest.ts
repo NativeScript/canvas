@@ -2,6 +2,7 @@ import { CancellablePromise, Http } from '../http/http';
 import { HttpError, HttpRequestOptions, ProgressEvent } from '../http/http-request-common';
 import { FileManager } from '../file/file';
 import { knownFolders, path as filePath, File as fsFile, Utils } from '@nativescript/core';
+import { Helpers } from '@nativescript/canvas/helpers';
 
 enum XMLHttpRequestResponseType {
 	empty = '',
@@ -470,6 +471,133 @@ export class TNSXMLHttpRequest {
 
 					this._updateReadyStateChange(this.DONE);
 				}
+
+				return;
+			}
+
+			if (!path) {
+				const startEvent = new ProgressEvent('loadstart', this._lastProgress);
+
+				if (this.onloadstart) {
+					this.onloadstart(startEvent);
+				}
+
+				this.emitEvent('loadstart', startEvent);
+
+				this._updateReadyStateChange(this.LOADING);
+
+				if (this._request.url.startsWith('data:')) {
+					const split = this._request.url.split(',');
+					const mime = split[0];
+					const base64result = split[1];
+					if (mime && base64result) {
+						Helpers.base64DecodeAsync(base64result)
+							.then((result) => {
+								this._headers['Content-Type'] = mime;
+								const data = result[1];
+
+								this._response = data ?? '';
+								this._responseText = data[0] ?? '';
+
+								this._status = 200;
+								this._responseURL = this._request.url;
+
+								const size = data?.byteLength ?? 0;
+								this._lastProgress = {
+									lengthComputable: true,
+									loaded: size,
+									total: size,
+									target: this,
+								};
+
+								const progressEvent = new ProgressEvent('progress', this._lastProgress);
+								if (this.onprogress) {
+									this.onprogress(progressEvent);
+								}
+								this.emitEvent('progress', progressEvent);
+
+								this._addToStringOnResponse();
+
+								const loadEvent = new ProgressEvent('load', this._lastProgress);
+
+								if (this.onload) {
+									this.onload(loadEvent);
+								}
+
+								this.emitEvent('load', loadEvent);
+
+								const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+								if (this.onloadend) {
+									this.onloadend(loadendEvent);
+								}
+
+								this.emitEvent('loadend', loadendEvent);
+
+								this._updateReadyStateChange(this.DONE);
+							})
+							.catch((_) => {
+								const errorEvent = new ProgressEvent('error', this._lastProgress);
+								this._status = 0;
+								this._responseText = '';
+								this._responseType = '' as never;
+								this._responseURL = '';
+
+								this._lastProgress = {
+									lengthComputable: false,
+									loaded: 0,
+									total: 0,
+									target: this,
+								};
+
+								if (this.onerror) {
+									this.onerror(errorEvent);
+								}
+
+								this.emitEvent('error', errorEvent);
+
+								const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+								if (this.onloadend) {
+									this.onloadend(loadendEvent);
+								}
+
+								this.emitEvent('loadend', loadendEvent);
+
+								this._updateReadyStateChange(this.DONE);
+							});
+
+						return;
+					}
+				}
+				const errorEvent = new ProgressEvent('error', this._lastProgress);
+				this._status = 0;
+				this._responseText = '';
+				this._responseType = '' as never;
+				this._responseURL = '';
+
+				this._lastProgress = {
+					lengthComputable: false,
+					loaded: 0,
+					total: 0,
+					target: this,
+				};
+
+				if (this.onerror) {
+					this.onerror(errorEvent);
+				}
+
+				this.emitEvent('error', errorEvent);
+
+				const loadendEvent = new ProgressEvent('loadend', this._lastProgress);
+
+				if (this.onloadend) {
+					this.onloadend(loadendEvent);
+				}
+
+				this.emitEvent('loadend', loadendEvent);
+
+				this._updateReadyStateChange(this.DONE);
 
 				return;
 			}

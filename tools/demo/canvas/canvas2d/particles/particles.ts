@@ -137,6 +137,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		canvas.addEventListener('touchstart', (args: TouchEvent) => {
 			const touches = args.touches.item(0);
 			const first = touches;
+			console.log('first', first.clientX, first.clientY);
 			cleanUpArray();
 			initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
 		});

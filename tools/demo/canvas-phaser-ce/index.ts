@@ -1,6 +1,6 @@
-import {DemoSharedBase} from '../utils';
-import {Screen, Utils} from "@nativescript/core";
-import {func, images} from "./games/utils";
+import { DemoSharedBase } from '../utils';
+import { Screen, Utils } from '@nativescript/core';
+import { func, images } from './games/utils';
 //import { canvasLoaded } from './games/monster-wants-candy/mwc';
 declare let Phaser: any, UIDevice;
 
@@ -10,14 +10,14 @@ interface AccelerometerData {
 	z: number;
 }
 
-type SensorDelay = "normal" | "game" | "ui" | "fastest";
+type SensorDelay = 'normal' | 'game' | 'ui' | 'fastest';
 
 interface AccelerometerOptions {
 	sensorDelay?: SensorDelay;
 }
 
-export const stopButNotStarted = "[nativescript-accelerometer] stopAccelerometerUpdates() called, but currently not listening. Ignoring...";
-export const startButNotStopped = "[nativescript-accelerometer] startAccelerometerUpdates() called, but there is active listener. Will stop the current listener and switch to the new one.";
+export const stopButNotStarted = '[nativescript-accelerometer] stopAccelerometerUpdates() called, but currently not listening. Ignoring...';
+export const startButNotStopped = '[nativescript-accelerometer] startAccelerometerUpdates() called, but there is active listener. Will stop the current listener and switch to the new one.';
 
 class Accelerometer {
 	static baseAcceleration = -9.81;
@@ -29,7 +29,6 @@ class Accelerometer {
 	static isListeningForUpdates = false;
 	static main_queue = global.isIOS ? dispatch_get_current_queue() : null;
 
-
 	static getNativeDelay(options?: AccelerometerOptions): number {
 		if (global.isAndroid) {
 			if (!options || !options.sensorDelay) {
@@ -37,16 +36,16 @@ class Accelerometer {
 			}
 
 			switch (options.sensorDelay) {
-				case "normal":
+				case 'normal':
 					return android.hardware.SensorManager.SENSOR_DELAY_NORMAL;
 
-				case "game":
+				case 'game':
 					return android.hardware.SensorManager.SENSOR_DELAY_GAME;
 
-				case "ui":
+				case 'ui':
 					return android.hardware.SensorManager.SENSOR_DELAY_UI;
 
-				case "fastest":
+				case 'fastest':
 					return android.hardware.SensorManager.SENSOR_DELAY_FASTEST;
 			}
 		} else {
@@ -55,13 +54,13 @@ class Accelerometer {
 			}
 
 			switch (options.sensorDelay) {
-				case "normal":
+				case 'normal':
 					return 0.2;
-				case "ui":
+				case 'ui':
 					return 0.06;
-				case "game":
-					return 0.02
-				case "fastest":
+				case 'game':
+					return 0.02;
+				case 'fastest':
 					return 0.001;
 			}
 		}
@@ -77,43 +76,37 @@ class Accelerometer {
 			const wrappedCallback = zonedCallback(callback);
 			const context: android.content.Context = Utils.ad.getApplicationContext();
 			if (!context) {
-				throw Error("Could not get Android application context.")
+				throw Error('Could not get Android application context.');
 			}
 
 			if (!Accelerometer.sensorManager) {
 				Accelerometer.sensorManager = context.getSystemService(android.content.Context.SENSOR_SERVICE);
 
 				if (!Accelerometer.sensorManager) {
-					throw Error("Could not initialize SensorManager.")
+					throw Error('Could not initialize SensorManager.');
 				}
 			}
 
 			if (!Accelerometer.accelerometerSensor) {
 				Accelerometer.accelerometerSensor = Accelerometer.sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER);
 				if (!Accelerometer.accelerometerSensor) {
-					throw Error("Could get accelerometer sensor.")
+					throw Error('Could get accelerometer sensor.');
 				}
 			}
 
-
 			Accelerometer.sensorListener = new android.hardware.SensorEventListener({
-				onAccuracyChanged: (sensor, accuracy) => {
-				},
+				onAccuracyChanged: (sensor, accuracy) => {},
 				onSensorChanged: (event) => {
 					wrappedCallback({
 						x: event.values[0] / Accelerometer.baseAcceleration,
 						y: event.values[1] / Accelerometer.baseAcceleration,
-						z: event.values[2] / Accelerometer.baseAcceleration
-					})
-				}
+						z: event.values[2] / Accelerometer.baseAcceleration,
+					});
+				},
 			});
 
 			const nativeDelay = Accelerometer.getNativeDelay(options);
-			Accelerometer.sensorManager.registerListener(
-				Accelerometer.sensorListener,
-				Accelerometer.accelerometerSensor,
-				nativeDelay
-			);
+			Accelerometer.sensorManager.registerListener(Accelerometer.sensorListener, Accelerometer.accelerometerSensor, nativeDelay);
 		} else {
 			if (Accelerometer.isListeningForUpdates) {
 				console.log(startButNotStopped);
@@ -138,14 +131,14 @@ class Accelerometer {
 						wrappedCallback({
 							x: data.acceleration.x,
 							y: data.acceleration.y,
-							z: data.acceleration.z
-						})
-					})
+							z: data.acceleration.z,
+						});
+					});
 				});
 
 				Accelerometer.isListeningForUpdates = true;
 			} else {
-				throw new Error("Accelerometer not available.")
+				throw new Error('Accelerometer not available.');
 			}
 		}
 	}
@@ -199,10 +192,10 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 
 	constructor() {
 		super();
-		this.on("propertyChange", (args) => {
+		this.on('propertyChange', (args) => {
 			if (!this.isLoading && !this.didSubscribe) {
 				this.subscribe();
-				this.set("didSubscribe", true);
+				this.set('didSubscribe', true);
 			}
 		});
 		this.updateStats = this.updateStats.bind(this);
@@ -215,21 +208,21 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 	}
 
 	onTouch(event) {
-		if (event.eventName === "touch") {
+		if (event.eventName === 'touch') {
 			switch (event.action) {
-				case "down":
+				case 'down':
 					this.onTouchesBegan();
 					break;
-				case "up":
+				case 'up':
 					this.onTouchesEnded();
 					break;
-				case "cancel":
+				case 'cancel':
 					this.onTouchesEnded();
 					break;
 				default:
 					break;
 			}
-		} else if (event.eventName === "pan") {
+		} else if (event.eventName === 'pan') {
 			if (!this.useAccelerometer) {
 				// TODO allow update position with pan
 				//this.game.updateControls(event.deltaX);
@@ -242,10 +235,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 			return;
 		}
 		if (global.isIOS) {
-
-			if (
-				!CMMotionManager.alloc().init().gyroAvailable
-			) {
+			if (!CMMotionManager.alloc().init().gyroAvailable) {
 				return;
 			}
 		}
@@ -259,10 +249,9 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 				}
 			},
 			{
-				sensorDelay: "ui",
+				sensorDelay: 'ui',
 			}
 		);
-
 	}
 
 	unsubscribe() {
@@ -270,11 +259,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 			return;
 		}
 		if (global.isIOS) {
-			return (
-				UIDevice.currentDevice.name
-					.toLowerCase()
-					.indexOf("simulator") !== -1
-			);
+			return UIDevice.currentDevice.name.toLowerCase().indexOf('simulator') !== -1;
 		}
 		if (Accelerometer.isListening) {
 			Accelerometer.stopAccelerometerUpdates();
@@ -283,21 +268,23 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 
 	async preloadAssetsAsync() {
 		const imageAssets = func.cacheImages(images.files);
-		await Promise.all([...imageAssets]).then((image) => {
-			this.set("isLoading", false);
-		}).catch(e => {
-			console.log('e:', e);
-		});
+		await Promise.all([...imageAssets])
+			.then((image) => {
+				this.set('isLoading', false);
+			})
+			.catch((e) => {
+				console.log('e:', e);
+			});
 	}
 
 	updateStats(data) {
-		this.set("kills", data.kills);
-		this.set("score", data.score);
-		this.set("shotsFired", data.shotsFired);
+		this.set('kills', data.kills);
+		this.set('score', data.score);
+		this.set('shotsFired', data.shotsFired);
 	}
 
 	handleTogglePause() {
-		this.set("gamePause", !this.gamePause);
+		this.set('gamePause', !this.gamePause);
 	}
 
 	onTouchesBegan() {
@@ -322,29 +309,27 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 			gamePause: this.gamePause,
 			updateStats: this.updateStats,
 		});
-
 	}
 
-	mwc(){}
-
+	mwc() {}
 }
-
 
 export class CustomGame {
 	game;
 	playable: Playable;
 
-	constructor({canvas, gamePause, updateStats}) {
-		const TNSPhaser = require("@nativescript/canvas-phaser-ce");
-		console.log(TNSPhaser);
-		this.game = TNSPhaser.Game({canvas});
+	constructor({ canvas, gamePause, updateStats }) {
+		const TNSPhaser = require('@nativescript/canvas-phaser-ce');
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+		this.game = TNSPhaser.Game({ canvas });
 		this.playable = new Playable({
 			game: this.game,
 			gamePause,
 			updateStats,
 		});
-		this.game.state.add("Playable", this.playable);
-		this.game.state.start("Playable");
+		this.game.state.add('Playable', this.playable);
+		this.game.state.start('Playable');
 
 		//this.onTouchesBegan = this.onTouchesBegan.bind(this);
 		//this.onTouchesEnded = this.onTouchesEnded.bind(this);
@@ -352,7 +337,7 @@ export class CustomGame {
 
 	updateControls(velocity) {
 		if (this.playable) {
-			this.playable.updateControls({velocity});
+			this.playable.updateControls({ velocity });
 		}
 	}
 
@@ -420,7 +405,7 @@ export class Playable {
 	live: any;
 	bullet: any;
 
-	constructor({game, gamePause, updateStats}) {
+	constructor({ game, gamePause, updateStats }) {
 		// prevent warnings for Phaser.Cache
 		(console as any).disableYellowBox = true;
 
@@ -455,29 +440,18 @@ export class Playable {
 	}
 
 	preload() {
+		const { files } = images;
+		this.game.load.image('bullet', func.uri(files.bullet));
+		this.game.load.image('enemyBullet', func.uri(files.enemyBullet));
+		this.game.load.spritesheet('invader', func.uri(files.invader), Settings.invader, Settings.invader);
+		this.game.load.image('ship', func.uri(files.player));
+		this.game.load.spritesheet('kaboom', func.uri(files.explode), Settings.explosion, Settings.explosion);
 
-		const {files} = images;
-		this.game.load.image("bullet", func.uri(files.bullet));
-		this.game.load.image("enemyBullet", func.uri(files.enemyBullet));
-		this.game.load.spritesheet(
-			"invader",
-			func.uri(files.invader),
-			Settings.invader,
-			Settings.invader
-		);
-		this.game.load.image("ship", func.uri(files.player));
-		this.game.load.spritesheet(
-			"kaboom",
-			func.uri(files.explode),
-			Settings.explosion,
-			Settings.explosion
-		);
-
-		this.game.load.image("starfield", func.uri(files.starfield));
+		this.game.load.image('starfield', func.uri(files.starfield));
 	}
 
-	updateControls({velocity}) {
-		const {player} = this;
+	updateControls({ velocity }) {
+		const { player } = this;
 
 		if (player && player.alive) {
 			const speed = Math.floor(velocity * Settings.playerSpeed);
@@ -509,19 +483,19 @@ export class Playable {
 	}
 
 	pauseGame(paused) {
-		const {game} = this;
+		const { game } = this;
 		game.paused = paused;
 	}
 
 	create() {
-		const {game, startLives} = this;
-		const {world} = game;
-		const {height, width} = world;
+		const { game, startLives } = this;
+		const { world } = game;
+		const { height, width } = world;
 
 		//Why ios needs this ?
 		world.alpha = 2;
 		// game.stage.backgroundColor = '#4488AA';
-		game.stage.backgroundColor = "#000";
+		game.stage.backgroundColor = '#000';
 		game.physics.startSystem(Phaser.Physics.ARCADE);
 
 		// initial game state paused?
@@ -538,7 +512,7 @@ export class Playable {
 
 		// the scrolling starfield background
 		// this.starfield = game.add.tileSprite(0, 0, width, height, 'starfield');
-		this.starfield = game.add.sprite(0, 0, "starfield");
+		this.starfield = game.add.sprite(0, 0, 'starfield');
 		this.starfield.height = height;
 		this.starfield.width = width;
 
@@ -546,33 +520,28 @@ export class Playable {
 		this.bullets = game.add.group();
 		this.bullets.enableBody = true;
 		this.bullets.physicsBodyType = Phaser.Physics.ARCADE;
-		this.bullets.createMultiple(30, "bullet");
-		this.bullets.setAll("anchor.x", 0.5);
-		this.bullets.setAll("anchor.y", 1);
-		this.bullets.setAll("width", 6 * scale);
-		this.bullets.setAll("height", 36 * scale);
-		this.bullets.setAll("outOfBoundsKill", true);
-		this.bullets.setAll("checkWorldBounds", true);
+		this.bullets.createMultiple(30, 'bullet');
+		this.bullets.setAll('anchor.x', 0.5);
+		this.bullets.setAll('anchor.y', 1);
+		this.bullets.setAll('width', 6 * scale);
+		this.bullets.setAll('height', 36 * scale);
+		this.bullets.setAll('outOfBoundsKill', true);
+		this.bullets.setAll('checkWorldBounds', true);
 
 		// the enemy's bullets
 		this.enemyBullets = game.add.group();
 		this.enemyBullets.enableBody = true;
 		this.enemyBullets.physicsBodyType = Phaser.Physics.ARCADE;
-		this.enemyBullets.createMultiple(30, "enemyBullet");
-		this.enemyBullets.setAll("anchor.x", 0.5);
-		this.enemyBullets.setAll("anchor.y", 1);
-		this.enemyBullets.setAll("width", 9 * scale);
-		this.enemyBullets.setAll("height", 9 * scale);
-		this.enemyBullets.setAll("outOfBoundsKill", true);
-		this.enemyBullets.setAll("checkWorldBounds", true);
+		this.enemyBullets.createMultiple(30, 'enemyBullet');
+		this.enemyBullets.setAll('anchor.x', 0.5);
+		this.enemyBullets.setAll('anchor.y', 1);
+		this.enemyBullets.setAll('width', 9 * scale);
+		this.enemyBullets.setAll('height', 9 * scale);
+		this.enemyBullets.setAll('outOfBoundsKill', true);
+		this.enemyBullets.setAll('checkWorldBounds', true);
 
 		// the hero!
-		this.player = game.add.sprite(
-			width * 0.5,
-			height * 0.833333333,
-			"ship"
-		);
-
+		this.player = game.add.sprite(width * 0.5, height * 0.833333333, 'ship');
 
 		this.player.anchor.setTo(0.5, 0.5);
 		this.scaleNode(this.player);
@@ -600,11 +569,7 @@ export class Playable {
 		const shipY = 60 * scale;
 
 		for (let i = 0; i < startLives; i += 1) {
-			const ship = this.lives.create(
-				initialshipXoffset + shipInterval * i,
-				shipY,
-				"ship"
-			);
+			const ship = this.lives.create(initialshipXoffset + shipInterval * i, shipY, 'ship');
 			this.scaleNode(ship);
 			ship.anchor.setTo(0.5, 0.5);
 			ship.angle = 90;
@@ -615,10 +580,10 @@ export class Playable {
 		this.explosions = game.add.group();
 
 		// this.explosions.scale = scale;
-		this.explosions.createMultiple(30, "kaboom");
-		this.explosions.setAll("height", 128 * scale);
-		this.explosions.setAll("width", 128 * scale);
-		this.explosions.setAll("transparent", true);
+		this.explosions.createMultiple(30, 'kaboom');
+		this.explosions.setAll('height', 128 * scale);
+		this.explosions.setAll('width', 128 * scale);
+		this.explosions.setAll('transparent', true);
 
 		this.explosions.forEach(this.setupInvader, this);
 
@@ -628,17 +593,15 @@ export class Playable {
 	}
 
 	createAliens() {
-		const {alienRows, game} = this;
-		const {world} = game;
-		const {height, width} = world;
+		const { alienRows, game } = this;
+		const { world } = game;
+		const { height, width } = world;
 
 		const alienDelta = width * 0.25;
 		const alienAvailableSpace = width - alienDelta;
 		const alienWidth = 32 * scale;
 		const alienPadding = 12;
-		const aliens = Math.floor(
-			alienAvailableSpace / (alienPadding + alienWidth)
-		);
+		const aliens = Math.floor(alienAvailableSpace / (alienPadding + alienWidth));
 
 		const dimensions = {
 			columns: aliens,
@@ -650,15 +613,11 @@ export class Playable {
 
 		for (let y = 0; y < dimensions.rows; y += 1) {
 			for (let x = 0; x < dimensions.columns; x += 1) {
-				const alien = this.aliens.create(
-					x * alienOffset.x,
-					y * alienOffset.x,
-					"invader"
-				);
+				const alien = this.aliens.create(x * alienOffset.x, y * alienOffset.x, 'invader');
 				this.scaleNode(alien);
 				alien.anchor.setTo(0.5, 0.5);
-				alien.animations.add("fly", [0, 1, 2, 3], 20, true);
-				alien.play("fly");
+				alien.animations.add('fly', [0, 1, 2, 3], 20, true);
+				alien.play('fly');
 				alien.body.moves = false;
 			}
 		}
@@ -669,17 +628,7 @@ export class Playable {
 
 		// all this does is basically start the invaders moving. notice we're
 		// moving the Group they belong to, rather than the invaders directly.
-		const tween = this.game.add
-			.tween(this.aliens)
-			.to(
-				{x: width - alienAvailableSpace + alienWidth / 2},
-				2000,
-				Phaser.Easing.Linear.None,
-				true,
-				0,
-				1000,
-				true
-			);
+		const tween = this.game.add.tween(this.aliens).to({ x: width - alienAvailableSpace + alienWidth / 2 }, 2000, Phaser.Easing.Linear.None, true, 0, 1000, true);
 
 		// when the tween loops it calls descend
 		tween.onRepeat.add(this.descend, this);
@@ -688,13 +637,13 @@ export class Playable {
 	setupInvader(invader) {
 		invader.anchor.x = 0.5;
 		invader.anchor.y = 0.5;
-		invader.animations.add("kaboom");
+		invader.animations.add('kaboom');
 	}
 
 	descend() {
-		const {game} = this;
-		const {world} = game;
-		const {height} = world;
+		const { game } = this;
+		const { world } = game;
+		const { height } = world;
 
 		//console.log("Loop");
 		this.aliens.y += height * 0.0166666667;
@@ -716,22 +665,22 @@ export class Playable {
 
 		if (explosion) {
 			explosion.reset(alien.body.x, alien.body.y);
-			explosion.play("kaboom", 30, false, true);
+			explosion.play('kaboom', 30, false, true);
 		}
 
 		if (this.aliens.countLiving() === 0) {
 			this.score += 1000;
 
 			this.player.kill();
-			this.enemyBullets.callAll("kill");
+			this.enemyBullets.callAll('kill');
 
 			// this.stateText.text = " You Won, \n Click to restart";
 			// this.stateText.visible = true;
 
 			// the "click to restart" handler
-			console.log("--------------------");
-			console.log("you beat this level!");
-			console.log("--------------------");
+			console.log('--------------------');
+			console.log('you beat this level!');
+			console.log('--------------------');
 			this.game.input.onTap.addOnce(this.restart, this);
 		}
 	}
@@ -749,28 +698,28 @@ export class Playable {
 		const explosion = this.explosions.getFirstExists(false);
 		if (explosion) {
 			explosion.reset(player.body.x, player.body.y);
-			explosion.play("kaboom", 30, false, true);
+			explosion.play('kaboom', 30, false, true);
 		}
 
 		// when the player dies
 		if (this.lives.countLiving() < 1) {
 			player.kill();
-			this.enemyBullets.callAll("kill");
+			this.enemyBullets.callAll('kill');
 
 			// this.stateText.text=" GAME OVER \n Click to restart";
 			// this.stateText.visible = true;
 
 			// the "click to restart" handler
-			console.log("--------------------");
-			console.log("you lost, game over!");
-			console.log("--------------------");
+			console.log('--------------------');
+			console.log('you lost, game over!');
+			console.log('--------------------');
 			this.game.input.onTap.addOnce(this.restart, this);
 			// game.input.onTap.addOnce(this.restart, this);
 		}
 	}
 
 	enemyFires() {
-		const {game} = this;
+		const { game } = this;
 
 		// grab the first bullet we can from the pool
 		this.enemyBullet = this.enemyBullets.getFirstExists(false);
@@ -782,21 +731,14 @@ export class Playable {
 		});
 
 		if (this.enemyBullet && this.livingEnemies.length > 0) {
-			const random = game.rnd.integerInRange(
-				0,
-				this.livingEnemies.length - 1
-			);
+			const random = game.rnd.integerInRange(0, this.livingEnemies.length - 1);
 
 			// randomly select one of them
 			const shooter = this.livingEnemies[random];
 			// and fire the bullet from this enemy
 			this.enemyBullet.reset(shooter.body.x, shooter.body.y);
 
-			game.physics.arcade.moveToObject(
-				this.enemyBullet,
-				this.player,
-				120
-			);
+			game.physics.arcade.moveToObject(this.enemyBullet, this.player, 120);
 			this.firingTimer = game.time.now + 2000;
 		}
 	}
@@ -827,11 +769,11 @@ export class Playable {
 	}
 
 	restart() {
-		const {lives, aliens, player} = this;
+		const { lives, aliens, player } = this;
 		// a new level starts
 
 		// resets the life count
-		lives.callAll("revive");
+		lives.callAll('revive');
 		// and brings the aliens back from the dead :)
 		aliens.removeAll();
 		this.createAliens();
@@ -844,9 +786,9 @@ export class Playable {
 	}
 
 	cycleNode(node) {
-		const {game} = this;
-		const {world} = game;
-		const {width} = world;
+		const { game } = this;
+		const { world } = game;
+		const { width } = world;
 
 		const half = node.width / 2;
 
@@ -858,17 +800,7 @@ export class Playable {
 	}
 
 	update() {
-		const {
-			aliens,
-			bullets,
-			collisionHandler,
-			enemyBullets,
-			enemyHitsPlayer,
-			firingTimer,
-			game,
-			player,
-			starfield,
-		} = this;
+		const { aliens, bullets, collisionHandler, enemyBullets, enemyHitsPlayer, firingTimer, game, player, starfield } = this;
 		// scroll the background
 
 		if (starfield.tilePosition) {
@@ -890,7 +822,7 @@ export class Playable {
 
 			if (this.aliens.y >= player.y && this.lives.countLiving() > 0) {
 				player.kill();
-				this.enemyBullets.callAll("kill");
+				this.enemyBullets.callAll('kill');
 				// this.stateText.text=" GAME OVER \n Click to restart";
 				// this.stateText.visible = true;
 
@@ -899,21 +831,9 @@ export class Playable {
 			}
 
 			// run collision
-			game.physics.arcade.overlap(
-				bullets,
-				aliens,
-				collisionHandler,
-				null,
-				this
-			);
+			game.physics.arcade.overlap(bullets, aliens, collisionHandler, null, this);
 
-			game.physics.arcade.overlap(
-				enemyBullets,
-				player,
-				enemyHitsPlayer,
-				null,
-				this
-			);
+			game.physics.arcade.overlap(enemyBullets, player, enemyHitsPlayer, null, this);
 		}
 	}
 }

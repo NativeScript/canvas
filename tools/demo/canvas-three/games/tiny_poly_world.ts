@@ -19,8 +19,10 @@ function createScene(canvas) {
 	// Get the width and height of the screen
 	// and use them to setup the aspect ratio
 	// of the camera and the size of the renderer.
-	HEIGHT = canvas.height;
-	WIDTH = canvas.width;
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.width = canvas.clientHeight * window.devicePixelRatio;
+	HEIGHT = canvas.clientWidth;
+	WIDTH = canvas.clientHeight;
 
 	const context = canvas.getContext('webgl2');
 	// Create the scene.
@@ -31,9 +33,9 @@ function createScene(canvas) {
 
 	// Create the camera
 	aspectRatio = WIDTH / HEIGHT;
-	fieldOfView = 60;
-	nearPlane = 1;
-	farPlane = 10000;
+	fieldOfView = 75;
+	nearPlane = 0.1;
+	farPlane = 1000;
 	camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
 	// Position the camera
 	camera.position.x = 0;
@@ -43,15 +45,15 @@ function createScene(canvas) {
 	// Create the renderer
 
 	renderer = new THREE.WebGLRenderer({
-		context,
+		canvas,
 		// Alpha makes the background transparent, antialias is performant heavy
 		alpha: true,
 		antialias: true,
 	});
 	renderer.outputColorSpace = THREE.SRGBColorSpace;
 	//set the size of the renderer to fullscreen
-	renderer.setSize(WIDTH, HEIGHT);
 	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(WIDTH, HEIGHT, false);
 	//enable shadow rendering
 	renderer.shadowMap.enabled = true;
 

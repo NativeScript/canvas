@@ -17,8 +17,9 @@ export class NativeScriptPlatform extends BasePlatform {
 	acquireContext(canvas: HTMLCanvasElement, options?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | null {
 		return canvas.getContext('2d', options);
 	}
+
 	getDevicePixelRatio(): number {
-		return Screen.mainScreen.scale;
+		return 1;
 	}
 
 	addEventListener(chart: Chart, type: string, listener: (e: ChartEvent) => void): void {

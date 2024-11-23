@@ -677,7 +677,7 @@ fn main() -> @location(0) vec4f {
 		//this.clearIssue(this.canvas);
 		//this.fillIssue(this.canvas);
 		//rnSkiaPerf(this.canvas);
-		breathe(this.canvas);
+		//breathe(this.canvas);
 		//this.drawOnCanvasWithCanvas(this.canvas);
 		//const ctx = this.canvas.getContext('2d');
 		//this.urlTests();
@@ -786,7 +786,7 @@ fn main() -> @location(0) vec4f {
 		//arcToAnimation(this.canvas);
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
-		//createChaosLines(this.canvas);
+		createChaosLines(this.canvas);
 		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);

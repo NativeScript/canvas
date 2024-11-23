@@ -29,6 +29,8 @@ public:
     static void Ctor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void Decode(const v8::FunctionCallbackInfo<v8::Value> &args);
+    
+    static void DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void
     Encoding(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info);

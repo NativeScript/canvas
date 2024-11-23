@@ -48,5 +48,11 @@ public:
     static void AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &args);
 
     static void AddFontData(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Base64Encode(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Base64Decode(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+    static void Base64DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &args);
 };
 

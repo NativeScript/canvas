@@ -3,8 +3,9 @@ Helpers.initialize();
 require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
+import { Canvas } from '@nativescript/canvas';
 /*
-import { Canvas, importFontsFromCSS } from '@nativescript/canvas';
+
 
 const font = new FontFace('Roboto', 'url(https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxP.ttf)');
 
@@ -90,7 +91,7 @@ declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
 
-// Canvas.useSurface = false;
+Canvas.useSurface = false;
 // Canvas.forceGL = false;
 Application.on('discardedError', (args) => {
 	console.log('discardedError', args.error, args);

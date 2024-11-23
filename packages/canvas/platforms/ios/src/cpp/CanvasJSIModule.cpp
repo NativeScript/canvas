@@ -199,6 +199,18 @@ void CanvasJSIModule::install(v8::Isolate *isolate) {
                        v8::FunctionTemplate::New(isolate, &AddFontData)->GetFunction(
                                context).ToLocalChecked()).FromJust();
 
+        canvasMod->Set(context, ConvertToV8String(isolate, "__base64Encode"),
+                       v8::FunctionTemplate::New(isolate, &Base64Encode)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
+        canvasMod->Set(context, ConvertToV8String(isolate, "__base64Decode"),
+                       v8::FunctionTemplate::New(isolate, &Base64Decode)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
+        canvasMod->Set(context, ConvertToV8String(isolate, "__base64DecodeAsync"),
+                       v8::FunctionTemplate::New(isolate, &Base64DecodeAsync)->GetFunction(
+                               context).ToLocalChecked()).FromJust();
+
         global->Set(context,
                     ConvertToV8String(isolate, "CanvasModule"), canvasMod).FromJust();
 
@@ -238,7 +250,6 @@ void CanvasJSIModule::AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &a
 
 void CanvasJSIModule::AddFontData(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
     auto aliasValue = args[0];
     auto dataValue = args[1];
 
@@ -279,9 +290,168 @@ void CanvasJSIModule::AddFontData(const v8::FunctionCallbackInfo<v8::Value> &arg
 
 }
 
+void CanvasJSIModule::Base64Encode(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto dataValue = args[0];
+
+    auto data = ConvertFromV8StringView(isolate, dataValue);
+
+    if (data.empty()) {
+        args.GetReturnValue().SetEmptyString();
+    } else {
+        auto encoded = canvas_native_helper_base64_encode((const uint8_t *) data.data(),
+                                                          data.size());
+        if (encoded == nullptr) {
+            args.GetReturnValue().SetEmptyString();
+            return;
+        }
+        auto returnValue = new OneByteStringResource(encoded);
+        auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
+        v8::Local<v8::Value> value;
+        if (ret.ToLocal(&value)) {
+            args.GetReturnValue().Set(value);
+        } else {
+            args.GetReturnValue().SetEmptyString();
+        }
+
+    }
+}
+
+void CanvasJSIModule::Base64Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto dataValue = args[0];
+
+    auto data = ConvertFromV8StringView(isolate, dataValue);
+
+    if (data.empty()) {
+        args.GetReturnValue().SetEmptyString();
+    } else {
+        auto decoded = canvas_native_helper_base64_decode((const uint8_t *) data.data(),
+                                                          data.size());
+        if (decoded == nullptr) {
+            args.GetReturnValue().SetEmptyString();
+            return;
+        }
+        auto returnValue = new OneByteStringResource(decoded);
+        auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
+        v8::Local<v8::Value> value;
+        auto decoded_clone = canvas_native_u8_buffer_clone(decoded);
+        auto buffer_ptr = canvas_native_u8_buffer_get_bytes(decoded_clone);
+        auto buffer_len = canvas_native_u8_buffer_get_length(decoded_clone);
+        auto buffer = v8::ArrayBuffer::NewBackingStore((void *) buffer_ptr, buffer_len,
+                                                       [](void *data,
+                                                          size_t length,
+                                                          void *deleter_data) {
+                                                           if (deleter_data !=
+                                                               nullptr) {
+                                                               canvas_native_u8_buffer_release(
+                                                                       (U8Buffer *) deleter_data);
+                                                           }
+                                                       },
+                                                       (void *) decoded_clone);
+
+        if (ret.ToLocal(&value)) {
+            v8::Local<v8::Value> retArgs[2] = {value,
+                                               v8::ArrayBuffer::New(isolate, std::move(buffer))};
+            args.GetReturnValue().Set(v8::Array::New(isolate, retArgs, 2));
+        } else {
+            args.GetReturnValue().Set(v8::Array::New(isolate));
+        }
+
+    }
+}
+
+void CanvasJSIModule::Base64DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto dataValue = args[0];
+
+    auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
+    args.GetReturnValue().Set(resolver->GetPromise());
+
+    v8::String::Utf8Value utf8(isolate, dataValue);
+    std::string data(*utf8);
+
+    auto callback = new PromiseCallback{
+            isolate,
+            resolver,
+            [](bool done, void *data) {
+                auto async_data = static_cast<PromiseCallback *>(data);
+                auto func = async_data->inner_;
+                if (func != nullptr && func->isolate_ != nullptr) {
+                    v8::Isolate *isolate = func->isolate_;
+                    v8::Locker locker(isolate);
+                    v8::Isolate::Scope isolate_scope(
+                            isolate);
+                    v8::HandleScope handle_scope(
+                            isolate);
+                    v8::Local<v8::Promise::Resolver> callback = func->callback_.Get(
+                            isolate);
+                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                    v8::Context::Scope context_scope(
+                            context);
+
+                    auto funcData = func->getData();
+
+                    if (funcData == nullptr) {
+                        callback->Resolve(context, v8::String::Empty(isolate));
+                    } else {
+                        auto decoded = static_cast<U8Buffer *>(funcData);
+
+                        auto returnValue = new OneByteStringResource(decoded);
+                        auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
+                        v8::Local<v8::Value> value;
+                        auto decoded_clone = canvas_native_u8_buffer_clone(decoded);
+
+                        func->setData(nullptr);
+
+                        auto buffer_ptr = canvas_native_u8_buffer_get_bytes(decoded_clone);
+                        auto buffer_len = canvas_native_u8_buffer_get_length(decoded_clone);
+                        auto buffer = v8::ArrayBuffer::NewBackingStore((void *) buffer_ptr,
+                                                                       buffer_len,
+                                                                       [](void *data,
+                                                                          size_t length,
+                                                                          void *deleter_data) {
+                                                                           if (deleter_data !=
+                                                                               nullptr) {
+                                                                               canvas_native_u8_buffer_release(
+                                                                                       (U8Buffer *) deleter_data);
+                                                                           }
+                                                                       },
+                                                                       (void *) decoded_clone);
+
+                        if (ret.ToLocal(&value)) {
+                            v8::Local<v8::Value> retArgs[2] = {value,
+                                                               v8::ArrayBuffer::New(isolate,
+                                                                                    std::move(
+                                                                                            buffer))};
+                            callback->Resolve(context,
+                                              v8::Array::New(isolate, retArgs, 2)).IsJust();
+                        } else {
+                            callback->Resolve(context, v8::Array::New(isolate)).IsJust();
+                        }
+                    }
+                }
+
+                delete static_cast<PromiseCallback *>(data);
+            }
+    };
+    callback->prepare();
+
+    std::thread thread(
+            [callback](std::string data) {
+                if (callback->inner_ != nullptr) {
+                    auto decoded = canvas_native_helper_base64_decode((const uint8_t *) data.data(),
+                                                                      data.size());
+                    callback->inner_->setData(decoded);
+                    callback->inner_->execute(true, callback);
+                }
+            }, std::move(data));
+    thread.detach();
+
+}
+
 void CanvasJSIModule::Create2DContext(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto isolate = args.GetIsolate();
-    auto context = isolate->GetCurrentContext();
     auto ptr = args[0].As<v8::BigInt>()->Int64Value();
 
     auto context_2d = static_cast<CanvasRenderingContext2D *>((void *) ptr);

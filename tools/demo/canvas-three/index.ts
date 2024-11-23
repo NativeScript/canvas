@@ -6,14 +6,14 @@ import { DemoSharedBase } from '../utils';
 // import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 // import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
 // import { VertexTangentsHelper } from 'three/examples/jsm/helpers/VertexTangentsHelper';
-// import { DRACOLoader } from './custom/DRACOLoader';
+import { DRACOLoader } from './custom/DRACOLoader';
 //import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 // import { FirstPersonControls } from 'three/examples/jsm/controls/FirstPersonControls';
 // import { Points } from 'three';
 // import { Water } from 'three/examples/jsm/objects/Water';
 // import { Sky } from 'three/examples/jsm/objects/Sky';
 //import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
-// import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 // import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader';
 // import { init } from './x-jet/main';
@@ -29,7 +29,7 @@ import { DemoSharedBase } from '../utils';
 // import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 // import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 // import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-// import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_of_the_valorous_rabbit';
+import { the_frantic_run_of_the_valorous_rabbit } from './games/the_frantic_run_of_the_valorous_rabbit';
 // import { ghost_card } from './examples/ghost_card';
 // import { tiny_poly_world } from './games/tiny_poly_world';
 import { Canvas, GPUCanvasContext } from '@nativescript/canvas';
@@ -37,7 +37,7 @@ import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
 import * as THREE from 'three';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+// import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -78,7 +78,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -114,9 +114,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		//this.threeCar(this.canvas);
+		this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
-		// tiny_poly_world(this.canvas);
+		//tiny_poly_world(this.canvas);
 		//tiny_poly_world_webgpu(this.canvas);
 		//this.webGLHelpers(this.canvas);
 		//this.fbxLoader(this.canvas);
@@ -183,7 +183,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_tsl_galaxy(canvas: Canvas) {
-		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('@nativescript/canvas-three');
+		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('three');
 
 		let camera, scene, renderer, controls, context;
 
@@ -517,7 +517,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_1m_particles(canvas: Canvas) {
-		const { Fn, uniform, texture, instanceIndex, float, hash, vec3, storage, If, StorageInstancedBufferAttribute, SpriteNodeMaterial } = require('@nativescript/canvas-three');
+		const { Fn, uniform, texture, instanceIndex, float, hash, vec3, storage, If, StorageInstancedBufferAttribute, SpriteNodeMaterial } = require('three');
 
 		const particleCount = 100; //0000;
 
@@ -811,7 +811,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	// }
 
 	ao(canvas) {
-		const { pass, mrt, output, transformedNormalView, texture, ao, denoise } = require('@nativescript/canvas-three');
+		const { pass, mrt, output, transformedNormalView, texture, ao, denoise } = require('three');
 
 		let camera, scene, renderer, postProcessing, controls, clock, mixer;
 
@@ -1025,7 +1025,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		let camera, stats;
 		let postProcessing, renderer, mixer, clock, context;
 
-		const { pass, bloom } = require('@nativescript/canvas-three');
+		const { pass, bloom } = require('three');
 
 		const params = {
 			threshold: 0,
@@ -2581,252 +2581,256 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	// 	const context = canvas.getContext('webgl2') as any;
 	// }
 
-	// threeCar(canvas) {
-	// 	const context = canvas.getContext('webgl2') as any;
-	// 	const width = canvas.width;
-	// 	const height = canvas.height;
-	// 	let camera, scene, renderer;
-	// 	let stats;
+	threeCar(canvas) {
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+		const context = canvas.getContext('webgl2') as any;
+		const width = canvas.width;
+		const height = canvas.height;
+		let camera, scene, renderer;
+		let stats;
 
-	// 	let grid;
-	// 	let controls;
+		let grid;
+		let controls;
 
-	// 	const wheels = [];
-	// 	let bodyColor = '#ff0000';
-	// 	let detailsColor = '#ffffff';
-	// 	let glassColor = '#ffffff';
-	// 	function init(root) {
-	// 		renderer = new THREE.WebGLRenderer({ context, antialias: false });
-	// 		renderer.setPixelRatio(window.devicePixelRatio);
-	// 		renderer.setAnimationLoop(render);
-	// 		renderer.setSize(width, height);
+		const wheels = [];
+		let bodyColor = '#ff0000';
+		let detailsColor = '#ffffff';
+		let glassColor = '#ffffff';
+		function init(root) {
+			renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setAnimationLoop(render);
+			renderer.setSize(width, height, false);
 
-	// 		grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000);
-	// 		grid.material.opacity = 0.1;
-	// 		grid.material.depthWrite = false;
-	// 		grid.material.transparent = true;
-	// 		renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	// 		renderer.toneMappingExposure = 0.85;
+			grid = new THREE.GridHelper(100, 40, 0x000000, 0x000000);
+			grid.material.opacity = 0.1;
+			grid.material.depthWrite = false;
+			grid.material.transparent = true;
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 0.85;
 
-	// 		window.addEventListener('resize', onWindowResize, false);
+			window.addEventListener('resize', onWindowResize, false);
 
-	// 		//
-	// 		camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-	// 		camera.position.set(4.25, 1.4, -4.5);
+			//
+			camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+			camera.position.set(4.25, 1.4, -4.5);
 
-	// 		controls = new OrbitControls(camera, canvas);
-	// 		controls.maxDistance = 9;
-	// 		controls.maxPolarAngle = THREE.MathUtils.degToRad(90);
-	// 		controls.target.set(0, 0.5, 0);
+			controls = new OrbitControls(camera, canvas);
+			controls.maxDistance = 9;
+			controls.maxPolarAngle = THREE.MathUtils.degToRad(90);
+			controls.target.set(0, 0.5, 0);
 
-	// 		controls.update();
+			controls.update();
 
-	// 		scene = new THREE.Scene();
-	// 		scene.background = new THREE.Color(0x333333);
-	// 		scene.environment = new RGBELoader().load(root + '/textures/equirectangular/venice_sunset_1k.hdr');
-	// 		scene.environment.mapping = THREE.EquirectangularReflectionMapping;
-	// 		scene.fog = new THREE.Fog(0x333333, 10, 15);
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x333333);
+			scene.environment = new RGBELoader().load(root + '/textures/equirectangular/venice_sunset_1k.hdr');
+			scene.environment.mapping = THREE.EquirectangularReflectionMapping;
+			scene.fog = new THREE.Fog(0x333333, 10, 15);
 
-	// 		grid = new THREE.GridHelper(20, 40, 0xffffff, 0xffffff);
-	// 		grid.material.opacity = 0.2;
-	// 		grid.material.depthWrite = false;
-	// 		grid.material.transparent = true;
-	// 		scene.add(grid);
+			grid = new THREE.GridHelper(20, 40, 0xffffff, 0xffffff);
+			grid.material.opacity = 0.2;
+			grid.material.depthWrite = false;
+			grid.material.transparent = true;
+			scene.add(grid);
 
-	// 		const light = new THREE.SpotLight('white', 1);
-	// 		light.position.set(4.25, 10, -10);
-	// 		scene.add(light);
-	// 		scene.add(grid);
+			const light = new THREE.SpotLight('white', 1);
+			light.position.set(4.25, 10, -10);
+			scene.add(light);
+			scene.add(grid);
 
-	// 		// materials
+			// materials
 
-	// 		const bodyMaterial = new THREE.MeshPhysicalMaterial({
-	// 			color: 0xff0000,
-	// 			metalness: 1.0,
-	// 			roughness: 0.5,
-	// 			clearcoat: 1.0,
-	// 			clearcoatRoughness: 0.03,
-	// 		});
+			const bodyMaterial = new THREE.MeshPhysicalMaterial({
+				color: 0xff0000,
+				metalness: 1.0,
+				roughness: 0.5,
+				clearcoat: 1.0,
+				clearcoatRoughness: 0.03,
+			});
 
-	// 		const detailsMaterial = new THREE.MeshStandardMaterial({
-	// 			color: 0xffffff,
-	// 			metalness: 1.0,
-	// 			roughness: 0.5,
-	// 		});
+			const detailsMaterial = new THREE.MeshStandardMaterial({
+				color: 0xffffff,
+				metalness: 1.0,
+				roughness: 0.5,
+			});
 
-	// 		const glassMaterial = new THREE.MeshPhysicalMaterial({
-	// 			color: 0xffffff,
-	// 			metalness: 0.25,
-	// 			roughness: 0,
-	// 			transmission: 1.0,
-	// 		});
+			const glassMaterial = new THREE.MeshPhysicalMaterial({
+				color: 0xffffff,
+				metalness: 0.25,
+				roughness: 0,
+				transmission: 1.0,
+			});
 
-	// 		bodyMaterial.color.set(bodyColor);
-	// 		detailsMaterial.color.set(detailsColor);
-	// 		glassMaterial.color.set(glassColor);
-	// 		/*
-	// 		const bodyColorInput = document.getElementById( 'body-color' );
-	// 		bodyColorInput.addEventListener( 'input', function () {
+			bodyMaterial.color.set(bodyColor);
+			detailsMaterial.color.set(detailsColor);
+			glassMaterial.color.set(glassColor);
+			/*
+			const bodyColorInput = document.getElementById( 'body-color' );
+			bodyColorInput.addEventListener( 'input', function () {
 
-	// 			bodyMaterial.color.set( this.value );
+				bodyMaterial.color.set( this.value );
 
-	// 		} );
+			} );
 
-	// 		const detailsColorInput = document.getElementById( 'details-color' );
-	// 		detailsColorInput.addEventListener( 'input', function () {
+			const detailsColorInput = document.getElementById( 'details-color' );
+			detailsColorInput.addEventListener( 'input', function () {
 
-	// 			detailsMaterial.color.set( this.value );
+				detailsMaterial.color.set( this.value );
 
-	// 		} );
+			} );
 
-	// 		const glassColorInput = document.getElementById( 'glass-color' );
-	// 		glassColorInput.addEventListener( 'input', function () {
+			const glassColorInput = document.getElementById( 'glass-color' );
+			glassColorInput.addEventListener( 'input', function () {
 
-	// 			glassMaterial.color.set( this.value );
+				glassMaterial.color.set( this.value );
 
-	// 		} );
-	// 		*/
+			} );
+			*/
 
-	// 		// Car
+			// Car
 
-	// 		const shadow = new THREE.TextureLoader().load(root + '/models/gltf/ferrari_ao.png');
-	// 		// almost working
-	// 		const dracoLoader = new DRACOLoader();
-	// 		dracoLoader.setDecoderPath(root + '/js/libs/draco/gltf/');
-	// 		dracoLoader.setDecoderConfig({ type: 'js' });
+			const shadow = new THREE.TextureLoader().load(root + '/models/gltf/ferrari_ao.png');
+			// almost working
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath(root + '/js/libs/draco/gltf/');
+			dracoLoader.setDecoderConfig({ type: 'js' });
 
-	// 		const loader = new GLTFLoader();
-	// 		loader.setDRACOLoader(dracoLoader);
+			const loader = new GLTFLoader();
+			loader.setDRACOLoader(dracoLoader);
 
-	// 		loader.setPath(root + '/models/gltf/').load('ferrari.glb', function (gltf) {
-	// 			const carModel: any = gltf.scene.children[0];
+			loader.setPath(root + '/models/gltf/').load('ferrari.glb', function (gltf) {
+				const carModel: any = gltf.scene.children[0];
 
-	// 			carModel.getObjectByName('body').material = bodyMaterial;
+				carModel.getObjectByName('body').material = bodyMaterial;
 
-	// 			carModel.getObjectByName('rim_fl').material = detailsMaterial;
-	// 			carModel.getObjectByName('rim_fr').material = detailsMaterial;
-	// 			carModel.getObjectByName('rim_rr').material = detailsMaterial;
-	// 			carModel.getObjectByName('rim_rl').material = detailsMaterial;
-	// 			carModel.getObjectByName('trim').material = detailsMaterial;
+				carModel.getObjectByName('rim_fl').material = detailsMaterial;
+				carModel.getObjectByName('rim_fr').material = detailsMaterial;
+				carModel.getObjectByName('rim_rr').material = detailsMaterial;
+				carModel.getObjectByName('rim_rl').material = detailsMaterial;
+				carModel.getObjectByName('trim').material = detailsMaterial;
 
-	// 			carModel.getObjectByName('glass').material = glassMaterial;
+				carModel.getObjectByName('glass').material = glassMaterial;
 
-	// 			wheels.push(carModel.getObjectByName('wheel_fl'), carModel.getObjectByName('wheel_fr'), carModel.getObjectByName('wheel_rl'), carModel.getObjectByName('wheel_rr'));
+				wheels.push(carModel.getObjectByName('wheel_fl'), carModel.getObjectByName('wheel_fr'), carModel.getObjectByName('wheel_rl'), carModel.getObjectByName('wheel_rr'));
 
-	// 			// shadow
-	// 			const mesh = new THREE.Mesh(
-	// 				new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
-	// 				new THREE.MeshBasicMaterial({
-	// 					map: shadow,
-	// 					toneMapped: false,
-	// 					transparent: true,
-	// 				})
-	// 			);
-	// 			mesh.rotation.x = -Math.PI / 2;
-	// 			mesh.renderOrder = 2;
-	// 			carModel.add(mesh);
+				// shadow
+				const mesh = new THREE.Mesh(
+					new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
+					new THREE.MeshBasicMaterial({
+						map: shadow,
+						toneMapped: false,
+						transparent: true,
+					})
+				);
+				mesh.rotation.x = -Math.PI / 2;
+				mesh.renderOrder = 2;
+				carModel.add(mesh);
 
-	// 			scene.add(carModel);
-	// 		});
-	// 	}
+				scene.add(carModel);
+			});
+		}
 
-	// 	function onWindowResize() {
-	// 		camera.aspect = canvas.width / canvas.height;
-	// 		camera.updateProjectionMatrix();
+		function onWindowResize() {
+			camera.aspect = canvas.width / canvas.height;
+			camera.updateProjectionMatrix();
 
-	// 		renderer.setSize(canvas.width, canvas.height);
-	// 	}
+			renderer.setSize(canvas.width, canvas.height);
+		}
 
-	// 	function render() {
-	// 		const time = -performance.now() / 1000;
+		function render() {
+			const time = -performance.now() / 1000;
 
-	// 		for (let i = 0; i < wheels.length; i++) {
-	// 			wheels[i].rotation.x = time * Math.PI;
-	// 		}
+			for (let i = 0; i < wheels.length; i++) {
+				wheels[i].rotation.x = time * Math.PI;
+			}
 
-	// 		grid.position.z = -time % 5;
+			grid.position.z = -time % 5;
 
-	// 		renderer.render(scene, camera);
+			renderer.render(scene, camera);
 
-	// 		//	stats.update();
-	// 	}
+			//	stats.update();
+		}
 
-	// 	init(this.root);
-	// }
+		init(this.root);
+	}
 
-	// threeKeyframes(canvas) {
-	// 	let mixer;
-	// 	const context = canvas.getContext('webgl2') as any;
-	// 	const width = canvas.width; //canvas.width;
-	// 	const height = canvas.height; //canvas.height;
-	// 	const clock = new THREE.Clock();
-	// 	const renderer = new THREE.WebGLRenderer({ context, antialias: true });
-	// 	renderer.setPixelRatio(window.devicePixelRatio);
-	// 	renderer.setSize(width, height);
+	threeKeyframes(canvas) {
+		let mixer;
+		const context = canvas.getContext('webgl2') as any;
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		const width = canvas.clientWidth; //canvas.width;
+		const height = canvas.clientHeight; //canvas.height;
+		const clock = new THREE.Clock();
+		const renderer = new THREE.WebGLRenderer({ context, antialias: true });
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(width, height, false);
 
-	// 	const pmremGenerator = new THREE.PMREMGenerator(renderer);
+		const pmremGenerator = new THREE.PMREMGenerator(renderer);
 
-	// 	const scene = new THREE.Scene();
-	// 	scene.background = new THREE.Color(0xbfe3dd);
-	// 	scene.environment = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xbfe3dd);
+		scene.environment = pmremGenerator.fromScene(new RoomEnvironment(renderer), 0.04).texture;
 
-	// 	const camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
-	// 	camera.position.set(5, 2, 8);
+		const camera = new THREE.PerspectiveCamera(40, width / height, 1, 100);
+		camera.position.set(5, 2, 8);
 
-	// 	const controls = new OrbitControls(camera, canvas);
-	// 	controls.target.set(0, 0.5, 0);
-	// 	controls.update();
-	// 	controls.enablePan = false;
-	// 	controls.enableDamping = true;
+		const controls = new OrbitControls(camera, canvas);
+		controls.target.set(0, 0.5, 0);
+		controls.update();
+		controls.enablePan = false;
+		controls.enableDamping = true;
 
-	// 	const light = new THREE.SpotLight();
-	// 	light.position.set(-1.8, 0.6, 2.7 * 1.2);
-	// 	scene.add(light);
+		const light = new THREE.SpotLight();
+		light.position.set(-1.8, 0.6, 2.7 * 1.2);
+		scene.add(light);
 
-	// 	const dracoLoader = new DRACOLoader();
-	// 	dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
-	// 	dracoLoader.setDecoderConfig({ type: 'js' });
+		const dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath(this.root + '/js/libs/draco/gltf/');
+		dracoLoader.setDecoderConfig({ type: 'js' });
 
-	// 	const loader = new GLTFLoader();
-	// 	loader.setDRACOLoader(dracoLoader);
-	// 	loader.load(
-	// 		this.root + '/models/gltf/LittlestTokyo.glb',
-	// 		function (gltf) {
-	// 			const model = gltf.scene;
-	// 			model.position.set(1, 1, 0);
-	// 			model.scale.set(0.01, 0.01, 0.01);
-	// 			scene.add(model);
+		const loader = new GLTFLoader();
+		loader.setDRACOLoader(dracoLoader);
+		loader.load(
+			this.root + '/models/gltf/LittlestTokyo.glb',
+			function (gltf) {
+				const model = gltf.scene;
+				model.position.set(1, 1, 0);
+				model.scale.set(0.01, 0.01, 0.01);
+				scene.add(model);
 
-	// 			mixer = new THREE.AnimationMixer(model);
-	// 			mixer.clipAction(gltf.animations[0]).play();
+				mixer = new THREE.AnimationMixer(model);
+				mixer.clipAction(gltf.animations[0]).play();
 
-	// 			animate();
-	// 		},
-	// 		undefined,
-	// 		function (e) {
-	// 			console.error(e);
-	// 		}
-	// 	);
+				animate();
+			},
+			undefined,
+			function (e) {
+				console.error(e);
+			}
+		);
 
-	// 	window.onresize = function () {
-	// 		camera.aspect = width / height;
-	// 		camera.updateProjectionMatrix();
+		window.onresize = function () {
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
 
-	// 		renderer.setSize(width, height);
-	// 	};
+			renderer.setSize(width, height);
+		};
 
-	// 	function animate() {
-	// 		requestAnimationFrame(animate);
+		function animate() {
+			requestAnimationFrame(animate);
 
-	// 		const delta = clock.getDelta();
+			const delta = clock.getDelta();
 
-	// 		mixer.update(delta);
+			mixer.update(delta);
 
-	// 		controls.update();
+			controls.update();
 
-	// 		renderer.render(scene, camera);
-	// 	}
-	// }
+			renderer.render(scene, camera);
+		}
+	}
 	// birds(canvas) {
 	// 	const context = canvas.getContext('webgl2') as WebGL2RenderingContext;
 

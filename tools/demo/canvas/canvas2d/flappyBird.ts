@@ -157,15 +157,15 @@ export function flappyBird(canvas) {
 	}
 
 	function main() {
-		width = canvas.width;
-		height = canvas.height;
+		width = canvas.clientWidth;
+		height = canvas.clientHeight;
 
 		canvas.addEventListener('touchstart', onpress);
 
 		var evt = 'touchstart';
 		if (width >= 500) {
-			width = 320;
-			height = 480;
+			//	width = 320;
+			//	height = 480;
 			canvas.style.border = '1px solid #000';
 			evt = 'mousedown';
 		}

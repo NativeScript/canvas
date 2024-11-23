@@ -73,8 +73,11 @@ public class NSCCanvas: UIView {
     
     public var weblikeScale = false {
         didSet {
-            glkView.layer.transform = CATransform3DIdentity
-            mtlView.layer.transform = CATransform3DIdentity
+            if(!weblikeScale){
+                glkView.layer.transform = CATransform3DIdentity
+                mtlView.layer.transform = CATransform3DIdentity
+            }
+            scaleSurface()
         }
     }
         
@@ -646,7 +649,7 @@ public class NSCCanvas: UIView {
          
          
          if(scaleX.isZero || scaleX.isNaN ||  scaleY.isZero || scaleY.isNaN ){
-         return
+             return
          }
          
         var transform: CATransform3D? = nil
@@ -654,6 +657,7 @@ public class NSCCanvas: UIView {
         switch(fit){
         case .None:
             // noop
+            transform = CATransform3DIdentity
             break
         case .Fill:
             transform = CATransform3DMakeScale(scaleX, scaleY, 1)

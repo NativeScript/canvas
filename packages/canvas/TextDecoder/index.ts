@@ -32,4 +32,16 @@ export class TextDecoder {
 			return '';
 		}
 	}
+
+	@profile
+	decodeAsync(buffer?: ArrayBuffer | ArrayBufferView, options?: any): Promise<string> {
+		if (buffer instanceof ArrayBuffer || buffer instanceof Uint8Array || buffer instanceof Int8Array || buffer instanceof Uint16Array || buffer instanceof Int16Array || buffer instanceof Uint32Array || buffer instanceof Int32Array || buffer instanceof Float32Array || buffer instanceof Uint8ClampedArray) {
+			if (buffer.byteLength === 0) {
+				return Promise.resolve('');
+			}
+			return this.native.decodeAsync(buffer);
+		} else {
+			return Promise.resolve('');
+		}
+	}
 }

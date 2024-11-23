@@ -52,6 +52,12 @@ v8::Local<v8::FunctionTemplate> TextDecoderImpl::GetCtor(v8::Isolate *isolate) {
     tmpl->Set(
             ConvertToV8String(isolate, "decode"),
             v8::FunctionTemplate::New(isolate, &Decode));
+    
+    tmpl->Set(
+            ConvertToV8String(isolate, "decodeAsync"),
+            v8::FunctionTemplate::New(isolate, &DecodeAsync));
+    
+    
     cache->TextDecoderTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -184,4 +190,140 @@ void TextDecoderImpl::Decode(const v8::FunctionCallbackInfo<v8::Value> &args) {
     }
 
     args.GetReturnValue().SetEmptyString();
+}
+
+struct DecodeAsyncData {
+    v8::Persistent<v8::Object>* buffer;
+    uint8_t* data;
+    size_t size;
+};
+
+void TextDecoderImpl::DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+
+    auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
+    args.GetReturnValue().Set(resolver->GetPromise());
+    
+    auto context = isolate->GetCurrentContext();
+    
+    auto value = args[0];
+    if (value->IsNull() ||
+        value->IsUndefined() ||
+        !value->IsObject()) {
+        
+        auto msg = v8::Exception::Error(ConvertToV8String(isolate, "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'"));
+        
+        resolver->Reject(context, msg);
+
+        return;
+    }
+    
+    TextDecoderImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) {
+        resolver->Resolve(context, v8::String::Empty(isolate));
+        return;
+    }
+    
+    if(!value->IsArrayBufferView() && !value->IsArrayBuffer()){
+        
+        auto msg = v8::Exception::Error(ConvertToV8String(isolate, "Failed to execute 'decode' on 'TextDecoder': The provided value is not of type '(ArrayBuffer or ArrayBufferView)'"));
+        
+        resolver->Reject(context, msg);
+        return;
+    }
+
+
+    auto callback = new PromiseCallback{
+            isolate,
+            resolver,
+            [](bool done, void *data) {
+                auto async_data = static_cast<PromiseCallback *>(data);
+                auto func = async_data->inner_;
+                if (func != nullptr && func->isolate_ != nullptr) {
+                    v8::Isolate *isolate = func->isolate_;
+                    v8::Locker locker(isolate);
+                    v8::Isolate::Scope isolate_scope(
+                            isolate);
+                    v8::HandleScope handle_scope(
+                            isolate);
+                    v8::Local<v8::Promise::Resolver> callback = func->callback_.Get(
+                            isolate);
+                    v8::Local<v8::Context> context = callback->GetCreationContextChecked();
+                    v8::Context::Scope context_scope(
+                            context);
+
+                    auto funcData = func->getData();
+
+                    if (funcData == nullptr) {
+                        callback->Resolve(context, v8::String::Empty(isolate));
+                    } else {
+                        auto decoded = static_cast<CCow *>(funcData);
+
+                        auto returnValue = new OneByteStringResource(decoded);
+                        auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
+                        v8::Local<v8::Value> value;
+                        func->setData(nullptr);
+
+                        
+                        if (ret.ToLocal(&value)){
+                            callback->Resolve(context, value).IsJust();
+                        } else {
+                            callback->Resolve(context, v8::String::Empty(isolate)).IsJust();
+                        }
+                    }
+                }
+
+                delete static_cast<PromiseCallback *>(data);
+            }
+    };
+    callback->prepare();
+    
+    
+    auto buf = value.As<v8::Object>();
+    
+    auto bufferPer = new v8::Persistent<v8::Object>(isolate, buf);
+    
+    uint8_t* data = nullptr;
+    size_t size;
+    
+    if (buf->IsArrayBuffer()) {
+        auto buffer = buf.As<v8::ArrayBuffer>();
+        data = static_cast<u_int8_t *>(buffer->GetBackingStore()->Data());
+        size = buffer->ByteLength();
+    }
+
+
+    if (buf->IsArrayBufferView()) {
+        auto buffer = buf.As<v8::ArrayBufferView>();
+
+        auto store = buffer->Buffer()->GetBackingStore();
+        data = static_cast<uint8_t *>(store->Data()) + buffer->ByteOffset();
+
+        size = buffer->ByteLength();
+    }
+
+    DecodeAsyncData asyncData{
+        bufferPer,
+        data,
+        size
+    };
+    
+
+    std::thread thread(
+            [callback, asyncData, ptr]() {
+                if (callback->inner_ != nullptr) {
+                    
+                    auto decoded = canvas_native_text_decoder_decode_as_cow(
+                            ptr->GetTextDecoder(),
+                                                                            asyncData.data, asyncData.size);
+                    
+                    callback->inner_->setData(decoded);
+                    callback->inner_->execute(true, callback);
+                }
+                asyncData.buffer->Reset();
+                delete asyncData.buffer;
+                
+            });
+    thread.detach();
+
 }

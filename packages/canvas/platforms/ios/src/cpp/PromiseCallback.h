@@ -35,6 +35,7 @@ struct PromiseCallback {
         CompleteCallback completeCallbackWrapper_;
         bool isPrepared_ = false;
         void* data;
+        mutable std::mutex mtx;
 
         Inner(v8::Isolate *isolate, v8::Local<v8::Promise::Resolver> callback,
               CompleteCallback completeCallback) : isolate_(isolate),
@@ -45,25 +46,37 @@ struct PromiseCallback {
             this->completeCallbackWrapper_ = [](bool success, void *data){
                 if(data != nullptr){
                     auto* callback = static_cast<PromiseCallback*>(data);
-                    auto inner = callback->inner_.get();
-                    if(inner == nullptr || inner->current_queue != nullptr){
+                    if(callback->inner_ == nullptr || callback->inner_->current_queue == nullptr){
                         return;
                     }
 
-                    inner->current_queue->addOperation([success, data, inner, callback](){
-                        inner->completeCallback_(success, data);
+                    callback->inner_->current_queue->addOperation([success, data, callback](){
+                        callback->inner_->completeCallback_(success, data);
                      //   delete callback;
                     });
                 }
             };
         }
 
+        void setData(void* newData) {
+              std::lock_guard<std::mutex> lock(mtx);
+              data = newData;
+        }
+
+
+        void* getData() {
+            std::lock_guard<std::mutex> lock(mtx);
+            return data;
+        }
+
         void prepare(){
+            std::lock_guard<std::mutex> lock(mtx);
             current_queue = new NSOperationQueueWrapper(true);
             isPrepared_ = true;
         }
 
         void execute(bool complete, PromiseCallback* callback){
+            std::lock_guard<std::mutex> lock(mtx);
            completeCallbackWrapper_(complete, callback);
         }
 
@@ -76,15 +89,13 @@ struct PromiseCallback {
     std::shared_ptr<Inner> inner_;
 
     void prepare(){
-       auto inner = this->inner_.get();
-       if(inner == nullptr){return;}
-        inner->prepare();
+       if( this->inner_ == nullptr){return;}
+        this->inner_->prepare();
     }
 
         void execute(bool complete) {
-        auto inner = this->inner_.get();
-        if (inner == nullptr) { return; }
-        inner->execute(complete, this);
+        if (this->inner_ == nullptr) { return; }
+            this->inner_->execute(complete, this);
     }
 
     explicit PromiseCallback(std::shared_ptr<Inner> inner) : inner_(std::move(inner)) {}
@@ -106,6 +117,7 @@ struct PromiseCallback {
         void *data = nullptr;
         CompleteCallback completeCallback_;
         bool isPrepared_ = false;
+        mutable std::mutex mtx;
 
         Inner(v8::Isolate *isolate, v8::Local<v8::Promise::Resolver> callback,
               CompleteCallback completeCallback) : isolate_(isolate),
@@ -135,12 +147,24 @@ struct PromiseCallback {
             isPrepared_ = true;
         }
 
-        void execute(bool complete) const {
+        void execute(bool complete, [[maybe_unused]] PromiseCallback *callback) const {
             if (!isPrepared_) { return; }
             write(fd_[1],
                   &complete,
                   sizeof(bool));
         }
+
+        void setData(void *newData) {
+            std::lock_guard<std::mutex> lock(mtx);
+            data = newData;
+        }
+
+
+        void *getData() {
+            std::lock_guard<std::mutex> lock(mtx);
+            return data;
+        }
+
 
 
         ~Inner() {
@@ -155,11 +179,10 @@ struct PromiseCallback {
     };
 
     void prepare() const {
-        auto inner = this->inner_.get();
-        if (inner == nullptr) { return; }
-        inner->prepare();
-        auto looper = inner->looper_;
-        auto fd = inner->fd_[0];
+        if (inner_ == nullptr) { return; }
+        inner_->prepare();
+        auto looper = inner_->looper_;
+        auto fd = inner_->fd_[0];
         auto data = new PromiseCallback(this->inner_);
         ALooper_addFd(looper,
                       fd,
@@ -175,13 +198,12 @@ struct PromiseCallback {
                           return 0;
                       }, (void *) data);
 
-        inner->isPrepared_ = true;
+        inner_->isPrepared_ = true;
     }
 
     void execute(bool complete) const {
-        auto inner = this->inner_.get();
-        if (inner == nullptr) { return; }
-        inner->execute(complete);
+        if (this->inner_ == nullptr) { return; }
+        this->inner_->execute(complete, nullptr);
     }
 
     std::shared_ptr<Inner> inner_;

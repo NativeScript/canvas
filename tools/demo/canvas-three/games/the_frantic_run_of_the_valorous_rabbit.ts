@@ -12,6 +12,8 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 	containerLayout.iosOverflowSafeArea = false;
 	GridLayout.setColumnSpan(containerLayout, 2);
 	GridLayout.setRowSpan(containerLayout, 2);
+	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
+	canvas.width = canvas.clientHeight * Screen.mainScreen.scale;
 
 	const context = canvas.getContext('webgl2');
 	const width = canvas.width;
@@ -132,14 +134,14 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 		camera.lookAt(new THREE.Vector3(0, 30, 0));
 
 		renderer = new THREE.WebGLRenderer({
-			context,
+			canvas,
 			alpha: true,
 			antialias: true,
 		});
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setClearColor(malusClearColor, malusClearAlpha);
 
-		renderer.setSize(WIDTH, HEIGHT);
+		renderer.setSize(WIDTH, HEIGHT, false);
 		renderer.shadowMap.enabled = true;
 
 		//container = document.getElementById('world');
@@ -165,7 +167,7 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 		WIDTH = width;
 		windowHalfX = WIDTH / 2;
 		windowHalfY = HEIGHT / 2;
-		renderer.setSize(WIDTH, HEIGHT);
+		renderer.setSize(WIDTH, HEIGHT, false);
 		camera.aspect = WIDTH / HEIGHT;
 		camera.updateProjectionMatrix();
 	}
@@ -1355,7 +1357,7 @@ export function the_frantic_run_of_the_valorous_rabbit(canvas, parent: GridLayou
 		GridLayout.setRow(fieldDistance, 1);
 		GridLayout.setRowSpan(fieldGameOver, 2);
 
-		if(containerLayout.parent !== parent){
+		if (containerLayout.parent !== parent) {
 			parent.addChild(containerLayout);
 		}
 	}

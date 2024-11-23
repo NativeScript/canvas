@@ -5,7 +5,7 @@
     </ActionBar>
   </Page.actionBar>
   <GridLayout class="bg-black w-full h-full" iosOverflowSafeArea="true">
-    <canvas:Canvas style="width:100%;height:auto;" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
+    <canvas:Canvas style="width:auto100%;height:100%;" id="canvas" ready="{{ canvasLoaded }}" loaded="{{ loaded }}"
                       unloaded="{{unloaded}}"/>
   </GridLayout>
 </Page>

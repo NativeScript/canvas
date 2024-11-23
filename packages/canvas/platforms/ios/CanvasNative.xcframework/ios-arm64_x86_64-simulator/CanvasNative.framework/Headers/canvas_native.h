@@ -3615,6 +3615,8 @@ void canvas_native_webgpu_texture_view_release(const struct CanvasGPUTextureView
 
 void canvas_native_webgpu_struct_surface_capabilities_release(struct CanvasSurfaceCapabilities *cap);
 
+const struct U8Buffer *canvas_native_u8_buffer_clone(const struct U8Buffer *buffer);
+
 const uint8_t *canvas_native_u8_buffer_get_bytes(const struct U8Buffer *buffer);
 
 uint8_t *canvas_native_u8_buffer_get_bytes_mut(struct U8Buffer *buffer);
@@ -3660,6 +3662,14 @@ uintptr_t canvas_native_string_buffer_get_length(const struct StringBuffer *buff
 char *canvas_native_string_buffer_get_value_at(const struct StringBuffer *buffer, uintptr_t index);
 
 void canvas_native_string_buffer_release(struct StringBuffer *buffer);
+
+const char *canvas_native_helper_base64_encode(const uint8_t *data, uintptr_t size);
+
+const char *canvas_native_helper_base64_encode_c_str(const char *data);
+
+struct U8Buffer *canvas_native_helper_base64_decode(const uint8_t *data, uintptr_t size);
+
+struct U8Buffer *canvas_native_helper_base64_decode_c_str(const char *data);
 
 struct FileHelperMime *canvas_native_helper_get_mime(const uint8_t *data, uintptr_t size);
 

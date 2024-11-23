@@ -199,6 +199,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
         auto textureVal = destinationObj->Get(context, ConvertToV8String(isolate,
                                                                          "texture")).ToLocalChecked();
         auto texture = GPUTextureImpl::GetPointer(textureVal.As<v8::Object>())->GetTexture();
+        
 
         uint32_t mipLevel = 0;
         CanvasOrigin3d origin{0, 0, 0};

@@ -106,7 +106,7 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
-		//this.bitmapFont(canvas);
+		// this.bitmapFont(canvas);
 
 		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
@@ -246,25 +246,25 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 			height: canvas.height,
 		});
 		try {
-			// 	const encoder = new TextEncoder();
-			// 	const encoded = encoder.encode(`<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
-			// 		<!-- Draw the paths -->
-			// 		<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
-			// 		<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
-			// 		<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
-			// 		<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
+			const encoder = new TextEncoder();
+			const encoded = encoder.encode(`<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
+					<!-- Draw the paths -->
+					<path id="lineAB" d="M 100 350 l 150 -300" stroke="red" stroke-width="4"/>
+					<path id="lineBC" d="M 250 50 l 150 300" stroke="red" stroke-width="4"/>
+					<path id="lineMID" d="M 175 200 l 150 0" stroke="green" stroke-width="4"/>
+					<path id="lineAC" d="M 100 350 q 150 -300 300 0" stroke="blue" fill="none" stroke-width="4"/>
 
-			// 		<!-- Mark relevant points -->
-			// 		<g stroke="black" stroke-width="3" fill="black">
-			// 			<circle id="pointA" cx="100" cy="350" r="4" />
-			// 			<circle id="pointB" cx="250" cy="50" r="4" />
-			// 			<circle id="pointC" cx="400" cy="350" r="4" />
-			// 		</g>
-			// 	</svg>
-			// `);
+					<!-- Mark relevant points -->
+					<g stroke="black" stroke-width="3" fill="black">
+						<circle id="pointA" cx="100" cy="350" r="4" />
+						<circle id="pointB" cx="250" cy="50" r="4" />
+						<circle id="pointC" cx="400" cy="350" r="4" />
+					</g>
+				</svg>
+			`);
 
-			// const blob = new Blob([encoded], { type: 'image/svg+xml' });
-			// const url = URL.createObjectURL(blob);
+			const blob = new Blob([encoded], { type: 'image/svg+xml' });
+			const url = URL.createObjectURL(blob);
 
 			const graphics = new Graphics().svg(`
 				<svg height="400" width="450" xmlns="http://www.w3.org/2000/svg">
@@ -283,11 +283,39 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 					</svg>
 				`);
 
-			PIXI.Assets.load(this.root + '/images/test.svg').then((texture) => {
+			const image = new Image();
+			image.onload = () => {
+				const texture = PIXI.Texture.from(image);
 				const sprite = PIXI.Sprite.from(texture);
+				app.stage.addChild(sprite);
+			};
+			image.src = url;
+			image.decode();
+
+			// PIXI.Assets.load(url).then((texture) => {
+			// 	const sprite = PIXI.Sprite.from(texture);
+			// 	// app.stage.addChild(graphics);
+			// 	app.stage.addChild(sprite);
+			// });
+
+			// PIXI.Assets.load(this.root + '/images/test.svg').then((texture) => {
+			// 	const sprite = PIXI.Sprite.from(texture);
+			// 	// app.stage.addChild(graphics);
+			// 	app.stage.addChild(sprite);
+			// });
+
+			const img =
+				'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAApgAAAKYB3X3/OAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVEiJtZZPbBtFFMZ/M7ubXdtdb1xSFyeilBapySVU8h8OoFaooFSqiihIVIpQBKci6KEg9Q6H9kovIHoCIVQJJCKE1ENFjnAgcaSGC6rEnxBwA04Tx43t2FnvDAfjkNibxgHxnWb2e/u992bee7tCa00YFsffekFY+nUzFtjW0LrvjRXrCDIAaPLlW0nHL0SsZtVoaF98mLrx3pdhOqLtYPHChahZcYYO7KvPFxvRl5XPp1sN3adWiD1ZAqD6XYK1b/dvE5IWryTt2udLFedwc1+9kLp+vbbpoDh+6TklxBeAi9TL0taeWpdmZzQDry0AcO+jQ12RyohqqoYoo8RDwJrU+qXkjWtfi8Xxt58BdQuwQs9qC/afLwCw8tnQbqYAPsgxE1S6F3EAIXux2oQFKm0ihMsOF71dHYx+f3NND68ghCu1YIoePPQN1pGRABkJ6Bus96CutRZMydTl+TvuiRW1m3n0eDl0vRPcEysqdXn+jsQPsrHMquGeXEaY4Yk4wxWcY5V/9scqOMOVUFthatyTy8QyqwZ+kDURKoMWxNKr2EeqVKcTNOajqKoBgOE28U4tdQl5p5bwCw7BWquaZSzAPlwjlithJtp3pTImSqQRrb2Z8PHGigD4RZuNX6JYj6wj7O4TFLbCO/Mn/m8R+h6rYSUb3ekokRY6f/YukArN979jcW+V/S8g0eT/N3VN3kTqWbQ428m9/8k0P/1aIhF36PccEl6EhOcAUCrXKZXXWS3XKd2vc/TRBG9O5ELC17MmWubD2nKhUKZa26Ba2+D3P+4/MNCFwg59oWVeYhkzgN/JDR8deKBoD7Y+ljEjGZ0sosXVTvbc6RHirr2reNy1OXd6pJsQ+gqjk8VWFYmHrwBzW/n+uMPFiRwHB2I7ih8ciHFxIkd/3Omk5tCDV1t+2nNu5sxxpDFNx+huNhVT3/zMDz8usXC3ddaHBj1GHj/As08fwTS7Kt1HBTmyN29vdwAw+/wbwLVOJ3uAD1wi/dUH7Qei66PfyuRj4Ik9is+hglfbkbfR3cnZm7chlUWLdwmprtCohX4HUtlOcQjLYCu+fzGJH2QRKvP3UNz8bWk1qMxjGTOMThZ3kvgLI5AzFfo379UAAAAASUVORK5CYII=';
+
+			try {
+				const texture: PIXI.Texture = await PIXI.Assets.load(img);
+				const sprite = PIXI.Sprite.from(texture);
+				sprite.scale.set(4);
+				sprite.x = 100;
+				sprite.y = 100;
 				// app.stage.addChild(graphics);
 				app.stage.addChild(sprite);
-			});
+			} catch (error) {}
 
 			const ctx = canvas.getContext('webgpu');
 			app.ticker.add((delta) => {

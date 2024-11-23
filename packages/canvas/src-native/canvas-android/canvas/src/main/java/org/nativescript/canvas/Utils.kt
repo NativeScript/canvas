@@ -5,11 +5,8 @@ import android.graphics.SurfaceTexture
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Environment
-import android.util.Log
 import java.io.File
 import java.nio.ByteBuffer
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 
 object Utils {

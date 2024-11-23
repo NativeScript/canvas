@@ -28,7 +28,9 @@ if (!global.Document) {
 
 (global as any).document = (global as any).window.document = (global as any).document || new Document();
 
-(global as any).document.fonts = global.fonts || new FontFaceSet();
+if (!global.document.fonts) {
+	(global as any).document.fonts = global.fonts || new FontFaceSet();
+}
 
 (global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
 	const image = args[0];

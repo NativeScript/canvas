@@ -290,10 +290,6 @@ export class TouchEvent extends UIEvent {
 		this.ctrlKey = options?.ctrlKey ?? false;
 		this.shiftKey = options?.shiftKey ?? false;
 	}
-
-	preventDefault() {}
-
-	stopPropagation() {}
 }
 
 interface WheelEventOptions extends UIEventOptions {
@@ -552,6 +548,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						isPrimary: pointer.isPrimary,
 						button: -1,
 						target: this.__target ?? this,
+						cancelable: true,
 						preventDefault: () => {
 							preventDefault = true;
 						},
@@ -588,6 +585,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					targetTouches: touches,
 					changedTouches,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -644,6 +642,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -707,6 +706,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					targetTouches: touches,
 					changedTouches,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -767,6 +767,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -797,6 +798,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					targetTouches: touches,
 					changedTouches: this._touches,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -850,6 +852,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageY: y,
 					isPrimary,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -880,6 +883,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					targetTouches: touches,
 					changedTouches: touchesList,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},
@@ -943,6 +947,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
 						target: this.__target ?? this,
+						cancelable: true,
 						preventDefault: () => {
 							preventDefault = true;
 						},
@@ -968,39 +973,6 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					);
 				}
 
-				if (hasMouseCallbacks && !preventDefault) {
-					const event = new MouseEvent('mousemove', {
-						clientX: pointer.x,
-						clientY: pointer.y,
-						screenX: pointer.x,
-						screenY: pointer.y,
-						pageX: pointer.x,
-						pageY: pointer.y,
-						movementX: pointer.x - previousEvent.x,
-						movementY: pointer.y - previousEvent.y,
-						button: -1,
-						target: this.__target ?? this,
-					});
-
-					for (const callback of this._mouseMoveCallbacks) {
-						callback(event);
-					}
-				}
-
-				if (hasMouseWheel) {
-					const event = new WheelEvent('wheel', {
-						deltaX: data.deltaX,
-						deltaY: data.deltaY,
-						deltaZ: 0,
-						deltaMode: data.deltaMode,
-						target: this.__target ?? this,
-					});
-
-					for (const callback of this._mouseWheelCallbacks) {
-						callback(event);
-					}
-				}
-
 				this._lastPointerEventById.set(pointerId, { pointerId, x: pointer.x, y: pointer.y });
 			}
 
@@ -1012,6 +984,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					targetTouches: touches,
 					changedTouches,
 					target: this.__target ?? this,
+					cancelable: true,
 					preventDefault: () => {
 						preventDefault = true;
 					},

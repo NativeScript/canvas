@@ -11,6 +11,8 @@ interface EventOptions {
 	cancelable?: boolean;
 	composed?: boolean;
 	target?: any;
+	preventDefault?: () => void;
+	stopPropagation?: () => void;
 }
 
 export class DOMRectReadOnly {
@@ -49,18 +51,26 @@ export class Event {
 	readonly timeStamp: number;
 	readonly target: any;
 
+	private _preventDefault?: () => void;
+	private _stopPropagation?: () => void;
+
 	constructor(type: string, options: EventOptions) {
 		this.type = type;
 		this.bubbles = options?.bubbles ?? false;
 		this.cancelable = options?.cancelable ?? false;
-		this.cancelable = options?.cancelable ?? false;
 		this.composed = options?.composed ?? false;
 		this.target = options?.target ?? null;
+		this._preventDefault = options?.preventDefault;
+		this._stopPropagation = options?.stopPropagation;
 	}
 
-	preventDefault() {}
+	preventDefault() {
+		this._preventDefault?.();
+	}
 
-	stopPropagation() {}
+	stopPropagation() {
+		this._stopPropagation?.();
+	}
 }
 
 interface UIEventOptions extends EventOptions {
@@ -180,10 +190,6 @@ export class PointerEvent extends MouseEvent {
 		this.twist = options?.twist ?? 0;
 		this.isPrimary = options?.isPrimary ?? false;
 	}
-
-	preventDefault() {}
-
-	stopPropagation() {}
 }
 
 interface TouchOptions {
@@ -370,7 +376,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	_touches: Touch[] = [];
 	_touchesById: Touch[] = [];
 
-	_lastPointerEventById: { pointerId: number; x: number; y: number }[] = [];
+	_lastPointerEventById: Map<number, { pointerId: number; x: number; y: number }> = new Map();
 
 	protected constructor() {
 		super();
@@ -523,18 +529,13 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	private _moveCallback(pointers: { ptrId: number; x: number; y: number; isPrimary: boolean }[]) {
 		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
-		if (hasPointerCallbacks || hasMouseCallbacks) {
+		const hasTouchCallbacks = this._touchMoveCallbacks.length > 0;
+		if (hasPointerCallbacks || hasMouseCallbacks || hasTouchCallbacks) {
+			let preventDefault = false;
+			const changedTouches = hasTouchCallbacks ? TouchList.empty() : null;
 			for (const pointer of pointers) {
 				const pointerId = pointer.ptrId;
-				const index = this._lastPointerEventById.findIndex((item) => {
-					return item?.pointerId === pointerId;
-				});
-				let previousEvent: { pointerId: number; x: number; y: number };
-				if (index > -1) {
-					previousEvent = this._lastPointerEventById[index];
-				} else {
-					previousEvent = { pointerId, x: 0, y: 0 };
-				}
+				const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
 
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
@@ -551,6 +552,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						isPrimary: pointer.isPrimary,
 						button: -1,
 						target: this.__target ?? this,
+						preventDefault: () => {
+							preventDefault = true;
+						},
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -558,7 +562,46 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 				}
 
-				if (hasMouseCallbacks) {
+				if (!preventDefault && hasTouchCallbacks) {
+					changedTouches.push(
+						new Touch({
+							identifier: pointer.ptrId,
+							target: this.__target ?? this,
+							clientX: pointer.x,
+							clientY: pointer.y,
+							screenX: pointer.x,
+							screenY: pointer.y,
+							pageX: pointer.x,
+							pageY: pointer.y,
+						})
+					);
+				}
+
+				this._lastPointerEventById.set(pointerId, { pointerId, x: pointer.x, y: pointer.y });
+			}
+
+			if ((changedTouches?.length ?? 0) > 0) {
+				const touches = TouchList.fromList(this._touches);
+
+				const event = new TouchEvent('touchmove', {
+					touches,
+					targetTouches: touches,
+					changedTouches,
+					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
+				});
+
+				for (const callback of this._touchMoveCallbacks) {
+					callback(event);
+				}
+			}
+
+			if (!preventDefault && hasMouseCallbacks) {
+				for (const pointer of pointers) {
+					const pointerId = pointer.ptrId;
+					const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
 					const event = new MouseEvent('mousemove', {
 						clientX: pointer.x,
 						clientY: pointer.y,
@@ -570,49 +613,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
 						target: this.__target ?? this,
+						preventDefault: () => {
+							preventDefault = true;
+						},
 					});
-
-					// todo emit mousemove when desktop is supported
-					// for (const callback of this._mouseMoveCallbacks) {
-					// 	callback(event);
-					// }
+					for (const callback of this._mouseMoveCallbacks) {
+						callback(event);
+					}
 				}
-
-				if (index > -1) {
-					this._lastPointerEventById[index] = { pointerId, x: pointer.x, y: pointer.y };
-				}
-			}
-		}
-
-		if (this._touchMoveCallbacks.length > 0) {
-			const changedTouches = TouchList.empty();
-
-			for (const pointer of pointers) {
-				changedTouches.push(
-					new Touch({
-						identifier: pointer.ptrId,
-						target: this.__target ?? this,
-						clientX: pointer.x,
-						clientY: pointer.y,
-						screenX: pointer.x,
-						screenY: pointer.y,
-						pageX: pointer.x,
-						pageY: pointer.y,
-					})
-				);
-			}
-
-			const touches = TouchList.fromList(this._touches);
-
-			const event = new TouchEvent('touchmove', {
-				touches,
-				targetTouches: touches,
-				changedTouches,
-				target: this.__target ?? this,
-			});
-
-			for (const callback of this._touchMoveCallbacks) {
-				callback(event);
 			}
 		}
 	}
@@ -620,9 +628,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	private _upCallback(ptrId: number, x: number, y: number, isPrimary: boolean = false) {
 		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0 || this._pointerOutCallbacks.length > 0 || this._pointerLeaveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
-
-		if (hasPointerCallbacks || hasMouseCallbacks) {
-			const pointerId = ptrId;
+		const hasTouchCallbacks = this._touchEndCallbacks.length > 0;
+		const pointerId = ptrId;
+		if (hasPointerCallbacks || hasMouseCallbacks || hasTouchCallbacks) {
+			let preventDefault = false;
 			if (hasPointerCallbacks) {
 				const up = new PointerEvent('pointerup', {
 					pointerType: 'touch',
@@ -635,6 +644,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 				const out = new PointerEvent('pointerout', {
 					pointerType: 'touch',
@@ -674,7 +686,38 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 			}
 
-			if (hasMouseCallbacks) {
+			if (hasTouchCallbacks && !preventDefault) {
+				const touches = TouchList.fromList(this._touches);
+
+				const changedTouches = TouchList.fromList([
+					new Touch({
+						identifier: ptrId,
+						target: this.__target ?? this,
+						clientX: x,
+						clientY: y,
+						screenX: x,
+						screenY: y,
+						pageX: x,
+						pageY: y,
+					}),
+				]);
+
+				const event = new TouchEvent('touchend', {
+					touches,
+					targetTouches: touches,
+					changedTouches,
+					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
+				});
+
+				for (const callback of this._touchEndCallbacks) {
+					callback(event);
+				}
+			}
+
+			if (hasMouseCallbacks && !preventDefault) {
 				const event = new MouseEvent('mouseup', {
 					clientX: x,
 					clientY: y,
@@ -683,19 +726,14 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 
-				// todo emit mouseup when desktop is supported
-				// for (const callback of this._mouseUpCallbacks) {
-				// 	callback(event);
-				// }
-			}
-
-			const index = this._lastPointerEventById.findIndex((item) => {
-				return item?.pointerId === pointerId;
-			});
-			if (index > -1) {
-				this._lastPointerEventById.splice(index, 1);
+				for (const callback of this._mouseUpCallbacks) {
+					callback(event);
+				}
 			}
 		}
 
@@ -707,40 +745,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 		}
 
-		if (this._touchEndCallbacks.length > 0) {
-			const touches = TouchList.fromList(this._touches);
-
-			const changedTouches = TouchList.fromList([
-				new Touch({
-					identifier: ptrId,
-					target: this.__target ?? this,
-					clientX: x,
-					clientY: y,
-					screenX: x,
-					screenY: y,
-					pageX: x,
-					pageY: y,
-				}),
-			]);
-
-			const event = new TouchEvent('touchend', {
-				touches,
-				targetTouches: touches,
-				changedTouches,
-				target: this.__target ?? this,
-			});
-
-			for (const callback of this._touchEndCallbacks) {
-				callback(event);
-			}
-		}
+		this._lastPointerEventById.delete(pointerId);
 	}
 
 	private _downCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerDownCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseDownCallbacks.length > 0;
-
-		if (hasPointerCallbacks || hasMouseCallbacks) {
+		const hasTouchCallbacks = this._touchStartCallbacks.length > 0;
+		if (hasPointerCallbacks || hasMouseCallbacks || hasTouchCallbacks) {
+			let preventDefault = false;
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointerdown', {
@@ -754,6 +767,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 
 				for (const callback of this._pointerDownCallbacks) {
@@ -761,7 +777,37 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 			}
 
-			if (hasMouseCallbacks) {
+			if (hasTouchCallbacks && !preventDefault) {
+				const touch = new Touch({
+					identifier: ptrId,
+					target: this.__target ?? this,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					pageX: x,
+					pageY: y,
+				});
+				this._touches.push(touch);
+				this._touchesById[ptrId] = touch;
+
+				const touches = TouchList.fromList(this._touches);
+				const touchEvent = new TouchEvent('touchstart', {
+					touches,
+					targetTouches: touches,
+					changedTouches: this._touches,
+					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
+				});
+
+				for (const callback of this._touchStartCallbacks) {
+					callback(touchEvent);
+				}
+			}
+
+			if (hasMouseCallbacks && !preventDefault) {
 				const event = new MouseEvent('mousedown', {
 					clientX: x,
 					clientY: y,
@@ -770,49 +816,27 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 
-				// todo emit mousedown when desktop is supported
-				// for (const callback of this._mouseDownCallbacks) {
-				// 	callback(event);
-				// }
+				for (const callback of this._mouseDownCallbacks) {
+					callback(event);
+				}
 			}
 
-			this._lastPointerEventById.push({ pointerId, x, y });
-		}
-
-		if (this._touchStartCallbacks.length > 0) {
-			const touch = new Touch({
-				identifier: ptrId,
-				target: this.__target ?? this,
-				clientX: x,
-				clientY: y,
-				screenX: x,
-				screenY: y,
-				pageX: x,
-				pageY: y,
-			});
-			this._touches.push(touch);
-			this._touchesById[ptrId] = touch;
-
-			const touches = TouchList.fromList(this._touches);
-			const touchEvent = new TouchEvent('touchstart', {
-				touches,
-				targetTouches: touches,
-				changedTouches: this._touches,
-				target: this.__target ?? this,
-			});
-
-			for (const callback of this._touchStartCallbacks) {
-				callback(touchEvent);
-			}
+			this._lastPointerEventById.set(pointerId, { pointerId, x, y });
 		}
 	}
 
 	private _cancelCallback(ptrId: number, x: number, y: number, isPrimary = false) {
 		const hasPointerCallbacks = this._pointerCancelCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseCancelCallbacks.length > 0;
-		if (hasPointerCallbacks || hasMouseCallbacks) {
+		const hasTouchCallbacks = this._touchCancelCallbacks.length > 0;
+
+		if (hasPointerCallbacks || hasMouseCallbacks || hasTouchCallbacks) {
+			let preventDefault = false;
 			const pointerId = ptrId;
 			if (hasPointerCallbacks) {
 				const event = new PointerEvent('pointercancel', {
@@ -826,6 +850,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageY: y,
 					isPrimary,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 
 				for (const callback of this._pointerCancelCallbacks) {
@@ -833,7 +860,37 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				}
 			}
 
-			if (hasMouseCallbacks) {
+			if (hasTouchCallbacks && !preventDefault) {
+				const touch = new Touch({
+					identifier: ptrId,
+					target: this.__target ?? this,
+					clientX: x,
+					clientY: y,
+					screenX: x,
+					screenY: y,
+					pageX: x,
+					pageY: y,
+				});
+				const touchesList = [touch];
+				const touchesById = [];
+				touchesById[ptrId] = touch;
+				const touches = TouchList.fromList(touchesList);
+				const touchEvent = new TouchEvent('touchcancel', {
+					touches,
+					targetTouches: touches,
+					changedTouches: touchesList,
+					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
+				});
+
+				for (const callback of this._touchCancelCallbacks) {
+					callback(touchEvent);
+				}
+			}
+
+			if (hasMouseCallbacks && !preventDefault) {
 				const event = new MouseEvent('mouseout', {
 					clientX: x,
 					clientY: y,
@@ -842,40 +899,17 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					pageX: x,
 					pageY: y,
 					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
 				});
 
-				// todo emit mouseout when desktop is supported
-				// for (const callback of this._mouseCancelCallbacks) {
-				// 	callback(event);
-				// }
+				for (const callback of this._mouseCancelCallbacks) {
+					callback(event);
+				}
 			}
-		}
 
-		if (this._touchCancelCallbacks.length > 0) {
-			const touch = new Touch({
-				identifier: ptrId,
-				target: this.__target ?? this,
-				clientX: x,
-				clientY: y,
-				screenX: x,
-				screenY: y,
-				pageX: x,
-				pageY: y,
-			});
-			const touchesList = [touch];
-			const touchesById = [];
-			touchesById[ptrId] = touch;
-			const touches = TouchList.fromList(touchesList);
-			const touchEvent = new TouchEvent('touchcancel', {
-				touches,
-				targetTouches: touches,
-				changedTouches: touchesList,
-				target: this.__target ?? this,
-			});
-
-			for (const callback of this._touchCancelCallbacks) {
-				callback(touchEvent);
-			}
+			this._lastPointerEventById.set(pointerId, { pointerId, x, y });
 		}
 	}
 
@@ -885,20 +919,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		const hasPointerCallbacks = this._pointerMoveCallbacks.length > 0;
 		const hasMouseCallbacks = this._mouseMoveCallbacks.length > 0;
 		const hasMouseWheel = this._mouseWheelCallbacks.length > 0;
+		const hasTouchCallbacks = this._touchMoveCallbacks.length > 0;
 
-		if (hasPointerCallbacks || hasMouseCallbacks || hasMouseWheel) {
+		if (hasPointerCallbacks || hasMouseCallbacks || hasMouseWheel || hasTouchCallbacks) {
+			const changedTouches = hasTouchCallbacks ? TouchList.empty() : null;
+			let preventDefault = false;
 			for (const pointer of data.pointers) {
 				const pointerId = pointer.ptrId;
 
-				const index = this._lastPointerEventById.findIndex((item) => {
-					return item?.pointerId === pointerId;
-				});
-				let previousEvent;
-				if (index > -1) {
-					previousEvent = this._lastPointerEventById[index];
-				} else {
-					previousEvent = { pointerId, x: 0, y: 0 };
-				}
+				const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
 
 				if (hasPointerCallbacks) {
 					const event = new PointerEvent('pointermove', {
@@ -914,6 +943,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						movementY: pointer.y - previousEvent.y,
 						button: -1,
 						target: this.__target ?? this,
+						preventDefault: () => {
+							preventDefault = true;
+						},
 					});
 
 					for (const callback of this._pointerMoveCallbacks) {
@@ -921,7 +953,22 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					}
 				}
 
-				if (hasMouseCallbacks) {
+				if (hasTouchCallbacks && !preventDefault) {
+					changedTouches.push(
+						new Touch({
+							identifier: pointer.ptrId,
+							target: this.__target ?? this,
+							clientX: pointer.x,
+							clientY: pointer.y,
+							screenX: pointer.x,
+							screenY: pointer.y,
+							pageX: pointer.x,
+							pageY: pointer.y,
+						})
+					);
+				}
+
+				if (hasMouseCallbacks && !preventDefault) {
 					const event = new MouseEvent('mousemove', {
 						clientX: pointer.x,
 						clientY: pointer.y,
@@ -935,10 +982,9 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						target: this.__target ?? this,
 					});
 
-					// todo emit mousemove when desktop is supported
-					// for (const callback of this._mouseMoveCallbacks) {
-					// 	callback(event);
-					// }
+					for (const callback of this._mouseMoveCallbacks) {
+						callback(event);
+					}
 				}
 
 				if (hasMouseWheel) {
@@ -950,47 +996,72 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						target: this.__target ?? this,
 					});
 
-					// todo emit wheel when desktop is supported
-					// for (const callback of this._mouseWheelCallbacks) {
-					// 	callback(event);
-					// }
+					for (const callback of this._mouseWheelCallbacks) {
+						callback(event);
+					}
 				}
 
-				if (index > -1) {
-					this._lastPointerEventById[index] = { pointerId, x: pointer.x, y: pointer.y };
+				this._lastPointerEventById.set(pointerId, { pointerId, x: pointer.x, y: pointer.y });
+			}
+
+			if ((changedTouches?.length ?? 0) > 0) {
+				const touches = TouchList.fromList(this._touches);
+
+				const event = new TouchEvent('touchmove', {
+					touches,
+					targetTouches: touches,
+					changedTouches,
+					target: this.__target ?? this,
+					preventDefault: () => {
+						preventDefault = true;
+					},
+				});
+
+				for (const callback of this._touchMoveCallbacks) {
+					callback(event);
 				}
 			}
-		}
 
-		if (this._touchMoveCallbacks.length > 0) {
-			const changedTouches = [];
+			if (!preventDefault && hasMouseCallbacks) {
+				for (const pointer of data.pointers) {
+					const pointerId = pointer.ptrId;
 
-			for (const pointer of data.pointers) {
-				changedTouches.push(
-					new Touch({
-						identifier: pointer.ptrId,
-						target: this.__target ?? this,
+					const previousEvent = this._lastPointerEventById.get(pointerId) ?? { pointerId, x: 0, y: 0 };
+
+					const event = new MouseEvent('mousemove', {
 						clientX: pointer.x,
 						clientY: pointer.y,
 						screenX: pointer.x,
 						screenY: pointer.y,
 						pageX: pointer.x,
 						pageY: pointer.y,
-					})
-				);
+						movementX: pointer.x - previousEvent.x,
+						movementY: pointer.y - previousEvent.y,
+						button: -1,
+						target: this.__target ?? this,
+						preventDefault: () => {
+							preventDefault = true;
+						},
+					});
+
+					for (const callback of this._mouseMoveCallbacks) {
+						callback(event);
+					}
+				}
 			}
 
-			const touches = TouchList.fromList(this._touches);
+			if (hasMouseWheel) {
+				const event = new WheelEvent('wheel', {
+					deltaX: data.deltaX,
+					deltaY: data.deltaY,
+					deltaZ: 0,
+					deltaMode: data.deltaMode,
+					target: this.__target ?? this,
+				});
 
-			const event = new TouchEvent('touchmove', {
-				touches,
-				targetTouches: touches,
-				changedTouches,
-				target: this.__target ?? this,
-			});
-
-			for (const callback of this._touchMoveCallbacks) {
-				callback(event);
+				for (const callback of this._mouseWheelCallbacks) {
+					callback(event);
+				}
 			}
 		}
 	}
@@ -1055,4 +1126,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	setPointerCapture(id) {}
 
 	releasePointerCapture(id) {}
+
+	getRootNode() {
+		return this;
+	}
 }

@@ -166,9 +166,8 @@ if ((global as any).document) {
 	(global as any).document.readyState = 'complete';
 }
 
-if (!global.ontouchstart) {
-	global.ontouchstart = () => {};
-}
+(global as any).window.ontouchstart = global.ontouchstart = () => {};
+(global as any).window.onpointerdown = global.onpointerdown = () => {};
 
 (global as any).window.setTimeout = setTimeout;
 (global as any).window.setInterval = setInterval;

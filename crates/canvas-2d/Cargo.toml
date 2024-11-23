@@ -19,7 +19,7 @@ gl-bindings = { workspace = true }
 csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86", features = ["named-colors"] }
 log.workspace = true
 skia-safe = { workspace = true, features = ["textlayout"] }
-bytes = "1.6.1"
+bytes = "1.7.2"
 env_logger = "0.11.2"
 ash = { version = "0.38.0", optional = true, features = ["libloading"] }
 raw-window-handle.workspace = true

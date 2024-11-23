@@ -5,6 +5,7 @@ use super::{
     gpu_command_encoder::CanvasImageCopyTexture,
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
+use crate::webgpu::enums::CanvasGPUTextureFormat;
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
@@ -144,6 +145,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
         );
     }
 
+    {
+        let destination = &*destination;
+        let texture = &*destination.texture;
+        match texture.format {
+            CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+                canvas_core::image_asset::ImageAsset::rgba_to_bgra_in_place(bytes.as_mut_slice())
+            }
+            _ => {}
+        }
+    }
+
 
     let ext_source = CanvasImageCopyExternalImage {
         source: bytes.as_ptr(),
@@ -179,9 +191,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     let (width, height) = context.context.dimensions();
 
-    let mut data = vec![0u8; (width * height * 4.) as usize];
-
-    context.context.get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     let queue = &*queue;
     let queue_id = queue.queue.id;
@@ -189,6 +198,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     let global = queue.queue.instance.global();
 
     let destination_texture = &*destination.texture;
+
+    let mut data = vec![0u8; (width * height * 4.) as usize];
+
+    match destination_texture.format {
+        CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+            context.context.get_pixels_format(data.as_mut_slice(), (0, 0), (width as i32, height as i32), canvas_2d::context::ColorType::BGRA8888);
+        }
+        _ => {
+            context.context.get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
+        }
+    }
 
     let destination_texture_id = destination_texture.texture;
 
@@ -265,7 +285,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
     }
     let image_asset = &*source.source;
     image_asset.with_bytes_dimension(|bytes, dimension| {
-        let ext_source = CanvasImageCopyExternalImage {
+        let mut ext_source = CanvasImageCopyExternalImage {
             source: bytes.as_ptr(),
             source_size: bytes.len(),
             origin: source.origin,
@@ -274,7 +294,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
             height: dimension.1,
         };
 
-        canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+        {
+            let destination = &*destination;
+            let texture = &*destination.texture;
+            match texture.format {
+                CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+                    let mut bytes = bytes.to_vec();
+                    canvas_core::image_asset::ImageAsset::rgba_to_bgra_in_place(bytes.as_mut_slice());
+
+                    ext_source.source = bytes.as_ptr();
+
+                    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+                }
+                _ => {
+                    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+                }
+            }
+        }
     });
 }
 

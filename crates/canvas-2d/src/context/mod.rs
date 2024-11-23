@@ -5,7 +5,8 @@ use base64::Engine;
 use regex::bytes::Replacer;
 use skia_safe::image::CachingHint;
 use skia_safe::BlendMode;
-use skia_safe::{AlphaType, Color, ColorType, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface};
+pub use skia_safe::ColorType;
+use skia_safe::{AlphaType, Color, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -19,6 +20,7 @@ use text_styles::{
 };
 
 use crate::context::drawing_text::typography::Font;
+
 
 use bitflags::bitflags;
 use bytes::Buf;
@@ -218,6 +220,18 @@ impl Context {
         let origin = origin.into();
         let size = size.into();
         let mut info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+
+        if let Some(img) = self.get_image() {
+            let row_bytes = (info.width() * 4) as usize;
+            img.read_pixels(&info, buffer, row_bytes, origin, CachingHint::Allow);
+        }
+    }
+
+
+    pub fn get_pixels_format(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>, color_type: ColorType) {
+        let origin = origin.into();
+        let size = size.into();
+        let mut info = ImageInfo::new(size, color_type, AlphaType::Unpremul, None);
 
         if let Some(img) = self.get_image() {
             let row_bytes = (info.width() * 4) as usize;

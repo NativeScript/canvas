@@ -977,6 +977,12 @@ use core_foundation::string::CFString;
         }
     }
 
+    pub fn rgba_to_bgra_in_place(data: &mut [u8]) {
+        for chunk in data.chunks_exact_mut(4) {
+            chunk.swap(0, 2);
+        }
+    }
+
 
     pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {
         let mut rgba_data = Vec::with_capacity(data.len() * 2);

@@ -432,6 +432,12 @@ impl JSCanvasRenderingContext2D {
     }
 
     #[napi]
+    pub fn restore(&self) {
+        canvas_c::canvas_native_context_restore(self.context);
+    }
+
+
+    #[napi]
     pub fn rotate(&self, angle: f64) {
         canvas_c::canvas_native_context_rotate(self.context, angle as f32);
     }
@@ -469,6 +475,11 @@ impl JSCanvasRenderingContext2D {
         }
     }
 
+
+    #[napi]
+    pub fn save(&self) {
+        canvas_c::canvas_native_context_save(self.context);
+    }
 
     #[napi]
     pub fn set_line_dash(&self, segments: Vec<f64>) {

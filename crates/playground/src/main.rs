@@ -1960,6 +1960,13 @@ fn main() {
 
     canvas_c::canvas_native_font_add_family_with_bytes(c"ChaChicle".as_ptr(), ChaChicle.as_ptr(), ChaChicle.len());
 
+    canvas_c::canvas_native_webgl_create_no_window(
+        600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false
+    );
+
+
+    /*
+
     event_loop.run(move |event, target| {
         match event {
             Event::NewEvents(_) => {}
@@ -2120,6 +2127,8 @@ fn main() {
             _ => {}
         }
     });
+
+    */
 
     /*
     event_loop.run(move |event, target| {

@@ -284,9 +284,11 @@ if (!nativeBinding) {
 	throw new Error(`Failed to load native binding`);
 }
 
-const { WebGLRenderingContext, CanvasRenderingContext2D, CanvasPattern, CanvasGradient } = nativeBinding;
+const { WebGLRenderingContext, Path2D, CanvasRenderingContext2D, CanvasPattern, CanvasGradient, ImageAsset } = nativeBinding;
 
 module.exports.WebGLRenderingContext = WebGLRenderingContext;
+module.exports.Path2D = Path2D;
 module.exports.CanvasRenderingContext2D = CanvasRenderingContext2D;
 module.exports.CanvasPattern = CanvasPattern;
 module.exports.CanvasGradient = CanvasGradient;
+module.exports.ImageAsset = ImageAsset;

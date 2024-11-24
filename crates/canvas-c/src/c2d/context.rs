@@ -2211,10 +2211,11 @@ pub extern "C" fn canvas_native_context_fill(context: *mut CanvasRenderingContex
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     rule: CanvasFillRule,
 ) {
     let context = unsafe { &mut *context };
+    let path = unsafe { &mut *path };
     context.context.fill_rule(Some(&mut path.0), rule.into());
 }
 
@@ -2312,12 +2313,13 @@ pub extern "C" fn canvas_native_context_is_point_in_path_str(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context
         .context
         .point_in_path(Some(&path.0), x, y, rule.into())
@@ -2337,12 +2339,13 @@ pub extern "C" fn canvas_native_context_is_point_in_path(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context
         .context
         .point_in_path(Some(&path.0), x, y, rule.into())
@@ -2361,11 +2364,12 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context.context.point_in_stroke(Some(&path.0), x, y)
 }
 
@@ -2565,9 +2569,10 @@ pub extern "C" fn canvas_native_context_stroke(context: *mut CanvasRenderingCont
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
 ) {
     let context = unsafe { &mut *context };
+    let path = unsafe { &mut *path };
     context.context.stroke(Some(&mut path.0));
 }
 

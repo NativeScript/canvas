@@ -1,15 +1,17 @@
+pub mod path;
+
 use napi_derive::napi;
 
+use crate::c2d::path::JSPath2D;
+use crate::image_asset::JSImageAsset;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::to_parsed_color;
-use canvas_c::{
-    canvas_native_context_get_current_fill_style_type, canvas_native_context_get_fill_style,
-    canvas_native_context_get_style_type, canvas_native_context_set_fill_style,
-    canvas_native_paint_style_get_color_string, CanvasRenderingContext2D, PaintStyle, PaintStyleType,
-};
+use canvas_c::enums::CanvasFillRule;
+use canvas_c::{canvas_native_context_get_current_fill_style_type, canvas_native_context_get_fill_style, canvas_native_context_get_style_type, canvas_native_context_set_fill_style, canvas_native_paint_style_get_color_string, CanvasRenderingContext2D, PaintStyle, PaintStyleType};
 use napi::bindgen_prelude::{ClassInstance, Either3, FromNapiValue};
 use napi::*;
 use std::ffi::CString;
+use std::sync::Arc;
 
 #[napi(js_name = "CanvasRenderingContext2D")]
 pub struct JSCanvasRenderingContext2D {
@@ -28,6 +30,32 @@ pub struct JSCCanvasGradient {
 
 #[napi]
 impl JSCanvasRenderingContext2D {
+    #[napi(factory)]
+    pub fn with_view(
+        view: i64,
+        width: f64,
+        height: f64,
+        density: f64,
+        alpha: bool,
+        font_color: i32,
+        ppi: f64,
+        direction: u32,
+    ) -> Self {
+        JSCanvasRenderingContext2D {
+            context: canvas_c::canvas_native_context_create_gl(
+                view as _,
+                width as f32,
+                height as f32,
+                density as f32,
+                alpha,
+                font_color,
+                ppi as f32,
+                direction,
+            ),
+        }
+    }
+
+
     #[napi(factory)]
     pub fn with_cpu(
         width: f64,
@@ -50,6 +78,71 @@ impl JSCanvasRenderingContext2D {
             ),
         }
     }
+
+    #[napi]
+    pub fn render(&self) {
+        canvas_c::canvas_native_context_flush(self.context);
+        canvas_c::canvas_native_context_render(self.context);
+    }
+
+    #[napi]
+    pub fn fill(&self, path: Option<ClassInstance<JSPath2D>>, rule: Option<JsString>) {
+        match (path, rule) {
+            (None, None) => {
+                canvas_c::canvas_native_context_fill(
+                    self.context, CanvasFillRule::NonZero,
+                )
+            }
+            (Some(path), None) => {
+                canvas_c::canvas_native_context_fill_with_path(self.context, path.path, CanvasFillRule::NonZero)
+            }
+            (None, Some(rule)) => {
+                if let Some(rule) = rule.into_utf8().ok() {
+                    if let Ok(rule) = rule.as_str() {
+                        match rule {
+                            "nonzero" => {
+                                canvas_c::canvas_native_context_fill(self.context, CanvasFillRule::NonZero)
+                            }
+                            "evenodd" => {
+                                canvas_c::canvas_native_context_fill(self.context, CanvasFillRule::EvenOdd)
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            (Some(path), Some(rule)) => {
+                if let Some(rule) = rule.into_utf8().ok() {
+                    if let Ok(rule) = rule.as_str() {
+                        match rule {
+                            "nonzero" => {
+                                canvas_c::canvas_native_context_fill_with_path(self.context, path.path, CanvasFillRule::NonZero)
+                            }
+                            "evenodd" => {
+                                canvas_c::canvas_native_context_fill_with_path(self.context, path.path, CanvasFillRule::EvenOdd)
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[napi]
+    pub fn stroke(&self, path: Option<ClassInstance<JSPath2D>>) {
+        match path {
+            None => {
+                canvas_c::canvas_native_context_stroke(
+                    self.context
+                )
+            }
+            Some(path) => {
+                canvas_c::canvas_native_context_stroke_with_path(self.context, path.path)
+            }
+        }
+    }
+
 
     #[napi(getter)]
     pub fn shadow_color(&self) -> String {
@@ -254,5 +347,32 @@ impl JSCanvasRenderingContext2D {
         let quality: u32 = (quality * 100.) as u32;
         let ret = canvas_c::canvas_native_to_data_url(self.context, c_str.as_ptr(), quality);
         unsafe { CString::from_raw(ret as _).to_string_lossy().to_string() }
+    }
+
+
+    #[napi]
+    pub fn draw_image(&self, image: ClassInstance<JSImageAsset>, sx: Option<f64>, sy: Option<f64>, s_width: Option<f64>, s_height: Option<f64>,
+                      dx: Option<f64>, dy: Option<f64>, d_width: Option<f64>, d_height: Option<f64>,
+    ) {
+        let image = Arc::as_ptr(&image.asset);
+        match (sx, sy, s_width, s_height, dx, dy, d_height, d_width) {
+            (Some(dx), Some(dy), None, None, None, None, None, None) => {
+                canvas_c::canvas_native_context_draw_image_dx_dy_asset(
+                    self.context, image as _, dx as f32, dy as f32,
+                );
+            }
+            (Some(dx), Some(dy), Some(d_width), Some(d_height), None, None, None, None) => {
+                canvas_c::canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                    self.context, image as _, dx as f32, dy as f32, d_width as f32, d_height as f32,
+                );
+            }
+            (Some(sx), Some(sy), Some(s_width), Some(s_height), Some(dx), Some(dy), Some(d_width), Some(d_height)) => {
+                canvas_c::canvas_native_context_draw_image_asset(
+                    self.context, image as _, sx as f32, sy as f32, s_width as f32, s_height as f32,
+                    dx as f32, dy as f32, d_width as f32, d_height as f32,
+                );
+            }
+            _ => {}
+        }
     }
 }

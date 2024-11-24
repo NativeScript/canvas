@@ -216,7 +216,8 @@ impl NSOpenGLView {
     }
 
     pub fn flush_buffer(&self) {
-        let _: () = unsafe { msg_send![&self.0, flushBuffer] };
+        let context: Id<NSObject> = unsafe { msg_send_id![&self.0, openGLContext] };
+        let _: () = unsafe { msg_send![&context, flushBuffer] };
     }
 
     pub fn open_gl_context(&self) -> NSOpenGLContext {

@@ -1,17 +1,18 @@
 pub mod path;
 
-use napi_derive::napi;
 
 use crate::c2d::path::JSPath2D;
+use crate::dom_matrix::JSDOMMatrix;
 use crate::image_asset::JSImageAsset;
 use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::utils::color::to_parsed_color;
 use canvas_c::enums::CanvasFillRule;
 use canvas_c::{canvas_native_context_get_current_fill_style_type, canvas_native_context_get_fill_style, canvas_native_context_get_style_type, canvas_native_context_set_fill_style, canvas_native_paint_style_get_color_string, CanvasRenderingContext2D, PaintStyle, PaintStyleType};
-use napi::bindgen_prelude::{ClassInstance, Either3, FromNapiValue};
+use napi::bindgen_prelude::{ClassInstance, Either, Either3, FromNapiValue};
 use napi::*;
 use std::ffi::CString;
 use std::sync::Arc;
+
 
 #[napi(js_name = "CanvasRenderingContext2D")]
 pub struct JSCanvasRenderingContext2D {
@@ -79,6 +80,24 @@ impl JSCanvasRenderingContext2D {
         }
     }
 
+
+    #[napi]
+    pub fn arc(&self, x: f64, y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>) {
+        canvas_c::canvas_native_context_arc(
+            self.context,
+            x as f32,
+            y as f32,
+            radius as f32,
+            start_angle as f32,
+            end_angle as f32,
+            anticlockwise.unwrap_or(false),
+        )
+    }
+    #[napi]
+    pub fn begin_path(&self) {
+        canvas_c::canvas_native_context_begin_path(self.context);
+    }
+
     #[napi]
     pub fn render(&self) {
         canvas_c::canvas_native_context_flush(self.context);
@@ -129,20 +148,18 @@ impl JSCanvasRenderingContext2D {
         }
     }
 
+
     #[napi]
-    pub fn stroke(&self, path: Option<ClassInstance<JSPath2D>>) {
-        match path {
-            None => {
-                canvas_c::canvas_native_context_stroke(
-                    self.context
+    pub fn fill_text(&self, text: JsString, x: f64, y: f64, max_width: Option<f64>) {
+        if let Some(text) = text.into_utf8().ok() {
+            if let Ok(text) = text.as_str() {
+                let context = unsafe { &mut *self.context };
+                context.get_context_mut().fill_text(
+                    text, x as f32, y as f32, max_width.map(|width| width as f32),
                 )
-            }
-            Some(path) => {
-                canvas_c::canvas_native_context_stroke_with_path(self.context, path.path)
             }
         }
     }
-
 
     #[napi(getter)]
     pub fn shadow_color(&self) -> String {
@@ -362,16 +379,6 @@ impl JSCanvasRenderingContext2D {
         )
     }
 
-    #[napi]
-    pub fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        canvas_c::canvas_native_context_stroke_rect(
-            self.context,
-            x as f32,
-            y as f32,
-            width as f32,
-            height as f32,
-        )
-    }
 
     #[napi(js_name = "toDataURL")]
     pub fn to_data_url(&self, format: String, encoderOptions: Option<f64>) -> String {
@@ -411,5 +418,138 @@ impl JSCanvasRenderingContext2D {
             }
             _ => {}
         }
+    }
+
+    #[napi]
+    pub fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
+        canvas_c::canvas_native_context_rect(
+            self.context,
+            x as f32,
+            y as f32,
+            width as f32,
+            height as f32,
+        )
+    }
+
+    #[napi]
+    pub fn rotate(&self, angle: f64) {
+        canvas_c::canvas_native_context_rotate(self.context, angle as f32);
+    }
+
+    #[napi]
+    pub fn round_rect(&self, x: f64, y: f64, width: f64, height: f64, radii: Either<f64, Vec<f64>>) {
+        match radii {
+            Either::A(radii) => {
+                let radii = radii as f32;
+                canvas_c::canvas_native_context_round_rect_tl_tr_br_bl(
+                    self.context,
+                    x as f32,
+                    y as f32,
+                    width as f32,
+                    height as f32,
+                    radii,
+                    radii,
+                    radii,
+                    radii,
+                )
+            }
+            Either::B(radii) => {
+                let radii = radii.into_iter().map(|v| v as f32).collect::<Vec<f32>>();
+
+                canvas_c::canvas_native_context_round_rect(
+                    self.context,
+                    x as f32,
+                    y as f32,
+                    width as f32,
+                    height as f32,
+                    radii.as_ptr(),
+                    radii.len(),
+                )
+            }
+        }
+    }
+
+
+    #[napi]
+    pub fn set_line_dash(&self, segments: Vec<f64>) {
+        let segments = segments.into_iter().map(|v| v as f32).collect::<Vec<f32>>();
+        canvas_c::canvas_native_context_set_line_dash(self.context, segments.as_ptr(), segments.len() as _);
+    }
+
+    #[napi]
+    pub fn stroke(&self, path: Option<ClassInstance<JSPath2D>>) {
+        match path {
+            None => {
+                canvas_c::canvas_native_context_stroke(
+                    self.context
+                )
+            }
+            Some(path) => {
+                canvas_c::canvas_native_context_stroke_with_path(self.context, path.path)
+            }
+        }
+    }
+
+
+    #[napi]
+    pub fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
+        canvas_c::canvas_native_context_stroke_rect(
+            self.context,
+            x as f32,
+            y as f32,
+            width as f32,
+            height as f32,
+        )
+    }
+
+    #[napi]
+    pub fn stroke_text(&self, text: JsString, x: f64, y: f64, max_width: Option<f64>) {
+        if let Some(text) = text.into_utf8().ok() {
+            if let Ok(text) = text.as_str() {
+                let context = unsafe { &mut *self.context };
+                context.get_context_mut().stroke_text(
+                    text, x as f32, y as f32, max_width.map(|width| width as f32),
+                )
+            }
+        }
+    }
+
+
+    #[napi]
+    pub fn stroke_oval(&self, x: f64, y: f64, width: f64, height: f64) {
+        canvas_c::canvas_native_context_stroke_oval(
+            self.context,
+            x as f32,
+            y as f32,
+            width as f32,
+            height as f32,
+        )
+    }
+    #[napi]
+    pub fn set_transform(&self, a: Either<f64, ClassInstance<JSDOMMatrix>>, b: Option<f64>, c: Option<f64>, d: Option<f64>, e: Option<f64>, f: Option<f64>) {
+        match a {
+            Either::A(a) => {
+                match (b, c, d, e, f) {
+                    (Some(b), Some(c), Some(d), Some(e), Some(f)) => {
+                        canvas_c::canvas_native_context_set_transform(self.context, a as f32, b as f32, c as f32, d as f32, e as f32, f as f32);
+                    }
+                    _ => {}
+                }
+            }
+            Either::B(b) => {
+                canvas_c::canvas_native_context_set_transform_matrix(self.context, b.matrix);
+            }
+        }
+    }
+
+    #[napi]
+    pub fn transform(&self, a: f64, b: f64, c: f64, d: f64, e: f64, f: f64) {
+        canvas_c::canvas_native_context_transform(self.context, a as f32, b as f32, c as f32, d as f32, e as f32, f as f32);
+    }
+
+
+    #[napi]
+    pub fn translate(&self, x: f64, y: f64) {
+        canvas_c::canvas_native_context_translate(self.context, x as f32, y as f32);
     }
 }

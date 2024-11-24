@@ -211,8 +211,6 @@ pub extern "C" fn canvas_native_path_round_rect(
     let radii = unsafe { std::slice::from_raw_parts(radii, size) };
     let path = unsafe { &mut *path };
 
-    println!("radii: {:?}", radii);
-
     let size = radii.len();
     if size == 0 {
         return;

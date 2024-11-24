@@ -38,9 +38,6 @@ export class ApplicationDelegate extends NSObject {
 		window.makeKeyAndOrderFront(this);
 
 		NSApp.activateIgnoringOtherApps(false);
-
-		doTheThing();
-
 	}
 
 	/**
@@ -62,7 +59,6 @@ export class NSCCanvas extends NSView {
 		NativeClass(this);
 	}
 }
-
 
 export class CanvasGLView extends NSOpenGLView {
 	static {
@@ -95,6 +91,8 @@ export class ViewController extends NSViewController {
 		NativeClass(this);
 	}
 
+	canvas;
+
 	/**
 	 * @param {NSCCanvas} canvas
 	 */
@@ -109,8 +107,7 @@ export class ViewController extends NSViewController {
 
 		glview.wantsLayer = true;
 
-		console.log('viewDidLoad');
-
+		doTheThing();
 	}
 }
 
@@ -118,131 +115,120 @@ const glview = CanvasGLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height
 
 let isDoingOrDone = false;
 
-async function doTheThing() {
+function mdnShadowColor(ctx) {
+	// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor
 
-	if (isDoingOrDone) {
-		return;
-	}
+	ctx.fillStyle = 'black';
 
-	isDoingOrDone = true;
+	// Shadow
+	ctx.shadowColor = 'red';
+	ctx.shadowOffsetX = 10;
+	ctx.shadowOffsetY = 10;
 
-	const asset = new ImageAsset();
+	// Filled rectangle
+	ctx.fillRect(20, 20, 100, 100);
+
+	// Stroked rectangle
+	ctx.lineWidth = 6;
+
+	ctx.strokeRect(170, 20, 100, 100);
+}
+
+function mdnStrokeText(ctx) {
+	ctx.font = '50px serif';
+	ctx.fillText('Hello world', 50, 90);
+}
+
+function mdnRoundRect(ctx) {
+	// Rounded rectangle with zero radius (specified as a number)
+	ctx.strokeStyle = 'red';
+	ctx.beginPath();
+	ctx.roundRect(10, 20, 150, 100, 0);
+	ctx.stroke();
+
+	// Rounded rectangle with 40px radius (single element list)
+	ctx.strokeStyle = 'blue';
+	ctx.beginPath();
+	ctx.roundRect(10, 20, 150, 100, [40]);
+	ctx.stroke();
+
+	// Rounded rectangle with 2 different radii
+	ctx.strokeStyle = 'orange';
+	ctx.beginPath();
+	ctx.roundRect(10, 150, 150, 100, [10, 40]);
+	ctx.stroke();
+
+	// Rounded rectangle with four different radii
+	ctx.strokeStyle = 'green';
+	ctx.beginPath();
+	ctx.roundRect(400, 20, 200, 100, [0, 30, 50, 60]);
+	ctx.stroke();
+
+	// Same rectangle drawn backwards
+	ctx.strokeStyle = 'magenta';
+	ctx.beginPath();
+	ctx.roundRect(400, 150, -200, 100, [0, 30, 50, 60]);
+	ctx.stroke();
+}
+
+function mdnRotate(ctx){
+	// Point of transform origin
+	ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+	ctx.fillStyle = "blue";
+	ctx.fill();
+
+// Non-rotated rectangle
+	ctx.fillStyle = "gray";
+	ctx.fillRect(100, 0, 80, 20);
+
+// Rotated rectangle
+	ctx.rotate((45 * Math.PI) / 180);
+	ctx.fillStyle = "red";
+	ctx.fillRect(100, 0, 80, 20);
+
+// Reset transformation matrix to the identity matrix
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+}
+
+function doTheThing() {
 
 	let loaded = false;
 	// console.time('load1');
 	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
 	// console.timeEnd('load1');
-	console.log('asset: loaded', loaded, asset.width, asset.height);
 
 	const scale = NSScreen.mainScreen.backingScaleFactor;
 
+	//const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
 
-	// glview.prepareOpenGL();
+	// gl.clearColor(0, 0, 1, 1);
+	// gl.clear(gl.COLOR_BUFFER_BIT);
+	// gl.flush();
 
-	console.log(scale);
-
-
-	const path = new Path2D();
-	path.roundRect(10, 10, 100, 100, [10, 10, 10, 10]);
-
-	let ctx = CanvasRenderingContext2D.withCpu(300, 150, 1, true, 0, 90, 1);
-	ctx.fillRect(0, 0, 300, 150);
-	console.log('ctx', ctx.toDataURL('image/png'));
-	console.log(ctx.font);
-	ctx.font = '100px serif';
-	console.log(ctx.font);
-
-	ctx.fillStyle = 'red';
-	ctx.fillRect(0, 0, 100, 150);
-	ctx.fillStyle = 'blue';
-	ctx.fillRect(100, 0, 100, 150);
-	ctx.fillStyle = 'green';
-	ctx.fillRect(200, 0, 100, 150);
-
-
-	ctx.fillStyle = 'purple';
-	ctx.fill(path);
-
-
-	console.log('ctx', ctx.toDataURL('image/png'));
-
-//const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
-
-// gl.clearColor(0, 0, 1, 1);
-// gl.clear(gl.COLOR_BUFFER_BIT);
-// gl.flush();
-
-//console.log('gl', gl.toDataURL('image/png'));
-
+	//console.log('gl', gl.toDataURL('image/png'));
 
 	// const glview = CanvasGLView.alloc().initWithFrame(NSMakeRect(0, 0, 300 / scale, 150 / scale));
 	// glview.wantsLayer = true;
-// glview.prepareOpenGL();
+	// glview.prepareOpenGL();
 
 	const handle = interop.handleof(glview);
-// const glContext = WebGLRenderingContext.withView(handle.toNumber(), 1, true, false, false, false, 1, true, false, false, false, false, false);
-// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
+	// const glContext = WebGLRenderingContext.withView(handle.toNumber(), 1, true, false, false, false, 1, true, false, false, false, false, false);
+	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
 
-	ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
+	const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
+	ctx.fillStyle = 'white';
 
-
-	ctx.fillRect(0, 0, 300, 150);
-	console.log('ctx', ctx.toDataURL('image/png'));
-	console.log(ctx.font);
-	ctx.font = '100px serif';
-	console.log(ctx.font);
-
-	ctx.fillStyle = 'red';
-	ctx.fillRect(0, 0, 100, 150);
-	ctx.fillStyle = 'blue';
-	ctx.fillRect(100, 0, 100, 150);
-	ctx.fillStyle = 'green';
-	ctx.fillRect(200, 0, 100, 150);
-
-
-	ctx.fillStyle = 'purple';
-	// ctx.fill(path);
-	console.log('osei');
-
-	// asset.loadUrlCallback('https://picsum.photos/id/1/200/300', (done) => {
-	// 	console.log('loadUrlCallback', done);
-	// });
-
-	// console.log(asset.width, asset.height);
-
-
-	try {
-		loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
-		console.log('picsum');
-	} catch (e) {
-		console.log('picsum: e', e);
-	}
-
-
-	// ctx.render();
-
-	//ctx.drawImage(asset, 0, 0, glview.frame.size.width * scale, glview.frame.size.height * scale);
+	ctx.fillRect(0, 0, 1000, 1000);
 
 	ctx.fillStyle = 'black';
 
-	// Shadow
-	ctx.shadowColor = "red";
-	ctx.shadowOffsetX = 10;
-	ctx.shadowOffsetY = 10;
+	ctx.translate(0, 100);
 
-// Filled rectangle
-	ctx.fillRect(20, 20, 100, 100);
-
-// Stroked rectangle
-	ctx.lineWidth = 6;
-	ctx.strokeRect(170, 20, 100, 100);
-
-
+	//mdnShadowColor(ctx);
+	mdnRotate(ctx);
 
 	ctx.render();
-
-
-
 
 	/*
 
@@ -273,5 +259,3 @@ NSApp.delegate = ApplicationDelegate.new();
 NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
 
 NSApplicationMain(0, null);
-
-

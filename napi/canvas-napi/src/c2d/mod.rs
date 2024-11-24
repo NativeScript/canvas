@@ -156,9 +156,46 @@ impl JSCanvasRenderingContext2D {
         if let Some(color) = color.into_utf8().ok() {
             if let Ok(color) = color.as_str() {
                 let context = unsafe { &mut *self.context };
-                context.get_context_mut().set_stroke_style_with_color(color);
+                context.get_context_mut().set_shadow_color_str(color);
             }
         }
+    }
+
+
+    #[napi(getter)]
+    pub fn shadow_offset_x(&self) -> f64 {
+        let context = unsafe { &*self.context };
+        context.get_context().shadow_offset_x() as f64
+    }
+
+    #[napi(setter)]
+    pub fn set_shadow_offset_x(&self, x: f64) {
+        let context = unsafe { &mut *self.context };
+        context.get_context_mut().set_shadow_offset_x(x as f32);
+    }
+
+    #[napi(getter)]
+    pub fn shadow_offset_y(&self) -> f64 {
+        let context = unsafe { &*self.context };
+        context.get_context().shadow_offset_y() as f64
+    }
+
+    #[napi(setter)]
+    pub fn set_shadow_offset_y(&self, y: f64) {
+        let context = unsafe { &mut *self.context };
+        context.get_context_mut().set_shadow_offset_y(y as f32);
+    }
+
+    #[napi(getter)]
+    pub fn line_width(&self) -> f64 {
+        let context = unsafe { &*self.context };
+        context.get_context().line_width() as f64
+    }
+
+    #[napi(setter)]
+    pub fn set_line_width(&self, width: f64) {
+        let context = unsafe { &mut *self.context };
+        context.get_context_mut().set_line_width(width as f32);
     }
 
     #[napi(getter)]

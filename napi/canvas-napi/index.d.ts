@@ -41,6 +41,12 @@ export declare class CanvasRenderingContext2D {
 	stroke(path?: Path2D | undefined | null): void;
 	get shadowColor(): string;
 	set shadowColor(color: string);
+	get shadowOffsetX(): number;
+	set shadowOffsetX(x: number);
+	get shadowOffsetY(): number;
+	set shadowOffsetY(y: number);
+	get lineWidth(): number;
+	set lineWidth(width: number);
 	get globalAlpha(): number;
 	set globalAlpha(alpha: number);
 	get direction(): string;

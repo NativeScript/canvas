@@ -221,12 +221,27 @@ async function doTheThing() {
 
 	// ctx.render();
 
-	ctx.drawImage(asset, 0, 0, glview.frame.size.width * scale, glview.frame.size.height * scale);
+	//ctx.drawImage(asset, 0, 0, glview.frame.size.width * scale, glview.frame.size.height * scale);
+
+	ctx.fillStyle = 'black';
+
+	// Shadow
+	ctx.shadowColor = "red";
+	ctx.shadowOffsetX = 10;
+	ctx.shadowOffsetY = 10;
+
+// Filled rectangle
+	ctx.fillRect(20, 20, 100, 100);
+
+// Stroked rectangle
+	ctx.lineWidth = 6;
+	ctx.strokeRect(170, 20, 100, 100);
+
+
 
 	ctx.render();
 
 
-	console.log('??');
 
 
 	/*
@@ -257,12 +272,6 @@ NSApp.delegate = ApplicationDelegate.new();
 
 NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
 
-NSApp.finishLaunching();
-
-NSApp.run();
-
-// setTimeout(()=>{
-// 	NSApplicationMain(0, null);
-// }, 5000)
+NSApplicationMain(0, null);
 
 

@@ -39,7 +39,7 @@ canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { version = "0.78.2", features = ["textlayout"] }
+skia-safe = { version = "0.80.0", features = ["textlayout"] }
 itertools = "0.13.0"
 wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "48f663f70d5b6e99a5b8a708876ce9642d78fbde", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
 wgpu-types = { git = "https://github.com/triniwiz/wgpu", rev = "48f663f70d5b6e99a5b8a708876ce9642d78fbde" }

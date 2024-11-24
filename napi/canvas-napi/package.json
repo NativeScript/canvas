@@ -9,7 +9,8 @@
 			"defaults": false,
 			"additional": [
 				"aarch64-apple-darwin",
-				"x86_64-apple-darwin"
+				"x86_64-apple-darwin",
+				"universal-apple-darwin"
 			]
 		}
 	},

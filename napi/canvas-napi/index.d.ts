@@ -65,8 +65,10 @@ export declare class CanvasRenderingContext2D {
 	toDataURL(format: string, encoderOptions?: number | undefined | null): string;
 	drawImage(image: JSImageAsset, sx?: number | undefined | null, sy?: number | undefined | null, sWidth?: number | undefined | null, sHeight?: number | undefined | null, dx?: number | undefined | null, dy?: number | undefined | null, dWidth?: number | undefined | null, dHeight?: number | undefined | null): void;
 	rect(x: number, y: number, width: number, height: number): void;
+	restore(): void;
 	rotate(angle: number): void;
 	roundRect(x: number, y: number, width: number, height: number, radii: number | Array<number>): void;
+	save(): void;
 	setLineDash(segments: Array<number>): void;
 	stroke(path?: Path2D | undefined | null): void;
 	strokeRect(x: number, y: number, width: number, height: number): void;

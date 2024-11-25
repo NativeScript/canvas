@@ -431,7 +431,7 @@ function flappyBird(canvas) {
 			width: s_buttons.Ok.width,
 			height: s_buttons.Ok.height
 		});
-			run();
+		run();
 
 		/*
 		img = document.createElement('img');
@@ -586,6 +586,15 @@ function solarSystem(canvas) {
 	let moon;
 	let earth;
 
+
+	const scale = NSScreen.mainScreen.backingScaleFactor;
+
+	ctx.fillStyle = 'white';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	ctx.render();
+
+
 	function init() {
 		// sun = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 		// moon = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
@@ -594,11 +603,14 @@ function solarSystem(canvas) {
 		sun = new ImageAsset();
 		moon = new ImageAsset();
 		earth = new ImageAsset();
-		sun.fromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
-		moon.fromUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
-		earth.fromUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+		sun.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
+		moon.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
+		earth.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
 		LAF = requestAnimationFrame(draw);
 	}
+
+
+	//ctx.scale(scale, scale);
 
 	function draw() {
 		ctx.globalCompositeOperation = 'destination-over';

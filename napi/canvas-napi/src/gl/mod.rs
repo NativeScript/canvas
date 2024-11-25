@@ -1,14 +1,14 @@
 use napi::*;
 use napi_derive::napi;
 use std::ffi::{c_void, CString};
-#[napi(js_name = "WebGLRenderingContext")]
-pub struct JSWebGLRenderingContext {
+#[napi]
+pub struct WebGLRenderingContext {
     state: *mut canvas_c::WebGLState,
 }
 
 
 #[napi]
-impl JSWebGLRenderingContext {
+impl WebGLRenderingContext {
 
     // #[napi]
     // pub fn render(&self) {
@@ -40,7 +40,7 @@ impl JSWebGLRenderingContext {
         stencil: bool,
         desynchronized: bool,
         xr_compatible: bool
-    ) -> Result<JSWebGLRenderingContext> {
+    ) -> Result<WebGLRenderingContext> {
         let ret = canvas_c::canvas_native_webgl_create(
             view as _,
             version,
@@ -60,7 +60,7 @@ impl JSWebGLRenderingContext {
             return Err(napi::Error::from_reason("Invalid parameter"));
         }
 
-        Ok(JSWebGLRenderingContext {
+        Ok(WebGLRenderingContext {
             state: ret
         })
     }
@@ -81,7 +81,7 @@ impl JSWebGLRenderingContext {
         desynchronized: bool,
         xr_compatible: bool,
         is_canvas: bool,
-    ) -> Result<JSWebGLRenderingContext> {
+    ) -> Result<WebGLRenderingContext> {
         let ret = canvas_c::canvas_native_webgl_create_no_window(
             width,
             height,
@@ -103,7 +103,7 @@ impl JSWebGLRenderingContext {
             return Err(napi::Error::from_reason("Invalid parameter"));
         }
 
-        Ok(JSWebGLRenderingContext {
+        Ok(WebGLRenderingContext {
             state: ret
         })
     }

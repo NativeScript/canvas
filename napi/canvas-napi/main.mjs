@@ -55,6 +55,58 @@ export class NSCMTLView extends NSView {
 	static {
 		NativeClass(this);
 	}
+	_device;
+	_queue;
+	_canvas;
+
+	get queue() {
+		return this._queue;
+	}
+
+	get device() {
+		return this._device;
+	}
+
+	initWithFrame(frameRect) {
+		super.initWithFrame(frameRect);
+		this.wantsLayer = true;
+		const layer = CAMetalLayer.layer();
+		this._device = MTLCreateSystemDefaultDevice();
+		this._queue = this._device.newCommandQueue();
+		layer.device = this._device;
+		layer.presentsWithTransaction = false;
+		layer.framebufferOnly = false;
+		layer.pixelFormat = MTLPixelFormat.BGRA8Unorm;
+
+		this.layer = layer;
+		return this;
+	}
+
+
+	/**
+	 * @return {CGSize}
+	 */
+	get drawableSize() {
+		return this.layer.drawableSize;
+	}
+
+	/**
+	 * @param {CGSize} value
+	 */
+	set drawableSize(value) {
+		this.layer.drawableSize = value;
+	}
+
+
+	present() {
+		this._canvas?.getContext('2d').flush();
+		this._canvas?.getContext('2d').present();
+	}
+
+	static ObjCExposedMethods = {
+		present: { returns: interop.types.void, params: [] }
+	};
+
 }
 
 export class NSCCanvas extends NSView {
@@ -89,6 +141,7 @@ export class CanvasGLView extends NSOpenGLView {
 	}
 }
 
+
 export class ViewController extends NSViewController {
 	static {
 		NativeClass(this);
@@ -105,14 +158,24 @@ export class ViewController extends NSViewController {
 		this.view.addSubview(this.canvas);
 
 		glview.frame = this.view.frame;
+		mtlview.frame = this.view.frame;
+		mtlview.drawableSize = new CGSize({
+			width: this.view.frame.size.width * NSScreen.mainScreen.backingScaleFactor,
+			height: this.view.frame.size.height * NSScreen.mainScreen.backingScaleFactor
+		});
 
-		this.canvas.addSubview(glview);
+		this.canvas.addSubview(mtlview);
 
-		glview.wantsLayer = true;
+		//this.canvas.addSubview(glview);
+
+		// glview.wantsLayer = true;
 	}
 }
 
 const glview = CanvasGLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
+
+const mtlview = NSCMTLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
+
 
 let isDoingOrDone = false;
 
@@ -399,8 +462,8 @@ function flappyBird(canvas) {
 	}
 
 	function main() {
-		width = canvas.clientWidth * window.devicePixelRatio;
-		height = canvas.clientHeight * window.devicePixelRatio;
+		width = canvas.clientWidth //* window.devicePixelRatio;
+		height = canvas.clientHeight // * window.devicePixelRatio;
 
 		canvas.addEventListener('touchstart', onpress);
 
@@ -981,6 +1044,47 @@ function mdnPattern(canvas) {
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+function mdnPutImageData(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	function putImageData(
+		ctx,
+		imageData,
+		dx,
+		dy,
+		dirtyX,
+		dirtyY,
+		dirtyWidth,
+		dirtyHeight
+	) {
+		const data = imageData.data;
+		const height = imageData.height;
+		const width = imageData.width;
+		dirtyX = dirtyX || 0;
+		dirtyY = dirtyY || 0;
+		dirtyWidth = dirtyWidth !== undefined ? dirtyWidth : width;
+		dirtyHeight = dirtyHeight !== undefined ? dirtyHeight : height;
+		const limitBottom = dirtyY + dirtyHeight;
+		const limitRight = dirtyX + dirtyWidth;
+		for (let y = dirtyY; y < limitBottom; y++) {
+			for (let x = dirtyX; x < limitRight; x++) {
+				const pos = y * width + x;
+				ctx.fillStyle = `rgb(${data[pos * 4 + 0]} ${data[pos * 4 + 1]}
+      ${data[pos * 4 + 2]} / ${data[pos * 4 + 3] / 255})`;
+				ctx.fillRect(x + dx, y + dy, 1, 1);
+			}
+		}
+	}
+
+// Draw content onto the canvas
+	ctx.fillRect(0, 0, 100, 100);
+// Create an ImageData object from it
+	const imagedata = ctx.getImageData(0, 0, 100, 100);
+// use the putImageData function that illustrates how putImageData works
+	putImageData(ctx, imagedata, 150, 0, 50, 50, 25, 25);
+	ctx.render();
+}
+
 function mdnRadialGradient(canvas) {
 	const ctx = canvas.getContext('2d');
 
@@ -1028,7 +1132,31 @@ function doTheThing() {
 	// const glContext = WebGLRenderingContext.withView(handle.toNumber(), 1, true, false, false, false, 1, true, false, false, false, false, false);
 	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
 
-	const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
+	//const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
+
+
+	const mtlViewHandle = interop.handleof(mtlview);
+	const deviceHandle = interop.handleof(mtlview.device);
+	const queueHandle = interop.handleof(mtlview.queue);
+	const ctx = CanvasRenderingContext2D.withMtlViewDeviceQueue(
+		mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), true, scale, 1, 0, 90, 1
+	);
+
+	const mtlCanvas = {
+		width: mtlview.frame.size.width,
+		height: mtlview.frame.size.height,
+		clientWidth: mtlview.frame.size.width,
+		clientHeight: mtlview.frame.size.height,
+		addEventListener: function() {
+		},
+		getContext: function() {
+			return ctx;
+		},
+		style: {}
+	};
+
+	mtlview._canvas = mtlCanvas;
+
 	ctx.fillStyle = 'white';
 
 	ctx.fillRect(0, 0, 1000, 1000);
@@ -1056,16 +1184,22 @@ function doTheThing() {
 		style: {}
 	};
 
-//	flappyBird(canvas);
+	//flappyBird(mtlCanvas);
 
-	solarSystem(canvas);
+	 solarSystem(canvas);
 
 	// swarm(canvas);
-	//breathe_demo(canvas);
+	// breathe_demo(canvas);
 	//mdnPattern(canvas);
-	//mdnRadialGradient(canvas);
+	// mdnRadialGradient(canvas);
+	//mdnPutImageData(canvas);
 
-//	ctx.render();
+	//
+	// ctx.font = '50px serif';
+	// ctx.strokeText('Hello world', 50, 90);
+
+
+	// ctx.render();
 
 	/*
 

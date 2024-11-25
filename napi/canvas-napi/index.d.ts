@@ -41,9 +41,28 @@ export declare class ImageData {
 	get height(): number;
 	get data(): Buffer;
 }
+export declare class TextMetrics {
+	get width(): number;
+	get actualBoundingBoxLeft(): number;
+	get actualBoundingBoxRight(): number;
+	get actualBoundingBoxAscent(): number;
+	get actualBoundingBoxDescent(): number;
+	get fontBoundingBoxAscent(): number;
+	get fontBoundingBoxDescent(): number;
+	get emHeightAscent(): number;
+	get emHeightDescent(): number;
+	get hangingBaseline(): number;
+	get alphabeticBaseline(): number;
+	get ideographicBaseline(): number;
+}
 export declare class CanvasRenderingContext2D {
 	static withView(view: number, width: number, height: number, density: number, alpha: boolean, fontColor: number, ppi: number, direction: number): CanvasRenderingContext2D;
+	static withMtlViewDeviceQueue(view: number, device: number, queue: number, alpha: boolean, density: number, samples: number, fontColor: number, ppi: number, direction: number): CanvasRenderingContext2D;
+	present(): void;
+	flush(): void;
+	render(): void;
 	static withCpu(width: number, height: number, density: number, alpha: boolean, fontColor: number, ppi: number, direction: number): CanvasRenderingContext2D;
+	toDataURL(format: string, encoderOptions?: number | undefined | null): string;
 	get direction(): string;
 	set direction(direction: string);
 	get fillStyle(): unknown;
@@ -109,6 +128,7 @@ export declare class CanvasRenderingContext2D {
 	createPattern(image: ImageAsset, repetition?: string | undefined | null): CanvasPattern;
 	createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
 	drawFocusIfNeeded(elementPath: object | Path2D, element?: object | undefined | null): void;
+	drawImage(image: ImageAsset, sx?: number | undefined | null, sy?: number | undefined | null, sWidth?: number | undefined | null, sHeight?: number | undefined | null, dx?: number | undefined | null, dy?: number | undefined | null, dWidth?: number | undefined | null, dHeight?: number | undefined | null): void;
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean | undefined | null): void;
 	fill(path?: Path2D | undefined | null, rule?: string | undefined | null): void;
 	fillRect(x: number, y: number, width: number, height: number): void;
@@ -116,12 +136,17 @@ export declare class CanvasRenderingContext2D {
 	getImageData(x: number, y: number, width: number, height: number): ImageData;
 	getLineDash(): Array<number>;
 	getTransform(): DOMMatrix;
+	isContextLost(): boolean;
+	isPointInPath(xOrPath: number | Path2D, y?: number | undefined | null, ruleOrY?: number | string | undefined | null, rule?: string | undefined | null): boolean;
+	isPointInStroke(xOrPath: number | Path2D, xOrY?: number | undefined | null, y?: number | undefined | null): boolean;
 	lineTo(x: number, y: number): void;
+	measureText(text: string): TextMetrics;
 	moveTo(x: number, y: number): void;
-	render(): void;
-	toDataURL(format: string, encoderOptions?: number | undefined | null): string;
-	drawImage(image: ImageAsset, sx?: number | undefined | null, sy?: number | undefined | null, sWidth?: number | undefined | null, sHeight?: number | undefined | null, dx?: number | undefined | null, dy?: number | undefined | null, dWidth?: number | undefined | null, dHeight?: number | undefined | null): void;
+	putImageData(imageData: ImageData, dx: number, dy: number, dirtyX?: number | undefined | null, dirtyY?: number | undefined | null, dirtyWidth?: number | undefined | null, dirtyHeight?: number | undefined | null): void;
+	quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
 	rect(x: number, y: number, width: number, height: number): void;
+	reset(): void;
+	resetTransform(): void;
 	restore(): void;
 	rotate(angle: number): void;
 	roundRect(x: number, y: number, width: number, height: number, radii: number | Array<number>): void;

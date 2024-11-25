@@ -2,11 +2,13 @@ pub mod path;
 mod pattern;
 mod gradient;
 mod image_data;
+mod text_metrics;
 
 use crate::c2d::gradient::CanvasGradient;
 use crate::c2d::image_data::ImageData;
 use crate::c2d::path::Path2D;
 use crate::c2d::pattern::CanvasPattern;
+use crate::c2d::text_metrics::TextMetrics;
 use crate::dom_matrix::DOMMatrix;
 use crate::image_asset::ImageAsset;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
@@ -67,6 +69,59 @@ impl CanvasRenderingContext2D {
 
 
     #[napi(factory)]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub fn with_mtl_view_device_queue(
+        view: i64,
+        device: i64,
+        queue: i64,
+        alpha: bool,
+        density: f64,
+        samples: u32,
+        font_color: i32,
+        ppi: f64,
+        direction: i32,
+    ) -> Self {
+        let ctx_2d = canvas_c::CanvasRenderingContext2D::new_metal(
+            canvas_2d::context::Context::new_metal_device_queue(
+                view as _,
+                device as _,
+                queue as _,
+                density as f32,
+                samples as _,
+                alpha,
+                font_color,
+                ppi as f32,
+                canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+            ),
+            alpha,
+        );
+
+        CanvasRenderingContext2D {
+            context: Box::into_raw(
+                Box::new(ctx_2d) as _,
+            ),
+        }
+    }
+
+    #[napi]
+    pub fn present(&self) {
+        let context = unsafe { &mut *self.context };
+        canvas_2d::context::Context::present(context.get_context_mut());
+    }
+
+    #[napi]
+    pub fn flush(&self) {
+        canvas_c::canvas_native_context_flush(self.context);
+    }
+
+
+    #[napi]
+    pub fn render(&self) {
+        canvas_c::canvas_native_context_render(self.context);
+    }
+
+
+    #[napi(factory)]
     pub fn with_cpu(
         width: f64,
         height: f64,
@@ -87,6 +142,19 @@ impl CanvasRenderingContext2D {
                 direction,
             ),
         }
+    }
+
+    #[napi(js_name = "toDataURL")]
+    pub fn to_data_url(&self, format: String, encoderOptions: Option<f64>) -> String {
+        let c_str = CString::new(format).unwrap();
+        let quality = encoderOptions
+            .map(|v| v as f32)
+            .unwrap_or(0.92)
+            .try_into()
+            .unwrap_or(0.92);
+        let quality: u32 = (quality * 100.) as u32;
+        let ret = canvas_c::canvas_native_to_data_url(self.context, c_str.as_ptr(), quality);
+        unsafe { CString::from_raw(ret as _).to_string_lossy().to_string() }
     }
 
 
@@ -770,6 +838,33 @@ impl CanvasRenderingContext2D {
     #[napi]
     pub fn draw_focus_if_needed(&self, element_path: Either<JsObject, ClassInstance<Path2D>>, element: Option<JsObject>) {}
 
+
+    #[napi]
+    pub fn draw_image(&self, image: ClassInstance<ImageAsset>, sx: Option<f64>, sy: Option<f64>, s_width: Option<f64>, s_height: Option<f64>,
+                      dx: Option<f64>, dy: Option<f64>, d_width: Option<f64>, d_height: Option<f64>,
+    ) {
+        let image = Arc::as_ptr(&image.asset);
+        match (sx, sy, s_width, s_height, dx, dy, d_height, d_width) {
+            (Some(dx), Some(dy), None, None, None, None, None, None) => {
+                canvas_c::canvas_native_context_draw_image_dx_dy_asset(
+                    self.context, image as _, dx as f32, dy as f32,
+                );
+            }
+            (Some(dx), Some(dy), Some(d_width), Some(d_height), None, None, None, None) => {
+                canvas_c::canvas_native_context_draw_image_dx_dy_dw_dh_asset(
+                    self.context, image as _, dx as f32, dy as f32, d_width as f32, d_height as f32,
+                );
+            }
+            (Some(sx), Some(sy), Some(s_width), Some(s_height), Some(dx), Some(dy), Some(d_width), Some(d_height)) => {
+                canvas_c::canvas_native_context_draw_image_asset(
+                    self.context, image as _, sx as f32, sy as f32, s_width as f32, s_height as f32,
+                    dx as f32, dy as f32, d_width as f32, d_height as f32,
+                );
+            }
+            _ => {}
+        }
+    }
+
     #[napi]
     pub fn ellipse(&self,
                    x: f64,
@@ -882,9 +977,121 @@ impl CanvasRenderingContext2D {
     }
 
     #[napi]
-    pub fn is_context_lost(&self) -> bool{
+    pub fn is_context_lost(&self) -> bool {
         // todo
         false
+    }
+
+    #[napi]
+    pub fn is_point_in_path(&self, x_or_path: Either<f64, ClassInstance<Path2D>>, y: Option<f64>, rule_or_y: Option<Either<f64, JsString>>, rule: Option<JsString>) -> bool {
+        let mut x_inner = None;
+        let mut y_inner = None;
+        let mut rule_inner = CanvasFillRule::NonZero;
+        match x_or_path {
+            Either::A(x) => {
+                x_inner = Some(x as f32);
+                if let Some(y) = y {
+                    y_inner = Some(y as f32);
+
+                    return if let Some(rule_or_y) = rule_or_y {
+                        match rule_or_y {
+                            Either::A(y) => {
+                                // return early
+                                canvas_c::canvas_native_context_is_point_in_path(
+                                    self.context, x as f32, y as f32, rule_inner,
+                                )
+                            }
+                            Either::B(rule) => {
+                                if let Some(rule) = rule.into_utf8().ok() {
+                                    if let Ok(rule) = rule.as_str() {
+                                        match rule {
+                                            "evenodd" => {
+                                                rule_inner = CanvasFillRule::EvenOdd;
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+
+                                canvas_c::canvas_native_context_is_point_in_path(
+                                    self.context, x as f32, y as f32, rule_inner,
+                                )
+                            }
+                        }
+                    } else {
+                        canvas_c::canvas_native_context_is_point_in_path(
+                            self.context, x as f32, y as f32, rule_inner,
+                        )
+                    };
+                }
+                false
+            }
+            Either::B(path) => {
+                match (y, rule_or_y, rule) {
+                    (Some(x), Some(rule_or_y), Some(rule)) => {
+                        match rule_or_y {
+                            Either::A(y) => {
+                                if let Some(rule) = rule.into_utf8().ok() {
+                                    if let Ok(rule) = rule.as_str() {
+                                        match rule {
+                                            "evenodd" => {
+                                                rule_inner = CanvasFillRule::EvenOdd;
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+
+                                canvas_c::canvas_native_context_is_point_in_path_with_path(
+                                    self.context, path.path, x as f32, y as f32, rule_inner,
+                                )
+                            }
+                            Either::B(_) => {
+                                false
+                            }
+                        }
+                    }
+                    (Some(x), Some(rule_or_y), _) => {
+                        match rule_or_y {
+                            Either::A(y) => {
+                                canvas_c::canvas_native_context_is_point_in_path(
+                                    self.context, x as f32, y as f32, rule_inner,
+                                )
+                            }
+                            Either::B(_) => {
+                                false
+                            }
+                        }
+                    }
+                    _ => false
+                }
+            }
+        }
+    }
+
+
+    #[napi]
+    pub fn is_point_in_stroke(&self, x_or_path: Either<f64, ClassInstance<Path2D>>, x_or_y: Option<f64>, y: Option<f64>) -> bool {
+        match x_or_path {
+            Either::A(x) => {
+                if let Some(y) = x_or_y {
+                    return canvas_c::canvas_native_context_is_point_in_stroke(
+                        self.context, x as f32, y as f32,
+                    );
+                }
+                false
+            }
+            Either::B(path) => {
+                match (x_or_y, y) {
+                    (Some(x), Some(y)) => {
+                        canvas_c::canvas_native_context_is_point_in_stroke_with_path(
+                            self.context, path.path, x as f32, y as f32,
+                        )
+                    }
+                    _ => false
+                }
+            }
+        }
     }
 
 
@@ -894,56 +1101,41 @@ impl CanvasRenderingContext2D {
     }
 
     #[napi]
+    pub fn measure_text(&self, env: Env, text: String) -> Result<ClassInstance<TextMetrics>> {
+        let text = CString::new(text).unwrap();
+        TextMetrics {
+            metrics: canvas_c::canvas_native_context_measure_text(self.context, text.as_ptr())
+        }.into_instance(env)
+    }
+
+
+    #[napi]
     pub fn move_to(&self, x: f64, y: f64) {
         canvas_c::canvas_native_context_move_to(self.context, x as f32, y as f32)
     }
 
-
     #[napi]
-    pub fn render(&self) {
-        canvas_c::canvas_native_context_flush(self.context);
-        canvas_c::canvas_native_context_render(self.context);
-    }
-
-    #[napi(js_name = "toDataURL")]
-    pub fn to_data_url(&self, format: String, encoderOptions: Option<f64>) -> String {
-        let c_str = CString::new(format).unwrap();
-        let quality = encoderOptions
-            .map(|v| v as f32)
-            .unwrap_or(0.92)
-            .try_into()
-            .unwrap_or(0.92);
-        let quality: u32 = (quality * 100.) as u32;
-        let ret = canvas_c::canvas_native_to_data_url(self.context, c_str.as_ptr(), quality);
-        unsafe { CString::from_raw(ret as _).to_string_lossy().to_string() }
-    }
-
-
-    #[napi]
-    pub fn draw_image(&self, image: ClassInstance<ImageAsset>, sx: Option<f64>, sy: Option<f64>, s_width: Option<f64>, s_height: Option<f64>,
-                      dx: Option<f64>, dy: Option<f64>, d_width: Option<f64>, d_height: Option<f64>,
-    ) {
-        let image = Arc::as_ptr(&image.asset);
-        match (sx, sy, s_width, s_height, dx, dy, d_height, d_width) {
-            (Some(dx), Some(dy), None, None, None, None, None, None) => {
-                canvas_c::canvas_native_context_draw_image_dx_dy_asset(
-                    self.context, image as _, dx as f32, dy as f32,
-                );
+    pub fn put_image_data(&self, image_data: ClassInstance<ImageData>, dx: f64, dy: f64, dirty_x: Option<f64>, dirty_y: Option<f64>, dirty_width: Option<f64>, dirty_height: Option<f64>) {
+        match (dirty_x, dirty_y, dirty_width, dirty_height) {
+            (Some(x), Some(y), Some(width), Some(height)) => {
+                canvas_c::canvas_native_context_put_image_data(
+                    self.context, image_data.data, dx as f32, dy as f32, x as f32, y as f32, width as f32, height as f32,
+                )
             }
-            (Some(dx), Some(dy), Some(d_width), Some(d_height), None, None, None, None) => {
-                canvas_c::canvas_native_context_draw_image_dx_dy_dw_dh_asset(
-                    self.context, image as _, dx as f32, dy as f32, d_width as f32, d_height as f32,
-                );
+            _ => {
+                canvas_c::canvas_native_context_put_image_data(
+                    self.context, image_data.data, dx as f32, dy as f32, 0., 0., image_data.width_inner() as f32, image_data.height_inner() as f32,
+                )
             }
-            (Some(sx), Some(sy), Some(s_width), Some(s_height), Some(dx), Some(dy), Some(d_width), Some(d_height)) => {
-                canvas_c::canvas_native_context_draw_image_asset(
-                    self.context, image as _, sx as f32, sy as f32, s_width as f32, s_height as f32,
-                    dx as f32, dy as f32, d_width as f32, d_height as f32,
-                );
-            }
-            _ => {}
         }
     }
+
+    #[napi]
+    pub fn quadratic_curve_to(&self, cpx: f64, cpy: f64, x: f64, y: f64) {
+        canvas_c::canvas_native_context_quadratic_curve_to(
+            self.context, cpx as f32, cpy as f32, x as f32, y as f32)
+    }
+
 
     #[napi]
     pub fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
@@ -957,10 +1149,20 @@ impl CanvasRenderingContext2D {
     }
 
     #[napi]
+    pub fn reset(&self) {
+        canvas_c::canvas_native_context_reset(self.context);
+    }
+
+    #[napi]
+    pub fn reset_transform(&self) {
+        canvas_c::canvas_native_context_reset_transform(self.context);
+    }
+
+
+    #[napi]
     pub fn restore(&self) {
         canvas_c::canvas_native_context_restore(self.context);
     }
-
 
     #[napi]
     pub fn rotate(&self, angle: f64) {

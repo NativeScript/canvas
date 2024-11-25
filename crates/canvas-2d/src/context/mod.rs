@@ -560,6 +560,14 @@ impl Context {
         };
     }
 
+    pub fn reset(&mut self) {
+        self.reset_state();
+        self.reset_transform();
+        self.with_canvas_dirty(|canvas| {
+            canvas.clear(Color::TRANSPARENT);
+        });
+    }
+
     pub fn reset_state(&mut self) {
         let direction = self.state.direction;
         self.state = State::default();

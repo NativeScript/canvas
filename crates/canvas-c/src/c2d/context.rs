@@ -2458,6 +2458,14 @@ pub extern "C" fn canvas_native_context_rect(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_context_reset(
+    context: *mut CanvasRenderingContext2D
+) {
+    let context = unsafe { &mut *context };
+    context.context.reset()
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_round_rect(
     context: *mut CanvasRenderingContext2D,
     x: f32,

@@ -1,5 +1,5 @@
 import '@nativescript/macos-node-api';
-import { CanvasRenderingContext2D, ImageAsset, Path2D } from './index.js';
+import { CanvasRenderingContext2D, ImageAsset } from './index.js';
 
 objc.import('OpenGL');
 objc.import('QuartzCore');
@@ -39,6 +39,8 @@ export class ApplicationDelegate extends NSObject {
 		window.makeKeyAndOrderFront(this);
 
 		NSApp.activateIgnoringOtherApps(false);
+
+		doTheThing();
 	}
 
 	/**
@@ -107,8 +109,6 @@ export class ViewController extends NSViewController {
 		this.canvas.addSubview(glview);
 
 		glview.wantsLayer = true;
-
-		doTheThing();
 	}
 }
 
@@ -191,7 +191,26 @@ function mdnRotate(ctx) {
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
+function mdnCreateConicGradient(ctx) {
+	// Create a conic gradient
+	// The start angle is 0
+	// The center position is 100, 100
+	const gradient = ctx.createConicGradient(0, 100, 100);
+
+	// Add five color stops
+	gradient.addColorStop(0, 'red');
+	gradient.addColorStop(0.25, 'orange');
+	gradient.addColorStop(0.5, 'yellow');
+	gradient.addColorStop(0.75, 'green');
+	gradient.addColorStop(1, 'blue');
+
+	// Set the fill style and draw a rectangle
+	ctx.fillStyle = gradient;
+	ctx.fillRect(20, 20, 200, 200);
+}
+
 let requestAnimationFrameFunc;
+
 class CADisplayLinkImpl extends NSObject {
 	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];
 
@@ -201,11 +220,11 @@ class CADisplayLinkImpl extends NSObject {
 
 	handleFrame(link) {
 		requestAnimationFrameFunc?.(link.timestamp);
-		requestAnimationFrameFunc = null;
+		//requestAnimationFrameFunc = null;
 	}
 
 	static ObjCExposedMethods = {
-		handleFrame: { returns: interop.types.void, params: [CADisplayLink] },
+		handleFrame: { returns: interop.types.void, params: [CADisplayLink] }
 	};
 }
 
@@ -214,13 +233,13 @@ const impl = CADisplayLinkImpl.new();
 const displayLink = NSScreen.mainScreen.displayLinkWithTargetSelector(impl, 'handleFrame');
 displayLink.paused = true;
 displayLink.addToRunLoopForMode(NSRunLoop.currentRunLoop, NSDefaultRunLoopMode);
-// displayLink.addToRunLoopForMode(NSRunLoop.currentRunLoop, UITrackingRunLoopMode);
 
 function requestAnimationFrame(func) {
 	if (displayLink.paused) {
-		displayLink.paused = true;
+		displayLink.paused = false;
 	}
 	requestAnimationFrameFunc = func;
+	return 1;
 }
 
 function flappyBird(canvas) {
@@ -235,7 +254,7 @@ function flappyBird(canvas) {
 		states = {
 			Splash: 0,
 			Game: 1,
-			Score: 2,
+			Score: 2
 		},
 		okbtn,
 		bird = {
@@ -249,11 +268,11 @@ function flappyBird(canvas) {
 			gravity: 0.25,
 			_jump: 4.6,
 
-			jump: function () {
+			jump: function() {
 				this.velocity = -this._jump;
 			},
 
-			update: function () {
+			update: function() {
 				var n = currentstate === states.Splash ? 10 : 5;
 				this.frame += frames % n === 0 ? 1 : 0;
 				this.frame %= this.animation.length;
@@ -282,7 +301,7 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function (ctx) {
+			draw: function(ctx) {
 				ctx.save();
 				ctx.translate(this.x, this.y);
 				ctx.rotate(this.rotation);
@@ -290,23 +309,23 @@ function flappyBird(canvas) {
 				var n = this.animation[this.frame];
 				s_bird[n].draw(ctx, -s_bird[n].width / 2, -s_bird[n].height / 2);
 				ctx.restore();
-			},
+			}
 		},
 		pipes = {
 			_pipes: [],
 
-			reset: function () {
+			reset: function() {
 				this._pipes = [];
 			},
 
-			update: function () {
+			update: function() {
 				if (frames % 100 === 0) {
 					var _y = height - (s_pipeSouth.height + s_fg.height + 120 + 200 * Math.random());
 					this._pipes.push({
 						x: 500,
 						y: _y,
 						width: s_pipeSouth.width,
-						height: s_pipeSouth.height,
+						height: s_pipeSouth.height
 					});
 				}
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
@@ -342,13 +361,13 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function (...args) {
+			draw: function(...args) {
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
 					var p = this._pipes[i];
 					s_pipeSouth.draw(ctx, p.x, p.y);
 					s_pipeNorth.draw(ctx, p.x, p.y + 80 + p.height);
 				}
-			},
+			}
 		},
 		img;
 
@@ -380,8 +399,8 @@ function flappyBird(canvas) {
 	}
 
 	function main() {
-		width = canvas.clientWidth;
-		height = canvas.clientHeight;
+		width = canvas.clientWidth * window.devicePixelRatio;
+		height = canvas.clientHeight * window.devicePixelRatio;
 
 		canvas.addEventListener('touchstart', onpress);
 
@@ -397,7 +416,7 @@ function flappyBird(canvas) {
 		canvas.height = height;
 		ctx = canvas.getContext('2d');
 
-		//ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+		// ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 		currentstate = states.Splash;
 		img = new ImageAsset();
@@ -410,8 +429,8 @@ function flappyBird(canvas) {
 			x: (width - s_buttons.Ok.width) / 2,
 			y: height - 200,
 			width: s_buttons.Ok.width,
-			height: s_buttons.Ok.height,
-		}),
+			height: s_buttons.Ok.height
+		});
 			run();
 
 		/*
@@ -435,15 +454,10 @@ function flappyBird(canvas) {
 	}
 
 	function run() {
-		var loop = function (ts) {
+		var loop = function(ts) {
+			render();
+			update();
 			requestAnimationFrame(loop);
-			try {
-				update();
-				render();
-				console.log('ts', ts);
-			} catch (error) {
-				console.log('error', error);
-			}
 		};
 		requestAnimationFrame(loop);
 	}
@@ -493,6 +507,8 @@ function flappyBird(canvas) {
 		} else {
 			s_numberB.draw(ctx, null, 20, score, width2);
 		}
+
+		ctx.render();
 	}
 
 	var s_bird, s_bg, s_fg, s_pipeNorth, s_pipeSouth, s_text, s_score, s_splash, s_buttons, s_numberS, s_numberB;
@@ -504,7 +520,8 @@ function flappyBird(canvas) {
 		this.width = width * 2;
 		this.height = height * 2;
 	}
-	Sprite.prototype.draw = function (ctx, x, y) {
+
+	Sprite.prototype.draw = function(ctx, x, y) {
 		ctx.drawImage(this.img, this.x, this.y, this.width, this.height, x, y, this.width, this.height);
 	};
 
@@ -521,7 +538,7 @@ function flappyBird(canvas) {
 		s_text = {
 			FlappyBird: new Sprite(img, 59, 114, 96, 22),
 			GameOver: new Sprite(img, 59, 136, 94, 19),
-			GetReady: new Sprite(img, 59, 155, 87, 22),
+			GetReady: new Sprite(img, 59, 155, 87, 22)
 		};
 		s_buttons = {
 			Rate: new Sprite(img, 79, 177, 40, 14),
@@ -529,7 +546,7 @@ function flappyBird(canvas) {
 			Share: new Sprite(img, 159, 177, 40, 14),
 			Score: new Sprite(img, 79, 191, 40, 14),
 			Ok: new Sprite(img, 119, 191, 40, 14),
-			Start: new Sprite(img, 159, 191, 40, 14),
+			Start: new Sprite(img, 159, 191, 40, 14)
 		};
 
 		s_score = new Sprite(img, 138, 56, 113, 58);
@@ -538,9 +555,8 @@ function flappyBird(canvas) {
 		s_numberS = new Sprite(img, 0, 177, 6, 7);
 		s_numberB = new Sprite(img, 0, 188, 7, 10);
 
-		s_numberS.draw = s_numberB.draw = function (ctx, x, y, num, center, offset) {
+		s_numberS.draw = s_numberB.draw = function(ctx, x, y, num, center, offset) {
 			num = num.toString();
-
 			var step = this.width + 2;
 
 			if (center) {
@@ -560,6 +576,420 @@ function flappyBird(canvas) {
 	}
 
 	main();
+}
+
+
+function solarSystem(canvas) {
+	const ctx = canvas.getContext('2d');
+
+	let sun;
+	let moon;
+	let earth;
+
+	function init() {
+		// sun = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		// moon = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
+		// earth = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+
+		sun = new ImageAsset();
+		moon = new ImageAsset();
+		earth = new ImageAsset();
+		sun.fromUrlSync('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
+		moon.fromUrlSync('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
+		earth.fromUrlSync('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
+		LAF = requestAnimationFrame(draw);
+	}
+
+	function draw() {
+		ctx.globalCompositeOperation = 'destination-over';
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+		ctx.strokeStyle = 'rgba(0, 153, 255, 0.4)';
+		ctx.save();
+		ctx.translate(150, 150);
+
+		// Earth
+		let time = new Date();
+		ctx.rotate(
+			((2 * Math.PI) / 60) * time.getSeconds() +
+			((2 * Math.PI) / 60000) * time.getMilliseconds()
+		);
+		ctx.translate(105, 0);
+		ctx.fillRect(0, -12, 40, 24);    // Shadow
+		ctx.drawImage(earth, -12, -12);
+
+		// Moon
+		ctx.save();
+		ctx.rotate(
+			((2 * Math.PI) / 6) * time.getSeconds() +
+			((2 * Math.PI) / 6000) * time.getMilliseconds()
+		);
+		ctx.translate(0, 28.5);
+		ctx.drawImage(moon, -3.5, -3.5);
+
+		ctx.restore();
+		ctx.restore();
+
+		// Earth orbit arc
+		ctx.beginPath();
+		ctx.arc(150, 150, 105, 0, Math.PI * 2, false);
+		ctx.stroke();
+
+		//
+		ctx.drawImage(sun, 0, 0, 300, 300);
+
+		ctx.render();
+
+		LAF = requestAnimationFrame(draw);
+	}
+
+	init();
+}
+
+
+let LAF = 0;
+
+const window = {
+	devicePixelRatio: NSScreen.mainScreen.backingScaleFactor
+};
+
+const Screen = {
+	mainScreen: {
+		scale: NSScreen.mainScreen.backingScaleFactor
+	}
+};
+
+function swarm(canvas, width, height, nativeCanvas) {
+	var requestAnimFrame = requestAnimationFrame;
+
+	function init() {
+		//canvas.nativeView.setHandleInvalidationManually(true);
+		// Initialize the context of the canvas
+
+		// canvas.nativeView.handleInvalidationManually = true
+
+		// Set the canvas width and height to occupy full window
+		var W = width || canvas.clientWidth * window.devicePixelRatio,
+			H = height || canvas.clientHeight * window.devicePixelRatio;
+
+		canvas.width = W;
+		canvas.height = H;
+
+		var ctx = canvas.getContext ? canvas.getContext('2d') : canvas;
+
+		// ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+		// Some variables for later use
+		var particleCount = 500,
+			particles = [],
+			minDist = 50,
+			dist;
+
+		// Function to paint the canvas black
+		function paintCanvas() {
+			// Set the fill color to black
+			ctx.fillStyle = 'black';
+
+			// This will create a rectangle of white color from the
+			// top left (0,0) to the bottom right corner (W,H)
+			//ctx.clearRect(0,0, W,H);
+			ctx.fillRect(0, 0, W, H);
+		}
+
+		// Now the idea is to create some particles that will attract
+		// each other when they come close. We will set a minimum
+		// distance for it and also draw a line when they come
+		// close to each other.
+
+		// The attraction can be done by increasing their velocity as
+		// they reach closer to each other
+
+		// Let's make a function that will act as a class for
+		// our particles.
+
+		function Particle() {
+			// Position them randomly on the canvas
+			// Math.random() generates a random value between 0
+			// and 1 so we will need to multiply that with the
+			// canvas width and height.
+			this.x = Math.random() * W;
+			this.y = Math.random() * H;
+
+			// We would also need some velocity for the particles
+			// so that they can move freely across the space
+			this.vx = -1 + Math.random() * 2;
+			this.vy = -1 + Math.random() * 2;
+
+			// Now the radius of the particles. I want all of
+			// them to be equal in size so no Math.random() here..
+			this.radius = 4;
+
+			// This is the method that will draw the Particle on the
+			// canvas. It is using the basic fillStyle, then we start
+			// the path and after we use the `arc` function to
+			// draw our circle. The `arc` function accepts four
+			// parameters in which first two depicts the position
+			// of the center point of our arc as x and y coordinates.
+			// The third value is for radius, then start angle,
+			// end angle and finally a boolean value which decides
+			// whether the arc is to be drawn in counter clockwise or
+			// in a clockwise direction. False for clockwise.
+			this.draw = function() {
+				ctx.fillStyle = 'white';
+				ctx.beginPath();
+				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+
+				// Fill the color to the arc that we just created
+				ctx.fill();
+			};
+		}
+
+		// Time to push the particles into an array
+		for (var i = 0; i < particleCount; i++) {
+			particles.push(new Particle());
+		}
+
+		// Function to draw everything on the canvas that we'll use when
+		// animating the whole scene.
+		var p = new Particle();
+
+		function draw() {
+			// Call the paintCanvas function here so that our canvas
+			// will get re-painted in each next frame
+			paintCanvas();
+
+			// Call the function that will draw the balls using a loop
+			for (var i = 0; i < particles.length; i++) {
+				p = particles[i];
+				p.draw();
+			}
+
+			//Finally call the update function
+			update();
+
+			ctx.render();
+		}
+
+		// Give every particle some life
+		function update() {
+			// In this function, we are first going to update every
+			// particle's position according to their velocities
+			for (var i = 0; i < particles.length; i++) {
+				p = particles[i];
+
+				// Change the velocities
+				p.x += p.vx;
+				p.y += p.vy;
+
+				// We don't want to make the particles leave the
+				// area, so just change their position when they
+				// touch the walls of the window
+				if (p.x + p.radius > W) p.x = p.radius;
+				else if (p.x - p.radius < 0) {
+					p.x = W - p.radius;
+				}
+
+				if (p.y + p.radius > H) p.y = p.radius;
+				else if (p.y - p.radius < 0) {
+					p.y = H - p.radius;
+				}
+
+				// Now we need to make them attract each other
+				// so first, we'll check the distance between
+				// them and compare it to the minDist we have
+				// already set
+
+				// We will need another loop so that each
+				// particle can be compared to every other particle
+				// except itself
+				for (var j = i + 1; j < particles.length; j++) {
+					let p2 = particles[j];
+					distance(p, p2);
+				}
+			}
+		}
+
+		// Distance calculator between two particles
+		function distance(p1, p2) {
+			var dist,
+				dx = p1.x - p2.x,
+				dy = p1.y - p2.y;
+
+			dist = Math.sqrt(dx * dx + dy * dy);
+
+			// Draw the line when distance is smaller
+			// then the minimum distance
+			if (dist <= minDist) {
+				// Draw the line
+				ctx.beginPath();
+				ctx.strokeStyle = 'rgba(255,255,255,' + (1.2 - dist / minDist) + ')';
+				ctx.moveTo(p1.x, p1.y);
+				ctx.lineTo(p2.x, p2.y);
+				ctx.stroke();
+				//ctx.closePath();
+
+				// Some acceleration for the partcles
+				// depending upon their distance
+				var ax = dx / 2000,
+					ay = dy / 2000;
+
+				// Apply the acceleration on the particles
+				p1.vx -= ax;
+				p1.vy -= ay;
+
+				p2.vx += ax;
+				p2.vy += ay;
+			}
+		}
+
+		// Start the main animation loop using requestAnimFrame
+		function animloop() {
+			LAF = requestAnimFrame(animloop);
+			draw();
+		}
+
+		animloop();
+	}
+
+	init();
+}
+
+function breathe_demo(canvas) {
+	const cartesian2Canvas = (v, center) => {
+		return { x: v.x + center.x, y: -1 * v.y + center.y };
+	};
+
+	const cartesian2Polar = (v) => {
+		return { x: Math.atan2(v.y, v.x), y: Math.sqrt(v.x * v.x + v.y * v.y) };
+	};
+
+	const polar2Cartesian = (p) => {
+		return {
+			x: p.radius * Math.cos(p.theta),
+			y: p.radius * Math.sin(p.theta)
+		};
+	};
+
+	const polar2Canvas = (p, center) => {
+		return cartesian2Canvas(polar2Cartesian(p), center);
+	};
+
+	function breathe(canvas) {
+		const context = canvas.getContext('2d');
+		const { width, height } = canvas;
+
+		let progress = 0;
+
+		const c1 = '#61bea2';
+		const c2 = '#529ca0';
+
+		const mix = (value, x, y) => {
+			return x * (1 - value) + y * value;
+		};
+
+		const Ring = ({ context, index, progress }) => {
+			context.save();
+			context.beginPath();
+			const R = width / 4;
+			const center = { x: width / 2, y: height / 2 - 64 };
+			const theta = (index * (2 * Math.PI)) / 6;
+
+			const { x, y } = polar2Canvas({ theta, radius: progress * R }, { x: 0, y: 0 });
+			const scale = mix(progress, 0.3, 1);
+
+			context.scale(scale / Screen.mainScreen.scale, scale / Screen.mainScreen.scale);
+
+			//context.translate(x, y);
+
+			context.arc(x, y, R, 0, 2 * Math.PI);
+
+			context.fillStyle = index % 2 ? c1 : c2;
+			context.fill();
+			context.restore();
+		};
+
+		const center = { x: width / 2, y: height / 2 - 64 };
+
+		const start = Date.now();
+		const duration = 5000; // 3000ms or 3 seconds
+
+		function breathingEase(t) {
+			if (t <= 0.5) {
+				// Inhale (first half of the cycle)
+				return 0.5 - 0.5 * Math.cos(Math.PI * t * 2);
+			} else {
+				// Exhale (second half of the cycle)
+				return 0.5 + 0.5 * Math.cos(Math.PI * (t - 0.5) * 2);
+			}
+		}
+
+		const tick = () => {
+			const elapsed = (Date.now() - start) % duration;
+			const rawProgress = elapsed / duration; // Normalize progress to range [0, 1]
+			progress = breathingEase(rawProgress); // Apply bounce easing to progress
+
+			context.save();
+			context.clearRect(0, 0, width, height);
+			context.fillStyle = 'rgb(36,43,56)';
+			context.fillRect(0, 0, width, height);
+			context.filter = 'blur(1px)';
+			context.globalCompositeOperation = 'screen';
+			context.translate(center.x, center.y);
+
+			// Rotate and draw rings
+			context.rotate(mix(progress, -Math.PI, 0));
+			for (let i = 0; i < 6; i++) {
+				Ring({ context: context, index: i, progress });
+			}
+
+			context.restore();
+
+			context.render();
+
+			// Loop the animation
+			requestAnimationFrame(tick);
+		};
+
+		tick();
+	}
+
+	breathe(canvas);
+}
+
+
+function mdnPattern(canvas) {
+	const ctx = canvas.getContext('2d');
+	const img = new ImageAsset();
+	img.fromUrlSync('https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/createPattern/canvas_create_pattern.png');
+	const pattern = ctx.createPattern(img, 'repeat');
+	ctx.fillStyle = 'white';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.fillStyle = pattern;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function mdnRadialGradient(canvas) {
+	const ctx = canvas.getContext('2d');
+
+// Create a radial gradient
+// The inner circle is at x=110, y=90, with radius=30
+// The outer circle is at x=100, y=100, with radius=70
+	const gradient = ctx.createRadialGradient(110, 90, 30, 100, 100, 70);
+
+// Add three color stops
+	gradient.addColorStop(0, 'pink');
+	gradient.addColorStop(0.9, 'white');
+	gradient.addColorStop(1, 'green');
+
+// Set the fill style and draw a rectangle
+	ctx.fillStyle = gradient;
+	ctx.fillRect(20, 20, 160, 160);
+}
+
+function cancelSwarm() {
+	// cancelAnimationFrame(LAF);
+	// LAF = 0;
 }
 
 function doTheThing() {
@@ -593,22 +1023,37 @@ function doTheThing() {
 
 	ctx.fillStyle = 'black';
 
-	ctx.translate(0, 100);
+	ctx.scale(scale, scale);
+
+	//	ctx.translate(0, 100);
 
 	//mdnShadowColor(ctx);
 	//mdnRotate(ctx);
+	// mdnCreateConicGradient(ctx);
 
-	flappyBird({
-		clientWidth: glview.frame.size.width * scale,
-		clientHeight: 480,
-		addEventListener: function () {},
-		getContext: function () {
+	const canvas = {
+		width: glview.frame.size.width,
+		height: glview.frame.size.height,
+		clientWidth: glview.frame.size.width,
+		clientHeight: glview.frame.size.height,
+		addEventListener: function() {
+		},
+		getContext: function() {
 			return ctx;
 		},
-		style: {},
-	});
+		style: {}
+	};
 
-	ctx.render();
+//	flappyBird(canvas);
+
+	solarSystem(canvas);
+
+	// swarm(canvas);
+	//breathe_demo(canvas);
+	//mdnPattern(canvas);
+	//mdnRadialGradient(canvas);
+
+//	ctx.render();
 
 	/*
 

@@ -1,4 +1,4 @@
-use canvas_c::{canvas_native_image_asset_load_from_url, ImageAsset};
+use canvas_c::{canvas_native_image_asset_load_from_url, ImageAsset as CImageAsset};
 use napi::bindgen_prelude::{AsyncTask, FromNapiValue, ObjectFinalize, ToNapiValue};
 use napi::threadsafe_function::{ErrorStrategy, ThreadsafeFunction, ThreadsafeFunctionCallMode};
 use napi::{Env, Error, JsBoolean, JsFunction, JsObject, JsString, Result, Task};
@@ -6,14 +6,14 @@ use napi_derive::napi;
 use std::ffi::{CStr, CString, FromBytesUntilNulError, NulError};
 use std::sync::Arc;
 
-#[napi(js_name = "ImageAsset")]
-pub struct JSImageAsset {
-    pub(crate) asset: Arc<ImageAsset>,
+#[napi]
+pub struct ImageAsset {
+    pub(crate) asset: Arc<CImageAsset>,
 }
 
 pub struct AsyncUrlTask {
     url: String,
-    asset: Arc<ImageAsset>,
+    asset: Arc<CImageAsset>,
 }
 
 impl Task for AsyncUrlTask {
@@ -35,23 +35,13 @@ impl Task for AsyncUrlTask {
     }
 
     fn resolve(&mut self, env: Env, done: bool) -> Result<Self::JsValue> {
-        println!("resolve: {:?}", done);
         Ok(done)
-    }
-
-    fn reject(&mut self, env: Env, err: Error) -> Result<Self::JsValue> {
-        println!("reject: {:?}", err);
-        Err(err)
-    }
-    fn finally(&mut self, _env: Env) -> Result<()> {
-        println!("finally");
-        Ok(())
     }
 }
 
 
 #[napi]
-impl JSImageAsset {
+impl ImageAsset {
     #[napi(constructor)]
     pub fn new() -> Self {
         Self {

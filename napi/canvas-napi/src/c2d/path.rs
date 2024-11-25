@@ -1,18 +1,24 @@
 use canvas_c::Path;
-use napi::bindgen_prelude::{ClassInstance, Either};
+use napi::bindgen_prelude::{ClassInstance, Either, ObjectFinalize};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 
-#[napi(js_name = "Path2D")]
-pub struct JSPath2D {
+#[napi(custom_finalize)]
+pub struct Path2D {
     pub(crate) path: *mut Path,
+}
+impl ObjectFinalize for Path2D {
+    fn finalize(self, _: Env) -> Result<()> {
+        canvas_c::canvas_native_path_release(self.path);
+        Ok(())
+    }
 }
 
 #[napi]
-impl JSPath2D {
+impl Path2D {
     #[napi(constructor)]
-    pub fn new(data: Option<Either<ClassInstance<JSPath2D>, JsString>>) -> Self {
+    pub fn new(data: Option<Either<ClassInstance<Path2D>, JsString>>) -> Self {
         match data {
             Some(Either::A(path)) => {
                 Self {
@@ -40,7 +46,7 @@ impl JSPath2D {
     }
 
     #[napi]
-    pub fn add_path(&self, path: ClassInstance<JSPath2D>) {
+    pub fn add_path(&self, path: ClassInstance<Path2D>) {
         canvas_c::canvas_native_path_add_path(self.path, path.path)
     }
 

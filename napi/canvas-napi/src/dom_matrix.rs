@@ -1,15 +1,23 @@
+use napi::bindgen_prelude::ObjectFinalize;
 use napi::*;
 
-#[napi(js_name = "DOMMatrix")]
-pub struct JSDOMMatrix {
+#[napi(custom_finalize)]
+pub struct DOMMatrix {
     pub(crate) matrix: *mut canvas_c::Matrix,
 }
 
+impl ObjectFinalize for DOMMatrix {
+    fn finalize(self, _: Env) -> Result<()> {
+        canvas_c::canvas_native_matrix_release(self.matrix);
+        Ok(())
+    }
+}
+
 #[napi]
-impl JSDOMMatrix {
+impl DOMMatrix {
     #[napi(constructor)]
-    pub fn new(data: Option<Vec<f64>>) -> JSDOMMatrix {
-        let mut matrix = canvas_c::canvas_native_matrix_create();
+    pub fn new(data: Option<Vec<f64>>) -> DOMMatrix {
+        let matrix = canvas_c::canvas_native_matrix_create();
         if let Some(init) = data {
             let init = init.into_iter().map(|v| v as f32).collect::<Vec<f32>>();
             match init.len() {
@@ -22,6 +30,6 @@ impl JSDOMMatrix {
                 _ => {}
             }
         }
-        JSDOMMatrix { matrix }
+        DOMMatrix { matrix }
     }
 }

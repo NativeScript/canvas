@@ -29,7 +29,7 @@ use std::sync::Arc;
 
 #[napi(custom_finalize)]
 pub struct CanvasRenderingContext2D {
-    context: *mut CCanvasRenderingContext2D,
+    pub(crate) context: *mut CCanvasRenderingContext2D,
 }
 
 impl ObjectFinalize for CanvasRenderingContext2D {

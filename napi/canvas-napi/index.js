@@ -284,8 +284,89 @@ if (!nativeBinding) {
 	throw new Error(`Failed to load native binding`);
 }
 
-const { WebGLRenderingContext, Path2D, CanvasPattern, CanvasGradient, ImageData, TextMetrics, CanvasRenderingContext2D, ImageAsset, DomMatrix } = nativeBinding;
+const {
+	WebGLProgram,
+	WebGLShader,
+	WebGLBuffer,
+	WebGLFramebuffer,
+	WebGLRenderbuffer,
+	WebGLTexture,
+	WebGLActiveInfo,
+	ANGLE_instanced_arrays,
+	OES_fbo_render_mipmap,
+	EXT_blend_minmax,
+	EXT_color_buffer_half_float,
+	EXT_disjoint_timer_query,
+	EXT_sRGB,
+	EXT_shader_texture_lod,
+	EXT_texture_filter_anisotropic,
+	OES_element_index_uint,
+	OES_standard_derivatives,
+	OES_texture_float,
+	OES_texture_float_linear,
+	OES_texture_half_float,
+	OES_texture_half_float_linear,
+	OES_vertex_array_object,
+	WEBGL_color_buffer_float,
+	WEBGL_compressed_texture_atc,
+	WEBGL_compressed_texture_etc,
+	WEBGL_compressed_texture_etc1,
+	WEBGL_compressed_texture_pvrtc,
+	WEBGL_compressed_texture_s3tc,
+	WEBGL_lose_context,
+	WEBGL_depth_texture,
+	WEBGL_draw_buffers,
+	WebGLShaderPrecisionFormat,
+	WebGLUniformLocation,
+	WebGLRenderingContext,
+	Path2D,
+	CanvasPattern,
+	CanvasGradient,
+	ImageData,
+	TextMetrics,
+	CanvasRenderingContext2D,
+	ImageAsset,
+	DomMatrix,
+	GPUCanvasContext,
+	GPU,
+	TextEncoder,
+	TextDecoder,
+	WebGL2RenderingContext,
+} = nativeBinding;
 
+module.exports.WebGLProgram = WebGLProgram;
+module.exports.WebGLShader = WebGLShader;
+module.exports.WebGLBuffer = WebGLBuffer;
+module.exports.WebGLFramebuffer = WebGLFramebuffer;
+module.exports.WebGLRenderbuffer = WebGLRenderbuffer;
+module.exports.WebGLTexture = WebGLTexture;
+module.exports.WebGLActiveInfo = WebGLActiveInfo;
+module.exports.ANGLE_instanced_arrays = ANGLE_instanced_arrays;
+module.exports.OES_fbo_render_mipmap = OES_fbo_render_mipmap;
+module.exports.EXT_blend_minmax = EXT_blend_minmax;
+module.exports.EXT_color_buffer_half_float = EXT_color_buffer_half_float;
+module.exports.EXT_disjoint_timer_query = EXT_disjoint_timer_query;
+module.exports.EXT_sRGB = EXT_sRGB;
+module.exports.EXT_shader_texture_lod = EXT_shader_texture_lod;
+module.exports.EXT_texture_filter_anisotropic = EXT_texture_filter_anisotropic;
+module.exports.OES_element_index_uint = OES_element_index_uint;
+module.exports.OES_standard_derivatives = OES_standard_derivatives;
+module.exports.OES_texture_float = OES_texture_float;
+module.exports.OES_texture_float_linear = OES_texture_float_linear;
+module.exports.OES_texture_half_float = OES_texture_half_float;
+module.exports.OES_texture_half_float_linear = OES_texture_half_float_linear;
+module.exports.OES_vertex_array_object = OES_vertex_array_object;
+module.exports.WEBGL_color_buffer_float = WEBGL_color_buffer_float;
+module.exports.WEBGL_compressed_texture_atc = WEBGL_compressed_texture_atc;
+module.exports.WEBGL_compressed_texture_etc = WEBGL_compressed_texture_etc;
+module.exports.WEBGL_compressed_texture_etc1 = WEBGL_compressed_texture_etc1;
+module.exports.WEBGL_compressed_texture_pvrtc = WEBGL_compressed_texture_pvrtc;
+module.exports.WEBGL_compressed_texture_s3tc = WEBGL_compressed_texture_s3tc;
+module.exports.WEBGL_lose_context = WEBGL_lose_context;
+module.exports.WEBGL_depth_texture = WEBGL_depth_texture;
+module.exports.WEBGL_draw_buffers = WEBGL_draw_buffers;
+module.exports.WebGLShaderPrecisionFormat = WebGLShaderPrecisionFormat;
+module.exports.WebGLUniformLocation = WebGLUniformLocation;
 module.exports.WebGLRenderingContext = WebGLRenderingContext;
 module.exports.Path2D = Path2D;
 module.exports.CanvasPattern = CanvasPattern;
@@ -295,3 +376,8 @@ module.exports.TextMetrics = TextMetrics;
 module.exports.CanvasRenderingContext2D = CanvasRenderingContext2D;
 module.exports.ImageAsset = ImageAsset;
 module.exports.DomMatrix = DomMatrix;
+module.exports.GPUCanvasContext = GPUCanvasContext;
+module.exports.GPU = GPU;
+module.exports.TextEncoder = TextEncoder;
+module.exports.TextDecoder = TextDecoder;
+module.exports.WebGL2RenderingContext = WebGL2RenderingContext;

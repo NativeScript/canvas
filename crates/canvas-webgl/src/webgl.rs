@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 #![allow(non_upper_case_globals)]
 
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_uchar, c_void};
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_uchar, c_void};
 
 use crate::prelude::*;
 use crate::utils;
@@ -913,7 +913,9 @@ pub fn canvas_native_webgl_enable(cap: u32, state: &mut WebGLState) {
 
 pub fn canvas_native_webgl_enable_vertex_attrib_array(index: u32, state: &mut WebGLState) {
     state.make_current();
-    unsafe { gl_bindings::EnableVertexAttribArray(index) }
+    unsafe {
+        gl_bindings::EnableVertexAttribArray(index)
+    }
 }
 
 pub fn canvas_native_webgl_finish(state: &mut WebGLState) {
@@ -1673,16 +1675,38 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
 
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
-    let ext = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) as *const c_char };
 
-    if ext.is_null() {
-        return Vec::with_capacity(0);
+
+    let mut max_ext = -1;
+
+    unsafe {
+        #[cfg(target_os = "macos")]
+        {
+            gl_bindings::GetIntegerv(gl_bindings::NUM_EXTENSIONS, &mut max_ext);
+
+
+            if max_ext > 0 {
+                let mut ret = Vec::with_capacity(max_ext as usize);
+                for i in 0..max_ext {
+                    let ext = gl_bindings::GetStringi(gl_bindings::EXTENSIONS, i as u32);
+                    if !ext.is_null() {
+                        let extension = CStr::from_ptr(ext as _);
+                        ret.push(extension.to_string_lossy().to_string());
+                    }
+                }
+                return ret;
+            }
+        }
+
+        let ext = unsafe { gl_bindings::GetString(gl_bindings::EXTENSIONS) as *const c_char };
+
+        if ext.is_null() {
+            return Vec::with_capacity(0);
+        }
+        let version = unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap() };
+
+        version.split(" ").map(|f| f.into()).collect()
     }
-    let version = unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap() };
-
-    // let extensions = unsafe { CStr::from_ptr(std::mem::transmute(ext)) };
-    // let extensions = extensions.to_string_lossy();
-    version.split(" ").map(|f| f.into()).collect()
 }
 
 pub fn canvas_native_webgl_get_tex_parameter(

@@ -84,8 +84,6 @@ impl Context {
             frame_buffer.format = GR_GL_RGB565;
         }
 
-        println!("??? {width} {height}");
-
         let target = gpu::backend_render_targets::make_gl(
             (width as i32, height as i32),
             Some(0),

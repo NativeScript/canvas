@@ -101,6 +101,10 @@ impl U16Buffer {
     pub fn length(&self) -> usize {
         self.0.len()
     }
+
+    pub fn into_vec(self) -> Vec<u16> {
+        self.0
+    }
 }
 
 impl Default for U16Buffer {
@@ -133,6 +137,10 @@ impl F32Buffer {
     pub fn length(&self) -> usize {
         self.0.len()
     }
+
+    pub fn into_vec(self) -> Vec<f32> {
+        self.0
+    }
 }
 
 impl Default for F32Buffer {
@@ -163,6 +171,10 @@ impl I32Buffer {
 
     pub fn length(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn into_vec(self) -> Vec<i32> {
+        self.0
     }
 }
 
@@ -195,6 +207,10 @@ impl U32Buffer {
 
     pub fn length(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn into_vec(self) -> Vec<u32> {
+        self.0
     }
 }
 

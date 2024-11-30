@@ -24,11 +24,9 @@ impl Task for AsyncUrlTask {
         match CString::new(self.url.as_str()) {
             Ok(url) => {
                 let done = canvas_native_image_asset_load_from_url(Arc::as_ptr(&self.asset), url.as_ptr());
-                println!("compute: {:?}", done);
                 Ok(done)
             }
             Err(e) => {
-                println!("Canvas native image load error: {:?}", e);
                 Err(Error::from_reason(e.to_string()))?
             }
         }
@@ -102,9 +100,7 @@ impl ImageAsset {
             })?;
         let tsfn = tsfn.clone();
         let asset = Arc::clone(&self.asset);
-        println!("load_url_callback");
         std::thread::spawn(move || {
-            println!("spawn");
             let done = match CString::new(url) {
                 Ok(url) => {
                     canvas_c::canvas_native_image_asset_load_from_url(Arc::as_ptr(&asset), url.as_ptr())

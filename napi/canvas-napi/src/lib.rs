@@ -13,3 +13,6 @@ pub mod c2d;
 pub mod image_asset;
 pub mod dom_matrix;
 mod gpu;
+mod text_encoder;
+mod text_decoder;
+mod gl2;

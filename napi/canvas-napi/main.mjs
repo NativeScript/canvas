@@ -1,10 +1,146 @@
 import '@nativescript/macos-node-api';
-import { CanvasRenderingContext2D, ImageAsset } from './index.js';
+import { CanvasRenderingContext2D, ImageAsset, TextDecoder, TextEncoder, WebGLRenderingContext } from './index.js';
 
+objc.import('AppKit');
 objc.import('OpenGL');
 objc.import('QuartzCore');
 
+let runLoop = 0;
+//
+//
+// const enc = new TextEncoder();
+// const dec = new TextDecoder();
+//
+// const encoded = enc.encode('Hello Osei');
+// console.log('encoded', encoded);
+// const decoded = dec.decode(encoded);
+// console.log('decoded', decoded, decoded === 'Hello Osei');
+
+class Application {
+	/**
+	 * @property {AppDelegate} delegate
+	 */
+	static delegate;
+
+	/**
+	 * @property {NSApplication} application
+	 */
+
+	static application;
+	static rootView;
+
+	/**
+	 * @property {Window} window
+	 */
+	static window;
+
+	/**
+	 * @property {NSMenu} appMenu
+	 */
+	static appMenu;
+
+	/**
+	 * @property {boolean} ensure60FPS
+	 */
+	static ensure60FPS;
+
+	/**
+	 * @property {boolean} ensure1200FPS
+	 */
+	static ensure120FPS;
+
+	/**
+	 * @property {boolean} initEditMenu
+	 */
+	static initEditMenu;
+
+	static launch() {
+		// Application.rootView = document.body as unknown as HTMLViewElement;
+		// Application.rootView?.connectedCallback();
+
+		const controller = ViewController.new();
+		const window = NSWindow.windowWithContentViewController(controller);
+
+		window.title = 'NativeScript for macOS';
+		window.styleMask = NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView;
+
+		window.titlebarAppearsTransparent = true;
+		window.titleVisibility = NSWindowTitleVisibility.Hidden;
+
+		NativeScriptApplication.window = window;
+
+
+		window.becomeMainWindow();
+		window.displayIfNeeded();
+		window.makeKeyAndOrderFront(NSApp);
+
+
+		Application.application = NSApplication.sharedApplication;
+		Application.delegate = ApplicationDelegate.new();
+		Application.delegate.window = NativeScriptApplication.window.nativeView;
+		Application.createMenu();
+		NSApp.delegate = Application.delegate;
+		window.delegate = Application.delegate;
+		NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
+		NSApp.run();
+	}
+
+	static createMenu() {
+		if (!Application.appMenu) {
+			const menu = NSMenu.new();
+
+			const appMenuItem = NSMenuItem.new();
+			menu.addItem(appMenuItem);
+
+			// appMenuItem.submenu = menu;
+
+			menu.addItemWithTitleActionKeyEquivalent('Quit', 'terminate:', 'q');
+
+			NSApp.mainMenu = menu;
+
+			Application.appMenu = menu;
+		}
+	}
+
+	static showMainWindow() {
+		// override
+	}
+}
+
+globalThis.NativeScriptApplication = Application;
+
+function RunLoop() {
+	let delay = 2;
+	let lastEventTime = 0;
+
+	const loop = () => {
+		const event = NSApp.nextEventMatchingMaskUntilDateInModeDequeue(NSEventMask.Any, null, 'kCFRunLoopDefaultMode', true);
+
+		const timeSinceLastEvent = Date.now() - lastEventTime;
+		if (event != null) {
+			NSApp.sendEvent(event);
+			delay = timeSinceLastEvent < 32 ? 2 : 8;
+			lastEventTime = Date.now();
+		} else {
+			delay = timeSinceLastEvent > 6000 ? 128 : timeSinceLastEvent > 4000 ? 64 : timeSinceLastEvent > 2000 ? 16 : 8;
+		}
+
+		if (NativeScriptApplication.delegate.running) {
+			let timeOut = delay;
+			if (NativeScriptApplication.ensure60FPS) {
+				timeOut = 8;
+			} else if (NativeScriptApplication.ensure120FPS) {
+				timeOut = 4;
+			}
+			runLoop = setTimeout(loop, timeOut);
+		}
+	};
+	runLoop = setTimeout(loop, 0);
+}
+
 export class ApplicationDelegate extends NSObject {
+	running = true;
+	isActive = true;
 	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];
 
 	static {
@@ -15,39 +151,33 @@ export class ApplicationDelegate extends NSObject {
 	 * @param {NSNotification} _notification
 	 */
 	applicationDidFinishLaunching(_notification) {
-		const menu = NSMenu.new();
-		NSApp.mainMenu = menu;
-
-		const appMenuItem = NSMenuItem.new();
-		menu.addItem(appMenuItem);
-
-		const appMenu = NSMenu.new();
-		appMenuItem.submenu = appMenu;
-
-		appMenu.addItemWithTitleActionKeyEquivalent('Quit', 'terminate:', 'q');
-
-		const controller = ViewController.new();
-		const window = NSWindow.windowWithContentViewController(controller);
-
-		window.title = 'NativeScript for macOS';
-		window.delegate = this;
-		window.styleMask = NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView;
-
-		window.titlebarAppearsTransparent = true;
-		window.titleVisibility = NSWindowTitleVisibility.Hidden;
-
-		window.makeKeyAndOrderFront(this);
-
 		NSApp.activateIgnoringOtherApps(false);
 
-		doTheThing();
+		NSApp.stop(this);
+
+		RunLoop();
+
+		//doTheThing();
+
+		doGL();
 	}
 
-	/**
-	 * @param {NSNotification} _notification
-	 */
+	applicationWillTerminate(_notification) {
+		this.running = false;
+	}
+
+	applicationShouldHandleReopenHasVisibleWindows(sender, hasVisibleWindows) {
+		if (!hasVisibleWindows) {
+			sender.windows.firstObject.makeKeyAndOrderFront(sender);
+		}
+		return true;
+	}
+
 	windowWillClose(_notification) {
 		NSApp.terminate(this);
+		clearTimeout(runLoop);
+		runLoop = 0;
+		process.exit(0);
 	}
 }
 
@@ -82,7 +212,6 @@ export class NSCMTLView extends NSView {
 		return this;
 	}
 
-
 	/**
 	 * @return {CGSize}
 	 */
@@ -97,7 +226,6 @@ export class NSCMTLView extends NSView {
 		this.layer.drawableSize = value;
 	}
 
-
 	present() {
 		this._canvas?.getContext('2d').flush();
 		this._canvas?.getContext('2d').present();
@@ -106,7 +234,6 @@ export class NSCMTLView extends NSView {
 	static ObjCExposedMethods = {
 		present: { returns: interop.types.void, params: [] }
 	};
-
 }
 
 export class NSCCanvas extends NSView {
@@ -124,10 +251,10 @@ export class CanvasGLView extends NSOpenGLView {
 	 * @param {NSCCanvas} canvas
 	 */
 	canvas = null;
-	fbo = 0;
 
 	initWithFrame(frame) {
 		super.initWithFrame(frame);
+		this.wantsLayer = true;
 		return this;
 	}
 
@@ -137,10 +264,8 @@ export class CanvasGLView extends NSOpenGLView {
 
 	clearGLContext() {
 		super.clearGLContext();
-		this.fbo = 0;
 	}
 }
-
 
 export class ViewController extends NSViewController {
 	static {
@@ -155,7 +280,6 @@ export class ViewController extends NSViewController {
 	viewDidLoad() {
 		super.viewDidLoad();
 		this.canvas = NSCCanvas.alloc().initWithFrame(this.view.frame);
-		this.view.addSubview(this.canvas);
 
 		glview.frame = this.view.frame;
 		mtlview.frame = this.view.frame;
@@ -164,18 +288,20 @@ export class ViewController extends NSViewController {
 			height: this.view.frame.size.height * NSScreen.mainScreen.backingScaleFactor
 		});
 
-		this.canvas.addSubview(mtlview);
+		// this.canvas.addSubview(mtlview);
 
-		//this.canvas.addSubview(glview);
+		glview.layer.backgroundColor = NSColor.blueColor;
 
-		// glview.wantsLayer = true;
+		this.canvas.addSubview(glview);
+
+		this.view.addSubview(this.canvas);
+
 	}
 }
 
 const glview = CanvasGLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
 
 const mtlview = NSCMTLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
-
 
 let isDoingOrDone = false;
 
@@ -462,8 +588,8 @@ function flappyBird(canvas) {
 	}
 
 	function main() {
-		width = canvas.clientWidth //* window.devicePixelRatio;
-		height = canvas.clientHeight // * window.devicePixelRatio;
+		width = canvas.clientWidth; //* window.devicePixelRatio;
+		height = canvas.clientHeight; // * window.devicePixelRatio;
 
 		canvas.addEventListener('touchstart', onpress);
 
@@ -488,12 +614,12 @@ function flappyBird(canvas) {
 		initSprites(img);
 		ctx.fillStyle = s_bg.color;
 
-		(okbtn = {
+		okbtn = {
 			x: (width - s_buttons.Ok.width) / 2,
 			y: height - 200,
 			width: s_buttons.Ok.width,
 			height: s_buttons.Ok.height
-		});
+		};
 		run();
 
 		/*
@@ -641,14 +767,12 @@ function flappyBird(canvas) {
 	main();
 }
 
-
 function solarSystem(canvas) {
 	const ctx = canvas.getContext('2d');
 
 	let sun;
 	let moon;
 	let earth;
-
 
 	const scale = NSScreen.mainScreen.backingScaleFactor;
 
@@ -657,8 +781,7 @@ function solarSystem(canvas) {
 
 	ctx.render();
 
-
-	function init() {
+	async function init() {
 		// sun = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1456/Canvas_sun.png');
 		// moon = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1443/Canvas_moon.png');
 		// earth = await ImageSource.fromUrl('https://mdn.mozillademos.org/files/1429/Canvas_earth.png');
@@ -666,12 +789,16 @@ function solarSystem(canvas) {
 		sun = new ImageAsset();
 		moon = new ImageAsset();
 		earth = new ImageAsset();
-		sun.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
-		moon.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
-		earth.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
+
+		await sun.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
+		await moon.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
+		await earth.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
+
+		// sun.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
+		// moon.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
+		// earth.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
 		LAF = requestAnimationFrame(draw);
 	}
-
 
 	//ctx.scale(scale, scale);
 
@@ -686,20 +813,14 @@ function solarSystem(canvas) {
 
 		// Earth
 		let time = new Date();
-		ctx.rotate(
-			((2 * Math.PI) / 60) * time.getSeconds() +
-			((2 * Math.PI) / 60000) * time.getMilliseconds()
-		);
+		ctx.rotate(((2 * Math.PI) / 60) * time.getSeconds() + ((2 * Math.PI) / 60000) * time.getMilliseconds());
 		ctx.translate(105, 0);
-		ctx.fillRect(0, -12, 40, 24);    // Shadow
+		ctx.fillRect(0, -12, 40, 24); // Shadow
 		ctx.drawImage(earth, -12, -12);
 
 		// Moon
 		ctx.save();
-		ctx.rotate(
-			((2 * Math.PI) / 6) * time.getSeconds() +
-			((2 * Math.PI) / 6000) * time.getMilliseconds()
-		);
+		ctx.rotate(((2 * Math.PI) / 6) * time.getSeconds() + ((2 * Math.PI) / 6000) * time.getMilliseconds());
 		ctx.translate(0, 28.5);
 		ctx.drawImage(moon, -3.5, -3.5);
 
@@ -721,7 +842,6 @@ function solarSystem(canvas) {
 
 	init();
 }
-
 
 let LAF = 0;
 
@@ -1032,7 +1152,6 @@ function breathe_demo(canvas) {
 	breathe(canvas);
 }
 
-
 function mdnPattern(canvas) {
 	const ctx = canvas.getContext('2d');
 	const img = new ImageAsset();
@@ -1047,16 +1166,7 @@ function mdnPattern(canvas) {
 function mdnPutImageData(canvas) {
 	const ctx = canvas.getContext('2d');
 
-	function putImageData(
-		ctx,
-		imageData,
-		dx,
-		dy,
-		dirtyX,
-		dirtyY,
-		dirtyWidth,
-		dirtyHeight
-	) {
+	function putImageData(ctx, imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
 		const data = imageData.data;
 		const height = imageData.height;
 		const width = imageData.width;
@@ -1076,11 +1186,11 @@ function mdnPutImageData(canvas) {
 		}
 	}
 
-// Draw content onto the canvas
+	// Draw content onto the canvas
 	ctx.fillRect(0, 0, 100, 100);
-// Create an ImageData object from it
+	// Create an ImageData object from it
 	const imagedata = ctx.getImageData(0, 0, 100, 100);
-// use the putImageData function that illustrates how putImageData works
+	// use the putImageData function that illustrates how putImageData works
 	putImageData(ctx, imagedata, 150, 0, 50, 50, 25, 25);
 	ctx.render();
 }
@@ -1088,17 +1198,17 @@ function mdnPutImageData(canvas) {
 function mdnRadialGradient(canvas) {
 	const ctx = canvas.getContext('2d');
 
-// Create a radial gradient
-// The inner circle is at x=110, y=90, with radius=30
-// The outer circle is at x=100, y=100, with radius=70
+	// Create a radial gradient
+	// The inner circle is at x=110, y=90, with radius=30
+	// The outer circle is at x=100, y=100, with radius=70
 	const gradient = ctx.createRadialGradient(110, 90, 30, 100, 100, 70);
 
-// Add three color stops
+	// Add three color stops
 	gradient.addColorStop(0, 'pink');
 	gradient.addColorStop(0.9, 'white');
 	gradient.addColorStop(1, 'green');
 
-// Set the fill style and draw a rectangle
+	// Set the fill style and draw a rectangle
 	ctx.fillStyle = gradient;
 	ctx.fillRect(20, 20, 160, 160);
 }
@@ -1106,6 +1216,538 @@ function mdnRadialGradient(canvas) {
 function cancelSwarm() {
 	// cancelAnimationFrame(LAF);
 	// LAF = 0;
+}
+
+function webglTextures(canvas) {
+	const vertexShaderSrc = `
+// #version 120
+precision highp float;
+attribute vec2 position;
+void main() {
+  gl_Position = vec4(position, 0.0, 1.0);
+  gl_PointSize = 128.0;
+}`;
+
+	const fragmentShaderSrc = `
+// #version 120
+precision mediump float;
+void main() {
+  vec2 fragmentPosition = 2.0*gl_PointCoord - 1.0;
+  float distance = length(fragmentPosition);
+  float distanceSqrd = distance * distance;
+  gl_FragColor = vec4(
+    0.2/distanceSqrd,
+    0.1/distanceSqrd,
+    0.0, 1.0 );
+}`;
+
+	var gl, program;
+
+	function textures(canvas) {
+		function setupWebGL() {
+			if (!(gl = getRenderingContext())) return;
+			var source = vertexShaderSrc;
+			var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+			gl.shaderSource(vertexShader, source);
+			gl.compileShader(vertexShader);
+			source = fragmentShaderSrc;
+			var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+			gl.shaderSource(fragmentShader, source);
+			gl.compileShader(fragmentShader);
+			program = gl.createProgram();
+
+			gl.attachShader(program, vertexShader);
+			gl.attachShader(program, fragmentShader);
+			gl.linkProgram(program);
+			gl.detachShader(program, vertexShader);
+			gl.detachShader(program, fragmentShader);
+			gl.deleteShader(vertexShader);
+			gl.deleteShader(fragmentShader);
+			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+				var linkErrLog = gl.getProgramInfoLog(program);
+				cleanup();
+				console.log('Shader program did not link successfully. ' + 'Error log: ' + linkErrLog);
+				return;
+			}
+			console.log('1', gl.getError());
+			initializeAttributes();
+			console.log('2', gl.getError());
+			gl.useProgram(program);
+			console.log('3', gl.getError());
+			gl.drawArrays(gl.POINTS, 0, 1);
+			gl.render();
+
+			cleanup();
+		}
+
+		var buffer;
+
+		function initializeAttributes() {
+			gl.enableVertexAttribArray(0);
+			console.log('1.1', gl.getError());
+			buffer = gl.createBuffer();
+			console.log('1.2', gl.getError());
+			gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+			console.log('1.3', gl.getError());
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0]), gl.STATIC_DRAW);
+			console.log('1.4', gl.getError());
+			gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+			console.log('1.5', gl.getError());
+		}
+
+		function cleanup() {
+			gl.useProgram(null);
+			if (buffer) gl.deleteBuffer(buffer);
+			if (program) gl.deleteProgram(program);
+		}
+
+		function getRenderingContext() {
+			var gl = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl');
+			if (!gl) {
+				console.log('Failed to get WebGL context.' + 'Your device may not support WebGL.');
+				return null;
+			}
+			gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+			gl.clearColor(0, 0, 0, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			return gl;
+		}
+
+		setupWebGL();
+	}
+
+	textures(canvas);
+
+}
+
+function createChaosLines(canvas) {
+
+	function createShader(gl, type, source) {
+		var shader = gl.createShader(type);
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			console.log('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+			gl.deleteShader(shader);
+			return null;
+		}
+
+		return shader;
+	}
+
+	function initWebGL(canvas) {
+		//	canvas.width = canvas.clientWidth;
+		//	canvas.height = canvas.clientHeight;
+		const gl = canvas.getContext('webgl2');
+
+		if (!gl) {
+			alert('Unable to initialize WebGL. Your browser may not support it.');
+			return;
+		}
+
+		const vertexShaderSource = `
+		#version 330 core
+    attribute vec4 aVertexPosition;
+    void main() {
+        gl_Position = aVertexPosition;
+    }`;
+
+		const fragmentShaderSource = `
+		#version 330 core
+    precision mediump float;
+
+    uniform float u_time;
+    uniform vec2 u_resolution;
+
+    float hash(float n) {
+        return fract(sin(n) * 753.5453123);
+    }
+
+    float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float n = i.x + i.y * 157.0;
+        return mix(mix(hash(n + 0.0), hash(n + 1.0), f.x),
+                   mix(hash(n + 157.0), hash(n + 158.0), f.x), f.y);
+    }
+
+    float fbm(vec2 p, vec3 a) {
+        float v = 0.0;
+        v += noise(p * a.x) * 0.50;
+        v += noise(p * a.y) * 1.50;
+        v += noise(p * a.z) * 0.125 * 0.1;
+        return v;
+    }
+
+    vec3 drawLines(vec2 uv, vec3 fbmOffset, vec3 color1, vec3 colorSet[4], float secs) {
+        float timeVal = secs * 0.05;
+        vec3 finalColor = vec3(0.0);
+        for (int i = 0; i < 4; ++i) {
+            float indexAsFloat = float(i);
+            float amp = 80.0 + indexAsFloat * 0.0;
+            float period = 2.0 + indexAsFloat + 2.0;
+            float thickness = mix(0.4, 0.2, noise(uv * 2.0));
+            float t = abs(1.0 / (sin(uv.y + fbm(uv + timeVal * period, fbmOffset)) * amp) * thickness);
+            finalColor += t * colorSet[i];
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            float indexAsFloat = float(i);
+            float amp = 40.0 + indexAsFloat * 5.0;
+            float period = 9.0 + indexAsFloat + 2.0;
+            float thickness = mix(0.1, 0.1, noise(uv * 12.0));
+            float t = abs(1.0 / (sin(uv.y + fbm(uv + timeVal * period, fbmOffset)) * amp) * thickness);
+            finalColor += t * colorSet[i] * color1;
+        }
+        return finalColor;
+    }
+
+    void main() {
+        vec2 uv = (gl_FragCoord.xy / u_resolution) * 0.75 - 2.0;
+        uv.x *= u_resolution.x / u_resolution.y;
+
+        vec3 lineColor1 = vec3(1.0, 0.0, 0.5);
+        vec3 lineColor2 = vec3(0.3, 0.5, 1.5);
+
+        float spread = 1.0;
+        vec3 finalColor = vec3(0.0);
+        vec3 colorSet[4];
+        colorSet[0] = vec3(0.7, 0.05, 1.0);
+        colorSet[1] = vec3(1.0, 0.19, 0.0);
+        colorSet[2] = vec3(0.0, 1.0, 0.3);
+        colorSet[3] = vec3(0.0, 0.38, 1.0);
+        float t = sin(u_time) * 0.5 + 0.5;
+        float pulse = mix(0.05, 0.20, t);
+
+        finalColor = drawLines(uv, vec3(65.2, 40.0, 4.0), lineColor1, colorSet, u_time * 0.1) * pulse;
+        finalColor += drawLines(uv, vec3(5.0 * spread / 2.0, 2.1 * spread, 1.0), lineColor2, colorSet, u_time);
+
+        gl_FragColor = vec4(finalColor, 1.0);
+    }
+`;
+
+		const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+		const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+		if (!vertexShader || !fragmentShader) {
+			console.error('Shader creation failed.');
+			return;
+		}
+
+		const shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		gl.linkProgram(shaderProgram);
+
+		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+			return;
+		}
+
+		const positionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		console.log('positionBuffer', positionBuffer, gl.getError());
+		const positions = [1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0];
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+		console.log('bufferData', positionBuffer, gl.getError());
+
+		const vertexPosition = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
+		console.log('vertexPosition', vertexPosition, gl.getError());
+		gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(vertexPosition);
+
+		gl.useProgram(shaderProgram);
+		const u_time = gl.getUniformLocation(shaderProgram, 'u_time');
+		const u_resolution = gl.getUniformLocation(shaderProgram, 'u_resolution');
+
+		console.log('u_time', u_time, 'u_resolution', u_resolution, gl.getError());
+
+		const width = canvas.width;
+		const height = canvas.height;
+		let start = 0;
+
+		function drawScene(now) {
+			if (start === 0) {
+				start = now;
+			}
+			// now *= 0.001;
+			now = (now - start) * 0.0001;
+			//	requestAnimationFrame(drawScene);
+			console.log('1', gl.getError());
+			gl.uniform1f(u_time, now);
+			console.log('2', gl.getError());
+			gl.uniform2f(u_resolution, width, height);
+			console.log('3', gl.getError());
+			gl.clearColor(0.0, 0.0, 0.0, 1.0);
+			console.log('4', gl.getError());
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			console.log('5', gl.getError());
+			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+			console.log('6', gl.getError());
+			gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+			console.log('7', gl.getError());
+			gl.enableVertexAttribArray(vertexPosition);
+			console.log('8', gl.getError());
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			console.log('9', gl.getError());
+			gl.render();
+			console.log(gl.getError());
+		}
+
+		drawScene();
+
+		//requestAnimationFrame(drawScene);
+	}
+
+	initWebGL(canvas);
+}
+
+
+function cubeRotation(canvas) {
+	let LAF = 0;
+
+	function rotation(canvas) {
+		var gl = canvas.getContext('webgl2');
+		var width = gl.drawingBufferWidth;
+		var height = gl.drawingBufferHeight;
+		/*============ Defining and storing the geometry =========*/
+
+		var vertices = [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, -1, -1, -1, -1, -1, 1, 1, -1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1];
+
+		var colors = [5, 3, 7, 5, 3, 7, 5, 3, 7, 5, 3, 7, 1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
+
+		var indices = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23];
+
+		// Create and store data into vertex buffer
+		var vertex_buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+		// Create and store data into color buffer
+		var color_buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+		// Create and store data into index buffer
+		var index_buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+		/*=================== Shaders =========================*/
+
+		var vertCode =
+			'#version 330 core\n' +
+			'in vec3 position;' +
+			'uniform mat4 Pmatrix;' +
+			'uniform mat4 Vmatrix;' +
+			'uniform mat4 Mmatrix;' +
+			'in vec3 color;' + //the color of the point
+			'out vec3 vColor;' +
+			'void main(void) { ' + //pre-built function
+			'gl_Position = Pmatrix*Vmatrix*Mmatrix*vec4(position, 1.0);' +
+			'vColor = color;' +
+			'}';
+
+		var fragCode =
+			'#version 330 core\n' +
+			'precision mediump float;' +
+			'out vec3 vColor;' +
+			'out vec4 fragColor;' +
+			'void main(void) {' + 'fragColor = vec4(vColor, 1.0);' + '}';
+
+		var vertShader = gl.createShader(gl.VERTEX_SHADER);
+		gl.shaderSource(vertShader, vertCode);
+		gl.compileShader(vertShader);
+
+		let compiled = gl.getShaderParameter(vertShader, gl.COMPILE_STATUS);
+		if (!compiled) {
+			// Something went wrong during compilation; get the error
+			const lastError = gl.getShaderInfoLog(vertShader);
+			console.log('*** Error compiling shader \'' + vertShader + '\':' + lastError);
+			gl.deleteShader(vertShader);
+			return null;
+		}
+
+
+		var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+		gl.shaderSource(fragShader, fragCode);
+		gl.compileShader(fragShader);
+
+
+		compiled = gl.getShaderParameter(fragShader, gl.COMPILE_STATUS);
+		if (!compiled) {
+			// Something went wrong during compilation; get the error
+			const lastError = gl.getShaderInfoLog(fragShader);
+			console.log('*** Error compiling shader \'' + fragShader + '\':' + lastError);
+			gl.deleteShader(fragShader);
+			return null;
+		}
+
+
+		var shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertShader);
+		gl.attachShader(shaderProgram, fragShader);
+		gl.linkProgram(shaderProgram);
+
+		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			var linkErrLog = gl.getProgramInfoLog(shaderProgram);
+			console.log('Shader program did not link successfully. ' + 'Error log: ' + linkErrLog);
+			return;
+		}
+
+
+		/* ====== Associating attributes to vertex shader =====*/
+		var Pmatrix = gl.getUniformLocation(shaderProgram, 'Pmatrix');
+		var Vmatrix = gl.getUniformLocation(shaderProgram, 'Vmatrix');
+		var Mmatrix = gl.getUniformLocation(shaderProgram, 'Mmatrix');
+
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+		var position = gl.getAttribLocation(shaderProgram, 'position');
+		gl.vertexAttribPointer(position, 3, gl.FLOAT, false, 0, 0);
+
+		// Position
+		gl.enableVertexAttribArray(position);
+		gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+		var color = gl.getAttribLocation(shaderProgram, 'color');
+		gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0);
+
+		// Color
+		gl.enableVertexAttribArray(color);
+		gl.useProgram(shaderProgram);
+
+		/*==================== MATRIX =====================*/
+
+		function get_projection(angle, a, zMin, zMax) {
+			var ang = Math.tan((angle * 0.5 * Math.PI) / 180); //angle*.5
+			return [0.5 / ang, 0, 0, 0, 0, (0.5 * a) / ang, 0, 0, 0, 0, -(zMax + zMin) / (zMax - zMin), -1, 0, 0, (-2 * zMax * zMin) / (zMax - zMin), 0];
+		}
+
+		var proj_matrix = get_projection(40, width / height, 1, 100);
+
+		var mov_matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+		var view_matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+		// translating z
+		view_matrix[14] = view_matrix[14] - 6; //zoom
+
+		/*==================== Rotation ====================*/
+
+		function rotateZ(m, angle) {
+			var c = Math.cos(angle);
+			var s = Math.sin(angle);
+			var mv0 = m[0],
+				mv4 = m[4],
+				mv8 = m[8];
+
+			m[0] = c * m[0] - s * m[1];
+			m[4] = c * m[4] - s * m[5];
+			m[8] = c * m[8] - s * m[9];
+
+			m[1] = c * m[1] + s * mv0;
+			m[5] = c * m[5] + s * mv4;
+			m[9] = c * m[9] + s * mv8;
+		}
+
+		function rotateX(m, angle) {
+			var c = Math.cos(angle);
+			var s = Math.sin(angle);
+			var mv1 = m[1],
+				mv5 = m[5],
+				mv9 = m[9];
+
+			m[1] = m[1] * c - m[2] * s;
+			m[5] = m[5] * c - m[6] * s;
+			m[9] = m[9] * c - m[10] * s;
+
+			m[2] = m[2] * c + mv1 * s;
+			m[6] = m[6] * c + mv5 * s;
+			m[10] = m[10] * c + mv9 * s;
+		}
+
+		function rotateY(m, angle) {
+			var c = Math.cos(angle);
+			var s = Math.sin(angle);
+			var mv0 = m[0],
+				mv4 = m[4],
+				mv8 = m[8];
+
+			m[0] = c * m[0] + s * m[2];
+			m[4] = c * m[4] + s * m[6];
+			m[8] = c * m[8] + s * m[10];
+
+			m[2] = c * m[2] - s * mv0;
+			m[6] = c * m[6] - s * mv4;
+			m[10] = c * m[10] - s * mv8;
+		}
+
+		/*================= Drawing ===========================*/
+		var time_old = 0;
+
+		var animate = function(time) {
+			var dt = time - time_old;
+			rotateZ(mov_matrix, dt * 0.005); //time
+			rotateY(mov_matrix, dt * 0.002);
+			rotateX(mov_matrix, dt * 0.003);
+			time_old = time;
+			gl.clearColor(0.5, 0.5, 0.5, 0.9);
+			gl.clearDepth(1.0);
+			gl.enable(gl.DEPTH_TEST);
+			gl.depthFunc(gl.LEQUAL);
+			gl.viewport(0, 0, width, height);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
+			gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
+			gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+			gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+			LAF = requestAnimationFrame(animate);
+		};
+		animate(0);
+	}
+
+	function cancelCubeRotation() {
+		cancelAnimationFrame(LAF);
+		LAF = 0;
+	}
+
+	rotation(canvas);
+
+}
+
+function doGL() {
+	let loaded = false;
+	// console.time('load1');
+	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
+	// console.timeEnd('load1');
+
+	const scale = NSScreen.mainScreen.backingScaleFactor;
+
+	const handle = interop.handleof(glview);
+	const glContext = WebGLRenderingContext.withView(handle.toNumber(), 2, true, false, false, false, 1, true, false, false, false, false, false);
+	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
+
+	const glCanvas = {
+		width: glview.frame.size.width,
+		height: glview.frame.size.height,
+		clientWidth: glview.frame.size.width,
+		clientHeight: glview.frame.size.height,
+		addEventListener: function() {
+		},
+		getContext: function() {
+			return glContext;
+		},
+		style: {}
+	};
+
+	glview._canvas = glCanvas;
+
+
+	//webglTextures(glCanvas);
+	//createChaosLines(glCanvas);
+	cubeRotation(glCanvas);
+
 }
 
 function doTheThing() {
@@ -1116,7 +1758,14 @@ function doTheThing() {
 
 	const scale = NSScreen.mainScreen.backingScaleFactor;
 
-	//const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
+	console.log('doTheThing');
+
+	const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
+
+	console.log('gl', gl);
+
+	console.log(gl.getContextAttributes());
+
 
 	// gl.clearColor(0, 0, 1, 1);
 	// gl.clear(gl.COLOR_BUFFER_BIT);
@@ -1134,13 +1783,10 @@ function doTheThing() {
 
 	//const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
 
-
 	const mtlViewHandle = interop.handleof(mtlview);
 	const deviceHandle = interop.handleof(mtlview.device);
 	const queueHandle = interop.handleof(mtlview.queue);
-	const ctx = CanvasRenderingContext2D.withMtlViewDeviceQueue(
-		mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), true, scale, 1, 0, 90, 1
-	);
+	const ctx = CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), true, scale, 1, 0, 90, 1);
 
 	const mtlCanvas = {
 		width: mtlview.frame.size.width,
@@ -1165,6 +1811,10 @@ function doTheThing() {
 
 	ctx.scale(scale, scale);
 
+	const encoder = new TextEncoder();
+
+	const decoder = new TextDecoder();
+
 	//	ctx.translate(0, 100);
 
 	//mdnShadowColor(ctx);
@@ -1186,7 +1836,7 @@ function doTheThing() {
 
 	//flappyBird(mtlCanvas);
 
-	 solarSystem(canvas);
+	solarSystem(canvas);
 
 	// swarm(canvas);
 	// breathe_demo(canvas);
@@ -1197,7 +1847,6 @@ function doTheThing() {
 	//
 	// ctx.font = '50px serif';
 	// ctx.strokeText('Hello world', 50, 90);
-
 
 	// ctx.render();
 
@@ -1223,10 +1872,6 @@ function doTheThing() {
 	*/
 }
 
-const NSApp = NSApplication.sharedApplication;
+Application.launch();
 
-NSApp.delegate = ApplicationDelegate.new();
-
-NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
-
-NSApplicationMain(0, null);
+// const NSApp = NSApplication.sharedApplication;

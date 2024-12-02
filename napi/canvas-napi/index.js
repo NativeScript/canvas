@@ -331,6 +331,11 @@ const {
 	GPU,
 	TextEncoder,
 	TextDecoder,
+	WebGLQuery,
+	WebGLSampler,
+	WebGLTransformFeedback,
+	WebGLVertexArrayObject,
+	WebGLSync,
 	WebGL2RenderingContext,
 } = nativeBinding;
 
@@ -380,4 +385,9 @@ module.exports.GPUCanvasContext = GPUCanvasContext;
 module.exports.GPU = GPU;
 module.exports.TextEncoder = TextEncoder;
 module.exports.TextDecoder = TextDecoder;
+module.exports.WebGLQuery = WebGLQuery;
+module.exports.WebGLSampler = WebGLSampler;
+module.exports.WebGLTransformFeedback = WebGLTransformFeedback;
+module.exports.WebGLVertexArrayObject = WebGLVertexArrayObject;
+module.exports.WebGLSync = WebGLSync;
 module.exports.WebGL2RenderingContext = WebGL2RenderingContext;

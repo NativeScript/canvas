@@ -1,5 +1,7 @@
 import '@nativescript/macos-node-api';
-import { CanvasRenderingContext2D, ImageAsset, TextDecoder, TextEncoder, WebGLRenderingContext } from './index.js';
+import { CanvasRenderingContext2D, ImageAsset, TextDecoder, TextEncoder, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
+import { cancelAnimationFrame, requestAnimationFrame } from './utils/index.js';
+import { Canvas } from './canvas.js';
 
 objc.import('AppKit');
 objc.import('OpenGL');
@@ -69,11 +71,9 @@ class Application {
 
 		NativeScriptApplication.window = window;
 
-
 		window.becomeMainWindow();
 		window.displayIfNeeded();
 		window.makeKeyAndOrderFront(NSApp);
-
 
 		Application.application = NSApplication.sharedApplication;
 		Application.delegate = ApplicationDelegate.new();
@@ -157,9 +157,9 @@ export class ApplicationDelegate extends NSObject {
 
 		RunLoop();
 
-		//doTheThing();
+		doTheThing();
 
-		doGL();
+		//doGL();
 	}
 
 	applicationWillTerminate(_notification) {
@@ -181,92 +181,7 @@ export class ApplicationDelegate extends NSObject {
 	}
 }
 
-export class NSCMTLView extends NSView {
-	static {
-		NativeClass(this);
-	}
-	_device;
-	_queue;
-	_canvas;
-
-	get queue() {
-		return this._queue;
-	}
-
-	get device() {
-		return this._device;
-	}
-
-	initWithFrame(frameRect) {
-		super.initWithFrame(frameRect);
-		this.wantsLayer = true;
-		const layer = CAMetalLayer.layer();
-		this._device = MTLCreateSystemDefaultDevice();
-		this._queue = this._device.newCommandQueue();
-		layer.device = this._device;
-		layer.presentsWithTransaction = false;
-		layer.framebufferOnly = false;
-		layer.pixelFormat = MTLPixelFormat.BGRA8Unorm;
-
-		this.layer = layer;
-		return this;
-	}
-
-	/**
-	 * @return {CGSize}
-	 */
-	get drawableSize() {
-		return this.layer.drawableSize;
-	}
-
-	/**
-	 * @param {CGSize} value
-	 */
-	set drawableSize(value) {
-		this.layer.drawableSize = value;
-	}
-
-	present() {
-		this._canvas?.getContext('2d').flush();
-		this._canvas?.getContext('2d').present();
-	}
-
-	static ObjCExposedMethods = {
-		present: { returns: interop.types.void, params: [] }
-	};
-}
-
-export class NSCCanvas extends NSView {
-	static {
-		NativeClass(this);
-	}
-}
-
-export class CanvasGLView extends NSOpenGLView {
-	static {
-		NativeClass(this);
-	}
-	isDirty = false;
-	/**
-	 * @param {NSCCanvas} canvas
-	 */
-	canvas = null;
-
-	initWithFrame(frame) {
-		super.initWithFrame(frame);
-		this.wantsLayer = true;
-		return this;
-	}
-
-	prepareOpenGL() {
-		super.prepareOpenGL();
-	}
-
-	clearGLContext() {
-		super.clearGLContext();
-	}
-}
-
+const canvasView = new Canvas();
 export class ViewController extends NSViewController {
 	static {
 		NativeClass(this);
@@ -279,29 +194,17 @@ export class ViewController extends NSViewController {
 	 */
 	viewDidLoad() {
 		super.viewDidLoad();
-		this.canvas = NSCCanvas.alloc().initWithFrame(this.view.frame);
-
-		glview.frame = this.view.frame;
-		mtlview.frame = this.view.frame;
-		mtlview.drawableSize = new CGSize({
+		this.canvas = canvasView;
+		const dim = {
 			width: this.view.frame.size.width * NSScreen.mainScreen.backingScaleFactor,
-			height: this.view.frame.size.height * NSScreen.mainScreen.backingScaleFactor
-		});
+			height: this.view.frame.size.height * NSScreen.mainScreen.backingScaleFactor,
+		};
+		this.canvas.width = dim.width;
+		this.canvas.height = dim.height;
 
-		// this.canvas.addSubview(mtlview);
-
-		glview.layer.backgroundColor = NSColor.blueColor;
-
-		this.canvas.addSubview(glview);
-
-		this.view.addSubview(this.canvas);
-
+		this.view.addSubview(this.canvas.nativeView);
 	}
 }
-
-const glview = CanvasGLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
-
-const mtlview = NSCMTLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
 
 let isDoingOrDone = false;
 
@@ -398,39 +301,6 @@ function mdnCreateConicGradient(ctx) {
 	ctx.fillRect(20, 20, 200, 200);
 }
 
-let requestAnimationFrameFunc;
-
-class CADisplayLinkImpl extends NSObject {
-	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];
-
-	static {
-		NativeClass(this);
-	}
-
-	handleFrame(link) {
-		requestAnimationFrameFunc?.(link.timestamp);
-		//requestAnimationFrameFunc = null;
-	}
-
-	static ObjCExposedMethods = {
-		handleFrame: { returns: interop.types.void, params: [CADisplayLink] }
-	};
-}
-
-const impl = CADisplayLinkImpl.new();
-
-const displayLink = NSScreen.mainScreen.displayLinkWithTargetSelector(impl, 'handleFrame');
-displayLink.paused = true;
-displayLink.addToRunLoopForMode(NSRunLoop.currentRunLoop, NSDefaultRunLoopMode);
-
-function requestAnimationFrame(func) {
-	if (displayLink.paused) {
-		displayLink.paused = false;
-	}
-	requestAnimationFrameFunc = func;
-	return 1;
-}
-
 function flappyBird(canvas) {
 	var ctx,
 		width,
@@ -443,7 +313,7 @@ function flappyBird(canvas) {
 		states = {
 			Splash: 0,
 			Game: 1,
-			Score: 2
+			Score: 2,
 		},
 		okbtn,
 		bird = {
@@ -457,11 +327,11 @@ function flappyBird(canvas) {
 			gravity: 0.25,
 			_jump: 4.6,
 
-			jump: function() {
+			jump: function () {
 				this.velocity = -this._jump;
 			},
 
-			update: function() {
+			update: function () {
 				var n = currentstate === states.Splash ? 10 : 5;
 				this.frame += frames % n === 0 ? 1 : 0;
 				this.frame %= this.animation.length;
@@ -490,7 +360,7 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function(ctx) {
+			draw: function (ctx) {
 				ctx.save();
 				ctx.translate(this.x, this.y);
 				ctx.rotate(this.rotation);
@@ -498,23 +368,23 @@ function flappyBird(canvas) {
 				var n = this.animation[this.frame];
 				s_bird[n].draw(ctx, -s_bird[n].width / 2, -s_bird[n].height / 2);
 				ctx.restore();
-			}
+			},
 		},
 		pipes = {
 			_pipes: [],
 
-			reset: function() {
+			reset: function () {
 				this._pipes = [];
 			},
 
-			update: function() {
+			update: function () {
 				if (frames % 100 === 0) {
 					var _y = height - (s_pipeSouth.height + s_fg.height + 120 + 200 * Math.random());
 					this._pipes.push({
 						x: 500,
 						y: _y,
 						width: s_pipeSouth.width,
-						height: s_pipeSouth.height
+						height: s_pipeSouth.height,
 					});
 				}
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
@@ -550,13 +420,13 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function(...args) {
+			draw: function (...args) {
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
 					var p = this._pipes[i];
 					s_pipeSouth.draw(ctx, p.x, p.y);
 					s_pipeNorth.draw(ctx, p.x, p.y + 80 + p.height);
 				}
-			}
+			},
 		},
 		img;
 
@@ -618,7 +488,7 @@ function flappyBird(canvas) {
 			x: (width - s_buttons.Ok.width) / 2,
 			y: height - 200,
 			width: s_buttons.Ok.width,
-			height: s_buttons.Ok.height
+			height: s_buttons.Ok.height,
 		};
 		run();
 
@@ -643,7 +513,7 @@ function flappyBird(canvas) {
 	}
 
 	function run() {
-		var loop = function(ts) {
+		var loop = function (ts) {
 			render();
 			update();
 			requestAnimationFrame(loop);
@@ -710,7 +580,7 @@ function flappyBird(canvas) {
 		this.height = height * 2;
 	}
 
-	Sprite.prototype.draw = function(ctx, x, y) {
+	Sprite.prototype.draw = function (ctx, x, y) {
 		ctx.drawImage(this.img, this.x, this.y, this.width, this.height, x, y, this.width, this.height);
 	};
 
@@ -727,7 +597,7 @@ function flappyBird(canvas) {
 		s_text = {
 			FlappyBird: new Sprite(img, 59, 114, 96, 22),
 			GameOver: new Sprite(img, 59, 136, 94, 19),
-			GetReady: new Sprite(img, 59, 155, 87, 22)
+			GetReady: new Sprite(img, 59, 155, 87, 22),
 		};
 		s_buttons = {
 			Rate: new Sprite(img, 79, 177, 40, 14),
@@ -735,7 +605,7 @@ function flappyBird(canvas) {
 			Share: new Sprite(img, 159, 177, 40, 14),
 			Score: new Sprite(img, 79, 191, 40, 14),
 			Ok: new Sprite(img, 119, 191, 40, 14),
-			Start: new Sprite(img, 159, 191, 40, 14)
+			Start: new Sprite(img, 159, 191, 40, 14),
 		};
 
 		s_score = new Sprite(img, 138, 56, 113, 58);
@@ -744,7 +614,7 @@ function flappyBird(canvas) {
 		s_numberS = new Sprite(img, 0, 177, 6, 7);
 		s_numberB = new Sprite(img, 0, 188, 7, 10);
 
-		s_numberS.draw = s_numberB.draw = function(ctx, x, y, num, center, offset) {
+		s_numberS.draw = s_numberB.draw = function (ctx, x, y, num, center, offset) {
 			num = num.toString();
 			var step = this.width + 2;
 
@@ -790,13 +660,13 @@ function solarSystem(canvas) {
 		moon = new ImageAsset();
 		earth = new ImageAsset();
 
-		await sun.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
-		await moon.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
-		await earth.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
+		// await sun.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
+		// await moon.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
+		// await earth.fromUrl('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
 
-		// sun.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
-		// moon.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
-		// earth.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
+		sun.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_sun.png');
+		moon.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_moon.png');
+		earth.fromUrlSync('https://raw.githubusercontent.com/NativeScript/canvas/refs/heads/feat/macos-napi/napi/canvas-napi/examples/assets/canvas_earth.png');
 		LAF = requestAnimationFrame(draw);
 	}
 
@@ -846,13 +716,13 @@ function solarSystem(canvas) {
 let LAF = 0;
 
 const window = {
-	devicePixelRatio: NSScreen.mainScreen.backingScaleFactor
+	devicePixelRatio: NSScreen.mainScreen.backingScaleFactor,
 };
 
 const Screen = {
 	mainScreen: {
-		scale: NSScreen.mainScreen.backingScaleFactor
-	}
+		scale: NSScreen.mainScreen.backingScaleFactor,
+	},
 };
 
 function swarm(canvas, width, height, nativeCanvas) {
@@ -930,7 +800,7 @@ function swarm(canvas, width, height, nativeCanvas) {
 			// end angle and finally a boolean value which decides
 			// whether the arc is to be drawn in counter clockwise or
 			// in a clockwise direction. False for clockwise.
-			this.draw = function() {
+			this.draw = function () {
 				ctx.fillStyle = 'white';
 				ctx.beginPath();
 				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
@@ -1062,7 +932,7 @@ function breathe_demo(canvas) {
 	const polar2Cartesian = (p) => {
 		return {
 			x: p.radius * Math.cos(p.theta),
-			y: p.radius * Math.sin(p.theta)
+			y: p.radius * Math.sin(p.theta),
 		};
 	};
 
@@ -1317,11 +1187,9 @@ void main() {
 	}
 
 	textures(canvas);
-
 }
 
 function createChaosLines(canvas) {
-
 	function createShader(gl, type, source) {
 		var shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
@@ -1503,7 +1371,6 @@ function createChaosLines(canvas) {
 	initWebGL(canvas);
 }
 
-
 function cubeRotation(canvas) {
 	let LAF = 0;
 
@@ -1549,12 +1416,7 @@ function cubeRotation(canvas) {
 			'vColor = color;' +
 			'}';
 
-		var fragCode =
-			'#version 330 core\n' +
-			'precision mediump float;' +
-			'out vec3 vColor;' +
-			'out vec4 fragColor;' +
-			'void main(void) {' + 'fragColor = vec4(vColor, 1.0);' + '}';
+		var fragCode = '#version 330 core\n' + 'precision mediump float;' + 'out vec3 vColor;' + 'out vec4 fragColor;' + 'void main(void) {' + 'fragColor = vec4(vColor, 1.0);' + '}';
 
 		var vertShader = gl.createShader(gl.VERTEX_SHADER);
 		gl.shaderSource(vertShader, vertCode);
@@ -1564,26 +1426,23 @@ function cubeRotation(canvas) {
 		if (!compiled) {
 			// Something went wrong during compilation; get the error
 			const lastError = gl.getShaderInfoLog(vertShader);
-			console.log('*** Error compiling shader \'' + vertShader + '\':' + lastError);
+			console.log("*** Error compiling shader '" + vertShader + "':" + lastError);
 			gl.deleteShader(vertShader);
 			return null;
 		}
-
 
 		var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
 		gl.shaderSource(fragShader, fragCode);
 		gl.compileShader(fragShader);
 
-
 		compiled = gl.getShaderParameter(fragShader, gl.COMPILE_STATUS);
 		if (!compiled) {
 			// Something went wrong during compilation; get the error
 			const lastError = gl.getShaderInfoLog(fragShader);
-			console.log('*** Error compiling shader \'' + fragShader + '\':' + lastError);
+			console.log("*** Error compiling shader '" + fragShader + "':" + lastError);
 			gl.deleteShader(fragShader);
 			return null;
 		}
-
 
 		var shaderProgram = gl.createProgram();
 		gl.attachShader(shaderProgram, vertShader);
@@ -1596,12 +1455,10 @@ function cubeRotation(canvas) {
 			return;
 		}
 
-
 		/* ====== Associating attributes to vertex shader =====*/
 		var Pmatrix = gl.getUniformLocation(shaderProgram, 'Pmatrix');
 		var Vmatrix = gl.getUniformLocation(shaderProgram, 'Vmatrix');
 		var Mmatrix = gl.getUniformLocation(shaderProgram, 'Mmatrix');
-
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 		var position = gl.getAttribLocation(shaderProgram, 'position');
@@ -1685,7 +1542,7 @@ function cubeRotation(canvas) {
 		/*================= Drawing ===========================*/
 		var time_old = 0;
 
-		var animate = function(time) {
+		var animate = function (time) {
 			var dt = time - time_old;
 			rotateZ(mov_matrix, dt * 0.005); //time
 			rotateY(mov_matrix, dt * 0.002);
@@ -1713,7 +1570,6 @@ function cubeRotation(canvas) {
 	}
 
 	rotation(canvas);
-
 }
 
 function doGL() {
@@ -1722,32 +1578,9 @@ function doGL() {
 	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
 	// console.timeEnd('load1');
 
-	const scale = NSScreen.mainScreen.backingScaleFactor;
-
-	const handle = interop.handleof(glview);
-	const glContext = WebGLRenderingContext.withView(handle.toNumber(), 2, true, false, false, false, 1, true, false, false, false, false, false);
-	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
-
-	const glCanvas = {
-		width: glview.frame.size.width,
-		height: glview.frame.size.height,
-		clientWidth: glview.frame.size.width,
-		clientHeight: glview.frame.size.height,
-		addEventListener: function() {
-		},
-		getContext: function() {
-			return glContext;
-		},
-		style: {}
-	};
-
-	glview._canvas = glCanvas;
-
-
 	//webglTextures(glCanvas);
-	//createChaosLines(glCanvas);
-	cubeRotation(glCanvas);
-
+	createChaosLines(canvasView);
+	// cubeRotation(glCanvas);
 }
 
 function doTheThing() {
@@ -1756,52 +1589,11 @@ function doTheThing() {
 	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
 	// console.timeEnd('load1');
 
+	const canvas = canvasView;
+
 	const scale = NSScreen.mainScreen.backingScaleFactor;
 
-	console.log('doTheThing');
-
-	const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
-
-	console.log('gl', gl);
-
-	console.log(gl.getContextAttributes());
-
-
-	// gl.clearColor(0, 0, 1, 1);
-	// gl.clear(gl.COLOR_BUFFER_BIT);
-	// gl.flush();
-
-	//console.log('gl', gl.toDataURL('image/png'));
-
-	// const glview = CanvasGLView.alloc().initWithFrame(NSMakeRect(0, 0, 300 / scale, 150 / scale));
-	// glview.wantsLayer = true;
-	// glview.prepareOpenGL();
-
-	const handle = interop.handleof(glview);
-	// const glContext = WebGLRenderingContext.withView(handle.toNumber(), 1, true, false, false, false, 1, true, false, false, false, false, false);
-	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
-
-	//const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
-
-	const mtlViewHandle = interop.handleof(mtlview);
-	const deviceHandle = interop.handleof(mtlview.device);
-	const queueHandle = interop.handleof(mtlview.queue);
-	const ctx = CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), true, scale, 1, 0, 90, 1);
-
-	const mtlCanvas = {
-		width: mtlview.frame.size.width,
-		height: mtlview.frame.size.height,
-		clientWidth: mtlview.frame.size.width,
-		clientHeight: mtlview.frame.size.height,
-		addEventListener: function() {
-		},
-		getContext: function() {
-			return ctx;
-		},
-		style: {}
-	};
-
-	mtlview._canvas = mtlCanvas;
+	const ctx = canvas.getContext('2d');
 
 	ctx.fillStyle = 'white';
 
@@ -1811,28 +1603,11 @@ function doTheThing() {
 
 	ctx.scale(scale, scale);
 
-	const encoder = new TextEncoder();
-
-	const decoder = new TextDecoder();
-
 	//	ctx.translate(0, 100);
 
 	//mdnShadowColor(ctx);
 	//mdnRotate(ctx);
 	// mdnCreateConicGradient(ctx);
-
-	const canvas = {
-		width: glview.frame.size.width,
-		height: glview.frame.size.height,
-		clientWidth: glview.frame.size.width,
-		clientHeight: glview.frame.size.height,
-		addEventListener: function() {
-		},
-		getContext: function() {
-			return ctx;
-		},
-		style: {}
-	};
 
 	//flappyBird(mtlCanvas);
 

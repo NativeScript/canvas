@@ -35,6 +35,7 @@
 		"prepublishOnly": "napi prepublish -t npm",
 		"test": "ava",
 		"universal": "napi universal",
-		"version": "napi version"
+		"version": "napi version",
+		"build-tsc": "tsc -p tsconfig.json"
 	}
 }

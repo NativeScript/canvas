@@ -7,7 +7,13 @@ const require = createRequire(import.meta.url);
 import '@nativescript/macos-node-api';
 const { CanvasRenderingContext2D, ImageAsset, Path2D } = require('./canvas-napi.darwin-arm64.node');
 
+const { requestAnimationFrame } = require('./utils');
+
 objc.import('OpenGL');
+
+requestAnimationFrame(function (ts) {
+	console.log('ts', ts);
+});
 
 export class ApplicationDelegate extends NSObject {
 	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];

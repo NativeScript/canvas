@@ -941,7 +941,6 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 					}
 				}
 			} else if (border && typeof border.tagName === 'string' && border.tagName === 'CANVAS' && border._canvas instanceof Canvas) {
-				console.log('border._canvas', border._canvas);
 				this.native.texImage2D(target, level, internalformat, width, height, border._canvas.native);
 			} else if (border instanceof ImageData) {
 				this.native.texImage2D(target, level, internalformat, width, height, (<any>border).native);

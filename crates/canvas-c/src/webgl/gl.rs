@@ -1280,6 +1280,20 @@ pub extern "C" fn canvas_native_webgl_result_get_bool_array(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_into_bool_array(
+    result: *mut WebGLResult,
+) -> Vec<bool> {
+    if result.is_null() {
+        return Vec::new();
+    }
+    let result = unsafe { *Box::from_raw(result) };
+    match result.0 {
+        canvas_webgl::prelude::WebGLResult::BooleanArray(value) => value,
+        _ => Vec::new(),
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl_result_get_u32(result: *const WebGLResult) -> u32 {
     let result = unsafe { &*result };
     match result.0 {

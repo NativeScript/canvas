@@ -1,7 +1,13 @@
-import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+// import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
+
+const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } = require('./canvas-napi.darwin-arm64.node');
 
 import { Event } from '@nativescript/foundation/dom/dom-utils.js';
-import type { YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
+import { Layout, type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
 import { native } from '@nativescript/foundation/views/decorators/native.js';
 import { view } from '@nativescript/foundation/views/decorators/view.js';
 import { View } from '@nativescript/foundation/views/view/view.js';
@@ -50,7 +56,7 @@ class NSCMTLView extends NSView {
 	present() {
 		const owner = this._canvas?.deref();
 		if (owner) {
-			const ctx = owner.getContext('2d') as CanvasRenderingContext2D | null;
+			const ctx = owner.getContext('2d') as CanvasRenderingContext2D & { flush: () => void; present: () => void };
 			ctx?.flush();
 			ctx?.present();
 		}
@@ -199,7 +205,7 @@ class NSCCanvas extends NSView {
 			this.scaleSurface();
 			setTimeout(() => {
 				const canvas = this._canvas?.deref();
-				canvas?.dispatchEvent?.(new CanvasReadyEvent());
+				canvas?.dispatchEvent?.(new CanvasReadyEvent({}));
 			}, 0);
 		} else {
 			this.resize();
@@ -359,7 +365,7 @@ export class Canvas extends ViewBase {
 	_canvas: NSCCanvas;
 	constructor() {
 		super();
-		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectMake(0, 0, 500, 500));
+		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
 		this._canvas.canvas = this;
 		this.style.width = '100%';
 		this.style.height = 'auto';
@@ -368,14 +374,19 @@ export class Canvas extends ViewBase {
 	nativeView?: NSCCanvas = undefined;
 
 	initNativeView() {
-		this.nativeView = NSCCanvas.alloc().initWithFrame(CGRectZero);
-		return this.nativeView;
+		return this._canvas;
 	}
 
 	applyLayout(parentLayout?: YogaNodeLayout) {
 		super.applyLayout(parentLayout);
 		if (this.nativeView) {
-			this.nativeView.translatesAutoresizingMaskIntoConstraints = true;
+			//this.nativeView.translatesAutoresizingMaskIntoConstraints = true;
+		}
+
+		if (parentLayout) {
+			this._canvas.frame = CGRectMake(parentLayout.left, parentLayout.top, parentLayout.width, parentLayout.height);
+			this._canvas.needsLayout = true;
+			this._canvas.layout();
 		}
 	}
 
@@ -403,13 +414,13 @@ export class Canvas extends ViewBase {
 		return this._canvas;
 	}
 
-	// get clientWidth() {
-	// 	return this.clientHeight;
-	// }
+	get clientWidth() {
+		return this._canvas.frame.size.width;
+	}
 
-	// get clientHeight() {
-	// 	return 0;
-	// }
+	get clientHeight() {
+		return this._canvas.frame.size.height;
+	}
 
 	set width(value) {
 		this._canvas.surfaceWidth = value;
@@ -526,3 +537,5 @@ export class Canvas extends ViewBase {
 		return null;
 	}
 }
+
+Canvas.register();

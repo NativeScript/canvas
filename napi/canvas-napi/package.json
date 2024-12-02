@@ -41,6 +41,7 @@
 		"test": "ava",
 		"universal": "napi universal",
 		"version": "napi version",
-		"start": "node --experimental-strip-types --disable-warning=ExperimentalWarning --experimental-transform-types canvas.ts"
+		"start": "node --experimental-strip-types --disable-warning=ExperimentalWarning --experimental-transform-types canvas.ts",
+		"deno": "deno run -A deno.ts"
 	}
 }

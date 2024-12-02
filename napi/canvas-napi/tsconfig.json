@@ -11,8 +11,8 @@
 		"target": "ESNext",
 		"module": "NodeNext",
 		"lib": ["ESNext", "dom"],
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true
+		"allowImportingTsExtensions": true,
+		"noEmit": true
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",
 	"include": ["**/*.ts", "references.d.ts"]

@@ -76,10 +76,11 @@ var __setFunctionName =
 	};
 var _a, _b;
 Object.defineProperty(exports, '__esModule', { value: true });
-var index_1 = require('./index');
-var dom_utils_1 = require('@nativescript/foundation/dom/dom-utils');
-var view_1 = require('@nativescript/foundation/views/decorators/view');
-var view_base_1 = require('@nativescript/foundation/views/view/view-base');
+exports.Canvas = void 0;
+var index_js_1 = require('./index.js');
+var dom_utils_js_1 = require('@nativescript/foundation/dom/dom-utils.js');
+var view_js_1 = require('@nativescript/foundation/views/decorators/view.js');
+var view_base_js_1 = require('@nativescript/foundation/views/view/view-base.js');
 var NSCMTLView = /** @class */ (function (_super) {
 	__extends(NSCMTLView, _super);
 	function NSCMTLView() {
@@ -167,13 +168,14 @@ _a = NSCGLView;
 (function () {
 	NativeClass(_a);
 })();
-// enum ContextType {
-// 	None,
-// 	Canvas,
-// 	WebGL,
-// 	WebGL2,
-// 	WebGPU,
-// }
+var ContextType;
+(function (ContextType) {
+	ContextType[(ContextType['None'] = 0)] = 'None';
+	ContextType[(ContextType['Canvas'] = 1)] = 'Canvas';
+	ContextType[(ContextType['WebGL'] = 2)] = 'WebGL';
+	ContextType[(ContextType['WebGL2'] = 3)] = 'WebGL2';
+	ContextType[(ContextType['WebGPU'] = 4)] = 'WebGPU';
+})(ContextType || (ContextType = {}));
 var NSCCanvas = /** @class */ (function (_super) {
 	__extends(NSCCanvas, _super);
 	function NSCCanvas() {
@@ -183,6 +185,7 @@ var NSCCanvas = /** @class */ (function (_super) {
 		 * @type {0 | 1 | 2 | 3 | 4}
 		 */
 		_this._fit = 2;
+		_this.__isLoaded = false;
 		_this.weblikeScale = true;
 		_this._surfaceWidth = 300;
 		_this._surfaceHeight = 150;
@@ -239,6 +242,45 @@ var NSCCanvas = /** @class */ (function (_super) {
 		this.scaleSurface();
 		this.layer.isOpaque = false;
 		mtlView.layer.isOpaque = false;
+	};
+	NSCCanvas.prototype.resize = function () {
+		// if(nativeContext == 0){
+		//     scaleSurface()
+		//     return
+		// }
+		// if(!is2D && engine == .GPU){
+		//     let width = UInt32(surfaceWidth)
+		//     let height =  UInt32(surfaceHeight)
+		//     CanvasHelpers.resizeWebGPUWithView(nativeContext, self, width, height)
+		//     scaleSurface()
+		//     return
+		// }
+		// if(engine == .GL){
+		//     EAGLContext.setCurrent(glkView.context)
+		// }
+		// if(engine == .GL){
+		//     glkView.deleteDrawable()
+		//     glkView.bindDrawable()
+		// }
+		// if(is2D){
+		//     CanvasHelpers.resize2DContext(nativeContext, Float(surfaceWidth), Float(surfaceHeight))
+		// }
+		// scaleSurface()
+	};
+	NSCCanvas.prototype.layout = function () {
+		var _this = this;
+		_super.prototype.layout.call(this);
+		if (!this.__isLoaded && this.surfaceWidth > 0 && this.surfaceHeight > 0) {
+			this.__isLoaded = true;
+			this.scaleSurface();
+			setTimeout(function () {
+				var _d, _e;
+				var canvas = (_d = _this._canvas) === null || _d === void 0 ? void 0 : _d.deref();
+				(_e = canvas === null || canvas === void 0 ? void 0 : canvas.dispatchEvent) === null || _e === void 0 ? void 0 : _e.call(canvas, new CanvasReadyEvent());
+			}, 0);
+		} else {
+			this.resize();
+		}
 	};
 	NSCCanvas.prototype.scaleSurface = function () {
 		if (!this.weblikeScale == false) {
@@ -322,8 +364,8 @@ var NSCCanvas = /** @class */ (function (_super) {
 		this.mtlView.drawableSize = CGSizeMake(Math.floor(width), Math.floor(height));
 		this.glkView.needsLayout = true;
 		this.mtlView.needsLayout = true;
-		this.glkView.layoutSubtreeIfNeeded();
-		this.mtlView.layoutSubtreeIfNeeded();
+		this.glkView.layout();
+		this.mtlView.layout();
 	};
 	Object.defineProperty(NSCCanvas.prototype, 'surfaceWidth', {
 		get: function () {
@@ -360,204 +402,16 @@ _b = NSCCanvas;
 (function () {
 	NativeClass(_b);
 })();
-var Canvas = /** @class */ (function () {
-	function Canvas() {
-		/**
-		 * @param {boolean} value
-		 */
-		this._ignoreTouchEvents = false;
-		/**
-		 * @type {0 | 1 | 2 | 3 | 4}
-		 */
-		this._contextType = 0;
-		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectMake(0, 0, 500, 500));
-		this._canvas.canvas = this;
-		// this._style.nativeElement = this._canvas;
-		// this._style.width = '100%';
-		// this._style.height = 'auto';
-	}
-	Object.defineProperty(Canvas.prototype, 'lang', {
-		get: function () {
-			return NSLocale.currentLocale.languageCode;
-		},
-		/**
-		 * @param {string} value
-		 */
-		set: function (value) {
-			// todo
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'ignoreTouchEventsProperty', {
-		/**
-		 * @returns {boolean}
-		 */
-		get: function () {
-			return this._ignoreTouchEvents;
-		},
-		set: function (value) {
-			this._ignoreTouchEvents = value;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'ios', {
-		get: function () {
-			return this._canvas;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'nativeView', {
-		get: function () {
-			return this._canvas;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'clientWidth', {
-		get: function () {
-			return 0;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'clientHeight', {
-		get: function () {
-			return 0;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'width', {
-		get: function () {
-			return this._canvas.surfaceWidth;
-		},
-		set: function (value) {
-			this._canvas.surfaceWidth = value;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'height', {
-		get: function () {
-			return this._canvas.surfaceHeight;
-		},
-		set: function (value) {
-			this._canvas.surfaceHeight = value;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, '__native__context', {
-		//_gpuContext?: GPUCanvasContext;
-		get: function () {
-			switch (this._contextType) {
-				case 1:
-					return this._2dContext;
-				case 2:
-					return this._webglContext;
-				case 3:
-					return this._webgl2Context;
-				case 4:
-				//	return this._gpuContext;
-				default:
-					return null;
-			}
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	Object.defineProperty(Canvas.prototype, 'native', {
-		get: function () {
-			return this.__native__context;
-		},
-		enumerable: false,
-		configurable: true,
-	});
-	/**
-	 *
-	 * @param {string} type
-	 * @param {number} encoderOptions
-	 * @returns
-	 */
-	Canvas.prototype.toDataURL = function (type, encoderOptions) {
-		var _d, _e;
-		if (this.width === 0 || this.height === 0) {
-			return 'data:,';
-		}
-		if (!this.native) {
-			// todo
-			//return this._canvas.toDataURL(type, encoderOptions);
-			return 'data:,';
-		}
-		if (this._contextType === 4) {
-			return 'data:,';
-			//return this._gpuContext.toDataURL(type ?? 'image/png', encoderOptions ?? 0.92);
-		}
-		return (_e = (_d = this.native) === null || _d === void 0 ? void 0 : _d.toDataURL) === null || _e === void 0 ? void 0 : _e.call(_d, type !== null && type !== void 0 ? type : 'image/png', encoderOptions !== null && encoderOptions !== void 0 ? encoderOptions : 0.92);
-	};
-	Canvas.prototype.getContext = function (contextType, options) {
-		var _d, _e;
-		if (this._canvas === null) {
-			return null;
-		}
-		if (contextType === '2d') {
-			if (this._2dContext) {
-				return this._2dContext;
-			}
-			var scale = NSScreen.mainScreen.backingScaleFactor;
-			if (Canvas.forceGL) {
-				var handle = interop.handleof(this._canvas.glkView);
-				this._2dContext = index_1.CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, (_d = options === null || options === void 0 ? void 0 : options.alpha) !== null && _d !== void 0 ? _d : true, 0, 90, 1);
-				this._canvas.glkView.isHidden = false;
-				this._contextType = 1;
-			} else {
-				var mtlViewHandle = interop.handleof(this._canvas.mtlView);
-				var deviceHandle = interop.handleof(this._canvas.mtlView.device);
-				var queueHandle = interop.handleof(this._canvas.mtlView.queue);
-				this._2dContext = index_1.CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), (_e = options === null || options === void 0 ? void 0 : options.alpha) !== null && _e !== void 0 ? _e : true, scale, 1, 0, 90, 1);
-				this._canvas.mtlView.isHidden = false;
-				this._contextType = 1;
-			}
-			return this._2dContext;
-		} else if (contextType === 'webgl' || contextType === 'experimental-webgl') {
-			if (this._webglContext) {
-				return this._webglContext;
-			}
-			var handle = interop.handleof(this._canvas.glkView);
-			this._webglContext = index_1.WebGLRenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
-			this._canvas.glkView.isHidden = false;
-			this._contextType = 2;
-		} else if (contextType === 'webgl2' || contextType === 'experimental-webgl2') {
-			if (this._webgl2Context) {
-				return this._webgl2Context;
-			}
-			var handle = interop.handleof(this._canvas.glkView);
-			this._webgl2Context = index_1.WebGL2RenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
-			this._canvas.glkView.isHidden = false;
-			this._contextType = 2;
-		}
-		return null;
-	};
-	/**
-	 * @type {boolean}
-	 */
-	Canvas.forceGL = false;
-	return Canvas;
-})();
-module.exports.Canvas = Canvas;
 var CanvasReadyEvent = /** @class */ (function (_super) {
 	__extends(CanvasReadyEvent, _super);
 	function CanvasReadyEvent(eventDict) {
 		return _super.call(this, 'ready', eventDict) || this;
 	}
 	return CanvasReadyEvent;
-})(dom_utils_1.Event);
-var CanvasView = (function () {
+})(dom_utils_js_1.Event);
+var Canvas = (function () {
 	var _classDecorators = [
-		(0, view_1.view)({
+		(0, view_js_1.view)({
 			name: 'HTMLCanvasElement',
 			tagName: 'canvas',
 		}),
@@ -565,46 +419,195 @@ var CanvasView = (function () {
 	var _classDescriptor;
 	var _classExtraInitializers = [];
 	var _classThis;
-	var _classSuper = view_base_1.ViewBase;
-	var CanvasView = (_classThis = /** @class */ (function (_super) {
-		__extends(CanvasView_1, _super);
-		function CanvasView_1() {
-			var _this = (_super !== null && _super.apply(this, arguments)) || this;
+	var _classSuper = view_base_js_1.ViewBase;
+	var Canvas = (_classThis = /** @class */ (function (_super) {
+		__extends(Canvas_1, _super);
+		function Canvas_1() {
+			var _this = _super.call(this) || this;
 			_this.nativeView = undefined;
+			_this._ignoreTouchEvents = false;
+			_this._contextType = ContextType.None;
+			_this._canvas = NSCCanvas.alloc().initWithFrame(CGRectMake(0, 0, 500, 500));
+			_this._canvas.canvas = _this;
+			_this.style.width = '100%';
+			_this.style.height = 'auto';
 			return _this;
 		}
-		Object.defineProperty(CanvasView_1.prototype, 'isLeaf', {
+		Object.defineProperty(Canvas_1.prototype, 'isLeaf', {
 			get: function () {
 				return true;
 			},
 			enumerable: false,
 			configurable: true,
 		});
-		CanvasView_1.prototype.initNativeView = function () {
+		Canvas_1.prototype.initNativeView = function () {
 			this.nativeView = NSCCanvas.alloc().initWithFrame(CGRectZero);
 			return this.nativeView;
 		};
-		/**
-		 *
-		 * @param {YogaNodeLayout} parentLayout
-		 */
-		CanvasView_1.prototype.applyLayout = function (parentLayout) {
+		Canvas_1.prototype.applyLayout = function (parentLayout) {
 			_super.prototype.applyLayout.call(this, parentLayout);
 			if (this.nativeView) {
 				this.nativeView.translatesAutoresizingMaskIntoConstraints = true;
 			}
 		};
-		return CanvasView_1;
+		Object.defineProperty(Canvas_1.prototype, 'lang', {
+			get: function () {
+				return NSLocale.currentLocale.languageCode;
+			},
+			set: function (value) {
+				// todo
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, 'ignoreTouchEventsProperty', {
+			get: function () {
+				return this._ignoreTouchEvents;
+			},
+			set: function (value) {
+				this._ignoreTouchEvents = value;
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, 'ios', {
+			get: function () {
+				return this._canvas;
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, 'width', {
+			get: function () {
+				return this._canvas.surfaceWidth;
+			},
+			// get clientWidth() {
+			// 	return this.clientHeight;
+			// }
+			// get clientHeight() {
+			// 	return 0;
+			// }
+			set: function (value) {
+				this._canvas.surfaceWidth = value;
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, 'height', {
+			get: function () {
+				return this._canvas.surfaceHeight;
+			},
+			set: function (value) {
+				this._canvas.surfaceHeight = value;
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, '__native__context', {
+			//_gpuContext?: GPUCanvasContext;
+			get: function () {
+				switch (this._contextType) {
+					case ContextType.Canvas:
+						return this._2dContext;
+					case ContextType.WebGL:
+						return this._webglContext;
+					case ContextType.WebGL2:
+						return this._webgl2Context;
+					case ContextType.WebGPU:
+					//	return this._gpuContext;
+					default:
+						return null;
+				}
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		Object.defineProperty(Canvas_1.prototype, 'native', {
+			get: function () {
+				return this.__native__context;
+			},
+			enumerable: false,
+			configurable: true,
+		});
+		/**
+		 *
+		 * @param {string} type
+		 * @param {number} encoderOptions
+		 * @returns
+		 */
+		Canvas_1.prototype.toDataURL = function (type, encoderOptions) {
+			var _d, _e;
+			if (this.width === 0 || this.height === 0) {
+				return 'data:,';
+			}
+			if (!this.native) {
+				// todo
+				//return this._canvas.toDataURL(type, encoderOptions);
+				return 'data:,';
+			}
+			if (this._contextType === 4) {
+				return 'data:,';
+				//return this._gpuContext.toDataURL(type ?? 'image/png', encoderOptions ?? 0.92);
+			}
+			return (_e = (_d = this.native) === null || _d === void 0 ? void 0 : _d.toDataURL) === null || _e === void 0 ? void 0 : _e.call(_d, type !== null && type !== void 0 ? type : 'image/png', encoderOptions !== null && encoderOptions !== void 0 ? encoderOptions : 0.92);
+		};
+		Canvas_1.prototype.getContext = function (contextType, options) {
+			var _d, _e;
+			if (this._canvas === null) {
+				return null;
+			}
+			if (contextType === '2d') {
+				if (this._2dContext) {
+					return this._2dContext;
+				}
+				var scale = NSScreen.mainScreen.backingScaleFactor;
+				if (Canvas.forceGL) {
+					var handle = interop.handleof(this._canvas.glkView);
+					this._2dContext = index_js_1.CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, (_d = options === null || options === void 0 ? void 0 : options.alpha) !== null && _d !== void 0 ? _d : true, 0, 90, 1);
+					this._canvas.glkView.isHidden = false;
+					this._contextType = ContextType.Canvas;
+				} else {
+					var mtlViewHandle = interop.handleof(this._canvas.mtlView);
+					var deviceHandle = interop.handleof(this._canvas.mtlView.device);
+					var queueHandle = interop.handleof(this._canvas.mtlView.queue);
+					this._2dContext = index_js_1.CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), (_e = options === null || options === void 0 ? void 0 : options.alpha) !== null && _e !== void 0 ? _e : true, scale, 1, 0, 90, 1);
+					this._canvas.mtlView.isHidden = false;
+					this._contextType = ContextType.Canvas;
+				}
+				return this._2dContext;
+			} else if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+				if (this._webglContext) {
+					return this._webglContext;
+				}
+				var handle = interop.handleof(this._canvas.glkView);
+				this._webglContext = index_js_1.WebGLRenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
+				this._canvas.glkView.isHidden = false;
+				this._contextType = ContextType.WebGL;
+			} else if (contextType === 'webgl2' || contextType === 'experimental-webgl2') {
+				if (this._webgl2Context) {
+					return this._webgl2Context;
+				}
+				var handle = interop.handleof(this._canvas.glkView);
+				this._webgl2Context = index_js_1.WebGL2RenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
+				this._canvas.glkView.isHidden = false;
+				this._contextType = ContextType.WebGL2;
+			}
+			return null;
+		};
+		return Canvas_1;
 	})(_classSuper));
-	__setFunctionName(_classThis, 'CanvasView');
+	__setFunctionName(_classThis, 'Canvas');
 	(function () {
 		var _d;
 		var _metadata = typeof Symbol === 'function' && Symbol.metadata ? Object.create((_d = _classSuper[Symbol.metadata]) !== null && _d !== void 0 ? _d : null) : void 0;
 		__esDecorate(null, (_classDescriptor = { value: _classThis }), _classDecorators, { kind: 'class', name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-		CanvasView = _classThis = _classDescriptor.value;
+		Canvas = _classThis = _classDescriptor.value;
 		if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+	})();
+	_classThis.forceGL = false;
+	(function () {
 		__runInitializers(_classThis, _classExtraInitializers);
 	})();
-	return (CanvasView = _classThis);
+	return (Canvas = _classThis);
 })();
-module.exports.CanvasView = CanvasView;
+exports.Canvas = Canvas;

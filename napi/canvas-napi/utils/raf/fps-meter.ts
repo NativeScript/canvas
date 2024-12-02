@@ -1,19 +1,11 @@
 class FrameHandlerImpl extends NSObject {
-	/**
-	 * @type {WeakRef<FPSCallback>}
-	 */
-	_owner;
+	_owner?: WeakRef<FPSCallback>;
 
 	static {
 		NativeClass(this);
 	}
 
-	/**
-	 *
-	 * @param {WeakRef<FPSCallback>} owner
-	 * @returns {FrameHandlerImpl}
-	 */
-	static initWithOwner(owner) {
+	static initWithOwner(owner: WeakRef<FPSCallback>): FrameHandlerImpl {
 		const handler = FrameHandlerImpl.new();
 		handler._owner = owner;
 
@@ -24,7 +16,7 @@ class FrameHandlerImpl extends NSObject {
 	 *
 	 * @param {CADisplayLink} sender
 	 */
-	handleFrame(sender) {
+	handleFrame(sender: CADisplayLink) {
 		const owner = this._owner?.deref();
 		if (owner) {
 			owner._handleFrame(sender);
@@ -36,29 +28,13 @@ class FrameHandlerImpl extends NSObject {
 	};
 }
 
-class FPSCallback {
-	/**
-	 * @type {boolean}
-	 */
-	running;
-	/**
-	 * @type {Function}
-	 */
-	onFrame;
-	/**
-	 * @type {CADisplayLink}
-	 */
-	displayLink;
-	/**
-	 * @type {FrameHandlerImpl}
-	 */
-	impl;
+export class FPSCallback {
+	running = false;
+	onFrame: (time: number) => void;
+	displayLink: CADisplayLink;
+	impl: FrameHandlerImpl;
 
-	/**
-	 *
-	 * @param {function(number): void}  onFrame
-	 */
-	constructor(onFrame) {
+	constructor(onFrame: (time: number) => void) {
 		this.onFrame = onFrame;
 
 		this.impl = FrameHandlerImpl.initWithOwner(new WeakRef(this));
@@ -86,11 +62,7 @@ class FPSCallback {
 		this.running = false;
 	}
 
-	/**
-	 *
-	 * @param  {CADisplayLink} sender
-	 */
-	_handleFrame(sender) {
+	_handleFrame(sender: CADisplayLink) {
 		if (!this.running) {
 			return;
 		}
@@ -99,5 +71,3 @@ class FPSCallback {
 		this.onFrame(sender.timestamp * 1000);
 	}
 }
-
-module.exports.FPSCallback = FPSCallback;

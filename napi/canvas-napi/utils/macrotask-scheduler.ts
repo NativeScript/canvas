@@ -1,10 +1,8 @@
-const { dispatchToMainThread } = require('./mainthread-helper');
+import { dispatchToMainThread } from './mainthread-helper.ts';
 
 let scheduled = false;
-/**
- * @type {Array<Function>}
- */
-let macroTaskQueue = [];
+
+let macroTaskQueue: Array<Function> = [];
 
 function drainMacrotaskQueue() {
 	const currentQueue = macroTaskQueue;
@@ -14,21 +12,15 @@ function drainMacrotaskQueue() {
 		try {
 			task();
 		} catch (err) {
-			const msg = err ? err.stack || err : err;
+			//	const msg = err ? err.stack || err : err;
 		}
 	});
 }
 
-/**
- *
- * @param {function(): void} task
- */
-function queueMacrotask(task) {
+export function queueMacrotask(task: () => void): void {
 	macroTaskQueue.push(task);
 	if (!scheduled) {
 		scheduled = true;
 		dispatchToMainThread(drainMacrotaskQueue);
 	}
 }
-
-module.exports.queueMacrotask = queueMacrotask;

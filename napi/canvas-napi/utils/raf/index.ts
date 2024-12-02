@@ -1,32 +1,29 @@
-const { queueMacrotask } = require('../macrotask-scheduler');
-const { FPSCallback } = require('./fps-meter');
+import { queueMacrotask } from '../macrotask-scheduler.ts';
+import { FPSCallback } from './fps-meter.ts';
 
 /**
  * @returns {function(): number} The current time in milliseconds.
  */
-const time = global.__time || Date.now;
+const time = (<any>('global' in globalThis ? global : globalThis)).__time || Date.now;
 
-function getTimeInFrameBase() {
+export function getTimeInFrameBase() {
 	return time();
 }
 
+export interface FrameRequestCallback {
+	(time: number): void;
+}
+
+type AnimationFrameCallbacks = { [key: string]: FrameRequestCallback };
+
 let animationId = 0;
-/**
- * @type { [key: string]: function(time: number): void }
- */
-let currentFrameAnimationCallbacks = {}; // requests that were scheduled in this frame and must be called ASAP
+let currentFrameAnimationCallbacks: AnimationFrameCallbacks = {}; // requests that were scheduled in this frame and must be called ASAP
 let currentFrameScheduled = false;
 
-/**
- * @type { [key: string]: function(time: number): void }
- */
-let nextFrameAnimationCallbacks = {}; // requests there were scheduled in another request and must be called in the next frame
+let nextFrameAnimationCallbacks: AnimationFrameCallbacks = {}; // requests there were scheduled in another request and must be called in the next frame
 let shouldStop = true;
 let inAnimationFrame = false;
-/**
- * @type {FPSCallback}
- */
-let fpsCallback;
+let fpsCallback: FPSCallback;
 let lastFrameTime = 0;
 
 function getNewId() {
@@ -40,20 +37,14 @@ function ensureNative() {
 	fpsCallback = new FPSCallback(doFrame);
 }
 
-/**
- *
- * @param { [key: string]: function(time: number): void } thisFrameCbs
- * @param {number} frameTime
- *
- */
-function callAnimationCallbacks(thisFrameCbs, frameTime) {
+function callAnimationCallbacks(thisFrameCbs: AnimationFrameCallbacks, frameTime: number) {
 	inAnimationFrame = true;
 	for (const animationId in thisFrameCbs) {
 		if (thisFrameCbs[animationId]) {
 			try {
 				thisFrameCbs[animationId](frameTime);
 			} catch (err) {
-				const msg = err ? err.stack || err : err;
+				//	const msg = err ? err.stack || err : err;
 			}
 		}
 	}
@@ -72,11 +63,7 @@ function doCurrentFrame() {
 	callAnimationCallbacks(thisFrameCbs, lastFrameTime);
 }
 
-/**
- *
- * @param  {number} currentTimeMillis
- */
-function doFrame(currentTimeMillis) {
+function doFrame(currentTimeMillis: number) {
 	lastFrameTime = currentTimeMillis;
 	shouldStop = true;
 	const thisFrameCbs = nextFrameAnimationCallbacks;
@@ -99,25 +86,20 @@ function ensureCurrentFrameScheduled() {
  * @param {Function} callback
  * @returns {Function}
  */
-const zonedCallback = function (callback) {
-	if (global.zone) {
+const zonedCallback = function (callback: any) {
+	if ((global as any).zone) {
 		// Zone v0.5.* style callback wrapping
-		return global.zone.bind(callback);
+		return (global as any).zone.bind(callback);
 	}
-	if (global.Zone) {
+	if ((global as any).Zone) {
 		// Zone v0.6.* style callback wrapping
-		return global.Zone.current.wrap(callback);
+		return (global as any).Zone.current.wrap(callback);
 	} else {
 		return callback;
 	}
 };
 
-/**
- *
- * @param {function(time: number): void} cb
- * @returns {number}
- */
-function requestAnimationFrame(cb) {
+export function requestAnimationFrame(cb: FrameRequestCallback): number {
 	const animId = getNewId();
 	if (!inAnimationFrame) {
 		ensureCurrentFrameScheduled();
@@ -132,15 +114,7 @@ function requestAnimationFrame(cb) {
 	return animId;
 }
 
-/**
- *
- * @param {number} id
- */
-function cancelAnimationFrame(id) {
+export function cancelAnimationFrame(id: number) {
 	delete currentFrameAnimationCallbacks[id];
 	delete nextFrameAnimationCallbacks[id];
 }
-
-module.exports.requestAnimationFrame = requestAnimationFrame;
-module.exports.cancelAnimationFrame = cancelAnimationFrame;
-module.exports.time = time;

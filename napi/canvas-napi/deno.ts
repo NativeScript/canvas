@@ -2,132 +2,21 @@
 
 import { createRequire } from 'node:module';
 
+// @ts-ignore
 const require = createRequire(import.meta.url);
 
 import '@nativescript/macos-node-api';
+import '@nativescript/foundation/dom/index.js';
+import Application from './app.ts';
 const { CanvasRenderingContext2D, ImageAsset, Path2D } = require('./canvas-napi.darwin-arm64.node');
 
-const { requestAnimationFrame } = require('./utils');
+const { requestAnimationFrame } = require('./utils/index.ts');
+
+import './canvas.ts';
 
 objc.import('OpenGL');
 
-requestAnimationFrame(function (ts) {
-	console.log('ts', ts);
-});
-
-export class ApplicationDelegate extends NSObject {
-	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];
-
-	static {
-		NativeClass(this);
-	}
-
-	/**
-	 * @param {NSNotification} _notification
-	 */
-	applicationDidFinishLaunching(_notification) {
-		const menu = NSMenu.new();
-		NSApp.mainMenu = menu;
-
-		const appMenuItem = NSMenuItem.new();
-		menu.addItem(appMenuItem);
-
-		const appMenu = NSMenu.new();
-		appMenuItem.submenu = appMenu;
-
-		appMenu.addItemWithTitleActionKeyEquivalent('Quit', 'terminate:', 'q');
-
-		const controller = ViewController.new();
-		const window = NSWindow.windowWithContentViewController(controller);
-
-		window.title = 'NativeScript for macOS';
-		window.delegate = this;
-		window.styleMask = NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView;
-
-		window.titlebarAppearsTransparent = true;
-		window.titleVisibility = NSWindowTitleVisibility.Hidden;
-
-		window.makeKeyAndOrderFront(this);
-
-		NSApp.activateIgnoringOtherApps(false);
-	}
-
-	/**
-	 * @param {NSNotification} _notification
-	 */
-	windowWillClose(_notification) {
-		NSApp.terminate(this);
-	}
-}
-
-export class NSCMTLView extends NSView {
-	static {
-		NativeClass(this);
-	}
-}
-
-export class NSCCanvas extends NSView {
-	static {
-		NativeClass(this);
-	}
-}
-
-export class CanvasGLView extends NSOpenGLView {
-	static {
-		NativeClass(this);
-	}
-	isDirty = false;
-	/**
-	 * @param {NSCCanvas} canvas
-	 */
-	canvas = null;
-	fbo = 0;
-
-	initWithFrame(frame) {
-		super.initWithFrame(frame);
-		return this;
-	}
-
-	prepareOpenGL() {
-		super.prepareOpenGL();
-	}
-
-	clearGLContext() {
-		super.clearGLContext();
-		this.fbo = 0;
-	}
-}
-
-export class ViewController extends NSViewController {
-	static {
-		NativeClass(this);
-	}
-
-	canvas: NSCCanvas;
-
-	/**
-	 * @param {NSCCanvas} canvas
-	 */
-	viewDidLoad() {
-		super.viewDidLoad();
-		this.canvas = NSCCanvas.alloc().initWithFrame(this.view.frame);
-		this.view.addSubview(this.canvas);
-
-		glview.frame = this.view.frame;
-
-		this.canvas.addSubview(glview);
-
-		glview.wantsLayer = true;
-
-		doTheThing();
-	}
-}
-
-const glview = CanvasGLView.alloc().initWithFrame({ x: 0, y: 0, width: 0, height: 0 });
-
-let isDoingOrDone = false;
-
-function mdnShadowColor(ctx) {
+function mdnShadowColor(ctx: any) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor
 
 	ctx.fillStyle = 'black';
@@ -146,12 +35,12 @@ function mdnShadowColor(ctx) {
 	ctx.strokeRect(170, 20, 100, 100);
 }
 
-function mdnStrokeText(ctx) {
+function mdnStrokeText(ctx: any) {
 	ctx.font = '50px serif';
 	ctx.fillText('Hello world', 50, 90);
 }
 
-function mdnRoundRect(ctx) {
+function mdnRoundRect(ctx: any) {
 	// Rounded rectangle with zero radius (specified as a number)
 	ctx.strokeStyle = 'red';
 	ctx.beginPath();
@@ -183,13 +72,7 @@ function mdnRoundRect(ctx) {
 	ctx.stroke();
 }
 
-function doTheThing() {
-	if (isDoingOrDone) {
-		return;
-	}
-
-	isDoingOrDone = true;
-
+function doTheThing(canvas: any) {
 	const asset = new ImageAsset();
 
 	let loaded = false;
@@ -199,30 +82,15 @@ function doTheThing() {
 
 	const scale = NSScreen.mainScreen.backingScaleFactor;
 
-	//const gl = WebGLRenderingContext.offscreen(600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false);
+	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D & { render: () => void };
 
-	// gl.clearColor(0, 0, 1, 1);
-	// gl.clear(gl.COLOR_BUFFER_BIT);
-	// gl.flush();
-
-	//console.log('gl', gl.toDataURL('image/png'));
-
-	// const glview = CanvasGLView.alloc().initWithFrame(NSMakeRect(0, 0, 300 / scale, 150 / scale));
-	// glview.wantsLayer = true;
-	// glview.prepareOpenGL();
-
-	const handle = interop.handleof(glview);
-	// const glContext = WebGLRenderingContext.withView(handle.toNumber(), 1, true, false, false, false, 1, true, false, false, false, false, false);
-	// console.log(glContext, 'drawingBufferWidth', glContext.drawingBufferWidth, 'drawingBufferHeight', glContext.drawingBufferHeight);
-
-	const ctx = CanvasRenderingContext2D.withView(handle.toNumber(), glview.frame.size.width * scale, glview.frame.size.height * scale, 1, true, 0, 90, 1);
 	ctx.fillStyle = 'white';
 
-	// ctx.fillRect(0, 0, 1000, 1000);
+	ctx.fillRect(0, 0, 1000, 1000);
 
 	ctx.fillStyle = 'black';
 
-	ctx.translate(0, 100);
+	ctx.scale(scale, scale);
 
 	//mdnShadowColor(ctx);
 	mdnRoundRect(ctx);
@@ -251,10 +119,38 @@ function doTheThing() {
 	*/
 }
 
-const NSApp = NSApplication.sharedApplication;
+const window = document.createElement('window');
+window.style.width = `${NSScreen.mainScreen.frame.size.width / 2}`;
+window.style.height = `${NSScreen.mainScreen.frame.size.height / 2}`;
 
-NSApp.delegate = ApplicationDelegate.new();
+const canvas = document.createElement('canvas');
 
-NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
+canvas.addEventListener('ready', (event) => {
+	doTheThing(canvas);
+});
 
-NSApplicationMain(0, null);
+canvas.width = NSScreen.mainScreen.frame.size.width / 2;
+canvas.height = NSScreen.mainScreen.frame.size.height / 2;
+
+// canvas.style.width = `${NSScreen.mainScreen.frame.size.width / 2}`;
+// canvas.style.height = `${NSScreen.mainScreen.frame.size.height / 2}`;
+
+window.setAttribute('styleMask', (NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView) as any);
+
+const txt = document.createElement('text');
+txt.textContent = 'Hello, World!';
+txt.style.color = 'black';
+txt.style.fontSize = '20px';
+txt.style.textAlign = 'center';
+txt.style.width = '100%';
+txt.style.backgroundColor = 'red';
+window.appendChild(txt);
+window.appendChild(canvas);
+
+canvas.style.width = '100%';
+canvas.style.height = '100%';
+canvas.style.backgroundColor = 'blue';
+
+document.body.appendChild(window);
+
+Application.launch();

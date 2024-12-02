@@ -1,14 +1,19 @@
 {
 	"compilerOptions": {
-		"outDir": "./dist",
-		"sourceMap": true,
-		"declaration": true,
-		"target": "ES2020",
+		"moduleResolution": "NodeNext",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
 		"noEmitHelpers": false,
-		"module": "ESNext",
+		"target": "ESNext",
+		"module": "NodeNext",
 		"lib": ["ESNext", "dom"],
-		"skipLibCheck": true,
-		"skipDefaultLibCheck": true
+		"noEmitHelpers": false,
+		"target": "ESNext",
+		"module": "NodeNext",
+		"lib": ["ESNext", "dom"],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true
 	},
+	"extends": "@tsconfig/node22/tsconfig.json",
 	"include": ["**/*.ts", "references.d.ts"]
 }

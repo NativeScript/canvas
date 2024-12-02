@@ -2,141 +2,14 @@ import '@nativescript/macos-node-api';
 import { CanvasRenderingContext2D, ImageAsset, TextDecoder, TextEncoder, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
 import { cancelAnimationFrame, requestAnimationFrame } from './utils/index.js';
 import { Canvas } from './canvas.js';
+import { Application, NativeWindow } from '@nativescript/foundation';
+
 
 objc.import('AppKit');
 objc.import('OpenGL');
 objc.import('QuartzCore');
 
-let runLoop = 0;
-//
-//
-// const enc = new TextEncoder();
-// const dec = new TextDecoder();
-//
-// const encoded = enc.encode('Hello Osei');
-// console.log('encoded', encoded);
-// const decoded = dec.decode(encoded);
-// console.log('decoded', decoded, decoded === 'Hello Osei');
 
-class Application {
-	/**
-	 * @property {AppDelegate} delegate
-	 */
-	static delegate;
-
-	/**
-	 * @property {NSApplication} application
-	 */
-
-	static application;
-	static rootView;
-
-	/**
-	 * @property {Window} window
-	 */
-	static window;
-
-	/**
-	 * @property {NSMenu} appMenu
-	 */
-	static appMenu;
-
-	/**
-	 * @property {boolean} ensure60FPS
-	 */
-	static ensure60FPS;
-
-	/**
-	 * @property {boolean} ensure1200FPS
-	 */
-	static ensure120FPS;
-
-	/**
-	 * @property {boolean} initEditMenu
-	 */
-	static initEditMenu;
-
-	static launch() {
-		// Application.rootView = document.body as unknown as HTMLViewElement;
-		// Application.rootView?.connectedCallback();
-
-		const controller = ViewController.new();
-		const window = NSWindow.windowWithContentViewController(controller);
-
-		window.title = 'NativeScript for macOS';
-		window.styleMask = NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView;
-
-		window.titlebarAppearsTransparent = true;
-		window.titleVisibility = NSWindowTitleVisibility.Hidden;
-
-		NativeScriptApplication.window = window;
-
-		window.becomeMainWindow();
-		window.displayIfNeeded();
-		window.makeKeyAndOrderFront(NSApp);
-
-		Application.application = NSApplication.sharedApplication;
-		Application.delegate = ApplicationDelegate.new();
-		Application.delegate.window = NativeScriptApplication.window.nativeView;
-		Application.createMenu();
-		NSApp.delegate = Application.delegate;
-		window.delegate = Application.delegate;
-		NSApp.setActivationPolicy(NSApplicationActivationPolicy.Regular);
-		NSApp.run();
-	}
-
-	static createMenu() {
-		if (!Application.appMenu) {
-			const menu = NSMenu.new();
-
-			const appMenuItem = NSMenuItem.new();
-			menu.addItem(appMenuItem);
-
-			// appMenuItem.submenu = menu;
-
-			menu.addItemWithTitleActionKeyEquivalent('Quit', 'terminate:', 'q');
-
-			NSApp.mainMenu = menu;
-
-			Application.appMenu = menu;
-		}
-	}
-
-	static showMainWindow() {
-		// override
-	}
-}
-
-globalThis.NativeScriptApplication = Application;
-
-function RunLoop() {
-	let delay = 2;
-	let lastEventTime = 0;
-
-	const loop = () => {
-		const event = NSApp.nextEventMatchingMaskUntilDateInModeDequeue(NSEventMask.Any, null, 'kCFRunLoopDefaultMode', true);
-
-		const timeSinceLastEvent = Date.now() - lastEventTime;
-		if (event != null) {
-			NSApp.sendEvent(event);
-			delay = timeSinceLastEvent < 32 ? 2 : 8;
-			lastEventTime = Date.now();
-		} else {
-			delay = timeSinceLastEvent > 6000 ? 128 : timeSinceLastEvent > 4000 ? 64 : timeSinceLastEvent > 2000 ? 16 : 8;
-		}
-
-		if (NativeScriptApplication.delegate.running) {
-			let timeOut = delay;
-			if (NativeScriptApplication.ensure60FPS) {
-				timeOut = 8;
-			} else if (NativeScriptApplication.ensure120FPS) {
-				timeOut = 4;
-			}
-			runLoop = setTimeout(loop, timeOut);
-		}
-	};
-	runLoop = setTimeout(loop, 0);
-}
 
 export class ApplicationDelegate extends NSObject {
 	running = true;
@@ -180,6 +53,10 @@ export class ApplicationDelegate extends NSObject {
 		process.exit(0);
 	}
 }
+
+
+Application.delegate = ApplicationDelegate;
+Application.launch();
 
 const canvasView = new Canvas();
 export class ViewController extends NSViewController {
@@ -1646,7 +1523,5 @@ function doTheThing() {
 	});
 	*/
 }
-
-Application.launch();
 
 // const NSApp = NSApplication.sharedApplication;

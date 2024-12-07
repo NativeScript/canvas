@@ -1,12 +1,12 @@
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_ulong, c_void};
-use canvas_webgl::utils;
-use canvas_webgl::utils::gl::bytes_per_pixel;
 use crate::buffers::U32Buffer;
 use crate::c2d::CanvasRenderingContext2D;
 use crate::image_asset::ImageAsset;
-use crate::ImageData;
 use crate::webgl::gl::{WebGLActiveInfo, WebGLResult, WebGLState};
+use crate::ImageData;
+use canvas_webgl::utils;
+use canvas_webgl::utils::gl::bytes_per_pixel;
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_ulong, c_void};
 
 pub struct WebGLSync(canvas_webgl::webgl2::GLSync);
 
@@ -259,6 +259,69 @@ pub extern "C" fn canvas_native_webgl2_client_wait_sync(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_webgl2_compressed_tex_image3d_none(
+    target: u32,
+    level: i32,
+    internalformat: u32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    border: i32,
+    image_size: i32,
+    offset: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl2::canvas_native_webgl2_compressed_tex_image3d_none(
+        target,
+        level,
+        internalformat,
+        width,
+        height,
+        depth,
+        border,
+        image_size,
+        offset,
+        state.get_inner_mut(),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_compressed_tex_image3d(
+    target: u32,
+    level: i32,
+    internalformat: u32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    border: i32,
+    src: *const u8,
+    size: usize,
+    src_offset: usize,
+    src_length_override: usize,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let src = unsafe { std::slice::from_raw_parts(src, size) };
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl2::canvas_native_webgl2_compressed_tex_image3d(
+        target,
+        level,
+        internalformat,
+        width,
+        height,
+        depth,
+        border,
+        src,
+        src_offset,
+        src_length_override,
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
     target: u32,
     level: i32,
@@ -270,7 +333,7 @@ pub extern "C" fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
     depth: i32,
     format: u32,
     image_size: i32,
-    offset: i32,
+    offset: usize,
     state: *mut WebGLState,
 ) {
     assert!(!state.is_null());
@@ -424,6 +487,15 @@ pub extern "C" fn canvas_native_webgl2_delete_sampler_with_sampler(
         sampler,
         state.get_inner_mut(),
     )
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_sync_destroy(
+    sync: *const WebGLSync,
+) {
+    if !sync.is_null() {
+        let _ = unsafe { Box::from_raw(sync as *mut WebGLSync) };
+    }
 }
 
 #[no_mangle]
@@ -1104,7 +1176,6 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
     let canvas = unsafe { &mut *canvas };
 
 
-
     // let (width, height) = (canvas.context.width(), canvas.context.height());
     // let snapshot = canvas.context.as_data();
 
@@ -1115,6 +1186,57 @@ pub extern "C" fn canvas_native_webgl2_tex_image3d_canvas2d(
 
     canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
+
+    // todo handle pre-multipied
+    // let premultiply = state.get_inner().get_premultiplied_alpha();
+
+    // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+
+    state.0.make_current();
+
+    canvas_webgl::webgl2::canvas_native_webgl2_tex_image3d(
+        target,
+        level,
+        internalformat,
+        width as i32,
+        height as i32,
+        depth,
+        border,
+        format,
+        type_,
+        bytes.as_slice(),
+        state.get_inner_mut(),
+    )
+}
+
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_tex_image3d_webgl(
+    target: u32,
+    level: i32,
+    internalformat: i32,
+    _width: i32,
+    _height: i32,
+    depth: i32,
+    border: i32,
+    format: u32,
+    type_: u32,
+    webgl: *mut WebGLState,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    assert!(!webgl.is_null());
+    let state = unsafe { &mut *state };
+    let webgl = unsafe { &mut *webgl };
+
+
+
+    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
+        &mut webgl.0,
+        &mut state.0,
+        internalformat,
+        format as i32,
+    );
 
     // todo handle pre-multipied
     // let premultiply = state.get_inner().get_premultiplied_alpha();
@@ -1396,6 +1518,59 @@ pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_canvas2d(
         zoffset,
         width as i32,
         height as i32,
+        depth,
+        format,
+        type_,
+        bytes.as_slice(),
+        state.get_inner_mut(),
+    );
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl2_tex_sub_image3d_webgl(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    zoffset: i32,
+    _width: i32,
+    _height: i32,
+    depth: i32,
+    format: u32,
+    type_: u32,
+    webgl: *mut WebGLState,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    let webgl = unsafe { &mut *webgl };
+
+    let (width, height, bytes) = canvas_webgl::webgl::canvas_native_webgl_read_webgl_pixels(
+        &mut webgl.0,
+        &mut state.0,
+        gl_bindings::RGBA as _,
+        gl_bindings::RGBA as _,
+    );
+
+
+    // canvas.make_current();
+    // let (width, height) = (canvas.context.width(), canvas.context.height());
+    // let data = canvas.context.as_data();
+
+    //  let premultiply = state.get_inner().get_premultiplied_alpha();
+
+    // let buf = source_ctx.read_pixels_with_alpha_premultiply(&snapshot, format as i32, premultiply);
+
+    state.0.make_current();
+
+    canvas_webgl::webgl2::canvas_native_webgl2_tex_sub_image3d(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        zoffset,
+        width,
+        height,
         depth,
         format,
         type_,
@@ -1930,7 +2105,6 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_webgl(
 }
 
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
     target: i32,
@@ -2004,8 +2178,8 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_canvas2d(
     let integers = match format as u32 {
         gl_bindings::RGBA_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rgba_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
         gl_bindings::RGB_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rgb_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
-        gl_bindings::RED_INTEGER =>Some(canvas_core::image_asset::ImageAsset::rgba_to_red_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
-        gl_bindings::RG_INTEGER =>Some(canvas_core::image_asset::ImageAsset::rgba_to_rg_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
+        gl_bindings::RED_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_red_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
+        gl_bindings::RG_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rg_integer(bytes.as_slice(), source_width as usize, source_height as usize)),
         _ => None,
     };
 
@@ -2171,8 +2345,8 @@ pub extern "C" fn canvas_native_webgl2_tex_image2d_image_data(
     let integers = match format as u32 {
         gl_bindings::RGBA_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rgba_integer(bytes, source_width as usize, source_height as usize)),
         gl_bindings::RGB_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rgb_integer(bytes, source_width as usize, source_height as usize)),
-        gl_bindings::RED_INTEGER =>Some(canvas_core::image_asset::ImageAsset::rgba_to_red_integer(bytes, source_width as usize, source_height as usize)),
-        gl_bindings::RG_INTEGER =>Some(canvas_core::image_asset::ImageAsset::rgba_to_rg_integer(bytes, source_width as usize, source_height as usize)),
+        gl_bindings::RED_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_red_integer(bytes, source_width as usize, source_height as usize)),
+        gl_bindings::RG_INTEGER => Some(canvas_core::image_asset::ImageAsset::rgba_to_rg_integer(bytes, source_width as usize, source_height as usize)),
         _ => None,
     };
 

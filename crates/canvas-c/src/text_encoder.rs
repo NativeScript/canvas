@@ -5,6 +5,15 @@ use crate::buffers::U8Buffer;
 
 #[derive(Clone)]
 pub struct TextEncoder(canvas_2d::context::text_encoder::TextEncoder);
+impl TextEncoder {
+    pub fn encoding(&self) -> &str {
+        self.0.encoding()
+    }
+
+    pub fn encode(&self, value: &str) -> Vec<u8> {
+        self.0.encode(value)
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_text_encoder_release(value: *mut TextEncoder) {

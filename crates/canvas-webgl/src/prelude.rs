@@ -442,7 +442,6 @@ impl WebGLState {
         if !self.context.make_current() {
             return false;
         }
-
         self.context.swap_buffers()
     }
 

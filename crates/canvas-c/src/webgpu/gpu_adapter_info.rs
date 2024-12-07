@@ -7,7 +7,23 @@ impl CanvasGPUAdapterInfo {
     pub fn new(types: wgt::AdapterInfo) -> Self {
         Self(types)
     }
+
+    pub fn vendor(&self) -> String {
+        self.0.vendor.to_string()
+    }
+
+    pub fn architecture(&self) -> &str {
+        ""
+    }
+    pub fn device(&self) -> String {
+        self.0.device.to_string()
+    }
+
+    pub fn description(&self) -> &str {
+        self.0.name.as_str()
+    }
 }
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(

@@ -3,6 +3,7 @@ use std::os::raw::c_float;
 use skia_safe::Color;
 
 use crate::context::Context;
+use crate::utils::color::parse_color;
 
 impl Context {
     pub fn set_shadow_blur(&mut self, blur: c_float) {
@@ -32,6 +33,12 @@ impl Context {
 
     pub fn set_shadow_color(&mut self, color: Color) {
         self.state.shadow_color = color;
+    }
+
+    pub fn set_shadow_color_str(&mut self, color: &str) {
+        if let Some(color) = parse_color(color) {
+            self.state.shadow_color = color;
+        }
     }
 
     pub fn set_shadow_color_rgba(&mut self, r: u8, g: u8, b: u8, a: u8) {

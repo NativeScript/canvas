@@ -1,6 +1,6 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
 use std::sync::Arc;
+use std::{ffi::CStr, os::raw::c_char};
 
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
@@ -50,7 +50,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_get_label(
     label_to_ptr(command_encoder.label.clone())
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_reference(
     command_encoder: *const CanvasGPUCommandEncoder,
@@ -75,10 +74,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_release(
 
 #[repr(C)]
 pub struct CanvasImageCopyBuffer {
-    buffer: *const CanvasGPUBuffer,
-    offset: u64,
-    bytes_per_row: i32,
-    rows_per_image: i32,
+    pub buffer: *const CanvasGPUBuffer,
+    pub offset: u64,
+    pub bytes_per_row: i32,
+    pub rows_per_image: i32,
 }
 
 #[repr(C)]
@@ -317,7 +316,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_clear_buffer(
 
     let error_sink = command_encoder.error_sink.as_ref();
 
-    if let Err(cause) = global.command_encoder_clear_buffer(command_encoder_id, buffer_id, offset, size)
+    if let Err(cause) =
+        global.command_encoder_clear_buffer(command_encoder_id, buffer_id, offset, size)
     {
         handle_error(
             global,
@@ -355,8 +355,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_buf
 
     let global = command_encoder.instance.global();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_copy_buffer_to_buffer(command_encoder_id, src_id, src_offset, dst_id, dst_offset, size)
-    {
+    if let Err(cause) = global.command_encoder_copy_buffer_to_buffer(
+        command_encoder_id,
+        src_id,
+        src_offset,
+        dst_id,
+        dst_offset,
+        size,
+    ) {
         handle_error(
             global,
             error_sink,
@@ -412,8 +418,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
     let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_copy_buffer_to_texture(command_encoder_id, &image_copy_buffer, &image_copy_texture, &copy_size)
-    {
+    if let Err(cause) = global.command_encoder_copy_buffer_to_texture(
+        command_encoder_id,
+        &image_copy_buffer,
+        &image_copy_texture,
+        &copy_size,
+    ) {
         handle_error(
             global,
             error_sink,
@@ -471,8 +481,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
     let copy_size = *copy_size;
     let copy_size: wgt::Extent3d = copy_size.into();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_copy_texture_to_buffer(command_encoder_id, &image_copy_texture, &image_copy_buffer, &copy_size)
-    {
+    if let Err(cause) = global.command_encoder_copy_texture_to_buffer(
+        command_encoder_id,
+        &image_copy_texture,
+        &image_copy_buffer,
+        &copy_size,
+    ) {
         handle_error(
             global,
             error_sink,
@@ -528,8 +542,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
     let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_copy_texture_to_texture(command_encoder_id, &image_copy_texture_src, &image_copy_texture_dst, &copy_size)
-    {
+    if let Err(cause) = global.command_encoder_copy_texture_to_texture(
+        command_encoder_id,
+        &image_copy_texture_src,
+        &image_copy_texture_dst,
+        &copy_size,
+    ) {
         handle_error(
             global,
             error_sink,
@@ -560,7 +578,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
 
     let label = ptr_into_label(label);
 
-    let desc = wgt::CommandBufferDescriptor { label: label.clone() };
+    let desc = wgt::CommandBufferDescriptor {
+        label: label.clone(),
+    };
 
     let (id, err) = global.command_encoder_finish(command_encoder_id, &desc);
 
@@ -600,8 +620,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_insert_debug_marke
     let label = CStr::from_ptr(label);
     let label = label.to_str().unwrap();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_insert_debug_marker(command_encoder_id, label)
-    {
+    if let Err(cause) = global.command_encoder_insert_debug_marker(command_encoder_id, label) {
         handle_error(
             global,
             error_sink,
@@ -625,8 +644,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_pop_debug_group(
     let command_encoder_id = command_encoder.encoder;
     let global = command_encoder.instance.global();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_pop_debug_group(command_encoder_id)
-    {
+    if let Err(cause) = global.command_encoder_pop_debug_group(command_encoder_id) {
         handle_error(
             global,
             error_sink,
@@ -654,8 +672,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_push_debug_group(
     let label = CStr::from_ptr(label);
     let label = label.to_str().unwrap();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_push_debug_group(command_encoder_id, label)
-    {
+    if let Err(cause) = global.command_encoder_push_debug_group(command_encoder_id, label) {
         handle_error(
             global,
             error_sink,
@@ -691,8 +708,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_resolve_query_set(
 
     let global = command_encoder.instance.global();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_resolve_query_set(command_encoder_id, query_set_id, first_query, query_count, dst_id, dst_offset)
-    {
+    if let Err(cause) = global.command_encoder_resolve_query_set(
+        command_encoder_id,
+        query_set_id,
+        first_query,
+        query_count,
+        dst_id,
+        dst_offset,
+    ) {
         handle_error(
             global,
             error_sink,
@@ -722,7 +745,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_write_timestamp(
 
     let global = command_encoder.instance.global();
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Err(cause) = global.command_encoder_write_timestamp(command_encoder_id, query_set_id, query_index)
+    if let Err(cause) =
+        global.command_encoder_write_timestamp(command_encoder_id, query_set_id, query_index)
     {
         handle_error(
             global,

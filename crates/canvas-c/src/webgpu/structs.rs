@@ -8,7 +8,7 @@ use crate::buffers::StringBuffer;
 use crate::ImageAsset;
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash,Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct CanvasOrigin3d {
     /// X position of the origin
     pub x: u32,
@@ -103,6 +103,13 @@ pub struct CanvasColor {
     pub g: f64,
     pub b: f64,
     pub a: f64,
+}
+
+
+impl From<CanvasColor> for Vec<f64> {
+    fn from(value: CanvasColor) -> Self {
+        vec![value.r, value.g, value.b, value.a]
+    }
 }
 
 impl CanvasColor {
@@ -222,7 +229,6 @@ pub struct CanvasImageCopyExternalImage {
 }
 
 
-
 #[repr(C)]
 #[derive(Debug)]
 pub struct CanvasImageCopyCanvasRenderingContext2D {
@@ -261,7 +267,6 @@ pub struct CanvasImageCopyWebGL {
     /// true, `origin` is still relative to the top left.
     pub flip_y: bool,
 }
-
 
 
 #[repr(C)]

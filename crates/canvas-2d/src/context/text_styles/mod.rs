@@ -102,6 +102,6 @@ impl Context {
     }
 
     pub fn get_letter_spacing(&self) -> &str {
-        return self.state.letter_spacing_value.as_str();
+        self.state.letter_spacing_value.as_str()
     }
 }

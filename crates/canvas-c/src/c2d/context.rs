@@ -2211,10 +2211,11 @@ pub extern "C" fn canvas_native_context_fill(context: *mut CanvasRenderingContex
 #[no_mangle]
 pub extern "C" fn canvas_native_context_fill_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     rule: CanvasFillRule,
 ) {
     let context = unsafe { &mut *context };
+    let path = unsafe { &mut *path };
     context.context.fill_rule(Some(&mut path.0), rule.into());
 }
 
@@ -2312,12 +2313,13 @@ pub extern "C" fn canvas_native_context_is_point_in_path_str(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path_str(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context
         .context
         .point_in_path(Some(&path.0), x, y, rule.into())
@@ -2337,12 +2339,13 @@ pub extern "C" fn canvas_native_context_is_point_in_path(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_path_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
     rule: CanvasFillRule,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context
         .context
         .point_in_path(Some(&path.0), x, y, rule.into())
@@ -2361,11 +2364,12 @@ pub extern "C" fn canvas_native_context_is_point_in_stroke(
 #[no_mangle]
 pub extern "C" fn canvas_native_context_is_point_in_stroke_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
     x: f32,
     y: f32,
 ) -> bool {
     let context = unsafe { &*context };
+    let path = unsafe { &*path };
     context.context.point_in_stroke(Some(&path.0), x, y)
 }
 
@@ -2454,6 +2458,14 @@ pub extern "C" fn canvas_native_context_rect(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_context_reset(
+    context: *mut CanvasRenderingContext2D
+) {
+    let context = unsafe { &mut *context };
+    context.context.reset()
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_context_round_rect(
     context: *mut CanvasRenderingContext2D,
     x: f32,
@@ -2465,8 +2477,63 @@ pub extern "C" fn canvas_native_context_round_rect(
 ) {
     let radii = unsafe { std::slice::from_raw_parts(radii, size) };
     let context = unsafe { &mut *context };
-    if radii.len() == 8 {
-        context.context.round_rect(x, y, width, height, radii)
+
+
+    let size = radii.len();
+    if size == 0 {
+        return;
+    }
+    /*
+    [all-corners]
+    [top-left-and-bottom-right, top-right-and-bottom-left]
+    [top-left, top-right-and-bottom-left, bottom-right]
+    [top-left, top-right, bottom-right, bottom-left]
+     */
+    let mut top_left = 0.;
+    let mut top_right = 0.;
+    let mut bottom_right = 0.;
+    let mut bottom_left = 0.;
+
+    match size {
+        1 => {
+            top_left = radii[0];
+            top_right = top_left;
+            bottom_right = top_left;
+            bottom_left = top_left;
+        }
+        2 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = top_left;
+            bottom_left = top_right;
+        }
+
+        3 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = radii[2];
+            bottom_left = top_right
+        }
+        4 => {
+            top_left = radii[0];
+            top_right = radii[1];
+            bottom_right = radii[2];
+            bottom_left = radii[3];
+        }
+        _ => {}
+    }
+
+    if size > 0 && size <= 4 {
+        context.context.round_rect(x, y, width, height, &[
+            top_left,
+            top_left,
+            top_right,
+            top_right,
+            bottom_right,
+            bottom_right,
+            bottom_left,
+            bottom_left,
+        ]);
     }
 }
 
@@ -2565,9 +2632,10 @@ pub extern "C" fn canvas_native_context_stroke(context: *mut CanvasRenderingCont
 #[no_mangle]
 pub extern "C" fn canvas_native_context_stroke_with_path(
     context: *mut CanvasRenderingContext2D,
-    path: &mut Path,
+    path: *mut Path,
 ) {
     let context = unsafe { &mut *context };
+    let path = unsafe { &mut *path };
     context.context.stroke(Some(&mut path.0));
 }
 

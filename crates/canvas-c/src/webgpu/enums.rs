@@ -4,10 +4,7 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgt::{
-    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode,
-    QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType,
-};
+use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
@@ -15,7 +12,7 @@ use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug,Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SurfaceGetCurrentTextureStatus {
     Success = 0x00000000,
     Timeout = 0x00000001,
@@ -23,7 +20,7 @@ pub enum SurfaceGetCurrentTextureStatus {
     Lost = 0x00000003,
     OutOfMemory = 0x00000004,
     DeviceLost = 0x00000005,
-    Force32 = 0x7FFFFFFF
+    Force32 = 0x7FFFFFFF,
 }
 
 #[repr(C)]
@@ -1679,6 +1676,44 @@ pub enum CanvasCullMode {
     Back,
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasOptionalCanvasCullMode {
+    None,
+    Some(CanvasCullMode),
+}
+
+
+impl From<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
+    fn from(value: Option<wgt::Face>) -> Self {
+        match value {
+            None => Self::None,
+            Some(value) => {
+                match value {
+                    wgt::Face::Front => Self::Some(CanvasCullMode::Front),
+                    wgt::Face::Back => Self::Some(CanvasCullMode::Back),
+                }
+            }
+        }
+    }
+}
+
+impl Into<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
+    fn into(self) -> Option<wgt::Face> {
+        match self {
+            CanvasOptionalCanvasCullMode::None => None,
+            CanvasOptionalCanvasCullMode::Some(value) => {
+                match value {
+                    CanvasCullMode::None => None,
+                    CanvasCullMode::Front => Some(wgt::Face::Front),
+                    CanvasCullMode::Back => Some(wgt::Face::Back),
+                }
+            }
+        }
+    }
+}
+
+
 impl From<CanvasCullMode> for Option<wgt::Face> {
     fn from(value: CanvasCullMode) -> Option<wgt::Face> {
         match value {
@@ -1979,9 +2014,9 @@ impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasTextureBindingLayout {
-    sample_type: CanvasTextureSampleType,
-    view_dimension: CanvasTextureViewDimension,
-    multisampled: bool,
+    pub sample_type: CanvasTextureSampleType,
+    pub view_dimension: CanvasTextureViewDimension,
+    pub multisampled: bool,
 }
 
 #[repr(C)]
@@ -2028,9 +2063,9 @@ impl Into<TextureSampleType> for CanvasTextureSampleType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasStorageTextureBindingLayout {
-    access: CanvasStorageTextureAccess,
-    format: CanvasGPUTextureFormat,
-    view_dimension: CanvasTextureViewDimension,
+    pub access: CanvasStorageTextureAccess,
+    pub format: CanvasGPUTextureFormat,
+    pub view_dimension: CanvasTextureViewDimension,
 }
 
 #[repr(C)]
@@ -2069,15 +2104,15 @@ impl Into<SamplerBindingType> for CanvasSamplerBindingType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasSamplerBindingLayout {
-    type_: CanvasSamplerBindingType,
+    pub type_: CanvasSamplerBindingType,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasBufferBindingLayout {
-    type_: CanvasBufferBindingType,
-    has_dynamic_offset: bool,
-    min_binding_size: i64,
+    pub type_: CanvasBufferBindingType,
+    pub has_dynamic_offset: bool,
+    pub min_binding_size: i64,
 }
 
 #[repr(C)]
@@ -2127,9 +2162,9 @@ pub enum CanvasBindingType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasBindGroupLayoutEntry {
-    binding: u32,
-    visibility: u32,
-    binding_type: CanvasBindingType,
+    pub binding: u32,
+    pub visibility: u32,
+    pub binding_type: CanvasBindingType,
 }
 
 impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {

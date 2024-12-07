@@ -1,0 +1,11 @@
+{
+	"name": "examples",
+	"version": "1.0.0",
+	"description": "",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NativeScript/canvas.git"
+	},
+	"private": true
+}

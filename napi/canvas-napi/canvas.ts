@@ -1,18 +1,19 @@
-import { createRequire } from 'node:module';
+// import { createRequire } from 'node:module';
 import { Event } from '@nativescript/foundation/dom/dom-utils.js';
 import { type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
 import { view } from '@nativescript/foundation/views/decorators/view.js';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
 
-const require = createRequire(import.meta.url);
+// @ts-ignore
+// const require = createRequire(import.meta.url);
 
 objc.import('OpenGL');
 objc.import('Metal');
 objc.import('MetalKit');
 
-// import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } from './index.js';
 
-const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
+// const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
 
 class NSCMTLView extends NSView {
 	static {
@@ -198,7 +199,7 @@ class NSCCanvas extends NSView {
 	mtlViewLayerPtr?: interop.Pointer;
 	mtlViewPtr?: interop.Pointer;
 	glViewPtr?: interop.Pointer;
-	gpuContext?: GPUCanvasContext;
+	gpuContext?: typeof GPUCanvasContext;
 
 	initWebGPUContext() {
 		if (this.gpuContext) {
@@ -225,7 +226,7 @@ class NSCCanvas extends NSView {
 			this.glkView?.openGLContext?.makeCurrentContext?.();
 		}
 		if (this.is2D) {
-			this._canvas?.deref()?._2dContext?.resize?.(this.surfaceWidth, this.surfaceHeight);
+			(<any>this._canvas?.deref()?._2dContext)?.resize?.(this.surfaceWidth, this.surfaceHeight);
 		}
 		this.scaleSurface();
 	}
@@ -480,7 +481,7 @@ export class Canvas extends ViewBase {
 
 	_webgl2Context?: WebGL2RenderingContext;
 
-	_gpuContext?: GPUCanvasContext;
+	_gpuContext?: typeof GPUCanvasContext;
 
 	get __native__context() {
 		switch (this._contextType) {

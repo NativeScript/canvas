@@ -1,19 +1,19 @@
 {
 	"compilerOptions": {
-		"moduleResolution": "NodeNext",
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"noEmitHelpers": false,
+		"noEmitHelpers": true,
+		"allowJs": true,
+		"importHelpers": true,
 		"target": "ESNext",
-		"module": "NodeNext",
+		"outDir": "./dist",
 		"lib": ["ESNext", "dom"],
-		"noEmitHelpers": false,
-		"target": "ESNext",
-		"module": "NodeNext",
-		"lib": ["ESNext", "dom"],
-		"allowImportingTsExtensions": true,
-		"noEmit": true
+		"allowImportingTsExtensions": false,
+		"noEmit": false
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",
-	"include": ["**/*.ts", "references.d.ts"]
+	"include": ["canvas.ts", "index.d.ts", "utils/*.ts", "references.d.ts"],
+	"exclude": ["node_modules", "examples"]
 }

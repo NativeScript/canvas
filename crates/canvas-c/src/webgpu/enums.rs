@@ -2014,9 +2014,9 @@ impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasTextureBindingLayout {
-    sample_type: CanvasTextureSampleType,
-    view_dimension: CanvasTextureViewDimension,
-    multisampled: bool,
+    pub sample_type: CanvasTextureSampleType,
+    pub view_dimension: CanvasTextureViewDimension,
+    pub multisampled: bool,
 }
 
 #[repr(C)]
@@ -2063,9 +2063,9 @@ impl Into<TextureSampleType> for CanvasTextureSampleType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasStorageTextureBindingLayout {
-    access: CanvasStorageTextureAccess,
-    format: CanvasGPUTextureFormat,
-    view_dimension: CanvasTextureViewDimension,
+    pub access: CanvasStorageTextureAccess,
+    pub format: CanvasGPUTextureFormat,
+    pub view_dimension: CanvasTextureViewDimension,
 }
 
 #[repr(C)]
@@ -2104,15 +2104,15 @@ impl Into<SamplerBindingType> for CanvasSamplerBindingType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasSamplerBindingLayout {
-    type_: CanvasSamplerBindingType,
+    pub type_: CanvasSamplerBindingType,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasBufferBindingLayout {
-    type_: CanvasBufferBindingType,
-    has_dynamic_offset: bool,
-    min_binding_size: i64,
+    pub type_: CanvasBufferBindingType,
+    pub has_dynamic_offset: bool,
+    pub min_binding_size: i64,
 }
 
 #[repr(C)]
@@ -2162,9 +2162,9 @@ pub enum CanvasBindingType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct CanvasBindGroupLayoutEntry {
-    binding: u32,
-    visibility: u32,
-    binding_type: CanvasBindingType,
+    pub binding: u32,
+    pub visibility: u32,
+    pub binding_type: CanvasBindingType,
 }
 
 impl Into<BindGroupLayoutEntry> for CanvasBindGroupLayoutEntry {

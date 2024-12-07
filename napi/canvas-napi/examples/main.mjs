@@ -1,89 +1,20 @@
 import '@nativescript/macos-node-api';
-import { CanvasRenderingContext2D, ImageAsset, TextDecoder, TextEncoder, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
-import { cancelAnimationFrame, requestAnimationFrame } from './utils/index.js';
-import { Canvas } from './canvas.js';
-import { Application, NativeWindow } from '@nativescript/foundation';
+import { ImageAsset } from '../index.js';
+console.log(ImageAsset);
+import { cancelAnimationFrame, requestAnimationFrame } from '../dist/utils.mjs';
+import '@nativescript/foundation/dom/index.js';
+import '../dist/examples/app.mjs';
+import '../dist/index.mjs';
+
+console.log(GPU);
 
 
 objc.import('AppKit');
 objc.import('OpenGL');
 objc.import('QuartzCore');
 
+let LAF = 0;
 
-
-export class ApplicationDelegate extends NSObject {
-	running = true;
-	isActive = true;
-	static ObjCProtocols = [NSApplicationDelegate, NSWindowDelegate];
-
-	static {
-		NativeClass(this);
-	}
-
-	/**
-	 * @param {NSNotification} _notification
-	 */
-	applicationDidFinishLaunching(_notification) {
-		NSApp.activateIgnoringOtherApps(false);
-
-		NSApp.stop(this);
-
-		RunLoop();
-
-		doTheThing();
-
-		//doGL();
-	}
-
-	applicationWillTerminate(_notification) {
-		this.running = false;
-	}
-
-	applicationShouldHandleReopenHasVisibleWindows(sender, hasVisibleWindows) {
-		if (!hasVisibleWindows) {
-			sender.windows.firstObject.makeKeyAndOrderFront(sender);
-		}
-		return true;
-	}
-
-	windowWillClose(_notification) {
-		NSApp.terminate(this);
-		clearTimeout(runLoop);
-		runLoop = 0;
-		process.exit(0);
-	}
-}
-
-
-Application.delegate = ApplicationDelegate;
-Application.launch();
-
-const canvasView = new Canvas();
-export class ViewController extends NSViewController {
-	static {
-		NativeClass(this);
-	}
-
-	canvas;
-
-	/**
-	 * @param {NSCCanvas} canvas
-	 */
-	viewDidLoad() {
-		super.viewDidLoad();
-		this.canvas = canvasView;
-		const dim = {
-			width: this.view.frame.size.width * NSScreen.mainScreen.backingScaleFactor,
-			height: this.view.frame.size.height * NSScreen.mainScreen.backingScaleFactor,
-		};
-		this.canvas.width = dim.width;
-		this.canvas.height = dim.height;
-
-		this.view.addSubview(this.canvas.nativeView);
-	}
-}
-
-let isDoingOrDone = false;
 
 function mdnShadowColor(ctx) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor
@@ -190,7 +121,7 @@ function flappyBird(canvas) {
 		states = {
 			Splash: 0,
 			Game: 1,
-			Score: 2,
+			Score: 2
 		},
 		okbtn,
 		bird = {
@@ -204,11 +135,11 @@ function flappyBird(canvas) {
 			gravity: 0.25,
 			_jump: 4.6,
 
-			jump: function () {
+			jump: function() {
 				this.velocity = -this._jump;
 			},
 
-			update: function () {
+			update: function() {
 				var n = currentstate === states.Splash ? 10 : 5;
 				this.frame += frames % n === 0 ? 1 : 0;
 				this.frame %= this.animation.length;
@@ -237,7 +168,7 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function (ctx) {
+			draw: function(ctx) {
 				ctx.save();
 				ctx.translate(this.x, this.y);
 				ctx.rotate(this.rotation);
@@ -245,23 +176,23 @@ function flappyBird(canvas) {
 				var n = this.animation[this.frame];
 				s_bird[n].draw(ctx, -s_bird[n].width / 2, -s_bird[n].height / 2);
 				ctx.restore();
-			},
+			}
 		},
 		pipes = {
 			_pipes: [],
 
-			reset: function () {
+			reset: function() {
 				this._pipes = [];
 			},
 
-			update: function () {
+			update: function() {
 				if (frames % 100 === 0) {
 					var _y = height - (s_pipeSouth.height + s_fg.height + 120 + 200 * Math.random());
 					this._pipes.push({
 						x: 500,
 						y: _y,
 						width: s_pipeSouth.width,
-						height: s_pipeSouth.height,
+						height: s_pipeSouth.height
 					});
 				}
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
@@ -297,13 +228,13 @@ function flappyBird(canvas) {
 				}
 			},
 
-			draw: function (...args) {
+			draw: function(...args) {
 				for (var i = 0, len = this._pipes.length; i < len; i++) {
 					var p = this._pipes[i];
 					s_pipeSouth.draw(ctx, p.x, p.y);
 					s_pipeNorth.draw(ctx, p.x, p.y + 80 + p.height);
 				}
-			},
+			}
 		},
 		img;
 
@@ -365,7 +296,7 @@ function flappyBird(canvas) {
 			x: (width - s_buttons.Ok.width) / 2,
 			y: height - 200,
 			width: s_buttons.Ok.width,
-			height: s_buttons.Ok.height,
+			height: s_buttons.Ok.height
 		};
 		run();
 
@@ -390,7 +321,7 @@ function flappyBird(canvas) {
 	}
 
 	function run() {
-		var loop = function (ts) {
+		var loop = function(ts) {
 			render();
 			update();
 			requestAnimationFrame(loop);
@@ -457,7 +388,7 @@ function flappyBird(canvas) {
 		this.height = height * 2;
 	}
 
-	Sprite.prototype.draw = function (ctx, x, y) {
+	Sprite.prototype.draw = function(ctx, x, y) {
 		ctx.drawImage(this.img, this.x, this.y, this.width, this.height, x, y, this.width, this.height);
 	};
 
@@ -474,7 +405,7 @@ function flappyBird(canvas) {
 		s_text = {
 			FlappyBird: new Sprite(img, 59, 114, 96, 22),
 			GameOver: new Sprite(img, 59, 136, 94, 19),
-			GetReady: new Sprite(img, 59, 155, 87, 22),
+			GetReady: new Sprite(img, 59, 155, 87, 22)
 		};
 		s_buttons = {
 			Rate: new Sprite(img, 79, 177, 40, 14),
@@ -482,7 +413,7 @@ function flappyBird(canvas) {
 			Share: new Sprite(img, 159, 177, 40, 14),
 			Score: new Sprite(img, 79, 191, 40, 14),
 			Ok: new Sprite(img, 119, 191, 40, 14),
-			Start: new Sprite(img, 159, 191, 40, 14),
+			Start: new Sprite(img, 159, 191, 40, 14)
 		};
 
 		s_score = new Sprite(img, 138, 56, 113, 58);
@@ -491,7 +422,7 @@ function flappyBird(canvas) {
 		s_numberS = new Sprite(img, 0, 177, 6, 7);
 		s_numberB = new Sprite(img, 0, 188, 7, 10);
 
-		s_numberS.draw = s_numberB.draw = function (ctx, x, y, num, center, offset) {
+		s_numberS.draw = s_numberB.draw = function(ctx, x, y, num, center, offset) {
 			num = num.toString();
 			var step = this.width + 2;
 
@@ -590,17 +521,6 @@ function solarSystem(canvas) {
 	init();
 }
 
-let LAF = 0;
-
-const window = {
-	devicePixelRatio: NSScreen.mainScreen.backingScaleFactor,
-};
-
-const Screen = {
-	mainScreen: {
-		scale: NSScreen.mainScreen.backingScaleFactor,
-	},
-};
 
 function swarm(canvas, width, height, nativeCanvas) {
 	var requestAnimFrame = requestAnimationFrame;
@@ -677,7 +597,7 @@ function swarm(canvas, width, height, nativeCanvas) {
 			// end angle and finally a boolean value which decides
 			// whether the arc is to be drawn in counter clockwise or
 			// in a clockwise direction. False for clockwise.
-			this.draw = function () {
+			this.draw = function() {
 				ctx.fillStyle = 'white';
 				ctx.beginPath();
 				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
@@ -809,7 +729,7 @@ function breathe_demo(canvas) {
 	const polar2Cartesian = (p) => {
 		return {
 			x: p.radius * Math.cos(p.theta),
-			y: p.radius * Math.sin(p.theta),
+			y: p.radius * Math.sin(p.theta)
 		};
 	};
 
@@ -1303,7 +1223,7 @@ function cubeRotation(canvas) {
 		if (!compiled) {
 			// Something went wrong during compilation; get the error
 			const lastError = gl.getShaderInfoLog(vertShader);
-			console.log("*** Error compiling shader '" + vertShader + "':" + lastError);
+			console.log('*** Error compiling shader \'' + vertShader + '\':' + lastError);
 			gl.deleteShader(vertShader);
 			return null;
 		}
@@ -1316,7 +1236,7 @@ function cubeRotation(canvas) {
 		if (!compiled) {
 			// Something went wrong during compilation; get the error
 			const lastError = gl.getShaderInfoLog(fragShader);
-			console.log("*** Error compiling shader '" + fragShader + "':" + lastError);
+			console.log('*** Error compiling shader \'' + fragShader + '\':' + lastError);
 			gl.deleteShader(fragShader);
 			return null;
 		}
@@ -1419,7 +1339,7 @@ function cubeRotation(canvas) {
 		/*================= Drawing ===========================*/
 		var time_old = 0;
 
-		var animate = function (time) {
+		var animate = function(time) {
 			var dt = time - time_old;
 			rotateZ(mov_matrix, dt * 0.005); //time
 			rotateY(mov_matrix, dt * 0.002);
@@ -1460,68 +1380,173 @@ function doGL() {
 	// cubeRotation(glCanvas);
 }
 
-function doTheThing() {
-	let loaded = false;
-	// console.time('load1');
-	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
-	// console.timeEnd('load1');
 
-	const canvas = canvasView;
+const gpu = GPU.getInstance();
 
-	const scale = NSScreen.mainScreen.backingScaleFactor;
+globalThis.gpu = gpu;
 
-	const ctx = canvas.getContext('2d');
+const window = document.createElement('window');
 
-	ctx.fillStyle = 'white';
+window.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
+window.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
 
-	ctx.fillRect(0, 0, 1000, 1000);
-
-	ctx.fillStyle = 'black';
-
-	ctx.scale(scale, scale);
-
-	//	ctx.translate(0, 100);
-
-	//mdnShadowColor(ctx);
-	//mdnRotate(ctx);
-	// mdnCreateConicGradient(ctx);
-
-	//flappyBird(mtlCanvas);
-
-	solarSystem(canvas);
-
-	// swarm(canvas);
-	// breathe_demo(canvas);
-	//mdnPattern(canvas);
-	// mdnRadialGradient(canvas);
-	//mdnPutImageData(canvas);
-
-	//
-	// ctx.font = '50px serif';
-	// ctx.strokeText('Hello world', 50, 90);
-
-	// ctx.render();
-
-	/*
-
-	asset.fromUrl('https://picsum.photos/id/1/200/300')
-		.then(function(done) {
-			console.log('ftghjkl');
-			console.log(NSThread.currentThread);
-			console.log('fromUrl: done', done, NSThread.currentThread);
-			ctx.drawImage(asset, 0, 0, glview.frame.size.width * scale, glview.frame.size.height * scale);
-
-			ctx.render();
-		}).catch(e => {
-		console.log('fromUrl: error', e);
-		console.log(NSThread.currentThread);
-	})
-		.catch(e => {
-			console.log('e', e);
-		}).finally(() => {
-		console.log('?');
+function installPolyfills(window) {
+	Object.defineProperty(window, 'devicePixelRatio', {
+		value: NSScreen.mainScreen.backingScaleFactor,
+		writable: true
 	});
-	*/
 }
 
-// const NSApp = NSApplication.sharedApplication;
+installPolyfills(window);
+
+async function webgpuTest() {
+	console.log(gpu.wgslLanguageFeatures);
+	console.log(gpu.getPreferredCanvasFormat());
+
+	const adapter = await gpu.requestAdapter();
+
+	console.log(adapter.features);
+	console.log(adapter.isFallbackAdapter);
+	console.log(adapter.limits);
+
+	const info = await adapter.requestAdapterInfo();
+	console.log(info.architecture);
+	console.log(info.description);
+	console.log(info.device);
+	console.log(info.vendor);
+}
+
+async function webgpuTriangle(canvas) {
+	const tri = `@vertex
+fn main(
+  @builtin(vertex_index) VertexIndex : u32
+) -> @builtin(position) vec4f {
+  var pos = array<vec2f, 3>(
+    vec2(0.0, 0.5),
+    vec2(-0.5, -0.5),
+    vec2(0.5, -0.5)
+  );
+
+  return vec4f(pos[VertexIndex], 0.0, 1.0);
+}`;
+
+	const red = `@fragment
+fn main() -> @location(0) vec4f {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}`;
+	// todo
+
+
+	if (gpu) {
+		const adapter = await gpu.requestAdapter();
+		let device = await adapter.requestDevice();
+		// device.addEventListener('uncapturederror', (event: any) => {
+		// 	console.error('A WebGPU error was not captured:', event.error.message);
+		// });
+
+		const devicePixelRatio = window.devicePixelRatio;
+		canvas.width = canvas.clientWidth * devicePixelRatio;
+		canvas.height = canvas.clientHeight * devicePixelRatio;
+
+		console.log(canvas);
+
+		const context = canvas.getContext('webgpu');
+
+		// console.log(context.toDataURL());
+
+		//
+		const capabilities = context.getCapabilities(adapter);
+		//
+		console.log(capabilities);
+
+		const presentationFormat = gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+		const alphaMode = 'postmultiplied'; //capabilities.alphaModes[0];
+
+		context.configure({
+			device,
+			format: presentationFormat,
+			alphaMode,
+			presentMode: 'fifo'
+		});
+
+		console.log('toDataURL', context.toDataURL());
+
+		const pipeline = device.createRenderPipeline({
+			layout: 'auto',
+			vertex: {
+				module: device.createShaderModule({
+					code: tri
+				}),
+				entryPoint: 'main'
+			},
+			fragment: {
+				module: device.createShaderModule({
+					code: red
+				}),
+				targets: [
+					{
+						format: presentationFormat
+					}
+				],
+				entryPoint: 'main'
+			},
+			primitive: {
+				topology: 'triangle-list'
+			}
+		});
+
+		function frame() {
+			const framebuffer = context.getCurrentTexture();
+			if (!framebuffer) {
+				requestAnimationFrame(frame);
+				return;
+			}
+
+			const commandEncoder = device.createCommandEncoder();
+			const textureView = framebuffer.createView();
+
+			const passEncoder = commandEncoder.beginRenderPass({
+				colorAttachments: [
+					{
+						view: textureView,
+						clearValue: [0, 0, 0, 1],
+						loadOp: 'clear',
+						storeOp: 'store'
+					}
+				]
+			});
+			passEncoder.setPipeline(pipeline);
+			passEncoder.draw(3);
+			passEncoder.end();
+
+			device.queue.submit([commandEncoder.finish()]);
+			context.presentSurface();
+			//	requestAnimationFrame(frame);
+
+			requestAnimationFrame(frame);
+		}
+	}
+}
+
+const canvas = document.createElement('canvas');
+
+canvas.addEventListener('ready', (event) => {
+	console.log('ready');
+	// webgpuTriangle(canvas);
+});
+
+canvas.width = NSScreen.mainScreen.frame.size.width;
+canvas.height = NSScreen.mainScreen.frame.size.height;
+
+window.setAttribute('styleMask', NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView);
+
+window.appendChild(canvas);
+
+webgpuTriangle(canvas);
+
+
+
+document.body.appendChild(window);
+
+globalThis.NativeScriptApplication.launch();
+

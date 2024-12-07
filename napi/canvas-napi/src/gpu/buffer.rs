@@ -16,11 +16,12 @@ pub enum GPUMapState {
   pending,
 }
 
-#[napi]
+#[napi(js_name = "GPUBuffer")]
 pub struct g_p_u_buffer {
   pub(crate) buffer: Arc<canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer>,
   pub(crate) state: Arc<Mutex<GPUMapState>>,
 }
+
 struct Sender {
   tx: std::sync::mpsc::Sender<Option<String>>,
   state: Arc<Mutex<GPUMapState>>,
@@ -117,6 +118,12 @@ impl Task for AsyncMapBufferTask {
 
 #[napi]
 impl g_p_u_buffer {
+  pub fn new(buffer: Arc<canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer>) -> Self {
+    Self {
+      buffer,
+      state: Arc::new(Mutex::new(GPUMapState::unmapped)),
+    }
+  }
   #[napi(getter)]
   pub fn get_state(&self) -> GPUMapState {
     *self.state.lock().unwrap_or_else(|mut e| {

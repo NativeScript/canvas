@@ -34,6 +34,7 @@ mod compute_pipeline;
 mod render_bundle;
 mod render_bundle_encoder;
 mod sampler;
+mod external_texture;
 // const GPU: std::sync::LazyLock<Arc<canvas_c::webgpu::gpu::CanvasWebGPUInstance>> = std::sync::LazyLock::new(|| {
 //     unsafe {
 //         let instance = canvas_c::webgpu::gpu::canvas_native_webgpu_instance_create();

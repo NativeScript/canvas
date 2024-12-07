@@ -1,10 +1,12 @@
-import { queueMacrotask } from '../macrotask-scheduler.ts';
-import { FPSCallback } from './fps-meter.ts';
+import { queueMacrotask } from '../macrotask-scheduler.js';
+import { FPSCallback } from './fps-meter.js';
 
 /**
  * @returns {function(): number} The current time in milliseconds.
  */
-const time = (<any>('global' in globalThis ? global : globalThis)).__time || Date.now;
+
+// @ts-ignore
+const time = ('global' in globalThis ? global : globalThis).__time || Date.now;
 
 export function getTimeInFrameBase() {
 	return time();

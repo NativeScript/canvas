@@ -6,12 +6,16 @@ import '@nativescript/foundation/dom/index.js';
 import Application from './app.ts';
 import './canvas.ts';
 
+objc.import('AppKit');
+objc.import('OpenGL');
+objc.import('QuartzCore');
+
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
-const { CanvasRenderingContext2D, ImageAsset, Path2D, GPU } = require('./canvas-napi.darwin-arm64.node');
+const { CanvasRenderingContext2D, ImageAsset, Path2D, GPU, GPUCanvasContext } = require('../canvas-napi.darwin-arm64.node');
 
-const { requestAnimationFrame } = require('./utils/index.ts');
+const { requestAnimationFrame } = require('../utils/index.ts');
 
 function mdnShadowColor(ctx: any) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor

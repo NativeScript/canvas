@@ -292,10 +292,17 @@ const {
 	GPUDevice,
 	GPUFeatureName,
 	GPUTexture,
+	GPUErrorFilter,
+	GPUTextureSampleType,
+	GPUTextureViewDimension,
+	GPUStorageTextureAccess,
+	GPUSamplerBindingType,
+	GPUBufferBindingType,
+	GPUTextureDimension,
 	GPUTextureAspect,
 	GPUMapMode,
 	GPULoadOp,
-	GPULoadOp,
+	GPUStoreOp,
 	GPUVertexFormat,
 	GPUVertexStepMode,
 	GPUPrimitiveTopology,
@@ -310,7 +317,7 @@ const {
 	PredefinedColorSpaceEnum,
 	GPUCanvasAlphaMode,
 	GPUCanvasPresentMode,
-	GPUFeatureName,
+	GPUTextureFormat,
 	GPUShaderModule,
 	GPUPipelineLayout,
 	GPURenderPipeline,
@@ -327,7 +334,8 @@ const {
 	GPUComputePipeline,
 	GPURenderBundle,
 	GPURenderBundleEncoder,
-	GPUSample,
+	GPUSampler,
+	GPUExternalTexture,
 	GPU,
 	Path2D,
 	CanvasPattern,
@@ -375,9 +383,9 @@ const {
 	WebGLRenderingContext,
 	WebGLQuery,
 	WebGLSampler,
+	WebGLSync,
 	WebGLTransformFeedback,
 	WebGLVertexArrayObject,
-	WebGLSync,
 	WebGL2RenderingContext,
 } = nativeBinding;
 
@@ -388,10 +396,17 @@ module.exports.GPUBindGroup = GPUBindGroup;
 module.exports.GPUDevice = GPUDevice;
 module.exports.GPUFeatureName = GPUFeatureName;
 module.exports.GPUTexture = GPUTexture;
+module.exports.GPUErrorFilter = GPUErrorFilter;
+module.exports.GPUTextureSampleType = GPUTextureSampleType;
+module.exports.GPUTextureViewDimension = GPUTextureViewDimension;
+module.exports.GPUStorageTextureAccess = GPUStorageTextureAccess;
+module.exports.GPUSamplerBindingType = GPUSamplerBindingType;
+module.exports.GPUBufferBindingType = GPUBufferBindingType;
+module.exports.GPUTextureDimension = GPUTextureDimension;
 module.exports.GPUTextureAspect = GPUTextureAspect;
 module.exports.GPUMapMode = GPUMapMode;
 module.exports.GPULoadOp = GPULoadOp;
-module.exports.GPULoadOp = GPULoadOp;
+module.exports.GPUStoreOp = GPUStoreOp;
 module.exports.GPUVertexFormat = GPUVertexFormat;
 module.exports.GPUVertexStepMode = GPUVertexStepMode;
 module.exports.GPUPrimitiveTopology = GPUPrimitiveTopology;
@@ -406,7 +421,7 @@ module.exports.GPUCompareFunction = GPUCompareFunction;
 module.exports.PredefinedColorSpaceEnum = PredefinedColorSpaceEnum;
 module.exports.GPUCanvasAlphaMode = GPUCanvasAlphaMode;
 module.exports.GPUCanvasPresentMode = GPUCanvasPresentMode;
-module.exports.GPUFeatureName = GPUFeatureName;
+module.exports.GPUTextureFormat = GPUTextureFormat;
 module.exports.GPUShaderModule = GPUShaderModule;
 module.exports.GPUPipelineLayout = GPUPipelineLayout;
 module.exports.GPURenderPipeline = GPURenderPipeline;
@@ -423,7 +438,8 @@ module.exports.GPUComputePassEncoder = GPUComputePassEncoder;
 module.exports.GPUComputePipeline = GPUComputePipeline;
 module.exports.GPURenderBundle = GPURenderBundle;
 module.exports.GPURenderBundleEncoder = GPURenderBundleEncoder;
-module.exports.GPUSample = GPUSample;
+module.exports.GPUSampler = GPUSampler;
+module.exports.GPUExternalTexture = GPUExternalTexture;
 module.exports.GPU = GPU;
 module.exports.Path2D = Path2D;
 module.exports.CanvasPattern = CanvasPattern;
@@ -471,7 +487,7 @@ module.exports.WebGLUniformLocation = WebGLUniformLocation;
 module.exports.WebGLRenderingContext = WebGLRenderingContext;
 module.exports.WebGLQuery = WebGLQuery;
 module.exports.WebGLSampler = WebGLSampler;
+module.exports.WebGLSync = WebGLSync;
 module.exports.WebGLTransformFeedback = WebGLTransformFeedback;
 module.exports.WebGLVertexArrayObject = WebGLVertexArrayObject;
-module.exports.WebGLSync = WebGLSync;
 module.exports.WebGL2RenderingContext = WebGL2RenderingContext;

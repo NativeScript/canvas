@@ -90,10 +90,10 @@ impl GPUCommandEncoder {
       .color_attachments
       .into_iter()
       .map(|attach| CanvasRenderPassColorAttachment {
-        view: attach.view.texture_view,
+        view: Arc::as_ptr(&attach.view.texture_view),
         resolve_target: attach
           .resolve_target
-          .map(|v| v.texture_view)
+          .map(|v| Arc::as_ptr(&v.texture_view))
           .unwrap_or(std::ptr::null()),
         channel: CanvasPassChannelColor {
           load_op: attach.load_op.into(),

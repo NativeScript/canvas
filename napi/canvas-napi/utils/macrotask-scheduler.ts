@@ -1,4 +1,4 @@
-import { dispatchToMainThread } from './mainthread-helper.ts';
+import { dispatchToMainThread } from './mainthread-helper.js';
 
 let scheduled = false;
 

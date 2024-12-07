@@ -1,4 +1,9 @@
-use canvas_c::webgpu::enums::{CanvasAstcBlock, CanvasAstcChannel, CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasVertexFormat, CanvasVertexStepMode};
+use canvas_c::webgpu::enums::{
+  CanvasAstcBlock, CanvasAstcChannel, CanvasBufferBindingType, CanvasCullMode, CanvasFrontFace,
+  CanvasGPUTextureFormat, CanvasIndexFormat, CanvasPrimitiveTopology, CanvasSamplerBindingType,
+  CanvasStorageTextureAccess, CanvasTextureAspect, CanvasTextureDimension, CanvasTextureSampleType,
+  CanvasTextureViewDimension, CanvasVertexFormat, CanvasVertexStepMode,
+};
 use canvas_c::webgpu::structs::{
   CanvasBlendFactor, CanvasBlendOperation, CanvasLoadOp, CanvasStoreOp,
 };
@@ -6,7 +11,151 @@ use napi::*;
 use napi_derive::napi;
 
 use canvas_c::webgpu::gpu_buffer::GPUMapMode as CGPUMapMode;
+use canvas_c::webgpu::gpu_device::CanvasGPUErrorFilter;
 use canvas_c::webgpu::wgt::TextureAspect;
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUErrorFilter", string_enum = "kebab-case")]
+pub enum GPUErrorFilter {
+  validation,
+  outOfMemory,
+  internal,
+}
+
+impl Into<CanvasGPUErrorFilter> for GPUErrorFilter {
+  fn into(self) -> CanvasGPUErrorFilter {
+    match self {
+      GPUErrorFilter::validation => CanvasGPUErrorFilter::Validation,
+      GPUErrorFilter::outOfMemory => CanvasGPUErrorFilter::OutOfMemory,
+      GPUErrorFilter::internal => CanvasGPUErrorFilter::Internal,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUTextureSampleType", string_enum = "kebab-case")]
+pub enum GPUTextureSampleType {
+  float,
+  unfilterableFloat,
+  depth,
+  sint,
+  uint,
+}
+
+impl Into<CanvasTextureSampleType> for GPUTextureSampleType {
+  fn into(self) -> CanvasTextureSampleType {
+    match self {
+      GPUTextureSampleType::float => CanvasTextureSampleType::Float,
+      GPUTextureSampleType::unfilterableFloat => CanvasTextureSampleType::UnfilterableFloat,
+      GPUTextureSampleType::depth => CanvasTextureSampleType::Depth,
+      GPUTextureSampleType::sint => CanvasTextureSampleType::Sint,
+      GPUTextureSampleType::uint => CanvasTextureSampleType::Uint,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUTextureViewDimension", string_enum = "kebab-case")]
+pub enum GPUTextureViewDimension {
+  #[napi(value = "1d")]
+  d1,
+  #[napi(value = "2d")]
+  d2,
+  #[napi(value = "2d-array")]
+  array2d,
+  cube,
+  cubeArray,
+  #[napi(value = "3d")]
+  d3,
+}
+
+impl Into<CanvasTextureViewDimension> for GPUTextureViewDimension {
+  fn into(self) -> CanvasTextureViewDimension {
+    match self {
+      GPUTextureViewDimension::d1 => CanvasTextureViewDimension::D1,
+      GPUTextureViewDimension::d2 => CanvasTextureViewDimension::D2,
+      GPUTextureViewDimension::array2d => CanvasTextureViewDimension::D2Array,
+      GPUTextureViewDimension::cube => CanvasTextureViewDimension::Cube,
+      GPUTextureViewDimension::cubeArray => CanvasTextureViewDimension::CubeArray,
+      GPUTextureViewDimension::d3 => CanvasTextureViewDimension::D3,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUStorageTextureAccess", string_enum = "kebab-case")]
+pub enum GPUStorageTextureAccess {
+  writeOnly,
+  readOnly,
+  readWrite,
+}
+
+impl Into<CanvasStorageTextureAccess> for GPUStorageTextureAccess {
+  fn into(self) -> CanvasStorageTextureAccess {
+    match self {
+      GPUStorageTextureAccess::writeOnly => CanvasStorageTextureAccess::WriteOnly,
+      GPUStorageTextureAccess::readOnly => CanvasStorageTextureAccess::ReadOnly,
+      GPUStorageTextureAccess::readWrite => CanvasStorageTextureAccess::ReadWrite,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUSamplerBindingType", string_enum = "kebab-case")]
+pub enum GPUSamplerBindingType {
+  filtering,
+  nonFiltering,
+  comparison,
+}
+
+impl Into<CanvasSamplerBindingType> for GPUSamplerBindingType {
+  fn into(self) -> CanvasSamplerBindingType {
+    match self {
+      GPUSamplerBindingType::filtering => CanvasSamplerBindingType::Filtering,
+      GPUSamplerBindingType::nonFiltering => CanvasSamplerBindingType::NonFiltering,
+      GPUSamplerBindingType::comparison => CanvasSamplerBindingType::Comparison,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUBufferBindingType", string_enum = "kebab-case")]
+pub enum GPUBufferBindingType {
+  uniform,
+  storage,
+  readOnlyStorage,
+}
+
+impl Into<CanvasBufferBindingType> for GPUBufferBindingType {
+  fn into(self) -> CanvasBufferBindingType {
+    match self {
+      GPUBufferBindingType::uniform => CanvasBufferBindingType::Uniform,
+      GPUBufferBindingType::storage => CanvasBufferBindingType::Storage,
+      GPUBufferBindingType::readOnlyStorage => CanvasBufferBindingType::ReadOnlyStorage,
+    }
+  }
+}
+
+#[allow(clippy::enum_variant_names)]
+#[napi(js_name = "GPUTextureDimension", string_enum)]
+pub enum GPUTextureDimension {
+  #[napi(value = "1d")]
+  d1,
+  #[napi(value = "2d")]
+  d2,
+  #[napi(value = "2d")]
+  d3,
+}
+
+impl From<CanvasTextureDimension> for GPUTextureDimension {
+  fn from(value: CanvasTextureDimension) -> Self {
+    match value {
+      CanvasTextureDimension::D1 => Self::d1,
+      CanvasTextureDimension::D2 => Self::d2,
+      CanvasTextureDimension::D3 => Self::d3,
+    }
+  }
+}
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUTextureAspect", string_enum = "kebab-case")]
@@ -21,7 +170,7 @@ impl Into<TextureAspect> for GPUTextureAspect {
     match self {
       GPUTextureAspect::all => TextureAspect::All,
       GPUTextureAspect::stencilOnly => TextureAspect::StencilOnly,
-      GPUTextureAspect::depthOnly => TextureAspect::DepthOnly
+      GPUTextureAspect::depthOnly => TextureAspect::DepthOnly,
     }
   }
 }
@@ -31,12 +180,10 @@ impl Into<CanvasTextureAspect> for GPUTextureAspect {
     match self {
       GPUTextureAspect::all => CanvasTextureAspect::All,
       GPUTextureAspect::stencilOnly => CanvasTextureAspect::StencilOnly,
-      GPUTextureAspect::depthOnly => CanvasTextureAspect::DepthOnly
+      GPUTextureAspect::depthOnly => CanvasTextureAspect::DepthOnly,
     }
   }
 }
-
-
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUMapMode")]
@@ -71,7 +218,7 @@ impl From<GPULoadOp> for CanvasLoadOp {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[napi(js_name = "GPULoadOp", string_enum)]
+#[napi(js_name = "GPUStoreOp", string_enum)]
 pub enum GPUStoreOp {
   store,
   discard,
@@ -498,7 +645,7 @@ pub enum GPUCanvasPresentMode {
 }
 
 #[allow(clippy::enum_variant_names)]
-#[napi(js_name = "GPUFeatureName", string_enum = "lowercase")]
+#[napi(js_name = "GPUTextureFormat", string_enum = "lowercase")]
 pub enum GPUTextureFormat {
   r8unorm,
   r8snorm,
@@ -506,11 +653,15 @@ pub enum GPUTextureFormat {
   r8sint,
   r16uint,
   r16sint,
+  r16unorm,
+  r16snorm,
   r16float,
   rg8unorm,
   rg8snorm,
   rg8uint,
   rg8sint,
+  rg16unorm,
+  rg16snorm,
   r32uint,
   r32sint,
   r32float,
@@ -535,11 +686,14 @@ pub enum GPUTextureFormat {
   rg32float,
   rgba16uint,
   rgba16sint,
+  rgba16unorm,
+  rgba16snorm,
   rgba16float,
   rgba32uint,
   rgba32sint,
   rgba32float,
   stencil8,
+  nv12,
   depth16unorm,
   depth24plus,
   #[napi(value = "depth24plus_stencil8")]
@@ -599,58 +753,86 @@ pub enum GPUTextureFormat {
   astc_4x4_unorm,
   #[napi(value = "astc-4x4-unorm-srgb")]
   astc_4x4_unorm_srgb,
+  #[napi(value = "astc-4x4-hdr")]
+  astc_4x4_hdr,
   #[napi(value = "astc-5x4-unorm")]
   astc_5x4_unorm,
   #[napi(value = "astc-5x4-unorm-srgb")]
   astc_5x4_unorm_srgb,
+  #[napi(value = "astc-5x4-hdr")]
+  astc_5x4_hdr,
   #[napi(value = "astc-5x5-unorm")]
   astc_5x5_unorm,
   #[napi(value = "astc-5x5-unorm-srgb")]
   astc_5x5_unorm_srgb,
+  #[napi(value = "astc-5x5-hdr")]
+  astc_5x5_hdr,
   #[napi(value = "astc-6x5-unorm")]
   astc_6x5_unorm,
   #[napi(value = "astc-6x5-unorm-srgb")]
   astc_6x5_unorm_srgb,
+  #[napi(value = "astc-6x5-hdr")]
+  astc_6x5_hdr,
   #[napi(value = "astc-6x6-unorm")]
   astc_6x6_unorm,
   #[napi(value = "astc-6x6-unorm-srgb")]
   astc_6x6_unorm_srgb,
+  #[napi(value = "astc-6x6-hdr")]
+  astc_6x6_hdr,
   #[napi(value = "astc-8x5-unorm")]
   astc_8x5_unorm,
   #[napi(value = "astc-8x5-unorm-srgb")]
   astc_8x5_unorm_srgb,
+  #[napi(value = "astc-8x5-hdr")]
+  astc_8x5_hdr,
   #[napi(value = "astc-8x6-unorm")]
   astc_8x6_unorm,
   #[napi(value = "astc-8x6-unorm-srgb")]
   astc_8x6_unorm_srgb,
+  #[napi(value = "astc-8x6-hdr")]
+  astc_8x6_hdr,
   #[napi(value = "astc-8x8-unorm")]
   astc_8x8_unorm,
   #[napi(value = "astc-8x8-unorm-srgb")]
   astc_8x8_unorm_srgb,
+  #[napi(value = "astc-8x8-hdr")]
+  astc_8x8_hdr,
   #[napi(value = "astc-10x5-unorm")]
   astc_10x5_unorm,
   #[napi(value = "astc-10x5-unorm-srgb")]
   astc_10x5_unorm_srgb,
+  #[napi(value = "astc-10x5-hdr")]
+  astc_10x5_hdr,
   #[napi(value = "astc-10x6-unorm")]
   astc_10x6_unorm,
   #[napi(value = "astc-10x6-unorm-srgb")]
   astc_10x6_unorm_srgb,
+  #[napi(value = "astc-10x6-hdr")]
+  astc_10x6_hdr,
   #[napi(value = "astc-10x8-unorm")]
   astc_10x8_unorm,
   #[napi(value = "astc-10x8-unorm-srgb")]
   astc_10x8_unorm_srgb,
+  #[napi(value = "astc-10x8-hdr")]
+  astc_10x8_hdr,
   #[napi(value = "astc-10x10-unorm")]
   astc_10x10_unorm,
   #[napi(value = "astc-10x10-unorm-srgb")]
   astc_10x10_unorm_srgb,
+  #[napi(value = "astc-10x10-hdr")]
+  astc_10x10_hdr,
   #[napi(value = "astc-12x10-unorm")]
   astc_12x10_unorm,
   #[napi(value = "astc-12x10-unorm-srgb")]
   astc_12x10_unorm_srgb,
+  #[napi(value = "astc-12x10-hdr")]
+  astc_12x10_hdr,
   #[napi(value = "astc-12x12-unorm")]
   astc_12x12_unorm,
   #[napi(value = "astc-12x12-unorm-srgb")]
   astc_12x12_unorm_srgb,
+  #[napi(value = "astc-12x12-hdr")]
+  astc_12x12_hdr,
 }
 
 impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
@@ -672,6 +854,7 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
       GPUTextureFormat::r32float => CanvasGPUTextureFormat::R32Float,
       GPUTextureFormat::rg16uint => CanvasGPUTextureFormat::Rg16Uint,
       GPUTextureFormat::rg16sint => CanvasGPUTextureFormat::Rg16Sint,
+      GPUTextureFormat::r16snorm => CanvasGPUTextureFormat::R16Snorm,
       GPUTextureFormat::rg16float => CanvasGPUTextureFormat::Rg16Float,
       GPUTextureFormat::rgba8unorm => CanvasGPUTextureFormat::Rgba8Unorm,
       GPUTextureFormat::rgba8unorm_srgb => CanvasGPUTextureFormat::Rgba8UnormSrgb,
@@ -693,6 +876,12 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
       GPUTextureFormat::rgba32uint => CanvasGPUTextureFormat::Rgba32Uint,
       GPUTextureFormat::rgba32sint => CanvasGPUTextureFormat::Rgba32Sint,
       GPUTextureFormat::rgba32float => CanvasGPUTextureFormat::Rgba32Float,
+      GPUTextureFormat::r16unorm => CanvasGPUTextureFormat::R16Unorm,
+      GPUTextureFormat::rg16snorm => CanvasGPUTextureFormat::Rg16Snorm,
+      GPUTextureFormat::rg16unorm => CanvasGPUTextureFormat::Rg16Unorm,
+      GPUTextureFormat::rgba16unorm => CanvasGPUTextureFormat::Rgba16Unorm,
+      GPUTextureFormat::rgba16snorm => CanvasGPUTextureFormat::Rgba16Snorm,
+      GPUTextureFormat::nv12 => CanvasGPUTextureFormat::NV12,
       GPUTextureFormat::stencil8 => CanvasGPUTextureFormat::Stencil8,
       GPUTextureFormat::depth16unorm => CanvasGPUTextureFormat::Depth16Unorm,
       GPUTextureFormat::depth24plus => CanvasGPUTextureFormat::Depth24Plus,
@@ -731,12 +920,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B4x4,
       },
+      GPUTextureFormat::astc_4x4_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B4x4,
+      },
       GPUTextureFormat::astc_5x4_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B5x4,
       },
       GPUTextureFormat::astc_5x4_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B5x4,
+      },
+      GPUTextureFormat::astc_5x4_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B5x4,
       },
       GPUTextureFormat::astc_5x5_unorm => CanvasGPUTextureFormat::Astc {
@@ -747,12 +944,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B5x5,
       },
+      GPUTextureFormat::astc_5x5_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B5x5,
+      },
       GPUTextureFormat::astc_6x5_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B6x5,
       },
       GPUTextureFormat::astc_6x5_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B6x5,
+      },
+      GPUTextureFormat::astc_6x5_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B6x5,
       },
       GPUTextureFormat::astc_6x6_unorm => CanvasGPUTextureFormat::Astc {
@@ -763,12 +968,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B6x6,
       },
+      GPUTextureFormat::astc_6x6_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B6x6,
+      },
       GPUTextureFormat::astc_8x5_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B8x5,
       },
       GPUTextureFormat::astc_8x5_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B8x5,
+      },
+      GPUTextureFormat::astc_8x5_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B8x5,
       },
       GPUTextureFormat::astc_8x6_unorm => CanvasGPUTextureFormat::Astc {
@@ -779,12 +992,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B8x6,
       },
+      GPUTextureFormat::astc_8x6_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B8x6,
+      },
       GPUTextureFormat::astc_8x8_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B8x8,
       },
       GPUTextureFormat::astc_8x8_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B8x8,
+      },
+      GPUTextureFormat::astc_8x8_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B8x8,
       },
       GPUTextureFormat::astc_10x5_unorm => CanvasGPUTextureFormat::Astc {
@@ -795,12 +1016,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B10x5,
       },
+      GPUTextureFormat::astc_10x5_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B10x5,
+      },
       GPUTextureFormat::astc_10x6_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B10x6,
       },
       GPUTextureFormat::astc_10x6_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B10x6,
+      },
+      GPUTextureFormat::astc_10x6_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B10x6,
       },
       GPUTextureFormat::astc_10x8_unorm => CanvasGPUTextureFormat::Astc {
@@ -811,12 +1040,20 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B10x8,
       },
+      GPUTextureFormat::astc_10x8_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B10x8,
+      },
       GPUTextureFormat::astc_10x10_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B10x10,
       },
       GPUTextureFormat::astc_10x10_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
+        block: CanvasAstcBlock::B10x10,
+      },
+      GPUTextureFormat::astc_10x10_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
         block: CanvasAstcBlock::B10x10,
       },
       GPUTextureFormat::astc_12x10_unorm => CanvasGPUTextureFormat::Astc {
@@ -827,6 +1064,10 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B12x10,
       },
+      GPUTextureFormat::astc_12x10_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B12x10,
+      },
       GPUTextureFormat::astc_12x12_unorm => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::Unorm,
         block: CanvasAstcBlock::B12x12,
@@ -834,6 +1075,174 @@ impl Into<CanvasGPUTextureFormat> for GPUTextureFormat {
       GPUTextureFormat::astc_12x12_unorm_srgb => CanvasGPUTextureFormat::Astc {
         channel: CanvasAstcChannel::UnormSrgb,
         block: CanvasAstcBlock::B12x12,
+      },
+      GPUTextureFormat::astc_12x12_hdr => CanvasGPUTextureFormat::Astc {
+        channel: CanvasAstcChannel::Hdr,
+        block: CanvasAstcBlock::B12x12,
+      },
+    }
+  }
+}
+
+impl From<CanvasGPUTextureFormat> for GPUTextureFormat {
+  fn from(value: CanvasGPUTextureFormat) -> GPUTextureFormat {
+    match value {
+      CanvasGPUTextureFormat::R8Unorm => GPUTextureFormat::r8unorm,
+      CanvasGPUTextureFormat::R8Snorm => GPUTextureFormat::r8snorm,
+      CanvasGPUTextureFormat::R8Uint => GPUTextureFormat::r8uint,
+      CanvasGPUTextureFormat::R8Sint => GPUTextureFormat::r8sint,
+      CanvasGPUTextureFormat::R16Uint => GPUTextureFormat::r16uint,
+      CanvasGPUTextureFormat::R16Sint => GPUTextureFormat::r16sint,
+      CanvasGPUTextureFormat::R16Float => GPUTextureFormat::r16float,
+      CanvasGPUTextureFormat::Rg8Unorm => GPUTextureFormat::rg8unorm,
+      CanvasGPUTextureFormat::Rg8Snorm => GPUTextureFormat::rg8snorm,
+      CanvasGPUTextureFormat::Rg8Uint => GPUTextureFormat::rg8uint,
+      CanvasGPUTextureFormat::Rg8Sint => GPUTextureFormat::rg8sint,
+      CanvasGPUTextureFormat::R32Uint => GPUTextureFormat::r32uint,
+      CanvasGPUTextureFormat::R32Sint => GPUTextureFormat::r32sint,
+      CanvasGPUTextureFormat::R32Float => GPUTextureFormat::r32float,
+      CanvasGPUTextureFormat::Rg16Uint => GPUTextureFormat::rg16uint,
+      CanvasGPUTextureFormat::Rg16Sint => GPUTextureFormat::rg16sint,
+      CanvasGPUTextureFormat::Rg16Float => GPUTextureFormat::rg16float,
+      CanvasGPUTextureFormat::Rgba8Unorm => GPUTextureFormat::rgba8unorm,
+      CanvasGPUTextureFormat::Rgba8UnormSrgb => GPUTextureFormat::rgba8unorm_srgb,
+      CanvasGPUTextureFormat::Rgba8Snorm => GPUTextureFormat::rgba8snorm,
+      CanvasGPUTextureFormat::Rgba8Uint => GPUTextureFormat::rgba8uint,
+      CanvasGPUTextureFormat::Rgba8Sint => GPUTextureFormat::rgba8sint,
+      CanvasGPUTextureFormat::Bgra8Unorm => GPUTextureFormat::bgra8unorm,
+      CanvasGPUTextureFormat::Bgra8UnormSrgb => GPUTextureFormat::bgra8unorm_srgb,
+      CanvasGPUTextureFormat::Rgb9e5Ufloat => GPUTextureFormat::rgb9e5ufloat,
+      CanvasGPUTextureFormat::Rgb10a2Uint => GPUTextureFormat::rgb10a2uint,
+      CanvasGPUTextureFormat::Rgb10a2Unorm => GPUTextureFormat::rgb10a2unorm,
+      CanvasGPUTextureFormat::Rg11b10UFloat => GPUTextureFormat::rg11b10ufloat,
+      CanvasGPUTextureFormat::Rg32Uint => GPUTextureFormat::rg32uint,
+      CanvasGPUTextureFormat::Rg32Sint => GPUTextureFormat::rg32sint,
+      CanvasGPUTextureFormat::Rg32Float => GPUTextureFormat::rg32float,
+      CanvasGPUTextureFormat::Rgba16Uint => GPUTextureFormat::rgba16uint,
+      CanvasGPUTextureFormat::Rgba16Sint => GPUTextureFormat::rgba16sint,
+      CanvasGPUTextureFormat::Rgba16Float => GPUTextureFormat::rgba16float,
+      CanvasGPUTextureFormat::Rgba32Uint => GPUTextureFormat::rgba32uint,
+      CanvasGPUTextureFormat::Rgba32Sint => GPUTextureFormat::rgba32sint,
+      CanvasGPUTextureFormat::Rgba32Float => GPUTextureFormat::rgba32float,
+      CanvasGPUTextureFormat::R16Unorm => GPUTextureFormat::r16unorm,
+      CanvasGPUTextureFormat::R16Snorm => GPUTextureFormat::r16snorm,
+      CanvasGPUTextureFormat::Rg16Unorm => GPUTextureFormat::rg16unorm,
+      CanvasGPUTextureFormat::Rg16Snorm => GPUTextureFormat::rg16snorm,
+      CanvasGPUTextureFormat::Rgba16Unorm => GPUTextureFormat::rgba16unorm,
+      CanvasGPUTextureFormat::Rgba16Snorm => GPUTextureFormat::rgba16snorm,
+      CanvasGPUTextureFormat::NV12 => GPUTextureFormat::nv12,
+      CanvasGPUTextureFormat::Stencil8 => GPUTextureFormat::stencil8,
+      CanvasGPUTextureFormat::Depth16Unorm => GPUTextureFormat::depth16unorm,
+      CanvasGPUTextureFormat::Depth24Plus => GPUTextureFormat::depth24plus,
+      CanvasGPUTextureFormat::Depth24PlusStencil8 => GPUTextureFormat::depth24plus_stencil8,
+      CanvasGPUTextureFormat::Depth32Float => GPUTextureFormat::depth32float,
+      CanvasGPUTextureFormat::Depth32FloatStencil8 => GPUTextureFormat::depth32float_stencil8,
+      CanvasGPUTextureFormat::Bc1RgbaUnorm => GPUTextureFormat::bc1_rgba_unorm,
+      CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => GPUTextureFormat::bc1_rgba_unorm_srgb,
+      CanvasGPUTextureFormat::Bc2RgbaUnorm => GPUTextureFormat::bc2_rgba_unorm,
+      CanvasGPUTextureFormat::Bc2RgbaUnormSrgb => GPUTextureFormat::bc2_rgba_unorm_srgb,
+      CanvasGPUTextureFormat::Bc3RgbaUnorm => GPUTextureFormat::bc3_rgba_unorm,
+      CanvasGPUTextureFormat::Bc3RgbaUnormSrgb => GPUTextureFormat::bc3_rgba_unorm_srgb,
+      CanvasGPUTextureFormat::Bc4RUnorm => GPUTextureFormat::bc4_r_unorm,
+      CanvasGPUTextureFormat::Bc4RSnorm => GPUTextureFormat::bc4_r_snorm,
+      CanvasGPUTextureFormat::Bc5RgUnorm => GPUTextureFormat::bc5_rg_unorm,
+      CanvasGPUTextureFormat::Bc5RgSnorm => GPUTextureFormat::bc5_rg_snorm,
+      CanvasGPUTextureFormat::Bc6hRgbUfloat => GPUTextureFormat::bc6h_rgb_ufloat,
+      CanvasGPUTextureFormat::Bc6hRgbFloat => GPUTextureFormat::bc6h_rgb_float,
+      CanvasGPUTextureFormat::Bc7RgbaUnorm => GPUTextureFormat::bc7_rgba_unorm,
+      CanvasGPUTextureFormat::Bc7RgbaUnormSrgb => GPUTextureFormat::bc7_rgba_unorm_srgb,
+      CanvasGPUTextureFormat::Etc2Rgb8Unorm => GPUTextureFormat::etc2_rgb8unorm,
+      CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb => GPUTextureFormat::etc2_rgb8unorm_srgb,
+      CanvasGPUTextureFormat::Etc2Rgb8A1Unorm => GPUTextureFormat::etc2_rgb8a1unorm,
+      CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb => GPUTextureFormat::etc2_rgb8a1unorm_srgb,
+      CanvasGPUTextureFormat::Etc2Rgba8Unorm => GPUTextureFormat::etc2_rgba8unorm,
+      CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb => GPUTextureFormat::etc2_rgba8unorm_srgb,
+      CanvasGPUTextureFormat::EacR11Unorm => GPUTextureFormat::eac_r11unorm,
+      CanvasGPUTextureFormat::EacR11Snorm => GPUTextureFormat::eac_r11snorm,
+      CanvasGPUTextureFormat::EacRg11Unorm => GPUTextureFormat::eac_rg11unorm,
+      CanvasGPUTextureFormat::EacRg11Snorm => GPUTextureFormat::eac_rg11snorm,
+      CanvasGPUTextureFormat::Astc { channel, block } => match (channel, block) {
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B4x4) => GPUTextureFormat::astc_4x4_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B4x4) => {
+          GPUTextureFormat::astc_4x4_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B4x4) => GPUTextureFormat::astc_4x4_hdr,
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B5x4) => GPUTextureFormat::astc_5x4_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B5x4) => {
+          GPUTextureFormat::astc_5x4_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B5x4) => GPUTextureFormat::astc_5x4_hdr,
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B5x5) => GPUTextureFormat::astc_5x5_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B5x5) => {
+          GPUTextureFormat::astc_5x5_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B5x5) => GPUTextureFormat::astc_5x5_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B6x5) => GPUTextureFormat::astc_6x5_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B6x5) => {
+          GPUTextureFormat::astc_6x5_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B6x5) => GPUTextureFormat::astc_6x5_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B6x6) => GPUTextureFormat::astc_6x6_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B6x6) => {
+          GPUTextureFormat::astc_6x6_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B6x6) => GPUTextureFormat::astc_6x6_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B8x5) => GPUTextureFormat::astc_8x5_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B8x5) => {
+          GPUTextureFormat::astc_8x5_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B8x5) => GPUTextureFormat::astc_8x5_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B8x6) => GPUTextureFormat::astc_8x6_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B8x6) => {
+          GPUTextureFormat::astc_8x6_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B8x6) => GPUTextureFormat::astc_8x6_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B8x8) => GPUTextureFormat::astc_8x8_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B8x8) => {
+          GPUTextureFormat::astc_8x8_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B8x8) => GPUTextureFormat::astc_8x8_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B10x5) => GPUTextureFormat::astc_10x5_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B10x5) => {
+          GPUTextureFormat::astc_10x5_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B10x5) => GPUTextureFormat::astc_10x5_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B10x6) => GPUTextureFormat::astc_10x6_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B10x6) => {
+          GPUTextureFormat::astc_10x6_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B10x6) => GPUTextureFormat::astc_10x6_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B10x8) => GPUTextureFormat::astc_10x8_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B10x8) => {
+          GPUTextureFormat::astc_10x8_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B10x8) => GPUTextureFormat::astc_10x8_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B10x10) => GPUTextureFormat::astc_10x10_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B10x10) => {
+          GPUTextureFormat::astc_10x10_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B10x10) => GPUTextureFormat::astc_10x10_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B12x10) => GPUTextureFormat::astc_12x10_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B12x10) => {
+          GPUTextureFormat::astc_12x10_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B12x10) => GPUTextureFormat::astc_12x10_hdr,
+
+        (CanvasAstcChannel::Unorm, CanvasAstcBlock::B12x12) => GPUTextureFormat::astc_12x12_unorm,
+        (CanvasAstcChannel::UnormSrgb, CanvasAstcBlock::B12x12) => {
+          GPUTextureFormat::astc_12x12_unorm_srgb
+        }
+        (CanvasAstcChannel::Hdr, CanvasAstcBlock::B12x12) => GPUTextureFormat::astc_12x12_hdr,
       },
     }
   }

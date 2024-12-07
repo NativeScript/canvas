@@ -19,42 +19,6 @@ export interface GpuCanvasContextConfigOptions {
 	presentMode?: GPUCanvasPresentMode;
 	size?: Array<number> | GPUExtent3DDict;
 }
-export interface GPUSupportedLimits {
-	maxTextureDimension1D: number;
-	maxTextureDimension2D: number;
-	maxTextureDimension3D: number;
-	maxTextureArrayLayers: number;
-	maxBindGroups: number;
-	maxBindingsPerBindGroup: number;
-	maxDynamicUniformBuffersPerPipelineLayout: number;
-	maxDynamicStorageBuffersPerPipelineLayout: number;
-	maxSampledTexturesPerShaderStage: number;
-	maxSamplersPerShaderStage: number;
-	maxStorageBuffersPerShaderStage: number;
-	maxStorageTexturesPerShaderStage: number;
-	maxUniformBuffersPerShaderStage: number;
-	maxUniformBufferBindingSize: number;
-	maxStorageBufferBindingSize: number;
-	maxVertexBuffers: number;
-	maxBufferSize: number;
-	maxVertexAttributes: number;
-	maxVertexBufferArrayStride: number;
-	minUniformBufferOffsetAlignment: number;
-	minStorageBufferOffsetAlignment: number;
-	maxInterStageShaderComponents: number;
-	maxColorAttachments: number;
-	maxColorAttachmentBytesPerSample: number;
-	maxComputeWorkgroupStorageSize: number;
-	maxComputeInvocationsPerWorkgroup: number;
-	maxComputeWorkgroupSizeX: number;
-	maxComputeWorkgroupSizeY: number;
-	maxComputeWorkgroupSizeZ: number;
-	maxComputeWorkgroupsPerDimension: number;
-	minSubgroupSize: number;
-	maxSubgroupSize: number;
-	maxPushConstantSize: number;
-	maxNonSamplerBindings: number;
-}
 export interface DefaultQueue {
 	label?: string;
 }
@@ -77,6 +41,46 @@ export interface GPUDeviceDescriptor {
 	requiredFeatures?: Array<GPUFeatureName>;
 	requiredLimits?: GPUSupportedLimits;
 }
+export const enum GPUErrorFilter {
+	validation = 'validation',
+	outOfMemory = 'out-of-memory',
+	internal = 'internal',
+}
+export const enum GPUTextureSampleType {
+	float = 'float',
+	unfilterableFloat = 'unfilterable-float',
+	depth = 'depth',
+	sint = 'sint',
+	uint = 'uint',
+}
+export const enum GPUTextureViewDimension {
+	d1 = '1d',
+	d2 = '2d',
+	array2d = '2d-array',
+	cube = 'cube',
+	cubeArray = 'cube-array',
+	d3 = '3d',
+}
+export const enum GPUStorageTextureAccess {
+	writeOnly = 'write-only',
+	readOnly = 'read-only',
+	readWrite = 'read-write',
+}
+export const enum GPUSamplerBindingType {
+	filtering = 'filtering',
+	nonFiltering = 'non-filtering',
+	comparison = 'comparison',
+}
+export const enum GPUBufferBindingType {
+	uniform = 'uniform',
+	storage = 'storage',
+	readOnlyStorage = 'read-only-storage',
+}
+export const enum GPUTextureDimension {
+	d1 = '1d',
+	d2 = '2d',
+	d3 = '2d',
+}
 export const enum GPUTextureAspect {
 	all = 'all',
 	stencilOnly = 'stencil-only',
@@ -90,7 +94,7 @@ export const enum GPULoadOp {
 	load = 'load',
 	clear = 'clear',
 }
-export const enum GPULoadOp {
+export const enum GPUStoreOp {
 	store = 'store',
 	discard = 'discard',
 }
@@ -222,18 +226,22 @@ export const enum GPUCanvasPresentMode {
 	immediate = 'immediate',
 	mailbox = 'mailbox',
 }
-export const enum GPUFeatureName {
+export const enum GPUTextureFormat {
 	r8unorm = 'r8unorm',
 	r8snorm = 'r8snorm',
 	r8uint = 'r8uint',
 	r8sint = 'r8sint',
 	r16uint = 'r16uint',
 	r16sint = 'r16sint',
+	r16unorm = 'r16unorm',
+	r16snorm = 'r16snorm',
 	r16float = 'r16float',
 	rg8unorm = 'rg8unorm',
 	rg8snorm = 'rg8snorm',
 	rg8uint = 'rg8uint',
 	rg8sint = 'rg8sint',
+	rg16unorm = 'rg16unorm',
+	rg16snorm = 'rg16snorm',
 	r32uint = 'r32uint',
 	r32sint = 'r32sint',
 	r32float = 'r32float',
@@ -256,11 +264,14 @@ export const enum GPUFeatureName {
 	rg32float = 'rg32float',
 	rgba16uint = 'rgba16uint',
 	rgba16sint = 'rgba16sint',
+	rgba16unorm = 'rgba16unorm',
+	rgba16snorm = 'rgba16snorm',
 	rgba16float = 'rgba16float',
 	rgba32uint = 'rgba32uint',
 	rgba32sint = 'rgba32sint',
 	rgba32float = 'rgba32float',
 	stencil8 = 'stencil8',
+	nv12 = 'nv12',
 	depth16unorm = 'depth16unorm',
 	depth24plus = 'depth24plus',
 	depth24plus_stencil8 = 'depth24plus_stencil8',
@@ -292,32 +303,145 @@ export const enum GPUFeatureName {
 	eac_rg11snorm = 'eac-rg11snorm',
 	astc_4x4_unorm = 'astc-4x4-unorm',
 	astc_4x4_unorm_srgb = 'astc-4x4-unorm-srgb',
+	astc_4x4_hdr = 'astc-4x4-hdr',
 	astc_5x4_unorm = 'astc-5x4-unorm',
 	astc_5x4_unorm_srgb = 'astc-5x4-unorm-srgb',
+	astc_5x4_hdr = 'astc-5x4-hdr',
 	astc_5x5_unorm = 'astc-5x5-unorm',
 	astc_5x5_unorm_srgb = 'astc-5x5-unorm-srgb',
+	astc_5x5_hdr = 'astc-5x5-hdr',
 	astc_6x5_unorm = 'astc-6x5-unorm',
 	astc_6x5_unorm_srgb = 'astc-6x5-unorm-srgb',
+	astc_6x5_hdr = 'astc-6x5-hdr',
 	astc_6x6_unorm = 'astc-6x6-unorm',
 	astc_6x6_unorm_srgb = 'astc-6x6-unorm-srgb',
+	astc_6x6_hdr = 'astc-6x6-hdr',
 	astc_8x5_unorm = 'astc-8x5-unorm',
 	astc_8x5_unorm_srgb = 'astc-8x5-unorm-srgb',
+	astc_8x5_hdr = 'astc-8x5-hdr',
 	astc_8x6_unorm = 'astc-8x6-unorm',
 	astc_8x6_unorm_srgb = 'astc-8x6-unorm-srgb',
+	astc_8x6_hdr = 'astc-8x6-hdr',
 	astc_8x8_unorm = 'astc-8x8-unorm',
 	astc_8x8_unorm_srgb = 'astc-8x8-unorm-srgb',
+	astc_8x8_hdr = 'astc-8x8-hdr',
 	astc_10x5_unorm = 'astc-10x5-unorm',
 	astc_10x5_unorm_srgb = 'astc-10x5-unorm-srgb',
+	astc_10x5_hdr = 'astc-10x5-hdr',
 	astc_10x6_unorm = 'astc-10x6-unorm',
 	astc_10x6_unorm_srgb = 'astc-10x6-unorm-srgb',
+	astc_10x6_hdr = 'astc-10x6-hdr',
 	astc_10x8_unorm = 'astc-10x8-unorm',
 	astc_10x8_unorm_srgb = 'astc-10x8-unorm-srgb',
+	astc_10x8_hdr = 'astc-10x8-hdr',
 	astc_10x10_unorm = 'astc-10x10-unorm',
 	astc_10x10_unorm_srgb = 'astc-10x10-unorm-srgb',
+	astc_10x10_hdr = 'astc-10x10-hdr',
 	astc_12x10_unorm = 'astc-12x10-unorm',
 	astc_12x10_unorm_srgb = 'astc-12x10-unorm-srgb',
+	astc_12x10_hdr = 'astc-12x10-hdr',
 	astc_12x12_unorm = 'astc-12x12-unorm',
 	astc_12x12_unorm_srgb = 'astc-12x12-unorm-srgb',
+	astc_12x12_hdr = 'astc-12x12-hdr',
+}
+export interface GPUProgrammableStage {
+	constants?: Record<string, number>;
+	entryPoint?: string;
+	module: g_p_u_shader_module;
+}
+export interface GPUComputePipelineDescriptor {
+	label?: string;
+	compute: GPUProgrammableStage;
+	layout: g_p_u_pipeline_layout | GPUPipelineLayoutAuto;
+}
+export interface GPUBufferDescriptor {
+	label?: string;
+	mappedAtCreation?: boolean;
+	size: number;
+	usage: number;
+}
+export interface GPUBufferBinding {
+	buffer: g_p_u_buffer;
+	offset?: number;
+	size?: number;
+}
+export interface GPUTextureBindingLayout {
+	multisampled?: boolean;
+	sampleType?: GPUTextureSampleType;
+	viewDimension?: GPUTextureViewDimension;
+}
+export interface GPUStorageTextureBindingLayout {
+	access?: GPUStorageTextureAccess;
+	format: GPUTextureFormat;
+	viewDimension?: GPUTextureViewDimension;
+}
+export interface GPUSamplerBindingLayout {
+	type?: GPUSamplerBindingType;
+}
+export interface GPUExternalTextureBindingLayout {}
+export interface GPUBufferBindingLayout {
+	hasDynamicOffset?: boolean;
+	minBindingSize?: number;
+	type?: GPUBufferBindingType;
+}
+export interface GPUBindGroupLayoutEntry {
+	label?: string;
+	binding: number;
+	buffer?: GPUBufferBindingLayout;
+	externalTexture?: GPUExternalTextureBindingLayout;
+	sampler?: GPUSamplerBindingLayout;
+	storageTexture?: GPUStorageTextureBindingLayout;
+	texture?: GPUTextureBindingLayout;
+	visibility: number;
+}
+export interface GPUBindGroupLayoutDescriptor {
+	label?: string;
+	entries: Array<GPUBindGroupLayoutEntry>;
+}
+export interface GPUBindGroupEntry {
+	binding: number;
+	resource: g_p_u_sampler | GPUTextureView | GPUBufferBinding;
+}
+export interface GPUBindGroupDescriptor {
+	entries: Array<GPUBindGroupEntry>;
+	label?: string;
+	layout: g_p_u_bind_group_layout;
+}
+export interface GPUSupportedLimits {
+	maxTextureDimension1D: number;
+	maxTextureDimension2D: number;
+	maxTextureDimension3D: number;
+	maxTextureArrayLayers: number;
+	maxBindGroups: number;
+	maxBindingsPerBindGroup: number;
+	maxDynamicUniformBuffersPerPipelineLayout: number;
+	maxDynamicStorageBuffersPerPipelineLayout: number;
+	maxSampledTexturesPerShaderStage: number;
+	maxSamplersPerShaderStage: number;
+	maxStorageBuffersPerShaderStage: number;
+	maxStorageTexturesPerShaderStage: number;
+	maxUniformBuffersPerShaderStage: number;
+	maxUniformBufferBindingSize: number;
+	maxStorageBufferBindingSize: number;
+	maxVertexBuffers: number;
+	maxBufferSize: number;
+	maxVertexAttributes: number;
+	maxVertexBufferArrayStride: number;
+	minUniformBufferOffsetAlignment: number;
+	minStorageBufferOffsetAlignment: number;
+	maxInterStageShaderComponents: number;
+	maxColorAttachments: number;
+	maxColorAttachmentBytesPerSample: number;
+	maxComputeWorkgroupStorageSize: number;
+	maxComputeInvocationsPerWorkgroup: number;
+	maxComputeWorkgroupSizeX: number;
+	maxComputeWorkgroupSizeY: number;
+	maxComputeWorkgroupSizeZ: number;
+	maxComputeWorkgroupsPerDimension: number;
+	minSubgroupSize: number;
+	maxSubgroupSize: number;
+	maxPushConstantSize: number;
+	maxNonSamplerBindings: number;
 }
 export interface GpuImageCopyBuffer {
 	buffer: g_p_u_buffer;
@@ -356,18 +480,18 @@ export interface GpuRenderPassColorAttachment {
 	depthSlice?: number;
 	loadOp: GPULoadOp;
 	resolveTarget?: GPUTextureView;
-	storeOp: GPULoadOp;
+	storeOp: GPUStoreOp;
 	view: GPUTextureView;
 }
 export interface GpuRenderPassDepthStencilAttachment {
 	depthClearValue?: number;
 	depthLoadOp: GPULoadOp;
 	depthReadOnly?: boolean;
-	depthStoreOp: GPULoadOp;
+	depthStoreOp: GPUStoreOp;
 	stencilClearValue?: number;
 	stencilLoadOp?: GPULoadOp;
 	stencilReadOnly?: boolean;
-	stencilStoreOp?: GPULoadOp;
+	stencilStoreOp?: GPUStoreOp;
 	view: GPUTextureView;
 }
 export interface GpuRenderPassTimestampWrites {
@@ -407,7 +531,7 @@ export interface GpuDepthStencilState {
 	depthBiasSlopeScale?: number;
 	depthCompare?: GPUCompareFunction;
 	depthWriteEnabled?: boolean;
-	format: GPUFeatureName;
+	format: GPUTextureFormat;
 	stencilBack?: GpuStencilFaceState;
 	stencilFront?: GpuStencilFaceState;
 	stencilReadMask?: number;
@@ -424,7 +548,7 @@ export interface GpuBlendState {
 }
 export interface GpuColorTargetState {
 	blend?: GpuBlendState;
-	format: GPUFeatureName;
+	format: GPUTextureFormat;
 	writeMask?: number;
 }
 export interface GpuFragmentState {
@@ -499,6 +623,7 @@ export declare class GPUCanvasContext {
 	static withView(gpu: g_p_u, view: number, width: number, height: number): GPUCanvasContext;
 	resize(layer: number, width: number, height: number): void;
 	configure(options: GpuCanvasContextConfigOptions): void;
+	unconfigure(): void;
 	getCurrentTexture(): g_p_u_texture | null;
 	getCapabilities(adapter: g_p_u_adapter): CanvasSurfaceCapabilities;
 	toDataURL(format?: string | undefined | null, encoderOptions?: number | undefined | null): string;
@@ -524,13 +649,31 @@ export declare class GPUBindGroup {
 }
 export type g_p_u_device = GPUDevice;
 export declare class GPUDevice {
+	get label(): string;
+	get limits(): GPUSupportedLimits;
+	get features(): Array<string>;
+	createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
+	createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): g_p_u_bind_group_layout;
+	createBuffer(descriptor: GPUBufferDescriptor): g_p_u_buffer;
+	createCommandEncoder(descriptor: GPUCommandEncoderDescriptor): GPUCommandEncoder;
+	createComputePipeline(descriptor: GPUComputePipelineDescriptor): g_p_u_compute_pipeline;
 	createRenderPipeline(descriptor: GPURenderPipelineDescriptor): g_p_u_render_pipeline;
 	createShaderModule(descriptor: GPUShaderModuleDescriptor): g_p_u_shader_module;
-	createCommandEncoder(descriptor: GPUCommandEncoderDescriptor): GPUCommandEncoder;
+	destroy(): void;
+	pushErrorScope(filter: GPUErrorFilter): void;
 }
 export type g_p_u_texture = GPUTexture;
 export declare class GPUTexture {
 	get label(): string;
+	get depthOrArrayLayers(): number;
+	get dimension(): GPUTextureDimension;
+	get format(): GPUTextureFormat;
+	get mipLevelCount(): number;
+	get sampleCount(): number;
+	get width(): number;
+	get height(): number;
+	get usage(): number;
+	destroy(): void;
 }
 export type g_p_u_shader_module = GPUShaderModule;
 export declare class GPUShaderModule {
@@ -584,10 +727,12 @@ export declare class GPUComputePipeline {
 }
 export declare class GPURenderBundle {}
 export declare class GPURenderBundleEncoder {}
-export type g_p_u_sample = GPUSample;
-export declare class GPUSample {
+export type g_p_u_sampler = GPUSampler;
+export declare class GPUSampler {
 	get label(): string;
 }
+export type g_p_u_external_texture = GPUExternalTexture;
+export declare class GPUExternalTexture {}
 export type g_p_u = GPU;
 export declare class GPU {
 	static getInstance(): GPU;
@@ -1241,9 +1386,9 @@ export declare class WebGLRenderingContext {
 }
 export declare class WebGLQuery {}
 export declare class WebGLSampler {}
+export declare class WebGLSync {}
 export declare class WebGLTransformFeedback {}
 export declare class WebGLVertexArrayObject {}
-export declare class WebGLSync {}
 export type web_g_l_2_rendering_context = WebGL2RenderingContext;
 export declare class WebGL2RenderingContext {
 	render(): void;
@@ -1414,7 +1559,7 @@ export declare class WebGL2RenderingContext {
 	deleteTransformFeedback(transformFeedback: WebGLTransformFeedback): void;
 	deleteVertexArray(vertexArray: WebGLVertexArrayObject): void;
 	drawArraysInstanced(mode: number, first: number, count: number, instanceCount: number): void;
-	drawBuffers(buffers: Uint32Array): void;
+	drawBuffers(buffers: Array<number>): void;
 	drawElementsInstanced(mode: number, count: number, type: number, offset: number, instanceCount: number): void;
 	drawRangeElements(mode: number, start: number, end: number, count: number, type: number, offset: number): void;
 	endQuery(target: number): void;
@@ -1423,7 +1568,7 @@ export declare class WebGL2RenderingContext {
 	framebufferTextureLayer(target: number, attachment: number, texture: WebGLTexture, level: number, layer: number): void;
 	getActiveUniformBlockName(program: WebGLProgram, uniformBlockIndex: number): string;
 	getActiveUniformBlockParameter(program: WebGLProgram, uniformBlockIndex: number, pname: number): unknown;
-	getActiveUniforms(program: WebGLProgram, uniformIndices: Uint32Array, pname: number): unknown;
+	getActiveUniforms(program: WebGLProgram, uniformIndices: Array<number>, pname: number): unknown;
 	getBufferSubData(target: number, srcByteOffset: number, dstData: Buffer, dstOffset?: number | undefined | null, length?: number | undefined | null): void;
 	getFragDataLocation(program: WebGLProgram, name: string): number | null;
 	getIndexedParameter(target: number, index: number): unknown;
@@ -1436,8 +1581,8 @@ export declare class WebGL2RenderingContext {
 	getTransformFeedbackVarying(program: WebGLProgram, index: number): WebGLActiveInfo | null;
 	getUniformBlockIndex(program: WebGLProgram, uniformBlockName: string): number;
 	getUniformIndices(program: WebGLProgram, uniformNames: Array<string>): Array<number>;
-	invalidateFramebuffer(target: number, attachments: Uint32Array): void;
-	invalidateSubFramebuffer(target: number, attachments: Uint32Array, x: number, y: number, width: number, height: number): void;
+	invalidateFramebuffer(target: number, attachments: Array<number>): void;
+	invalidateSubFramebuffer(target: number, attachments: Array<number>, x: number, y: number, width: number, height: number): void;
 	isQuery(query: WebGLQuery): boolean;
 	isSampler(sampler: WebGLSampler): boolean;
 	isSync(sync: WebGLSync): boolean;
@@ -1455,13 +1600,13 @@ export declare class WebGL2RenderingContext {
 	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: number | Buffer | CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext, srcOffset?: number | undefined | null): void;
 	transformFeedbackVaryings(program: WebGLProgram, varyings: Array<string>, bufferMode: number): void;
 	uniform1ui(location: WebGLUniformLocation, v0: number): void;
-	uniform1uiv(location: WebGLUniformLocation, data: Uint32Array | Uint32Array): void;
+	uniform1uiv(location: WebGLUniformLocation, data: Array<number> | Uint32Array): void;
 	uniform2ui(location: WebGLUniformLocation, v0: number, v1: number): void;
-	uniform2uiv(location: WebGLUniformLocation, data: Uint32Array | Uint32Array): void;
+	uniform2uiv(location: WebGLUniformLocation, data: Array<number> | Uint32Array): void;
 	uniform3ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number): void;
-	uniform3uiv(location: WebGLUniformLocation, data: Uint32Array | Uint32Array): void;
+	uniform3uiv(location: WebGLUniformLocation, data: Array<number> | Uint32Array): void;
 	uniform4ui(location: WebGLUniformLocation, v0: number, v1: number, v2: number, v3: number): void;
-	uniform4uiv(location: WebGLUniformLocation, data: Uint32Array | Uint32Array): void;
+	uniform4uiv(location: WebGLUniformLocation, data: Array<number> | Uint32Array): void;
 	uniformBlockBinding(program: WebGLProgram, uniformBlockIndex: number, uniformBlockBinding: number): void;
 	uniformMatrix2x3fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void;
 	uniformMatrix2x4fv(location: WebGLUniformLocation, transpose: boolean, data: Float32Array): void;
@@ -1472,8 +1617,8 @@ export declare class WebGL2RenderingContext {
 	vertexAttribDivisor(index: number, divisor: number): void;
 	vertexAttribI4i(index: number, v0: number, v1: number, v2: number, v3: number): void;
 	vertexAttribI4ui(index: number, v0: number, v1: number, v2: number, v3: number): void;
-	vertexAttribI4iv(index: number, value: Int32Array | Int32Array): void;
-	vertexAttribI4uiv(index: number, value: Uint32Array | Uint32Array): void;
+	vertexAttribI4iv(index: number, value: Array<number> | Int32Array): void;
+	vertexAttribI4uiv(index: number, value: Array<number> | Uint32Array): void;
 	get DEPTH_BUFFER_BIT(): number;
 	get STENCIL_BUFFER_BIT(): number;
 	get COLOR_BUFFER_BIT(): number;

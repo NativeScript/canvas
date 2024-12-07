@@ -1,15 +1,32 @@
-use crate::gpu::adapter::GPUSupportedLimits;
+use crate::gpu::bind_group::g_p_u_bind_group;
+use crate::gpu::bind_group_layout::g_p_u_bind_group_layout;
+use crate::gpu::buffer::g_p_u_buffer;
 use crate::gpu::command_encoder::GPUCommandEncoder;
+use crate::gpu::compute_pipeline::g_p_u_compute_pipeline;
+use crate::gpu::enums::{
+  GPUBufferBindingType, GPUErrorFilter, GPUSamplerBindingType,
+  GPUStorageTextureAccess, GPUTextureViewDimension,
+};
 use crate::gpu::objects::{
-  GPUCommandEncoderDescriptor, GPURenderPipelineDescriptor, GPUShaderModuleDescriptor,
+  GPUBindGroupDescriptor, GPUBindGroupLayoutDescriptor, GPUBufferDescriptor,
+  GPUCommandEncoderDescriptor, GPUComputePipelineDescriptor, GPURenderPipelineDescriptor,
+  GPUShaderModuleDescriptor, GPUSupportedLimits,
 };
 use crate::gpu::render_pipeline::g_p_u_render_pipeline;
 use crate::gpu::shader_module::g_p_u_shader_module;
-use canvas_c::webgpu::enums::CanvasVertexStepMode;
-use canvas_c::webgpu::gpu_device::CanvasGPUAutoLayoutMode;
+use canvas_c::webgpu::enums::{
+  CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry,
+  CanvasBindingType, CanvasBufferBinding, CanvasBufferBindingLayout, CanvasSamplerBindingLayout,
+  CanvasStorageTextureBindingLayout, CanvasTextureBindingLayout, CanvasTextureSampleType,
+  CanvasTextureViewDimension, CanvasVertexStepMode,
+};
+use canvas_c::webgpu::gpu_device::{
+  CanvasConstants, CanvasGPUAutoLayoutMode, CanvasGPUPipelineLayoutOrGPUAutoLayoutMode,
+  CanvasProgrammableStage,
+};
 use canvas_c::webgpu::gpu_supported_limits::CanvasGPUSupportedLimits;
 use canvas_c::webgpu::structs::CanvasVertexAttribute;
-use napi::bindgen_prelude::{ClassInstance, ObjectFinalize};
+use napi::bindgen_prelude::{ClassInstance, Either3, ObjectFinalize};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::{CStr, CString};
@@ -30,6 +47,289 @@ struct CanvasGPUVertexBufferLayout {
 
 #[napi]
 impl g_p_u_device {
+  #[napi(getter)]
+  pub fn get_label(&self) -> String {
+    let label = unsafe {
+      canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_label(Arc::as_ptr(&self.device))
+    };
+    if label.is_null() {
+      return String::new();
+    }
+    unsafe { CString::from_raw(label).into_string().unwrap() }
+  }
+
+  // #[napi(getter)]
+  pub fn get_lost(&self, env: Env) {}
+
+  #[napi(getter)]
+  pub fn get_limits(&self) -> GPUSupportedLimits {
+    let limits = unsafe {
+      *Box::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_limits(Arc::as_ptr(
+          &self.device,
+        )),
+      )
+    };
+
+    GPUSupportedLimits::from(limits)
+  }
+
+  #[napi(getter)]
+  pub fn get_features(&self) -> Vec<String> {
+    // todo use hashset after updating
+    unsafe {
+      *Box::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_features(Arc::as_ptr(
+          &self.device,
+        )),
+      )
+    }
+    .into()
+  }
+
+  #[napi]
+  pub fn create_bind_group(&self, descriptor: GPUBindGroupDescriptor) -> g_p_u_bind_group {
+    let label = descriptor.label.map(|l| CString::new(l).unwrap());
+    let label_ptr = match label.as_ref() {
+      None => std::ptr::null(),
+      Some(l) => l.as_ptr(),
+    };
+
+    let entries = descriptor
+      .entries
+      .iter()
+      .map(|entry| match &entry.resource {
+        Either3::A(sampler) => CanvasBindGroupEntry {
+          binding: entry.binding,
+          resource: CanvasBindGroupEntryResource::Sampler(Arc::as_ptr(&sampler.sampler)),
+        },
+        Either3::B(texture_view) => CanvasBindGroupEntry {
+          binding: entry.binding,
+          resource: CanvasBindGroupEntryResource::TextureView(Arc::as_ptr(
+            &texture_view.texture_view,
+          )),
+        },
+        Either3::C(buffer) => CanvasBindGroupEntry {
+          binding: entry.binding,
+          resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
+            buffer: Arc::as_ptr(&buffer.buffer.buffer),
+            offset: buffer.offset.unwrap_or(-1),
+            size: buffer.size.unwrap_or(-1),
+          }),
+        },
+      })
+      .collect::<Vec<_>>();
+
+    let bind_group = unsafe {
+      canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
+        Arc::as_ptr(&self.device),
+        label_ptr,
+        Arc::as_ptr(&descriptor.layout.layout),
+        entries.as_ptr(),
+        entries.len(),
+      )
+    };
+
+    g_p_u_bind_group {
+      group: unsafe { Arc::from_raw(bind_group) },
+    }
+  }
+
+  #[napi]
+  pub fn create_bind_group_layout(
+    &self,
+    descriptor: GPUBindGroupLayoutDescriptor,
+  ) -> g_p_u_bind_group_layout {
+    let label = descriptor.label.map(|l| CString::new(l).unwrap());
+    let label_ptr = if let Some(label) = label.as_ref() {
+      label.as_ptr()
+    } else {
+      std::ptr::null()
+    };
+    let mut has_external_texture = false;
+    let entries = descriptor
+      .entries
+      .iter()
+      .filter(|v| {
+        if has_external_texture == v.external_texture.is_some() {
+          has_external_texture = true;
+        }
+        v.external_texture.is_none()
+      })
+      .map(|entry| {
+        if let Some(buffer) = &entry.buffer {
+          CanvasBindGroupLayoutEntry {
+            binding: entry.binding,
+            visibility: entry.visibility,
+            binding_type: CanvasBindingType::Buffer(CanvasBufferBindingLayout {
+              type_: buffer.type_.unwrap_or(GPUBufferBindingType::uniform).into(),
+              has_dynamic_offset: buffer.has_dynamic_offset.unwrap_or(false),
+              min_binding_size: buffer.min_binding_size.unwrap_or(-1),
+            }),
+          }
+        } else if let Some(texture) = &entry.texture {
+          CanvasBindGroupLayoutEntry {
+            binding: entry.binding,
+            visibility: entry.visibility,
+            binding_type: CanvasBindingType::Texture(CanvasTextureBindingLayout {
+              sample_type: CanvasTextureSampleType::Float,
+              view_dimension: CanvasTextureViewDimension::D2,
+              multisampled: texture.multisampled.unwrap_or_default(),
+            }),
+          }
+        } else if let Some(sampler) = &entry.sampler {
+          CanvasBindGroupLayoutEntry {
+            binding: entry.binding,
+            visibility: entry.visibility,
+            binding_type: CanvasBindingType::Sampler(CanvasSamplerBindingLayout {
+              type_: sampler
+                .type_
+                .unwrap_or(GPUSamplerBindingType::filtering)
+                .into(),
+            }),
+          }
+        } else if let Some(storage) = &entry.storage_texture {
+          CanvasBindGroupLayoutEntry {
+            binding: entry.binding,
+            visibility: entry.visibility,
+            binding_type: CanvasBindingType::StorageTexture(CanvasStorageTextureBindingLayout {
+              access: storage
+                .access
+                .unwrap_or(GPUStorageTextureAccess::writeOnly)
+                .into(),
+              format: storage.format.into(),
+              view_dimension: storage
+                .view_dimension
+                .unwrap_or(GPUTextureViewDimension::d2)
+                .into(),
+            }),
+          }
+        } else {
+          unreachable!()
+        }
+      })
+      .collect::<Vec<_>>();
+
+    // todo
+    if has_external_texture {
+      println!("GPUExternalTexture is currently unsupported");
+    }
+    let layout = unsafe {
+      Arc::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group_layout(
+          Arc::as_ptr(&self.device),
+          label_ptr,
+          entries.as_ptr(),
+          entries.len(),
+        ),
+      )
+    };
+
+    g_p_u_bind_group_layout { layout }
+  }
+
+  #[napi]
+  pub fn create_buffer(&self, descriptor: GPUBufferDescriptor) -> g_p_u_buffer {
+    let label = descriptor.label.map(|l| CString::new(l).unwrap());
+    let label_ptr = if let Some(label) = label.as_ref() {
+      label.as_ptr()
+    } else {
+      std::ptr::null()
+    };
+    let buffer = unsafe {
+      Arc::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(
+          Arc::as_ptr(&self.device),
+          label_ptr,
+          descriptor.size as u64,
+          descriptor.usage,
+          descriptor.mapped_at_creation.unwrap_or_default(),
+        ),
+      )
+    };
+    g_p_u_buffer::new(buffer)
+  }
+
+  #[napi]
+  pub fn create_command_encoder(
+    &self,
+    descriptor: GPUCommandEncoderDescriptor,
+  ) -> GPUCommandEncoder {
+    let mut label_ptr: *const c_char = std::ptr::null();
+    let label = descriptor.label.map(|label| CString::new(label).unwrap());
+    if let Some(label) = &label {
+      label_ptr = label.as_ptr();
+    }
+    let encoder = unsafe {
+      Arc::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(
+          Arc::as_ptr(&self.device),
+          label_ptr,
+        ),
+      )
+    };
+    GPUCommandEncoder { encoder }
+  }
+
+  #[napi]
+  pub fn create_compute_pipeline(
+    &self,
+    descriptor: GPUComputePipelineDescriptor,
+  ) -> g_p_u_compute_pipeline {
+    let label = descriptor.label.map(|l| CString::new(l).unwrap());
+    let label_ptr = if let Some(label) = label.as_ref() {
+      label.as_ptr()
+    } else {
+      std::ptr::null()
+    };
+    let layout = match descriptor.layout {
+      Either::A(layout) => {
+        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(Arc::as_ptr(&layout.layout))
+      }
+      Either::B(_) => {
+        CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto)
+      }
+    };
+
+    let constants = descriptor
+      .compute
+      .constants
+      .map(|c| CanvasConstants::from(c));
+    let constants_ptr = if let Some(constants) = constants.as_ref() {
+      constants
+    } else {
+      std::ptr::null()
+    };
+    let entry_point = descriptor
+      .compute
+      .entry_point
+      .map(|l| CString::new(l).unwrap());
+    let entry_point_ptr = if let Some(entry_point) = entry_point.as_ref() {
+      entry_point.as_ptr()
+    } else {
+      std::ptr::null()
+    };
+
+    let compute = CanvasProgrammableStage {
+      module: Arc::as_ptr(&descriptor.compute.module.module),
+      entry_point: entry_point_ptr,
+      constants: constants_ptr,
+    };
+
+    let pipeline = unsafe {
+      Arc::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_compute_pipeline(
+          Arc::as_ptr(&self.device),
+          label_ptr,
+          layout,
+          &compute,
+        ),
+      )
+    };
+
+    g_p_u_compute_pipeline { pipeline }
+  }
+
   #[napi]
   pub fn create_render_pipeline(
     &self,
@@ -46,14 +346,10 @@ impl g_p_u_device {
       ),
       Some(layout) => match layout {
         Either::A(layout) => {
-          canvas_c::webgpu::gpu_device::CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(
-            layout.layout,
-          )
+          CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Layout(layout.layout.as_ref())
         }
         Either::B(_) => {
-          canvas_c::webgpu::gpu_device::CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(
-            CanvasGPUAutoLayoutMode::Auto,
-          )
+          CanvasGPUPipelineLayoutOrGPUAutoLayoutMode::Auto(CanvasGPUAutoLayoutMode::Auto)
         }
       },
     };
@@ -120,7 +416,7 @@ impl g_p_u_device {
     }
 
     let vertex = canvas_c::webgpu::gpu_device::CanvasVertexState {
-      module: descriptor.vertex.module.module,
+      module: Arc::as_ptr(&descriptor.vertex.module.module),
       entry_point: entry_point_ptr,
       constants: constants_ptr,
       buffers: buffers_ptr,
@@ -179,7 +475,7 @@ impl g_p_u_device {
       canvas_c::webgpu::gpu_device::CanvasFragmentState {
         targets: fragment_targets_ptr,
         targets_size: fragment_targets_size,
-        module: state.module.module,
+        module: state.module.module.as_ref(),
         entry_point: fragment_entry_point_ptr,
         constants: fragment_constants_ptr,
       }
@@ -228,28 +524,23 @@ impl g_p_u_device {
       )
     };
 
-    g_p_u_shader_module { module }
+    g_p_u_shader_module {
+      module: unsafe { Arc::from_raw(module) },
+    }
+  }
+  #[napi]
+  pub fn destroy(&self) {
+    canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_destroy(Arc::as_ptr(&self.device))
   }
 
   #[napi]
-  pub fn create_command_encoder(
-    &self,
-    descriptor: GPUCommandEncoderDescriptor,
-  ) -> GPUCommandEncoder {
-    let mut label_ptr: *const c_char = std::ptr::null();
-    let label = descriptor.label.map(|label| CString::new(label).unwrap());
-    if let Some(label) = &label {
-      label_ptr = label.as_ptr();
-    }
-    let encoder = unsafe {
-      Arc::from_raw(
-        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(
-          Arc::as_ptr(&self.device),
-          label_ptr,
-        ),
+  pub fn push_error_scope(&self, filter: GPUErrorFilter) {
+    unsafe {
+      canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_push_error_scope(
+        Arc::as_ptr(&self.device),
+        filter.into(),
       )
-    };
-    GPUCommandEncoder { encoder }
+    }
   }
 }
 

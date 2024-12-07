@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 #[napi]
 pub struct g_p_u_compute_pipeline {
-  pub(crate) pipeline: *const canvas_c::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline,
+  pub(crate) pipeline: Arc<canvas_c::webgpu::gpu_compute_pipeline::CanvasGPUComputePipeline>,
 }
 
 #[napi]
@@ -14,7 +14,7 @@ impl g_p_u_compute_pipeline {
   pub fn get_label(&self) -> String {
     let label = unsafe {
       canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_label(
-        self.pipeline,
+        Arc::as_ptr(&self.pipeline),
       )
     };
     if label.is_null() {
@@ -26,7 +26,7 @@ impl g_p_u_compute_pipeline {
   #[napi]
   pub fn get_bind_group_layout(&self, index: u32) -> Option<g_p_u_bind_group_layout> {
     let layout = unsafe {
-      canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(self.pipeline, index)
+      canvas_c::webgpu::gpu_compute_pipeline::canvas_native_webgpu_compute_pipeline_get_bind_group_layout(Arc::as_ptr(&self.pipeline), index)
     };
     if layout.is_null() {
       return None;

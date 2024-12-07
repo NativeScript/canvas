@@ -208,6 +208,14 @@ impl g_p_u_canvas_context {
     }
   }
   #[napi]
+  pub fn unconfigure(&self) {
+    unsafe {
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_unconfigure(Arc::as_ptr(
+        &self.context,
+      ))
+    }
+  }
+  #[napi]
   pub fn get_current_texture(&self) -> Option<g_p_u_texture> {
     let ret =
       canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_current_texture(

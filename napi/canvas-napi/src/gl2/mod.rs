@@ -471,6 +471,13 @@ impl web_g_l_2_rendering_context {
             }
             gl_bindings::UNIFORM_IS_ROW_MAJOR => {
                 let ret = canvas_c::canvas_native_webgl_result_into_bool_array(result);
+
+                if ret.is_null() {
+                    return env.get_null().map(|v| v.into_unknown());
+                }
+
+                let ret = unsafe { *Box::from_raw(ret) };
+                let mut ret = ret.into_vec();
                 Array::from_vec(&env, ret)?.coerce_to_object().map(|v| v.into_unknown())
             }
             _ => env.get_null().map(|v| v.into_unknown())

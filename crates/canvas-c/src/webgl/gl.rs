@@ -1,4 +1,11 @@
 /* GL */
+use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
+use crate::c2d::CanvasRenderingContext2D;
+use crate::c2d::PaintStyle;
+use crate::enums::CanvasRepetition;
+use crate::image_asset::ImageAsset;
+use crate::webgl::result::WebGLResultType;
+use crate::BoolBuffer;
 use canvas_2d::utils::image::from_image_slice;
 use canvas_core::context_attributes::PowerPreference;
 use canvas_core::gpu::gl::GLContext;
@@ -6,13 +13,6 @@ use canvas_webgl::prelude::WebGLVersion;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
-
-use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
-use crate::c2d::CanvasRenderingContext2D;
-use crate::c2d::PaintStyle;
-use crate::enums::CanvasRepetition;
-use crate::image_asset::ImageAsset;
-use crate::webgl::result::WebGLResultType;
 
 /* GL */
 
@@ -1282,15 +1282,16 @@ pub extern "C" fn canvas_native_webgl_result_get_bool_array(
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_result_into_bool_array(
     result: *mut WebGLResult,
-) -> Vec<bool> {
+) -> *mut BoolBuffer {
     if result.is_null() {
-        return Vec::new();
+        return std::ptr::null_mut();
     }
     let result = unsafe { *Box::from_raw(result) };
-    match result.0 {
+
+    Box::into_raw(Box::new(BoolBuffer::from(match result.0 {
         canvas_webgl::prelude::WebGLResult::BooleanArray(value) => value,
         _ => Vec::new(),
-    }
+    })))
 }
 
 #[no_mangle]

@@ -411,11 +411,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
 
     let func = callback as i64;
     let data = callback_data as i64;
-    let done = wgpu_core::device::queue::SubmittedWorkDoneClosure::from_rust(Box::new(move || {
+    let done = Box::new(move || {
         let callback: fn(*mut c_char, *mut c_void) = std::mem::transmute(func as *mut c_void);
         let callback_data = data as *mut c_void;
         callback(std::ptr::null_mut(), callback_data);
-    }));
+    });
 
     global.queue_on_submitted_work_done(queue_id, done);
 }

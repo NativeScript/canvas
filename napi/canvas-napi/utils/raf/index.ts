@@ -87,6 +87,7 @@ function ensureCurrentFrameScheduled() {
  * @returns {Function}
  */
 const zonedCallback = function (callback: any) {
+	const global = 'global' in globalThis ? globalThis.global : globalThis;
 	if ((global as any).zone) {
 		// Zone v0.5.* style callback wrapping
 		return (global as any).zone.bind(callback);

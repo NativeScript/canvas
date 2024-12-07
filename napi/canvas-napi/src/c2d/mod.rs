@@ -121,6 +121,13 @@ impl CanvasRenderingContext2D {
     }
 
 
+    #[napi]
+    pub fn resize(&self, width: u32, height: u32) {
+        let context = unsafe { &mut *self.context };
+        canvas_c::resize(context, width as f32, height as f32);
+    }
+
+
     #[napi(factory)]
     pub fn with_cpu(
         width: f64,

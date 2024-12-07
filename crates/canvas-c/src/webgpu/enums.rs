@@ -4,10 +4,7 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgt::{
-    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode,
-    QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType,
-};
+use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
@@ -15,7 +12,7 @@ use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug,Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SurfaceGetCurrentTextureStatus {
     Success = 0x00000000,
     Timeout = 0x00000001,
@@ -23,7 +20,7 @@ pub enum SurfaceGetCurrentTextureStatus {
     Lost = 0x00000003,
     OutOfMemory = 0x00000004,
     DeviceLost = 0x00000005,
-    Force32 = 0x7FFFFFFF
+    Force32 = 0x7FFFFFFF,
 }
 
 #[repr(C)]
@@ -1678,6 +1675,44 @@ pub enum CanvasCullMode {
     Front,
     Back,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasOptionalCanvasCullMode {
+    None,
+    Some(CanvasCullMode),
+}
+
+
+impl From<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
+    fn from(value: Option<wgt::Face>) -> Self {
+        match value {
+            None => Self::None,
+            Some(value) => {
+                match value {
+                    wgt::Face::Front => Self::Some(CanvasCullMode::Front),
+                    wgt::Face::Back => Self::Some(CanvasCullMode::Back),
+                }
+            }
+        }
+    }
+}
+
+impl Into<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
+    fn into(self) -> Option<wgt::Face> {
+        match self {
+            CanvasOptionalCanvasCullMode::None => None,
+            CanvasOptionalCanvasCullMode::Some(value) => {
+                match value {
+                    CanvasCullMode::None => None,
+                    CanvasCullMode::Front => Some(wgt::Face::Front),
+                    CanvasCullMode::Back => Some(wgt::Face::Back),
+                }
+            }
+        }
+    }
+}
+
 
 impl From<CanvasCullMode> for Option<wgt::Face> {
     fn from(value: CanvasCullMode) -> Option<wgt::Face> {

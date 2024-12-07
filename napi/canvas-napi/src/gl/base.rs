@@ -130,12 +130,12 @@ const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
       pub fn buffer_data(
         &self,
         target: u32,
-        size_or_src_data: Option<Either<i64, Buffer>>,
+        size_or_src_data: Option<Either3<i64, Buffer, Float32Array>>,
         usage: Option<u32>,
       ) {
         match size_or_src_data {
           Some(size_or_src_data) => match size_or_src_data {
-            Either::A(size) => match usage {
+            Either3::A(size) => match usage {
               Some(usage) => {
                 canvas_c::canvas_native_webgl_buffer_data_none(
                   target,
@@ -148,7 +148,7 @@ const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
                 canvas_c::canvas_native_webgl_buffer_data_none(target, 0, size as u32, self.state);
               }
             },
-            Either::B(src_data) => {
+            Either3::B(src_data) => {
               if let Some(usage) = usage {
                 canvas_c::canvas_native_webgl_buffer_data(
                   target,
@@ -159,6 +159,17 @@ const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
                 );
               }
             }
+            Either3::C(src_data) => {
+                if let Some(usage) = usage {
+                  canvas_c::canvas_native_webgl_buffer_data_f32(
+                    target,
+                    src_data.as_ptr(),
+                    src_data.len(),
+                    usage,
+                    self.state,
+                  );
+                }
+              }
           },
           _ => {
             if let Some(usage) = usage {

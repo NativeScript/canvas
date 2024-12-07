@@ -285,6 +285,60 @@ if (!nativeBinding) {
 }
 
 const {
+	GPUCanvasContext,
+	GPUAdapter,
+	GPUAdapterInfo,
+	GPUBindGroup,
+	GPUDevice,
+	GPUFeatureName,
+	GPUTexture,
+	GPUTextureAspect,
+	GPUMapMode,
+	GPULoadOp,
+	GPULoadOp,
+	GPUVertexFormat,
+	GPUVertexStepMode,
+	GPUPrimitiveTopology,
+	GPUIndexFormat,
+	GPUFrontFace,
+	GPUCullMode,
+	GPUBlendOperation,
+	GPUBlendFactor,
+	GPUPipelineLayoutAuto,
+	GPUStencilOperation,
+	GPUCompareFunction,
+	PredefinedColorSpaceEnum,
+	GPUCanvasAlphaMode,
+	GPUCanvasPresentMode,
+	GPUFeatureName,
+	GPUShaderModule,
+	GPUPipelineLayout,
+	GPURenderPipeline,
+	GPUBindGroupLayout,
+	GPUCommandEncoder,
+	GpuQueue,
+	GPUCommandBuffer,
+	GpuTextureView,
+	GPUQuerySet,
+	GPURenderPassEncoder,
+	GPUMapState,
+	GPUBuffer,
+	GPUComputePassEncoder,
+	GPUComputePipeline,
+	GPURenderBundle,
+	GPURenderBundleEncoder,
+	GPUSample,
+	GPU,
+	Path2D,
+	CanvasPattern,
+	CanvasGradient,
+	ImageData,
+	TextMetrics,
+	CanvasRenderingContext2D,
+	ImageAsset,
+	DomMatrix,
+	TextEncoder,
+	TextDecoder,
 	WebGLProgram,
 	WebGLShader,
 	WebGLBuffer,
@@ -319,18 +373,6 @@ const {
 	WebGLShaderPrecisionFormat,
 	WebGLUniformLocation,
 	WebGLRenderingContext,
-	Path2D,
-	CanvasPattern,
-	CanvasGradient,
-	ImageData,
-	TextMetrics,
-	CanvasRenderingContext2D,
-	ImageAsset,
-	DomMatrix,
-	GPUCanvasContext,
-	GPU,
-	TextEncoder,
-	TextDecoder,
 	WebGLQuery,
 	WebGLSampler,
 	WebGLTransformFeedback,
@@ -339,6 +381,60 @@ const {
 	WebGL2RenderingContext,
 } = nativeBinding;
 
+module.exports.GPUCanvasContext = GPUCanvasContext;
+module.exports.GPUAdapter = GPUAdapter;
+module.exports.GPUAdapterInfo = GPUAdapterInfo;
+module.exports.GPUBindGroup = GPUBindGroup;
+module.exports.GPUDevice = GPUDevice;
+module.exports.GPUFeatureName = GPUFeatureName;
+module.exports.GPUTexture = GPUTexture;
+module.exports.GPUTextureAspect = GPUTextureAspect;
+module.exports.GPUMapMode = GPUMapMode;
+module.exports.GPULoadOp = GPULoadOp;
+module.exports.GPULoadOp = GPULoadOp;
+module.exports.GPUVertexFormat = GPUVertexFormat;
+module.exports.GPUVertexStepMode = GPUVertexStepMode;
+module.exports.GPUPrimitiveTopology = GPUPrimitiveTopology;
+module.exports.GPUIndexFormat = GPUIndexFormat;
+module.exports.GPUFrontFace = GPUFrontFace;
+module.exports.GPUCullMode = GPUCullMode;
+module.exports.GPUBlendOperation = GPUBlendOperation;
+module.exports.GPUBlendFactor = GPUBlendFactor;
+module.exports.GPUPipelineLayoutAuto = GPUPipelineLayoutAuto;
+module.exports.GPUStencilOperation = GPUStencilOperation;
+module.exports.GPUCompareFunction = GPUCompareFunction;
+module.exports.PredefinedColorSpaceEnum = PredefinedColorSpaceEnum;
+module.exports.GPUCanvasAlphaMode = GPUCanvasAlphaMode;
+module.exports.GPUCanvasPresentMode = GPUCanvasPresentMode;
+module.exports.GPUFeatureName = GPUFeatureName;
+module.exports.GPUShaderModule = GPUShaderModule;
+module.exports.GPUPipelineLayout = GPUPipelineLayout;
+module.exports.GPURenderPipeline = GPURenderPipeline;
+module.exports.GPUBindGroupLayout = GPUBindGroupLayout;
+module.exports.GPUCommandEncoder = GPUCommandEncoder;
+module.exports.GpuQueue = GpuQueue;
+module.exports.GPUCommandBuffer = GPUCommandBuffer;
+module.exports.GpuTextureView = GpuTextureView;
+module.exports.GPUQuerySet = GPUQuerySet;
+module.exports.GPURenderPassEncoder = GPURenderPassEncoder;
+module.exports.GPUMapState = GPUMapState;
+module.exports.GPUBuffer = GPUBuffer;
+module.exports.GPUComputePassEncoder = GPUComputePassEncoder;
+module.exports.GPUComputePipeline = GPUComputePipeline;
+module.exports.GPURenderBundle = GPURenderBundle;
+module.exports.GPURenderBundleEncoder = GPURenderBundleEncoder;
+module.exports.GPUSample = GPUSample;
+module.exports.GPU = GPU;
+module.exports.Path2D = Path2D;
+module.exports.CanvasPattern = CanvasPattern;
+module.exports.CanvasGradient = CanvasGradient;
+module.exports.ImageData = ImageData;
+module.exports.TextMetrics = TextMetrics;
+module.exports.CanvasRenderingContext2D = CanvasRenderingContext2D;
+module.exports.ImageAsset = ImageAsset;
+module.exports.DomMatrix = DomMatrix;
+module.exports.TextEncoder = TextEncoder;
+module.exports.TextDecoder = TextDecoder;
 module.exports.WebGLProgram = WebGLProgram;
 module.exports.WebGLShader = WebGLShader;
 module.exports.WebGLBuffer = WebGLBuffer;
@@ -373,18 +469,6 @@ module.exports.WEBGL_draw_buffers = WEBGL_draw_buffers;
 module.exports.WebGLShaderPrecisionFormat = WebGLShaderPrecisionFormat;
 module.exports.WebGLUniformLocation = WebGLUniformLocation;
 module.exports.WebGLRenderingContext = WebGLRenderingContext;
-module.exports.Path2D = Path2D;
-module.exports.CanvasPattern = CanvasPattern;
-module.exports.CanvasGradient = CanvasGradient;
-module.exports.ImageData = ImageData;
-module.exports.TextMetrics = TextMetrics;
-module.exports.CanvasRenderingContext2D = CanvasRenderingContext2D;
-module.exports.ImageAsset = ImageAsset;
-module.exports.DomMatrix = DomMatrix;
-module.exports.GPUCanvasContext = GPUCanvasContext;
-module.exports.GPU = GPU;
-module.exports.TextEncoder = TextEncoder;
-module.exports.TextDecoder = TextDecoder;
 module.exports.WebGLQuery = WebGLQuery;
 module.exports.WebGLSampler = WebGLSampler;
 module.exports.WebGLTransformFeedback = WebGLTransformFeedback;

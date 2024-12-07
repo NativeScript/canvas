@@ -8,11 +8,12 @@ extern crate napi_derive;
 // #[macro_use]
 // extern crate serde_derive;
 
-pub mod gl;
+pub mod gpu;
 pub mod c2d;
 pub mod image_asset;
 pub mod dom_matrix;
-mod gpu;
 mod text_encoder;
 mod text_decoder;
-mod gl2;
+
+pub mod gl;
+pub mod gl2;

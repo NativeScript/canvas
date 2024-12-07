@@ -226,10 +226,53 @@ impl From<Vec<u32>> for U32Buffer {
     }
 }
 
+
+pub struct BoolBuffer(Vec<bool>);
+
+impl BoolBuffer {
+    pub fn new_with_vec(value: Vec<bool>) -> Self {
+        Self(value)
+    }
+
+    pub fn get_buffer(&self) -> &[bool] {
+        self.0.as_slice()
+    }
+
+    pub fn get_buffer_mut(&mut self) -> &mut [bool] {
+        self.0.as_mut_slice()
+    }
+
+    pub fn length(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn into_vec(self) -> Vec<bool> {
+        self.0
+    }
+}
+
+impl Default for BoolBuffer {
+    fn default() -> Self {
+        Self::new_with_vec(Vec::new())
+    }
+}
+
+impl From<Vec<bool>> for BoolBuffer {
+    fn from(value: Vec<bool>) -> Self {
+        Self::new_with_vec(value)
+    }
+}
+
 pub struct StringBuffer(Vec<String>);
 impl From<Vec<String>> for StringBuffer {
     fn from(value: Vec<String>) -> Self {
         Self(value)
+    }
+}
+
+impl Into<Vec<String>> for StringBuffer {
+    fn into(self) -> Vec<String> {
+        self.0
     }
 }
 

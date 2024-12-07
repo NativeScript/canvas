@@ -39,7 +39,7 @@ impl MetalContext {
             if let Some(clazz) = objc2::runtime::AnyClass::get("CAMetalLayer") {
 
                 let is_metal: BOOL = unsafe { msg_send![layer, isKindOfClass: clazz] };
-                if is_metal == objc2::ffi::YES {
+                if is_metal == objc2::ffi::NO {
                     let _: () = unsafe {
                         msg_send![&view,  setWantsLayer: objc2::ffi::YES]
                     };

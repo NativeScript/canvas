@@ -1,56 +1,57 @@
 import { createRequire } from 'node:module';
+import { Event } from '@nativescript/foundation/dom/dom-utils.js';
+import { type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
+import { view } from '@nativescript/foundation/views/decorators/view.js';
+import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
 
 const require = createRequire(import.meta.url);
 
+objc.import('OpenGL');
+objc.import('Metal');
+objc.import('MetalKit');
+
 // import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } from './index.js';
 
-const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } = require('./canvas-napi.darwin-arm64.node');
-
-import { Event } from '@nativescript/foundation/dom/dom-utils.js';
-import { Layout, type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
-import { native } from '@nativescript/foundation/views/decorators/native.js';
-import { view } from '@nativescript/foundation/views/decorators/view.js';
-import { View } from '@nativescript/foundation/views/view/view.js';
-import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
+const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
 
 class NSCMTLView extends NSView {
 	static {
 		NativeClass(this);
 	}
-	_device?: MTLDevice;
 	_queue?: MTLCommandQueue;
-
 	_canvas: WeakRef<Canvas> | null = null;
+
+	get mtlLayer() {
+		return this.layer as CAMetalLayer;
+	}
 
 	get queue() {
 		return this._queue;
 	}
 
 	get device() {
-		return this._device;
+		return this.mtlLayer.device;
 	}
 
 	initWithFrame(frameRect: CGRect) {
 		super.initWithFrame(frameRect);
 		this.wantsLayer = true;
 		const layer = CAMetalLayer.layer();
-		this._device = MTLCreateSystemDefaultDevice();
-		this._queue = this._device.newCommandQueue();
-		layer.device = this._device;
+		layer.device = MTLCreateSystemDefaultDevice();
+		this._queue = layer.device.newCommandQueue();
 		layer.presentsWithTransaction = false;
 		layer.framebufferOnly = false;
 		layer.pixelFormat = MTLPixelFormat.BGRA8Unorm;
-
 		this.layer = layer;
 		return this;
 	}
 
 	get drawableSize(): CGSize {
-		return (this.layer as CAMetalLayer).drawableSize;
+		return this.mtlLayer.drawableSize;
 	}
 
 	set drawableSize(value: CGSize) {
-		(this.layer as CAMetalLayer).drawableSize = value;
+		this.mtlLayer.drawableSize = value;
 	}
 
 	present() {
@@ -78,6 +79,7 @@ class NSCGLView extends NSOpenGLView {
 	initWithFrame(frame: CGRect) {
 		super.initWithFrame(frame);
 		this.wantsLayer = true;
+		this.layer = CAOpenGLLayer.layer();
 		return this;
 	}
 
@@ -98,11 +100,27 @@ enum ContextType {
 	WebGPU,
 }
 
+enum Engine {
+	None,
+	CPU,
+	GL,
+	GPU,
+}
+
+enum Fit {
+	None,
+	Fill,
+	FitX,
+	FitY,
+	ScaleDown,
+}
+
 class NSCCanvas extends NSView {
 	static {
 		NativeClass(this);
 	}
 
+	engine = Engine.None;
 	_canvas: WeakRef<Canvas> | null = null;
 
 	set canvas(value: Canvas) {
@@ -118,10 +136,13 @@ class NSCCanvas extends NSView {
 
 	glkView?: NSCGLView;
 
-	/**
-	 * @type {0 | 1 | 2 | 3 | 4}
-	 */
-	_fit = 2;
+	_fit = Fit.FitX;
+
+	_is2D: boolean = false;
+
+	get is2D() {
+		return this._is2D;
+	}
 
 	set fit(value) {
 		if (typeof value === 'number') {
@@ -148,6 +169,10 @@ class NSCCanvas extends NSView {
 		this.glkView = NSCGLView.alloc().initWithFrame(newFrame);
 		this.mtlView.drawableSize = CGSizeMake(300, 150);
 
+		this.mtlViewPtr = interop.handleof(this.mtlView);
+		this.mtlViewLayerPtr = interop.handleof(this.mtlView?.layer);
+		this.glViewPtr = interop.handleof(this.glkView);
+
 		this.initializeView();
 
 		return this;
@@ -170,29 +195,39 @@ class NSCCanvas extends NSView {
 		(mtlView.layer as CAMetalLayer).isOpaque = false;
 	}
 
+	mtlViewLayerPtr?: interop.Pointer;
+	mtlViewPtr?: interop.Pointer;
+	glViewPtr?: interop.Pointer;
+	gpuContext?: GPUCanvasContext;
+
+	initWebGPUContext() {
+		if (this.gpuContext) {
+			return;
+		}
+		this.gpuContext = GPUCanvasContext.withView(GPU.getInstance(), this.mtlViewLayerPtr?.toNumber(), this.surfaceWidth, this.surfaceHeight);
+		if (this.gpuContext) {
+			this.engine = Engine.GPU;
+		}
+		this.mtlView!.isHidden = false;
+	}
+
 	resize() {
-		// if(nativeContext == 0){
-		//     scaleSurface()
-		//     return
-		// }
-		// if(!is2D && engine == .GPU){
-		//     let width = UInt32(surfaceWidth)
-		//     let height =  UInt32(surfaceHeight)
-		//     CanvasHelpers.resizeWebGPUWithView(nativeContext, self, width, height)
-		//     scaleSurface()
-		//     return
-		// }
-		// if(engine == .GL){
-		//     EAGLContext.setCurrent(glkView.context)
-		// }
-		// if(engine == .GL){
-		//     glkView.deleteDrawable()
-		//     glkView.bindDrawable()
-		// }
-		// if(is2D){
-		//     CanvasHelpers.resize2DContext(nativeContext, Float(surfaceWidth), Float(surfaceHeight))
-		// }
-		// scaleSurface()
+		if (this.engine == 0) {
+			this.scaleSurface();
+			return;
+		}
+		if (!this.is2D && this.engine == Engine.GPU) {
+			this.gpuContext.resize(this.mtlViewLayerPtr?.toNumber(), this.surfaceWidth, this.surfaceHeight);
+			this.scaleSurface();
+			return;
+		}
+		if (this.engine == Engine.GL) {
+			this.glkView?.openGLContext?.makeCurrentContext?.();
+		}
+		if (this.is2D) {
+			this._canvas?.deref()?._2dContext?.resize?.(this.surfaceWidth, this.surfaceHeight);
+		}
+		this.scaleSurface();
 	}
 
 	__isLoaded = false;
@@ -212,10 +247,10 @@ class NSCCanvas extends NSView {
 		}
 	}
 
-	weblikeScale = true;
+	webLikeScale = true;
 
 	scaleSurface() {
-		if (!this.weblikeScale == false) {
+		if (!this.webLikeScale) {
 			return;
 		}
 		if (this.surfaceWidth == 0 || this.surfaceHeight == 0) {
@@ -336,9 +371,6 @@ class NSCCanvas extends NSView {
 		return this._surfaceHeight;
 	}
 
-	/**
-	 * @param {number} value
-	 */
 	set surfaceHeight(value) {
 		if (typeof value === 'number') {
 			this._surfaceHeight = value;
@@ -363,12 +395,14 @@ export class Canvas extends ViewBase {
 	}
 
 	_canvas: NSCCanvas;
+
 	constructor() {
 		super();
 		this._canvas = NSCCanvas.alloc().initWithFrame(CGRectZero);
 		this._canvas.canvas = this;
 		this.style.width = '100%';
 		this.style.height = 'auto';
+		this.nativeView = this._canvas;
 	}
 
 	nativeView?: NSCCanvas = undefined;
@@ -380,7 +414,7 @@ export class Canvas extends ViewBase {
 	applyLayout(parentLayout?: YogaNodeLayout) {
 		super.applyLayout(parentLayout);
 		if (this.nativeView) {
-			//this.nativeView.translatesAutoresizingMaskIntoConstraints = true;
+			this.nativeView.translatesAutoresizingMaskIntoConstraints = true;
 		}
 
 		if (parentLayout) {
@@ -446,7 +480,7 @@ export class Canvas extends ViewBase {
 
 	_webgl2Context?: WebGL2RenderingContext;
 
-	//_gpuContext?: GPUCanvasContext;
+	_gpuContext?: GPUCanvasContext;
 
 	get __native__context() {
 		switch (this._contextType) {
@@ -457,7 +491,7 @@ export class Canvas extends ViewBase {
 			case ContextType.WebGL2:
 				return this._webgl2Context;
 			case ContextType.WebGPU:
-			//	return this._gpuContext;
+				return this._gpuContext;
 			default:
 				return null;
 		}
@@ -483,8 +517,7 @@ export class Canvas extends ViewBase {
 			return 'data:,';
 		}
 		if (this._contextType === 4) {
-			return 'data:,';
-			//return this._gpuContext.toDataURL(type ?? 'image/png', encoderOptions ?? 0.92);
+			return this._gpuContext.toDataURL(type ?? 'image/png', encoderOptions ?? 0.92);
 		}
 		return this.native?.toDataURL?.(type ?? 'image/png', encoderOptions ?? 0.92);
 	}
@@ -494,6 +527,9 @@ export class Canvas extends ViewBase {
 			return null;
 		}
 		if (contextType === '2d') {
+			if (this._webglContext || this._webgl2Context || this._gpuContext) {
+				return null;
+			}
 			if (this._2dContext) {
 				return this._2dContext;
 			}
@@ -504,6 +540,8 @@ export class Canvas extends ViewBase {
 				this._2dContext = CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, options?.alpha ?? true, 0, 90, 1);
 				this._canvas.glkView!.isHidden = false;
 				this._contextType = ContextType.Canvas;
+				this._canvas.engine = Engine.GL;
+				this._canvas._is2D = true;
 			} else {
 				const mtlViewHandle = interop.handleof(this._canvas.mtlView);
 				const deviceHandle = interop.handleof(this._canvas.mtlView!.device);
@@ -511,10 +549,15 @@ export class Canvas extends ViewBase {
 				this._2dContext = CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), options?.alpha ?? true, scale, 1, 0, 90, 1);
 				this._canvas.mtlView!.isHidden = false;
 				this._contextType = ContextType.Canvas;
+				this._canvas.engine = Engine.GPU;
+				this._canvas._is2D = true;
 			}
 
 			return this._2dContext;
 		} else if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+			if (this._2dContext || this._webgl2Context || this._gpuContext) {
+				return null;
+			}
 			if (this._webglContext) {
 				return this._webglContext;
 			}
@@ -523,7 +566,12 @@ export class Canvas extends ViewBase {
 			this._webglContext = WebGLRenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
 			this._canvas.glkView!.isHidden = false;
 			this._contextType = ContextType.WebGL;
+			this._canvas.engine = Engine.GL;
+			return this._webglContext;
 		} else if (contextType === 'webgl2' || contextType === 'experimental-webgl2') {
+			if (this._2dContext || this._webglContext || this._gpuContext) {
+				return null;
+			}
 			if (this._webgl2Context) {
 				return this._webgl2Context;
 			}
@@ -532,9 +580,21 @@ export class Canvas extends ViewBase {
 			this._webgl2Context = WebGL2RenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
 			this._canvas.glkView!.isHidden = false;
 			this._contextType = ContextType.WebGL2;
+			this._canvas.engine = Engine.GL;
+			return this._webgl2Context;
+		} else if (contextType === 'webgpu') {
+			if (this._2dContext || this._webglContext || this._webgl2Context) {
+				return null;
+			}
+			if (this._gpuContext) {
+				return this._gpuContext;
+			}
+			this._canvas.initWebGPUContext();
+			this._gpuContext = this._canvas.gpuContext;
+			this._canvas.engine = Engine.GPU;
 		}
 
-		return null;
+		return this._gpuContext;
 	}
 }
 

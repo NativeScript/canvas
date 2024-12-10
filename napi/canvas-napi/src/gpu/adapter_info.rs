@@ -20,12 +20,12 @@ impl g_p_u_adapter_info {
     }
 
     #[napi(getter)]
-    pub fn get_device(&self) -> String {
+    pub fn get_device(&self) -> &str {
         self.info.device()
     }
 
     #[napi(getter)]
-    pub fn get_vendor(&self) -> String {
+    pub fn get_vendor(&self) -> &str {
         self.info.vendor()
     }
 }

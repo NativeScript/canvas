@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUMapState", string_enum)]
+#[derive(Debug)]
 pub enum GPUMapState {
   unmapped,
   mapped,
@@ -17,6 +18,7 @@ pub enum GPUMapState {
 }
 
 #[napi(js_name = "GPUBuffer")]
+#[derive(Debug)]
 pub struct g_p_u_buffer {
   pub(crate) buffer: Arc<canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer>,
   pub(crate) state: Arc<Mutex<GPUMapState>>,

@@ -8,22 +8,28 @@ impl CanvasGPUAdapterInfo {
         Self(types)
     }
 
-    pub fn vendor(&self) -> String {
-        self.0.vendor.to_string()
+    pub fn vendor(&self) -> &str {
+        self.0.driver.as_str()
     }
 
     pub fn architecture(&self) -> &str {
         ""
     }
-    pub fn device(&self) -> String {
-        self.0.device.to_string()
+    pub fn device(&self) -> &str {
+        self.0.name.as_str()
     }
 
     pub fn description(&self) -> &str {
-        self.0.name.as_str()
+        self.0.driver_info.as_str()
+    }
+    pub fn vendor_id(&self) -> u32 {
+        self.0.vendor
+    }
+
+    pub fn device_id(&self) -> u32 {
+        self.0.device
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(
@@ -33,7 +39,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_vendor(
         return std::ptr::null_mut();
     }
     let info = unsafe { &*info };
-    CString::new(info.0.vendor.to_string()).unwrap().into_raw()
+    CString::new(info.0.driver.clone()).unwrap().into_raw()
 }
 
 #[no_mangle]
@@ -54,7 +60,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_device(
         return std::ptr::null_mut();
     }
     let info = unsafe { &*info };
-    CString::new(info.0.device.to_string()).unwrap().into_raw()
+    CString::new(info.0.name.clone()).unwrap().into_raw()
 }
 
 #[no_mangle]
@@ -65,7 +71,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_info_description(
         return std::ptr::null_mut();
     }
     let info = unsafe { &*info };
-    CString::new(info.0.name.clone()).unwrap().into_raw()
+    CString::new(info.0.driver_info.clone()).unwrap().into_raw()
 }
 
 #[no_mangle]

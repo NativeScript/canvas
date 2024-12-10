@@ -1,12 +1,25 @@
 import '@nativescript/macos-node-api';
-import { ImageAsset } from '../index.js';
-console.log(ImageAsset);
-import { cancelAnimationFrame, requestAnimationFrame } from '../dist/utils.mjs';
+import { createRequire } from 'node:module';
+import utils from '../../utils';
 import '@nativescript/foundation/dom/index.js';
-import '../dist/examples/app.mjs';
-import '../dist/index.mjs';
+import '../app.ts';
+import '../../canvas';
+import installPolyfills from '../../polyfill';
 
-console.log(GPU);
+// import { run as texturedCube } from './texturedCube';
+// import { run as twoCubes } from './twoCubes.ts';
+//import { run as computeBoids } from './gpgpu/computeBoids';
+// import { run as wireframe } from './graphicsTechniques/wireframe';
+import { run as renderBundles } from './renderBundles';
+// @ts-ignore
+const require = createRequire(import.meta.url);
+
+
+// import { GPU, ImageAsset } from '../../index.js';
+
+const { ImageAsset } = require('../../canvas-napi.darwin-arm64.node');
+
+const { requestAnimationFrame, cancelAnimationFrame } = utils;
 
 
 objc.import('AppKit');
@@ -760,8 +773,6 @@ function breathe_demo(canvas) {
 			const { x, y } = polar2Canvas({ theta, radius: progress * R }, { x: 0, y: 0 });
 			const scale = mix(progress, 0.3, 1);
 
-			context.scale(scale / Screen.mainScreen.scale, scale / Screen.mainScreen.scale);
-
 			//context.translate(x, y);
 
 			context.arc(x, y, R, 0, 2 * Math.PI);
@@ -1132,7 +1143,7 @@ function createChaosLines(canvas) {
 		const height = canvas.height;
 		let start = 0;
 
-		function drawScene(now) {
+		function drawScene(now: number = 0) {
 			if (start === 0) {
 				start = now;
 			}
@@ -1376,34 +1387,25 @@ function doGL() {
 	// console.timeEnd('load1');
 
 	//webglTextures(glCanvas);
-	createChaosLines(canvasView);
+	createChaosLines(canvas);
 	// cubeRotation(glCanvas);
 }
 
 
-const gpu = GPU.getInstance();
-
-globalThis.gpu = gpu;
-
-const window = document.createElement('window');
+const window = document.createElement('window') as HTMLElement & {
+	devicePixelRatio: number
+};
 
 window.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
 window.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
 
-function installPolyfills(window) {
-	Object.defineProperty(window, 'devicePixelRatio', {
-		value: NSScreen.mainScreen.backingScaleFactor,
-		writable: true
-	});
-}
-
-installPolyfills(window);
+installPolyfills(globalThis.window);
 
 async function webgpuTest() {
-	console.log(gpu.wgslLanguageFeatures);
-	console.log(gpu.getPreferredCanvasFormat());
+	console.log(navigator.gpu.wgslLanguageFeatures);
+	console.log(navigator.gpu.getPreferredCanvasFormat());
 
-	const adapter = await gpu.requestAdapter();
+	const adapter = await navigator.gpu.requestAdapter();
 
 	console.log(adapter.features);
 	console.log(adapter.isFallbackAdapter);
@@ -1435,41 +1437,30 @@ fn main() -> @location(0) vec4f {
   return vec4(1.0, 0.0, 0.0, 1.0);
 }`;
 	// todo
-
-
-	if (gpu) {
-		const adapter = await gpu.requestAdapter();
+	if ('gpu' in navigator) {
+		const adapter = await navigator.gpu.requestAdapter();
 		let device = await adapter.requestDevice();
-		// device.addEventListener('uncapturederror', (event: any) => {
-		// 	console.error('A WebGPU error was not captured:', event.error.message);
-		// });
+		device.addEventListener('uncapturederror', (event: any) => {
+			console.error('A WebGPU error was not captured:', event.error.message);
+		});
 
 		const devicePixelRatio = window.devicePixelRatio;
 		canvas.width = canvas.clientWidth * devicePixelRatio;
 		canvas.height = canvas.clientHeight * devicePixelRatio;
 
-		console.log(canvas);
-
 		const context = canvas.getContext('webgpu');
 
-		// console.log(context.toDataURL());
-
-		//
 		const capabilities = context.getCapabilities(adapter);
-		//
-		console.log(capabilities);
 
-		const presentationFormat = gpu.getPreferredCanvasFormat(); //capabilities.format[0];
-		const alphaMode = 'postmultiplied'; //capabilities.alphaModes[0];
-
+		const presentationFormat = capabilities.formats[0];
+		const alphaMode = capabilities.alphaModes[0];
+		const presentMode = capabilities.presentModes[0];
 		context.configure({
 			device,
 			format: presentationFormat,
 			alphaMode,
-			presentMode: 'fifo'
+			presentMode
 		});
-
-		console.log('toDataURL', context.toDataURL());
 
 		const pipeline = device.createRenderPipeline({
 			layout: 'auto',
@@ -1510,7 +1501,7 @@ fn main() -> @location(0) vec4f {
 					{
 						view: textureView,
 						clearValue: [0, 0, 0, 1],
-						loadOp: 'clear',
+						loadOp: 'load',
 						storeOp: 'store'
 					}
 				]
@@ -1525,26 +1516,32 @@ fn main() -> @location(0) vec4f {
 
 			requestAnimationFrame(frame);
 		}
+
+		frame();
 	}
 }
 
 const canvas = document.createElement('canvas');
-
 canvas.addEventListener('ready', (event) => {
 	console.log('ready');
 	// webgpuTriangle(canvas);
+	// doGL()
+	// swarm(canvas);
+//	texturedCube(canvas);
+	//twoCubes(canvas);
+//	computeBoids(canvas);
+	//wireframe(canvas);
+	renderBundles(canvas);
 });
 
 canvas.width = NSScreen.mainScreen.frame.size.width;
 canvas.height = NSScreen.mainScreen.frame.size.height;
 
-window.setAttribute('styleMask', NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView);
+window.setAttribute('styleMask', (
+	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
+) as never);
 
 window.appendChild(canvas);
-
-webgpuTriangle(canvas);
-
-
 
 document.body.appendChild(window);
 

@@ -2,13 +2,13 @@ use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
-#[napi]
-pub struct GPUTextureView {
+#[napi(js_name = "GPUTextureView")]
+pub struct g_p_u_texture_view {
   pub(crate) texture_view: Arc<canvas_c::webgpu::gpu_texture_view::CanvasGPUTextureView>,
 }
 
 #[napi]
-impl GPUTextureView {
+impl g_p_u_texture_view {
   #[napi(getter)]
   pub fn get_label(&self) -> String {
     let label = unsafe {

@@ -1,8 +1,10 @@
+use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
 
-#[napi]
+#[napi(js_name = "GPUSampler")]
+#[derive(Debug)]
 pub struct g_p_u_sampler {
   pub(crate) sampler: Arc<canvas_c::webgpu::gpu_sampler::CanvasGPUSampler>,
 }

@@ -8,12 +8,12 @@ use std::ffi::CString;
 use std::sync::Arc;
 
 #[napi(js_name = "GPUComputePassEncoder")]
-pub struct GPUComputePassEncoder {
+pub struct g_p_u_compute_pass_encoder {
   pub(crate) encoder: Arc<canvas_c::webgpu::gpu_compute_pass_encoder::CanvasGPUComputePassEncoder>,
 }
 
 #[napi]
-impl GPUComputePassEncoder {
+impl g_p_u_compute_pass_encoder {
   #[napi(getter)]
   pub fn get_label(&self) -> String {
     let label = unsafe {

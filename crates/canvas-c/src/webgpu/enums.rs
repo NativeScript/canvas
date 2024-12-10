@@ -21,6 +21,7 @@ pub enum SurfaceGetCurrentTextureStatus {
     OutOfMemory = 0x00000004,
     DeviceLost = 0x00000005,
     Force32 = 0x7FFFFFFF,
+    Unknown = 0x00000006
 }
 
 #[repr(C)]
@@ -1873,6 +1874,7 @@ impl Into<Option<wgt::FrontFace>> for CanvasOptionalFrontFace {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasBufferBinding {
     pub buffer: *const CanvasGPUBuffer,
     pub offset: i64,
@@ -1898,6 +1900,7 @@ impl Into<BufferBinding> for CanvasBufferBinding {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub enum CanvasBindGroupEntryResource {
     Buffer(CanvasBufferBinding),
     Sampler(*const CanvasGPUSampler),
@@ -1905,6 +1908,7 @@ pub enum CanvasBindGroupEntryResource {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasBindGroupEntry {
     pub binding: u32,
     pub resource: CanvasBindGroupEntryResource,

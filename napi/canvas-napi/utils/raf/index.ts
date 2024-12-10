@@ -102,7 +102,7 @@ const zonedCallback = function (callback: any) {
 	}
 };
 
-export function requestAnimationFrame(cb: FrameRequestCallback): number {
+function requestAnimationFrame(cb: FrameRequestCallback): number {
 	const animId = getNewId();
 	if (!inAnimationFrame) {
 		ensureCurrentFrameScheduled();
@@ -117,7 +117,12 @@ export function requestAnimationFrame(cb: FrameRequestCallback): number {
 	return animId;
 }
 
-export function cancelAnimationFrame(id: number) {
+function cancelAnimationFrame(id: number) {
 	delete currentFrameAnimationCallbacks[id];
 	delete nextFrameAnimationCallbacks[id];
 }
+
+export default {
+	requestAnimationFrame,
+	cancelAnimationFrame,
+};

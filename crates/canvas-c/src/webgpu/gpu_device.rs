@@ -223,6 +223,9 @@ pub struct CanvasGPUDevice {
     pub(crate) error_sink: ErrorSink,
 }
 
+unsafe impl Sync for CanvasGPUDevice  {}
+unsafe impl Send for CanvasGPUDevice {}
+
 impl Drop for CanvasGPUDevice {
     fn drop(&mut self) {
         if !std::thread::panicking() {
@@ -420,8 +423,6 @@ impl CanvasGPUDevice {
     }
 }
 
-unsafe impl Send for CanvasGPUDevice {}
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_get_label(
     device: *const CanvasGPUDevice,
@@ -473,7 +474,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_queue(
         return std::ptr::null();
     }
     let device = unsafe { &*device };
-    Arc::into_raw(device.queue.clone())
+    Arc::into_raw(Arc::clone(&device.queue))
 }
 
 #[no_mangle]
@@ -784,7 +785,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
     let error_sink = pipeline.error_sink.as_ref();
 
     if let Some(cause) = error {
-        println!("Can not create compute pipeline: {:?}", cause);
         if let wgpu_core::pipeline::CreateComputePipelineError::Internal(ref error) = cause {
             #[cfg(target_os = "android")]
             log::warn!(
@@ -1018,13 +1018,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
 
 #[repr(C)]
 pub struct CanvasCreateRenderBundleEncoderDescriptor {
-    label: *const c_char,
-    color_formats: *const CanvasGPUTextureFormat,
-    color_formats_size: usize,
-    depth_stencil_format: CanvasOptionalGPUTextureFormat,
-    sample_count: u32,
-    depth_read_only: bool,
-    stencil_read_only: bool,
+    pub label: *const c_char,
+    pub color_formats: *const CanvasGPUTextureFormat,
+    pub color_formats_size: usize,
+    pub depth_stencil_format: CanvasOptionalGPUTextureFormat,
+    pub sample_count: u32,
+    pub depth_read_only: bool,
+    pub stencil_read_only: bool,
 }
 
 #[no_mangle]
@@ -1222,16 +1222,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(constants: *mut 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CanvasDepthStencilState {
-    format: CanvasGPUTextureFormat,
-    depth_write_enabled: bool,
-    depth_compare: CanvasCompareFunction,
-    stencil_front: CanvasStencilFaceState,
-    stencil_back: CanvasStencilFaceState,
-    stencil_read_mask: u32,
-    stencil_write_mask: u32,
-    depth_bias: i32,
-    depth_bias_slope_scale: f32,
-    depth_bias_clamp: f32,
+    pub format: CanvasGPUTextureFormat,
+    pub depth_write_enabled: bool,
+    pub depth_compare: CanvasCompareFunction,
+    pub stencil_front: CanvasStencilFaceState,
+    pub stencil_back: CanvasStencilFaceState,
+    pub stencil_read_mask: u32,
+    pub stencil_write_mask: u32,
+    pub depth_bias: i32,
+    pub depth_bias_slope_scale: f32,
+    pub depth_bias_clamp: f32,
 }
 
 impl From<wgt::DepthStencilState> for CanvasDepthStencilState {
@@ -1314,6 +1314,7 @@ impl Into<wgt::PrimitiveState> for CanvasPrimitiveState {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasVertexBufferLayout {
     pub array_stride: u64,
     pub step_mode: CanvasVertexStepMode,
@@ -1674,6 +1675,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasCreateTextureDescriptor {
     pub label: *const c_char,
     pub dimension: CanvasTextureDimension,

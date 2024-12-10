@@ -1,9 +1,0 @@
-{
-	"compilerOptions": {
-		"moduleResolution": "node",
-		"rootDir": ".",
-		"target": "ES2015",
-		"outDir": "./dist"
-	},
-	"extends": "../tsconfig.json"
-}

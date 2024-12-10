@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"main": "index.js",
 	"types": "index.d.ts",
+	"type": "module",
 	"napi": {
 		"name": "canvas-napi",
 		"triples": {

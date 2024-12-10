@@ -1,8 +1,8 @@
 pub mod path;
-mod pattern;
-mod gradient;
-mod image_data;
-mod text_metrics;
+pub mod pattern;
+pub mod gradient;
+pub mod image_data;
+pub mod text_metrics;
 
 use crate::c2d::gradient::CanvasGradient;
 use crate::c2d::image_data::ImageData;

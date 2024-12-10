@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::webgpu::gpu::CanvasWebGPUInstance;
 use crate::webgpu::prelude::label_to_ptr;
 
+#[derive(Debug)]
 pub struct CanvasGPUSampler {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) sampler: wgpu_core::id::SamplerId,

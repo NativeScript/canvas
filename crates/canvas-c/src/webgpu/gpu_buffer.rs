@@ -36,6 +36,7 @@ impl From<wgpu_core::device::HostMap> for GPUMapMode {
     }
 }
 
+#[derive(Debug)]
 pub struct CanvasGPUBuffer {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) label: Option<Cow<'static, str>>,

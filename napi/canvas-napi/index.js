@@ -285,13 +285,22 @@ if (!nativeBinding) {
 }
 
 const {
-	GPUCanvasContext,
 	GPUAdapter,
 	GPUAdapterInfo,
 	GPUBindGroup,
+	GPUBindGroupLayout,
+	GPUCommandBuffer,
+	GPUCommandEncoder,
+	GPUCanvasContext,
 	GPUDevice,
 	GPUFeatureName,
-	GPUTexture,
+	GPUShaderStage,
+	GPUQueryType,
+	GPUMipmapFilterMode,
+	GPUFilterMode,
+	GPUAddressMode,
+	GPUBufferUsage,
+	GPUTextureUsage,
 	GPUErrorFilter,
 	GPUTextureSampleType,
 	GPUTextureViewDimension,
@@ -318,24 +327,22 @@ const {
 	GPUCanvasAlphaMode,
 	GPUCanvasPresentMode,
 	GPUTextureFormat,
-	GPUShaderModule,
 	GPUPipelineLayout,
-	GPURenderPipeline,
-	GPUBindGroupLayout,
-	GPUCommandEncoder,
-	GpuQueue,
-	GPUCommandBuffer,
-	GpuTextureView,
 	GPUQuerySet,
+	GPUQueue,
 	GPURenderPassEncoder,
+	GPURenderPipeline,
+	GPUShaderModule,
+	GPUTexture,
+	GPUTextureView,
 	GPUMapState,
 	GPUBuffer,
 	GPUComputePassEncoder,
 	GPUComputePipeline,
+	GPUExternalTexture,
 	GPURenderBundle,
 	GPURenderBundleEncoder,
 	GPUSampler,
-	GPUExternalTexture,
 	GPU,
 	Path2D,
 	CanvasPattern,
@@ -389,13 +396,22 @@ const {
 	WebGL2RenderingContext,
 } = nativeBinding;
 
-module.exports.GPUCanvasContext = GPUCanvasContext;
 module.exports.GPUAdapter = GPUAdapter;
 module.exports.GPUAdapterInfo = GPUAdapterInfo;
 module.exports.GPUBindGroup = GPUBindGroup;
+module.exports.GPUBindGroupLayout = GPUBindGroupLayout;
+module.exports.GPUCommandBuffer = GPUCommandBuffer;
+module.exports.GPUCommandEncoder = GPUCommandEncoder;
+module.exports.GPUCanvasContext = GPUCanvasContext;
 module.exports.GPUDevice = GPUDevice;
 module.exports.GPUFeatureName = GPUFeatureName;
-module.exports.GPUTexture = GPUTexture;
+module.exports.GPUShaderStage = GPUShaderStage;
+module.exports.GPUQueryType = GPUQueryType;
+module.exports.GPUMipmapFilterMode = GPUMipmapFilterMode;
+module.exports.GPUFilterMode = GPUFilterMode;
+module.exports.GPUAddressMode = GPUAddressMode;
+module.exports.GPUBufferUsage = GPUBufferUsage;
+module.exports.GPUTextureUsage = GPUTextureUsage;
 module.exports.GPUErrorFilter = GPUErrorFilter;
 module.exports.GPUTextureSampleType = GPUTextureSampleType;
 module.exports.GPUTextureViewDimension = GPUTextureViewDimension;
@@ -422,24 +438,22 @@ module.exports.PredefinedColorSpaceEnum = PredefinedColorSpaceEnum;
 module.exports.GPUCanvasAlphaMode = GPUCanvasAlphaMode;
 module.exports.GPUCanvasPresentMode = GPUCanvasPresentMode;
 module.exports.GPUTextureFormat = GPUTextureFormat;
-module.exports.GPUShaderModule = GPUShaderModule;
 module.exports.GPUPipelineLayout = GPUPipelineLayout;
-module.exports.GPURenderPipeline = GPURenderPipeline;
-module.exports.GPUBindGroupLayout = GPUBindGroupLayout;
-module.exports.GPUCommandEncoder = GPUCommandEncoder;
-module.exports.GpuQueue = GpuQueue;
-module.exports.GPUCommandBuffer = GPUCommandBuffer;
-module.exports.GpuTextureView = GpuTextureView;
 module.exports.GPUQuerySet = GPUQuerySet;
+module.exports.GPUQueue = GPUQueue;
 module.exports.GPURenderPassEncoder = GPURenderPassEncoder;
+module.exports.GPURenderPipeline = GPURenderPipeline;
+module.exports.GPUShaderModule = GPUShaderModule;
+module.exports.GPUTexture = GPUTexture;
+module.exports.GPUTextureView = GPUTextureView;
 module.exports.GPUMapState = GPUMapState;
 module.exports.GPUBuffer = GPUBuffer;
 module.exports.GPUComputePassEncoder = GPUComputePassEncoder;
 module.exports.GPUComputePipeline = GPUComputePipeline;
+module.exports.GPUExternalTexture = GPUExternalTexture;
 module.exports.GPURenderBundle = GPURenderBundle;
 module.exports.GPURenderBundleEncoder = GPURenderBundleEncoder;
 module.exports.GPUSampler = GPUSampler;
-module.exports.GPUExternalTexture = GPUExternalTexture;
 module.exports.GPU = GPU;
 module.exports.Path2D = Path2D;
 module.exports.CanvasPattern = CanvasPattern;

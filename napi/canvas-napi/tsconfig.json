@@ -10,7 +10,7 @@
 		"target": "ESNext",
 		"outDir": "./dist",
 		"lib": ["ESNext", "dom"],
-		"allowImportingTsExtensions": false,
+		"allowImportingTsExtensions": true,
 		"noEmit": false
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",

@@ -1,3 +1,6 @@
-export * from './raf/index.js';
-export * from './mainthread-helper.js';
-export * from './macrotask-scheduler.js';
+import raf from './raf/index';
+
+export default raf;
+
+// export * from './mainthread-helper.js';
+// export * from './macrotask-scheduler.js';

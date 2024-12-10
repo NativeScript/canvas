@@ -967,17 +967,17 @@ impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
 
 impl Drop for CanvasSurfaceCapabilities {
     fn drop(&mut self) {
-        if !self.formats.is_null() {
-            let _ = unsafe { Box::from_raw(self.formats as *mut StringBuffer) };
-        }
-
-        if !self.present_modes.is_null() {
-            let _ = unsafe { Box::from_raw(self.present_modes as *mut StringBuffer) };
-        }
-
-        if !self.alpha_modes.is_null() {
-            let _ = unsafe { Box::from_raw(self.alpha_modes as *mut StringBuffer) };
-        }
+        // if !self.formats.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.formats as *mut StringBuffer) };
+        // }
+        //
+        // if !self.present_modes.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.present_modes as *mut StringBuffer) };
+        // }
+        //
+        // if !self.alpha_modes.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.alpha_modes as *mut StringBuffer) };
+        // }
     }
 }
 

@@ -5,12 +5,12 @@ use std::ffi::CString;
 use std::sync::Arc;
 
 #[napi(js_name = "GPUQuerySet")]
-pub struct GPUQuerySet {
+pub struct g_p_u_query_set {
   pub(crate) query: Arc<canvas_c::webgpu::gpu_query_set::CanvasGPUQuerySet>,
 }
 
 #[napi]
-impl GPUQuerySet {
+impl g_p_u_query_set {
   #[napi(getter)]
   pub fn get_label(&self) -> String {
     let label = unsafe {

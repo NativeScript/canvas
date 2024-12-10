@@ -27,7 +27,7 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "bc52e9448087a79b78d2231f0ddd7409781551f7"
+rev = "6f163cdf622bd183fcfc20224294b797312550bb"
 
 [workspace.dependencies]
 env_logger = "0.11.5"
@@ -41,7 +41,7 @@ gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
 skia-safe = { version = "0.80.0", features = ["textlayout"] }
 itertools = "0.13.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "bc52e9448087a79b78d2231f0ddd7409781551f7", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-types = { git = "https://github.com/triniwiz/wgpu", rev = "bc52e9448087a79b78d2231f0ddd7409781551f7" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "6f163cdf622bd183fcfc20224294b797312550bb", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
+wgpu-types = { git = "https://github.com/triniwiz/wgpu", rev = "6f163cdf622bd183fcfc20224294b797312550bb" }
 ureq = "2.10.1"
 jni = "0.21.1"

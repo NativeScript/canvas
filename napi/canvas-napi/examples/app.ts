@@ -1,5 +1,6 @@
 import type { NativeWindow } from '@nativescript/foundation/views/window/native-window.js';
 import type { Window } from '@nativescript/foundation/views/window/window.js';
+
 objc.import('AppKit');
 
 @NativeClass
@@ -32,6 +33,7 @@ class AppDelegate extends NSObject implements NSApplicationDelegate {
 
 	applicationWillTerminate(_notification: NSNotification): void {
 		this.running = false;
+		process.exit(0);
 	}
 
 	showMainWindow(_id: this) {
@@ -60,7 +62,8 @@ function RunLoop() {
 		}
 
 		if (NativeScriptApplication.delegate.running) {
-			setTimeout(loop, NativeScriptApplication.ensure60FPS ? 8 : delay);
+			const time = NativeScriptApplication.ensure120FPS ? 4 : NativeScriptApplication.ensure60FPS ? 8 : delay;
+			setTimeout(loop, NativeScriptApplication.ensure60FPS ? 8 : time);
 		}
 	};
 	setTimeout(loop, 0);
@@ -73,6 +76,7 @@ export default class Application {
 	static window: Window;
 	static appMenu: NSMenu;
 	static ensure60FPS: boolean;
+	static ensure120FPS: boolean;
 	static initEditMenu: boolean;
 
 	static launch() {
@@ -104,6 +108,7 @@ export default class Application {
 			Application.appMenu = menu;
 		}
 	}
+
 	static showMainWindow() {
 		// override
 	}
@@ -113,3 +118,5 @@ declare global {
 	var NativeScriptApplication: typeof Application;
 }
 globalThis.NativeScriptApplication = Application;
+
+NativeScriptApplication.ensure120FPS = true;

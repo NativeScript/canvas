@@ -1,21 +1,28 @@
+use crate::c2d::image_data::ImageData;
+use crate::c2d::CanvasRenderingContext2D;
+use crate::gl::web_g_l_rendering_context;
+use crate::gl2::web_g_l_2_rendering_context;
 use crate::gpu::bind_group_layout::g_p_u_bind_group_layout;
 use crate::gpu::buffer::g_p_u_buffer;
+use crate::gpu::context::g_p_u_canvas_context;
 use crate::gpu::enums::{
-  GPUBlendFactor, GPUBlendOperation, GPUBufferBindingType, GPUCompareFunction, GPUCullMode,
-  GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUPipelineLayoutAuto, GPUPrimitiveTopology,
-  GPUSamplerBindingType, GPUStencilOperation, GPUStorageTextureAccess, GPUStoreOp,
-  GPUTextureAspect, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension,
-  GPUVertexFormat, GPUVertexStepMode,
+  GPUAddressMode, GPUBlendFactor, GPUBlendOperation, GPUBufferBindingType, GPUCompareFunction,
+  GPUCullMode, GPUFilterMode, GPUFrontFace, GPUIndexFormat, GPULoadOp, GPUPipelineLayoutAuto,
+  GPUPrimitiveTopology, GPUQueryType, GPUSamplerBindingType, GPUStencilOperation,
+  GPUStorageTextureAccess, GPUStoreOp, GPUTextureAspect, GPUTextureDimension, GPUTextureFormat,
+  GPUTextureSampleType, GPUTextureViewDimension, GPUVertexFormat, GPUVertexStepMode,
+  PredefinedColorSpaceEnum,
 };
 use crate::gpu::pipeline_layout::g_p_u_pipeline_layout;
-use crate::gpu::query_set::GPUQuerySet;
+use crate::gpu::query_set::g_p_u_query_set;
 use crate::gpu::sampler::g_p_u_sampler;
 use crate::gpu::shader_module::g_p_u_shader_module;
 use crate::gpu::texture::g_p_u_texture;
-use crate::gpu::texture_view::GPUTextureView;
+use crate::gpu::texture_view::g_p_u_texture_view;
+use crate::image_asset::ImageAsset;
 use canvas_c::webgpu::enums::{
   CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasOptionalIndexFormat,
-  CanvasOptionalPrimitiveTopology,
+  CanvasOptionalPrimitiveTopology, CanvasStencilFaceState,
 };
 use canvas_c::webgpu::gpu_device::{CanvasPrimitiveState, CanvasVertexBufferLayout};
 use canvas_c::webgpu::gpu_supported_limits::CanvasGPUSupportedLimits;
@@ -23,10 +30,110 @@ use canvas_c::webgpu::structs::{
   CanvasBlendFactor, CanvasBlendOperation, CanvasBlendState, CanvasColor, CanvasColorTargetState,
   CanvasExtent3d, CanvasOrigin3d,
 };
-use napi::bindgen_prelude::{ClassInstance, Either3};
-use napi::Either;
+use napi::bindgen_prelude::{ClassInstance, Either6};
+use napi::{Either, JsObject};
 use napi_derive::napi;
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
+
+#[napi(js_name = "GPURenderBundleDescriptor", object)]
+pub struct GPURenderBundleDescriptor{
+  pub label: Option<String>
+}
+
+#[napi(js_name = "GPURenderBundleEncoderDescriptor", object)]
+pub struct GPURenderBundleEncoderDescriptor {
+  pub label: Option<String>,
+  pub color_formats: Vec<GPUTextureFormat>,
+  pub depth_read_only: Option<bool>,
+  pub depth_stencil_format: Option<GPUTextureFormat>,
+  pub sample_count: Option<u32>,
+  pub stencil_read_only: Option<bool>,
+}
+
+#[napi(js_name = "GPUPipelineLayoutDescriptor", object)]
+pub struct GPUPipelineLayoutDescriptor {
+  pub label: Option<String>,
+  pub bind_group_layouts: Vec<ClassInstance<g_p_u_bind_group_layout>>,
+}
+
+#[napi(js_name = "GPUQuerySetDescriptor", object)]
+pub struct GPUQuerySetDescriptor {
+  pub label: Option<String>,
+  pub count: u32,
+  #[napi(js_name = "type")]
+  pub type_: GPUQueryType,
+}
+
+#[napi(js_name = "GPUSamplerDescriptor", object)]
+pub struct GPUSamplerDescriptor {
+  pub label: Option<String>,
+  pub address_mode_u: Option<GPUAddressMode>,
+  pub address_mode_v: Option<GPUAddressMode>,
+  pub address_mode_w: Option<GPUAddressMode>,
+  pub compare: Option<GPUCompareFunction>,
+  pub lod_max_clamp: Option<f64>,
+  pub lod_min_clamp: Option<f64>,
+  pub mag_filter: Option<GPUFilterMode>,
+  pub max_anisotropy: Option<u16>,
+  pub min_filter: Option<GPUFilterMode>,
+  pub mipmap_filter: Option<GPUFilterMode>,
+}
+
+#[napi(js_name = "GPUOrigin2DDict", object)]
+pub struct GPUOrigin2DDict {
+  pub x: Option<u32>,
+  pub y: Option<u32>,
+}
+
+#[napi(js_name = "GPUImageCopyTextureTagged", object)]
+pub struct GPUImageCopyTextureTagged {
+  pub aspect: Option<GPUTextureAspect>,
+  pub color_space: Option<PredefinedColorSpaceEnum>,
+  pub mip_level: Option<u32>,
+  pub origin: Option<Either<Vec<u32>, GPUOrigin3DDict>>,
+  pub premultiplied_alpha: Option<bool>,
+  pub texture: ClassInstance<g_p_u_texture>,
+}
+
+#[napi(js_name = "GPUImageCopyExternalImage", object)]
+pub struct GPUImageCopyExternalImage {
+  pub flip_y: Option<bool>,
+  pub origin: Option<Either<Vec<u32>, GPUOrigin2DDict>>,
+  pub source: Either6<
+    ClassInstance<ImageData>,
+    ClassInstance<ImageAsset>,
+    ClassInstance<CanvasRenderingContext2D>,
+    ClassInstance<web_g_l_rendering_context>,
+    ClassInstance<web_g_l_2_rendering_context>,
+    ClassInstance<g_p_u_canvas_context>,
+  >,
+}
+
+#[napi(js_name = "GPUTextureDescriptor", object)]
+#[derive(Debug)]
+pub struct GPUTextureDescriptor {
+  pub label: Option<String>,
+  pub dimension: Option<GPUTextureDimension>,
+  pub format: GPUTextureFormat,
+  pub mip_level_count: Option<u32>,
+  pub sample_count: Option<u32>,
+  pub size: Either<Vec<u32>, GPUExtent3DDict>,
+  pub usage: u32,
+  pub view_formats: Option<Vec<GPUTextureFormat>>,
+}
+
+#[napi(js_name = "GPUTextureViewDescriptor", object)]
+pub struct GPUTextureViewDescriptor {
+  pub label: Option<String>,
+  pub format: Option<GPUTextureFormat>,
+  pub dimension: Option<GPUTextureViewDimension>,
+  pub aspect: Option<GPUTextureAspect>,
+  pub base_mip_level: Option<u32>,
+  pub mip_level_count: Option<u32>,
+  pub base_array_layer: Option<u32>,
+  pub array_layer_count: Option<u32>,
+}
 
 #[napi(js_name = "GPUProgrammableStage", object)]
 pub struct GPUProgrammableStage {
@@ -50,21 +157,32 @@ pub struct GPUBufferDescriptor {
   pub usage: u32,
 }
 
-#[napi(js_name = "GPUBufferBinding", object)]
+#[napi(object)]
 pub struct GPUBufferBinding {
   pub buffer: ClassInstance<g_p_u_buffer>,
   pub offset: Option<i64>,
   pub size: Option<i64>,
 }
 
+impl Debug for GPUBufferBinding {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GPUBufferBinding")
+      .field("buffer", &self.buffer.buffer)
+      .field("offset", &self.offset)
+      .field("size", &self.size)
+      .finish()
+  }
+}
+
 // pub type GPUBindingResource = Either4<
 //   ClassInstance<g_p_u_sampler>,
-//   ClassInstance<GPUTextureView>,
+//   ClassInstance<g_p_u_texture_view>,
 //   ClassInstance<GPUBufferBinding>,
 //   ClassInstance<g_p_u_external_texture>,
 // >;
 
 #[napi(js_name = "GPUTextureBindingLayout", object)]
+#[derive(Debug)]
 pub struct GPUTextureBindingLayout {
   pub multisampled: Option<bool>,
   pub sample_type: Option<GPUTextureSampleType>,
@@ -72,6 +190,7 @@ pub struct GPUTextureBindingLayout {
 }
 
 #[napi(js_name = "GPUStorageTextureBindingLayout", object)]
+#[derive(Debug)]
 pub struct GPUStorageTextureBindingLayout {
   pub access: Option<GPUStorageTextureAccess>,
   pub format: GPUTextureFormat,
@@ -79,15 +198,18 @@ pub struct GPUStorageTextureBindingLayout {
 }
 
 #[napi(js_name = "GPUSamplerBindingLayout", object)]
+#[derive(Debug)]
 pub struct GPUSamplerBindingLayout {
   #[napi(js_name = "type")]
   pub type_: Option<GPUSamplerBindingType>,
 }
 
 #[napi(js_name = "GPUExternalTextureBindingLayout", object)]
+#[derive(Debug)]
 pub struct GPUExternalTextureBindingLayout {}
 
 #[napi(js_name = "GPUBufferBindingLayout", object)]
+#[derive(Debug)]
 pub struct GPUBufferBindingLayout {
   pub has_dynamic_offset: Option<bool>,
   pub min_binding_size: Option<i64>,
@@ -96,6 +218,7 @@ pub struct GPUBufferBindingLayout {
 }
 
 #[napi(js_name = "GPUBindGroupLayoutEntry", object)]
+#[derive(Debug)]
 pub struct GPUBindGroupLayoutEntry {
   pub label: Option<String>,
   pub binding: u32,
@@ -108,17 +231,63 @@ pub struct GPUBindGroupLayoutEntry {
 }
 
 #[napi(js_name = "GPUBindGroupLayoutDescriptor", object)]
+
 pub struct GPUBindGroupLayoutDescriptor {
   pub label: Option<String>,
   pub entries: Vec<GPUBindGroupLayoutEntry>,
 }
 
+#[napi(js_name = "GPUBindGroupSampleEntry", object)]
+pub struct GPUBindGroupSampleEntry {
+  pub binding: u32,
+  pub resource: ClassInstance<g_p_u_sampler>,
+}
+
+impl Debug for GPUBindGroupSampleEntry {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GPUBindGroupSampleEntry")
+      .field("binding", &self.binding)
+      .field("resource", &self.resource.sampler)
+      .finish()
+  }
+}
+
+#[napi(js_name = "GPUBindGroupTextureViewEntry", object)]
+pub struct GPUBindGroupTextureViewEntry {
+  pub binding: u32,
+  pub resource: ClassInstance<g_p_u_texture_view>,
+}
+
+impl Debug for GPUBindGroupTextureViewEntry {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GPUBindGroupTextureViewEntry")
+      .field("binding", &self.binding)
+      .field("resource", &self.resource.texture_view)
+      .finish()
+  }
+}
+
+#[napi(js_name = "GPUBindGroupBufferEntry", object)]
+#[derive(Debug)]
+pub struct GPUBindGroupBufferEntry {
+  pub binding: u32,
+  pub resource: GPUBufferBinding,
+}
+
 #[napi(js_name = "GPUBindGroupEntry", object)]
 pub struct GPUBindGroupEntry {
   pub binding: u32,
-  pub resource:
-    Either3<ClassInstance<g_p_u_sampler>, ClassInstance<GPUTextureView>, GPUBufferBinding>,
+  pub resource: JsObject,
 }
+
+impl Debug for GPUBindGroupEntry {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GPUBindGroupEntry")
+      .field("binding", &self.binding)
+      .finish()
+  }
+}
+
 #[napi(js_name = "GPUBindGroupDescriptor", object)]
 pub struct GPUBindGroupDescriptor {
   pub entries: Vec<GPUBindGroupEntry>,
@@ -338,7 +507,7 @@ pub struct GPUImageCopyTexture {
 pub struct GPUComputePassTimestampWrites {
   pub beginning_of_pass_write_index: i32,
   pub end_of_pass_write_index: i32,
-  pub query_qet: ClassInstance<GPUQuerySet>,
+  pub query_set: ClassInstance<g_p_u_query_set>,
 }
 
 #[napi(object)]
@@ -366,34 +535,36 @@ impl From<CanvasColor> for GPUColorDict {
   }
 }
 
-#[napi(object)]
+#[napi(js_name = "GPURenderPassColorAttachment", object)]
 pub struct GPURenderPassColorAttachment {
   pub clear_value: Option<Either<Vec<f64>, GPUColorDict>>,
   pub depth_slice: Option<u32>,
+  #[napi(js_name = "loadOp")]
   pub load_op: GPULoadOp,
-  pub resolve_target: Option<ClassInstance<GPUTextureView>>,
+  pub resolve_target: Option<ClassInstance<g_p_u_texture_view>>,
+  #[napi(js_name = "storeOp")]
   pub store_op: GPUStoreOp,
-  pub view: ClassInstance<GPUTextureView>,
+  pub view: ClassInstance<g_p_u_texture_view>,
 }
 
 #[napi(object)]
 pub struct GPURenderPassDepthStencilAttachment {
-  pub depth_clear_value: Option<u32>,
-  pub depth_load_op: GPULoadOp,
+  pub depth_clear_value: Option<f64>,
+  pub depth_load_op: Option<GPULoadOp>,
   pub depth_read_only: Option<bool>,
-  pub depth_store_op: GPUStoreOp,
+  pub depth_store_op: Option<GPUStoreOp>,
   pub stencil_clear_value: Option<u32>,
   pub stencil_load_op: Option<GPULoadOp>,
   pub stencil_read_only: Option<bool>,
   pub stencil_store_op: Option<GPUStoreOp>,
-  pub view: ClassInstance<GPUTextureView>,
+  pub view: ClassInstance<g_p_u_texture_view>,
 }
 
 #[napi(object)]
 pub struct GPURenderPassTimestampWrites {
-  pub beginning_of_pass_write_index: i32,
-  pub end_of_pass_write_index: i32,
-  pub query_set: ClassInstance<GPUQuerySet>,
+  pub beginning_of_pass_write_index: Option<i32>,
+  pub end_of_pass_write_index: Option<i32>,
+  pub query_set: ClassInstance<g_p_u_query_set>,
 }
 
 #[napi(object)]
@@ -402,7 +573,7 @@ pub struct GPURenderPassDescriptor {
   pub depth_stencil_attachment: Option<GPURenderPassDepthStencilAttachment>,
   pub label: Option<String>,
   pub max_draw_count: Option<i64>,
-  pub occlusion_query_set: Option<ClassInstance<GPUQuerySet>>,
+  pub occlusion_query_set: Option<ClassInstance<g_p_u_query_set>>,
   pub timestamp_writes: Option<GPURenderPassTimestampWrites>,
 }
 
@@ -418,6 +589,7 @@ pub struct GPUShaderModuleDescriptor {
 }
 
 #[napi(object)]
+#[derive(Debug)]
 pub struct GPUExtent3DDict {
   pub width: u32,
   pub height: Option<u32>,
@@ -462,11 +634,34 @@ pub struct GPUStencilFaceState {
   pub pass_op: Option<GPUStencilOperation>,
 }
 
+impl Into<CanvasStencilFaceState> for GPUStencilFaceState {
+  fn into(self) -> CanvasStencilFaceState {
+    let mut ret = CanvasStencilFaceState::IGNORE;
+    if let Some(compare) = self.compare {
+      ret.compare = compare.into();
+    }
+
+    if let Some(depth_fail_op) = self.depth_fail_op {
+      ret.depth_fail_op = depth_fail_op.into();
+    }
+
+    if let Some(fail_op) = self.fail_op {
+      ret.fail_op = fail_op.into();
+    }
+
+    if let Some(pass_op) = self.pass_op {
+      ret.pass_op = pass_op.into();
+    }
+
+    ret
+  }
+}
+
 #[napi(object)]
 pub struct GPUDepthStencilState {
-  pub depth_bias: Option<u32>,
-  pub depth_bias_clamp: Option<u32>,
-  pub depth_bias_slope_scale: Option<u32>,
+  pub depth_bias: Option<i32>,
+  pub depth_bias_clamp: Option<f64>,
+  pub depth_bias_slope_scale: Option<f64>,
   pub depth_compare: Option<GPUCompareFunction>,
   pub depth_write_enabled: Option<bool>,
   pub format: GPUTextureFormat,
@@ -561,7 +756,7 @@ pub struct GPUFragmentState {
 pub struct GPUMultisampleState {
   pub alpha_to_coverage_enabled: Option<bool>,
   pub count: Option<u32>,
-  pub mask: Option<u32>,
+  pub mask: Option<i64>,
 }
 
 #[napi(object)]
@@ -695,7 +890,7 @@ pub struct GPURenderPipelineDescriptor {
   pub depth_stencil: Option<GPUDepthStencilState>,
   pub fragment: Option<GPUFragmentState>,
   pub label: Option<String>,
-  pub layout: Option<Either<ClassInstance<g_p_u_pipeline_layout>, GPUPipelineLayoutAuto>>,
+  pub layout: Option<Either<JsObject, GPUPipelineLayoutAuto>>,
   pub multisample: Option<GPUMultisampleState>,
   pub primitive: Option<GPUPrimitiveState>,
   pub vertex: GPUVertexState,

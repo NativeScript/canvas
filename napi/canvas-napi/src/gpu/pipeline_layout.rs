@@ -2,7 +2,7 @@ use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
 
-#[napi]
+#[napi(js_name = "GPUPipelineLayout")]
 pub struct g_p_u_pipeline_layout {
   pub(crate) layout: Arc<canvas_c::webgpu::gpu_pipeline_layout::CanvasGPUPipelineLayout>,
 }

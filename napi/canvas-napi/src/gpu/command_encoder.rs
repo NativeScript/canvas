@@ -1,16 +1,17 @@
 use crate::gpu::buffer::g_p_u_buffer;
 use crate::gpu::command_buffer::g_p_u_command_buffer;
-use crate::gpu::compute_pass_encoder::GPUComputePassEncoder;
+use crate::gpu::compute_pass_encoder::g_p_u_compute_pass_encoder;
+use crate::gpu::enums::{GPULoadOp, GPUStoreOp};
 use crate::gpu::objects::{
   GPUComputePassDescriptor, GPUExtent3DDict, GPUImageCopyBuffer, GPUImageCopyTexture,
   GPURenderPassDescriptor,
 };
-use crate::gpu::query_set::GPUQuerySet;
-use crate::gpu::render_pass_encoder::GPURenderPassEncoder;
+use crate::gpu::query_set::g_p_u_query_set;
+use crate::gpu::render_pass_encoder::g_p_u_render_pass_encoder;
 use canvas_c::webgpu::gpu_query_set::CanvasGPUQuerySet;
 use canvas_c::webgpu::structs::{
-  CanvasColor, CanvasPassChannelColor, CanvasRenderPassColorAttachment,
-  CanvasRenderPassDepthStencilAttachment,
+  CanvasColor, CanvasOptionalLoadOp, CanvasOptionalStoreOp, CanvasPassChannelColor,
+  CanvasRenderPassColorAttachment, CanvasRenderPassDepthStencilAttachment,
 };
 use napi::*;
 use napi_derive::napi;
@@ -18,7 +19,7 @@ use std::ffi::CString;
 use std::sync::Arc;
 
 #[napi(js_name = "GPUCommandEncoder")]
-pub struct GPUCommandEncoder {
+pub struct g_p_u_command_encoder {
   pub(crate) encoder: Arc<canvas_c::webgpu::gpu_command_encoder::CanvasGPUCommandEncoder>,
 }
 
@@ -28,7 +29,7 @@ pub struct GPUCommandEncoderFinishDescriptor {
 }
 
 #[napi]
-impl GPUCommandEncoder {
+impl g_p_u_command_encoder {
   #[napi(getter)]
   pub fn get_label(&self) -> String {
     let label = unsafe {
@@ -46,7 +47,7 @@ impl GPUCommandEncoder {
   pub fn begin_compute_pass(
     &self,
     descriptor: Option<GPUComputePassDescriptor>,
-  ) -> GPUComputePassEncoder {
+  ) -> g_p_u_compute_pass_encoder {
     let mut query_set = std::ptr::null();
     let mut label_ptr = std::ptr::null();
     let mut label = None;
@@ -55,7 +56,7 @@ impl GPUCommandEncoder {
     if let Some(descriptor) = descriptor {
       label = descriptor.label.map(|l| CString::new(l).unwrap());
       if let Some(timestamp_writes) = descriptor.timestamp_writes {
-        query_set = Arc::as_ptr(&timestamp_writes.query_qet.query);
+        query_set = Arc::as_ptr(&timestamp_writes.query_set.query);
         beginning_of_pass_write_index = timestamp_writes.beginning_of_pass_write_index;
         end_of_pass_write_index = timestamp_writes.end_of_pass_write_index;
       }
@@ -72,13 +73,16 @@ impl GPUCommandEncoder {
         end_of_pass_write_index,
       )
     };
-    GPUComputePassEncoder {
+    g_p_u_compute_pass_encoder {
       encoder: unsafe { Arc::from_raw(pass) },
     }
   }
 
   #[napi]
-  pub fn begin_render_pass(&self, descriptor: GPURenderPassDescriptor) -> GPURenderPassEncoder {
+  pub fn begin_render_pass(
+    &self,
+    descriptor: GPURenderPassDescriptor,
+  ) -> g_p_u_render_pass_encoder {
     let mut label_ptr = std::ptr::null();
     let label = descriptor.label.map(|l| CString::new(l).unwrap());
 
@@ -125,12 +129,54 @@ impl GPUCommandEncoder {
       })
       .collect::<Vec<_>>();
 
-    let mut depth_stencil_attachment: *const CanvasRenderPassDepthStencilAttachment =
+    let mut depth_stencil_attachment_ptr: *const CanvasRenderPassDepthStencilAttachment =
       std::ptr::null();
+
+    let depth_stencil_attachment =
+      descriptor
+        .depth_stencil_attachment
+        .map(|stencil| CanvasRenderPassDepthStencilAttachment {
+          view: Arc::as_ptr(&stencil.view.texture_view),
+          depth_clear_value: stencil.depth_clear_value.unwrap_or(0.) as f32,
+          depth_load_op: match stencil.depth_load_op {
+            None => CanvasOptionalLoadOp::None,
+            Some(value) => CanvasOptionalLoadOp::Some(value.into()),
+          },
+          depth_store_op: match stencil.depth_store_op {
+            None => CanvasOptionalStoreOp::None,
+            Some(value) => CanvasOptionalStoreOp::Some(value.into()),
+          },
+          depth_read_only: stencil.depth_read_only.unwrap_or(false),
+          stencil_clear_value: stencil.stencil_clear_value.unwrap_or(0),
+          stencil_load_op: match stencil.stencil_load_op {
+            None => CanvasOptionalLoadOp::None,
+            Some(value) => CanvasOptionalLoadOp::Some(value.into()),
+          },
+          stencil_store_op: match stencil.stencil_store_op {
+            None => CanvasOptionalStoreOp::None,
+            Some(value) => CanvasOptionalStoreOp::Some(value.into()),
+          },
+          stencil_read_only: stencil.stencil_read_only.unwrap_or(false),
+        });
+
+    if let Some(depth_stencil_attachment) = &depth_stencil_attachment {
+      depth_stencil_attachment_ptr = depth_stencil_attachment;
+    }
+
     let mut occlusion_query_set: *const CanvasGPUQuerySet = std::ptr::null();
     let mut query_set: *const CanvasGPUQuerySet = std::ptr::null();
     let mut beginning_of_pass_write_index: i32 = -1;
     let mut end_of_pass_write_index: i32 = -1;
+
+    if let Some(descriptor) = descriptor.timestamp_writes {
+      query_set = Arc::as_ptr(&descriptor.query_set.query);
+      beginning_of_pass_write_index = descriptor.beginning_of_pass_write_index.unwrap_or(-1);
+      end_of_pass_write_index = descriptor.end_of_pass_write_index.unwrap_or(-1);
+    }
+
+    if let Some(descriptor) = descriptor.occlusion_query_set {
+      occlusion_query_set = Arc::as_ptr(&descriptor.query);
+    }
 
     let pass = unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(
@@ -138,7 +184,7 @@ impl GPUCommandEncoder {
         label_ptr,
         color_attachments.as_ptr(),
         color_attachments.len(),
-        depth_stencil_attachment,
+        depth_stencil_attachment_ptr,
         occlusion_query_set,
         query_set,
         beginning_of_pass_write_index,
@@ -146,7 +192,9 @@ impl GPUCommandEncoder {
       )
     };
 
-    GPURenderPassEncoder { encoder: pass }
+    g_p_u_render_pass_encoder {
+      encoder: unsafe { Arc::from_raw(pass) },
+    }
   }
 
   #[napi]
@@ -409,12 +457,12 @@ impl GPUCommandEncoder {
 
   #[napi]
   pub fn resolve_query_set(
-    &self,
-    query_set: &GPUQuerySet,
-    first_query: u32,
-    query_count: u32,
-    destination: &g_p_u_buffer,
-    destination_offset: i64,
+      &self,
+      query_set: &g_p_u_query_set,
+      first_query: u32,
+      query_count: u32,
+      destination: &g_p_u_buffer,
+      destination_offset: i64,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_resolve_query_set(
@@ -429,7 +477,7 @@ impl GPUCommandEncoder {
   }
 
   #[napi]
-  pub fn write_timestamp(&self, query_set: &GPUQuerySet, query_index: u32) {
+  pub fn write_timestamp(&self, query_set: &g_p_u_query_set, query_index: u32) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_write_timestamp(
         Arc::as_ptr(&self.encoder),

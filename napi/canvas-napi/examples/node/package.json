@@ -7,5 +7,9 @@
 		"type": "git",
 		"url": "https://github.com/NativeScript/canvas.git"
 	},
-	"private": true
+	"private": true,
+	"dependencies": {
+		"wgpu-matrix": "~3.3.0",
+		"teapot": "~1.0.0"
+	}
 }

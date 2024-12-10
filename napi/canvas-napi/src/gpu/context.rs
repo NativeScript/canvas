@@ -1,3 +1,4 @@
+use crate::gpu::adapter::g_p_u_adapter;
 use crate::gpu::device::g_p_u_device;
 use crate::gpu::enums::{
   GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUTextureFormat, PredefinedColorSpaceEnum,
@@ -19,11 +20,26 @@ pub struct g_p_u_canvas_context {
 }
 
 #[napi(object)]
+#[derive(Clone, Debug, Default)]
 pub struct CanvasSurfaceCapabilities {
   pub formats: Vec<String>,
   pub usages: u32,
   pub alpha_modes: Vec<String>,
   pub present_modes: Vec<String>,
+}
+
+impl From<canvas_c::webgpu::structs::CanvasSurfaceCapabilities> for CanvasSurfaceCapabilities {
+  fn from(value: canvas_c::webgpu::structs::CanvasSurfaceCapabilities) -> Self {
+    let formats = unsafe { *Box::from_raw(value.formats as *mut StringBuffer) };
+    let alpha_modes = unsafe { *Box::from_raw(value.alpha_modes as *mut StringBuffer) };
+    let present_modes = unsafe { *Box::from_raw(value.present_modes as *mut StringBuffer) };
+    Self {
+      usages: value.usages,
+      formats: formats.into(),
+      alpha_modes: alpha_modes.into(),
+      present_modes: present_modes.into(),
+    }
+  }
 }
 
 #[napi(object)]
@@ -41,11 +57,11 @@ pub struct GPUCanvasContextConfigOptions {
 #[napi]
 impl g_p_u_canvas_context {
   #[napi(factory)]
-  pub fn with_view(gpu: &g_p_u, view: i64, width: u32, height: u32) -> Self {
+  pub fn with_layer(gpu: &g_p_u, layer: i64, width: u32, height: u32) -> Self {
     unsafe {
       let context = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
         Arc::as_ptr(&gpu.instance),
-        view as _,
+        layer as _,
         width,
         height,
       );
@@ -60,6 +76,25 @@ impl g_p_u_canvas_context {
     }
   }
 
+  #[napi(factory)]
+  pub fn with_view(gpu: &g_p_u, layer: i64, width: u32, height: u32) -> Self {
+    unsafe {
+      let context =
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_nsview(
+          Arc::as_ptr(&gpu.instance),
+          layer as _,
+          width,
+          height,
+        );
+      if context.is_null() {
+        // todo throw
+      }
+      g_p_u_canvas_context {
+        context: Arc::from_raw(context),
+      }
+    }
+  }
+
   #[napi]
   pub fn resize(&self, layer: i64, width: u32, height: u32) {
     unsafe {
@@ -68,6 +103,24 @@ impl g_p_u_canvas_context {
         layer as _,
         width,
         height,
+      )
+    }
+  }
+
+  #[napi]
+  pub fn present_surface(&self) {
+    let context = Arc::as_ptr(&self.context);
+    let texture =
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_current_texture(
+        context,
+      );
+
+    if texture.is_null() {
+      return;
+    }
+    unsafe {
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_present_surface(
+        context, texture,
       )
     }
   }
@@ -231,29 +284,18 @@ impl g_p_u_canvas_context {
     }
   }
 
-  #[napi]
-  pub fn get_capabilities(
-    &self,
-    adapter: ClassInstance<crate::gpu::adapter::g_p_u_adapter>,
-  ) -> CanvasSurfaceCapabilities {
+  #[napi(
+    ts_return_type = "{usages: number, formats: string[], alphaModes: string[], presentModes: string[]}"
+  )]
+  pub fn get_capabilities(&self, adapter: &g_p_u_adapter) -> CanvasSurfaceCapabilities {
     let cap = unsafe {
       canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_capabilities(
         Arc::as_ptr(&self.context),
         Arc::as_ptr(&adapter.adapter),
       )
     };
-    let mut cap = unsafe { Box::from_raw(cap) };
-    let formats: Vec<String> = unsafe { *Box::from_raw(cap.formats as *mut StringBuffer) }.into();
-    let alpha_modes: Vec<String> =
-      unsafe { *Box::from_raw(cap.alpha_modes as *mut StringBuffer) }.into();
-    let present_modes: Vec<String> =
-      unsafe { *Box::from_raw(cap.present_modes as *mut StringBuffer) }.into();
-    CanvasSurfaceCapabilities {
-      usages: cap.usages,
-      formats,
-      alpha_modes,
-      present_modes,
-    }
+    let cap = unsafe { *Box::from_raw(cap) };
+    CanvasSurfaceCapabilities::from(cap)
   }
 
   #[napi(js_name = "toDataURL")]

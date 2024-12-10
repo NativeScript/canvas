@@ -10,7 +10,7 @@ macro_rules! webgl_context_imports {
     use napi::*;
 
     use crate::gl::webgl_active_info::WebGLActiveInfo;
-    use crate::gl::webgl_shader_precision_format::WebGLShaderPrecisionFormat;
+    use crate::gl::webgl_shader_precision_format::web_g_l_shader_precision_format;
     use crate::gl::webgl_uniform_location::WebGLUniformLocation;
     use canvas_c::{WebGLExtension, WebGLResultType, WebGLState};
     use std::ffi::{c_void, CString, IntoStringError};

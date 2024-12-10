@@ -6,7 +6,7 @@ import '../app.ts';
 import '../../canvas';
 import installPolyfills from '../../polyfill';
 import three from './three';
-const { webgpuCube } = three;
+const { webgpuCube, cube } = three;
 
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
@@ -538,7 +538,7 @@ function solarSystem(canvas) {
 }
 
 
-function swarm(canvas, width, height, nativeCanvas) {
+function swarm(canvas, width?: number, height?: number) {
 	var requestAnimFrame = requestAnimationFrame;
 
 	function init() {
@@ -546,10 +546,9 @@ function swarm(canvas, width, height, nativeCanvas) {
 		// Initialize the context of the canvas
 
 		// canvas.nativeView.handleInvalidationManually = true
-
 		// Set the canvas width and height to occupy full window
-		var W = width || canvas.clientWidth * window.devicePixelRatio,
-			H = height || canvas.clientHeight * window.devicePixelRatio;
+		var W = width ?? canvas.clientWidth * window.devicePixelRatio,
+			H = height ?? canvas.clientHeight * window.devicePixelRatio;
 
 		canvas.width = W;
 		canvas.height = H;
@@ -1395,12 +1394,10 @@ function doGL() {
 }
 
 
-const window = document.createElement('window') as HTMLElement & {
-	devicePixelRatio: number
-};
+const windowDoc = document.createElement('window');
 
-window.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
-window.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
+windowDoc.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
+windowDoc.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
 
 installPolyfills(globalThis.window);
 
@@ -1534,24 +1531,25 @@ canvas.addEventListener('ready', (event) => {
 // 	twoCubes(canvas);
 	// computeBoids(canvas);
 // 	wireframe(canvas);
-	renderBundles(canvas);
+// 	renderBundles(canvas);
 	//webgpuCube(canvas);
 	//cubeMap(canvas);
+	cube(canvas);
 });
 
 canvas.width = NSScreen.mainScreen.frame.size.width;
 canvas.height = NSScreen.mainScreen.frame.size.height;
 
-window.setAttribute('styleMask', (
+windowDoc.setAttribute('styleMask', (
 	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
 ) as never);
 
 const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0,0,0.2, 0.5);
 const background = `rgba(${color.redComponent * 255}, ${color.greenComponent * 255}, ${color.blueComponent * 255}, ${color.alphaComponent})`;
-window.style.backgroundColor = background;
-window.appendChild(canvas);
+// window.style.backgroundColor = background;
+windowDoc.appendChild(canvas);
 
-document.body.appendChild(window);
+document.body.appendChild(windowDoc);
 
 globalThis.NativeScriptApplication.launch();
 

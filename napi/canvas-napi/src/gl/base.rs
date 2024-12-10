@@ -4,10 +4,9 @@ macro_rules! impl_webgl_context {
     use crate::webgl_context_imports;
     webgl_context_imports!();
 
-
     const UNPACK_FLIP_Y_WEBGL: u32 = 37440;
-const UNPACK_PREMULTIPLY_ALPHA_WEBGL: u32 = 37441;
-const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
+    const UNPACK_PREMULTIPLY_ALPHA_WEBGL: u32 = 37441;
+    const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
 
     #[napi]
     impl $struct_name {
@@ -715,9 +714,9 @@ const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
     }
 
     #[napi]
-    pub fn get_shader_precision_format(&self, env: Env, shader_type: u32, precision_type: u32) -> Result<ClassInstance<WebGLShaderPrecisionFormat>> {
+    pub fn get_shader_precision_format(&self, env: Env, shader_type: u32, precision_type: u32) -> Result<ClassInstance<web_g_l_shader_precision_format>> {
         let precision = canvas_c::canvas_native_webgl_get_shader_precision_format(shader_type, precision_type, self.state);
-        WebGLShaderPrecisionFormat(precision)
+        web_g_l_shader_precision_format(precision)
             .into_instance(env)
     }
 
@@ -1034,6 +1033,10 @@ const UNPACK_COLOR_SPACE_CONVERSION_WEBGL: u32 = 37443;
     #[napi]
     pub fn shader_source(&self, shader: ClassInstance<WebGLShader>, source: String) {
         let state = unsafe { &mut *self.state };
+        let mut source = source;
+        if(source.contains("#version 300 es")){
+              source =  source.replace("#version 300 es", "#version 330 core");
+        }
         canvas_webgl::webgl::canvas_native_webgl_shader_source(shader.0, source.as_str(), state.get_inner_mut());
     }
 

@@ -219,6 +219,7 @@ class NSCCanvas extends NSView {
 	mtlViewPtr?: interop.Pointer;
 	glViewPtr?: interop.Pointer;
 	gpuContext?: GPUCanvasContext;
+	glContext: WebGLRenderingContext | WebGL2RenderingContext | undefined;
 
 	initWebGPUContext() {
 		if (this.gpuContext) {
@@ -245,6 +246,7 @@ class NSCCanvas extends NSView {
 		}
 		if (this.engine == Engine.GL) {
 			this.glkView?.openGLContext?.makeCurrentContext?.();
+			this.glkView?.openGLContext?.update?.();
 		}
 		if (this.is2D) {
 			(<any>this._canvas?.deref()?._2dContext)?.resize?.(this.surfaceWidth, this.surfaceHeight);
@@ -407,6 +409,100 @@ class CanvasReadyEvent extends Event {
 	}
 }
 
+const defaultOpts = {
+	alpha: true,
+	antialias: true,
+	depth: true,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
+
+const defaultGLOptions = {
+	alpha: true,
+	antialias: true,
+	depth: true,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
+
+const default2DOptions = {
+	alpha: true,
+	antialias: true,
+	depth: false,
+	failIfMajorPerformanceCaveat: false,
+	powerPreference: 'default',
+	premultipliedAlpha: true,
+	preserveDrawingBuffer: false,
+	stencil: false,
+	desynchronized: false,
+	xrCompatible: false,
+};
+
+function parsePowerPreference(powerPreference: string) {
+	switch (powerPreference) {
+		case 'default':
+			return 0;
+		case 'high-performance':
+			return 1;
+		case 'low-power':
+			return 2;
+		default:
+			return -1;
+	}
+}
+
+function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextAttributes) {
+	if (!contextAttributes) {
+		if (type === '2d') {
+			return { ...default2DOptions, powerPreference: 0 };
+		}
+		if (type.indexOf('webgl') > -1) {
+			return { ...defaultGLOptions, powerPreference: 0 };
+		}
+	}
+	if (type === '2d') {
+		if (contextAttributes.alpha !== undefined && typeof contextAttributes.alpha === 'boolean') {
+			return { ...contextAttributes, powerPreference: 0 };
+		} else {
+			return { alpha: true, powerPreference: 0 };
+		}
+	}
+	const glOptions = { ...defaultGLOptions };
+	const setIfDefined = (prop: keyof typeof defaultGLOptions, value: unknown) => {
+		if (value !== undefined) {
+			if (prop === 'powerPreference') {
+				// Handle specific conversion logic for 'powerPreference'
+				glOptions[prop] = value as (typeof glOptions)[typeof prop];
+			} else if (typeof value === typeof glOptions[prop]) {
+				glOptions[prop] = value as (typeof glOptions)[typeof prop];
+			}
+		}
+	};
+	if (type.indexOf('webgl') > -1) {
+		setIfDefined('alpha', contextAttributes.alpha);
+		setIfDefined('antialias', contextAttributes.antialias);
+		setIfDefined('depth', contextAttributes.depth);
+		setIfDefined('failIfMajorPerformanceCaveat', contextAttributes.failIfMajorPerformanceCaveat);
+		setIfDefined('powerPreference', parsePowerPreference(contextAttributes.powerPreference ?? 'default'));
+		setIfDefined('premultipliedAlpha', contextAttributes.premultipliedAlpha);
+		setIfDefined('preserveDrawingBuffer', contextAttributes.preserveDrawingBuffer);
+		setIfDefined('stencil', contextAttributes.stencil);
+		setIfDefined('desynchronized', contextAttributes.desynchronized);
+		return glOptions;
+	}
+	return null;
+}
+
 @view({
 	name: 'HTMLCanvasElement',
 	tagName: 'canvas',
@@ -557,11 +653,19 @@ export class Canvas extends ViewBase {
 			if (this._2dContext) {
 				return this._2dContext;
 			}
+
+			const opts = {
+				...defaultOpts,
+				...handleContextOptions(contextType, options),
+				fontColor: -16777216,
+			};
+
 			const scale = NSScreen.mainScreen.backingScaleFactor;
 
 			if (Canvas.forceGL) {
 				const handle = interop.handleof(this._canvas.glkView);
-				this._2dContext = CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, options?.alpha ?? true, 0, 90, 1);
+
+				this._2dContext = CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, opts.alpha, opts.fontColor, 90, 1);
 				this._canvas.glkView!.isHidden = false;
 				this._contextType = ContextType.Canvas;
 				this._canvas.engine = Engine.GL;
@@ -570,11 +674,15 @@ export class Canvas extends ViewBase {
 				const mtlViewHandle = interop.handleof(this._canvas.mtlView);
 				const deviceHandle = interop.handleof(this._canvas.mtlView!.device);
 				const queueHandle = interop.handleof(this._canvas.mtlView!.queue);
-				this._2dContext = CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), options?.alpha ?? true, scale, 1, 0, 90, 1);
+				this._2dContext = CanvasRenderingContext2D.withMtlViewDeviceQueue(mtlViewHandle.toNumber(), deviceHandle.toNumber(), queueHandle.toNumber(), opts.alpha, scale, 1, opts.fontColor, 90, 1);
 				this._canvas.mtlView!.isHidden = false;
 				this._contextType = ContextType.Canvas;
 				this._canvas.engine = Engine.GPU;
 				this._canvas._is2D = true;
+			}
+
+			if (this._2dContext) {
+				(<any>this._2dContext).canvas = this;
 			}
 
 			return this._2dContext;
@@ -586,8 +694,19 @@ export class Canvas extends ViewBase {
 				return this._webglContext;
 			}
 
+			const opts = {
+				...defaultOpts,
+				...handleContextOptions(contextType, options),
+				fontColor: -16777216,
+			};
+
 			const handle = interop.handleof(this._canvas.glkView);
-			this._webglContext = WebGLRenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
+			this._webglContext = WebGLRenderingContext.withView(handle.toNumber(), opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+			if (this._webglContext) {
+				(<any>this._webglContext).canvas = this;
+			}
+
+			this._canvas.glContext = this._webglContext;
 			this._canvas.glkView!.isHidden = false;
 			this._contextType = ContextType.WebGL;
 			this._canvas.engine = Engine.GL;
@@ -599,9 +718,19 @@ export class Canvas extends ViewBase {
 			if (this._webgl2Context) {
 				return this._webgl2Context;
 			}
+			const opts = {
+				...defaultOpts,
+				...handleContextOptions(contextType, options),
+				fontColor: -16777216,
+			};
 
 			const handle = interop.handleof(this._canvas.glkView);
-			this._webgl2Context = WebGL2RenderingContext.withView(handle.toNumber(), true, false, false, false, 1, true, false, false, false, false);
+			this._webgl2Context = WebGL2RenderingContext.withView(handle.toNumber(), opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+			if (this._webgl2Context) {
+				(<any>this._webgl2Context).canvas = this;
+			}
+
+			this._canvas.glContext = this._webgl2Context;
 			this._canvas.glkView!.isHidden = false;
 			this._contextType = ContextType.WebGL2;
 			this._canvas.engine = Engine.GL;
@@ -615,6 +744,10 @@ export class Canvas extends ViewBase {
 			}
 			this._canvas.initWebGPUContext();
 			this._canvas.engine = Engine.GPU;
+		}
+
+		if (this._gpuContext) {
+			(<any>this._gpuContext).canvas = this;
 		}
 
 		return this._gpuContext;

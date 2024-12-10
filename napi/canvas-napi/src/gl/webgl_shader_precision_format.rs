@@ -3,9 +3,9 @@ use napi::*;
 use napi_derive::napi;
 
 #[napi(js_name = "WebGLShaderPrecisionFormat", custom_finalize)]
-pub struct WebGLShaderPrecisionFormat(pub(crate) *const canvas_c::WebGLShaderPrecisionFormat);
+pub struct web_g_l_shader_precision_format(pub(crate) *const canvas_c::WebGLShaderPrecisionFormat);
 
-impl ObjectFinalize for WebGLShaderPrecisionFormat {
+impl ObjectFinalize for web_g_l_shader_precision_format {
     fn finalize(self, _: Env) -> Result<()> {
         canvas_c::canvas_native_webgl_shader_precision_format_destroy(self.0 as _);
         Ok(())
@@ -14,7 +14,7 @@ impl ObjectFinalize for WebGLShaderPrecisionFormat {
 
 
 #[napi]
-impl WebGLShaderPrecisionFormat {
+impl web_g_l_shader_precision_format {
     #[napi(getter)]
     pub fn get_precision(&self) -> i32 {
         canvas_c::canvas_native_webgl_shader_precision_format_get_precision(self.0)

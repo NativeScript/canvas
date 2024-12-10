@@ -1149,7 +1149,12 @@ export declare class WEBGL_compressed_texture_s3tc {}
 export declare class WEBGL_lose_context {}
 export declare class WEBGL_depth_texture {}
 export declare class WEBGL_draw_buffers {}
-export declare class WebGLShaderPrecisionFormat {}
+export type web_g_l_shader_precision_format = WebGLShaderPrecisionFormat;
+export declare class WebGLShaderPrecisionFormat {
+	get precision(): number;
+	get rangeMin(): number;
+	get rangeMax(): number;
+}
 export declare class WebGLUniformLocation {}
 export type web_g_l_rendering_context = WebGLRenderingContext;
 export declare class WebGLRenderingContext {

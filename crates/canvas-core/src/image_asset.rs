@@ -192,6 +192,8 @@ unsafe impl Send for ImageAssetInner {}
 #[derive(Clone, Debug, Default)]
 pub struct ImageAsset(Arc<parking_lot::Mutex<ImageAssetInner>>);
 
+unsafe impl Send for ImageAsset {}
+
 impl ImageAsset {
     pub fn with_bytes_dimension<F>(&self, f: F)
     where

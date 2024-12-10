@@ -363,7 +363,7 @@ export class Canvas extends CanvasBase {
 
 		if (typeof type === 'string') {
 			if (type === '2d') {
-				if (this._webglContext || this._webgl2Context) {
+				if (this._webglContext || this._webgl2Context || this._gpuContext) {
 					return null;
 				}
 
@@ -384,7 +384,7 @@ export class Canvas extends CanvasBase {
 
 				return this._2dContext;
 			} else if (type === 'webgl' || type === 'experimental-webgl') {
-				if (this._2dContext || this._webgl2Context) {
+				if (this._2dContext || this._webgl2Context || this._gpuContext) {
 					return null;
 				}
 				if (!this._webglContext) {
@@ -397,7 +397,7 @@ export class Canvas extends CanvasBase {
 				}
 				return this._webglContext;
 			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
-				if (this._2dContext || this._webglContext) {
+				if (this._2dContext || this._webglContext || this._gpuContext) {
 					return null;
 				}
 				if (!this._webgl2Context) {

@@ -69,11 +69,12 @@ impl Drop for CanvasGPUTexture {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasCreateTextureViewDescriptor {
-    label: *const c_char,
-    format: CanvasOptionalGPUTextureFormat,
-    dimension: CanvasOptionalTextureViewDimension,
-    range: *const CanvasImageSubresourceRange,
+    pub label: *const c_char,
+    pub format: CanvasOptionalGPUTextureFormat,
+    pub dimension: CanvasOptionalTextureViewDimension,
+    pub range: *const CanvasImageSubresourceRange,
 }
 
 #[no_mangle]

@@ -7,7 +7,7 @@ use crate::webgpu::prelude::label_to_ptr;
 //use wgpu_core::gfx_select;
 use super::gpu::CanvasWebGPUInstance;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CanvasGPUTextureView {
     pub(crate) label: Option<Cow<'static, str>>,
     pub(crate) instance: Arc<CanvasWebGPUInstance>,

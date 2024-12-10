@@ -138,7 +138,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             memory_hints: Default::default(),
         };
 
-        let instance_copy = Arc::clone(&instance);
 
         let global = instance.global();
 
@@ -165,7 +164,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     label: descriptor.label,
                     queue: Arc::new(QueueId {
                         id: queue,
-                        instance: Arc::clone(&instance_copy),
+                        instance: Arc::clone(&instance),
                     }),
                     error_sink: error_sink.clone(),
                 });
@@ -175,7 +174,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     device,
                     queue,
                     user_data: std::ptr::null_mut(),
-                    instance: instance_copy,
+                    instance,
                     error_sink,
                 }));
                 callback(std::ptr::null_mut(), ret, callback_data);

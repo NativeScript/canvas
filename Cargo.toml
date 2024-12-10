@@ -10,7 +10,9 @@ members = [
     "crates/canvas-ios",
     "crates/playground",
     "crates/canvas-c",
-    "crates/canvas-svg"]
+    "crates/canvas-svg",
+    "napi/canvas-napi",
+    ]
 
 [profile.release]
 panic = "abort"
@@ -25,7 +27,7 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "48f663f70d5b6e99a5b8a708876ce9642d78fbde"
+rev = "6f163cdf622bd183fcfc20224294b797312550bb"
 
 [workspace.dependencies]
 env_logger = "0.11.5"
@@ -37,9 +39,9 @@ canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { version = "0.78.2", features = ["textlayout"] }
+skia-safe = { version = "0.80.0", features = ["textlayout"] }
 itertools = "0.13.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "48f663f70d5b6e99a5b8a708876ce9642d78fbde", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-types = { git = "https://github.com/triniwiz/wgpu", rev = "48f663f70d5b6e99a5b8a708876ce9642d78fbde" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "6f163cdf622bd183fcfc20224294b797312550bb", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
+wgpu-types = { git = "https://github.com/triniwiz/wgpu", rev = "6f163cdf622bd183fcfc20224294b797312550bb" }
 ureq = "2.10.1"
 jni = "0.21.1"

@@ -166,6 +166,82 @@ pub fn canvas_native_webgl2_client_wait_sync(
     ret
 }
 
+
+pub fn canvas_native_webgl2_compressed_tex_image3d_none(
+    target: u32,
+    level: i32,
+    internalformat: u32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    border: i32,
+    image_size: i32,
+    offset: usize,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+    unsafe {
+        gl_bindings::CompressedTexImage3D(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            depth,
+            border,
+            image_size,
+            offset as *const c_void,
+        )
+    }
+}
+
+pub fn canvas_native_webgl2_compressed_tex_image3d(
+    target: u32,
+    level: i32,
+    internalformat: u32,
+    width: i32,
+    height: i32,
+    depth: i32,
+    border: i32,
+    src: &[u8],
+    src_offset: usize,
+    src_length_override: usize,
+    state: &mut WebGLState,
+) {
+    state.make_current();
+
+    let mut len = src.len();
+    if src_offset > len {
+        return;
+    }
+    if src_length_override == 0 {
+        len = len - src_offset;
+    } else {
+        len = src_length_override;
+    }
+
+    let mut buf = src;
+    if src_offset > 0 {
+        let ptr = unsafe { buf.as_ptr().offset(src_offset as isize) };
+        buf = unsafe { std::slice::from_raw_parts(ptr, len) }
+    }
+
+    unsafe {
+        gl_bindings::CompressedTexImage3D(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            depth,
+            border,
+            len.try_into().unwrap(),
+            buf.as_ptr() as *const c_void,
+        )
+    }
+}
+
+
 pub fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
     target: u32,
     level: i32,
@@ -177,7 +253,7 @@ pub fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
     depth: i32,
     format: u32,
     image_size: i32,
-    offset: i32,
+    offset: usize,
     state: &mut WebGLState,
 ) {
     state.make_current();
@@ -602,12 +678,12 @@ pub fn canvas_native_webgl2_get_buffer_sub_data(
 
     let len = dst_data.len();
 
-    if dst_offset > len {
+    if dst_offset < len {
         // todo log error
         return;
     }
 
-    if length > len {
+    if length < len {
         // todo log error
         return;
     }
@@ -804,7 +880,7 @@ pub fn canvas_native_webgl2_get_parameter(pname: u32, state: &mut WebGLState) ->
             if params[0] == 0 {
                 return WebGLResult::None;
             }
-            return WebGLResult::I32(params[0]);
+            WebGLResult::I32(params[0])
         }
         _ => canvas_native_webgl_get_parameter(pname, state),
     }
@@ -963,9 +1039,9 @@ pub fn canvas_native_webgl2_get_uniform_block_index(
     ret
 }
 
-pub fn canvas_native_webgl2_get_uniform_indices(
+pub fn canvas_native_webgl2_get_uniform_indices<T: AsRef<str>>(
     program: u32,
-    uniform_names: &[&str],
+    uniform_names: &[T],
     state: &mut WebGLState,
 ) -> Vec<u32> {
     state.make_current();
@@ -973,7 +1049,7 @@ pub fn canvas_native_webgl2_get_uniform_indices(
     let mut count: Vec<u32> = vec![0; uniform_names.len()];
     let mut buffer: Vec<CString> = Vec::with_capacity(uniform_names.len());
     for name in uniform_names.iter() {
-        let name = CString::new(*name).unwrap();
+        let name = CString::new(name.as_ref().to_string()).unwrap();
         buffer.push(name);
     }
 
@@ -1810,9 +1886,9 @@ pub fn canvas_native_webgl2_tex_sub_image3d_offset(
     );
 }
 
-pub fn canvas_native_webgl2_transform_feedback_varyings(
+pub fn canvas_native_webgl2_transform_feedback_varyings<T: AsRef<str>>(
     program: u32,
-    varyings: &[String],
+    varyings: &[T],
     buffer_mode: u32,
     state: &mut WebGLState,
 ) {
@@ -1820,8 +1896,8 @@ pub fn canvas_native_webgl2_transform_feedback_varyings(
 
     // todo improve performance ... no allocation :D
     let mut buf: Vec<CString> = Vec::with_capacity(varyings.len());
-    for vary in varyings.into_iter() {
-        buf.push(CString::new(vary.as_str()).unwrap())
+    for vary in varyings.iter() {
+        buf.push(CString::new(vary.as_ref().to_string()).unwrap())
     }
 
     let buffer: Vec<*const c_char> = buf.iter().map(|f| f.as_ptr()).collect();
@@ -2325,9 +2401,7 @@ pub fn canvas_native_webgl2_tex_image2d_image_asset(
     type_: i32,
     src_data: &[u8],
     state: &WebGLState,
-) {
-
-}
+) {}
 
 /* GL_EXT */
 

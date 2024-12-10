@@ -17,7 +17,8 @@ impl Drop for CanvasGPUShaderModule {
     fn drop(&mut self) {
         if !std::thread::panicking() {
             let global = self.instance.global();
-             global.shader_module_drop(self.module);
+            //todo
+           //  global.shader_module_drop(self.module);
         }
     }
 }

@@ -21,7 +21,7 @@ ash = { version = "0.38.0", optional = true, features = ["libloading"] }
 ash-window = { version = "0.13.0", optional = true }
 
 [target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]
-icrate = { version = "0.1.2", features = ["objc2", "Foundation", "Foundation_NSData"] }
+icrate = { version = "0.1.2", features = ["objc2", "Foundation", "Foundation_NSData", "Foundation_NSArray"] }
 core-foundation = "0.10.0"
 objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
 metal = { version = "0.30.0", optional = true }

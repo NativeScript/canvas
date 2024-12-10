@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noEmitHelpers": true,
+		"allowJs": true,
+		"importHelpers": true,
+		"target": "ESNext",
+		"outDir": "./dist",
+		"lib": ["ESNext", "dom"],
+		"allowImportingTsExtensions": true,
+		"noEmit": false
+	},
+	"extends": "@tsconfig/node22/tsconfig.json",
+	"include": ["canvas.ts", "index.d.ts", "utils/*.ts", "references.d.ts"],
+	"exclude": ["node_modules", "examples"]
+}

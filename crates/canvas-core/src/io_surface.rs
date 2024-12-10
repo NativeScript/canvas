@@ -14,10 +14,11 @@
 
 // use cgl::{kCGLNoError, CGLErrorString, CGLGetCurrentContext, CGLTexImageIOSurface2D, GLenum};
 use core::ffi::{c_int, c_void};
+use std::os::raw::c_uint;
 use core_foundation::base::{mach_port_t, CFRelease, CFRetain, CFType, CFTypeID, CFTypeRef, TCFType};
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
 use core_foundation::string::{CFString, CFStringRef};
-use gl_bindings::types::GLenum;
+type GLenum = c_uint;
 use std::slice;
 
 const BGRA: GLenum = 0x80E1;

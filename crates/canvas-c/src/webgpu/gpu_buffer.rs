@@ -1,12 +1,12 @@
+use std::sync::Arc;
 use std::{
     borrow::Cow,
     ffi::CString,
     os::raw::{c_char, c_void},
 };
-use std::sync::Arc;
 
 //use wgpu_core::gfx_select;
-use crate::webgpu::error::{CanvasGPUError, CanvasGPUErrorType, handle_error_fatal};
+use crate::webgpu::error::{handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::prelude::label_to_ptr;
 
 use super::gpu::CanvasWebGPUInstance;
@@ -36,6 +36,7 @@ impl From<wgpu_core::device::HostMap> for GPUMapMode {
     }
 }
 
+#[derive(Debug)]
 pub struct CanvasGPUBuffer {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) label: Option<Cow<'static, str>>,
@@ -79,9 +80,10 @@ impl CanvasGPUBuffer {
     }
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_label(buffer: *const CanvasGPUBuffer) -> *mut c_char {
+pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_label(
+    buffer: *const CanvasGPUBuffer,
+) -> *mut c_char {
     if buffer.is_null() {
         return std::ptr::null_mut();
     }
@@ -152,6 +154,32 @@ pub unsafe extern "C" fn canvas_native_webgpu_buffer_get_mapped_range(
     }
 }
 
+pub unsafe fn canvas_native_webgpu_buffer_get_mapped_range_size(
+    buffer: *const CanvasGPUBuffer,
+    offset: i64,
+    size: i64,
+) -> (*mut c_void, u64) {
+    if buffer.is_null() {
+        return (std::ptr::null_mut(), 0);
+    }
+    let buffer = unsafe { &*buffer };
+    let offset: u64 = offset.try_into().ok().unwrap_or_default();
+    let size: Option<u64> = size.try_into().ok();
+
+    let buffer_id = buffer.buffer;
+    let global = buffer.instance.global();
+
+    let range = global.buffer_get_mapped_range(buffer_id, offset, size);
+
+    match range {
+        Ok((buf, size)) => (buf.as_ptr() as *mut c_void, size),
+        Err(err) => {
+            handle_error_fatal(global, err, "canvas_native_webgpu_buffer_get_mapped_range");
+            (std::ptr::null_mut(), 0)
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_buffer_destroy(buffer: *const CanvasGPUBuffer) {
     if buffer.is_null() {
@@ -191,8 +219,8 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
 
     let op = wgpu_core::resource::BufferMapOperation {
         host: mode.into(),
-        callback: Some(wgpu_core::resource::BufferMapCallback::from_rust(Box::new(
-            move |result| {
+        callback: Some(
+            (Box::new(move |result| {
                 let callback = unsafe {
                     std::mem::transmute::<
                         *const i64,
@@ -225,8 +253,8 @@ pub extern "C" fn canvas_native_webgpu_buffer_map_async(
                         callback_data,
                     );
                 }
-            },
-        ))),
+            })),
+        ),
     };
 
     let global = buffer.instance.global();

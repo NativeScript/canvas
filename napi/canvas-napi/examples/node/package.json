@@ -10,7 +10,8 @@
 	"private": true,
 	"dependencies": {
 		"teapot": "~1.0.0",
-		"wgpu-matrix": "~3.3.0"
+		"wgpu-matrix": "~3.3.0",
+		"three": "~0.171.0"
 	},
 	"devDependencies": {
 		"tsx": "^4.19.2"

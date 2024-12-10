@@ -5,12 +5,15 @@ import '@nativescript/foundation/dom/index.js';
 import '../app.ts';
 import '../../canvas';
 import installPolyfills from '../../polyfill';
+import three from './three';
+const { webgpuCube } = three;
 
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
-//import { run as computeBoids } from './gpgpu/computeBoids';
+// import { run as computeBoids } from './gpgpu/computeBoids';
 // import { run as wireframe } from './graphicsTechniques/wireframe';
 import { run as renderBundles } from './renderBundles';
+import { run as cubeMap } from './cubeMap';
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
@@ -1527,11 +1530,13 @@ canvas.addEventListener('ready', (event) => {
 	// webgpuTriangle(canvas);
 	// doGL()
 	// swarm(canvas);
-//	texturedCube(canvas);
-	//twoCubes(canvas);
-//	computeBoids(canvas);
-	//wireframe(canvas);
+	//texturedCube(canvas);
+// 	twoCubes(canvas);
+	// computeBoids(canvas);
+// 	wireframe(canvas);
 	renderBundles(canvas);
+	//webgpuCube(canvas);
+	//cubeMap(canvas);
 });
 
 canvas.width = NSScreen.mainScreen.frame.size.width;
@@ -1541,6 +1546,9 @@ window.setAttribute('styleMask', (
 	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
 ) as never);
 
+const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0,0,0.2, 0.5);
+const background = `rgba(${color.redComponent * 255}, ${color.greenComponent * 255}, ${color.blueComponent * 255}, ${color.alphaComponent})`;
+window.style.backgroundColor = background;
 window.appendChild(canvas);
 
 document.body.appendChild(window);

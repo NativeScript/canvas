@@ -9,7 +9,13 @@
 	},
 	"private": true,
 	"dependencies": {
-		"wgpu-matrix": "~3.3.0",
-		"teapot": "~1.0.0"
+		"teapot": "~1.0.0",
+		"wgpu-matrix": "~3.3.0"
+	},
+	"devDependencies": {
+		"tsx": "^4.19.2"
+	},
+	"scripts": {
+		"start": "node --import ./node_modules/tsx/dist/loader.cjs ./main.mts"
 	}
 }

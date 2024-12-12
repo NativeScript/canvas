@@ -127,7 +127,7 @@ impl g_p_u_buffer {
     }
   }
   #[napi(getter)]
-  pub fn get_state(&self) -> GPUMapState {
+  pub fn get_map_state(&self) -> GPUMapState {
     *self.state.lock().unwrap_or_else(|mut e| {
       self.state.clear_poison();
       e.into_inner()

@@ -887,7 +887,7 @@ export declare class GPUTextureView {
 }
 export type g_p_u_buffer = GPUBuffer;
 export declare class GPUBuffer {
-	get state(): GPUMapState;
+	get mapState(): GPUMapState;
 	get label(): string;
 	get usage(): number;
 	getMappedRange(offset?: number | undefined | null, size?: number | undefined | null): ArrayBuffer;

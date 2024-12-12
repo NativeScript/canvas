@@ -21,21 +21,21 @@ use super::{
 //use wgpu_core::gfx_select;
 
 #[derive(Copy, Clone, Debug)]
-struct TextureData {
-    usage: wgt::TextureUsages,
-    dimension: wgt::TextureDimension,
-    size: wgt::Extent3d,
-    format: wgt::TextureFormat,
-    mip_level_count: u32,
-    sample_count: u32,
+pub struct TextureData {
+    pub usage: wgt::TextureUsages,
+    pub dimension: wgt::TextureDimension,
+    pub size: wgt::Extent3d,
+    pub format: wgt::TextureFormat,
+    pub mip_level_count: u32,
+    pub sample_count: u32,
 }
 
 #[derive(Debug)]
 pub struct SurfaceData {
-    device: Arc<CanvasGPUDevice>,
-    error_sink: ErrorSink,
-    texture_data: TextureData,
-    previous_configuration: wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
+    pub(crate) device: Arc<CanvasGPUDevice>,
+    pub(crate) error_sink: ErrorSink,
+    pub texture_data: TextureData,
+    pub(crate) previous_configuration: wgt::SurfaceConfiguration<Vec<wgt::TextureFormat>>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -46,8 +46,8 @@ pub struct ViewData {
 
 #[derive(Copy, Clone, Debug)]
 pub struct ReadBackTexture {
-    texture: wgpu_core::id::TextureId,
-    data: TextureData,
+    pub(crate) texture: wgpu_core::id::TextureId,
+    pub(crate) data: TextureData,
 }
 
 pub struct CanvasGPUCanvasContext {

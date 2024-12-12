@@ -3,7 +3,6 @@ import { Event } from '@nativescript/foundation/dom/dom-utils.js';
 import { type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
 import { view } from '@nativescript/foundation/views/decorators/view.js';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
-
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
@@ -23,6 +22,11 @@ class NSCMTLView extends NSView {
 	}
 	_queue?: MTLCommandQueue;
 	_canvas: WeakRef<Canvas> | null = null;
+
+	//@ts-ignore
+	// isFlipped() {
+	// 	return true;
+	// }
 
 	get mtlLayer() {
 		return this.layer as CAMetalLayer;
@@ -135,7 +139,173 @@ function getGPU() {
 	return globalThis.__gpu;
 }
 
-class NSCCanvas extends NSView {
+interface MouseEventOptions extends EventInit {
+	screenX?: number;
+	screenY?: number;
+	clientX?: number;
+	clientY?: number;
+	ctrlKey?: boolean;
+	shiftKey?: boolean;
+	altKey?: boolean;
+	metaKey?: boolean;
+	button?: number;
+	buttons?: number;
+	relatedTarget?: any;
+	region?: any;
+	movementX?: number;
+	movementY?: number;
+	pageX?: number;
+	pageY?: number;
+}
+
+const isCancelled_ = Symbol('[[isCancelled]]');
+
+export class MouseEvent extends Event {
+	readonly screenX: number;
+	readonly screenY: number;
+	readonly clientX: number;
+	readonly clientY: number;
+	readonly ctrlKey: boolean;
+	readonly shiftKey: boolean;
+	readonly altKey: boolean;
+	readonly metaKey: boolean;
+	readonly button: number;
+	readonly buttons: number;
+	readonly relatedTarget: any;
+	readonly region: any;
+	readonly movementX: number;
+	readonly movementY: number;
+	readonly pageX: number;
+	readonly pageY: number;
+	[isCancelled_] = false;
+
+	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup', options?: MouseEventOptions) {
+		super(type as any, options);
+		this.screenX = options?.screenX ?? 0;
+		this.screenY = options?.screenY ?? 0;
+		this.clientX = options?.clientX ?? 0;
+		this.clientY = options?.clientY ?? 0;
+		this.ctrlKey = options?.ctrlKey ?? false;
+		this.shiftKey = options?.ctrlKey ?? false;
+		this.altKey = options?.ctrlKey ?? false;
+		this.metaKey = options?.ctrlKey ?? false;
+		this.button = options?.button ?? 0;
+		this.buttons = options?.buttons ?? 0;
+		this.relatedTarget = options?.relatedTarget ?? null;
+		this.region = options?.region ?? null;
+		this.movementX = options?.movementX ?? 0;
+		this.movementY = options?.movementY ?? 0;
+		this.pageX = options?.pageX ?? 0;
+		this.pageY = options?.pageY ?? 0;
+	}
+
+	get x() {
+		return this.clientX;
+	}
+
+	get y() {
+		return this.clientY;
+	}
+
+	preventDefault() {
+		super.preventDefault();
+		this[isCancelled_] = true;
+	}
+}
+
+interface PointerEventOptions extends MouseEventOptions {
+	pointerId?: number;
+	width?: number;
+	height?: number;
+	pressure?: number;
+	tangentialPressure?: number;
+	pointerType?: 'mouse' | 'touch' | 'pen';
+	tiltX?: number;
+	tiltY?: number;
+	twist?: number;
+	isPrimary?: boolean;
+}
+
+export class PointerEvent extends MouseEvent {
+	readonly type: string;
+	readonly pointerType: string;
+	readonly pointerId: number;
+	readonly width: number;
+	readonly height: number;
+	readonly pressure: number;
+	readonly tangentialPressure: number;
+	readonly tiltX?: number;
+	readonly tiltY?: number;
+	readonly twist?: number;
+	readonly isPrimary?: boolean;
+
+	constructor(type: 'pointerover' | 'pointerenter' | 'pointerdown' | 'pointermove' | 'pointerrawupdate' | 'pointerup' | 'pointercancel' | 'pointerout' | 'pointerleave' | 'gotpointercapture' | 'lostpointercapture', options?: PointerEventOptions) {
+		super(type as any, options);
+		this.pointerType = options?.pointerType ?? '';
+		this.type = type;
+		this.pointerId = options?.pointerId ?? 0;
+		this.width = options?.width ?? 1;
+		this.height = options?.height ?? 1;
+		this.pressure = options?.pressure ?? 0;
+		this.tangentialPressure = options?.tangentialPressure ?? 0;
+		this.tiltX = options?.tiltX ?? 0;
+		this.tiltY = options?.tiltY ?? 0;
+		this.twist = options?.twist ?? 0;
+		this.isPrimary = options?.isPrimary ?? false;
+	}
+}
+
+interface WheelEventOptions extends EventInit {
+	deltaX?: number;
+	deltaY?: number;
+	deltaZ?: number;
+	deltaMode?: number;
+}
+
+export class WheelEvent extends Event {
+	readonly deltaX?: number;
+	readonly deltaY?: number;
+	readonly deltaZ?: number;
+	readonly deltaMode?: number;
+
+	constructor(type: 'wheel', options?: WheelEventOptions) {
+		super(type, options);
+		this.deltaX = options?.deltaX ?? 0;
+		this.deltaY = options?.deltaY ?? 0;
+		this.deltaZ = options?.deltaZ ?? 0;
+		this.deltaMode = options?.deltaMode ?? 0;
+	}
+}
+
+const buildMouseEvent = (
+	view: NSView,
+	event: NSEvent
+): {
+	clientX: number;
+	clientY: number;
+	screenX: number;
+	screenY: number;
+	pageX: number;
+	pageY: number;
+} => {
+	const location = view.convertPointToView(event.locationInWindow, this as never);
+	const clientX = location.x;
+	const clientY = location.y;
+	const screenX = location.x;
+	const screenY = location.y;
+	const pageX = location.x;
+	const pageY = location.y;
+	return {
+		clientX,
+		clientY,
+		screenX,
+		screenY,
+		pageX,
+		pageY,
+	};
+};
+
+export class NSCCanvas extends NSView {
 	static {
 		NativeClass(this);
 	}
@@ -160,6 +330,13 @@ class NSCCanvas extends NSView {
 
 	_is2D: boolean = false;
 
+	//@ts-ignore
+	get isFlipped() {
+		return true;
+	}
+
+	touchEventListener?: (object: any, gesture: NSGestureRecognizer) => void;
+
 	get is2D() {
 		return this._is2D;
 	}
@@ -175,10 +352,33 @@ class NSCCanvas extends NSView {
 		return this._fit;
 	}
 
-	initWithFrame(frame: CGRect) {
-		super.initWithFrame(frame);
-		this.wantsLayer = true;
+	ignoreTouchEvents = false;
 
+	toDataURL(format?: string, quality?: number) {
+		if (this.engine === Engine.None) {
+			const rect = NSMakeRect(0, 0, this.surfaceWidth, this.surfaceHeight);
+			const rep = NSBitmapImageRep.alloc().initWithBitmapDataPlanesPixelsWidePixelsHighBitsPerSampleSamplesPerPixelHasAlphaIsPlanarColorSpaceNameBytesPerRowBitsPerPixel(null, this.surfaceWidth, this.surfaceHeight, 8, 4, true, false, NSDeviceRGBColorSpace, 0, 0);
+
+			NSGraphicsContext.currentContext = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+			NSColor.whiteColor.setFill();
+			NSRectFill(rect);
+			NSGraphicsContext.currentContext = null as never;
+			const image = NSImage.alloc().initWithSize(rect.size);
+			image.addRepresentation(rep);
+
+			switch (format) {
+				case 'image/jpeg':
+				case 'image/jpg':
+					break;
+			}
+		}
+
+		return 'data:,';
+	}
+
+	initWithFrame(frame: CGRect) {
+		const thiz = super.initWithFrame(frame);
+		thiz.wantsLayer = true;
 		const scale = NSScreen.mainScreen.backingScaleFactor;
 
 		const unscaledWidth = Math.floor(300 / scale);
@@ -195,7 +395,9 @@ class NSCCanvas extends NSView {
 
 		this.initializeView();
 
-		return this;
+		//	this.addGestureRecognizer(this._handler.gestureRecognizer);
+
+		return thiz;
 	}
 
 	initializeView() {
@@ -213,6 +415,149 @@ class NSCCanvas extends NSView {
 
 		this.layer.isOpaque = false;
 		(mtlView.layer as CAMetalLayer).isOpaque = false;
+	}
+
+	mouseDown(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+
+		const eventData = buildMouseEvent(this, event);
+
+		const pointerDown = new PointerEvent('pointerdown', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+		});
+
+		canvas.dispatchEvent(pointerDown);
+
+		if (pointerDown[isCancelled_]) {
+			return;
+		}
+
+		const ret = new MouseEvent('mousedown', eventData);
+
+		canvas.dispatchEvent(ret);
+	}
+
+	mouseUp(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this, event);
+		const pointerDown = new PointerEvent('pointerup', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+		});
+
+		canvas.dispatchEvent(pointerDown);
+
+		if (pointerDown[isCancelled_]) {
+			return;
+		}
+
+		const ret = new MouseEvent('mouseup', eventData);
+
+		canvas.dispatchEvent(ret);
+	}
+
+	mouseDragged(event: NSEvent) {}
+
+	scrollWheel(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const wheel = new WheelEvent('wheel', {
+			deltaX: event.deltaX,
+			deltaY: event.deltaY,
+			deltaZ: event.deltaY,
+		});
+
+		canvas.dispatchEvent(wheel);
+	}
+
+	mouseEntered(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this, event);
+		const pointerDown = new PointerEvent('pointerenter', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+		});
+
+		canvas.dispatchEvent(pointerDown);
+
+		if (pointerDown[isCancelled_]) {
+			return;
+		}
+
+		const ret = new MouseEvent('mouseenter', eventData);
+
+		canvas.dispatchEvent(ret);
+	}
+
+	mouseExited(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this, event);
+		const pointerDown = new PointerEvent('pointerleave', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+		});
+
+		canvas.dispatchEvent(pointerDown);
+
+		if (pointerDown[isCancelled_]) {
+			return;
+		}
+
+		const ret = new MouseEvent('mouseleave', eventData);
+
+		canvas.dispatchEvent(ret);
+	}
+
+	mouseMoved(event: NSEvent) {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this, event);
+		const pointerDown = new PointerEvent('pointermove', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+		});
+
+		canvas.dispatchEvent(pointerDown);
+
+		if (pointerDown[isCancelled_]) {
+			return;
+		}
+
+		const ret = new MouseEvent('mousemove', eventData);
+
+		canvas.dispatchEvent(ret);
 	}
 
 	mtlViewLayerPtr?: interop.Pointer;
@@ -256,9 +601,16 @@ class NSCCanvas extends NSView {
 
 	__isLoaded = false;
 
+	trackingArea?: NSTrackingArea | null;
+
 	layout(): void {
 		super.layout();
-
+		if (this.trackingArea) {
+			this.removeTrackingArea(this.trackingArea);
+			this.trackingArea ??= null;
+		}
+		this.trackingArea = NSTrackingArea.alloc().initWithRectOptionsOwnerUserInfo(this.bounds, NSTrackingAreaOptions.MouseEnteredAndExited | NSTrackingAreaOptions.MouseMoved | NSTrackingAreaOptions.ActiveAlways, this, null);
+		this.addTrackingArea(this.trackingArea);
 		if (!this.__isLoaded && this.surfaceWidth > 0 && this.surfaceHeight > 0) {
 			this.__isLoaded = true;
 			this.scaleSurface();
@@ -521,6 +873,9 @@ export class Canvas extends ViewBase {
 		this.style.width = '100%';
 		this.style.height = 'auto';
 		this.nativeView = this._canvas;
+		this._canvas.touchEventListener = (object, gesture) => {
+			console.log(object);
+		};
 	}
 
 	nativeView?: NSCCanvas = undefined;
@@ -632,9 +987,7 @@ export class Canvas extends ViewBase {
 			return 'data:,';
 		}
 		if (!this.native) {
-			// todo
-			//return this._canvas.toDataURL(type, encoderOptions);
-			return 'data:,';
+			return this._canvas.toDataURL(type, encoderOptions);
 		}
 		if (this._contextType === 4) {
 			return this._gpuContext?.toDataURL(type ?? 'image/png', encoderOptions ?? 0.92);
@@ -664,7 +1017,6 @@ export class Canvas extends ViewBase {
 
 			if (Canvas.forceGL) {
 				const handle = interop.handleof(this._canvas.glkView);
-
 				this._2dContext = CanvasRenderingContext2D.withView(handle.toNumber(), this._canvas.surfaceWidth, this._canvas.surfaceHeight, scale, opts.alpha, opts.fontColor, 90, 1);
 				this._canvas.glkView!.isHidden = false;
 				this._contextType = ContextType.Canvas;

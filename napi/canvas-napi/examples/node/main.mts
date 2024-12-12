@@ -6,14 +6,12 @@ import '../app.ts';
 import '../../canvas';
 import installPolyfills from '../../polyfill';
 import three from './three';
-const { webgpuCube, cube } = three;
-
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
 // import { run as computeBoids } from './gpgpu/computeBoids';
 // import { run as wireframe } from './graphicsTechniques/wireframe';
-import { run as renderBundles } from './renderBundles';
-import { run as cubeMap } from './cubeMap';
+
+const { webgpuCube, cube } = three;
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
@@ -268,8 +266,8 @@ function flappyBird(canvas) {
 					my = evt.offsetY;
 
 				if (mx == null || my == null) {
-					mx = evt.changedTouches[0].clientX;
-					my = evt.changedTouches[0].clientY;
+					mx = evt.clientX;
+					my = evt.clientY;
 				}
 
 				if (okbtn.x < mx && mx < okbtn.x + okbtn.width && okbtn.y < my && my < okbtn.y + okbtn.height) {
@@ -282,15 +280,15 @@ function flappyBird(canvas) {
 	}
 
 	function main() {
-		width = canvas.clientWidth; //* window.devicePixelRatio;
-		height = canvas.clientHeight; // * window.devicePixelRatio;
+		width = canvas.clientWidth * window.devicePixelRatio;
+		height = canvas.clientHeight * window.devicePixelRatio;
 
-		canvas.addEventListener('touchstart', onpress);
+		canvas.addEventListener('mousedown', onpress);
 
-		var evt = 'touchstart';
+		var evt = 'mousedown';
 		if (width >= 500) {
-			//	width = 320;
-			//	height = 480;
+			width = 320;
+			height = 480;
 			canvas.style.border = '1px solid #000';
 			evt = 'mousedown';
 		}
@@ -1522,11 +1520,14 @@ fn main() -> @location(0) vec4f {
 }
 
 const canvas = document.createElement('canvas');
+
 canvas.addEventListener('ready', (event) => {
 	console.log('ready');
+	// touchParticles(canvas);
+	flappyBird(canvas);
 	// webgpuTriangle(canvas);
 	// doGL()
-	// swarm(canvas);
+	//swarm(canvas);
 	//texturedCube(canvas);
 // 	twoCubes(canvas);
 	// computeBoids(canvas);
@@ -1534,7 +1535,7 @@ canvas.addEventListener('ready', (event) => {
 // 	renderBundles(canvas);
 	//webgpuCube(canvas);
 	//cubeMap(canvas);
-	cube(canvas);
+	//cube(canvas);
 });
 
 canvas.width = NSScreen.mainScreen.frame.size.width;
@@ -1544,7 +1545,7 @@ windowDoc.setAttribute('styleMask', (
 	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
 ) as never);
 
-const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0,0,0.2, 0.5);
+const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0, 0, 0.2, 0.5);
 const background = `rgba(${color.redComponent * 255}, ${color.greenComponent * 255}, ${color.blueComponent * 255}, ${color.alphaComponent})`;
 // window.style.backgroundColor = background;
 windowDoc.appendChild(canvas);

@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 #[napi]
 pub struct g_p_u_canvas_context {
-  context: Arc<canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext>,
+  pub(crate) context: Arc<canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext>,
 }
 
 #[napi(object)]

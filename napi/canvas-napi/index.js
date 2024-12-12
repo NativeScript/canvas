@@ -37,7 +37,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.android-arm64.node');
 					} else {
-						nativeBinding = require('canvas-napi-android-arm64');
+						nativeBinding = require('@nativescript/canvas-napi-android-arm64');
 					}
 				} catch (e) {
 					loadError = e;
@@ -49,7 +49,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.android-arm-eabi.node');
 					} else {
-						nativeBinding = require('canvas-napi-android-arm-eabi');
+						nativeBinding = require('@nativescript/canvas-napi-android-arm-eabi');
 					}
 				} catch (e) {
 					loadError = e;
@@ -67,7 +67,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.win32-x64-msvc.node');
 					} else {
-						nativeBinding = require('canvas-napi-win32-x64-msvc');
+						nativeBinding = require('@nativescript/canvas-napi-win32-x64-msvc');
 					}
 				} catch (e) {
 					loadError = e;
@@ -79,7 +79,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.win32-ia32-msvc.node');
 					} else {
-						nativeBinding = require('canvas-napi-win32-ia32-msvc');
+						nativeBinding = require('@nativescript/canvas-napi-win32-ia32-msvc');
 					}
 				} catch (e) {
 					loadError = e;
@@ -91,7 +91,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.win32-arm64-msvc.node');
 					} else {
-						nativeBinding = require('canvas-napi-win32-arm64-msvc');
+						nativeBinding = require('@nativescript/canvas-napi-win32-arm64-msvc');
 					}
 				} catch (e) {
 					loadError = e;
@@ -107,7 +107,7 @@ switch (platform) {
 			if (localFileExisted) {
 				nativeBinding = require('./canvas-napi.darwin-universal.node');
 			} else {
-				nativeBinding = require('canvas-napi-darwin-universal');
+				nativeBinding = require('@nativescript/canvas-napi-darwin-universal');
 			}
 			break;
 		} catch {}
@@ -118,7 +118,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.darwin-x64.node');
 					} else {
-						nativeBinding = require('canvas-napi-darwin-x64');
+						nativeBinding = require('@nativescript/canvas-napi-darwin-x64');
 					}
 				} catch (e) {
 					loadError = e;
@@ -130,7 +130,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.darwin-arm64.node');
 					} else {
-						nativeBinding = require('canvas-napi-darwin-arm64');
+						nativeBinding = require('@nativescript/canvas-napi-darwin-arm64');
 					}
 				} catch (e) {
 					loadError = e;
@@ -149,7 +149,7 @@ switch (platform) {
 			if (localFileExisted) {
 				nativeBinding = require('./canvas-napi.freebsd-x64.node');
 			} else {
-				nativeBinding = require('canvas-napi-freebsd-x64');
+				nativeBinding = require('@nativescript/canvas-napi-freebsd-x64');
 			}
 		} catch (e) {
 			loadError = e;
@@ -164,7 +164,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-x64-musl.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-x64-musl');
+							nativeBinding = require('@nativescript/canvas-napi-linux-x64-musl');
 						}
 					} catch (e) {
 						loadError = e;
@@ -175,7 +175,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-x64-gnu.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-x64-gnu');
+							nativeBinding = require('@nativescript/canvas-napi-linux-x64-gnu');
 						}
 					} catch (e) {
 						loadError = e;
@@ -189,7 +189,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-arm64-musl.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-arm64-musl');
+							nativeBinding = require('@nativescript/canvas-napi-linux-arm64-musl');
 						}
 					} catch (e) {
 						loadError = e;
@@ -200,7 +200,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-arm64-gnu.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-arm64-gnu');
+							nativeBinding = require('@nativescript/canvas-napi-linux-arm64-gnu');
 						}
 					} catch (e) {
 						loadError = e;
@@ -214,7 +214,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-arm-musleabihf.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-arm-musleabihf');
+							nativeBinding = require('@nativescript/canvas-napi-linux-arm-musleabihf');
 						}
 					} catch (e) {
 						loadError = e;
@@ -225,7 +225,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-arm-gnueabihf.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-arm-gnueabihf');
+							nativeBinding = require('@nativescript/canvas-napi-linux-arm-gnueabihf');
 						}
 					} catch (e) {
 						loadError = e;
@@ -239,7 +239,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-riscv64-musl.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-riscv64-musl');
+							nativeBinding = require('@nativescript/canvas-napi-linux-riscv64-musl');
 						}
 					} catch (e) {
 						loadError = e;
@@ -250,7 +250,7 @@ switch (platform) {
 						if (localFileExisted) {
 							nativeBinding = require('./canvas-napi.linux-riscv64-gnu.node');
 						} else {
-							nativeBinding = require('canvas-napi-linux-riscv64-gnu');
+							nativeBinding = require('@nativescript/canvas-napi-linux-riscv64-gnu');
 						}
 					} catch (e) {
 						loadError = e;
@@ -263,7 +263,7 @@ switch (platform) {
 					if (localFileExisted) {
 						nativeBinding = require('./canvas-napi.linux-s390x-gnu.node');
 					} else {
-						nativeBinding = require('canvas-napi-linux-s390x-gnu');
+						nativeBinding = require('@nativescript/canvas-napi-linux-s390x-gnu');
 					}
 				} catch (e) {
 					loadError = e;

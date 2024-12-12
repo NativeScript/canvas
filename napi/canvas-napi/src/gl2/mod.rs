@@ -21,7 +21,7 @@ use crate::{impl_webgl2_context_constants, impl_webgl_context, impl_webgl_contex
 
 #[napi(custom_finalize)]
 pub struct web_g_l_2_rendering_context {
-  state: *mut WebGLState,
+  pub(crate) state: *mut WebGLState,
 }
 
 impl_webgl_context!(web_g_l_2_rendering_context);

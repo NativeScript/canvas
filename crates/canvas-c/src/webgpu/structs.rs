@@ -228,6 +228,26 @@ pub struct CanvasImageCopyExternalImage {
     pub height: u32,
 }
 
+#[repr(C)]
+#[derive(Debug)]
+pub struct CanvasImageCopyGPUContext {
+    /// The texture to be copied from. The copy source data is captured at the moment
+    /// the copy is issued.
+    pub source: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    /// The base texel used for copying from the external image. Together
+    /// with the `copy_size` argument to copy functions, defines the
+    /// sub-region of the image to copy.
+    ///
+    /// Relative to the top left of the image.
+    ///
+    /// Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+    pub origin: CanvasOrigin2d,
+    /// If the Y coordinate of the image should be flipped. Even if this is
+    /// true, `origin` is still relative to the top left.
+    pub flip_y: bool,
+}
+
+
 
 #[repr(C)]
 #[derive(Debug)]

@@ -474,7 +474,7 @@ impl GLContext {
         self.0
             .view
             .as_ref()
-            .map(|view| view.frame().size.width as i32)
+            .map(|view| view.frame().size.width as i32 * 2)
             .unwrap_or_default()
     }
 

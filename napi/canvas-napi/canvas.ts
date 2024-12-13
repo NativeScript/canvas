@@ -10,23 +10,61 @@ objc.import('OpenGL');
 objc.import('Metal');
 objc.import('MetalKit');
 
-const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
+const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } = require('./canvas-napi.darwin-arm64.node');
 
 // import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } from './index.js';
 
 // const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
 
+GPUDevice.prototype.lost = new Promise((resolve, reject) => {});
+
+// Object.defineProperty(GPUDevice.prototype, 'features', {
+// 	get: function() {
+// 		return new Set(this.__features);
+// 	},
+// 	writable: true
+// });
+
+export class DOMRectReadOnly {
+	readonly bottom: number;
+	readonly height: number;
+	readonly left: number;
+	readonly right: number;
+	readonly top: number;
+	readonly width: number;
+	readonly x: number;
+	readonly y: number;
+
+	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+		this.left = left ?? x;
+		this.top = top ?? y;
+		this.right = right ?? x + width;
+		this.bottom = bottom ?? y + height;
+	}
+}
+
+export class DOMRect extends DOMRectReadOnly {
+	constructor(x: number, y: number, width: number, height: number, top?: number, right?: number, bottom?: number, left?: number) {
+		super(x, y, width, height, top, right, bottom, left);
+	}
+}
+
 class NSCMTLView extends NSView {
 	static {
 		NativeClass(this);
 	}
+
 	_queue?: MTLCommandQueue;
 	_canvas: WeakRef<Canvas> | null = null;
 
 	//@ts-ignore
-	// isFlipped() {
-	// 	return true;
-	// }
+	isFlipped() {
+		return true;
+	}
 
 	get mtlLayer() {
 		return this.layer as CAMetalLayer;
@@ -76,6 +114,7 @@ class NSCMTLView extends NSView {
 
 	static ObjCExposedMethods = {
 		present: { returns: interop.types.void, params: [] },
+		isFlipped: { returns: interop.types.bool, params: [] },
 	};
 }
 
@@ -83,6 +122,16 @@ class NSCGLView extends NSOpenGLView {
 	static {
 		NativeClass(this);
 	}
+
+	static ObjCExposedMethods = {
+		isFlipped: { returns: interop.types.bool, params: [] },
+	};
+
+	// @ts-ignore
+	isFlipped() {
+		return true;
+	}
+
 	isDirty = false;
 
 	_canvas?: WeakRef<Canvas>;
@@ -90,7 +139,6 @@ class NSCGLView extends NSOpenGLView {
 	initWithFrame(frame: CGRect) {
 		super.initWithFrame(frame);
 		this.wantsLayer = true;
-		this.layer = CAOpenGLLayer.layer();
 		return this;
 	}
 
@@ -310,6 +358,10 @@ export class NSCCanvas extends NSView {
 		NativeClass(this);
 	}
 
+	static ObjCExposedMethods = {
+		isFlipped: { returns: interop.types.bool, params: [] },
+	};
+
 	engine = Engine.None;
 	_canvas: WeakRef<Canvas> | null = null;
 
@@ -331,7 +383,7 @@ export class NSCCanvas extends NSView {
 	_is2D: boolean = false;
 
 	//@ts-ignore
-	get isFlipped() {
+	isFlipped() {
 		return true;
 	}
 
@@ -354,7 +406,7 @@ export class NSCCanvas extends NSView {
 
 	ignoreTouchEvents = false;
 
-	toDataURL(format?: string, quality?: number) {
+	toDataURL(format?: string, encoderOptions?: number) {
 		if (this.engine === Engine.None) {
 			const rect = NSMakeRect(0, 0, this.surfaceWidth, this.surfaceHeight);
 			const rep = NSBitmapImageRep.alloc().initWithBitmapDataPlanesPixelsWidePixelsHighBitsPerSampleSamplesPerPixelHasAlphaIsPlanarColorSpaceNameBytesPerRowBitsPerPixel(null, this.surfaceWidth, this.surfaceHeight, 8, 4, true, false, NSDeviceRGBColorSpace, 0, 0);
@@ -417,14 +469,16 @@ export class NSCCanvas extends NSView {
 		(mtlView.layer as CAMetalLayer).isOpaque = false;
 	}
 
+	previousEvent: NSEvent;
+
 	mouseDown(event: NSEvent) {
 		const canvas = this._canvas?.deref?.();
 		if (!canvas) {
 			return;
 		}
+		this.previousEvent = event;
 
-		const eventData = buildMouseEvent(this, event);
-
+		const eventData = buildMouseEvent(this as never, event);
 		const pointerDown = new PointerEvent('pointerdown', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -449,6 +503,8 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
+		this.previousEvent = event;
+
 		const eventData = buildMouseEvent(this, event);
 		const pointerDown = new PointerEvent('pointerup', {
 			pointerId: 1,
@@ -469,7 +525,9 @@ export class NSCCanvas extends NSView {
 		canvas.dispatchEvent(ret);
 	}
 
-	mouseDragged(event: NSEvent) {}
+	mouseDragged(event: NSEvent) {
+		this.previousEvent = event;
+	}
 
 	scrollWheel(event: NSEvent) {
 		const canvas = this._canvas?.deref?.();
@@ -490,6 +548,8 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
+
+		this.previousEvent = event;
 		const eventData = buildMouseEvent(this, event);
 		const pointerDown = new PointerEvent('pointerenter', {
 			pointerId: 1,
@@ -515,6 +575,8 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
+
+		this.previousEvent = event;
 		const eventData = buildMouseEvent(this, event);
 		const pointerDown = new PointerEvent('pointerleave', {
 			pointerId: 1,
@@ -541,6 +603,10 @@ export class NSCCanvas extends NSView {
 			return;
 		}
 		const eventData = buildMouseEvent(this, event);
+
+		// movementX: pointer.x - previousEvent.x,
+		// 	movementY: pointer.y - previousEvent.y,
+
 		const pointerDown = new PointerEvent('pointermove', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -590,6 +656,7 @@ export class NSCCanvas extends NSView {
 			return;
 		}
 		if (this.engine == Engine.GL) {
+			this.glkView?.reshape();
 			this.glkView?.openGLContext?.makeCurrentContext?.();
 			this.glkView?.openGLContext?.update?.();
 		}
@@ -671,6 +738,7 @@ export class NSCCanvas extends NSView {
 				break;
 			case 1:
 				transform = CATransform3DMakeScale(scaleX, scaleY, 1);
+				break;
 			case 2:
 				{
 					const dx = (frame.size.width - scaledInternalWidth) / 2;
@@ -855,6 +923,11 @@ function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-we
 	return null;
 }
 
+ViewBase.prototype.getBoundingClientRect = function () {
+	const layout = this.yogaNode.getComputedLayout();
+	return new DOMRect(layout.left, layout.top, layout.width, layout.height) as never;
+};
+
 @view({
 	name: 'HTMLCanvasElement',
 	tagName: 'canvas',
@@ -873,9 +946,6 @@ export class Canvas extends ViewBase {
 		this.style.width = '100%';
 		this.style.height = 'auto';
 		this.nativeView = this._canvas;
-		this._canvas.touchEventListener = (object, gesture) => {
-			console.log(object);
-		};
 	}
 
 	nativeView?: NSCCanvas = undefined;
@@ -896,6 +966,14 @@ export class Canvas extends ViewBase {
 			this._canvas.layout();
 		}
 	}
+
+	getRootNode() {
+		return this.parentNode;
+	}
+
+	setPointerCapture() {}
+
+	releasePointerCapture() {}
 
 	get lang(): string {
 		return NSLocale.currentLocale.languageCode;
@@ -975,6 +1053,13 @@ export class Canvas extends ViewBase {
 	get native() {
 		return this.__native__context;
 	}
+
+	getBoundingClientRect() {
+		const layout = this.yogaNode.getComputedLayout();
+		return new DOMRect(layout.left, layout.top, layout.width, layout.height) as never;
+	}
+
+	focus(options) {}
 
 	/**
 	 *

@@ -2,7 +2,7 @@
 macro_rules! webgl_context_imports {
   () => {
     use crate::gl::webgl_buffer::WebGLBuffer;
-    use crate::gl::webgl_framebuffer::WebGLFramebuffer;
+    use crate::gl::webgl_framebuffer::web_g_l_framebuffer;
     use crate::gl::webgl_program::WebGLProgram;
     use crate::gl::webgl_renderbuffer::WebGLRenderbuffer;
     use crate::gl::webgl_shader::WebGLShader;

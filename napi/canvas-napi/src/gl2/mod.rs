@@ -939,7 +939,7 @@ impl web_g_l_2_rendering_context {
       gl_bindings::DRAW_FRAMEBUFFER_BINDING => {
         let ret = canvas_c::canvas_native_webgl_result_get_i32(result);
         canvas_c::canvas_native_webgl_WebGLResult_destroy(result);
-        WebGLFramebuffer(ret as u32)
+        web_g_l_framebuffer { buffer: ret as u32 }
           .into_instance(env)
           .map(|v| v.as_object(env).into_unknown())
       }

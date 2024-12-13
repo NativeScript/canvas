@@ -4,14 +4,14 @@ use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
 use crate::webgpu::structs::{CanvasExtent3d, CanvasSurfaceCapabilities};
 use base64::Engine;
+use metal::foreign_types::ForeignType;
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
-use metal::foreign_types::ForeignType;
-use wgt::{SurfaceStatus, TextureFormat};
+use wgt::{SurfaceCapabilities, SurfaceStatus, TextureFormat};
 
 use super::{
     enums::CanvasGPUTextureFormat, gpu::CanvasWebGPUInstance, gpu_device::CanvasGPUDevice,
@@ -988,14 +988,14 @@ pub enum CanvasGPUSurfaceAlphaMode {
     Inherit = 4,
 }
 
-impl From<wgt::CompositeAlphaMode> for CanvasGPUSurfaceAlphaMode {
-    fn from(value: wgt::CompositeAlphaMode) -> Self {
-        match value {
-            wgt::CompositeAlphaMode::Auto => Self::Auto,
-            wgt::CompositeAlphaMode::Opaque => Self::Opaque,
-            wgt::CompositeAlphaMode::PreMultiplied => Self::PreMultiplied,
-            wgt::CompositeAlphaMode::PostMultiplied => Self::PostMultiplied,
-            wgt::CompositeAlphaMode::Inherit => Self::Inherit,
+impl Into<CanvasGPUSurfaceAlphaMode> for wgt::CompositeAlphaMode {
+    fn into(self) -> CanvasGPUSurfaceAlphaMode {
+        match self {
+            wgt::CompositeAlphaMode::Auto => CanvasGPUSurfaceAlphaMode::Auto,
+            wgt::CompositeAlphaMode::Opaque => CanvasGPUSurfaceAlphaMode::Opaque,
+            wgt::CompositeAlphaMode::PreMultiplied => CanvasGPUSurfaceAlphaMode::PreMultiplied,
+            wgt::CompositeAlphaMode::PostMultiplied => CanvasGPUSurfaceAlphaMode::PostMultiplied,
+            wgt::CompositeAlphaMode::Inherit => CanvasGPUSurfaceAlphaMode::Inherit,
         }
     }
 }
@@ -1457,6 +1457,30 @@ pub extern "C" fn canvas_native_webgpu_context_get_capabilities(
                 "canvas_native_webgpu_context_get_capabilities",
             );
             std::ptr::null_mut()
+        }
+    }
+}
+
+pub fn canvas_native_webgpu_context_get_capabilities_rust(
+    context: &Arc<CanvasGPUCanvasContext>,
+    adapter: &Arc<CanvasGPUAdapter>,
+) -> Option<SurfaceCapabilities> {
+    let adapter = unsafe { &*adapter };
+    let adapter_id = adapter.adapter;
+    let context = unsafe { &*context };
+    let global = context.instance.global();
+
+    let surface_id = context.surface.lock();
+
+    match global.surface_get_capabilities(*surface_id, adapter_id) {
+        Ok(capabilities) => Some(capabilities),
+        Err(cause) => {
+            handle_error_fatal(
+                global,
+                cause,
+                "canvas_native_webgpu_context_get_capabilities",
+            );
+            None
         }
     }
 }

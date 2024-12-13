@@ -37,8 +37,8 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 
 #[napi(js_name = "GPURenderBundleDescriptor", object)]
-pub struct GPURenderBundleDescriptor{
-  pub label: Option<String>
+pub struct GPURenderBundleDescriptor {
+  pub label: Option<String>,
 }
 
 #[napi(js_name = "GPURenderBundleEncoderDescriptor", object)]
@@ -296,82 +296,88 @@ pub struct GPUBindGroupDescriptor {
 }
 
 #[napi(js_name = "GPUSupportedLimits", object)]
+#[derive(Debug)]
 pub struct GPUSupportedLimits {
-  pub max_texture_dimension_1d: u32,
-  pub max_texture_dimension_2d: u32,
-  pub max_texture_dimension_3d: u32,
-  pub max_texture_array_layers: u32,
-  pub max_bind_groups: u32,
-  pub max_bindings_per_bind_group: u32,
-  pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
-  pub max_dynamic_storage_buffers_per_pipeline_layout: u32,
-  pub max_sampled_textures_per_shader_stage: u32,
-  pub max_samplers_per_shader_stage: u32,
-  pub max_storage_buffers_per_shader_stage: u32,
-  pub max_storage_textures_per_shader_stage: u32,
-  pub max_uniform_buffers_per_shader_stage: u32,
-  pub max_uniform_buffer_binding_size: u32,
-  pub max_storage_buffer_binding_size: u32,
-  pub max_vertex_buffers: u32,
-  pub max_buffer_size: i64,
-  pub max_vertex_attributes: u32,
-  pub max_vertex_buffer_array_stride: u32,
-  pub min_uniform_buffer_offset_alignment: u32,
-  pub min_storage_buffer_offset_alignment: u32,
-  pub max_inter_stage_shader_components: u32,
-  pub max_color_attachments: u32,
-  pub max_color_attachment_bytes_per_sample: u32,
-  pub max_compute_workgroup_storage_size: u32,
-  pub max_compute_invocations_per_workgroup: u32,
-  pub max_compute_workgroup_size_x: u32,
-  pub max_compute_workgroup_size_y: u32,
-  pub max_compute_workgroup_size_z: u32,
-  pub max_compute_workgroups_per_dimension: u32,
-  pub min_subgroup_size: u32,
-  pub max_subgroup_size: u32,
-  pub max_push_constant_size: u32,
-  pub max_non_sampler_bindings: u32,
+  #[napi(js_name = "maxTextureDimension1D")]
+  pub max_texture_dimension_1d: Option<u32>,
+  #[napi(js_name = "maxTextureDimension2D")]
+  pub max_texture_dimension_2d: Option<u32>,
+  #[napi(js_name = "maxTextureDimension3D")]
+  pub max_texture_dimension_3d: Option<u32>,
+  pub max_texture_array_layers: Option<u32>,
+  pub max_bind_groups: Option<u32>,
+  pub max_bindings_per_bind_group: Option<u32>,
+  pub max_dynamic_uniform_buffers_per_pipeline_layout: Option<u32>,
+  pub max_dynamic_storage_buffers_per_pipeline_layout: Option<u32>,
+  pub max_sampled_textures_per_shader_stage: Option<u32>,
+  pub max_samplers_per_shader_stage: Option<u32>,
+  pub max_storage_buffers_per_shader_stage: Option<u32>,
+  pub max_storage_textures_per_shader_stage: Option<u32>,
+  pub max_uniform_buffers_per_shader_stage: Option<u32>,
+  pub max_uniform_buffer_binding_size: Option<u32>,
+  pub max_storage_buffer_binding_size: Option<u32>,
+  pub max_vertex_buffers: Option<u32>,
+  pub max_buffer_size: Option<i64>,
+  pub max_vertex_attributes: Option<u32>,
+  pub max_vertex_buffer_array_stride: Option<u32>,
+  pub min_uniform_buffer_offset_alignment: Option<u32>,
+  pub min_storage_buffer_offset_alignment: Option<u32>,
+  pub max_inter_stage_shader_components: Option<u32>,
+  pub max_color_attachments: Option<u32>,
+  pub max_color_attachment_bytes_per_sample: Option<u32>,
+  pub max_compute_workgroup_storage_size: Option<u32>,
+  pub max_compute_invocations_per_workgroup: Option<u32>,
+  pub max_compute_workgroup_size_x: Option<u32>,
+  pub max_compute_workgroup_size_y: Option<u32>,
+  pub max_compute_workgroup_size_z: Option<u32>,
+  pub max_compute_workgroups_per_dimension: Option<u32>,
+  pub min_subgroup_size: Option<u32>,
+  pub max_subgroup_size: Option<u32>,
+  pub max_push_constant_size: Option<u32>,
+  pub max_non_sampler_bindings: Option<u32>,
 }
 
 impl From<CanvasGPUSupportedLimits> for GPUSupportedLimits {
   fn from(value: CanvasGPUSupportedLimits) -> Self {
     Self {
-      max_texture_dimension_1d: value.max_texture_dimension_1d,
-      max_texture_dimension_2d: value.max_texture_dimension_2d,
-      max_texture_dimension_3d: value.max_texture_dimension_3d,
-      max_texture_array_layers: value.max_texture_array_layers,
-      max_bind_groups: value.max_bind_groups,
-      max_bindings_per_bind_group: value.max_bindings_per_bind_group,
-      max_dynamic_uniform_buffers_per_pipeline_layout: value
-        .max_dynamic_uniform_buffers_per_pipeline_layout,
-      max_dynamic_storage_buffers_per_pipeline_layout: value
-        .max_dynamic_storage_buffers_per_pipeline_layout,
-      max_sampled_textures_per_shader_stage: value.max_sampled_textures_per_shader_stage,
-      max_samplers_per_shader_stage: value.max_samplers_per_shader_stage,
-      max_storage_buffers_per_shader_stage: value.max_storage_buffers_per_shader_stage,
-      max_storage_textures_per_shader_stage: value.max_storage_textures_per_shader_stage,
-      max_uniform_buffers_per_shader_stage: value.max_uniform_buffers_per_shader_stage,
-      max_uniform_buffer_binding_size: value.max_uniform_buffer_binding_size,
-      max_storage_buffer_binding_size: value.max_storage_buffer_binding_size,
-      max_vertex_buffers: value.max_vertex_buffers,
-      max_buffer_size: value.max_buffer_size as i64,
-      max_vertex_attributes: value.max_vertex_attributes,
-      max_vertex_buffer_array_stride: value.max_vertex_buffer_array_stride,
-      min_uniform_buffer_offset_alignment: value.min_uniform_buffer_offset_alignment,
-      min_storage_buffer_offset_alignment: value.min_storage_buffer_offset_alignment,
-      max_inter_stage_shader_components: value.max_inter_stage_shader_components,
-      max_color_attachments: value.max_color_attachments,
-      max_color_attachment_bytes_per_sample: value.max_color_attachment_bytes_per_sample,
-      max_compute_workgroup_storage_size: value.max_compute_workgroup_storage_size,
-      max_compute_invocations_per_workgroup: value.max_compute_invocations_per_workgroup,
-      max_compute_workgroup_size_x: value.max_compute_workgroup_size_x,
-      max_compute_workgroup_size_y: value.max_compute_workgroup_size_y,
-      max_compute_workgroup_size_z: value.max_compute_workgroup_size_z,
-      max_compute_workgroups_per_dimension: value.max_compute_workgroups_per_dimension,
-      min_subgroup_size: value.min_subgroup_size,
-      max_subgroup_size: value.max_subgroup_size,
-      max_push_constant_size: value.max_push_constant_size,
-      max_non_sampler_bindings: value.max_non_sampler_bindings,
+      max_texture_dimension_1d: Some(value.max_texture_dimension_1d),
+      max_texture_dimension_2d: Some(value.max_texture_dimension_2d),
+      max_texture_dimension_3d: Some(value.max_texture_dimension_3d),
+      max_texture_array_layers: Some(value.max_texture_array_layers),
+      max_bind_groups: Some(value.max_bind_groups),
+      max_bindings_per_bind_group: Some(value.max_bindings_per_bind_group),
+      max_dynamic_uniform_buffers_per_pipeline_layout: Some(
+        value.max_dynamic_uniform_buffers_per_pipeline_layout,
+      ),
+      max_dynamic_storage_buffers_per_pipeline_layout: Some(
+        value.max_dynamic_storage_buffers_per_pipeline_layout,
+      ),
+      max_sampled_textures_per_shader_stage: Some(value.max_sampled_textures_per_shader_stage),
+      max_samplers_per_shader_stage: Some(value.max_samplers_per_shader_stage),
+      max_storage_buffers_per_shader_stage: Some(value.max_storage_buffers_per_shader_stage),
+      max_storage_textures_per_shader_stage: Some(value.max_storage_textures_per_shader_stage),
+      max_uniform_buffers_per_shader_stage: Some(value.max_uniform_buffers_per_shader_stage),
+      max_uniform_buffer_binding_size: Some(value.max_uniform_buffer_binding_size),
+      max_storage_buffer_binding_size: Some(value.max_storage_buffer_binding_size),
+      max_vertex_buffers: Some(value.max_vertex_buffers),
+      max_buffer_size: Some(value.max_buffer_size as i64),
+      max_vertex_attributes: Some(value.max_vertex_attributes),
+      max_vertex_buffer_array_stride: Some(value.max_vertex_buffer_array_stride),
+      min_uniform_buffer_offset_alignment: Some(value.min_uniform_buffer_offset_alignment),
+      min_storage_buffer_offset_alignment: Some(value.min_storage_buffer_offset_alignment),
+      max_inter_stage_shader_components: Some(value.max_inter_stage_shader_components),
+      max_color_attachments: Some(value.max_color_attachments),
+      max_color_attachment_bytes_per_sample: Some(value.max_color_attachment_bytes_per_sample),
+      max_compute_workgroup_storage_size: Some(value.max_compute_workgroup_storage_size),
+      max_compute_invocations_per_workgroup: Some(value.max_compute_invocations_per_workgroup),
+      max_compute_workgroup_size_x: Some(value.max_compute_workgroup_size_x),
+      max_compute_workgroup_size_y: Some(value.max_compute_workgroup_size_y),
+      max_compute_workgroup_size_z: Some(value.max_compute_workgroup_size_z),
+      max_compute_workgroups_per_dimension: Some(value.max_compute_workgroups_per_dimension),
+      min_subgroup_size: Some(value.min_subgroup_size),
+      max_subgroup_size: Some(value.max_subgroup_size),
+      max_push_constant_size: Some(value.max_push_constant_size),
+      max_non_sampler_bindings: Some(value.max_non_sampler_bindings),
     }
   }
 }
@@ -379,42 +385,54 @@ impl From<CanvasGPUSupportedLimits> for GPUSupportedLimits {
 impl Into<CanvasGPUSupportedLimits> for GPUSupportedLimits {
   fn into(self) -> CanvasGPUSupportedLimits {
     CanvasGPUSupportedLimits {
-      max_texture_dimension_1d: self.max_texture_dimension_1d,
-      max_texture_dimension_2d: self.max_texture_dimension_2d,
-      max_texture_dimension_3d: self.max_texture_dimension_3d,
-      max_texture_array_layers: self.max_texture_array_layers,
-      max_bind_groups: self.max_bind_groups,
-      max_bindings_per_bind_group: self.max_bindings_per_bind_group,
+      max_texture_dimension_1d: self.max_texture_dimension_1d.unwrap_or(8192),
+      max_texture_dimension_2d: self.max_texture_dimension_2d.unwrap_or(8192),
+      max_texture_dimension_3d: self.max_texture_dimension_3d.unwrap_or(2048),
+      max_texture_array_layers: self.max_texture_array_layers.unwrap_or(256),
+      max_bind_groups: self.max_bind_groups.unwrap_or(4),
+      max_bindings_per_bind_group: self.max_bindings_per_bind_group.unwrap_or(1000),
       max_dynamic_uniform_buffers_per_pipeline_layout: self
-        .max_dynamic_uniform_buffers_per_pipeline_layout,
+        .max_dynamic_uniform_buffers_per_pipeline_layout
+        .unwrap_or(8),
       max_dynamic_storage_buffers_per_pipeline_layout: self
-        .max_dynamic_storage_buffers_per_pipeline_layout,
-      max_sampled_textures_per_shader_stage: self.max_sampled_textures_per_shader_stage,
-      max_samplers_per_shader_stage: self.max_samplers_per_shader_stage,
-      max_storage_buffers_per_shader_stage: self.max_storage_buffers_per_shader_stage,
-      max_storage_textures_per_shader_stage: self.max_storage_textures_per_shader_stage,
-      max_uniform_buffers_per_shader_stage: self.max_uniform_buffers_per_shader_stage,
-      max_uniform_buffer_binding_size: self.max_uniform_buffer_binding_size,
-      max_storage_buffer_binding_size: self.max_storage_buffer_binding_size,
-      max_vertex_buffers: self.max_vertex_buffers,
-      max_buffer_size: self.max_buffer_size as u64,
-      max_vertex_attributes: self.max_vertex_attributes,
-      max_vertex_buffer_array_stride: self.max_vertex_buffer_array_stride,
-      min_uniform_buffer_offset_alignment: self.min_uniform_buffer_offset_alignment,
-      min_storage_buffer_offset_alignment: self.min_storage_buffer_offset_alignment,
-      max_inter_stage_shader_components: self.max_inter_stage_shader_components,
-      max_color_attachments: self.max_color_attachments,
-      max_color_attachment_bytes_per_sample: self.max_color_attachment_bytes_per_sample,
-      max_compute_workgroup_storage_size: self.max_compute_workgroup_storage_size,
-      max_compute_invocations_per_workgroup: self.max_compute_invocations_per_workgroup,
-      max_compute_workgroup_size_x: self.max_compute_workgroup_size_x,
-      max_compute_workgroup_size_y: self.max_compute_workgroup_size_y,
-      max_compute_workgroup_size_z: self.max_compute_workgroup_size_z,
-      max_compute_workgroups_per_dimension: self.max_compute_workgroups_per_dimension,
-      min_subgroup_size: self.min_subgroup_size,
-      max_subgroup_size: self.max_subgroup_size,
-      max_push_constant_size: self.max_push_constant_size,
-      max_non_sampler_bindings: self.max_non_sampler_bindings,
+        .max_dynamic_storage_buffers_per_pipeline_layout
+        .unwrap_or(4),
+      max_sampled_textures_per_shader_stage: self
+        .max_sampled_textures_per_shader_stage
+        .unwrap_or(16),
+      max_samplers_per_shader_stage: self.max_samplers_per_shader_stage.unwrap_or(16),
+      max_storage_buffers_per_shader_stage: self.max_storage_buffers_per_shader_stage.unwrap_or(8),
+      max_storage_textures_per_shader_stage: self
+        .max_storage_textures_per_shader_stage
+        .unwrap_or(4),
+      max_uniform_buffers_per_shader_stage: self.max_uniform_buffers_per_shader_stage.unwrap_or(12),
+      max_uniform_buffer_binding_size: self.max_uniform_buffer_binding_size.unwrap_or(64 << 10),
+      max_storage_buffer_binding_size: self.max_storage_buffer_binding_size.unwrap_or(128 << 20),
+      max_vertex_buffers: self.max_vertex_buffers.unwrap_or(8),
+      max_buffer_size: self.max_buffer_size.unwrap_or(256 << 20) as u64,
+      max_vertex_attributes: self.max_vertex_attributes.unwrap_or(16),
+      max_vertex_buffer_array_stride: self.max_vertex_buffer_array_stride.unwrap_or(16),
+      min_uniform_buffer_offset_alignment: self.min_uniform_buffer_offset_alignment.unwrap_or(256),
+      min_storage_buffer_offset_alignment: self.min_storage_buffer_offset_alignment.unwrap_or(256),
+      max_inter_stage_shader_components: self.max_inter_stage_shader_components.unwrap_or(60),
+      max_color_attachments: self.max_color_attachments.unwrap_or(8),
+      max_color_attachment_bytes_per_sample: self
+        .max_color_attachment_bytes_per_sample
+        .unwrap_or(32),
+      max_compute_workgroup_storage_size: self.max_compute_workgroup_storage_size.unwrap_or(16384),
+      max_compute_invocations_per_workgroup: self
+        .max_compute_invocations_per_workgroup
+        .unwrap_or(256),
+      max_compute_workgroup_size_x: self.max_compute_workgroup_size_x.unwrap_or(256),
+      max_compute_workgroup_size_y: self.max_compute_workgroup_size_y.unwrap_or(256),
+      max_compute_workgroup_size_z: self.max_compute_workgroup_size_z.unwrap_or(64),
+      max_compute_workgroups_per_dimension: self
+        .max_compute_workgroups_per_dimension
+        .unwrap_or(65535),
+      min_subgroup_size: self.min_subgroup_size.unwrap_or(0),
+      max_subgroup_size: self.max_subgroup_size.unwrap_or(0),
+      max_push_constant_size: self.max_push_constant_size.unwrap_or(0),
+      max_non_sampler_bindings: self.max_non_sampler_bindings.unwrap_or(1_000_000),
     }
   }
 }
@@ -422,40 +440,40 @@ impl Into<CanvasGPUSupportedLimits> for GPUSupportedLimits {
 impl Default for GPUSupportedLimits {
   fn default() -> Self {
     Self {
-      max_texture_dimension_1d: 8192,
-      max_texture_dimension_2d: 8192,
-      max_texture_dimension_3d: 2048,
-      max_texture_array_layers: 256,
-      max_bind_groups: 4,
-      max_bindings_per_bind_group: 1000,
-      max_dynamic_uniform_buffers_per_pipeline_layout: 8,
-      max_dynamic_storage_buffers_per_pipeline_layout: 4,
-      max_sampled_textures_per_shader_stage: 16,
-      max_samplers_per_shader_stage: 16,
-      max_storage_buffers_per_shader_stage: 8,
-      max_storage_textures_per_shader_stage: 4,
-      max_uniform_buffers_per_shader_stage: 12,
-      max_uniform_buffer_binding_size: 64 << 10, // (64 KiB)
-      max_storage_buffer_binding_size: 128 << 20, // (128 MiB)
-      max_vertex_buffers: 8,
-      max_buffer_size: 256 << 20, // (256 MiB)
-      max_vertex_attributes: 16,
-      max_vertex_buffer_array_stride: 2048,
-      min_uniform_buffer_offset_alignment: 256,
-      min_storage_buffer_offset_alignment: 256,
-      max_inter_stage_shader_components: 60,
-      max_color_attachments: 8,
-      max_color_attachment_bytes_per_sample: 32,
-      max_compute_workgroup_storage_size: 16384,
-      max_compute_invocations_per_workgroup: 256,
-      max_compute_workgroup_size_x: 256,
-      max_compute_workgroup_size_y: 256,
-      max_compute_workgroup_size_z: 64,
-      max_compute_workgroups_per_dimension: 65535,
-      min_subgroup_size: 0,
-      max_subgroup_size: 0,
-      max_push_constant_size: 0,
-      max_non_sampler_bindings: 1_000_000,
+      max_texture_dimension_1d: Some(8192),
+      max_texture_dimension_2d: Some(8192),
+      max_texture_dimension_3d: Some(2048),
+      max_texture_array_layers: Some(256),
+      max_bind_groups: Some(4),
+      max_bindings_per_bind_group: Some(1000),
+      max_dynamic_uniform_buffers_per_pipeline_layout: Some(8),
+      max_dynamic_storage_buffers_per_pipeline_layout: Some(4),
+      max_sampled_textures_per_shader_stage: Some(16),
+      max_samplers_per_shader_stage: Some(16),
+      max_storage_buffers_per_shader_stage: Some(8),
+      max_storage_textures_per_shader_stage: Some(4),
+      max_uniform_buffers_per_shader_stage: Some(12),
+      max_uniform_buffer_binding_size: Some(64 << 10), // (64 KiB)
+      max_storage_buffer_binding_size: Some(128 << 20), // (128 MiB)
+      max_vertex_buffers: Some(8),
+      max_buffer_size: Some(256 << 20), // (256 MiB)
+      max_vertex_attributes: Some(16),
+      max_vertex_buffer_array_stride: Some(2048),
+      min_uniform_buffer_offset_alignment: Some(256),
+      min_storage_buffer_offset_alignment: Some(256),
+      max_inter_stage_shader_components: Some(60),
+      max_color_attachments: Some(8),
+      max_color_attachment_bytes_per_sample: Some(32),
+      max_compute_workgroup_storage_size: Some(16384),
+      max_compute_invocations_per_workgroup: Some(256),
+      max_compute_workgroup_size_x: Some(256),
+      max_compute_workgroup_size_y: Some(256),
+      max_compute_workgroup_size_z: Some(64),
+      max_compute_workgroups_per_dimension: Some(65535),
+      min_subgroup_size: Some(0),
+      max_subgroup_size: Some(0),
+      max_push_constant_size: Some(0),
+      max_non_sampler_bindings: Some(1_000_000)
     }
   }
 }

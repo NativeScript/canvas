@@ -4,14 +4,20 @@ import utils from '../../utils';
 import '@nativescript/foundation/dom/index.js';
 import '../app.ts';
 import '../../canvas';
-import installPolyfills from '../../polyfill';
+import '../../polyfill';
 import three from './three';
+import { ViewBase } from '@nativescript/foundation/views/view/view-base';
+
+// import { webgl_shadowmap } from './threejs/webgl_shadowmap';
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
 // import { run as computeBoids } from './gpgpu/computeBoids';
 // import { run as wireframe } from './graphicsTechniques/wireframe';
-
+import {run as the_frantic_run_of_the_valorous_rabbit } from './threejs/the_frantic_run_of_the_valorous_rabbit';
+import {run as tiny_poly_world} from './threejs/tiny_poly_world';
+import {run as tsl_galaxy} from './threejs/tsl_galaxy';
 const { webgpuCube, cube } = three;
+import { run as damagedHelmet } from './threejs/damaged_helmet';
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
@@ -297,7 +303,7 @@ function flappyBird(canvas) {
 		canvas.height = height;
 		ctx = canvas.getContext('2d');
 
-		// ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+		//ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
 		currentstate = states.Splash;
 		img = new ImageAsset();
@@ -1397,8 +1403,6 @@ const windowDoc = document.createElement('window');
 windowDoc.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
 windowDoc.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
 
-installPolyfills(globalThis.window);
-
 async function webgpuTest() {
 	console.log(navigator.gpu.wgslLanguageFeatures);
 	console.log(navigator.gpu.getPreferredCanvasFormat());
@@ -1521,10 +1525,11 @@ fn main() -> @location(0) vec4f {
 
 const canvas = document.createElement('canvas');
 
+
 canvas.addEventListener('ready', (event) => {
 	console.log('ready');
 	// touchParticles(canvas);
-	flappyBird(canvas);
+	//flappyBird(canvas);
 	// webgpuTriangle(canvas);
 	// doGL()
 	//swarm(canvas);
@@ -1536,10 +1541,12 @@ canvas.addEventListener('ready', (event) => {
 	//webgpuCube(canvas);
 	//cubeMap(canvas);
 	//cube(canvas);
+	//webgl_shadowmap(canvas);
+//	the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
+//tiny_poly_world(canvas);
+//	damagedHelmet(canvas);
+	tsl_galaxy(canvas);
 });
-
-canvas.width = NSScreen.mainScreen.frame.size.width;
-canvas.height = NSScreen.mainScreen.frame.size.height;
 
 windowDoc.setAttribute('styleMask', (
 	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
@@ -1548,7 +1555,78 @@ windowDoc.setAttribute('styleMask', (
 const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0, 0, 0.2, 0.5);
 const background = `rgba(${color.redComponent * 255}, ${color.greenComponent * 255}, ${color.blueComponent * 255}, ${color.alphaComponent})`;
 // window.style.backgroundColor = background;
-windowDoc.appendChild(canvas);
+
+const splitView = document.createElement('split-view');
+
+const itemCell = document.createElement('table-cell');
+const label = document.createElement('text');
+label.style.fontSize = '100px';
+label.style.color = 'red';
+label.textContent = 'First';
+// itemCell.appendChild(label);
+
+const outline = document.createElement('outline');
+
+const sideBar = document.createElement('side-bar');
+
+const scrollView = document.createElement('scroll-view');
+
+// outline.appendChild(itemCell);
+// scrollView.appendChild(outline);
+// sideBar.appendChild(scrollView);
+// splitView.appendChild(sideBar);
+
+windowDoc.style.backgroundColor = 'white';
+windowDoc.style.width = NSScreen.mainScreen.frame.size.width * .66;
+windowDoc.style.height = NSScreen.mainScreen.frame.size.height * .66;
+console.log(NSScreen.mainScreen.frame.size.width * .66, NSScreen.mainScreen.frame.size.height * .66);
+
+
+//splitView.style.backgroundColor = background;
+
+//
+// splitView.width = NSScreen.mainScreen.frame.size.width;
+// splitView.height = NSScreen.mainScreen.frame.size.height;
+
+
+class RootNSView extends NSView {
+	static {
+		NativeClass(this);
+	}
+
+	static ObjCExposedMethods = {
+		isFlipped: { returns: interop.types.bool, params: [] }
+	};
+
+	initWithFrame(frameRect: CGRect) {
+		super.initWithFrame(frameRect);
+		this.wantsLayer = true;
+		return this;
+	}
+
+	// @ts-ignore
+	isFlipped() {
+		return true;
+	}
+}
+
+export class RootView extends ViewBase {
+	override get isLeaf() {
+		return false;
+	}
+
+	constructor() {
+		super();
+		this.nativeView = RootNSView.alloc().initWithFrame(CGRectZero);
+	}
+
+}
+
+const root = new RootView();
+
+root.appendChild(canvas);
+
+windowDoc.appendChild(root);
 
 document.body.appendChild(windowDoc);
 

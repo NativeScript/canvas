@@ -7,12 +7,14 @@ use crate::gpu::g_p_u;
 use crate::gpu::objects::GPUExtent3DDict;
 use crate::gpu::texture::g_p_u_texture;
 use canvas_c::webgpu::gpu_texture::CanvasGPUTexture;
+use canvas_c::webgpu::wgt::{CompositeAlphaMode, PresentMode};
 use canvas_c::StringBuffer;
 use napi::bindgen_prelude::{ClassInstance, ObjectFinalize, This};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
+use canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode;
 
 #[napi]
 pub struct g_p_u_canvas_context {
@@ -128,7 +130,7 @@ impl g_p_u_canvas_context {
   #[napi]
   pub fn configure(&self, options: GPUCanvasContextConfigOptions) {
     let mut alphaMode = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode::Auto;
-    let mut presentMode = canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Mailbox;
+    let mut presentMode = None;
     if let Some(alpha_mode) = options.alpha_mode {
       alphaMode = match alpha_mode {
         GPUCanvasAlphaMode::opaque => {
@@ -147,7 +149,7 @@ impl g_p_u_canvas_context {
     }
 
     if let Some(present_mode) = options.present_mode {
-      presentMode = match present_mode {
+      presentMode = Some(match present_mode {
         GPUCanvasPresentMode::autoVsync => {
           canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::AutoVsync
         }
@@ -166,7 +168,66 @@ impl g_p_u_canvas_context {
         GPUCanvasPresentMode::mailbox => {
           canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Mailbox
         }
-      };
+      });
+    }
+
+    let cap =
+      canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_capabilities_rust(
+        &self.context,
+        &options.device.adapter,
+      );
+
+    if let None = presentMode {
+      presentMode = Some(match cap.as_ref() {
+        Some(capabilities) => match capabilities.present_modes.first() {
+          None => canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
+          Some(mode) => match mode {
+            PresentMode::AutoVsync => {
+              canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::AutoVsync
+            }
+            PresentMode::AutoNoVsync => {
+              canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::AutoNoVsync
+            }
+            PresentMode::Fifo => canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
+            PresentMode::FifoRelaxed => {
+              canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::FifoRelaxed
+            }
+            PresentMode::Immediate => {
+              canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Immediate
+            }
+            PresentMode::Mailbox => {
+              canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Mailbox
+            }
+          },
+        },
+        None => canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo,
+      });
+    }
+
+    if let Some(cap) = cap.as_ref() {
+      let mode = alphaMode.into();
+      if !cap.alpha_modes.contains(&mode) {
+        alphaMode=  match cap
+            .alpha_modes
+            .first()
+            .unwrap_or(&CompositeAlphaMode::Auto) {
+          CompositeAlphaMode::Auto => {
+            CanvasGPUSurfaceAlphaMode::Auto
+          }
+          CompositeAlphaMode::Opaque => {
+            CanvasGPUSurfaceAlphaMode::Opaque
+          }
+          CompositeAlphaMode::PreMultiplied => {
+            CanvasGPUSurfaceAlphaMode::PreMultiplied
+          }
+          CompositeAlphaMode::PostMultiplied => {
+            CanvasGPUSurfaceAlphaMode::PostMultiplied
+          }
+          CompositeAlphaMode::Inherit => {
+            CanvasGPUSurfaceAlphaMode::Inherit
+          }
+        }
+      }
     }
 
     let mut view_formats_ptr: *const canvas_c::webgpu::enums::CanvasGPUTextureFormat =
@@ -246,7 +307,8 @@ impl g_p_u_canvas_context {
     let config = canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceConfiguration {
       alphaMode,
       usage,
-      presentMode,
+      presentMode: presentMode
+        .unwrap_or(canvas_c::webgpu::gpu_canvas_context::CanvasGPUPresentMode::Fifo),
       view_formats: view_formats_ptr,
       view_formats_size,
       size: size_ptr,

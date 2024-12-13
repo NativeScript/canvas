@@ -29,14 +29,19 @@ export const enum GPUFeatureName {
 	depthClipControl = 'depth-clip-control',
 	depth32floatStencil8 = 'depth32float-stencil8',
 	textureCompressionBc = 'texture-compression-bc',
+	textureCompressionBcSliced3d = 'texture-compression-bc-sliced-3d',
 	textureCompressionEtc2 = 'texture-compression-etc2',
 	textureCompressionAstc = 'texture-compression-astc',
+	textureCompressionAstcSliced3d = 'texture-compression-astc-sliced-3d',
 	timestampQuery = 'timestamp-query',
 	indirectFirstInstance = 'indirect-first-instance',
 	shaderF16 = 'shader-f16',
 	rg11b10ufloatRenderable = 'rg11b10ufloat-renderable',
 	bgra8unormStorage = 'bgra8unorm-storage',
 	float32Filterable = 'float32-filterable',
+	float32Blendable = 'float32-blendable',
+	clipDistances = 'clip-distances',
+	dualSourceBlending = 'dual-source-blending',
 }
 export interface GPUDeviceDescriptor {
 	defaultQueue?: DefaultQueue;
@@ -534,40 +539,40 @@ export interface GPUBindGroupDescriptor {
 	layout: GPUBindGroupLayout;
 }
 export interface GPUSupportedLimits {
-	maxTextureDimension1D: number;
-	maxTextureDimension2D: number;
-	maxTextureDimension3D: number;
-	maxTextureArrayLayers: number;
-	maxBindGroups: number;
-	maxBindingsPerBindGroup: number;
-	maxDynamicUniformBuffersPerPipelineLayout: number;
-	maxDynamicStorageBuffersPerPipelineLayout: number;
-	maxSampledTexturesPerShaderStage: number;
-	maxSamplersPerShaderStage: number;
-	maxStorageBuffersPerShaderStage: number;
-	maxStorageTexturesPerShaderStage: number;
-	maxUniformBuffersPerShaderStage: number;
-	maxUniformBufferBindingSize: number;
-	maxStorageBufferBindingSize: number;
-	maxVertexBuffers: number;
-	maxBufferSize: number;
-	maxVertexAttributes: number;
-	maxVertexBufferArrayStride: number;
-	minUniformBufferOffsetAlignment: number;
-	minStorageBufferOffsetAlignment: number;
-	maxInterStageShaderComponents: number;
-	maxColorAttachments: number;
-	maxColorAttachmentBytesPerSample: number;
-	maxComputeWorkgroupStorageSize: number;
-	maxComputeInvocationsPerWorkgroup: number;
-	maxComputeWorkgroupSizeX: number;
-	maxComputeWorkgroupSizeY: number;
-	maxComputeWorkgroupSizeZ: number;
-	maxComputeWorkgroupsPerDimension: number;
-	minSubgroupSize: number;
-	maxSubgroupSize: number;
-	maxPushConstantSize: number;
-	maxNonSamplerBindings: number;
+	maxTextureDimension1D?: number;
+	maxTextureDimension2D?: number;
+	maxTextureDimension3D?: number;
+	maxTextureArrayLayers?: number;
+	maxBindGroups?: number;
+	maxBindingsPerBindGroup?: number;
+	maxDynamicUniformBuffersPerPipelineLayout?: number;
+	maxDynamicStorageBuffersPerPipelineLayout?: number;
+	maxSampledTexturesPerShaderStage?: number;
+	maxSamplersPerShaderStage?: number;
+	maxStorageBuffersPerShaderStage?: number;
+	maxStorageTexturesPerShaderStage?: number;
+	maxUniformBuffersPerShaderStage?: number;
+	maxUniformBufferBindingSize?: number;
+	maxStorageBufferBindingSize?: number;
+	maxVertexBuffers?: number;
+	maxBufferSize?: number;
+	maxVertexAttributes?: number;
+	maxVertexBufferArrayStride?: number;
+	minUniformBufferOffsetAlignment?: number;
+	minStorageBufferOffsetAlignment?: number;
+	maxInterStageShaderComponents?: number;
+	maxColorAttachments?: number;
+	maxColorAttachmentBytesPerSample?: number;
+	maxComputeWorkgroupStorageSize?: number;
+	maxComputeInvocationsPerWorkgroup?: number;
+	maxComputeWorkgroupSizeX?: number;
+	maxComputeWorkgroupSizeY?: number;
+	maxComputeWorkgroupSizeZ?: number;
+	maxComputeWorkgroupsPerDimension?: number;
+	minSubgroupSize?: number;
+	maxSubgroupSize?: number;
+	maxPushConstantSize?: number;
+	maxNonSamplerBindings?: number;
 }
 export interface GpuImageCopyBuffer {
 	buffer: g_p_u_buffer;
@@ -802,7 +807,7 @@ export declare class GPUDevice {
 	get label(): string;
 	get queue(): g_p_u_queue;
 	get limits(): GPUSupportedLimits;
-	get features(): Array<string>;
+	get features(): unknown;
 	createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
 	createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor): GPUBindGroupLayout;
 	createBuffer(descriptor: GPUBufferDescriptor): g_p_u_buffer;
@@ -1121,6 +1126,7 @@ export declare class TextDecoder {
 export declare class WebGLProgram {}
 export declare class WebGLShader {}
 export declare class WebGLBuffer {}
+export type web_g_l_framebuffer = WebGLFramebuffer;
 export declare class WebGLFramebuffer {}
 export declare class WebGLRenderbuffer {}
 export declare class WebGLTexture {}
@@ -1165,9 +1171,9 @@ export declare class WebGLRenderingContext {
 	attachShader(program: WebGLProgram, shader: WebGLShader): void;
 	bindAttribLocation(program: WebGLProgram, index: number, name: string): void;
 	bindBuffer(target: number, buffer: WebGLBuffer): void;
-	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void;
-	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void;
-	bindTexture(target: number, texture: WebGLTexture): void;
+	bindFramebuffer(target: number, framebuffer?: WebGLFramebuffer | undefined | null): void;
+	bindRenderbuffer(target: number, renderbuffer?: WebGLRenderbuffer | undefined | null): void;
+	bindTexture(target: number, texture?: WebGLTexture | undefined | null): void;
 	blendColor(red: number, green: number, blue: number, alpha: number): void;
 	blendEquationSeparate(modeRGB: number, modeAlpha: number): void;
 	blendEquation(mode: number): void;
@@ -1268,7 +1274,7 @@ export declare class WebGLRenderingContext {
 	uniform1f(location: WebGLUniformLocation, v0: number): void;
 	uniform1iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform1fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;
-	uniform1i(location: WebGLUniformLocation, v0: number): void;
+	uniform1i(location: WebGLUniformLocation, v0: number | boolean): void;
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void;
 	uniform2iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform2fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;
@@ -1611,9 +1617,9 @@ export declare class WebGL2RenderingContext {
 	attachShader(program: WebGLProgram, shader: WebGLShader): void;
 	bindAttribLocation(program: WebGLProgram, index: number, name: string): void;
 	bindBuffer(target: number, buffer: WebGLBuffer): void;
-	bindFramebuffer(target: number, framebuffer: WebGLFramebuffer): void;
-	bindRenderbuffer(target: number, renderbuffer: WebGLRenderbuffer): void;
-	bindTexture(target: number, texture: WebGLTexture): void;
+	bindFramebuffer(target: number, framebuffer?: WebGLFramebuffer | undefined | null): void;
+	bindRenderbuffer(target: number, renderbuffer?: WebGLRenderbuffer | undefined | null): void;
+	bindTexture(target: number, texture?: WebGLTexture | undefined | null): void;
 	blendColor(red: number, green: number, blue: number, alpha: number): void;
 	blendEquationSeparate(modeRGB: number, modeAlpha: number): void;
 	blendEquation(mode: number): void;
@@ -1714,7 +1720,7 @@ export declare class WebGL2RenderingContext {
 	uniform1f(location: WebGLUniformLocation, v0: number): void;
 	uniform1iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform1fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;
-	uniform1i(location: WebGLUniformLocation, v0: number): void;
+	uniform1i(location: WebGLUniformLocation, v0: number | boolean): void;
 	uniform2f(location: WebGLUniformLocation, v0: number, v1: number): void;
 	uniform2iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform2fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;

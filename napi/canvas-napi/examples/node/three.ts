@@ -1,13 +1,9 @@
-let isAvailable = typeof navigator !== 'undefined' && navigator.gpu !== undefined;
-console.log('isAvailable', isAvailable);
-
-// import * as THREE from 'three';
-// import * as THREEWebGPU from 'three/webgpu';
+import * as THREE from 'three';
+import * as THREEWebGPU from 'three/webgpu';
 
 async function webgpuCube(canvas) {
 	// const adapter = await navigator.gpu?.requestAdapter();
 	// const device: GPUDevice = (await adapter?.requestDevice()) as never;
-	/*
 
 	var camera, scene, renderer;
 	var geometry, material, mesh;
@@ -19,8 +15,6 @@ async function webgpuCube(canvas) {
 
 		renderer.render(scene, camera);
 
-		console.log('animate');
-
 		context.presentSurface();
 	}
 
@@ -31,15 +25,15 @@ async function webgpuCube(canvas) {
 		const innerWidth = canvas.clientWidth;
 		const innerHeight = canvas.clientHeight;
 
-		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
+		camera = new THREEWebGPU.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
 		camera.position.z = 1;
 
-		scene = new THREE.Scene();
+		scene = new THREEWebGPU.Scene();
 
-		geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-		material = new THREE.MeshNormalMaterial();
+		geometry = new THREEWebGPU.BoxGeometry(0.2, 0.2, 0.2);
+		material = new THREEWebGPU.MeshNormalMaterial();
 
-		mesh = new THREE.Mesh(geometry, material);
+		mesh = new THREEWebGPU.Mesh(geometry, material);
 		scene.add(mesh);
 
 		renderer = new THREEWebGPU.WebGPURenderer({ canvas });
@@ -53,8 +47,6 @@ async function webgpuCube(canvas) {
 	}
 
 	init();
-
-	*/
 }
 
 function cube(canvas) {
@@ -80,31 +72,25 @@ function cube(canvas) {
 		const innerWidth = canvas.clientWidth;
 		const innerHeight = canvas.clientHeight;
 
-		// camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
-		// camera.position.z = 1;
-		//
-		// scene = new THREE.Scene();
-		//
-		// geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-		// material = new THREE.MeshNormalMaterial();
-		//
-		// mesh = new THREE.Mesh(geometry, material);
-		// scene.add(mesh);
-		//
-		// renderer = new THREE.WebGLRenderer({ canvas });
-		//
-		// renderer.setPixelRatio(window.devicePixelRatio);
-		// renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
+		camera.position.z = 1;
+
+		scene = new THREE.Scene();
+
+		geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+		material = new THREE.MeshNormalMaterial();
+
+		mesh = new THREE.Mesh(geometry, material);
+		scene.add(mesh);
+
+		renderer = new THREE.WebGLRenderer({ canvas });
 
 		context = canvas.getContext('webgl2');
-		context.clearColor(1, 0, 0, 1);
-		context.clear(context.COLOR_BUFFER_BIT);
-		context.flush();
-		console.log(context.toDataURL());
-		const ctx = context.canvas._canvas.glkView?.openGLContext as NSOpenGLContext;
 
-		//context.render();
-		//renderer.setAnimationLoop(animate);
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+
+		renderer.setAnimationLoop(animate);
 	}
 
 	init();

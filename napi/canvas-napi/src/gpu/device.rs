@@ -5,8 +5,8 @@ use crate::gpu::command_encoder::g_p_u_command_encoder;
 use crate::gpu::compute_pipeline::g_p_u_compute_pipeline;
 use crate::gpu::enums::{
   GPUAddressMode, GPUBufferBindingType, GPUCompareFunction, GPUErrorFilter, GPUFilterMode,
-  GPUSamplerBindingType, GPUStorageTextureAccess, GPUTextureDimension, GPUTextureFormat,
-  GPUTextureSampleType, GPUTextureViewDimension,
+  GPUSamplerBindingType, GPUStorageTextureAccess, GPUTextureDimension, GPUTextureSampleType,
+  GPUTextureViewDimension,
 };
 use crate::gpu::objects::{
   GPUBindGroupDescriptor, GPUBindGroupLayoutDescriptor, GPUBufferDescriptor,
@@ -18,7 +18,6 @@ use crate::gpu::pipeline_layout::g_p_u_pipeline_layout;
 use crate::gpu::query_set::g_p_u_query_set;
 use crate::gpu::queue::g_p_u_queue;
 use crate::gpu::render_bundle_encoder::g_p_u_render_bundle_encoder;
-use crate::gpu::render_pass_encoder::g_p_u_render_pass_encoder;
 use crate::gpu::render_pipeline::g_p_u_render_pipeline;
 use crate::gpu::sampler::g_p_u_sampler;
 use crate::gpu::shader_module::g_p_u_shader_module;
@@ -38,7 +37,7 @@ use canvas_c::webgpu::gpu_device::{
 };
 use canvas_c::webgpu::gpu_supported_limits::CanvasGPUSupportedLimits;
 use canvas_c::webgpu::structs::{CanvasMultisampleState, CanvasVertexAttribute};
-use napi::bindgen_prelude::{FromNapiRef, ObjectFinalize};
+use napi::bindgen_prelude::{FromNapiRef, ObjectFinalize, Unknown};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::{CStr, CString};
@@ -49,6 +48,7 @@ use std::sync::Arc;
 #[napi]
 pub struct g_p_u_device {
   pub(crate) device: Arc<canvas_c::webgpu::gpu_device::CanvasGPUDevice>,
+  pub(crate) adapter: Arc<canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter>,
 }
 
 #[derive(Debug, Clone)]
@@ -84,7 +84,11 @@ impl g_p_u_device {
   }
 
   // #[napi(getter)]
-  pub fn get_lost(&self, env: Env) {}
+  pub fn get_lost(&self) {
+    // canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_set_lost_callback(
+    //   Arc::as_ptr(&self.device),
+    // )
+  }
 
   #[napi(getter)]
   pub fn get_limits(&self) -> GPUSupportedLimits {
@@ -100,16 +104,26 @@ impl g_p_u_device {
   }
 
   #[napi(getter)]
-  pub fn get_features(&self) -> Vec<String> {
+  pub fn get_features(&self, env: Env) -> Result<Unknown> {
     // todo use hashset after updating
-    unsafe {
-      *Box::from_raw(
-        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_features(Arc::as_ptr(
-          &self.device,
-        )),
-      )
+
+    let features = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_get_features(
+      Arc::as_ptr(&self.device),
+    );
+    let set_constructor = env.get_global()?.get_named_property::<JsFunction>("Set")?;
+    let set = set_constructor.new_instance::<JsObject>(&[])?;
+    if features.is_null() {
+      return Ok(set.into_unknown());
     }
-    .into()
+    let features: Vec<String> = unsafe { (*Box::from_raw(features)).into() };
+
+    let add = set.get_named_property::<JsFunction>("add")?;
+    for feature in features.into_iter() {
+      let feat = env.create_string_from_std(feature)?;
+      add.call::<JsString>(Some(&set), &[feat.into()])?;
+    }
+
+    Ok(set.into_unknown())
   }
 
   #[napi]
@@ -910,6 +924,7 @@ struct Response {
 
 struct Sender {
   tx: std::sync::mpsc::Sender<Response>,
+  adapter: Arc<canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter>,
 }
 
 extern "C" fn request_device(
@@ -940,27 +955,36 @@ extern "C" fn request_device(
   data
     .tx
     .send(Response {
-      device: Some(g_p_u_device { device }),
+      device: Some(g_p_u_device {
+        device,
+        adapter: data.adapter,
+      }),
       error: None,
     })
     .unwrap();
 }
 
 #[napi(object)]
+#[derive(Debug)]
 pub struct default_queue {
   pub label: Option<String>,
 }
 
 #[allow(clippy::enum_variant_names)]
 #[napi(js_name = "GPUFeatureName", string_enum = "kebab-case")]
+#[derive(Debug)]
 pub enum GPUFeatureName {
   depthClipControl,
   #[napi(value = "depth32float-stencil8")]
   depth32floatStencil8,
   textureCompressionBc,
+  #[napi(value = "texture-compression-bc-sliced-3d")]
+  textureCompressionBcSliced3d,
   #[napi(value = "texture-compression-etc2")]
   textureCompressionEtc2,
   textureCompressionAstc,
+  #[napi(value = "texture-compression-astc-sliced-3d")]
+  textureCompressionAstcSliced3d,
   timestampQuery,
   indirectFirstInstance,
   #[napi(value = "shader-f16")]
@@ -971,6 +995,10 @@ pub enum GPUFeatureName {
   bgra8unormStorage,
   #[napi(value = "float32-filterable")]
   float32Filterable,
+  #[napi(value = "float32-blendable")]
+  float32Blendable,
+  clipDistances,
+  dualSourceBlending,
 }
 
 impl Into<&CStr> for GPUFeatureName {
@@ -987,11 +1015,17 @@ impl Into<&CStr> for GPUFeatureName {
       GPUFeatureName::rg11b10ufloatRenderable => c"rg11b10ufloat-renderable",
       GPUFeatureName::bgra8unormStorage => c"bgra8unorm-storage",
       GPUFeatureName::float32Filterable => c"float32-filterable",
+      GPUFeatureName::textureCompressionBcSliced3d => c"texture-compression-bc-sliced-3d",
+      GPUFeatureName::textureCompressionAstcSliced3d => c"texture-compression-astc-sliced-3d",
+      GPUFeatureName::float32Blendable => c"float32-blendable",
+      GPUFeatureName::clipDistances => c"clip-distances",
+      GPUFeatureName::dualSourceBlending => c"dual-source-blending",
     }
   }
 }
 
 #[napi(js_name = "GPUDeviceDescriptor", object)]
+#[derive(Debug)]
 pub struct GPUDeviceDescriptor {
   pub default_queue: Option<default_queue>,
   pub label: Option<String>,
@@ -1023,7 +1057,10 @@ impl Task for AsyncAdapterDevice {
   fn compute(&mut self) -> Result<Self::Output> {
     unsafe {
       let (tx, rx) = channel();
-      let data = Box::into_raw(Box::new(Sender { tx }));
+      let data = Box::into_raw(Box::new(Sender {
+        tx,
+        adapter: Arc::clone(&self.adapter),
+      }));
       let required_feature = c"texture-adapter-specific-format-features";
       let required_features = vec![required_feature.as_ptr()];
       match self.descriptor.take() {

@@ -61,23 +61,23 @@ macro_rules! impl_webgl_context {
       }
 
       #[napi]
-      pub fn bind_buffer(&self, target: u32, buffer: ClassInstance<WebGLBuffer>) {
+      pub fn bind_buffer(&self, target: u32, buffer: &WebGLBuffer) {
         canvas_c::canvas_native_webgl_bind_buffer(target, buffer.0, self.state);
       }
 
       #[napi]
-      pub fn bind_framebuffer(&self, target: u32, framebuffer: ClassInstance<WebGLFramebuffer>) {
-        canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.0, self.state);
+      pub fn bind_framebuffer(&self, target: u32, framebuffer: Option<&web_g_l_framebuffer>) {
+       canvas_c::canvas_native_webgl_bind_frame_buffer(target, framebuffer.map(|framebuffer| framebuffer.buffer).unwrap_or(0) , self.state);
       }
 
       #[napi]
-      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: ClassInstance<WebGLRenderbuffer>) {
-        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.0, self.state);
+      pub fn bind_renderbuffer(&self, target: u32, renderbuffer: Option<&WebGLRenderbuffer>) {
+        canvas_c::canvas_native_webgl_bind_render_buffer(target, renderbuffer.map(|renderbuffer|renderbuffer.0).unwrap_or(0), self.state);
       }
 
       #[napi]
-      pub fn bind_texture(&self, target: u32, texture: ClassInstance<WebGLTexture>) {
-        canvas_c::canvas_native_webgl_bind_texture(target, texture.0, self.state);
+      pub fn bind_texture(&self, target: u32, texture: Option<&WebGLTexture>) {
+        canvas_c::canvas_native_webgl_bind_texture(target, texture.map(|texture| texture.0).unwrap_or(0), self.state);
       }
 
       #[napi]
@@ -264,44 +264,45 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn create_buffer(&self, env: Env) -> Result<ClassInstance<WebGLBuffer>> {
+    pub fn create_buffer(&self) -> WebGLBuffer {
         WebGLBuffer(
             canvas_c::canvas_native_webgl_create_buffer(self.state)
-        ).into_instance(env)
+        )
     }
 
     #[napi]
-    pub fn create_framebuffer(&self, env: Env) -> Result<ClassInstance<WebGLFramebuffer>> {
-        WebGLFramebuffer(canvas_c::canvas_native_webgl_create_framebuffer(self.state))
-            .into_instance(env)
+    pub fn create_framebuffer(&self) -> web_g_l_framebuffer {
+        web_g_l_framebuffer{
+            buffer: canvas_c::canvas_native_webgl_create_framebuffer(self.state)
+        }
     }
 
     #[napi]
-    pub fn create_program(&self, env: Env) -> Result<ClassInstance<WebGLProgram>> {
+    pub fn create_program(&self) -> WebGLProgram {
         WebGLProgram(
             canvas_c::canvas_native_webgl_create_program(self.state)
-        ).into_instance(env)
+        )
     }
     #[napi]
 
-    pub fn create_renderbuffer(&self, env: Env) -> Result<ClassInstance<WebGLRenderbuffer>> {
+    pub fn create_renderbuffer(&self) -> WebGLRenderbuffer {
         WebGLRenderbuffer(
             canvas_c::canvas_native_webgl_create_renderbuffer(self.state)
-        ).into_instance(env)
+        )
     }
 
     #[napi(ts_args_type = "type: number")]
-    pub fn create_shader(&self, env: Env, type_: u32) -> Result<ClassInstance<WebGLShader>> {
+    pub fn create_shader(&self, type_: u32) -> WebGLShader {
         WebGLShader(
             canvas_c::canvas_native_webgl_create_shader(type_, self.state),
-        ).into_instance(env)
+        )
     }
 
     #[napi]
-    pub fn create_texture(&self, env: Env) -> Result<ClassInstance<WebGLTexture>> {
+    pub fn create_texture(&self, env: Env) -> WebGLTexture {
         WebGLTexture(
             canvas_c::canvas_native_webgl_create_texture(self.state)
-        ).into_instance(env)
+        )
     }
 
     #[napi]
@@ -311,32 +312,32 @@ macro_rules! impl_webgl_context {
 
 
     #[napi]
-    pub fn delete_buffer(&self, buffer: ClassInstance<WebGLBuffer>) {
+    pub fn delete_buffer(&self, buffer: &WebGLBuffer) {
         canvas_c::canvas_native_webgl_delete_buffer(buffer.0, self.state)
     }
 
     #[napi]
-    pub fn delete_framebuffer(&self, frame_buffer: ClassInstance<WebGLFramebuffer>) {
-        canvas_c::canvas_native_webgl_delete_framebuffer(frame_buffer.0, self.state)
+    pub fn delete_framebuffer(&self, frame_buffer: &web_g_l_framebuffer) {
+        canvas_c::canvas_native_webgl_delete_framebuffer(frame_buffer.buffer, self.state)
     }
 
     #[napi]
-    pub fn delete_program(&self, program: ClassInstance<WebGLProgram>) {
+    pub fn delete_program(&self, program: &WebGLProgram) {
         canvas_c::canvas_native_webgl_delete_program(program.0, self.state)
     }
 
     #[napi]
-    pub fn delete_renderbuffer(&self, render_buffer: ClassInstance<WebGLRenderbuffer>) {
+    pub fn delete_renderbuffer(&self, render_buffer: &WebGLRenderbuffer) {
         canvas_c::canvas_native_webgl_delete_renderbuffer(render_buffer.0, self.state)
     }
 
     #[napi]
-    pub fn delete_shader(&self, shader: ClassInstance<WebGLRenderbuffer>) {
+    pub fn delete_shader(&self, shader: &WebGLRenderbuffer) {
         canvas_c::canvas_native_webgl_delete_shader(shader.0, self.state)
     }
 
     #[napi]
-    pub fn delete_texture(&self, texture: ClassInstance<WebGLTexture>) {
+    pub fn delete_texture(&self, texture: &WebGLTexture) {
         canvas_c::canvas_native_webgl_delete_texture(texture.0, self.state)
     }
 
@@ -930,10 +931,10 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn is_framebuffer(&self, framebuffer: Option<ClassInstance<WebGLFramebuffer>>) -> bool {
+    pub fn is_framebuffer(&self, framebuffer: Option<&web_g_l_framebuffer>) -> bool {
         let framebuffer = match framebuffer {
             None => 0,
-            Some(framebuffer) => framebuffer.0
+            Some(framebuffer) => framebuffer.buffer
         };
         canvas_c::canvas_native_webgl_is_framebuffer(framebuffer, self.state)
     }
@@ -1160,7 +1161,11 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi(js_name = "uniform1i")]
-    pub fn uniform1i(&self, location: ClassInstance<WebGLUniformLocation>, v0: i32) {
+    pub fn uniform1i(&self, location: ClassInstance<WebGLUniformLocation>, v0: Either<i32, bool>) {
+          let v0 = match v0 {
+              Either::A(v) => v,
+              Either::B(v) => if v { 1 } else { 0 },
+          };
         canvas_c::canvas_native_webgl_uniform1i(location.0, v0, self.state);
     }
 

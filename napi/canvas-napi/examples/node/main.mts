@@ -18,6 +18,7 @@ import {run as tiny_poly_world} from './threejs/tiny_poly_world';
 import {run as tsl_galaxy} from './threejs/tsl_galaxy';
 const { webgpuCube, cube } = three;
 import { run as damagedHelmet } from './threejs/damaged_helmet';
+import { run as simplePixi } from './pixijs/simple';
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
@@ -1545,7 +1546,8 @@ canvas.addEventListener('ready', (event) => {
 //	the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
 //tiny_poly_world(canvas);
 //	damagedHelmet(canvas);
-	tsl_galaxy(canvas);
+// 	tsl_galaxy(canvas);
+	simplePixi(canvas);
 });
 
 windowDoc.setAttribute('styleMask', (

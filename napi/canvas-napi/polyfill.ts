@@ -6,7 +6,7 @@ import { Event } from '@nativescript/foundation/dom/dom-utils.js';
 // @ts-ignore
 const require = createRequire(import.meta.url);
 
-const { GPU, GPUDevice, GPUAdapter, GPUTextureUsage, GPUBufferUsage } = require('./canvas-napi.darwin-arm64.node');
+const { GPU, GPUDevice, GPUAdapter, GPUTextureUsage, GPUBufferUsage, CanvasRenderingContext2D, WebGLRenderingContext } = require('./canvas-napi.darwin-arm64.node');
 
 const { requestAnimationFrame, cancelAnimationFrame } = utils;
 
@@ -32,7 +32,7 @@ export class ProgressEvent extends Event {
 }
 
 function installPolyfills(window) {
-	window.addEventListener = () => {};
+	globalThis.addEventListener = window.addEventListener = () => {};
 	Object.defineProperty(window, 'devicePixelRatio', {
 		value: NSScreen.mainScreen.backingScaleFactor,
 		writable: true,
@@ -54,6 +54,8 @@ function installPolyfills(window) {
 	globalThis.GPUTextureUsage = GPUTextureUsage;
 	globalThis.GPUBufferUsage = GPUBufferUsage;
 	globalThis.ProgressEvent = ProgressEvent;
+	globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+	globalThis.WebGLRenderingContext = WebGLRenderingContext;
 }
 
 installPolyfills(globalThis.window);

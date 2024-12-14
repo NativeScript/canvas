@@ -469,14 +469,13 @@ export class NSCCanvas extends NSView {
 		(mtlView.layer as CAMetalLayer).isOpaque = false;
 	}
 
-	previousEvent: NSEvent;
+	previousEvent;
 
 	mouseDown(event: NSEvent) {
 		const canvas = this._canvas?.deref?.();
 		if (!canvas) {
 			return;
 		}
-		this.previousEvent = event;
 
 		const eventData = buildMouseEvent(this as never, event);
 		const pointerDown = new PointerEvent('pointerdown', {
@@ -486,6 +485,8 @@ export class NSCCanvas extends NSView {
 			cancelable: true,
 			...eventData,
 		});
+
+		this.previousEvent = { ...eventData };
 
 		canvas.dispatchEvent(pointerDown);
 
@@ -503,9 +504,8 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
-		this.previousEvent = event;
 
-		const eventData = buildMouseEvent(this, event);
+		const eventData = buildMouseEvent(this as never, event);
 		const pointerDown = new PointerEvent('pointerup', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -513,6 +513,8 @@ export class NSCCanvas extends NSView {
 			cancelable: true,
 			...eventData,
 		});
+
+		this.previousEvent = { ...eventData };
 
 		canvas.dispatchEvent(pointerDown);
 
@@ -526,7 +528,28 @@ export class NSCCanvas extends NSView {
 	}
 
 	mouseDragged(event: NSEvent) {
-		this.previousEvent = event;
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		if (!canvas._pointerCapture.get(1)) {
+			return;
+		}
+		const eventData = buildMouseEvent(this as never, event);
+
+		const pointerDown = new PointerEvent('pointermove', {
+			pointerId: 1,
+			pointerType: 'mouse',
+			isPrimary: true,
+			cancelable: true,
+			...eventData,
+			movementX: eventData.clientX - this.previousEvent.clientX ?? 0,
+			movementY: eventData.clientY - this.previousEvent.clientY ?? 0,
+		});
+
+		this.previousEvent = eventData;
+
+		canvas.dispatchEvent(pointerDown);
 	}
 
 	scrollWheel(event: NSEvent) {
@@ -602,7 +625,10 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
-		const eventData = buildMouseEvent(this, event);
+		if (canvas._pointerCapture.get(1)) {
+			return;
+		}
+		const eventData = buildMouseEvent(this as never, event);
 
 		// movementX: pointer.x - previousEvent.x,
 		// 	movementY: pointer.y - previousEvent.y,
@@ -968,12 +994,19 @@ export class Canvas extends ViewBase {
 	}
 
 	getRootNode() {
-		return this.parentNode;
+		return this.parentNode as never;
 	}
 
-	setPointerCapture() {}
+	_pointerCapture: Map<number, boolean> = new Map();
+	_lastMoved?: NSEvent;
 
-	releasePointerCapture() {}
+	setPointerCapture(pointerId: number) {
+		this._pointerCapture.set(pointerId, true);
+	}
+
+	releasePointerCapture(pointerId: number) {
+		this._pointerCapture.set(pointerId, false);
+	}
 
 	get lang(): string {
 		return NSLocale.currentLocale.languageCode;
@@ -1059,7 +1092,9 @@ export class Canvas extends ViewBase {
 		return new DOMRect(layout.left, layout.top, layout.width, layout.height) as never;
 	}
 
-	focus(options) {}
+	focus(options) {
+		this._canvas.becomeFirstResponder();
+	}
 
 	/**
 	 *

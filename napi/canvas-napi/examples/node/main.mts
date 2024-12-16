@@ -8,6 +8,7 @@ import '../../polyfill';
 import three from './three';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base';
 
+import { touchParticles } from './touchParticles';
 // import { webgl_shadowmap } from './threejs/webgl_shadowmap';
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
@@ -17,7 +18,7 @@ import {run as the_frantic_run_of_the_valorous_rabbit } from './threejs/the_fran
 import {run as tiny_poly_world} from './threejs/tiny_poly_world';
 import {run as tsl_galaxy} from './threejs/tsl_galaxy';
 const { webgpuCube, cube } = three;
-import { run as damagedHelmet } from './threejs/damaged_helmet';
+// import { run as damagedHelmet } from './threejs/damaged_helmet';
 import { run as simplePixi } from './pixijs/simple';
 // @ts-ignore
 const require = createRequire(import.meta.url);
@@ -1539,15 +1540,15 @@ canvas.addEventListener('ready', (event) => {
 	// computeBoids(canvas);
 // 	wireframe(canvas);
 // 	renderBundles(canvas);
-	//webgpuCube(canvas);
+	webgpuCube(canvas);
 	//cubeMap(canvas);
 	//cube(canvas);
 	//webgl_shadowmap(canvas);
 //	the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
 //tiny_poly_world(canvas);
-//	damagedHelmet(canvas);
+// 	damagedHelmet(canvas);
 // 	tsl_galaxy(canvas);
-	simplePixi(canvas);
+	//simplePixi(canvas);
 });
 
 windowDoc.setAttribute('styleMask', (
@@ -1581,7 +1582,6 @@ const scrollView = document.createElement('scroll-view');
 windowDoc.style.backgroundColor = 'white';
 windowDoc.style.width = NSScreen.mainScreen.frame.size.width * .66;
 windowDoc.style.height = NSScreen.mainScreen.frame.size.height * .66;
-console.log(NSScreen.mainScreen.frame.size.width * .66, NSScreen.mainScreen.frame.size.height * .66);
 
 
 //splitView.style.backgroundColor = background;

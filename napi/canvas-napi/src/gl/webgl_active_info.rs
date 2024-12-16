@@ -3,10 +3,10 @@ use napi::bindgen_prelude::ObjectFinalize;
 use napi::*;
 use napi_derive::napi;
 
-#[napi(js_name = "WebGLActiveInfo", custom_finalize)]
-pub struct WebGLActiveInfo(pub(crate) *mut ActiveInfo);
+#[napi(custom_finalize)]
+pub struct web_g_l_active_info(pub(crate) *mut ActiveInfo);
 
-impl ObjectFinalize for WebGLActiveInfo {
+impl ObjectFinalize for web_g_l_active_info {
     fn finalize(self, _: Env) -> Result<()> {
         canvas_c::canvas_native_webgl_active_info_destroy(self.0);
         Ok(())
@@ -15,7 +15,7 @@ impl ObjectFinalize for WebGLActiveInfo {
 
 
 #[napi]
-impl WebGLActiveInfo {
+impl web_g_l_active_info {
     #[napi(getter)]
     pub fn get_name(&self) -> &str {
         let info = unsafe { &*self.0 };

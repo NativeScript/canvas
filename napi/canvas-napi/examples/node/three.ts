@@ -43,6 +43,7 @@ async function webgpuCube(canvas) {
 		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
 		context = canvas.getContext('webgpu');
+		canvas.__giveMeFreeReign = true;
 		renderer.setAnimationLoop(animate);
 	}
 

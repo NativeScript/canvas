@@ -136,6 +136,7 @@ export async function run(canvas) {
 		controls.update();
 
 		context = canvas.getContext('webgpu');
+		//	context = canvas.getContext('webgl2');
 
 		//	onWindowResize();
 		window.addEventListener('resize', onWindowResize, false);
@@ -155,6 +156,7 @@ export async function run(canvas) {
 	function render() {
 		renderer.render(scene, camera);
 		context.presentSurface();
+		//context.render();
 	}
 
 	function animate() {

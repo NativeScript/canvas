@@ -1,5 +1,5 @@
 use napi::*;
-use napi_derive::*;
+use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
 

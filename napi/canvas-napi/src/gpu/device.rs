@@ -242,10 +242,17 @@ impl g_p_u_device {
       .entries
       .iter()
       .filter(|v| {
+        if v.buffer.is_some()
+            || v.texture.is_some()
+            || v.storage_texture.is_some()
+            || v.sampler.is_some()
+        {
+          return true;
+        }
         if has_external_texture == v.external_texture.is_some() {
           has_external_texture = true;
         }
-        v.external_texture.is_none()
+        false
       })
       .map(|entry| {
         if let Some(buffer) = &entry.buffer {
@@ -411,7 +418,7 @@ impl g_p_u_device {
     };
 
     let compute = CanvasProgrammableStage {
-      module: descriptor.compute.module.module,
+      module: Arc::as_ptr(&descriptor.compute.module.module),
       entry_point: entry_point_ptr,
       constants: constants_ptr,
     };
@@ -546,7 +553,7 @@ impl g_p_u_device {
     }
 
     let vertex = canvas_c::webgpu::gpu_device::CanvasVertexState {
-      module: descriptor.vertex.module.module,
+      module: Arc::as_ptr(&descriptor.vertex.module.module),
       entry_point: entry_point_ptr,
       constants: constants_ptr,
       buffers: buffers_ptr,
@@ -602,7 +609,7 @@ impl g_p_u_device {
       canvas_c::webgpu::gpu_device::CanvasFragmentState {
         targets: fragment_targets_ptr,
         targets_size: fragment_targets_size,
-        module: state.module.module,
+        module: Arc::as_ptr(&state.module.module),
         entry_point: fragment_entry_point_ptr,
         constants: fragment_constants_ptr,
       }
@@ -752,10 +759,12 @@ impl g_p_u_device {
 
     let source = CString::new(descriptor.code).unwrap();
     let module = unsafe {
-      canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(
-        Arc::as_ptr(&self.device),
-        label_ptr,
-        source.as_ptr(),
+      Arc::from_raw(
+        canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_shader_module(
+          Arc::as_ptr(&self.device),
+          label_ptr,
+          source.as_ptr(),
+        ),
       )
     };
 

@@ -1,5 +1,7 @@
 use std::ffi::CString;
 use std::sync::Arc;
+use napi::*;
+use napi_derive::napi;
 
 #[napi]
 pub struct g_p_u_command_buffer {

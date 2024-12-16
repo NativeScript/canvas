@@ -1291,7 +1291,7 @@ export function run(canvas, parent: HTMLElement) {
 
 	function render() {
 		renderer.render(scene, camera);
-		context.render();
+		// context.renderImmediate();
 	}
 
 	//window.addEventListener('load', init, false);

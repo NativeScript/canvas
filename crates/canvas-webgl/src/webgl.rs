@@ -2599,6 +2599,35 @@ pub fn canvas_native_webgl_tex_sub_image2d(
     }
 }
 
+pub fn canvas_native_webgl_tex_sub_image2d_offset(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    width: i32,
+    height: i32,
+    format: u32,
+    image_type: i32,
+    offset: i64,
+    state: &WebGLState,
+) {
+    state.make_current();
+
+    unsafe {
+        gl_bindings::TexSubImage2D(
+            target,
+            level,
+            xoffset,
+            yoffset,
+            width,
+            height,
+            format,
+            image_type as u32,
+            offset as *const c_void,
+        );
+    }
+}
+
 pub fn canvas_native_webgl_uniform1f(location: i32, v0: f32, state: &WebGLState) {
     state.make_current();
     unsafe { gl_bindings::Uniform1f(location, v0) }

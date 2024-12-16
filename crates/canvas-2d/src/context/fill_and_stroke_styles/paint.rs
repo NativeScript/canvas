@@ -51,6 +51,7 @@ impl PaintStyle {
         blue
     }
 
+    #[inline]
     pub fn new_color_str(color: &str) -> Option<Self> {
         parse(color)
             .map(|color| {

@@ -30,11 +30,19 @@ use canvas_c::webgpu::structs::{
   CanvasBlendFactor, CanvasBlendOperation, CanvasBlendState, CanvasColor, CanvasColorTargetState,
   CanvasExtent3d, CanvasOrigin3d,
 };
-use napi::bindgen_prelude::{ClassInstance, Either6};
+use napi::bindgen_prelude::{ClassInstance, Either6, Either7};
 use napi::{Either, JsObject};
 use napi_derive::napi;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use crate::image_bitmap::ImageBitmap;
+
+#[napi(js_name = "GPUImageDataLayout", object)]
+pub struct GPUImageDataLayout {
+  pub bytes_per_row: i32,
+  pub offset: Option<i64>,
+  pub rows_per_image: Option<i32>,
+}
 
 #[napi(js_name = "GPURenderBundleDescriptor", object)]
 pub struct GPURenderBundleDescriptor {
@@ -100,13 +108,14 @@ pub struct GPUImageCopyTextureTagged {
 pub struct GPUImageCopyExternalImage {
   pub flip_y: Option<bool>,
   pub origin: Option<Either<Vec<u32>, GPUOrigin2DDict>>,
-  pub source: Either6<
+  pub source: Either7<
     ClassInstance<ImageData>,
     ClassInstance<ImageAsset>,
     ClassInstance<CanvasRenderingContext2D>,
     ClassInstance<web_g_l_rendering_context>,
     ClassInstance<web_g_l_2_rendering_context>,
     ClassInstance<g_p_u_canvas_context>,
+    ClassInstance<ImageBitmap>
   >,
 }
 
@@ -473,7 +482,7 @@ impl Default for GPUSupportedLimits {
       min_subgroup_size: Some(0),
       max_subgroup_size: Some(0),
       max_push_constant_size: Some(0),
-      max_non_sampler_bindings: Some(1_000_000)
+      max_non_sampler_bindings: Some(1_000_000),
     }
   }
 }

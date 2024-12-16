@@ -176,9 +176,9 @@ impl From<wgt::Color> for CanvasColor {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasImageDataLayout {
-    offset: u64,
-    bytes_per_row: i32,
-    rows_per_image: i32,
+    pub offset: u64,
+    pub bytes_per_row: i32,
+    pub rows_per_image: i32,
 }
 
 impl From<wgt::ImageDataLayout> for CanvasImageDataLayout {

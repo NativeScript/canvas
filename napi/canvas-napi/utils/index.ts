@@ -1,4 +1,4 @@
-import raf from './raf/index';
+import raf from './raf/index.js';
 
 export default raf;
 

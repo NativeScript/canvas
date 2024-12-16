@@ -785,14 +785,14 @@ impl CanvasRenderingContext2D {
             Either::A(width) => {
                 if let Some(height) = height {
                     return ImageData {
-                        data: canvas_c::canvas_native_context_create_image_data(width as i32, height as i32)
+                        data: unsafe { Arc::from_raw(canvas_c::canvas_native_context_create_image_data(width as i32, height as i32))}
                     }.into_instance(env);
                 }
                 Err(napi::Error::from_reason("Argument 1 is not an object."))
             }
             Either::B(value) => {
                 ImageData {
-                    data: canvas_c::canvas_native_context_create_image_data(value.width_inner(), value.height_inner())
+                    data: unsafe { Arc::from_raw(canvas_c::canvas_native_context_create_image_data(value.width_inner(), value.height_inner()))}
                 }.into_instance(env)
             }
         }
@@ -956,13 +956,13 @@ impl CanvasRenderingContext2D {
     #[napi]
     pub fn get_image_data(&self, env: Env, x: f64, y: f64, width: f64, height: f64) -> Result<ClassInstance<ImageData>> {
         ImageData {
-            data: canvas_c::canvas_native_context_get_image_data(
+            data: unsafe { Arc::from_raw(canvas_c::canvas_native_context_get_image_data(
                 self.context,
                 x as f32,
                 y as f32,
                 width as f32,
                 height as f32,
-            )
+            )) }
         }.into_instance(env)
     }
 
@@ -1126,12 +1126,12 @@ impl CanvasRenderingContext2D {
         match (dirty_x, dirty_y, dirty_width, dirty_height) {
             (Some(x), Some(y), Some(width), Some(height)) => {
                 canvas_c::canvas_native_context_put_image_data(
-                    self.context, image_data.data, dx as f32, dy as f32, x as f32, y as f32, width as f32, height as f32,
+                    self.context,Arc::as_ptr(&image_data.data), dx as f32, dy as f32, x as f32, y as f32, width as f32, height as f32,
                 )
             }
             _ => {
                 canvas_c::canvas_native_context_put_image_data(
-                    self.context, image_data.data, dx as f32, dy as f32, 0., 0., image_data.width_inner() as f32, image_data.height_inner() as f32,
+                    self.context, Arc::as_ptr(&image_data.data), dx as f32, dy as f32, 0., 0., image_data.width_inner() as f32, image_data.height_inner() as f32,
                 )
             }
         }

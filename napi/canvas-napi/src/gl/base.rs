@@ -10,10 +10,36 @@ macro_rules! impl_webgl_context {
 
     #[napi]
     impl $struct_name {
+
+          pub fn update_invalidate_state(&mut self) {
+    let state = self.invalidate_state();
+    self.invalidate_state = state | InvalidateState::Pending as u32
+  }
+
+  pub fn invalidate_state(&self) -> u32 {
+    self.invalidate_state
+  }
+
+  pub fn set_invalidate_state(&mut self, state: u32) {
+    self.invalidate_state = state;
+  }
+
+
       #[napi]
-      pub fn render(&self) {
+      pub fn render_immediate(&self) {
         canvas_c::canvas_native_webgl_make_current_and_swap_buffers(self.state);
       }
+
+          #[napi]
+          pub fn render(&mut self) {
+    let state = self.invalidate_state & InvalidateState::Pending as u32;
+    if (state == InvalidateState::Pending as u32) {
+      self.invalidate_state = InvalidateState::Invalidating as u32;
+      canvas_c::canvas_native_webgl_make_current_and_swap_buffers(self.state);
+      self.invalidate_state = InvalidateState::None as u32;
+    }
+  }
+
 
       #[napi(getter)]
       pub fn get_drawing_buffer_width(&self) -> i32 {
@@ -215,8 +241,9 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn clear(&self, mask: u32) {
+    pub fn clear(&mut self, mask: u32) {
         canvas_c::canvas_native_webgl_clear(mask, self.state);
+              self.update_invalidate_state();
     }
 
     #[napi]
@@ -372,13 +399,15 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn draw_arrays(&self, mode: u32, first: i32, count: i32) {
+    pub fn draw_arrays(&mut self, mode: u32, first: i32, count: i32) {
         canvas_c::canvas_native_webgl_draw_arrays(mode, first, count, self.state);
+               self.update_invalidate_state();
     }
 
     #[napi(ts_args_type = "mode: number, count: number, type: number, offset: number")]
-    pub fn draw_elements(&self, mode: u32, count: i32, type_: u32, offset: i64) {
+    pub fn draw_elements(&mut self, mode: u32, count: i32, type_: u32, offset: i64) {
         canvas_c::canvas_native_webgl_draw_elements(mode, count, type_, offset as isize, self.state);
+                 self.update_invalidate_state();
     }
 
     #[napi]
@@ -425,8 +454,8 @@ macro_rules! impl_webgl_context {
 
 
     #[napi]
-    pub fn get_active_attrib(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<WebGLActiveInfo>> {
-        WebGLActiveInfo(
+    pub fn get_active_attrib(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<web_g_l_active_info>> {
+        web_g_l_active_info(
             canvas_c::canvas_native_webgl_get_active_attrib(
                 program.0, index, self.state,
             )
@@ -434,8 +463,8 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn get_active_uniform(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<WebGLActiveInfo>> {
-        WebGLActiveInfo(
+    pub fn get_active_uniform(&self, env: Env, program: ClassInstance<WebGLProgram>, index: u32) -> Result<ClassInstance<web_g_l_active_info>> {
+        web_g_l_active_info(
             canvas_c::canvas_native_webgl_get_active_uniform(
                 program.0, index, self.state,
             )
@@ -1072,7 +1101,7 @@ macro_rules! impl_webgl_context {
     }
 
     #[napi]
-    pub fn tex_image_2D(&self, target: i32, level: i32, internalformat: i32, width_or_format: i32, height_or_type: i32, border_or_pixels: Either4<i32, ClassInstance<crate::c2d::CanvasRenderingContext2D>, ClassInstance<web_g_l_rendering_context>, ClassInstance<crate::image_asset::ImageAsset>>, format: Option<i32>, type_: Option<i32>, pixels: Option<Either<Buffer, i64>>, offset: Option<i64>) -> Result<()> {
+    pub fn tex_image_2_d(&self, target: i32, level: i32, internalformat: i32, width_or_format: i32, height_or_type: i32, border_or_pixels: Either4<i32, ClassInstance<crate::c2d::CanvasRenderingContext2D>, ClassInstance<web_g_l_rendering_context>, ClassInstance<crate::image_asset::ImageAsset>>, format: Option<i32>, type_: Option<i32>, pixels: Option<Either<Buffer, i64>>, offset: Option<i64>) -> Result<()> {
         match border_or_pixels {
             Either4::A(border) => {
                 match (format, type_, pixels) {
@@ -1127,6 +1156,184 @@ macro_rules! impl_webgl_context {
     pub fn tex_parameteri(&self, target: u32, pname: u32, param: i32) {
         canvas_c::canvas_native_webgl_tex_parameteri(target, pname, param, self.state);
     }
+
+    #[napi]
+    pub fn tex_sub_image_2_d(
+    &self,
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    format_or_width: i32,
+    type_or_height: i32,
+    pixels_or_format: Either7<
+      u32,
+      &crate::image_bitmap::ImageBitmap,
+      &crate::image_asset::ImageAsset,
+      &crate::c2d::CanvasRenderingContext2D,
+      &crate::gl::web_g_l_rendering_context,
+      &crate::gl2::web_g_l_2_rendering_context,
+      &crate::c2d::image_data::ImageData,
+    >,
+    type_: Option<i32>,
+    pixels: Option<Either5<&[u8], &[u16], &[f32], JsArrayBuffer, i64>>,
+    offset: Option<i64>,
+  ) -> Result<()> {
+    match pixels_or_format {
+      Either7::A(format) => match (type_, pixels) {
+        (Some(type_), Some(pixels)) => match pixels {
+          Either5::A(buf) => {
+            canvas_c::canvas_native_webgl_tex_sub_image2d(
+              target,
+              level,
+              xoffset,
+              yoffset,
+              format_or_width,
+              type_or_height,
+              format,
+              type_,
+              buf.as_ptr(),
+              buf.len(),
+              self.state,
+            );
+          }
+          Either5::B(short) => {
+            canvas_c::canvas_native_webgl_tex_sub_image2d(
+              target,
+              level,
+              xoffset,
+              yoffset,
+              format_or_width,
+              type_or_height,
+              format,
+              type_,
+              short.as_ptr() as *const u8,
+              short.len() * size_of::<u16>(),
+              self.state,
+            );
+          }
+          Either5::C(float) => {
+            canvas_c::canvas_native_webgl_tex_sub_image2d(
+              target,
+              level,
+              xoffset,
+              yoffset,
+              format_or_width,
+              type_or_height,
+              format,
+              type_,
+              float.as_ptr() as *const u8,
+              float.len() * size_of::<f32>(),
+              self.state,
+            );
+          }
+          Either5::D(ab) => {
+            let buf = ab.into_value()?;
+            canvas_c::canvas_native_webgl_tex_sub_image2d(
+              target,
+              level,
+              xoffset,
+              yoffset,
+              format_or_width,
+              type_or_height,
+              format,
+              type_,
+              buf.as_ptr(),
+              buf.len(),
+              self.state,
+            );
+          }
+          Either5::E(offset) => {
+            canvas_c::canvas_native_webgl_tex_sub_image2d_offset(
+              target,
+              level,
+              xoffset,
+              yoffset,
+              format_or_width,
+              type_or_height,
+              format,
+              type_,
+              offset,
+              self.state,
+            );
+          }
+        },
+        _ => {}
+      },
+      Either7::B(bitmap) => canvas_c::canvas_native_webgl_tex_sub_image2d_asset(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        format_or_width as u32,
+        type_or_height,
+        Arc::as_ptr(&bitmap.asset),
+        self.state,
+      ),
+      Either7::C(asset) => canvas_c::canvas_native_webgl_tex_sub_image2d_asset(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        format_or_width as u32,
+        type_or_height,
+        Arc::as_ptr(&asset.asset),
+        self.state,
+      ),
+      Either7::D(c2d) => {
+        // todo
+        canvas_c::canvas_native_webgl_tex_sub_image2d_canvas2d(
+          target,
+          level,
+          xoffset,
+          yoffset,
+          format_or_width as u32,
+          type_or_height,
+          c2d.context as _,
+          self.state,
+        )
+      }
+      Either7::E(gl) => canvas_c::canvas_native_webgl_tex_sub_image2d_webgl(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        format_or_width as u32,
+        type_or_height,
+        gl.state as _,
+        self.state,
+      ),
+      Either7::F(gl2) => canvas_c::canvas_native_webgl_tex_sub_image2d_webgl(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        format_or_width as u32,
+        type_or_height,
+        gl2.state as _,
+        self.state,
+      ),
+      Either7::G(data) => {
+        let inner = data.data.inner();
+        let (width, height) = inner.dimensions();
+        let data = inner.data();
+        canvas_c::canvas_native_webgl_tex_sub_image2d(
+          target,
+          level,
+          xoffset,
+          yoffset,
+          width,
+          height,
+          format_or_width as u32,
+          gl_bindings::RGBA as i32,
+          data.as_ptr(),
+          data.len(),
+          self.state,
+        );
+      }
+    }
+    Ok(())
+  }
 
 
     #[napi(js_name = "uniform1f")]

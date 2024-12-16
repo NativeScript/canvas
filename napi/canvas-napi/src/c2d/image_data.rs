@@ -1,18 +1,12 @@
+use std::sync::Arc;
 use crate::c2d::path::Path2D;
 use canvas_c::{canvas_native_context_create_image_data_with_data, ImageData as CImageData};
-use napi::bindgen_prelude::{Buffer, ClassInstance, Either, ObjectFinalize, Uint8ClampedArray};
-use napi::{Env, JsObject, Result};
-
-#[napi(custom_finalize)]
+use napi::*;
+use napi::bindgen_prelude::Uint8ClampedArray;
+use napi_derive::napi;
+#[napi]
 pub struct ImageData {
-    pub(crate) data: *mut CImageData,
-}
-
-impl ObjectFinalize for ImageData {
-    fn finalize(self, _: Env) -> Result<()> {
-        canvas_c::canvas_native_image_data_release(self.data);
-        Ok(())
-    }
+    pub(crate) data: Arc<CImageData>,
 }
 
 
@@ -26,12 +20,12 @@ impl ImageData {
                     return Ok(
                         Self {
                             data: unsafe {
-                                canvas_c::canvas_native_context_create_image_data(width as i32, height as i32)
+                                Arc::from_raw(canvas_c::canvas_native_context_create_image_data(width as i32, height as i32))
                             }
                         }
                     );
                 };
-                Err(napi::Error::from_reason("constructor: 1 is not a valid argument count for any overload."))
+                Err(Error::from_reason("constructor: 1 is not a valid argument count for any overload."))
             }
             Either::B(value) => {
                 let length = value.len();
@@ -39,7 +33,7 @@ impl ImageData {
                 if let Some(width) = height {
                     let row = (width * 4.) as usize;
                     if (length % row) != 0 {
-                        return Err(napi::Error::from_reason(format!("Failed to construct 'ImageData': The input data length is not a multiple of (4 * {}", width)));
+                        return Err(Error::from_reason(format!("Failed to construct 'ImageData': The input data length is not a multiple of (4 * {}", width)));
                     }
                     let mut new_height = row as i32;
 
@@ -56,48 +50,42 @@ impl ImageData {
                     return Ok(
                         Self {
                             data: unsafe {
-                                canvas_c::canvas_native_context_create_image_data_with_data(
+                               Arc::from_raw(canvas_c::canvas_native_context_create_image_data_with_data(
                                     width as i32, new_height, value.as_ptr(), value.len(),
-                                )
+                                ))
                             }
                         }
                     );
                 }
-                Err(napi::Error::from_reason("Failed to construct 'ImageData': 2 arguments required, but only 1 present."))
+                Err(Error::from_reason("Failed to construct 'ImageData': 2 arguments required, but only 1 present."))
             }
         }
     }
 
     #[napi(getter)]
     pub fn width(&self) -> f64 {
-        let data = unsafe { &*self.data };
-        data.inner().width() as f64
+        self.data.inner().width() as f64
     }
 
     pub(crate) fn width_inner(&self) -> i32 {
-        let data = unsafe { &*self.data };
-        data.inner().width()
+        self.data.inner().width()
     }
 
     #[napi(getter)]
     pub fn height(&self) -> f64 {
-        let data = unsafe { &*self.data };
-        data.inner().height() as f64
+        self.data.inner().height() as f64
     }
 
     pub(crate) fn height_inner(&self) -> i32 {
-        let data = unsafe { &*self.data };
-        data.inner().height()
+        self.data.inner().height()
     }
 
     #[napi(getter)]
-    pub fn data(&self) -> Buffer {
-        let data = unsafe { &*self.data };
-        data.inner().data().into()
+    pub fn data(&self) -> &[u8] {
+        self.data.inner().data()
     }
 
     pub(crate) fn data_inner(&self) -> &[u8] {
-        let data = unsafe { &*self.data };
-        data.inner().data()
+       self.data.inner().data()
     }
 }

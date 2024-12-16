@@ -6,6 +6,7 @@ use crate::gpu::enums::{
 use crate::gpu::g_p_u;
 use crate::gpu::objects::GPUExtent3DDict;
 use crate::gpu::texture::g_p_u_texture;
+use canvas_c::webgpu::gpu_canvas_context::{CanvasGPUCanvasContext, CanvasGPUSurfaceAlphaMode};
 use canvas_c::webgpu::gpu_texture::CanvasGPUTexture;
 use canvas_c::webgpu::wgt::{CompositeAlphaMode, PresentMode};
 use canvas_c::StringBuffer;
@@ -14,7 +15,6 @@ use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
 use std::sync::Arc;
-use canvas_c::webgpu::gpu_canvas_context::CanvasGPUSurfaceAlphaMode;
 
 #[napi]
 pub struct g_p_u_canvas_context {
@@ -207,25 +207,12 @@ impl g_p_u_canvas_context {
     if let Some(cap) = cap.as_ref() {
       let mode = alphaMode.into();
       if !cap.alpha_modes.contains(&mode) {
-        alphaMode=  match cap
-            .alpha_modes
-            .first()
-            .unwrap_or(&CompositeAlphaMode::Auto) {
-          CompositeAlphaMode::Auto => {
-            CanvasGPUSurfaceAlphaMode::Auto
-          }
-          CompositeAlphaMode::Opaque => {
-            CanvasGPUSurfaceAlphaMode::Opaque
-          }
-          CompositeAlphaMode::PreMultiplied => {
-            CanvasGPUSurfaceAlphaMode::PreMultiplied
-          }
-          CompositeAlphaMode::PostMultiplied => {
-            CanvasGPUSurfaceAlphaMode::PostMultiplied
-          }
-          CompositeAlphaMode::Inherit => {
-            CanvasGPUSurfaceAlphaMode::Inherit
-          }
+        alphaMode = match cap.alpha_modes.first().unwrap_or(&CompositeAlphaMode::Auto) {
+          CompositeAlphaMode::Auto => CanvasGPUSurfaceAlphaMode::Auto,
+          CompositeAlphaMode::Opaque => CanvasGPUSurfaceAlphaMode::Opaque,
+          CompositeAlphaMode::PreMultiplied => CanvasGPUSurfaceAlphaMode::PreMultiplied,
+          CompositeAlphaMode::PostMultiplied => CanvasGPUSurfaceAlphaMode::PostMultiplied,
+          CompositeAlphaMode::Inherit => CanvasGPUSurfaceAlphaMode::Inherit,
         }
       }
     }
@@ -344,6 +331,13 @@ impl g_p_u_canvas_context {
         texture: unsafe { Arc::from_raw(ret) },
       })
     }
+  }
+
+  #[napi(getter)]
+  pub fn get_has_current_texture(&self) -> bool {
+    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_has_current_texture(
+      Arc::as_ptr(&self.context),
+    )
   }
 
   #[napi(

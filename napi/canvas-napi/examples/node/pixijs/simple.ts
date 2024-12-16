@@ -8,7 +8,12 @@ export async function run(canvas) {
 	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 	try {
-		await app.init();
+		await app.init({
+			canvas,
+			preference: 'webgpu',
+			width: canvas.width,
+			height: canvas.height,
+		});
 		console.log('done');
 	} catch (e) {
 		console.log(e);

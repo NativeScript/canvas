@@ -1,6 +1,6 @@
 {
-	"name": "canvas-napi-darwin-x64",
-	"version": "0.0.0",
+	"name": "@nativescript/canvas-napi-darwin-x64",
+	"version": "0.0.1",
 	"os": [
 		"darwin"
 	],

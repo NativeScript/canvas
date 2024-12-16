@@ -22,6 +22,7 @@ use crate::{impl_webgl2_context_constants, impl_webgl_context, impl_webgl_contex
 #[napi(custom_finalize)]
 pub struct web_g_l_2_rendering_context {
   pub(crate) state: *mut WebGLState,
+  pub(crate) invalidate_state: u32,
 }
 
 impl_webgl_context!(web_g_l_2_rendering_context);
@@ -68,7 +69,7 @@ impl web_g_l_2_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_2_rendering_context { state: ret })
+    Ok(web_g_l_2_rendering_context { state: ret, invalidate_state: 0 })
   }
 
   #[napi(factory)]
@@ -108,7 +109,7 @@ impl web_g_l_2_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_2_rendering_context { state: ret })
+    Ok(web_g_l_2_rendering_context { state: ret, invalidate_state: 0 })
   }
 
   /* Transform feedback */
@@ -481,14 +482,16 @@ impl web_g_l_2_rendering_context {
   }
 
   #[napi]
-  pub fn draw_arrays_instanced(&self, mode: u32, first: i32, count: i32, instance_count: i32) {
+  pub fn draw_arrays_instanced(&mut self, mode: u32, first: i32, count: i32, instance_count: i32) {
     canvas_c::canvas_native_webgl2_draw_arrays_instanced(
       mode,
       first,
       count,
       instance_count,
       self.state,
-    )
+    );
+
+    self.update_invalidate_state();
   }
 
   #[napi]
@@ -500,7 +503,7 @@ impl web_g_l_2_rendering_context {
     ts_args_type = "mode: number, count: number, type: number, offset: number, instanceCount: number"
   )]
   pub fn draw_elements_instanced(
-    &self,
+    &mut self,
     mode: u32,
     count: i32,
     type_: u32,
@@ -514,14 +517,16 @@ impl web_g_l_2_rendering_context {
       offset as isize,
       instance_count,
       self.state,
-    )
+    );
+
+    self.update_invalidate_state();
   }
 
   #[napi(
     ts_args_type = "mode: number, start: number,end: number, count: number, type: number, offset: number"
   )]
   pub fn draw_range_elements(
-    &self,
+    &mut self,
     mode: u32,
     start: u32,
     end: u32,
@@ -537,7 +542,9 @@ impl web_g_l_2_rendering_context {
       type_,
       offset as isize,
       self.state,
-    )
+    );
+
+    self.update_invalidate_state();
   }
 
   #[napi]
@@ -1012,7 +1019,7 @@ impl web_g_l_2_rendering_context {
     &self,
     program: ClassInstance<WebGLProgram>,
     index: u32,
-  ) -> Option<WebGLActiveInfo> {
+  ) -> Option<web_g_l_active_info> {
     let result =
       canvas_c::canvas_native_webgl2_get_transform_feedback_varying(program.0, index, self.state);
     if result.is_null() {
@@ -1022,7 +1029,7 @@ impl web_g_l_2_rendering_context {
       canvas_c::canvas_native_webgl_active_info_destroy(result);
       return None;
     }
-    Some(WebGLActiveInfo(result))
+    Some(web_g_l_active_info(result))
   }
 
   #[napi]

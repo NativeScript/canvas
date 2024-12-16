@@ -1236,12 +1236,8 @@ pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
     }
 
     let context = unsafe { &*context };
-    {
-        let current_texture = context.current_texture.lock();
-        return current_texture.is_some();
-    }
-
-    false
+    let current_texture = context.current_texture.lock();
+    current_texture.is_some()
 }
 
 #[no_mangle]

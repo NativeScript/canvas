@@ -1,0 +1,19 @@
+{
+	"name": "@nativescript/canvas-napi-darwin-universal",
+	"version": "0.0.1",
+	"os": [
+		"darwin"
+	],
+	"cpu": [
+		"arm64",
+		"x86"
+	],
+	"main": "canvas-napi.darwin-universal.node",
+	"files": [
+		"canvas-napi.darwin-universal.node"
+	],
+	"license": "MIT",
+	"engines": {
+		"node": ">= 10"
+	}
+}

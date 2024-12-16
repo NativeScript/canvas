@@ -9,11 +9,13 @@ macro_rules! webgl_context_imports {
     use crate::gl::webgl_texture::WebGLTexture;
     use napi::*;
 
-    use crate::gl::webgl_active_info::WebGLActiveInfo;
+    use crate::gl::webgl_active_info::web_g_l_active_info;
     use crate::gl::webgl_shader_precision_format::web_g_l_shader_precision_format;
     use crate::gl::webgl_uniform_location::WebGLUniformLocation;
     use canvas_c::{WebGLExtension, WebGLResultType, WebGLState};
     use std::ffi::{c_void, CString, IntoStringError};
+
+    use canvas_c::InvalidateState;
 
     use crate::gl::extensions::{
       ANGLE_instanced_arrays, EXT_blend_minmax, EXT_color_buffer_half_float,
@@ -25,7 +27,7 @@ macro_rules! webgl_context_imports {
       WEBGL_compressed_texture_s3tc, WEBGL_depth_texture, WEBGL_draw_buffers, WEBGL_lose_context,
     };
     use napi::bindgen_prelude::{
-      Array, Buffer, ClassInstance, Either3, Either4, Either5, Float32Array, Int32Array,
+      Array, Buffer, ClassInstance, Either3, Either4, Either5,Either7, Float32Array, Int32Array,
       ObjectFinalize, Uint32Array, Unknown,
     };
     use std::sync::Arc;

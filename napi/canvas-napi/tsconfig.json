@@ -5,15 +5,15 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"noEmitHelpers": true,
+		"noEmitOnError": false,
 		"allowJs": true,
 		"importHelpers": true,
 		"target": "ESNext",
 		"outDir": "./dist",
 		"lib": ["ESNext", "dom"],
-		"allowImportingTsExtensions": true,
 		"noEmit": false
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",
-	"include": ["canvas.ts", "NSCTouchHandler.ts", "index.d.ts", "utils/*.ts", "references.d.ts"],
+	"include": ["canvas.ts", "index.ts", "polyfill.ts", "utils/*.ts", "references.d.ts"],
 	"exclude": ["node_modules", "examples"]
 }

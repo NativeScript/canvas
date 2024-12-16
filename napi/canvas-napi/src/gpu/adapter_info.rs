@@ -1,5 +1,5 @@
-use napi::bindgen_prelude::ObjectFinalize;
 use napi::*;
+use napi_derive::napi;
 use std::sync::Arc;
 
 #[napi]

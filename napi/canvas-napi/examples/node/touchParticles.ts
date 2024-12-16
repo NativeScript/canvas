@@ -127,7 +127,7 @@ function touchParticles(canvas, w?: number, h?: number) {
 			drawParticle(p.x, p.y, p.r, p.c);
 		}
 
-		context.render();
+		// context.render();
 
 		// Play the same song? Ok!
 	};

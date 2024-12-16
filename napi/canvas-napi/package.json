@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-napi",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"main": "index.js",
 	"types": "index.d.ts",
 	"type": "module",
@@ -36,13 +36,18 @@
 	},
 	"scripts": {
 		"artifacts": "napi artifacts",
-		"build": "napi build --platform --release",
-		"build:debug": "napi build --platform",
+		"build": "napi build --platform --release  --js js-binding.js",
+		"build:debug": "napi build --platform  --js js-binding.js",
 		"prepublishOnly": "napi prepublish -t npm",
 		"test": "ava",
 		"universal": "napi universal",
 		"version": "napi version",
 		"start-node": "cd examples/node && npm run start",
 		"start-deno": "deno run -A deno.ts"
+	},
+	"optionalDependencies": {
+		"@nativescript/canvas-napi-darwin-arm64": "0.0.1",
+		"@nativescript/canvas-napi-darwin-x64": "0.0.1",
+		"@nativescript/canvas-napi-darwin-universal": "0.0.1"
 	}
 }

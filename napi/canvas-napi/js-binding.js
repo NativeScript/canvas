@@ -354,13 +354,6 @@ const {
 	DomMatrix,
 	TextEncoder,
 	TextDecoder,
-	WebGLProgram,
-	WebGLShader,
-	WebGLBuffer,
-	WebGLFramebuffer,
-	WebGLRenderbuffer,
-	WebGLTexture,
-	WebGLActiveInfo,
 	ANGLE_instanced_arrays,
 	OES_fbo_render_mipmap,
 	EXT_blend_minmax,
@@ -385,7 +378,14 @@ const {
 	WEBGL_lose_context,
 	WEBGL_depth_texture,
 	WEBGL_draw_buffers,
+	WebGLActiveInfo,
+	WebGLBuffer,
+	WebGLFramebuffer,
+	WebGLProgram,
+	WebGLRenderbuffer,
+	WebGLShader,
 	WebGLShaderPrecisionFormat,
+	WebGLTexture,
 	WebGLUniformLocation,
 	WebGLRenderingContext,
 	WebGLQuery,
@@ -394,6 +394,12 @@ const {
 	WebGLTransformFeedback,
 	WebGLVertexArrayObject,
 	WebGL2RenderingContext,
+	ImageBitmapOptionsImageOrientation,
+	ImageBitmapOptionsPremultiplyAlpha,
+	ImageBitmapOptionsColorSpaceConversion,
+	ImageBitmapOptionResizeQuality,
+	createImageBitmap,
+	ImageBitmap,
 } = nativeBinding;
 
 module.exports.GPUAdapter = GPUAdapter;
@@ -465,13 +471,6 @@ module.exports.ImageAsset = ImageAsset;
 module.exports.DomMatrix = DomMatrix;
 module.exports.TextEncoder = TextEncoder;
 module.exports.TextDecoder = TextDecoder;
-module.exports.WebGLProgram = WebGLProgram;
-module.exports.WebGLShader = WebGLShader;
-module.exports.WebGLBuffer = WebGLBuffer;
-module.exports.WebGLFramebuffer = WebGLFramebuffer;
-module.exports.WebGLRenderbuffer = WebGLRenderbuffer;
-module.exports.WebGLTexture = WebGLTexture;
-module.exports.WebGLActiveInfo = WebGLActiveInfo;
 module.exports.ANGLE_instanced_arrays = ANGLE_instanced_arrays;
 module.exports.OES_fbo_render_mipmap = OES_fbo_render_mipmap;
 module.exports.EXT_blend_minmax = EXT_blend_minmax;
@@ -496,7 +495,14 @@ module.exports.WEBGL_compressed_texture_s3tc = WEBGL_compressed_texture_s3tc;
 module.exports.WEBGL_lose_context = WEBGL_lose_context;
 module.exports.WEBGL_depth_texture = WEBGL_depth_texture;
 module.exports.WEBGL_draw_buffers = WEBGL_draw_buffers;
+module.exports.WebGLActiveInfo = WebGLActiveInfo;
+module.exports.WebGLBuffer = WebGLBuffer;
+module.exports.WebGLFramebuffer = WebGLFramebuffer;
+module.exports.WebGLProgram = WebGLProgram;
+module.exports.WebGLRenderbuffer = WebGLRenderbuffer;
+module.exports.WebGLShader = WebGLShader;
 module.exports.WebGLShaderPrecisionFormat = WebGLShaderPrecisionFormat;
+module.exports.WebGLTexture = WebGLTexture;
 module.exports.WebGLUniformLocation = WebGLUniformLocation;
 module.exports.WebGLRenderingContext = WebGLRenderingContext;
 module.exports.WebGLQuery = WebGLQuery;
@@ -505,3 +511,9 @@ module.exports.WebGLSync = WebGLSync;
 module.exports.WebGLTransformFeedback = WebGLTransformFeedback;
 module.exports.WebGLVertexArrayObject = WebGLVertexArrayObject;
 module.exports.WebGL2RenderingContext = WebGL2RenderingContext;
+module.exports.ImageBitmapOptionsImageOrientation = ImageBitmapOptionsImageOrientation;
+module.exports.ImageBitmapOptionsPremultiplyAlpha = ImageBitmapOptionsPremultiplyAlpha;
+module.exports.ImageBitmapOptionsColorSpaceConversion = ImageBitmapOptionsColorSpaceConversion;
+module.exports.ImageBitmapOptionResizeQuality = ImageBitmapOptionResizeQuality;
+module.exports.createImageBitmap = createImageBitmap;
+module.exports.ImageBitmap = ImageBitmap;

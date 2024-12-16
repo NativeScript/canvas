@@ -10,20 +10,74 @@ objc.import('OpenGL');
 objc.import('Metal');
 objc.import('MetalKit');
 
+let displayLink: CADisplayLink | null = null;
+const canvasRenderMap = new Set<WeakRef<Canvas>>();
+
+function renderContexts() {
+	for (const value of canvasRenderMap) {
+		const canvas = value.deref();
+		if (!canvas) {
+			continue;
+		}
+		if (canvas.__giveMeFreeReign) {
+			continue;
+		}
+		switch (canvas._contextType) {
+			case ContextType.WebGL:
+				canvas.__native__context.render?.();
+				break;
+			case ContextType.WebGL2:
+				canvas.__native__context.render?.();
+				break;
+			case ContextType.WebGPU:
+				if (canvas.__native__context.hasCurrentTexture) {
+					canvas.__native__context.presentSurface?.();
+				}
+				break;
+			case ContextType.Canvas:
+				canvas.__native__context.render?.();
+				break;
+			case ContextType.None:
+				break;
+		}
+	}
+}
+
+class RenderHandlerImpl extends NSObject {
+	static {
+		NativeClass(this);
+	}
+
+	/**
+	 *
+	 * @param {CADisplayLink} sender
+	 */
+	handleFrame(sender: CADisplayLink) {
+		renderContexts();
+	}
+
+	static ObjCExposedMethods = {
+		handleFrame: { returns: interop.types.void, params: [CADisplayLink] },
+	};
+}
+
+let renderHandler: RenderHandlerImpl | null = null;
+
+NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(NSApplicationDidResignActiveNotification, null, null, () => {
+	if (displayLink) {
+		displayLink.isPaused = true;
+	}
+});
+
+NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(NSApplicationDidBecomeActiveNotification, null, null, () => {
+	if (displayLink) {
+		displayLink.isPaused = false;
+	}
+});
+
 const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } = require('./canvas-napi.darwin-arm64.node');
 
-// import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } from './index.js';
-
-// const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext } = require('./canvas-napi.darwin-arm64.node');
-
 GPUDevice.prototype.lost = new Promise((resolve, reject) => {});
-
-// Object.defineProperty(GPUDevice.prototype, 'features', {
-// 	get: function() {
-// 		return new Set(this.__features);
-// 	},
-// 	writable: true
-// });
 
 export class DOMRectReadOnly {
 	readonly bottom: number;
@@ -175,7 +229,7 @@ enum Fit {
 }
 
 function getGPU() {
-	if (navigator.gpu && navigator.gpu instanceof GPU) {
+	if (navigator && 'gpu' in navigator && navigator.gpu instanceof GPU) {
 		return navigator.gpu;
 	}
 	if (!('__gpu' in globalThis)) {
@@ -184,7 +238,8 @@ function getGPU() {
 			writable: true,
 		});
 	}
-	return globalThis.__gpu;
+	// @ts-ignore
+	return globalThis['__gpu'] as never;
 }
 
 interface MouseEventOptions extends EventInit {
@@ -453,8 +508,8 @@ export class NSCCanvas extends NSView {
 	}
 
 	initializeView() {
-		const glkView = this.glkView!;
-		const mtlView = this.mtlView!;
+		const glkView = this.glkView as never as NSView;
+		const mtlView = this.mtlView as never as NSView;
 		// glkView._canvas = this;
 		// mtlView._canvas = this;
 		// handler = NSCTouchHandler(canvas: self)
@@ -469,7 +524,7 @@ export class NSCCanvas extends NSView {
 		(mtlView.layer as CAMetalLayer).isOpaque = false;
 	}
 
-	previousEvent;
+	previousEvent: any;
 
 	mouseDown(event: NSEvent) {
 		const canvas = this._canvas?.deref?.();
@@ -543,8 +598,8 @@ export class NSCCanvas extends NSView {
 			isPrimary: true,
 			cancelable: true,
 			...eventData,
-			movementX: eventData.clientX - this.previousEvent.clientX ?? 0,
-			movementY: eventData.clientY - this.previousEvent.clientY ?? 0,
+			movementX: eventData.clientX - (this.previousEvent.clientX ?? 0),
+			movementY: eventData.clientY - (this.previousEvent.clientY ?? 0),
 		});
 
 		this.previousEvent = eventData;
@@ -573,7 +628,7 @@ export class NSCCanvas extends NSView {
 		}
 
 		this.previousEvent = event;
-		const eventData = buildMouseEvent(this, event);
+		const eventData = buildMouseEvent(this as never, event);
 		const pointerDown = new PointerEvent('pointerenter', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -600,7 +655,7 @@ export class NSCCanvas extends NSView {
 		}
 
 		this.previousEvent = event;
-		const eventData = buildMouseEvent(this, event);
+		const eventData = buildMouseEvent(this as never, event);
 		const pointerDown = new PointerEvent('pointerleave', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -655,7 +710,7 @@ export class NSCCanvas extends NSView {
 	mtlViewLayerPtr?: interop.Pointer;
 	mtlViewPtr?: interop.Pointer;
 	glViewPtr?: interop.Pointer;
-	gpuContext?: GPUCanvasContext;
+	gpuContext?: typeof GPUCanvasContext;
 	glContext: WebGLRenderingContext | WebGL2RenderingContext | undefined;
 
 	initWebGPUContext() {
@@ -907,7 +962,7 @@ function parsePowerPreference(powerPreference: string) {
 	}
 }
 
-function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextAttributes) {
+function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experimental-webgl' | 'experimental-webgl2', contextAttributes: any) {
 	if (!contextAttributes) {
 		if (type === '2d') {
 			return { ...default2DOptions, powerPreference: 0 };
@@ -972,6 +1027,13 @@ export class Canvas extends ViewBase {
 		this.style.width = '100%';
 		this.style.height = 'auto';
 		this.nativeView = this._canvas;
+
+		if (!renderHandler) {
+			renderHandler = RenderHandlerImpl.new();
+			displayLink = NSScreen.mainScreen.displayLinkWithTargetSelector(renderHandler, 'handleFrame');
+			displayLink.isPaused = !NSApplication.sharedApplication.isActive;
+			displayLink.addToRunLoopForMode(NSRunLoop.currentRunLoop, NSDefaultRunLoopMode);
+		}
 	}
 
 	nativeView?: NSCCanvas = undefined;
@@ -1026,7 +1088,7 @@ export class Canvas extends ViewBase {
 		this._ignoreTouchEvents = value;
 	}
 
-	static forceGL = false;
+	static forceGL = true;
 
 	get ios() {
 		return this._canvas;
@@ -1064,6 +1126,8 @@ export class Canvas extends ViewBase {
 
 	_webgl2Context?: WebGL2RenderingContext;
 
+	__giveMeFreeReign: boolean = false;
+
 	get _gpuContext() {
 		return this._canvas?.gpuContext;
 	}
@@ -1092,7 +1156,7 @@ export class Canvas extends ViewBase {
 		return new DOMRect(layout.left, layout.top, layout.width, layout.height) as never;
 	}
 
-	focus(options) {
+	focus(options: any) {
 		this._canvas.becomeFirstResponder();
 	}
 
@@ -1155,6 +1219,7 @@ export class Canvas extends ViewBase {
 
 			if (this._2dContext) {
 				(<any>this._2dContext).canvas = this;
+				canvasRenderMap.add(new WeakRef<Canvas>(this));
 			}
 
 			return this._2dContext;
@@ -1176,6 +1241,7 @@ export class Canvas extends ViewBase {
 			this._webglContext = WebGLRenderingContext.withView(handle.toNumber(), opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 			if (this._webglContext) {
 				(<any>this._webglContext).canvas = this;
+				canvasRenderMap.add(new WeakRef<Canvas>(this));
 			}
 
 			this._canvas.glContext = this._webglContext;
@@ -1200,6 +1266,7 @@ export class Canvas extends ViewBase {
 			this._webgl2Context = WebGL2RenderingContext.withView(handle.toNumber(), opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
 			if (this._webgl2Context) {
 				(<any>this._webgl2Context).canvas = this;
+				canvasRenderMap.add(new WeakRef<Canvas>(this));
 			}
 
 			this._canvas.glContext = this._webgl2Context;
@@ -1216,10 +1283,13 @@ export class Canvas extends ViewBase {
 			}
 			this._canvas.initWebGPUContext();
 			this._canvas.engine = Engine.GPU;
+			this._contextType = ContextType.WebGPU;
 		}
 
 		if (this._gpuContext) {
 			(<any>this._gpuContext).canvas = this;
+			// todo
+			//	canvasRenderMap.add(new WeakRef<Canvas>(this));
 		}
 
 		return this._gpuContext;

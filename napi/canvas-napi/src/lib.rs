@@ -17,3 +17,4 @@ mod text_decoder;
 
 pub mod gl;
 pub mod gl2;
+mod image_bitmap;

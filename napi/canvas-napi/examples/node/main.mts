@@ -651,7 +651,7 @@ function swarm(canvas, width?: number, height?: number) {
 			//Finally call the update function
 			update();
 
-			ctx.render();
+		///	ctx.render();
 		}
 
 		// Give every particle some life
@@ -1534,13 +1534,13 @@ canvas.addEventListener('ready', (event) => {
 	//flappyBird(canvas);
 	// webgpuTriangle(canvas);
 	// doGL()
-	//swarm(canvas);
+	swarm(canvas);
 	//texturedCube(canvas);
 // 	twoCubes(canvas);
 	// computeBoids(canvas);
 // 	wireframe(canvas);
 // 	renderBundles(canvas);
-	webgpuCube(canvas);
+	//webgpuCube(canvas);
 	//cubeMap(canvas);
 	//cube(canvas);
 	//webgl_shadowmap(canvas);

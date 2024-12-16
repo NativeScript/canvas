@@ -75,7 +75,7 @@ NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(NSApp
 	}
 });
 
-const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } = require('./canvas-napi.darwin-arm64.node');
+const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } = require('./js-binding.js');
 
 GPUDevice.prototype.lost = new Promise((resolve, reject) => {});
 

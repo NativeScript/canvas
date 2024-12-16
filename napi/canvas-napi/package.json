@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-napi",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"main": "index.js",
 	"types": "index.d.ts",
 	"type": "module",
@@ -46,8 +46,8 @@
 		"start-deno": "deno run -A deno.ts"
 	},
 	"optionalDependencies": {
-		"@nativescript/canvas-napi-darwin-arm64": "0.0.1",
-		"@nativescript/canvas-napi-darwin-x64": "0.0.1",
-		"@nativescript/canvas-napi-darwin-universal": "0.0.1"
+		"@nativescript/canvas-napi-darwin-arm64": "0.0.2",
+		"@nativescript/canvas-napi-darwin-x64": "0.0.2",
+		"@nativescript/canvas-napi-darwin-universal": "0.0.2"
 	}
 }

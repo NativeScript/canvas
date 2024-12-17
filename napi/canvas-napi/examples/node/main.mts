@@ -15,7 +15,7 @@ import {run as the_frantic_run_of_the_valorous_rabbit } from './threejs/the_fran
 import {run as tiny_poly_world} from './threejs/tiny_poly_world';
 import {run as tsl_galaxy} from './threejs/tsl_galaxy';
 const { webgpuCube, cube } = three;
-// import { run as damagedHelmet } from './threejs/damaged_helmet';
+import { run as damagedHelmet } from './threejs/damaged_helmet';
 import { run as simplePixi } from './pixijs/simple';
 
 
@@ -1526,7 +1526,7 @@ canvas.addEventListener('ready', (event) => {
 	//flappyBird(canvas);
 	// webgpuTriangle(canvas);
 	// doGL()
-	swarm(canvas);
+	//swarm(canvas);
 	//texturedCube(canvas);
 // 	twoCubes(canvas);
 	// computeBoids(canvas);
@@ -1538,7 +1538,7 @@ canvas.addEventListener('ready', (event) => {
 	//webgl_shadowmap(canvas);
 //	the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
 //tiny_poly_world(canvas);
-// 	damagedHelmet(canvas);
+ 	damagedHelmet(canvas);
 // 	tsl_galaxy(canvas);
 	//simplePixi(canvas);
 });

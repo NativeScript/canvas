@@ -3,67 +3,6 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-/*
-function getContentType(filePath) {
-	const ext = filePath.split('.').pop();
-	switch (ext) {
-		case 'txt':
-			return 'text/plain';
-		case 'html':
-			return 'text/html';
-		case 'json':
-			return 'application/json';
-		case 'png':
-			return 'image/png';
-		case 'jpg':
-		case 'jpeg':
-			return 'image/jpeg';
-		default:
-			return 'application/octet-stream';
-	}
-}
-
-	globalThis.__fetch = globalThis.fetch;
-	globalThis.fetch = function(resource, options) {
-
-		let url;
-
-		// Normalize `resource` to a URL instance
-		if (typeof resource === 'string' || resource instanceof URL) {
-			url = new URL(resource.toString());
-		} else if (resource instanceof Request) {
-			url = new URL(resource.url);
-		} else {
-			throw new TypeError('Invalid resource type for fetch.');
-		}
-
-		if (url.protocol === 'file:') {
-			const filePath = decodeURIComponent(url.pathname); // Decode URL-encoded characters
-			return fs.readFile(filePath).then((buffer) => {
-				// Create a Readable stream from the buffer
-				const readable = Readable.from(buffer);
-				const body = Readable.toWeb(readable);
-
-				// Simulate a Response object
-				const init = {
-					status: 200,
-					statusText: 'OK',
-					headers: {
-						'Content-Type': getContentType(filePath)
-					}
-				};
-
-				console.log(init);
-
-				return new Response(body, init);
-			});
-		}
-
-		return globalThis.__fetch(resource, options);
-	}
-
-	*/
-
 export async function run(canvas) {
 	var container, controls, context, width, height;
 	var camera, scene, renderer;
@@ -86,46 +25,25 @@ export async function run(canvas) {
 
 		// global.parent = window.parent = window;
 
-		const royal_esplanade_1k = import.meta.resolve('./textures/equirectangular/royal_esplanade_1k.hdr');
-		const damaged_helmet = import.meta.resolve('./models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf');
-
 		new RGBELoader().setPath('https://threejs.org/examples/textures/equirectangular/').load('royal_esplanade_1k.hdr', function (texture) {
 			texture.mapping = THREE.EquirectangularReflectionMapping;
-
 			scene.background = texture;
 			scene.environment = texture;
 
 			context?.presentSurface?.();
 
-			var loader = new GLTFLoader().setPath('https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/').load('DamagedHelmet.gltf', (gltf) => {
-				console.log('loaded');
+			new GLTFLoader().setPath('https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/').load('DamagedHelmet.gltf', (gltf) => {
 				scene.add(gltf.scene);
 				animate();
 			});
 		});
-
-		/*	const path = import.meta.resolve('./models/gltf/DamagedHelmet/glTF/').replace('index.js', '');
-			console.log(path);
-			fs.readFile(damaged_helmet.replace('file://', '')).then(buffer => {
-				loader.parse(buffer.buffer, path, function(gltf) {
-					console.log('parse');
-					scene.add(gltf.scene);
-					animate();
-				});
-			});
-
-			*/
 
 		renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		await renderer.init();
 
-		// renderer.toneMapping = THREE.ACESFilmicToneMapping;
-		// renderer.toneMappingExposure = 1;
-
-		// var pmremGenerator = new THREE.PMREMGenerator(renderer);
-		// pmremGenerator.compileEquirectangularShader();
+		renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
 		controls = new OrbitControls(camera, canvas);
 
@@ -156,7 +74,6 @@ export async function run(canvas) {
 	function render() {
 		renderer.render(scene, camera);
 		context.presentSurface();
-		//context.render();
 	}
 
 	function animate() {

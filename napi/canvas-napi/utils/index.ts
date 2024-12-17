@@ -1,6 +1,2 @@
-import raf from './raf/index.js';
-
-export default raf;
-
-// export * from './mainthread-helper.js';
-// export * from './macrotask-scheduler.js';
+export { queueMacrotask } from './macrotask-scheduler';
+export { dispatchToMainThread, dispatchToUIThread, isMainThread } from './mainthread-helper';

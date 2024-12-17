@@ -1,2 +1,4 @@
-export * from './js-binding.js';
-export * from './canvas.js';
+export * from './js-bindings';
+export * from './canvas';
+
+import './polyfill';

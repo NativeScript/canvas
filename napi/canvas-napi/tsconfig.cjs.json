@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"declaration": true,
-		"module": "ESNext",
+		"module": "CommonJS",
 		"moduleResolution": "node",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
@@ -18,5 +18,5 @@
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",
 	"include": ["canvas.ts", "polyfill.ts", "utils/raf/*.ts", "utils/*.ts", "references.d.ts"],
-	"exclude": ["node_modules", "examples", "npm", "dist"]
+	"exclude": ["node_modules", "examples"]
 }

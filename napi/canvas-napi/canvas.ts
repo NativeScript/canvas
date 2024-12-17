@@ -1,10 +1,9 @@
-import { createRequire } from 'node:module';
 import { Event } from '@nativescript/foundation/dom/dom-utils.js';
 import { type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
 import { view } from '@nativescript/foundation/views/decorators/view.js';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
-// @ts-ignore
-const require = createRequire(import.meta.url);
+
+import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } from './js-bindings.js';
 
 objc.import('OpenGL');
 objc.import('Metal');
@@ -24,18 +23,18 @@ function renderContexts() {
 		}
 		switch (canvas._contextType) {
 			case ContextType.WebGL:
-				canvas.__native__context.render?.();
+				(canvas.__native__context as WebGLRenderingContext | undefined)?.render?.();
 				break;
 			case ContextType.WebGL2:
-				canvas.__native__context.render?.();
+				(canvas.__native__context as WebGL2RenderingContext | undefined)?.render?.();
 				break;
 			case ContextType.WebGPU:
-				if (canvas.__native__context.hasCurrentTexture) {
-					canvas.__native__context.presentSurface?.();
+				if ((canvas.__native__context as never as GPUCanvasContext).hasCurrentTexture) {
+					(canvas.__native__context as never as GPUCanvasContext)?.presentSurface?.();
 				}
 				break;
 			case ContextType.Canvas:
-				canvas.__native__context.render?.();
+				(canvas.__native__context as CanvasRenderingContext2D | undefined)?.render?.();
 				break;
 			case ContextType.None:
 				break;
@@ -75,8 +74,7 @@ NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(NSApp
 	}
 });
 
-const { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } = require('./js-binding.js');
-
+// @ts-ignore
 GPUDevice.prototype.lost = new Promise((resolve, reject) => {});
 
 export class DOMRectReadOnly {
@@ -391,7 +389,7 @@ const buildMouseEvent = (
 	pageX: number;
 	pageY: number;
 } => {
-	const location = view.convertPointToView(event.locationInWindow, this as never);
+	const location = view.convertPointToView(event.locationInWindow, view as never);
 	const clientX = location.x;
 	const clientY = location.y;
 	const screenX = location.x;
@@ -710,7 +708,7 @@ export class NSCCanvas extends NSView {
 	mtlViewLayerPtr?: interop.Pointer;
 	mtlViewPtr?: interop.Pointer;
 	glViewPtr?: interop.Pointer;
-	gpuContext?: typeof GPUCanvasContext;
+	gpuContext?: GPUCanvasContext;
 	glContext: WebGLRenderingContext | WebGL2RenderingContext | undefined;
 
 	initWebGPUContext() {
@@ -718,7 +716,7 @@ export class NSCCanvas extends NSView {
 			return;
 		}
 		if (this.mtlViewLayerPtr) {
-			this.gpuContext = GPUCanvasContext.withLayer(getGPU(), this.mtlViewLayerPtr.toNumber(), this.surfaceWidth, this.surfaceHeight);
+			this.gpuContext = GPUCanvasContext.withLayer(getGPU(), this.mtlViewLayerPtr.toNumber(), this.surfaceWidth, this.surfaceHeight) as never;
 			if (this.gpuContext) {
 				this.engine = Engine.GPU;
 			}
@@ -732,7 +730,10 @@ export class NSCCanvas extends NSView {
 			return;
 		}
 		if (!this.is2D && this.engine == Engine.GPU && this.mtlViewLayerPtr) {
-			this.gpuContext?.resize(this.mtlViewLayerPtr.toNumber(), this.surfaceWidth, this.surfaceHeight);
+			if (this.gpuContext) {
+				this.gpuContext?.resize(this.mtlViewLayerPtr.toNumber(), this.surfaceWidth, this.surfaceHeight);
+			}
+
 			this.scaleSurface();
 			return;
 		}

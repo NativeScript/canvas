@@ -1,14 +1,8 @@
 import '@nativescript/macos-node-api';
-import { createRequire } from 'node:module';
-import utils from './utils/index.js';
-import { Event } from '@nativescript/foundation/dom/dom-utils.js';
+import { requestAnimationFrame, cancelAnimationFrame } from './utils/raf';
+import { Event } from '@nativescript/foundation/dom/dom-utils';
 
-// @ts-ignore
-const require = createRequire(import.meta.url);
-
-const { GPU, GPUDevice, GPUAdapter, GPUTextureUsage, GPUBufferUsage, CanvasRenderingContext2D, WebGLRenderingContext, createImageBitmap, Path2D } = require('./canvas-napi.darwin-arm64.node');
-
-const { requestAnimationFrame, cancelAnimationFrame } = utils;
+import { GPU, GPUDevice, GPUAdapter, GPUTextureUsage, GPUBufferUsage, CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, createImageBitmap, Path2D } from './js-bindings.js';
 
 function fixup_shader_code(code: string) {
 	let ret = `${code}`;
@@ -44,20 +38,50 @@ export class ProgressEvent extends Event {
 	loaded: number;
 	total: number;
 
-	constructor(
-		type: string,
-		data: { lengthComputable: boolean; loaded: number; total: number; target: any } = {
-			lengthComputable: false,
-			loaded: 0,
-			total: 0,
-			target: {},
-		}
-	) {
+	constructor(type: string, data: { lengthComputable: boolean; loaded: number; total: number }) {
 		super(type);
 		this.lengthComputable = data.lengthComputable ?? false;
 		this.loaded = data.loaded ?? 0;
 		this.total = data.total ?? 0;
 	}
+}
+
+function install2DPolyfills() {
+	// @ts-ignore
+	globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+	// @ts-ignore
+	globalThis.Path2D = Path2D;
+}
+
+function installWebGLPolyfills() {
+	// @ts-ignore
+	globalThis.WebGLRenderingContext = WebGLRenderingContext;
+}
+
+function installWebGL2Polyfills() {
+	// @ts-ignore
+	globalThis.WebGL2RenderingContext = WebGL2RenderingContext;
+}
+
+// @ts-ignore
+GPUDevice.prototype.__createShaderModule = GPUDevice.prototype.createShaderModule;
+
+function installWebGPUPolyfills() {
+	// @ts-ignore
+	globalThis.GPUTextureUsage = GPUTextureUsage;
+	// @ts-ignore
+	globalThis.GPUBufferUsage = GPUBufferUsage;
+	// @ts-ignore
+	globalThis.GPUAdapter = GPUAdapter;
+	GPUDevice.prototype.createShaderModule = function (descriptor) {
+		const desc = {
+			...descriptor,
+			code: fixup_shader_code(descriptor.code),
+		};
+
+		// @ts-ignore
+		return this.__createShaderModule(desc);
+	};
 }
 
 function installPolyfills(window: any) {
@@ -74,43 +98,28 @@ function installPolyfills(window: any) {
 		});
 	}
 
-	globalThis.window.devicePixelRatio = window.devicePixelRatio = NSScreen.mainScreen.backingScaleFactor;
-	globalThis.requestAnimationFrame = window.requestAnimationFrame = requestAnimationFrame;
-	globalThis.cancelAnimationFrame = window.cancelAnimationFrame = cancelAnimationFrame;
-
-	globalThis.self = window;
-
-	//@ts-ignore
-	globalThis.GPUTextureUsage = GPUTextureUsage;
-	//@ts-ignore
-	globalThis.GPUBufferUsage = GPUBufferUsage;
 	//@ts-ignore
 	globalThis.ProgressEvent = ProgressEvent;
-	globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
-	globalThis.WebGLRenderingContext = WebGLRenderingContext;
-	globalThis.Path2D = Path2D;
 
-	GPUDevice.prototype.__createShaderModule = GPUDevice.prototype.createShaderModule;
-	GPUDevice.prototype.createShaderModule = function (descriptor: any) {
-		const desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] } = {
-			...descriptor,
-			code: fixup_shader_code(descriptor.code),
-		};
-
-		return this.__createShaderModule(desc);
-	};
-
-	globalThis.createImageBitmap = function (source, sxOroptions?, sy?, sw?, sh?, options?) {
+	globalThis.devicePixelRatio = window.devicePixelRatio = NSScreen.mainScreen.backingScaleFactor;
+	globalThis.requestAnimationFrame = window.requestAnimationFrame = requestAnimationFrame;
+	globalThis.cancelAnimationFrame = window.cancelAnimationFrame = cancelAnimationFrame;
+	globalThis.self = window;
+	// @ts-ignore
+	globalThis.createImageBitmap = function (source, sxOroptions, sy, sw, sh, options) {
 		if (source instanceof Blob) {
 			return source.arrayBuffer().then((buffer) => {
-				return createImageBitmap(new Uint8Array(buffer), sxOroptions, sy, sw, sh, options);
+				return createImageBitmap(new Uint8Array(buffer), sxOroptions, sy, sw, sh, options as never);
 			});
 		} else {
-			return createImageBitmap(source, sxOroptions, sy, sw, sh, options);
+			return createImageBitmap(source as never, sxOroptions, sy, sw, sh, options as never);
 		}
 	};
+
+	install2DPolyfills();
+	installWebGLPolyfills();
+	installWebGL2Polyfills();
+	installWebGPUPolyfills();
 }
 
 installPolyfills(globalThis.window);
-
-export default installPolyfills;

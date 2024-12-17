@@ -1,10 +1,7 @@
 import '@nativescript/macos-node-api';
-import { createRequire } from 'node:module';
-import utils from '../../utils';
 import '@nativescript/foundation/dom/index.js';
 import '../app.ts';
-import '../../canvas';
-import '../../polyfill';
+import {ImageAsset} from '@nativescript/canvas-napi';
 import three from './three';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base';
 
@@ -20,15 +17,10 @@ import {run as tsl_galaxy} from './threejs/tsl_galaxy';
 const { webgpuCube, cube } = three;
 // import { run as damagedHelmet } from './threejs/damaged_helmet';
 import { run as simplePixi } from './pixijs/simple';
-// @ts-ignore
-const require = createRequire(import.meta.url);
 
 
 // import { GPU, ImageAsset } from '../../index.js';
 
-const { ImageAsset } = require('../../canvas-napi.darwin-arm64.node');
-
-const { requestAnimationFrame, cancelAnimationFrame } = utils;
 
 
 objc.import('AppKit');

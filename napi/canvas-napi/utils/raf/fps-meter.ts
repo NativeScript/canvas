@@ -1,6 +1,6 @@
 import '@nativescript/macos-node-api';
 class FrameHandlerImpl extends NSObject {
-	_owner?: WeakRef<FPSCallback>;
+	_owner: WeakRef<FPSCallback> | undefined;
 
 	static {
 		NativeClass(this);
@@ -13,10 +13,6 @@ class FrameHandlerImpl extends NSObject {
 		return handler;
 	}
 
-	/**
-	 *
-	 * @param {CADisplayLink} sender
-	 */
 	handleFrame(sender: CADisplayLink) {
 		const owner = this._owner?.deref();
 		if (owner) {

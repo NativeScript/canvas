@@ -1,4 +1,4 @@
-import { dispatchToMainThread } from './mainthread-helper.js';
+import { dispatchToMainThread } from './mainthread-helper';
 
 let scheduled = false;
 
@@ -17,7 +17,7 @@ function drainMacrotaskQueue() {
 	});
 }
 
-export function queueMacrotask(task: () => void): void {
+export function queueMacrotask(task: () => void) {
 	macroTaskQueue.push(task);
 	if (!scheduled) {
 		scheduled = true;

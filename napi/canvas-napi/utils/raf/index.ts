@@ -1,22 +1,19 @@
-import { queueMacrotask } from '../macrotask-scheduler.js';
-import { FPSCallback } from './fps-meter.js';
+import { queueMacrotask } from '../macrotask-scheduler';
+import { FPSCallback } from './fps-meter';
 
-/**
- * @returns {function(): number} The current time in milliseconds.
- */
-
-// @ts-ignore
-const time = ('global' in globalThis ? global : globalThis).__time || Date.now;
+const time: () => number = (('global' in globalThis ? global : globalThis) as any).__time || Date.now;
 
 export function getTimeInFrameBase() {
 	return time();
 }
 
-export interface FrameRequestCallback {
+interface FrameRequestCallback {
 	(time: number): void;
 }
 
-type AnimationFrameCallbacks = { [key: string]: FrameRequestCallback };
+interface AnimationFrameCallbacks {
+	[key: number]: FrameRequestCallback;
+}
 
 let animationId = 0;
 let currentFrameAnimationCallbacks: AnimationFrameCallbacks = {}; // requests that were scheduled in this frame and must be called ASAP
@@ -88,21 +85,21 @@ function ensureCurrentFrameScheduled() {
  * @param {Function} callback
  * @returns {Function}
  */
-const zonedCallback = function (callback: any) {
-	const global = 'global' in globalThis ? globalThis.global : globalThis;
-	if ((global as any).zone) {
+const zonedCallback = function <T = Function>(callback: T) {
+	const global: any = 'global' in globalThis ? globalThis.global : globalThis;
+	if (global.zone) {
 		// Zone v0.5.* style callback wrapping
-		return (global as any).zone.bind(callback);
+		return global.zone.bind(callback);
 	}
-	if ((global as any).Zone) {
+	if (global.Zone) {
 		// Zone v0.6.* style callback wrapping
-		return (global as any).Zone.current.wrap(callback);
+		return global.Zone.current.wrap(callback);
 	} else {
 		return callback;
 	}
 };
 
-function requestAnimationFrame(cb: FrameRequestCallback): number {
+export function requestAnimationFrame(cb: FrameRequestCallback): number {
 	const animId = getNewId();
 	if (!inAnimationFrame) {
 		ensureCurrentFrameScheduled();
@@ -117,12 +114,7 @@ function requestAnimationFrame(cb: FrameRequestCallback): number {
 	return animId;
 }
 
-function cancelAnimationFrame(id: number) {
+export function cancelAnimationFrame(id: number) {
 	delete currentFrameAnimationCallbacks[id];
 	delete nextFrameAnimationCallbacks[id];
 }
-
-export default {
-	requestAnimationFrame,
-	cancelAnimationFrame,
-};

@@ -280,7 +280,7 @@ export class MouseEvent extends Event {
 	readonly pageY: number;
 	[isCancelled_] = false;
 
-	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup', options?: MouseEventOptions) {
+	constructor(type: 'dblclick' | 'mousedown' | 'mouseenter' | 'mouseleave' | 'mousemove' | 'mouseout' | 'mouseover' | 'mouseup' | 'wheel', options?: MouseEventOptions) {
 		super(type as any, options);
 		this.screenX = options?.screenX ?? 0;
 		this.screenY = options?.screenY ?? 0;
@@ -356,14 +356,14 @@ export class PointerEvent extends MouseEvent {
 	}
 }
 
-interface WheelEventOptions extends EventInit {
+interface WheelEventOptions extends MouseEventOptions {
 	deltaX?: number;
 	deltaY?: number;
 	deltaZ?: number;
 	deltaMode?: number;
 }
 
-export class WheelEvent extends Event {
+export class WheelEvent extends MouseEvent {
 	readonly deltaX?: number;
 	readonly deltaY?: number;
 	readonly deltaZ?: number;
@@ -605,15 +605,54 @@ export class NSCCanvas extends NSView {
 		canvas.dispatchEvent(pointerDown);
 	}
 
+	smartMagnifyWithEvent(event: NSEvent): void {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this as never, event);
+
+		// AppKit uses z on the web for deltaY when magnifying
+		const wheel = new WheelEvent('wheel', {
+			...eventData,
+			deltaX: event.deltaX,
+			deltaY: event.deltaZ,
+			deltaZ: event.deltaY,
+		});
+
+		canvas.dispatchEvent(wheel);
+	}
+
+	magnifyWithEvent(event: NSEvent): void {
+		const canvas = this._canvas?.deref?.();
+		if (!canvas) {
+			return;
+		}
+		const eventData = buildMouseEvent(this as never, event);
+
+		// AppKit uses z on the web for deltaY when magnifying
+		const wheel = new WheelEvent('wheel', {
+			...eventData,
+			deltaX: event.deltaX,
+			deltaY: event.deltaZ,
+			deltaZ: event.deltaY,
+		});
+
+		canvas.dispatchEvent(wheel);
+	}
+
 	scrollWheel(event: NSEvent) {
 		const canvas = this._canvas?.deref?.();
 		if (!canvas) {
 			return;
 		}
+		const eventData = buildMouseEvent(this as never, event);
+
 		const wheel = new WheelEvent('wheel', {
+			...eventData,
 			deltaX: event.deltaX,
 			deltaY: event.deltaY,
-			deltaZ: event.deltaY,
+			deltaZ: event.deltaZ,
 		});
 
 		canvas.dispatchEvent(wheel);

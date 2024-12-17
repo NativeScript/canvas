@@ -2,7 +2,7 @@ use std::{os::raw::c_void, sync::Arc};
 use std::fmt::{Debug, Formatter};
 ////use wgpu_core::gfx_select;
 use wgpu_core::global::Global;
-
+use wgpu_core::id::SurfaceId;
 use super::gpu_adapter::CanvasGPUAdapter;
 
 #[repr(C)]
@@ -134,11 +134,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         *options
     };
 
-    let opts = wgt::RequestAdapterOptions {
+    let opts: wgt::RequestAdapterOptions<SurfaceId> = wgt::RequestAdapterOptions {
         power_preference: options.power_preference.into(),
         force_fallback_adapter: options.force_fallback_adapter,
         compatible_surface: None,
     };
+
 
     let callback = callback as i64;
     let callback_data = callback_data as i64;
@@ -153,6 +154,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
         #[cfg(target_os = "windows")]
         let backends = wgt::Backends::DX12;
+
 
         let adapter = global.request_adapter(
             &opts,

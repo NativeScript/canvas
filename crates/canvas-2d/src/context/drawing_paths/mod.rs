@@ -2,16 +2,21 @@ use std::borrow::BorrowMut;
 
 use skia_safe::{ClipOp, Matrix, Point};
 
-use crate::context::Context;
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::paths::path::Path;
+use crate::context::Context;
 
 pub mod fill_rule;
 
 impl Context {
-    fn fill_or_stroke(&mut self, is_fill: bool, path: Option<&mut Path>, fill_rule: Option<FillRule>) {
-
-        #[cfg(feature = "gl")]{
+    fn fill_or_stroke(
+        &mut self,
+        is_fill: bool,
+        path: Option<&mut Path>,
+        fill_rule: Option<FillRule>,
+    ) {
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
@@ -41,6 +46,9 @@ impl Context {
                 self.state.shadow_blur,
             )
         };
+
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        let pool = unsafe { objc2_foundation::NSAutoreleasePool::new() };
 
         self.render_to_canvas(&paint, |canvas, paint| {
             if let Some(paint) = &shadow_paint {

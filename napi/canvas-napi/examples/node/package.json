@@ -1,0 +1,24 @@
+{
+	"name": "examples",
+	"version": "1.0.0",
+	"description": "",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NativeScript/canvas.git"
+	},
+	"private": true,
+	"dependencies": {
+		"teapot": "~1.0.0",
+		"wgpu-matrix": "~3.3.0",
+		"three": "~0.171.0",
+		"xhr": "~2.6.0",
+		"pixi.js": "8.6.4"
+	},
+	"devDependencies": {
+		"tsx": "^4.19.2"
+	},
+	"scripts": {
+		"start": "node --import ./node_modules/tsx/dist/loader.cjs ./main.mts"
+	}
+}

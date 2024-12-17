@@ -7,6 +7,17 @@ use crate::c2d::CCow;
 #[derive(Clone)]
 pub struct TextDecoder(canvas_2d::context::text_decoder::TextDecoder);
 
+impl TextDecoder {
+    pub fn encoding(&self) -> &str {
+        self.0.encoding()
+    }
+
+    pub fn decode(&self, data: &[u8]) -> String {
+        self.0.decode_to_string(data)
+    }
+}
+
+
 #[no_mangle]
 pub extern "C" fn canvas_native_text_decoder_release(value: *mut TextDecoder) {
     if value.is_null() {

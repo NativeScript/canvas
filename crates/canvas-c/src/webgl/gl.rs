@@ -1,19 +1,18 @@
 /* GL */
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_void};
-use std::ptr::NonNull;
-use canvas_2d::context::SurfaceEngine::CPU;
-use canvas_2d::utils::image::from_image_slice;
-use canvas_core::context_attributes::PowerPreference;
-use canvas_core::gpu::gl::GLContext;
-use canvas_webgl::prelude::WebGLVersion;
-
 use crate::buffers::{F32Buffer, I32Buffer, StringBuffer, U32Buffer, U8Buffer};
 use crate::c2d::CanvasRenderingContext2D;
 use crate::c2d::PaintStyle;
 use crate::enums::CanvasRepetition;
 use crate::image_asset::ImageAsset;
 use crate::webgl::result::WebGLResultType;
+use crate::BoolBuffer;
+use canvas_2d::utils::image::from_image_slice;
+use canvas_core::context_attributes::PowerPreference;
+use canvas_core::gpu::gl::GLContext;
+use canvas_webgl::prelude::WebGLVersion;
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_void};
+use std::ptr::NonNull;
 
 /* GL */
 
@@ -146,7 +145,6 @@ pub extern "C" fn canvas_native_context_create_pattern_webgl(
 
     let source = unsafe { &*source };
 
-
     context.remove_if_current();
     let state = source.get_inner();
     state.make_current();
@@ -168,7 +166,8 @@ pub extern "C" fn canvas_native_context_create_pattern_webgl(
         );
     }
 
-    #[cfg(feature = "gl")]{
+    #[cfg(feature = "gl")]
+    {
         context.make_current();
     }
 
@@ -255,8 +254,8 @@ pub extern "C" fn canvas_native_webgl_to_data_url(
         format.as_ref(),
         quality,
     ))
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[derive(Debug)]
@@ -277,7 +276,7 @@ pub extern "C" fn canvas_native_webgl_state_destroy(state: *mut WebGLState) {
 }
 
 impl WebGLState {
-   #[cfg(target_os = "android")]
+    #[cfg(target_os = "android")]
     pub fn new_with_view(
         view: *mut c_void,
         width: i32,
@@ -296,15 +295,24 @@ impl WebGLState {
         is_canvas: bool,
     ) -> Option<Self> {
         let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-            alpha, antialias, depth, fail_if_major_performance_caveat, power_preference.into(), premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, false,
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference.into(),
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            false,
         );
 
         let context = if !view.is_null() {
-            let handle = raw_window_handle::AndroidNdkWindowHandle::new(NonNull::new(view).unwrap());
+            let handle =
+                raw_window_handle::AndroidNdkWindowHandle::new(NonNull::new(view).unwrap());
             let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
-            GLContext::create_window_context(
-                &mut attr, width, height, handle,
-            )
+            GLContext::create_window_context(&mut attr, width, height, handle)
         } else {
             GLContext::create_offscreen_context(&mut attr, width, height)
         }?;
@@ -324,7 +332,8 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
-            )))
+            ),
+        ))
     }
 
     #[cfg(not(target_os = "android"))]
@@ -344,11 +353,19 @@ impl WebGLState {
         is_canvas: bool,
     ) -> Option<Self> {
         let mut attr = canvas_core::context_attributes::ContextAttributes::new(
-            alpha, antialias, depth, fail_if_major_performance_caveat, power_preference.into(), premultiplied_alpha, preserve_drawing_buffer, stencil, desynchronized, xr_compatible, false,
+            alpha,
+            antialias,
+            depth,
+            fail_if_major_performance_caveat,
+            power_preference.into(),
+            premultiplied_alpha,
+            preserve_drawing_buffer,
+            stencil,
+            desynchronized,
+            xr_compatible,
+            false,
         );
-        let context = GLContext::create_window_context(
-            &mut attr, NonNull::new(view)?,
-        );
+        let context = GLContext::create_window_context(&mut attr, NonNull::new(view)?);
         Some(Self(
             canvas_webgl::prelude::WebGLState::new_with_context_attributes(
                 context?,
@@ -364,7 +381,8 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
-            )))
+            ),
+        ))
     }
     pub fn new_with_context(
         context: GLContext,
@@ -396,7 +414,8 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
-            ))
+            ),
+        )
     }
     pub fn get_inner(&self) -> &canvas_webgl::prelude::WebGLState {
         &self.0
@@ -533,6 +552,12 @@ impl WebGLShaderPrecisionFormat {
 }
 
 pub struct WebGLExtension(Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>);
+
+impl WebGLExtension {
+    pub fn new(extension: Option<Box<dyn canvas_webgl::prelude::WebGLExtension>>) -> Self {
+        Self(extension)
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_extension_destroy(value: *mut WebGLExtension) {
@@ -1194,12 +1219,41 @@ pub extern "C" fn canvas_native_webgl_result_get_i32_array(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_into_i32_array(
+    result: *mut WebGLResult,
+) -> *mut I32Buffer {
+    if result.is_null() {
+        return std::ptr::null_mut();
+    }
+    let result = unsafe { *Box::from_raw(result) };
+    Box::into_raw(Box::new(I32Buffer::from(match result.0 {
+        canvas_webgl::prelude::WebGLResult::I32Array(value) => value,
+        _ => Vec::new(),
+    })))
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl_result_get_u32_array(
     result: *const WebGLResult,
 ) -> *mut U32Buffer {
     let result = unsafe { &*result };
     Box::into_raw(Box::new(U32Buffer::from(match &result.0 {
         canvas_webgl::prelude::WebGLResult::U32Array(value) => value.to_vec(),
+        _ => Vec::new(),
+    })))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_into_u32_array(
+    result: *mut WebGLResult,
+) -> *mut U32Buffer {
+    if result.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    let result = unsafe { *Box::from_raw(result) };
+    Box::into_raw(Box::new(U32Buffer::from(match result.0 {
+        canvas_webgl::prelude::WebGLResult::U32Array(value) => value,
         _ => Vec::new(),
     })))
 }
@@ -1216,6 +1270,21 @@ pub extern "C" fn canvas_native_webgl_result_get_f32_array(
 }
 
 #[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_into_f32_array(
+    result: *mut WebGLResult,
+) -> *mut F32Buffer {
+    if result.is_null() {
+        return std::ptr::null_mut();
+    }
+    let result = unsafe { *Box::from_raw(result) };
+
+    Box::into_raw(Box::new(F32Buffer::from(match result.0 {
+        canvas_webgl::prelude::WebGLResult::F32Array(value) => value,
+        _ => Vec::new(),
+    })))
+}
+
+#[no_mangle]
 pub extern "C" fn canvas_native_webgl_result_get_bool_array(
     result: *const WebGLResult,
 ) -> *mut U8Buffer {
@@ -1224,6 +1293,21 @@ pub extern "C" fn canvas_native_webgl_result_get_bool_array(
         canvas_webgl::prelude::WebGLResult::BooleanArray(value) => unsafe {
             std::slice::from_raw_parts(value.as_ptr() as *const u8, value.len()).to_vec()
         },
+        _ => Vec::new(),
+    })))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_result_into_bool_array(
+    result: *mut WebGLResult,
+) -> *mut BoolBuffer {
+    if result.is_null() {
+        return std::ptr::null_mut();
+    }
+    let result = unsafe { *Box::from_raw(result) };
+
+    Box::into_raw(Box::new(BoolBuffer::from(match result.0 {
+        canvas_webgl::prelude::WebGLResult::BooleanArray(value) => value,
         _ => Vec::new(),
     })))
 }
@@ -1269,11 +1353,13 @@ pub extern "C" fn canvas_native_webgl_result_get_string(
                 return CString::new("WebGL 2.0 (OpenGL ES 3.0 NativeScript)")
                     .unwrap()
                     .into_raw();
+            } else if val.contains("OpenGL ES 2.") {
+                ret = CString::new("WebGL 1.0 (OpenGL ES 2.0 NativeScript)")
+                    .unwrap()
+                    .into_raw()
+            } else {
+                ret = result.clone().into_raw()
             }
-
-            ret = CString::new("WebGL 1.0 (OpenGL ES 2.0 NativeScript)")
-                .unwrap()
-                .into_raw()
         }
         _ => {
             ret = std::ptr::null_mut();
@@ -1529,7 +1615,6 @@ pub extern "C" fn canvas_native_webgl_oes_vertex_array_object_bind_vertex_array_
 
 /* OES_vertex_array_object */
 
-
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "C" fn canvas_native_webgl_create(
@@ -1571,15 +1656,12 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => {
-                    Box::into_raw(Box::new(state))
-                }
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
     }
 }
-
 
 #[cfg(not(target_os = "android"))]
 #[no_mangle]
@@ -1618,9 +1700,7 @@ pub extern "C" fn canvas_native_webgl_create(
                 false,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => {
-                    Box::into_raw(Box::new(state))
-                }
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
@@ -1666,9 +1746,7 @@ pub extern "C" fn canvas_native_webgl_create_no_window(
                 is_canvas,
             ) {
                 None => std::ptr::null_mut(),
-                Some(state) => {
-                    Box::into_raw(Box::new(state))
-                }
+                Some(state) => Box::into_raw(Box::new(state)),
             }
         }
         _ => std::ptr::null_mut(),
@@ -1707,23 +1785,21 @@ pub(crate) fn canvas_native_webgl_create_no_window_internal(
 
     let ctx = GLContext::create_offscreen_context(&mut attrs, width, height)?;
 
-    Some(
-        WebGLState::new_with_context(
-            ctx,
-            version,
-            attrs.get_alpha(),
-            attrs.get_antialias(),
-            attrs.get_depth(),
-            attrs.get_fail_if_major_performance_caveat(),
-            PowerPreference::from(attrs.get_power_preference()),
-            attrs.get_premultiplied_alpha(),
-            attrs.get_preserve_drawing_buffer(),
-            attrs.get_stencil(),
-            attrs.get_desynchronized(),
-            attrs.get_xr_compatible(),
-            attrs.get_is_canvas(),
-        )
-    )
+    Some(WebGLState::new_with_context(
+        ctx,
+        version,
+        attrs.get_alpha(),
+        attrs.get_antialias(),
+        attrs.get_depth(),
+        attrs.get_fail_if_major_performance_caveat(),
+        PowerPreference::from(attrs.get_power_preference()),
+        attrs.get_premultiplied_alpha(),
+        attrs.get_preserve_drawing_buffer(),
+        attrs.get_stencil(),
+        attrs.get_desynchronized(),
+        attrs.get_xr_compatible(),
+        attrs.get_is_canvas(),
+    ))
 }
 
 #[no_mangle]
@@ -2842,8 +2918,8 @@ pub extern "C" fn canvas_native_webgl_get_program_info_log(
             state.get_inner_mut(),
         ),
     )
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -2885,8 +2961,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_info_log(
     CString::new(
         canvas_webgl::webgl::canvas_native_webgl_get_shader_info_log(shader, state.get_inner_mut()),
     )
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -2931,8 +3007,8 @@ pub extern "C" fn canvas_native_webgl_get_shader_source(
         shader,
         state.get_inner_mut(),
     ))
-        .unwrap()
-        .into_raw()
+    .unwrap()
+    .into_raw()
 }
 
 #[no_mangle]
@@ -3388,7 +3464,9 @@ pub extern "C" fn canvas_native_webgl_tex_image2d_canvas2d(
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
 
-    canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    canvas
+        .context
+        .get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
 
@@ -3594,7 +3672,9 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_canvas2d(
 
     let mut bytes = vec![0u8; (width * height * 4.) as usize];
 
-    canvas.context.get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
+    canvas
+        .context
+        .get_pixels(bytes.as_mut_slice(), (0, 0), (width as i32, height as i32));
 
     state.0.make_current();
 
@@ -3684,6 +3764,35 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d(
         format,
         image_type,
         buf,
+        state.get_inner(),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgl_tex_sub_image2d_offset(
+    target: u32,
+    level: i32,
+    xoffset: i32,
+    yoffset: i32,
+    width: i32,
+    height: i32,
+    format: u32,
+    image_type: i32,
+    offset: i64,
+    state: *mut WebGLState,
+) {
+    assert!(!state.is_null());
+    let state = unsafe { &mut *state };
+    canvas_webgl::webgl::canvas_native_webgl_tex_sub_image2d_offset(
+        target,
+        level,
+        xoffset,
+        yoffset,
+        width,
+        height,
+        format,
+        image_type,
+        offset,
         state.get_inner(),
     )
 }

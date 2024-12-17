@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 use std::fmt::Formatter;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
-
+use std::sync::Arc;
 use chrono::Timelike;
 use glutin::display::GetGlDisplay;
 use glutin::prelude::*;
@@ -15,7 +15,7 @@ use winit::window::WindowBuilder;
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
-use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
+use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasOptionalPrimitiveTopology, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
 use canvas_c::webgpu::error::CanvasGPUErrorType;
 use canvas_c::webgpu::gpu_adapter::CanvasGPUAdapter;
 use canvas_c::webgpu::gpu_buffer::CanvasGPUBuffer;
@@ -599,10 +599,12 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
 
     let instance = data.instance;
 
+    let view = canvas_core::gpu::metal::MetalContext::new(window.ns_view.as_ptr());
+    let ins = unsafe { Arc::from_raw(instance)};
     let context = unsafe {
-        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create_nsview(
-            instance,
-            window.ns_view.as_ptr(),
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
+            Arc::as_ptr(&ins),
+            view.layer(),
             data.width,
             data.height,
         )
@@ -626,6 +628,9 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
         size: &size,
         format: CanvasOptionalGPUTextureFormat::None,
     };
+
+
+    let cap = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_get_capabilities(context, data.adapter.unwrap_or(std::ptr::null()));
 
     unsafe {
         canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(
@@ -699,7 +704,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
     };
 
     let primitive = canvas_c::webgpu::gpu_device::CanvasPrimitiveState {
-        topology: canvas_c::webgpu::enums::CanvasPrimitiveTopology::TriangleList,
+        topology: canvas_c::webgpu::enums::CanvasOptionalPrimitiveTopology::None,
         strip_index_format: canvas_c::webgpu::enums::CanvasOptionalIndexFormat::None,
         front_face: canvas_c::webgpu::enums::CanvasFrontFace::Ccw,
         cull_mode: canvas_c::webgpu::enums::CanvasCullMode::None,
@@ -966,7 +971,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     };
 
     let primitive = CanvasPrimitiveState {
-        topology: CanvasPrimitiveTopology::TriangleList,
+        topology: CanvasOptionalPrimitiveTopology::None,
         strip_index_format: CanvasOptionalIndexFormat::None,
         front_face: CanvasFrontFace::Ccw,
         cull_mode: CanvasCullMode::None,
@@ -1464,10 +1469,6 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         format: CanvasOptionalGPUTextureFormat::None,
     };
 
-    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(
-        context, device, &config,
-    );
-
     let entry_point = c"main";
 
     let targets = [CanvasColorTargetState {
@@ -1531,7 +1532,7 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
     };
 
     let primitive = CanvasPrimitiveState {
-        topology: CanvasPrimitiveTopology::TriangleList,
+        topology: CanvasOptionalPrimitiveTopology::None,
         strip_index_format: CanvasOptionalIndexFormat::None,
         front_face: CanvasFrontFace::Ccw,
         cull_mode: CanvasCullMode::None,
@@ -1960,6 +1961,13 @@ fn main() {
 
     canvas_c::canvas_native_font_add_family_with_bytes(c"ChaChicle".as_ptr(), ChaChicle.as_ptr(), ChaChicle.len());
 
+    canvas_c::canvas_native_webgl_create_no_window(
+        600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false
+    );
+
+
+
+
     event_loop.run(move |event, target| {
         match event {
             Event::NewEvents(_) => {}
@@ -1970,11 +1978,11 @@ fn main() {
 
                         match data_.window {
                             RawWindowHandle::AppKit(window) => {
-                                // webgpu_triangle(data, window);
+                                 webgpu_triangle(data, window);
                                 unsafe {
                                     //   webgpu_blur(data, window);
 
-                                    webgpu_render_2d(data, window)
+                                  //  webgpu_render_2d(data, window)
                                 }
 
                                 // let mut ctx_2d = Context::new_metal(
@@ -2120,6 +2128,8 @@ fn main() {
             _ => {}
         }
     });
+
+
 
     /*
     event_loop.run(move |event, target| {

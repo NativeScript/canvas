@@ -1,5 +1,5 @@
 use std::ffi::CStr;
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_float};
 use std::ptr;
 
 use canvas_2d::utils::image::from_image_slice;
@@ -7,7 +7,10 @@ use canvas_2d::utils::image::from_image_slice;
 use crate::c2d::context::CanvasRenderingContext2D;
 
 mod gradient;
+pub use gradient::*;
 mod pattern;
+
+pub use pattern::*;
 
 #[derive(Clone)]
 pub struct PaintStyle(pub(crate) canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle);
@@ -36,6 +39,16 @@ impl PaintStyle {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
                 PaintStyleType::Pattern
             }
+        }
+    }
+
+
+    pub fn add_color_stop(&mut self, offset: c_float, color: &str) {
+        match &mut self.0 {
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
+                gradient.add_color_stop_str(offset, color.as_ref())
+            }
+            _ => {}
         }
     }
 }

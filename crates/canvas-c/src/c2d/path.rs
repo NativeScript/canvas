@@ -4,6 +4,12 @@ use std::os::raw::c_char;
 #[derive(Clone)]
 pub struct Path(pub(crate) canvas_2d::context::paths::path::Path);
 
+impl Path {
+    pub fn with_d(d: &str) -> Self {
+        Path(canvas_2d::context::paths::path::Path::from_str(d))
+    }
+}
+
 impl Default for Path {
     fn default() -> Self {
         Self(Default::default())

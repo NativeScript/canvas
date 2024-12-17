@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"declaration": true,
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noEmitHelpers": false,
+		"noEmitOnError": false,
+		"allowJs": true,
+		"importHelpers": true,
+		"target": "ESNext",
+		"outDir": "./dist",
+		"lib": ["ESNext", "dom"],
+		"noEmit": false,
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true
+	},
+	"extends": "@tsconfig/node22/tsconfig.json",
+	"include": ["canvas.ts", "polyfill.ts", "utils/raf/*.ts", "utils/*.ts", "references.d.ts"],
+	"exclude": ["node_modules", "examples", "npm", "dist"]
+}

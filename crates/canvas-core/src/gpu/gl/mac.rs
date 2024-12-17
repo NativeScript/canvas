@@ -1,13 +1,11 @@
-use std::ffi::c_void;
-use std::ptr::NonNull;
-use std::sync::OnceLock;
-
+use crate::context_attributes::ContextAttributes;
 use icrate::objc2::rc::Id;
 use icrate::objc2::{class, msg_send, msg_send_id};
 use objc2_foundation::NSObject;
 use raw_window_handle::RawWindowHandle;
-
-use crate::context_attributes::ContextAttributes;
+use std::ffi::c_void;
+use std::ptr::NonNull;
+use std::sync::OnceLock;
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
@@ -178,15 +176,16 @@ impl NSOpenGLContext {
 pub struct NSOpenGLPixelFormat(Id<NSObject>);
 
 impl NSOpenGLPixelFormat {
-    pub fn init_with_attributes(attribs: &[u32]) -> Self {
+    pub fn init_with_attributes(attribs: &[u32]) -> Option<Self> {
         let cls = class!(NSOpenGLPixelFormat);
-        let instance = unsafe { msg_send_id![cls, alloc] };
-        NSOpenGLPixelFormat(unsafe {
+        let alloc = unsafe { msg_send_id![cls, alloc] };
+        let instance: Option<Id<NSObject>> = unsafe {
             msg_send_id![
-                instance,
+                alloc,
                 initWithAttributes: attribs.as_ptr()
             ]
-        })
+        };
+        instance.map(|id| NSOpenGLPixelFormat(id))
     }
 }
 
@@ -216,7 +215,8 @@ impl NSOpenGLView {
     }
 
     pub fn flush_buffer(&self) {
-        let _: () = unsafe { msg_send![&self.0, flushBuffer] };
+        let context: Id<NSObject> = unsafe { msg_send_id![&self.0, openGLContext] };
+        let _: () = unsafe { msg_send![&context, flushBuffer] };
     }
 
     pub fn open_gl_context(&self) -> NSOpenGLContext {
@@ -240,15 +240,17 @@ impl NSOpenGLView {
 #[derive(Debug, Default)]
 pub struct GLContext(GLContextInner);
 
-fn parse_context_attributes(context_attrs: &ContextAttributes) -> NSOpenGLPixelFormat {
+fn parse_context_attributes(context_attrs: &ContextAttributes, accelerated: bool) -> Option<NSOpenGLPixelFormat> {
     let mut attributes = vec![
-        NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32,
-        NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32,
         NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
         NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
         NSOpenGLPixelFormatAttribute::NSOpenGLPFAColorSize as u32,
         24,
     ];
+
+    if accelerated {
+        attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFAAccelerated as u32);
+    }
 
     if context_attrs.get_alpha() {
         attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFAAlphaSize as u32);
@@ -272,6 +274,9 @@ fn parse_context_attributes(context_attrs: &ContextAttributes) -> NSOpenGLPixelF
         attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFASamples as u32);
         attributes.push(4);
     }
+
+    attributes.push(NSOpenGLPixelFormatAttribute::NSOpenGLPFADoubleBuffer as u32);
+    attributes.push(0);
 
     NSOpenGLPixelFormat::init_with_attributes(attributes.as_slice())
 }
@@ -362,14 +367,26 @@ impl GLContext {
                     NSOpenGLPixelFormatAttribute::NSOpenGLPFAOpenGLProfile as u32,
                     NSOpenGLPFAOpenGLProfiles::NSOpenGLProfileVersion3_2Core as u32,
                     0,
-                ]);
+                ])?;
                 NSOpenGLContext::new(format, None)
             }
         };
 
-        let format = parse_context_attributes(context_attrs);
+        let mut format = parse_context_attributes(context_attrs, true);
 
-        let context = NSOpenGLContext::new(format, share_group.clone());
+        if format.is_none() {
+            if context_attrs.get_antialias() {
+                context_attrs.set_antialias(false);
+            }
+
+            if context_attrs.get_preserve_drawing_buffer() {
+                context_attrs.set_preserve_drawing_buffer(false);
+            }
+
+            format = parse_context_attributes(context_attrs, false);
+        }
+
+        let context = NSOpenGLContext::new(format?, share_group.clone());
 
 
         if context.is_none() {
@@ -392,9 +409,24 @@ impl GLContext {
         width: i32,
         height: i32,
     ) -> Option<Self> {
-        let format = parse_context_attributes(context_attrs);
+        let mut format = parse_context_attributes(context_attrs, true);
+
+        if format.is_none() {
+            if context_attrs.get_antialias() {
+                context_attrs.set_antialias(false);
+            }
+
+            if context_attrs.get_preserve_drawing_buffer() {
+                context_attrs.set_preserve_drawing_buffer(false);
+            }
+
+            format = parse_context_attributes(context_attrs, false);
+        }
+
+
         let view =
-            NSOpenGLView::new_with_frame_pixel_format(0., 0., width as f32, height as f32, format);
+            NSOpenGLView::new_with_frame_pixel_format(0., 0., width as f32, height as f32, format?);
+
 
         GLContext::create_window_context_with_gl_view(context_attrs, view, None)
     }
@@ -442,7 +474,7 @@ impl GLContext {
         self.0
             .view
             .as_ref()
-            .map(|view| view.frame().size.width as i32)
+            .map(|view| view.frame().size.width as i32 * 2)
             .unwrap_or_default()
     }
 

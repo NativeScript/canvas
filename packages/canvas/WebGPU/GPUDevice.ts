@@ -15,7 +15,7 @@ import { GPUTextureView } from './GPUTextureView';
 import { GPUSampler } from './GPUSampler';
 import { GPUExternalTexture } from './GPUExternalTexture';
 import type { GPUAddressMode, GPUCompareFunction, GPUErrorFilter, GPUFilterMode, GPUMipmapFilterMode, GPUQueryType, GPUTextureFormat, GPUTextureSampleType, GPUTextureViewDimension } from './Types';
-import type { GPUBindGroupDescriptor, GPUBindGroupLayoutEntry, GPUComputePipelineDescriptor, GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPURenderPipelineDescriptor, GPUVertexState } from './Interfaces';
+import type { GPUBindGroupDescriptor, GPUBindGroupLayoutDescriptor, GPUBindGroupLayoutEntry, GPUComputePipelineDescriptor, GPUDepthStencilState, GPUExternalTextureBindingLayout, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPUProgrammableStage, GPURenderPipelineDescriptor, GPUVertexState } from './Interfaces';
 import { GPUComputePipeline } from './GPUComputePipeline';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
@@ -230,7 +230,7 @@ export class GPUDevice extends EventTarget {
 		return undefined;
 	}
 
-	createBindGroupLayout(descriptor: GPUBindGroupLayoutEntry) {
+	createBindGroupLayout(descriptor: GPUBindGroupLayoutDescriptor) {
 		const groupLayout = this.native.createBindGroupLayout(descriptor);
 		if (groupLayout) {
 			return GPUBindGroupLayout.fromNative(groupLayout);

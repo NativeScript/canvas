@@ -14,6 +14,7 @@ struct ImageDataInner {
 }
 
 unsafe impl Send for ImageDataInner {}
+unsafe impl Sync for ImageDataInner {}
 
 #[derive(Debug, Clone)]
 pub struct ImageData(ImageDataInner);

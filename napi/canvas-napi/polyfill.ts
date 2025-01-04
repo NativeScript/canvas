@@ -2,7 +2,7 @@ import '@nativescript/macos-node-api';
 import { cancelAnimationFrame, requestAnimationFrame } from './utils/raf';
 import { Event } from '@nativescript/foundation/dom/dom-utils';
 
-import { CanvasRenderingContext2D, createImageBitmap, GPU, GPUAdapter, GPUBufferUsage, GPUDevice, GPUTextureUsage, ImageAsset, Path2D, WebGL2RenderingContext, WebGLRenderingContext } from './js-bindings.js';
+import { CanvasRenderingContext2D, createImageBitmap, GPU, GPUAdapter, GPUDevice, ImageAsset, Path2D, WebGL2RenderingContext, WebGLRenderingContext } from './js-bindings.js';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base';
 import { view } from '@nativescript/foundation/views/decorators/view';
 
@@ -85,10 +85,29 @@ WebGL2RenderingContext.prototype.shaderSource = function (shader, source) {
 GPUDevice.prototype.__createShaderModule = GPUDevice.prototype.createShaderModule;
 
 function installWebGPUPolyfills(window: any) {
+	// TODO fix export rename
+
 	// @ts-ignore
-	globalThis.GPUTextureUsage = GPUTextureUsage;
+	globalThis.GPUTextureUsage = {
+		COPY_SRC: 1,
+		COPY_DST: 2,
+		RENDER_ATTACHMENT: 16,
+		STORAGE_BINDING: 8,
+		TEXTURE_BINDING: 4,
+	};
 	// @ts-ignore
-	globalThis.GPUBufferUsage = GPUBufferUsage;
+	globalThis.GPUBufferUsage = {
+		MAP_READ: 1,
+		MAP_WRITE: 2,
+		COPY_SRC: 4,
+		COPY_DST: 8,
+		INDEX: 16,
+		VERTEX: 32,
+		UNIFORM: 64,
+		STORAGE: 128,
+		INDIRECT: 256,
+		QUERY_RESOLVE: 512,
+	};
 	// @ts-ignore
 	globalThis.GPUAdapter = GPUAdapter;
 	GPUDevice.prototype.createShaderModule = function (descriptor) {

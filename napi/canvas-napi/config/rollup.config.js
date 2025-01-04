@@ -1,12 +1,16 @@
 import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
+
 const config = [
 	{
 		input: 'index.ts',
 		plugins: [
 			typescript(),
-			commonjs(),
+			commonjs({
+				ignoreGlobal: true,
+			}),
 			copy({
 				targets: [
 					{ src: 'package.json', dest: 'dist' },
@@ -22,12 +26,15 @@ const config = [
 				indent: '\t',
 			},
 		],
+		external: ['js-bindings.js', '@nativescript/foundation', '@nativescript/macos-node-api'],
 	},
 	{
 		input: 'index.ts',
 		plugins: [
 			typescript(),
-			commonjs(),
+			commonjs({
+				ignoreGlobal: true,
+			}),
 			copy({
 				targets: [
 					{ src: 'package.json', dest: 'dist' },
@@ -43,6 +50,7 @@ const config = [
 				indent: '\t',
 			},
 		],
+		external: ['js-bindings.js', '@nativescript/foundation', '@nativescript/macos-node-api'],
 	},
 ];
 

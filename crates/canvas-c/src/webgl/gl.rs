@@ -265,6 +265,14 @@ impl WebGLState {
     pub fn get_dimensions(&self) -> (i32, i32) {
         self.0.get_dimensions()
     }
+
+    pub fn get_version(&self) -> i32 {
+        match  self.0.get_version() {
+            WebGLVersion::V1 => 1,
+            WebGLVersion::V2 => 2,
+            WebGLVersion::NONE => 0
+        }
+    }
 }
 
 #[no_mangle]
@@ -306,6 +314,7 @@ impl WebGLState {
             desynchronized,
             xr_compatible,
             false,
+            version == WebGLVersion::V1,
         );
 
         let context = if !view.is_null() {
@@ -332,6 +341,7 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
+                version == WebGLVersion::V1,
             ),
         ))
     }
@@ -364,6 +374,7 @@ impl WebGLState {
             desynchronized,
             xr_compatible,
             false,
+            version == WebGLVersion::V1,
         );
         let context = GLContext::create_window_context(&mut attr, NonNull::new(view)?);
         Some(Self(
@@ -381,6 +392,7 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
+                version == WebGLVersion::V1,
             ),
         ))
     }
@@ -414,6 +426,7 @@ impl WebGLState {
                 desynchronized,
                 xr_compatible,
                 is_canvas,
+                version == WebGLVersion::V1,
             ),
         )
     }
@@ -1781,6 +1794,7 @@ pub(crate) fn canvas_native_webgl_create_no_window_internal(
         desynchronized,
         xr_compatible,
         is_canvas,
+        version == WebGLVersion::V1,
     );
 
     let ctx = GLContext::create_offscreen_context(&mut attrs, width, height)?;

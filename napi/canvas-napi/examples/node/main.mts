@@ -1,34 +1,28 @@
 import '@nativescript/macos-node-api';
 import '@nativescript/foundation/dom/index.js';
 import '../app.ts';
-import {ImageAsset} from '@nativescript/canvas-napi';
+import { ImageAsset } from '@nativescript/canvas-napi';
 import three from './three';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base';
-
-import { touchParticles } from './touchParticles';
+import { interactiveCube } from './gl/interactive-cube';
+import { fog } from './gl2/fog';
+import { simplePlane } from './pixijs/simple';
 // import { webgl_shadowmap } from './threejs/webgl_shadowmap';
 // import { run as texturedCube } from './texturedCube';
 // import { run as twoCubes } from './twoCubes.ts';
 // import { run as computeBoids } from './gpgpu/computeBoids';
 // import { run as wireframe } from './graphicsTechniques/wireframe';
-import {run as the_frantic_run_of_the_valorous_rabbit } from './threejs/the_frantic_run_of_the_valorous_rabbit';
-import {run as tiny_poly_world} from './threejs/tiny_poly_world';
-import {run as tsl_galaxy} from './threejs/tsl_galaxy';
-const { webgpuCube, cube } = three;
-import { run as damagedHelmet } from './threejs/damaged_helmet';
-import { run as simplePixi } from './pixijs/simple';
 
+
+const { webgpuCube, cube } = three;
 
 // import { GPU, ImageAsset } from '../../index.js';
-
-
 
 objc.import('AppKit');
 objc.import('OpenGL');
 objc.import('QuartzCore');
 
 let LAF = 0;
-
 
 function mdnShadowColor(ctx) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/shadowColor
@@ -535,7 +529,6 @@ function solarSystem(canvas) {
 	init();
 }
 
-
 function swarm(canvas, width?: number, height?: number) {
 	var requestAnimFrame = requestAnimationFrame;
 
@@ -643,7 +636,7 @@ function swarm(canvas, width?: number, height?: number) {
 			//Finally call the update function
 			update();
 
-		///	ctx.render();
+			///	ctx.render();
 		}
 
 		// Give every particle some life
@@ -897,8 +890,9 @@ function cancelSwarm() {
 }
 
 function webglTextures(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	const vertexShaderSrc = `
-// #version 120
 precision highp float;
 attribute vec2 position;
 void main() {
@@ -907,7 +901,6 @@ void main() {
 }`;
 
 	const fragmentShaderSrc = `
-// #version 120
 precision mediump float;
 void main() {
   vec2 fragmentPosition = 2.0*gl_PointCoord - 1.0;
@@ -929,16 +922,20 @@ void main() {
 			gl.shaderSource(vertexShader, source);
 			gl.compileShader(vertexShader);
 			source = fragmentShaderSrc;
+
 			var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 			gl.shaderSource(fragmentShader, source);
 			gl.compileShader(fragmentShader);
 			program = gl.createProgram();
+
 
 			gl.attachShader(program, vertexShader);
 			gl.attachShader(program, fragmentShader);
 			gl.linkProgram(program);
 			gl.detachShader(program, vertexShader);
 			gl.detachShader(program, fragmentShader);
+
+
 			gl.deleteShader(vertexShader);
 			gl.deleteShader(fragmentShader);
 			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -947,13 +944,10 @@ void main() {
 				console.log('Shader program did not link successfully. ' + 'Error log: ' + linkErrLog);
 				return;
 			}
-			console.log('1', gl.getError());
 			initializeAttributes();
-			console.log('2', gl.getError());
 			gl.useProgram(program);
-			console.log('3', gl.getError());
 			gl.drawArrays(gl.POINTS, 0, 1);
-			gl.render();
+			// gl.render();
 
 			cleanup();
 		}
@@ -962,15 +956,10 @@ void main() {
 
 		function initializeAttributes() {
 			gl.enableVertexAttribArray(0);
-			console.log('1.1', gl.getError());
 			buffer = gl.createBuffer();
-			console.log('1.2', gl.getError());
 			gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-			console.log('1.3', gl.getError());
 			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0]), gl.STATIC_DRAW);
-			console.log('1.4', gl.getError());
 			gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-			console.log('1.5', gl.getError());
 		}
 
 		function cleanup() {
@@ -980,7 +969,7 @@ void main() {
 		}
 
 		function getRenderingContext() {
-			var gl = canvas.getContext('webgl2') || canvas.getContext('experimental-webgl');
+			var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 			if (!gl) {
 				console.log('Failed to get WebGL context.' + 'Your device may not support WebGL.');
 				return null;
@@ -998,6 +987,9 @@ void main() {
 }
 
 function createChaosLines(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
 	function createShader(gl, type, source) {
 		var shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
@@ -1015,7 +1007,7 @@ function createChaosLines(canvas) {
 	function initWebGL(canvas) {
 		//	canvas.width = canvas.clientWidth;
 		//	canvas.height = canvas.clientHeight;
-		const gl = canvas.getContext('webgl2');
+		const gl = canvas.getContext('webgl');
 
 		if (!gl) {
 			alert('Unable to initialize WebGL. Your browser may not support it.');
@@ -1023,14 +1015,12 @@ function createChaosLines(canvas) {
 		}
 
 		const vertexShaderSource = `
-		#version 330 core
     attribute vec4 aVertexPosition;
     void main() {
         gl_Position = aVertexPosition;
     }`;
 
 		const fragmentShaderSource = `
-		#version 330 core
     precision mediump float;
 
     uniform float u_time;
@@ -1123,21 +1113,16 @@ function createChaosLines(canvas) {
 
 		const positionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-		console.log('positionBuffer', positionBuffer, gl.getError());
 		const positions = [1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0];
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-		console.log('bufferData', positionBuffer, gl.getError());
 
 		const vertexPosition = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
-		console.log('vertexPosition', vertexPosition, gl.getError());
 		gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(vertexPosition);
 
 		gl.useProgram(shaderProgram);
 		const u_time = gl.getUniformLocation(shaderProgram, 'u_time');
 		const u_resolution = gl.getUniformLocation(shaderProgram, 'u_resolution');
-
-		console.log('u_time', u_time, 'u_resolution', u_resolution, gl.getError());
 
 		const width = canvas.width;
 		const height = canvas.height;
@@ -1148,32 +1133,23 @@ function createChaosLines(canvas) {
 				start = now;
 			}
 			// now *= 0.001;
-			now = (now - start) * 0.0001;
-			//	requestAnimationFrame(drawScene);
-			console.log('1', gl.getError());
+			now = (now - start) * 0.001;
+
 			gl.uniform1f(u_time, now);
-			console.log('2', gl.getError());
 			gl.uniform2f(u_resolution, width, height);
-			console.log('3', gl.getError());
 			gl.clearColor(0.0, 0.0, 0.0, 1.0);
-			console.log('4', gl.getError());
 			gl.clear(gl.COLOR_BUFFER_BIT);
-			console.log('5', gl.getError());
 			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-			console.log('6', gl.getError());
 			gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-			console.log('7', gl.getError());
 			gl.enableVertexAttribArray(vertexPosition);
-			console.log('8', gl.getError());
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-			console.log('9', gl.getError());
-			gl.render();
-			console.log(gl.getError());
+			//	gl.render();
+			requestAnimationFrame(drawScene);
 		}
 
-		drawScene();
+			drawScene();
 
-		//requestAnimationFrame(drawScene);
+	//	requestAnimationFrame(drawScene);
 	}
 
 	initWebGL(canvas);
@@ -1386,16 +1362,15 @@ function doGL() {
 	// loaded = asset.fromUrlSync('https://www.superherotoystore.com/cdn/shop/articles/Website_Blog_creatives_29_1600x.jpg?v=1713945144');
 	// console.timeEnd('load1');
 
-	//webglTextures(glCanvas);
-	createChaosLines(canvas);
+	//webglTextures(canvas);
+	//createChaosLines(canvas);
 	// cubeRotation(glCanvas);
 }
 
-
 const windowDoc = document.createElement('window');
 
-windowDoc.style.width = `${NSScreen.mainScreen.frame.size.width * .66}`;
-windowDoc.style.height = `${NSScreen.mainScreen.frame.size.height * .66}`;
+windowDoc.style.width = `${NSScreen.mainScreen.frame.size.width * 0.66}`;
+windowDoc.style.height = `${NSScreen.mainScreen.frame.size.height * 0.66}`;
 
 async function webgpuTest() {
 	console.log(navigator.gpu.wgslLanguageFeatures);
@@ -1519,7 +1494,6 @@ fn main() -> @location(0) vec4f {
 
 const canvas = document.createElement('canvas');
 
-
 canvas.addEventListener('ready', (event) => {
 	console.log('ready');
 	// touchParticles(canvas);
@@ -1528,24 +1502,30 @@ canvas.addEventListener('ready', (event) => {
 	// doGL()
 	//swarm(canvas);
 	//texturedCube(canvas);
-// 	twoCubes(canvas);
+	// 	twoCubes(canvas);
 	// computeBoids(canvas);
-// 	wireframe(canvas);
-// 	renderBundles(canvas);
+	// 	wireframe(canvas);
+	// 	renderBundles(canvas);
 	//webgpuCube(canvas);
 	//cubeMap(canvas);
 	//cube(canvas);
 	//webgl_shadowmap(canvas);
-//	the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
-//tiny_poly_world(canvas);
- 	damagedHelmet(canvas);
-// 	tsl_galaxy(canvas);
+	//the_frantic_run_of_the_valorous_rabbit(canvas, windowDoc);
+	//tiny_poly_world(canvas);
+	//damagedHelmet(canvas);
+	//tsl_galaxy(canvas);
 	//simplePixi(canvas);
+	simplePlane(canvas);
+	//demo.setup(canvas);
+	// drawImage(canvas);
+	//cubeRotationRotation(canvas);
+	//createChaosLines(canvas);
+//	webglTextures(canvas);
+	//interactiveCube(canvas);
+	//fog(canvas);
 });
 
-windowDoc.setAttribute('styleMask', (
-	NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView
-) as never);
+windowDoc.setAttribute('styleMask', (NSWindowStyleMask.Titled | NSWindowStyleMask.Closable | NSWindowStyleMask.Miniaturizable | NSWindowStyleMask.Resizable | NSWindowStyleMask.FullSizeContentView) as never);
 
 const color = NSColor.colorWithCalibratedHueSaturationBrightnessAlpha(0, 0, 0.2, 0.5);
 const background = `rgba(${color.redComponent * 255}, ${color.greenComponent * 255}, ${color.blueComponent * 255}, ${color.alphaComponent})`;
@@ -1572,16 +1552,14 @@ const scrollView = document.createElement('scroll-view');
 // splitView.appendChild(sideBar);
 
 windowDoc.style.backgroundColor = 'white';
-windowDoc.style.width = NSScreen.mainScreen.frame.size.width * .66;
-windowDoc.style.height = NSScreen.mainScreen.frame.size.height * .66;
-
+windowDoc.style.width = NSScreen.mainScreen.frame.size.width * 0.66;
+windowDoc.style.height = NSScreen.mainScreen.frame.size.height * 0.66;
 
 //splitView.style.backgroundColor = background;
 
 //
 // splitView.width = NSScreen.mainScreen.frame.size.width;
 // splitView.height = NSScreen.mainScreen.frame.size.height;
-
 
 class RootNSView extends NSView {
 	static {
@@ -1613,7 +1591,6 @@ export class RootView extends ViewBase {
 		super();
 		this.nativeView = RootNSView.alloc().initWithFrame(CGRectZero);
 	}
-
 }
 
 const root = new RootView();
@@ -1625,4 +1602,3 @@ windowDoc.appendChild(root);
 document.body.appendChild(windowDoc);
 
 globalThis.NativeScriptApplication.launch();
-

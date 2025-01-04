@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
-import { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } from 'three/tsl';
+import { color, cos, float, Fn, mix, PI, PI2, range, sin, timerLocal, uniform, uv, vec3, vec4 } from 'three/tsl';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+
 export async function run(canvas) {
 	let camera, scene, renderer, controls, context;
 
@@ -91,11 +92,9 @@ export async function run(canvas) {
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		await renderer.init();
-		context = canvas.getContext('webgpu');
-
+		//context = canvas.getContext('webgpu');
 		renderer.setAnimationLoop(animate);
 		// document.body.appendChild( renderer.domElement );
-
 		controls = new OrbitControls(camera, renderer.domElement);
 		controls.enableDamping = true;
 		controls.minDistance = 0.1;
@@ -114,7 +113,7 @@ export async function run(canvas) {
 		controls.update();
 
 		renderer.render(scene, camera);
-
-		context.presentSurface();
+		// no manual present 🤷🏽
+		//	context.presentSurface();
 	}
 }

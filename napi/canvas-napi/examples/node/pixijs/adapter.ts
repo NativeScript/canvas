@@ -16,11 +16,12 @@ const NSCAdapter: Pixii.Adapter = {
 	},
 	getNavigator() {
 		return {
-			userAgent: '',
+			userAgent: global.navigator.userAgent,
 			gpu: global.navigator.gpu,
 		};
 	},
 	getBaseUrl() {
+		//@ts-ignore
 		return import.meta.url;
 	},
 	getFontFaceSet() {
@@ -30,6 +31,7 @@ const NSCAdapter: Pixii.Adapter = {
 		return fetch(url, options);
 	},
 	parseXML(xml: string) {
+		console.log('parseXML');
 		const parser = new DOMParser();
 		return parser.parseFromString(xml, 'text/xml');
 	},

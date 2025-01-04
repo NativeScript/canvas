@@ -8,8 +8,8 @@ use std::os::raw::c_void;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use canvas_core::context_attributes::PowerPreference;
 use canvas_core::context_attributes::ContextAttributes;
+use canvas_core::context_attributes::PowerPreference;
 
 pub fn get_sdk_version() -> i32 {
     18
@@ -150,13 +150,22 @@ impl WebGLState {
         RefMut::map(self.attributes.borrow_mut(), |v| v)
     }
 
+    pub fn get_version(&self) -> WebGLVersion {
+        self.state.borrow().version
+    }
+
     #[cfg(not(target_os = "android"))]
     pub fn set_surface(&mut self, view: NonNull<std::ffi::c_void>) -> bool {
         self.context.set_surface(view)
     }
 
     #[cfg(target_os = "android")]
-    pub fn set_surface(&mut self, width: i32, height: i32, window: NonNull<std::ffi::c_void>) -> bool {
+    pub fn set_surface(
+        &mut self,
+        width: i32,
+        height: i32,
+        window: NonNull<std::ffi::c_void>,
+    ) -> bool {
         let attr = &mut *self.attributes.borrow_mut();
         let handle = raw_window_handle::AndroidNdkWindowHandle::new(window);
         let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
@@ -164,7 +173,12 @@ impl WebGLState {
     }
 
     #[cfg(target_os = "android")]
-    pub fn set_window_surface(&mut self, width: i32, height: i32, window: NonNull<std::ffi::c_void>) {
+    pub fn set_window_surface(
+        &mut self,
+        width: i32,
+        height: i32,
+        window: NonNull<std::ffi::c_void>,
+    ) {
         let attr = &mut *self.attributes.borrow_mut();
         let handle = raw_window_handle::AndroidNdkWindowHandle::new(window);
         let handle = raw_window_handle::RawWindowHandle::AndroidNdk(handle);
@@ -177,25 +191,27 @@ impl WebGLState {
         self.context.resize_pbuffer(attr, width, height);
     }
 
-    pub fn new_with_context(context: canvas_core::gpu::gl::GLContext, version: WebGLVersion) -> Self {
+    pub fn new_with_context(
+        context: canvas_core::gpu::gl::GLContext,
+        version: WebGLVersion,
+    ) -> Self {
         context.make_current();
         Self {
             context,
-            attributes: Rc::new(RefCell::new(
-                ContextAttributes::new(
-                    true,
-                    true,
-                    true,
-                    false,
-                    PowerPreference::Default,
-                    true,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                )
-            )),
+            attributes: Rc::new(RefCell::new(ContextAttributes::new(
+                true,
+                true,
+                true,
+                false,
+                PowerPreference::Default,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                version == WebGLVersion::V1,
+            ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
                 clear_stencil: 0,
@@ -230,14 +246,24 @@ impl WebGLState {
         desynchronized: bool,
         xr_compatible: bool,
         is_canvas: bool,
+        gl_legacy: bool,
     ) -> Self {
         context.make_current();
         Self {
             context,
             attributes: Rc::new(RefCell::new(ContextAttributes::new(
-                alpha, antialias, depth, fail_if_major_performance_caveat,
-                power_preference, premultiplied_alpha,
-                preserve_drawing_buffer, stencil, desynchronized, xr_compatible, is_canvas,
+                alpha,
+                antialias,
+                depth,
+                fail_if_major_performance_caveat,
+                power_preference,
+                premultiplied_alpha,
+                preserve_drawing_buffer,
+                stencil,
+                desynchronized,
+                xr_compatible,
+                is_canvas,
+                gl_legacy,
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
@@ -335,7 +361,8 @@ impl WebGLState {
     }
 
     pub fn set_premultiplied_alpha(&mut self, premultiply: bool) {
-        self.get_attributes_mut().set_premultiplied_alpha(premultiply);
+        self.get_attributes_mut()
+            .set_premultiplied_alpha(premultiply);
     }
 
     pub fn set_unpack_colorspace_conversion_webgl(&mut self, color_space: i32) {
@@ -454,20 +481,20 @@ impl Default for WebGLState {
     fn default() -> Self {
         Self {
             context: Default::default(),
-            attributes: Rc::new(RefCell::new(
-                ContextAttributes::new(
-                    true, true,
-                    true,
-                    false,
-                    PowerPreference::Default,
-                    true,
-                    false,
-                    false,
-                    false,
-                    false,
-                    false,
-                )
-            )),
+            attributes: Rc::new(RefCell::new(ContextAttributes::new(
+                true,
+                true,
+                true,
+                false,
+                PowerPreference::Default,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+            ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version: WebGLVersion::NONE,
                 clear_stencil: 0,
@@ -1054,7 +1081,7 @@ impl WEBGL_compressed_texture_atc {
             compressed_rgb_atc_webgl: gl_bindings::ATC_RGB_AMD,
             compressed_rgba_atc_explicit_alpha_webgl: gl_bindings::ATC_RGBA_EXPLICIT_ALPHA_AMD,
             compressed_rgba_atc_interpolated_alpha_webgl:
-            gl_bindings::ATC_RGBA_INTERPOLATED_ALPHA_AMD,
+                gl_bindings::ATC_RGBA_INTERPOLATED_ALPHA_AMD,
         }
     }
 }
@@ -1211,7 +1238,9 @@ pub struct WEBGL_lose_context {
 
 impl WEBGL_lose_context {
     pub fn new(state: &WebGLState) -> Self {
-        Self { context: state.context.as_raw() }
+        Self {
+            context: state.context.as_raw(),
+        }
     }
     pub fn lose_context(&self) {
         self.context.remove_if_current();

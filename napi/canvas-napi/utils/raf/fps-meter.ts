@@ -1,4 +1,5 @@
 import '@nativescript/macos-node-api';
+
 class FrameHandlerImpl extends NSObject {
 	_owner: WeakRef<FPSCallback> | undefined;
 

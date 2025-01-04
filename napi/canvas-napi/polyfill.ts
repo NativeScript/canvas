@@ -1,8 +1,10 @@
 import '@nativescript/macos-node-api';
-import { requestAnimationFrame, cancelAnimationFrame } from './utils/raf';
+import { cancelAnimationFrame, requestAnimationFrame } from './utils/raf';
 import { Event } from '@nativescript/foundation/dom/dom-utils';
 
-import { GPU, GPUDevice, GPUAdapter, GPUTextureUsage, GPUBufferUsage, CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, createImageBitmap, Path2D } from './js-bindings.js';
+import { CanvasRenderingContext2D, createImageBitmap, GPU, GPUAdapter, GPUBufferUsage, GPUDevice, GPUTextureUsage, ImageAsset, Path2D, WebGL2RenderingContext, WebGLRenderingContext } from './js-bindings.js';
+import { ViewBase } from '@nativescript/foundation/views/view/view-base';
+import { view } from '@nativescript/foundation/views/decorators/view';
 
 function fixup_shader_code(code: string) {
 	let ret = `${code}`;
@@ -46,27 +48,43 @@ export class ProgressEvent extends Event {
 	}
 }
 
-function install2DPolyfills() {
+function install2DPolyfills(window: any) {
 	// @ts-ignore
-	globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+	globalThis.CanvasRenderingContext2D = window.CanvasRenderingContext2D = CanvasRenderingContext2D;
 	// @ts-ignore
-	globalThis.Path2D = Path2D;
+	globalThis.Path2D = window.Path2D = Path2D;
 }
 
-function installWebGLPolyfills() {
+function installWebGLPolyfills(window: any) {
 	// @ts-ignore
-	globalThis.WebGLRenderingContext = WebGLRenderingContext;
+	globalThis.WebGLRenderingContext = window.WebGLRenderingContext = WebGLRenderingContext;
 }
 
-function installWebGL2Polyfills() {
+function installWebGL2Polyfills(window: any) {
 	// @ts-ignore
-	globalThis.WebGL2RenderingContext = WebGL2RenderingContext;
+	globalThis.WebGL2RenderingContext = window.WebGL2RenderingContext = WebGL2RenderingContext;
 }
+
+// @ts-ignore
+WebGLRenderingContext.prototype.__shaderSource = WebGLRenderingContext.prototype.shaderSource;
+
+WebGLRenderingContext.prototype.shaderSource = function (shader, source) {
+	// @ts-ignore
+	this.__shaderSource(shader, source.replace(/precision\s+\w+\s+\w+;\s*/g, ''));
+};
+
+// @ts-ignore
+WebGL2RenderingContext.prototype.__shaderSource = WebGL2RenderingContext.prototype.shaderSource;
+
+WebGL2RenderingContext.prototype.shaderSource = function (shader, source) {
+	// @ts-ignore
+	this.__shaderSource(shader, source.replace(/precision\s+\w+\s+\w+;\s*/g, ''));
+};
 
 // @ts-ignore
 GPUDevice.prototype.__createShaderModule = GPUDevice.prototype.createShaderModule;
 
-function installWebGPUPolyfills() {
+function installWebGPUPolyfills(window: any) {
 	// @ts-ignore
 	globalThis.GPUTextureUsage = GPUTextureUsage;
 	// @ts-ignore
@@ -84,8 +102,269 @@ function installWebGPUPolyfills() {
 	};
 }
 
+type ScreenOrientationType = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary';
+
+class ScreenOrientation {
+	angle: number;
+	type: ScreenOrientationType;
+
+	constructor(angle: number, type: ScreenOrientationType) {
+		this.angle = angle;
+		this.type = type;
+	}
+}
+
+class Screen {
+	get orientation() {
+		const { width, height } = NSScreen.mainScreen.frame.size;
+		if (width > height) {
+			return new ScreenOrientation(0, 'landscape-primary');
+		}
+		return new ScreenOrientation(0, 'portrait-primary');
+	}
+}
+
+const _navigator = navigator;
+
+class Navigator {
+	get appCodeName() {
+		return _navigator.appCodeName;
+	}
+
+	appName() {
+		return _navigator.appName;
+	}
+
+	product = 'NativeScript';
+	_userAgent = '';
+	get userAgent() {
+		if (this._userAgent === '') {
+			const processInfo = NSProcessInfo.processInfo;
+			const version = processInfo.operatingSystemVersion;
+			const osVersion = `Mac OS X ${version.majorVersion}.${version.minorVersion}.${version.patchVersion}`;
+			//@ts-ignore
+			this._userAgent = `Mozilla/5.0 (${_navigator.platform === 'MacIntel' ? 'Macintosh' : _navigator.platform}; ${_navigator.platform.replace('Mac', '')} ${osVersion};) (KHTML, like Gecko) Safari/537.36 NativeScript/` + `${globalThis.__runtimeVersion ?? '0.1.4'}`.replaceAll('"', '');
+		}
+		return this._userAgent;
+	}
+
+	get vendor() {
+		return _navigator.vendor;
+	}
+
+	get vendorSub() {
+		return _navigator.vendorSub;
+	}
+
+	_appVersion = '';
+
+	get appVersion() {
+		if (this._appVersion === '') {
+			const processInfo = NSProcessInfo.processInfo;
+			const version = processInfo.operatingSystemVersion;
+			const osVersion = `Mac OS X ${version.majorVersion}.${version.minorVersion}.${version.patchVersion}`;
+			// @ts-ignore
+			this._appVersion = `5.0 (${_navigator.platform === 'MacIntel' ? 'Macintosh' : _navigator.platform}; ${_navigator.platform.replace('Mac', '')} ${osVersion};) (KHTML, like Gecko) Safari/537.36 NativeScript/` + `${globalThis.__runtimeVersion ?? '0.1.4'}`.replaceAll('"', '');
+		}
+		return this._appVersion;
+	}
+
+	get maxTouchPoints() {
+		return _navigator.maxTouchPoints;
+	}
+
+	standalone = true;
+
+	language() {
+		return _navigator.language;
+	}
+
+	private _gpu = GPU.getInstance();
+	get gpu() {
+		return this._gpu;
+	}
+
+	get platform() {
+		return _navigator.platform;
+	}
+}
+
+@view({
+	name: 'HTMLImageElement',
+	tagName: 'img',
+})
+class HTMLImageElement extends ViewBase {
+	_image: ImageAsset;
+	complete = false;
+	_onload: any;
+	_onerror: any;
+
+	constructor() {
+		super();
+		this._image = new ImageAsset();
+	}
+
+	get naturalWidth() {
+		return this.width;
+	}
+
+	get naturalHeight() {
+		return this.height;
+	}
+
+	get width() {
+		return this._image.width;
+	}
+
+	get height() {
+		return this._image.height;
+	}
+
+	get onload() {
+		return this._onload;
+	}
+
+	set onload(value) {
+		this._onload = value;
+	}
+
+	get onerror() {
+		return this._onerror;
+	}
+
+	set onerror(value) {
+		this._onerror = value;
+	}
+
+	_src = '';
+	get src() {
+		return this._src;
+	}
+
+	set src(value: string) {
+		this._src = value;
+		if (typeof value === 'string') {
+			if (value.startsWith('data:')) {
+				this._image
+					.fromBase64(value.split('base64,')[1])
+					.then(() => {
+						this.complete = true;
+						this.dispatchEvent(new Event('load'));
+						this._onload?.();
+					})
+					.catch(() => {
+						this.complete = false;
+						this.dispatchEvent(new Event('error'));
+						this._onerror?.();
+					});
+				return;
+			} else if (value.startsWith('http')) {
+				this._image
+					.fromUrl(value)
+					.then(() => {
+						this.complete = true;
+						this.dispatchEvent(new Event('load'));
+						this._onload?.();
+					})
+					.catch(() => {
+						this.complete = false;
+						this.dispatchEvent(new Event('error'));
+						this._onerror?.();
+					});
+				return;
+			}
+
+			this._image
+				.fromFile(value)
+				.then(() => {
+					this.complete = true;
+					this.dispatchEvent(new Event('load'));
+					this._onload?.();
+				})
+				.catch((e) => {
+					this.complete = false;
+					this.dispatchEvent(new Event('error'));
+					this._onerror?.();
+				});
+		}
+	}
+}
+
+HTMLImageElement.register();
+
+@view({
+	name: 'HTMLVideoElement',
+	tagName: 'video',
+})
+class HTMLVideoElement extends ViewBase {
+	public controls: boolean = true;
+	public loop: boolean = false;
+	public autoplay: boolean = false;
+	public playsinline: boolean = false;
+	public src: string | undefined;
+	public currentTime: number = 0;
+	public readonly duration: number = 0;
+	public muted: boolean = false;
+
+	canPlayType(type: string): '' | 'probably' | 'maybe' {
+		switch (type) {
+			case 'video/mp4':
+			case 'video/ogg':
+				return 'probably';
+			default:
+				return '';
+		}
+	}
+}
+
+HTMLVideoElement.register();
+
+@view({
+	name: 'SVGRectElement',
+	tagName: 'rect',
+})
+class SVGRectElement extends ViewBase {
+	getBoundingClientRect() {
+		const layout = this.yogaNode.getComputedLayout();
+		return new DOMRect(layout.left, layout.top, layout.width, layout.height) as never;
+	}
+}
+
+SVGRectElement.register();
+
 function installPolyfills(window: any) {
+	// NSEvent.addLocalMonitorForEventsMatchingMaskHandler(NSEventMask.KeyDown, (event) => {
+	// 	console.log('event');
+	// });
+	//@ts-ignore
+	/*
+	document.__addEventListener = document.addEventListener;
+	document.addEventListener = function(eventName, callback) {
+		//@ts-ignore
+		this.__addEventListener(eventName, callback);
+	};
+	*/
 	globalThis.addEventListener = window.addEventListener = () => {};
+	globalThis.removeEventListener = window.removeEventListener = () => {};
+	if (!('console' in window)) {
+		window.console = globalThis.console;
+	}
+	window.setTimeout = globalThis.setTimeout;
+	window.clearTimeout = globalThis.clearTimeout;
+	window.setInterval = globalThis.setInterval;
+	window.clearInterval = globalThis.clearInterval;
+	window.setImmediate = globalThis.setImmediate;
+	window.clearImmediate = globalThis.clearImmediate;
+	window.navigator = new Navigator() as never;
+	Object.defineProperty(globalThis, 'navigator', {
+		value: window.navigator,
+		writable: true,
+	});
+
+	globalThis.Image = window.Image = HTMLImageElement as never;
+
+	window.screen = new Screen();
+
 	Object.defineProperty(window, 'devicePixelRatio', {
 		value: NSScreen.mainScreen.backingScaleFactor,
 		writable: true,
@@ -98,6 +377,17 @@ function installPolyfills(window: any) {
 		});
 	}
 
+	// todo remove after getComputedStyle
+	if (typeof window.getComputedStyle === 'undefined') {
+		window.getComputedStyle = function () {};
+	}
+
+	// @ts-ignore
+	if (typeof document.defaultView.getComputedStyle === 'undefined') {
+		// @ts-ignore
+		document.defaultView.getComputedStyle = function () {};
+	}
+
 	//@ts-ignore
 	globalThis.ProgressEvent = ProgressEvent;
 
@@ -106,20 +396,20 @@ function installPolyfills(window: any) {
 	globalThis.cancelAnimationFrame = window.cancelAnimationFrame = cancelAnimationFrame;
 	globalThis.self = window;
 	// @ts-ignore
-	globalThis.createImageBitmap = function (source, sxOroptions, sy, sw, sh, options) {
+	globalThis.createImageBitmap = function (source, sxOrOptions, sy, sw, sh, options) {
 		if (source instanceof Blob) {
 			return source.arrayBuffer().then((buffer) => {
-				return createImageBitmap(new Uint8Array(buffer), sxOroptions, sy, sw, sh, options as never);
+				return createImageBitmap(new Uint8Array(buffer), sxOrOptions, sy, sw, sh, options as never);
 			});
 		} else {
-			return createImageBitmap(source as never, sxOroptions, sy, sw, sh, options as never);
+			return createImageBitmap(source as never, sxOrOptions, sy, sw, sh, options as never);
 		}
 	};
 
-	install2DPolyfills();
-	installWebGLPolyfills();
-	installWebGL2Polyfills();
-	installWebGPUPolyfills();
+	install2DPolyfills(window);
+	installWebGLPolyfills(window);
+	installWebGL2Polyfills(window);
+	installWebGPUPolyfills(window);
 }
 
 installPolyfills(globalThis.window);

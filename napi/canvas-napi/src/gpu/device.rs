@@ -4,15 +4,15 @@ use crate::gpu::buffer::g_p_u_buffer;
 use crate::gpu::command_encoder::g_p_u_command_encoder;
 use crate::gpu::compute_pipeline::g_p_u_compute_pipeline;
 use crate::gpu::enums::{
-  GPUAddressMode, GPUBufferBindingType, GPUCompareFunction, GPUErrorFilter, GPUFilterMode,
-  GPUSamplerBindingType, GPUStorageTextureAccess, GPUTextureDimension, GPUTextureSampleType,
-  GPUTextureViewDimension,
+    GPUAddressMode, GPUBufferBindingType, GPUCompareFunction, GPUErrorFilter, GPUFilterMode,
+    GPUSamplerBindingType, GPUStorageTextureAccess, GPUTextureDimension, GPUTextureSampleType,
+    GPUTextureViewDimension,
 };
 use crate::gpu::objects::{
-  GPUBindGroupDescriptor, GPUBindGroupLayoutDescriptor, GPUBufferDescriptor,
-  GPUCommandEncoderDescriptor, GPUComputePipelineDescriptor, GPUPipelineLayoutDescriptor,
-  GPUQuerySetDescriptor, GPURenderBundleEncoderDescriptor, GPURenderPipelineDescriptor,
-  GPUSamplerDescriptor, GPUShaderModuleDescriptor, GPUSupportedLimits, GPUTextureDescriptor,
+    GPUBindGroupDescriptor, GPUBindGroupLayoutDescriptor, GPUBufferDescriptor,
+    GPUCommandEncoderDescriptor, GPUComputePipelineDescriptor, GPUPipelineLayoutDescriptor,
+    GPUQuerySetDescriptor, GPURenderBundleEncoderDescriptor, GPURenderPipelineDescriptor,
+    GPUSamplerDescriptor, GPUShaderModuleDescriptor, GPUSupportedLimits, GPUTextureDescriptor,
 };
 use crate::gpu::pipeline_layout::g_p_u_pipeline_layout;
 use crate::gpu::query_set::g_p_u_query_set;
@@ -24,20 +24,21 @@ use crate::gpu::shader_module::g_p_u_shader_module;
 use crate::gpu::texture::g_p_u_texture;
 use crate::gpu::texture_view::g_p_u_texture_view;
 use canvas_c::webgpu::enums::{
-  CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry,
-  CanvasBindingType, CanvasBufferBinding, CanvasBufferBindingLayout, CanvasGPUTextureFormat,
-  CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasSamplerBindingLayout,
-  CanvasStencilFaceState, CanvasStorageTextureBindingLayout, CanvasTextureBindingLayout,
-  CanvasVertexStepMode,
+    CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry,
+    CanvasBindingType, CanvasBufferBinding, CanvasBufferBindingLayout, CanvasGPUTextureFormat,
+    CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasSamplerBindingLayout,
+    CanvasStencilFaceState, CanvasStorageTextureBindingLayout, CanvasTextureBindingLayout,
+    CanvasVertexStepMode,
 };
 use canvas_c::webgpu::gpu_device::{
-  CanvasConstants, CanvasCreateRenderBundleEncoderDescriptor, CanvasCreateSamplerDescriptor,
-  CanvasCreateTextureDescriptor, CanvasDepthStencilState, CanvasGPUAutoLayoutMode,
-  CanvasGPUPipelineLayoutOrGPUAutoLayoutMode, CanvasProgrammableStage,
+    CanvasConstants, CanvasCreateRenderBundleEncoderDescriptor, CanvasCreateSamplerDescriptor,
+    CanvasCreateTextureDescriptor, CanvasDepthStencilState, CanvasGPUAutoLayoutMode,
+    CanvasGPUPipelineLayoutOrGPUAutoLayoutMode, CanvasProgrammableStage,
 };
 use canvas_c::webgpu::gpu_supported_limits::CanvasGPUSupportedLimits;
 use canvas_c::webgpu::structs::{CanvasMultisampleState, CanvasVertexAttribute};
 use napi::bindgen_prelude::{FromNapiRef, ObjectFinalize, Unknown};
+use napi::threadsafe_function::{ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::{CStr, CString};
@@ -56,6 +57,27 @@ struct CanvasGPUVertexBufferLayout {
   pub array_stride: u64,
   pub attributes: Vec<CanvasVertexAttribute>,
   pub step_mode: Option<CanvasVertexStepMode>,
+}
+
+extern "C" fn lost_callback(reason: i32, message: *mut c_char, data: *mut c_void) {
+  if !data.is_null() {
+    let callback = unsafe {
+      *Box::from_raw(
+        data as *mut ThreadsafeFunction<(i32, Option<String>), ErrorStrategy::CalleeHandled>,
+      )
+    };
+
+    let ret = if message.is_null() {
+      let message = unsafe { CString::from_raw(message) };
+      let message = message.to_string_lossy();
+      let message = message.into_owned();
+      (reason, Some(message))
+    } else {
+      (reason, None)
+    };
+
+    let _ = callback.call(Ok(ret), ThreadsafeFunctionCallMode::Blocking);
+  }
 }
 
 #[napi]
@@ -83,11 +105,35 @@ impl g_p_u_device {
     g_p_u_queue { queue }
   }
 
-  // #[napi(getter)]
-  pub fn get_lost(&self) {
-    // canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_set_lost_callback(
-    //   Arc::as_ptr(&self.device),
-    // )
+  #[napi]
+  pub fn set_lost_callback(&self, callback: JsFunction) -> napi::Result<()> {
+    let func: ThreadsafeFunction<(i32, Option<String>), ErrorStrategy::CalleeHandled> = callback
+      .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<(i32, Option<String>)>| {
+        let mut ret = ctx.env.create_object()?;
+        match ctx.value.1 {
+          Some(message) => {
+            ret.set_named_property("message", ctx.env.create_string_from_std(message))?;
+            ret.set_named_property("reason", ctx.env.create_int32(ctx.value.0))?;
+          }
+          _ => {
+            ret.set_named_property("message", ctx.env.create_string(""))?;
+          }
+        }
+
+        ctx
+          .env
+          .get_undefined()
+          .map(|value| vec![ret.into_unknown()])
+      })?;
+    let data = Box::into_raw(Box::new(func));
+    unsafe {
+      canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_set_lost_callback(
+        Arc::as_ptr(&self.device),
+        Some(lost_callback),
+        data as *mut c_void,
+      );
+    }
+    Ok(())
   }
 
   #[napi(getter)]
@@ -243,9 +289,9 @@ impl g_p_u_device {
       .iter()
       .filter(|v| {
         if v.buffer.is_some()
-            || v.texture.is_some()
-            || v.storage_texture.is_some()
-            || v.sampler.is_some()
+          || v.texture.is_some()
+          || v.storage_texture.is_some()
+          || v.sampler.is_some()
         {
           return true;
         }

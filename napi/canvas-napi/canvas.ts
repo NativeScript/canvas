@@ -3,7 +3,7 @@ import { type YogaNodeLayout } from '@nativescript/foundation/layout/index.js';
 import { view } from '@nativescript/foundation/views/decorators/view.js';
 import { ViewBase } from '@nativescript/foundation/views/view/view-base.js';
 
-import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, GPU, GPUCanvasContext, GPUDevice } from './js-bindings.js';
+import { CanvasRenderingContext2D, GPU, GPUCanvasContext, GPUDevice, WebGL2RenderingContext, WebGLRenderingContext } from './js-bindings.js';
 
 objc.import('OpenGL');
 objc.import('Metal');
@@ -29,8 +29,11 @@ function renderContexts() {
 				(canvas.__native__context as WebGL2RenderingContext | undefined)?.render?.();
 				break;
 			case ContextType.WebGPU:
-				if ((canvas.__native__context as never as GPUCanvasContext).hasCurrentTexture) {
-					(canvas.__native__context as never as GPUCanvasContext)?.presentSurface?.();
+				{
+					const ctx = canvas.__native__context as never as GPUCanvasContext;
+					if (ctx?.hasCurrentTexture && !ctx?.hasSurfacePresented) {
+						(canvas.__native__context as never as GPUCanvasContext)?.presentSurface?.();
+					}
 				}
 				break;
 			case ContextType.Canvas:
@@ -74,8 +77,35 @@ NSNotificationCenter.defaultCenter.addObserverForNameObjectQueueUsingBlock(NSApp
 	}
 });
 
-// @ts-ignore
-GPUDevice.prototype.lost = new Promise((resolve, reject) => {});
+export class GPUError extends Error {}
+
+const GPUErrorPrototype = GPUError.prototype;
+
+export class GPUValidationError extends GPUError {}
+
+export class GPUOutOfMemoryError extends GPUError {}
+
+export class GPUInternalError extends GPUError {}
+
+export class GPUDeviceLostInfo extends GPUError {
+	reason: any;
+}
+
+Object.defineProperty(GPUDevice.prototype, 'lost', {
+	get: function () {
+		if (!this.__lost) {
+			this.__lost = new Promise((resolve, reject) => {
+				// @ts-ignore
+				(this as GPUDevice).setLostCallback((value) => {
+					const lost = new GPUDeviceLostInfo(value.message);
+					lost.reason = value.reason;
+					resolve(lost);
+				});
+			});
+		}
+		return this.__lost;
+	},
+});
 
 export class DOMRectReadOnly {
 	readonly bottom: number;
@@ -105,10 +135,21 @@ export class DOMRect extends DOMRectReadOnly {
 	}
 }
 
+if (typeof globalThis.DOMRect === 'undefined') {
+	// @ts-ignore
+	globalThis.global = globalThis.window.DOMRect = DOMRect;
+}
+
 class NSCMTLView extends NSView {
 	static {
 		NativeClass(this);
 	}
+
+	static ObjCExposedMethods = {
+		present: { returns: interop.types.void, params: [] },
+		isFlipped: { returns: interop.types.bool, params: [] },
+		sampleCount: { returns: interop.types.uint64, params: [] },
+	};
 
 	_queue?: MTLCommandQueue;
 	_canvas: WeakRef<Canvas> | null = null;
@@ -164,10 +205,9 @@ class NSCMTLView extends NSView {
 		}
 	}
 
-	static ObjCExposedMethods = {
-		present: { returns: interop.types.void, params: [] },
-		isFlipped: { returns: interop.types.bool, params: [] },
-	};
+	sampleCount() {
+		return 1;
+	}
 }
 
 class NSCGLView extends NSOpenGLView {
@@ -389,7 +429,7 @@ const buildMouseEvent = (
 	pageX: number;
 	pageY: number;
 } => {
-	const location = view.convertPointToView(event.locationInWindow, view as never);
+	const location = view.convertPointToView(event.locationInWindow, null);
 	const clientX = location.x;
 	const clientY = location.y;
 	const screenX = location.x;
@@ -482,8 +522,8 @@ export class NSCCanvas extends NSView {
 	}
 
 	initWithFrame(frame: CGRect) {
-		const thiz = super.initWithFrame(frame);
-		thiz.wantsLayer = true;
+		super.initWithFrame(frame);
+		this.wantsLayer = true;
 		const scale = NSScreen.mainScreen.backingScaleFactor;
 
 		const unscaledWidth = Math.floor(300 / scale);
@@ -502,7 +542,7 @@ export class NSCCanvas extends NSView {
 
 		//	this.addGestureRecognizer(this._handler.gestureRecognizer);
 
-		return thiz;
+		return this;
 	}
 
 	initializeView() {
@@ -585,11 +625,15 @@ export class NSCCanvas extends NSView {
 		if (!canvas) {
 			return;
 		}
-		if (!canvas._pointerCapture.get(1)) {
-			return;
-		}
 		const eventData = buildMouseEvent(this as never, event);
 
+		if (!canvas._pointerCapture.get(1)) {
+			const ret = new MouseEvent('mousemove', eventData);
+
+			canvas.dispatchEvent(ret);
+
+			return;
+		}
 		const pointerDown = new PointerEvent('pointermove', {
 			pointerId: 1,
 			pointerType: 'mouse',
@@ -925,10 +969,8 @@ export class NSCCanvas extends NSView {
 	}
 
 	set surfaceWidth(value: number) {
-		if (typeof value === 'number') {
-			this._surfaceWidth = value;
-			this.forceLayout(value, this.surfaceHeight);
-		}
+		this._surfaceWidth = value;
+		this.forceLayout(value, this.surfaceHeight);
 	}
 
 	_surfaceHeight = 150;
@@ -937,10 +979,8 @@ export class NSCCanvas extends NSView {
 	}
 
 	set surfaceHeight(value) {
-		if (typeof value === 'number') {
-			this._surfaceHeight = value;
-			this.forceLayout(this.surfaceWidth, value);
-		}
+		this._surfaceHeight = value;
+		this.forceLayout(this.surfaceWidth, value);
 	}
 }
 
@@ -1128,7 +1168,7 @@ export class Canvas extends ViewBase {
 		this._ignoreTouchEvents = value;
 	}
 
-	static forceGL = true;
+	static forceGL = false;
 
 	get ios() {
 		return this._canvas;
@@ -1143,6 +1183,9 @@ export class Canvas extends ViewBase {
 	}
 
 	set width(value) {
+		if (value === undefined || value === null) {
+			return;
+		}
 		this._canvas.surfaceWidth = value;
 	}
 
@@ -1155,6 +1198,9 @@ export class Canvas extends ViewBase {
 	}
 
 	set height(value) {
+		if (value === undefined || value === null) {
+			return;
+		}
 		this._canvas.surfaceHeight = value;
 	}
 
@@ -1206,7 +1252,7 @@ export class Canvas extends ViewBase {
 	 * @param {number} encoderOptions
 	 * @returns
 	 */
-	toDataURL(type: string, encoderOptions: number) {
+	toDataURL(type: string = 'image/png', encoderOptions: number = 92) {
 		if (this.width === 0 || this.height === 0) {
 			return 'data:,';
 		}
@@ -1328,8 +1374,7 @@ export class Canvas extends ViewBase {
 
 		if (this._gpuContext) {
 			(<any>this._gpuContext).canvas = this;
-			// todo
-			//	canvasRenderMap.add(new WeakRef<Canvas>(this));
+			canvasRenderMap.add(new WeakRef<Canvas>(this));
 		}
 
 		return this._gpuContext;

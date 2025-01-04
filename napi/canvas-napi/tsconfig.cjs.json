@@ -17,6 +17,6 @@
 		"skipDefaultLibCheck": true
 	},
 	"extends": "@tsconfig/node22/tsconfig.json",
-	"include": ["canvas.ts", "polyfill.ts", "utils/raf/*.ts", "utils/*.ts", "references.d.ts"],
+	"include": ["index.ts", "canvas.ts", "polyfill.ts", "utils/raf/*.ts", "utils/*.ts", "references.d.ts"],
 	"exclude": ["node_modules", "examples"]
 }

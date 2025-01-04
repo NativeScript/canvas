@@ -18,8 +18,6 @@ export default function Game({ canvas, width = null, height = null, renderer = 2
 		canvas,
 	};
 
-	console.dir(Phaser);
-
 	const game = new Phaser.Game(config);
 
 	const render = () => {

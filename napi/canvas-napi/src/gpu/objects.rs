@@ -1,6 +1,6 @@
 use crate::c2d::image_data::ImageData;
 use crate::c2d::CanvasRenderingContext2D;
-use crate::gl::web_g_l_rendering_context;
+use crate::gl::{web_g_l_rendering_context, HTMLCanvasSource, HTMLImageSource};
 use crate::gl2::web_g_l_2_rendering_context;
 use crate::gpu::bind_group_layout::g_p_u_bind_group_layout;
 use crate::gpu::buffer::g_p_u_buffer;
@@ -30,7 +30,7 @@ use canvas_c::webgpu::structs::{
   CanvasBlendFactor, CanvasBlendOperation, CanvasBlendState, CanvasColor, CanvasColorTargetState,
   CanvasExtent3d, CanvasOrigin3d,
 };
-use napi::bindgen_prelude::{ClassInstance, Either6, Either7};
+use napi::bindgen_prelude::{ClassInstance, Either6, Either7, Either9};
 use napi::{Either, JsObject};
 use napi_derive::napi;
 use std::collections::HashMap;
@@ -108,14 +108,16 @@ pub struct GPUImageCopyTextureTagged {
 pub struct GPUImageCopyExternalImage {
   pub flip_y: Option<bool>,
   pub origin: Option<Either<Vec<u32>, GPUOrigin2DDict>>,
-  pub source: Either7<
+  pub source: Either9<
     ClassInstance<ImageData>,
     ClassInstance<ImageAsset>,
     ClassInstance<CanvasRenderingContext2D>,
     ClassInstance<web_g_l_rendering_context>,
     ClassInstance<web_g_l_2_rendering_context>,
     ClassInstance<g_p_u_canvas_context>,
-    ClassInstance<ImageBitmap>
+    ClassInstance<ImageBitmap>,
+    HTMLImageSource,
+    HTMLCanvasSource
   >,
 }
 

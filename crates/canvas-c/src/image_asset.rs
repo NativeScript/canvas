@@ -4,7 +4,7 @@ use std::io::Read;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
 
 unsafe impl Send for ImageAsset {}

@@ -1,9 +1,20 @@
 import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
+import copy from 'rollup-plugin-copy';
 const config = [
 	{
 		input: 'index.ts',
-		plugins: [typescript(), commonjs()],
+		plugins: [
+			typescript(),
+			commonjs(),
+			copy({
+				targets: [
+					{ src: 'package.json', dest: 'dist' },
+					{ src: 'js-bindings.js', dest: 'dist' },
+					{ src: 'js-bindings.d.ts', dest: 'dist' },
+				],
+			}),
+		],
 		output: [
 			{
 				format: 'cjs',
@@ -14,7 +25,17 @@ const config = [
 	},
 	{
 		input: 'index.ts',
-		plugins: [typescript(), commonjs()],
+		plugins: [
+			typescript(),
+			commonjs(),
+			copy({
+				targets: [
+					{ src: 'package.json', dest: 'dist' },
+					{ src: 'js-bindings.js', dest: 'dist' },
+					{ src: 'js-bindings.d.ts', dest: 'dist' },
+				],
+			}),
+		],
 		output: [
 			{
 				format: 'es',

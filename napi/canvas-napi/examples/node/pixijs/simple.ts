@@ -7,28 +7,22 @@ export async function run(canvas) {
 	canvas.width = canvas.clientWidth * window.devicePixelRatio;
 	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-	try {
-		await app.init({
-			canvas,
-			preference: 'webgpu',
-			width: canvas.width,
-			height: canvas.height,
-		});
-		console.log('done');
-	} catch (e) {
-		console.log(e);
-	}
-	/*
-	console.log(app);
+	await app.init({
+		canvas,
+		// preference: 'webgpu',
+		width: canvas.width,
+		height: canvas.height,
+		background: '#1099bb',
+	});
 
 	// grab context to present
-//	const ctx = canvas.getContext('webgpu');
+	// const ctx = canvas.getContext('webgpu');
 
-	app.ticker.add((delta) => {
-		//if (ctx) {
-		//	ctx.presentSurface();
-		//}
-	});
+	// app.ticker.add((delta) => {
+	// 	if (ctx) {
+	// 		ctx.presentSurface();
+	// 	}
+	// });
 
 	const graphics = new PIXI.Graphics();
 
@@ -82,7 +76,7 @@ export async function run(canvas) {
 	graphics.roundRect(50, 440, 100, 100, 16);
 	graphics.fill({
 		color: 0x650a5a,
-		alpha: 0.25
+		alpha: 0.25,
 	});
 	graphics.stroke({ width: 2, color: 0xff00ff });
 
@@ -108,5 +102,50 @@ export async function run(canvas) {
 	graphics.fill(0x3500fa);
 
 	app.stage.addChild(graphics);
-	*/
+}
+
+export async function simplePlane(canvas) {
+	canvas.width = canvas.clientWidth * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
+	const app = new PIXI.Application();
+
+	await app.init({
+		background: '#1099bb',
+		canvas,
+		width: canvas.width,
+		height: canvas.height,
+		// preference: 'webgpu',
+	});
+
+	//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
+	const texture = await PIXI.Assets.load('https://pixijs.com/assets/bg_grass.jpg');
+
+	// const ctx = canvas.getContext('webgpu');
+	//
+	// app.ticker.add((delta) => {
+	// 	if (ctx) {
+	// 		ctx.presentSurface();
+	// 	}
+	// });
+
+	const plane = new PIXI.MeshPlane({ texture, verticesX: 10, verticesY: 10 });
+	plane.x = 100;
+	plane.y = 100;
+
+	app.stage.addChild(plane);
+
+	// Get the buffer for vertice positions.
+	const { buffer } = plane.geometry.getAttribute('aPosition');
+
+	// Listen for animate update
+	let timer = 0;
+
+	app.ticker.add(() => {
+		// Randomize the vertice positions a bit to create movement.
+		for (let i = 0; i < buffer.data.length; i++) {
+			buffer.data[i] += Math.sin(timer / 10 + i) * 0.5;
+		}
+		buffer.update();
+		timer++;
+	});
 }

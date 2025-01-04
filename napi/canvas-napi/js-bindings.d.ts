@@ -446,7 +446,7 @@ export interface GPUImageCopyTextureTagged {
 export interface GPUImageCopyExternalImage {
 	flipY?: boolean;
 	origin?: Array<number> | GPUOrigin2DDict;
-	source: ImageData | ImageAsset | CanvasRenderingContext2D | web_g_l_rendering_context | web_g_l_2_rendering_context | GPUCanvasContext | ImageBitmap;
+	source: ImageData | ImageAsset | CanvasRenderingContext2D | web_g_l_rendering_context | web_g_l_2_rendering_context | GPUCanvasContext | ImageBitmap | HTMLImageSource | HTMLCanvasSource;
 }
 export interface GPUTextureDescriptor {
 	label?: string;
@@ -751,6 +751,12 @@ export interface ContextAttributes {
 	desynchronized: boolean;
 	xrCompatible: boolean;
 }
+export interface HtmlImageSource {
+	_image: ImageAsset;
+}
+export interface HtmlCanvasSource {
+	__native__context: CanvasRenderingContext2D | web_g_l_rendering_context | web_g_l_2_rendering_context | GPUCanvasContext;
+}
 export const enum ImageBitmapOptionsImageOrientation {
 	fromImage = 'from-image',
 	flipY = 'flipY',
@@ -834,6 +840,7 @@ export declare class GPUCanvasContext {
 	unconfigure(): void;
 	getCurrentTexture(): g_p_u_texture | null;
 	get hasCurrentTexture(): boolean;
+	get hasSurfacePresented(): boolean;
 	getCapabilities(adapter: GPUAdapter): { usages: number; formats: string[]; alphaModes: string[]; presentModes: string[] };
 	toDataURL(format?: string | undefined | null, encoderOptions?: number | undefined | null): string;
 }
@@ -841,6 +848,7 @@ export type g_p_u_device = GPUDevice;
 export declare class GPUDevice {
 	get label(): string;
 	get queue(): g_p_u_queue;
+	setLostCallback(callback: (...args: any[]) => any): void;
 	get limits(): GPUSupportedLimits;
 	get features(): unknown;
 	createBindGroup(descriptor: GPUBindGroupDescriptor): GPUBindGroup;
@@ -987,6 +995,15 @@ export declare class GPU {
 	getPreferredCanvasFormat(): string;
 	requestAdapter(options?: GpuRequestAdapterOptions | undefined | null): Promise<GPUAdapter>;
 }
+export declare class CanvasGradient {
+	addColorStop(offset: number, color: string): void;
+}
+export declare class ImageData {
+	constructor(widthOrImageData: number | Uint8ClampedArray, height?: number | undefined | null, settingsOrHeight?: object | number | undefined | null);
+	get width(): number;
+	get height(): number;
+	get data(): Uint8Array;
+}
 export declare class Path2D {
 	constructor(data?: Path2D | string | undefined | null);
 	addPath(path: Path2D): void;
@@ -1004,15 +1021,6 @@ export declare class Path2D {
 	toSvg(): string;
 }
 export declare class CanvasPattern {}
-export declare class CanvasGradient {
-	addColorStop(offset: number, color: string): void;
-}
-export declare class ImageData {
-	constructor(widthOrImageData: number | Uint8ClampedArray, height?: number | undefined | null, settingsOrHeight?: object | number | undefined | null);
-	get width(): number;
-	get height(): number;
-	get data(): Uint8Array;
-}
 export declare class TextMetrics {
 	get width(): number;
 	get actualBoundingBoxLeft(): number;
@@ -1101,7 +1109,7 @@ export declare class CanvasRenderingContext2D {
 	createPattern(image: ImageAsset, repetition?: string | undefined | null): CanvasPattern;
 	createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): CanvasGradient;
 	drawFocusIfNeeded(elementPath: object | Path2D, element?: object | undefined | null): void;
-	drawImage(image: ImageAsset, sx?: number | undefined | null, sy?: number | undefined | null, sWidth?: number | undefined | null, sHeight?: number | undefined | null, dx?: number | undefined | null, dy?: number | undefined | null, dWidth?: number | undefined | null, dHeight?: number | undefined | null): void;
+	drawImage(image: ImageAsset | HTMLImageSource | HTMLCanvasSource, sx?: number | undefined | null, sy?: number | undefined | null, sWidth?: number | undefined | null, sHeight?: number | undefined | null, dx?: number | undefined | null, dy?: number | undefined | null, dWidth?: number | undefined | null, dHeight?: number | undefined | null): void;
 	ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, anticlockwise?: boolean | undefined | null): void;
 	fill(path?: Path2D | undefined | null, rule?: string | undefined | null): void;
 	fillRect(x: number, y: number, width: number, height: number): void;
@@ -1139,9 +1147,14 @@ export declare class ImageAsset {
 	get width(): number;
 	get height(): number;
 	get error(): string;
-	fromUrlSync(url: string): boolean;
+	fromEncodedBytesSync(value: Uint8Array | Buffer): boolean;
+	fromEncodedBytes(value: Uint8Array | Buffer): Promise<unknown>;
+	fromBytesSync(width: number, height: number, value: Uint8Array | Buffer): boolean;
+	fromBytes(width: number, height: number, value: Uint8Array | Buffer): Promise<unknown>;
+	fromBase64Sync(value: string): boolean;
+	fromBase64(value: string): Promise<unknown>;
 	fromUrl(url: string): Promise<boolean>;
-	loadUrlCallback(url: string, callback: (...args: any[]) => any): void;
+	fromUrlCallback(url: string, callback: (...args: any[]) => any): void;
 	fromFileSync(path: string): boolean;
 	fromFile(path: string): Promise<boolean>;
 }
@@ -1180,7 +1193,11 @@ export declare class WEBGL_compressed_texture_etc {}
 export declare class WEBGL_compressed_texture_etc1 {}
 export declare class WEBGL_compressed_texture_pvrtc {}
 export declare class WEBGL_compressed_texture_s3tc {}
-export declare class WEBGL_lose_context {}
+export type w_e_b_g_l_lose_context = WEBGLLoseContext;
+export declare class WEBGLLoseContext {
+	loseContext(): void;
+	restoreContext(): void;
+}
 export declare class WEBGL_depth_texture {}
 export declare class WEBGL_draw_buffers {}
 export type web_g_l_active_info = WebGLActiveInfo;
@@ -1222,7 +1239,7 @@ export declare class WebGLRenderingContext {
 	blendEquation(mode: number): void;
 	blendFuncSeparate(srcRGB?: number | undefined | null, dstRGB?: number | undefined | null, srcAlpha?: number | undefined | null, dstAlpha?: number | undefined | null): void;
 	blendFunc(sfactor?: number | undefined | null, dfactor?: number | undefined | null): void;
-	bufferData(target: number, sizeOrSrcData?: number | Buffer | Float32Array | undefined | null, usage?: number | undefined | null): void;
+	bufferData(target: number, sizeOrSrcData?: number | Buffer | Float32Array | ArrayBuffer | Uint8Array | undefined | null, usage?: number | undefined | null): void;
 	bufferSubData(target: number, offset: number, srcData: Uint8Array): void;
 	checkFramebufferStatus(target: number): number;
 	clearColor(red: number, green: number, blue: number, alpha: number): void;
@@ -1311,10 +1328,10 @@ export declare class WebGLRenderingContext {
 	stencilMask(mask: number): void;
 	stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void;
 	stencilOp(fail: number, zfail: number, zpass: number): void;
-	texImage2D(target: number, level: number, internalformat: number, widthOrFormat: number, heightOrType: number, borderOrPixels: number | CanvasRenderingContext2D | WebGLRenderingContext | ImageAsset, format?: number | undefined | null, type?: number | undefined | null, pixels?: Buffer | number | undefined | null, offset?: number | undefined | null): void;
+	texImage2D(target: number, level: number, internalformat: number, widthOrFormat: number, heightOrType: number, borderOrPixels: number | CanvasRenderingContext2D | WebGLRenderingContext | web_g_l_2_rendering_context | ImageAsset | HtmlImageSource | HtmlCanvasSource, format?: number | undefined | null, type?: number | undefined | null, pixels?: Buffer | number | undefined | null, offset?: number | undefined | null): void;
 	texParameterf(target: number, pname: number, param: number): void;
 	texParameteri(target: number, pname: number, param: number): void;
-	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, formatOrWidth: number, typeOrHeight: number, pixelsOrFormat: number | ImageBitmap | ImageAsset | CanvasRenderingContext2D | WebGLRenderingContext | web_g_l_2_rendering_context | ImageData, type?: number | undefined | null, pixels?: Uint8Array | Uint16Array | Float32Array | ArrayBuffer | number | undefined | null, offset?: number | undefined | null): void;
+	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, formatOrWidth: number, typeOrHeight: number, pixelsOrFormat: number | ImageBitmap | ImageAsset | CanvasRenderingContext2D | WebGLRenderingContext | web_g_l_2_rendering_context | ImageData | HtmlImageSource | HtmlCanvasSource, type?: number | undefined | null, pixels?: Uint8Array | Uint16Array | Float32Array | ArrayBuffer | number | undefined | null, offset?: number | undefined | null): void;
 	uniform1f(location: WebGLUniformLocation, v0: number): void;
 	uniform1iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform1fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;
@@ -1670,7 +1687,7 @@ export declare class WebGL2RenderingContext {
 	blendEquation(mode: number): void;
 	blendFuncSeparate(srcRGB?: number | undefined | null, dstRGB?: number | undefined | null, srcAlpha?: number | undefined | null, dstAlpha?: number | undefined | null): void;
 	blendFunc(sfactor?: number | undefined | null, dfactor?: number | undefined | null): void;
-	bufferData(target: number, sizeOrSrcData?: number | Buffer | Float32Array | undefined | null, usage?: number | undefined | null): void;
+	bufferData(target: number, sizeOrSrcData?: number | Buffer | Float32Array | ArrayBuffer | Uint8Array | undefined | null, usage?: number | undefined | null): void;
 	bufferSubData(target: number, offset: number, srcData: Uint8Array): void;
 	checkFramebufferStatus(target: number): number;
 	clearColor(red: number, green: number, blue: number, alpha: number): void;
@@ -1759,10 +1776,10 @@ export declare class WebGL2RenderingContext {
 	stencilMask(mask: number): void;
 	stencilOpSeparate(face: number, fail: number, zfail: number, zpass: number): void;
 	stencilOp(fail: number, zfail: number, zpass: number): void;
-	texImage2D(target: number, level: number, internalformat: number, widthOrFormat: number, heightOrType: number, borderOrPixels: number | CanvasRenderingContext2D | WebGLRenderingContext | ImageAsset, format?: number | undefined | null, type?: number | undefined | null, pixels?: Buffer | number | undefined | null, offset?: number | undefined | null): void;
+	texImage2D(target: number, level: number, internalformat: number, widthOrFormat: number, heightOrType: number, borderOrPixels: number | CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | ImageAsset | HtmlImageSource | HtmlCanvasSource, format?: number | undefined | null, type?: number | undefined | null, pixels?: Buffer | number | undefined | null, offset?: number | undefined | null): void;
 	texParameterf(target: number, pname: number, param: number): void;
 	texParameteri(target: number, pname: number, param: number): void;
-	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, formatOrWidth: number, typeOrHeight: number, pixelsOrFormat: number | ImageBitmap | ImageAsset | CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | ImageData, type?: number | undefined | null, pixels?: Uint8Array | Uint16Array | Float32Array | ArrayBuffer | number | undefined | null, offset?: number | undefined | null): void;
+	texSubImage2D(target: number, level: number, xoffset: number, yoffset: number, formatOrWidth: number, typeOrHeight: number, pixelsOrFormat: number | ImageBitmap | ImageAsset | CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | ImageData | HtmlImageSource | HtmlCanvasSource, type?: number | undefined | null, pixels?: Uint8Array | Uint16Array | Float32Array | ArrayBuffer | number | undefined | null, offset?: number | undefined | null): void;
 	uniform1f(location: WebGLUniformLocation, v0: number): void;
 	uniform1iv(location: WebGLUniformLocation, value: Array<number> | Int32Array): void;
 	uniform1fv(location: WebGLUniformLocation, value: Array<number> | Float32Array): void;

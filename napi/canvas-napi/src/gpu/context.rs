@@ -340,6 +340,13 @@ impl g_p_u_canvas_context {
     )
   }
 
+  #[napi(getter)]
+  pub fn get_has_surface_presented(&self) -> bool {
+    canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_has_surface_presented(
+      Arc::as_ptr(&self.context),
+    )
+  }
+
   #[napi(
     ts_return_type = "{usages: number, formats: string[], alphaModes: string[], presentModes: string[]}"
   )]

@@ -15,11 +15,29 @@ pub mod webgl_uniform_location;
 
 use crate::c2d::CanvasRenderingContext2D;
 use crate::gl2::web_g_l_2_rendering_context;
+use crate::gpu::context::g_p_u_canvas_context;
 use crate::image_asset::ImageAsset;
 use crate::image_bitmap::ImageBitmap;
 use crate::{impl_webgl_context, impl_webgl_context_constants};
 use napi::*;
 use napi_derive::napi;
+
+#[napi(object)]
+pub struct HTMLImageSource {
+  #[napi(js_name = "_image")]
+  pub image: ClassInstance<ImageAsset>,
+}
+
+#[napi(object)]
+pub struct HTMLCanvasSource {
+  #[napi(js_name = "__native__context")]
+  pub context: Either4<
+    ClassInstance<CanvasRenderingContext2D>,
+    ClassInstance<web_g_l_rendering_context>,
+    ClassInstance<web_g_l_2_rendering_context>,
+    ClassInstance<g_p_u_canvas_context>,
+  >,
+}
 
 #[napi(custom_finalize)]
 pub struct web_g_l_rendering_context {
@@ -281,7 +299,10 @@ impl web_g_l_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_rendering_context { state: ret, invalidate_state: 0 })
+    Ok(web_g_l_rendering_context {
+      state: ret,
+      invalidate_state: 0,
+    })
   }
 
   #[napi(factory)]
@@ -321,7 +342,10 @@ impl web_g_l_rendering_context {
       return Err(napi::Error::from_reason("Invalid parameter"));
     }
 
-    Ok(web_g_l_rendering_context { state: ret, invalidate_state: 0 })
+    Ok(web_g_l_rendering_context {
+      state: ret,
+      invalidate_state: 0,
+    })
   }
 
   #[napi]

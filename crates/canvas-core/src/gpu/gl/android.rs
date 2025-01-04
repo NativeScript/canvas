@@ -6,7 +6,9 @@ use std::sync::OnceLock;
 
 use crate::context_attributes::ContextAttributes;
 use glutin::api::egl::{
-    context::{NotCurrentContext, PossiblyCurrentContext}, display::Display, surface::Surface,
+    context::{NotCurrentContext, PossiblyCurrentContext},
+    display::Display,
+    surface::Surface,
 };
 use glutin::config::{
     Api, ColorBufferType, ConfigSurfaceTypes, ConfigTemplate, ConfigTemplateBuilder,
@@ -17,7 +19,9 @@ use glutin::display::AsRawDisplay;
 use glutin::display::{GetGlDisplay, RawDisplay};
 use glutin::prelude::GlSurface;
 use glutin::prelude::*;
-use glutin::surface::{AsRawSurface, PbufferSurface, PixmapSurface, RawSurface, SwapInterval, WindowSurface};
+use glutin::surface::{
+    AsRawSurface, PbufferSurface, PixmapSurface, RawSurface, SwapInterval, WindowSurface,
+};
 use parking_lot::RwLock;
 use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle};
 
@@ -43,7 +47,7 @@ impl GLContextRaw {
             (RawDisplay::Egl(display), RawSurface::Egl(surface), RawContext::Egl(context)) => {
                 egl::make_current(display as _, surface as _, surface as _, context as _)
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -55,7 +59,6 @@ impl GLContextRaw {
         false
     }
 }
-
 
 #[derive(Debug, Copy, Clone, Default)]
 struct Dimensions {
@@ -74,15 +77,12 @@ pub(crate) struct GLContextInner {
 #[derive(Default)]
 pub struct GLContext(GLContextInner);
 
-
 impl Debug for GLContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // todo
-        f.debug_struct("GLContext")
-            .finish()
+        f.debug_struct("GLContext").finish()
     }
 }
-
 
 impl Into<ConfigTemplate> for ContextAttributes {
     fn into(self) -> ConfigTemplate {
@@ -168,7 +168,7 @@ impl Into<ConfigTemplateBuilder> for ContextAttributes {
 impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
     fn from(value: &mut ContextAttributes) -> Self {
         let mut builder = ConfigTemplateBuilder::new()
-            .with_api(if value.get_is_canvas() {
+            .with_api(if value.get_is_canvas() | value.get_gl_legacy() {
                 glutin::config::Api::GLES2
             } else {
                 glutin::config::Api::GLES3
@@ -192,47 +192,32 @@ impl From<&mut ContextAttributes> for ConfigTemplateBuilder {
     }
 }
 
-// impl Into<glutin::config::ConfigTemplate> for ContextAttributes {
-//     fn into(self) -> ConfigTemplate {
-//         ConfigTemplateBuilder::new()
-//             .with_alpha_size(
-//                 if self.get_alpha() { 8 } else { 0 }
-//             )
-//             .with_depth_size(if self.get_depth() { 16 } else { 0 })
-//             .with_stencil_size(if self.get_stencil() { 8 } else { 0 })
-//             .with_transparency(self.get_alpha())
-//             .build()
-//     }
-// }
-
-
 impl GLContext {
     pub fn as_raw(&self) -> GLContextRaw {
-        let surface = self.0.surface.as_ref().map(|surface| {
-            match surface {
-                SurfaceHelper::Window(window) => {
-                    window.raw_surface()
-                }
-                SurfaceHelper::Pbuffer(buffer) => {
-                    buffer.raw_surface()
-                }
-                SurfaceHelper::Pixmap(map) => {
-                    map.raw_surface()
-                }
-            }
-        }).unwrap_or_else(|| {
-            RawSurface::Egl(std::ptr::null())
-        });
+        let surface = self
+            .0
+            .surface
+            .as_ref()
+            .map(|surface| match surface {
+                SurfaceHelper::Window(window) => window.raw_surface(),
+                SurfaceHelper::Pbuffer(buffer) => buffer.raw_surface(),
+                SurfaceHelper::Pixmap(map) => map.raw_surface(),
+            })
+            .unwrap_or_else(|| RawSurface::Egl(std::ptr::null()));
 
-        let context = self.0.context.as_ref().map(|context| {
-            context.raw_context()
-        }).unwrap_or_else(|| {
-            RawContext::Egl(std::ptr::null())
-        });
+        let context = self
+            .0
+            .context
+            .as_ref()
+            .map(|context| context.raw_context())
+            .unwrap_or_else(|| RawContext::Egl(std::ptr::null()));
 
-        let display = self.0.display.as_ref().map(|display| {
-            display.raw_display()
-        }).unwrap_or_else(|| { RawDisplay::Egl(std::ptr::null()) });
+        let display = self
+            .0
+            .display
+            .as_ref()
+            .map(|display| display.raw_display())
+            .unwrap_or_else(|| RawDisplay::Egl(std::ptr::null()));
 
         GLContextRaw {
             surface,
@@ -544,7 +529,7 @@ impl GLContext {
 
                         let mut context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
-                                if context_attrs.get_is_canvas() {
+                                if context_attrs.get_is_canvas() | context_attrs.get_gl_legacy() {
                                     Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
@@ -643,7 +628,8 @@ impl GLContext {
                         if config.is_none() {
                             let mut cfg: ConfigTemplateBuilder = context_attrs.clone().into();
 
-                            cfg = cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
+                            cfg =
+                                cfg.with_depth_size(if context_attrs.get_depth() { 16 } else { 0 });
 
                             let cfg = cfg.build();
 
@@ -652,9 +638,10 @@ impl GLContext {
                                 .map(|c| {
                                     c.reduce(|accum, cconfig| {
                                         if is_2d {
-                                            let transparency_check =
-                                                cconfig.supports_transparency().unwrap_or(false)
-                                                    & !accum.supports_transparency().unwrap_or(false);
+                                            let transparency_check = cconfig
+                                                .supports_transparency()
+                                                .unwrap_or(false)
+                                                & !accum.supports_transparency().unwrap_or(false);
                                             return if transparency_check
                                                 || cconfig.num_samples() < accum.num_samples()
                                             {
@@ -683,9 +670,10 @@ impl GLContext {
                                 .map(|c| {
                                     c.reduce(|accum, cconfig| {
                                         if is_2d {
-                                            let transparency_check =
-                                                cconfig.supports_transparency().unwrap_or(false)
-                                                    & !accum.supports_transparency().unwrap_or(false);
+                                            let transparency_check = cconfig
+                                                .supports_transparency()
+                                                .unwrap_or(false)
+                                                & !accum.supports_transparency().unwrap_or(false);
                                             return if transparency_check
                                                 || cconfig.num_samples() < accum.num_samples()
                                             {
@@ -711,14 +699,13 @@ impl GLContext {
                                 context_attrs.set_antialias(false);
                             }
 
-
                             let surface_attr =
-                                glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new().build(
-                                    window,
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
-                                );
-
+                                glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
+                                    .build(
+                                        window,
+                                        NonZeroU32::try_from(width as u32).unwrap(),
+                                        NonZeroU32::try_from(height as u32).unwrap(),
+                                    );
 
                             let surface = display
                                 .create_window_surface(&config, &surface_attr)
@@ -727,16 +714,16 @@ impl GLContext {
 
                             self.0.surface = surface;
                             let ctx = match (context, self.0.surface.as_ref()) {
-                                (Some(context), Some(surface)) => {
-                                    match surface {
-                                        SurfaceHelper::Window(window) => {
-                                            context.make_current(window).ok()
-                                        }
-                                        SurfaceHelper::Pbuffer(buffer) => context.make_current(buffer).ok(),
-                                        SurfaceHelper::Pixmap(map) => context.make_current(map).ok(),
+                                (Some(context), Some(surface)) => match surface {
+                                    SurfaceHelper::Window(window) => {
+                                        context.make_current(window).ok()
                                     }
-                                }
-                                _ => None
+                                    SurfaceHelper::Pbuffer(buffer) => {
+                                        context.make_current(buffer).ok()
+                                    }
+                                    SurfaceHelper::Pixmap(map) => context.make_current(map).ok(),
+                                },
+                                _ => None,
                             };
                             self.0.context = ctx;
                             {
@@ -811,7 +798,6 @@ impl GLContext {
                         context_attrs.set_antialias(false);
                     }
 
-
                     let surface_attr =
                         glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new().build(
                             NonZeroU32::try_from(width as u32).unwrap(),
@@ -828,7 +814,6 @@ impl GLContext {
                     }
 
                     self.0.surface = surface;
-
                 }
             }
         }
@@ -985,7 +970,7 @@ impl GLContext {
 
                         let context_attrs = glutin::context::ContextAttributesBuilder::new()
                             .with_context_api(ContextApi::Gles(Some(
-                                if context_attrs.get_is_canvas() {
+                                if context_attrs.get_is_canvas() | context_attrs.get_gl_legacy() {
                                     Version::new(2, 0)
                                 } else {
                                     Version::new(3, 0)
@@ -1093,7 +1078,8 @@ impl GLContext {
         }
 
         {
-            let display = self.0
+            let display = self
+                .0
                 .display
                 .as_ref()
                 .map(|display| match display.raw_display() {
@@ -1126,7 +1112,8 @@ impl GLContext {
         self.0.dimensions.read().width
     }
 
-    pub fn get_surface_height(&self) -> i32 {self.0.dimensions.read().height
+    pub fn get_surface_height(&self) -> i32 {
+        self.0.dimensions.read().height
     }
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {

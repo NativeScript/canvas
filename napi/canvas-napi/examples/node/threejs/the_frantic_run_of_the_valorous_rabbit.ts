@@ -12,7 +12,7 @@ export function run(canvas, parent: HTMLElement) {
 	containerLayout.style.width = '100%';
 	containerLayout.style.height = '100%';
 	canvas.width = canvas.clientWidth * window.devicePixelRatio;
-	canvas.width = canvas.clientHeight * window.devicePixelRatio;
+	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
 	var context;
 	const width = canvas.clientWidth;
@@ -113,8 +113,8 @@ export function run(canvas, parent: HTMLElement) {
 	//INIT THREE JS, SCREEN AND MOUSE EVENTS
 
 	function initScreenAnd3D() {
-		HEIGHT = width;
-		WIDTH = height;
+		HEIGHT = height;
+		WIDTH = width;
 		windowHalfX = WIDTH / 2;
 		windowHalfY = HEIGHT / 2;
 
@@ -141,16 +141,17 @@ export function run(canvas, parent: HTMLElement) {
 		renderer.setClearColor(malusClearColor, malusClearAlpha);
 		renderer.setSize(WIDTH, HEIGHT, false);
 
-		context = canvas.getContext('webgl2');
-
 		renderer.shadowMap.enabled = true;
 
 		//container = document.getElementById('world');
 		//container.appendChild(renderer.domElement);
 
 		window.addEventListener('resize', handleWindowResize, false);
+		document.addEventListener('keydown', (event) => {
+			console.log('keydown');
+		});
 		canvas.addEventListener('mousedown', handleMouseDown, false);
-		canvas.addEventListener('touchend', handleMouseDown, false);
+		//	canvas.addEventListener('touchend', handleMouseDown, false);
 
 		/*
   controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -174,6 +175,13 @@ export function run(canvas, parent: HTMLElement) {
 	}
 
 	function handleMouseDown(event) {
+		if (gameStatus == 'play') hero.jump();
+		else if (gameStatus == 'readyToReplay') {
+			replay();
+		}
+	}
+
+	function handleJump() {
 		if (gameStatus == 'play') hero.jump();
 		else if (gameStatus == 'readyToReplay') {
 			replay();
@@ -1271,26 +1279,31 @@ export function run(canvas, parent: HTMLElement) {
 	}
 
 	function loop() {
-		delta = clock.getDelta();
-		updateFloorRotation();
+		try {
+			delta = clock.getDelta();
+			updateFloorRotation();
 
-		if (gameStatus == 'play') {
-			if (hero.status == 'running') {
-				hero.run();
+			if (gameStatus == 'play') {
+				if (hero.status == 'running') {
+					hero.run();
+				}
+				updateDistance();
+				updateMonsterPosition();
+				updateCarrotPosition();
+				updateObstaclePosition();
+				checkCollision();
 			}
-			updateDistance();
-			updateMonsterPosition();
-			updateCarrotPosition();
-			updateObstaclePosition();
-			checkCollision();
-		}
 
-		render();
-		requestAnimationFrame(loop);
+			render();
+			requestAnimationFrame(loop);
+		} catch (e) {
+			console.log(e);
+		}
 	}
 
 	function render() {
 		renderer.render(scene, camera);
+
 		// context.renderImmediate();
 	}
 

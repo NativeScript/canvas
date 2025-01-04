@@ -1,23 +1,20 @@
-use crate::c2d::image_data::ImageData;
-use crate::c2d::CanvasRenderingContext2D;
-use crate::gl::web_g_l_rendering_context;
-use crate::gl2::web_g_l_2_rendering_context;
 use crate::gpu::buffer::g_p_u_buffer;
 use crate::gpu::command_buffer::g_p_u_command_buffer;
-use crate::gpu::context::g_p_u_canvas_context;
 use crate::gpu::enums::GPUTextureAspect;
 use crate::gpu::objects::{
   GPUExtent3DDict, GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged,
-  GPUImageDataLayout, GPUOrigin2DDict, GPUOrigin3DDict,
+  GPUImageDataLayout,
 };
-use crate::image_asset::ImageAsset;
 use canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture;
 use canvas_c::webgpu::structs::{
   CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyExternalImage,
   CanvasImageCopyGPUContext, CanvasImageCopyImageAsset, CanvasImageCopyWebGL,
   CanvasImageDataLayout, CanvasOrigin2d, CanvasOrigin3d,
 };
-use napi::bindgen_prelude::{Buffer, ClassInstance, Either3, Either4, Either5, Either6, Either7, Float32Array, ObjectFinalize};
+use napi::bindgen_prelude::{
+  Either4, Either9,
+  ObjectFinalize,
+};
 use napi::*;
 use napi_derive::napi;
 use std::ffi::CString;
@@ -94,7 +91,7 @@ impl g_p_u_queue {
       aspect: destination.aspect.unwrap_or(GPUTextureAspect::all).into(),
     };
     match source.source {
-      Either7::A(image_data) => {
+      Either9::A(image_data) => {
         let data = unsafe { &*image_data.data };
         let width = data.inner().width() as u32;
         let height = data.inner().height() as u32;
@@ -116,7 +113,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::B(image_asset) => {
+      Either9::B(image_asset) => {
         let src = CanvasImageCopyImageAsset {
           source: Arc::as_ptr(&image_asset.asset),
           origin,
@@ -131,7 +128,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::C(c2d) => {
+      Either9::C(c2d) => {
         let src = CanvasImageCopyCanvasRenderingContext2D {
           source: c2d.context,
           origin,
@@ -146,7 +143,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::D(gl) => {
+      Either9::D(gl) => {
         let src = CanvasImageCopyWebGL {
           source: gl.state,
           origin,
@@ -161,7 +158,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::E(gl2) => {
+      Either9::E(gl2) => {
         let src = CanvasImageCopyWebGL {
           source: gl2.state,
           origin,
@@ -176,7 +173,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::F(gpu) => {
+      Either9::F(gpu) => {
         let src = CanvasImageCopyGPUContext {
           source: Arc::as_ptr(&gpu.context),
           origin,
@@ -191,7 +188,7 @@ impl g_p_u_queue {
           )
         }
       }
-      Either7::G(image_bitmap) => {
+      Either9::G(image_bitmap) => {
         let src = CanvasImageCopyImageAsset {
           source: Arc::as_ptr(&image_bitmap.asset),
           origin,
@@ -206,6 +203,83 @@ impl g_p_u_queue {
           )
         }
       }
+      Either9::H(image_source) => {
+        let src = CanvasImageCopyImageAsset {
+          source: Arc::as_ptr(&image_source.image.asset),
+          origin,
+          flip_y: source.flip_y.unwrap_or(false),
+        };
+        unsafe {
+          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_image_asset_to_texture(
+            Arc::as_ptr(&self.queue),
+            &src,
+            &dst,
+            &size,
+          )
+        }
+      }
+      Either9::I(canvas_source) => match canvas_source.context {
+        Either4::A(c2d) => {
+          let src = CanvasImageCopyCanvasRenderingContext2D {
+            source: c2d.context,
+            origin,
+            flip_y: source.flip_y.unwrap_or(false),
+          };
+          unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_context_to_texture(
+              Arc::as_ptr(&self.queue),
+              &src,
+              &dst,
+              &size,
+            )
+          }
+        }
+        Either4::B(gl) => {
+          let src = CanvasImageCopyWebGL {
+            source: gl.state,
+            origin,
+            flip_y: source.flip_y.unwrap_or(false),
+          };
+          unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
+              Arc::as_ptr(&self.queue),
+              &src,
+              &dst,
+              &size,
+            )
+          }
+        }
+        Either4::C(gl2) => {
+          let src = CanvasImageCopyWebGL {
+            source: gl2.state,
+            origin,
+            flip_y: source.flip_y.unwrap_or(false),
+          };
+          unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_webgl_to_texture(
+              Arc::as_ptr(&self.queue),
+              &src,
+              &dst,
+              &size,
+            )
+          }
+        }
+        Either4::D(gpu) => {
+          let src = CanvasImageCopyGPUContext {
+            source: Arc::as_ptr(&gpu.context),
+            origin,
+            flip_y: source.flip_y.unwrap_or(false),
+          };
+          unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_gpu_context_to_texture(
+              Arc::as_ptr(&self.queue),
+              &src,
+              &dst,
+              &size,
+            )
+          }
+        }
+      },
     }
   }
 
@@ -281,7 +355,7 @@ impl g_p_u_queue {
   pub fn write_texture(
     &self,
     destination: GPUImageCopyTexture,
-    data: Either4<&[u8], &[u16],  &[u32], JsArrayBuffer>,
+    data: Either4<&[u8], &[u16], &[u32], JsArrayBuffer>,
     data_layout: GPUImageDataLayout,
     size: Either<Vec<u32>, GPUExtent3DDict>,
   ) -> Result<()> {

@@ -1,11 +1,8 @@
 import '@nativescript/macos-node-api';
 import { createRequire } from 'node:module';
-import utils from '../../utils';
 
 //@ts-ignore
 const require = createRequire(import.meta.url);
-
-const { requestAnimationFrame } = utils;
 
 import helpers from '../helpers';
 

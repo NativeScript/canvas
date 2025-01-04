@@ -478,7 +478,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
                         sample_count: 1,
                         dimension: wgt::TextureDimension::D2,
                         format,
-                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        usage: wgt::TextureUsages::from_bits_truncate(
+                            wgt::TextureUsages::COPY_SRC.bits()
+                                | wgt::TextureUsages::COPY_DST.bits(),
+                        ),
                         view_formats: vec![],
                     };
                     let texture_data = TextureData {
@@ -668,7 +671,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
                         sample_count: 1,
                         dimension: wgt::TextureDimension::D2,
                         format,
-                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        usage: wgt::TextureUsages::from_bits_truncate(
+                            wgt::TextureUsages::COPY_SRC.bits()
+                                | wgt::TextureUsages::COPY_DST.bits(),
+                        ),
                         view_formats: vec![],
                     };
 
@@ -789,6 +795,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
             context
                 .has_surface_presented
                 .store(false, std::sync::atomic::Ordering::SeqCst);
+
             let mut view_data = context.view_data.lock();
             view_data.width = width;
             view_data.height = height;
@@ -824,7 +831,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
                         sample_count: 1,
                         dimension: wgt::TextureDimension::D2,
                         format,
-                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        usage: wgt::TextureUsages::from_bits_truncate(
+                            wgt::TextureUsages::COPY_SRC.bits()
+                                | wgt::TextureUsages::COPY_DST.bits(),
+                        ),
                         view_formats: vec![],
                     };
                     let texture_data = TextureData {
@@ -897,6 +907,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
             context
                 .has_surface_presented
                 .store(false, std::sync::atomic::Ordering::SeqCst);
+
             let mut view_data = context.view_data.lock();
             view_data.width = width;
             view_data.height = height;
@@ -932,7 +943,10 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_layer(
                         sample_count: 1,
                         dimension: wgt::TextureDimension::D2,
                         format,
-                        usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+                        usage: wgt::TextureUsages::from_bits_truncate(
+                            wgt::TextureUsages::COPY_SRC.bits()
+                                | wgt::TextureUsages::COPY_DST.bits(),
+                        ),
                         view_formats: vec![],
                     };
                     let texture_data = TextureData {
@@ -1115,7 +1129,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
     };
 
     let config = wgt::SurfaceConfiguration::<Vec<TextureFormat>> {
-        desired_maximum_frame_latency: 2,
+        desired_maximum_frame_latency: 3,
         usage,
         format,
         width,
@@ -1148,7 +1162,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
             sample_count: 1,
             dimension: wgt::TextureDimension::D2,
             format,
-            usage: wgt::TextureUsages::COPY_SRC | wgt::TextureUsages::COPY_DST,
+            usage: wgt::TextureUsages::from_bits_truncate(
+                wgt::TextureUsages::COPY_SRC.bits() | wgt::TextureUsages::COPY_DST.bits(),
+            ),
             view_formats: vec![],
         };
 
@@ -1238,6 +1254,20 @@ pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
     let context = unsafe { &*context };
     let current_texture = context.current_texture.lock();
     current_texture.is_some()
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_webgpu_context_has_surface_presented(
+    context: *const CanvasGPUCanvasContext,
+) -> bool {
+    if context.is_null() {
+        return false;
+    }
+
+    let context = unsafe { &*context };
+    context
+        .has_surface_presented
+        .load(std::sync::atomic::Ordering::SeqCst)
 }
 
 #[no_mangle]

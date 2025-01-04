@@ -94,6 +94,13 @@ pub unsafe extern "C" fn canvas_native_helper_base64_decode_c_str(data: *const c
         .unwrap_or(std::ptr::null_mut())
 }
 
+pub fn canvas_native_helper_base64_decode_str(data: &str) -> Option<Vec<u8>> {
+    if data.is_empty() {
+        return None
+    }
+    base64::engine::general_purpose::STANDARD.decode(data.as_bytes()).ok()
+}
+
 
 #[no_mangle]
 pub extern "C" fn canvas_native_helper_get_mime(data: *const u8, size: usize) -> *mut FileHelperMime {

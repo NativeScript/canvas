@@ -7,7 +7,6 @@ version = "0.0.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.16.13", default-features = false, features = ["napi8"] }
 napi-derive = "2.16.13"
 canvas-core = { workspace = true, features = ["2d", "gl", "mtl"] }

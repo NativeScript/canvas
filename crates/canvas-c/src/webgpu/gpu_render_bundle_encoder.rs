@@ -310,11 +310,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_bind_gro
         if let Some(encoder) = render_bundle.encoder.as_mut() {
             if let Some(encoder) = encoder {
                 if let Some(encoder) = encoder.as_mut() {
+                    let empty = [];
                     wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
                         encoder,
                         index,
                         bind_group_id,
-                        std::ptr::null(),
+                        empty.as_ptr(),
                         0,
                     );
                 }

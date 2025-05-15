@@ -318,6 +318,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_pass_encoder_end(
 
     if let Some(pass) = lock.as_mut() {
         if let Err(cause) = global.render_pass_end(pass) {
+            println!("canvas_native_webgpu_render_pass_encoder_end: {:?}", cause);
             handle_error(
                 global,
                 error_sink,

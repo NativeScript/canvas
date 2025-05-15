@@ -9,7 +9,10 @@ use crate::webgpu::enums::CanvasGPUTextureFormat;
 //use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
-use crate::webgpu::structs::{CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyImageAsset, CanvasImageCopyWebGL};
+use crate::webgpu::structs::{
+    CanvasImageCopyCanvasRenderingContext2D, CanvasImageCopyGPUContext, CanvasImageCopyImageAsset,
+    CanvasImageCopyWebGL,
+};
 use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
@@ -40,7 +43,9 @@ pub struct CanvasGPUQueue {
 unsafe impl Send for CanvasGPUQueue {}
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_get_label(queue: *const CanvasGPUQueue) -> *mut c_char {
+pub unsafe extern "C" fn canvas_native_webgpu_queue_get_label(
+    queue: *const CanvasGPUQueue,
+) -> *mut c_char {
     if queue.is_null() {
         return std::ptr::null_mut();
     }
@@ -89,7 +94,6 @@ fn get_offset_image(
             break;
         }
 
-
         let src_start = (src_y * img_width + x_offset) * bytes_per_pixel;
         let src_end = src_start + width * bytes_per_pixel;
 
@@ -99,8 +103,7 @@ fn get_offset_image(
         let dst_start = row * width * bytes_per_pixel;
         let copy_len = src_row_data.len().min(width * bytes_per_pixel);
 
-        result[dst_start..dst_start + copy_len]
-            .copy_from_slice(&src_row_data[0..copy_len]);
+        result[dst_start..dst_start + copy_len].copy_from_slice(&src_row_data[0..copy_len]);
     }
 
     result
@@ -123,11 +126,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
     }
     let webgl = &*source.source;
 
-
     webgl.0.make_current();
     let width = webgl.0.get_drawing_buffer_width();
     let height = webgl.0.get_drawing_buffer_height();
-
 
     let row_size = bytes_per_pixel(gl_bindings::RGBA as u32, gl_bindings::RGBA as u32) as i32;
 
@@ -156,7 +157,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
         }
     }
 
-
     let ext_source = CanvasImageCopyExternalImage {
         source: bytes.as_ptr(),
         source_size: bytes.len(),
@@ -166,7 +166,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_webgl_to_texture(
         height: height as u32,
     };
 
-    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+    canvas_native_webgpu_queue_copy_external_image_to_texture(
+        queue,
+        &ext_source,
+        destination,
+        size,
+    );
 }
 
 #[no_mangle]
@@ -180,7 +185,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         return;
     }
 
-
     let source = &*source;
     let destination = &*destination;
 
@@ -190,7 +194,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     let context = &mut *(source.source as *mut crate::c2d::CanvasRenderingContext2D);
 
     let (width, height) = context.context.dimensions();
-
 
     let queue = &*queue;
     let queue_id = queue.queue.id;
@@ -203,10 +206,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     match destination_texture.format {
         CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
-            context.context.get_pixels_format(data.as_mut_slice(), (0, 0), (width as i32, height as i32), canvas_2d::context::ColorType::BGRA8888);
+            context.context.get_pixels_format(
+                data.as_mut_slice(),
+                (0, 0),
+                (width as i32, height as i32),
+                canvas_2d::context::ColorType::BGRA8888,
+            );
         }
         _ => {
-            context.context.get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
+            context
+                .context
+                .get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
         }
     }
 
@@ -267,7 +277,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
     }
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
     queue: *const CanvasGPUQueue,
@@ -300,14 +309,26 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_image_asset_to_texture(
             match texture.format {
                 CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
                     let mut bytes = bytes.to_vec();
-                    canvas_core::image_asset::ImageAsset::rgba_to_bgra_in_place(bytes.as_mut_slice());
+                    canvas_core::image_asset::ImageAsset::rgba_to_bgra_in_place(
+                        bytes.as_mut_slice(),
+                    );
 
                     ext_source.source = bytes.as_ptr();
 
-                    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+                    canvas_native_webgpu_queue_copy_external_image_to_texture(
+                        queue,
+                        &ext_source,
+                        destination,
+                        size,
+                    );
                 }
                 _ => {
-                    canvas_native_webgpu_queue_copy_external_image_to_texture(queue, &ext_source, destination, size);
+                    canvas_native_webgpu_queue_copy_external_image_to_texture(
+                        queue,
+                        &ext_source,
+                        destination,
+                        size,
+                    );
                 }
             }
         }
@@ -395,6 +416,90 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_gpu_context_to_texture(
+    queue: *const CanvasGPUQueue,
+    source: *const CanvasImageCopyGPUContext,
+    destination: *const CanvasImageCopyTexture,
+    size: *const CanvasExtent3d,
+) {
+    if queue.is_null() || source.is_null() || destination.is_null() || size.is_null() {
+        return;
+    }
+
+    let source = &*source;
+    let destination = &*destination;
+
+    if source.source.is_null() || destination.texture.is_null() {
+        return;
+    }
+    let context =
+        &mut *(source.source as *mut crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext);
+
+    let mut texture = None;
+    if let Some(current_texture) = context.current_texture.lock().as_ref() {
+        texture = Some(current_texture.texture);
+    } else if let Some(read_back_texture) = context.read_back_texture.lock().as_ref() {
+        texture = Some(read_back_texture.texture);
+    }
+
+    if let Some(texture) = texture {
+        let queue = &*queue;
+
+        let global = queue.queue.instance.global();
+
+        if let Some(data) = context.data.lock().as_ref() {
+            let label = Cow::Borrowed("copyExternalImageToTexture:Encoder");
+            let (encoder, error) = global.device_create_command_encoder(
+                data.device.device,
+                &wgt::CommandEncoderDescriptor {
+                    label: wgpu_core::Label::from(label),
+                },
+                None,
+            );
+            if let Some(error) = error {
+                // todo log error
+                return;
+            }
+
+            let source = wgt::TexelCopyTextureInfo {
+                texture,
+                mip_level: data.texture_data.mip_level_count,
+                origin: wgt::Origin3d {
+                    x: source.origin.x,
+                    y: source.origin.y,
+                    z: 0,
+                },
+                aspect: Default::default(),
+            };
+            let destination_texture = unsafe { &*destination.texture };
+            let dest = wgt::TexelCopyTextureInfo {
+                texture: destination_texture.texture,
+                mip_level: destination.mip_level,
+                origin: destination.origin.into(),
+                aspect: destination.aspect.into(),
+            };
+
+            let size = *size;
+
+            let size: wgt::Extent3d = size.into();
+
+            if let Err(cause) =
+                global.command_encoder_copy_texture_to_texture(encoder, &source, &dest, &size)
+            {
+                handle_error(
+                    global,
+                    queue.error_sink.as_ref(),
+                    cause,
+                    "",
+                    None,
+                    "canvas_native_webgpu_queue_copy_gpu_context_to_texture",
+                );
+            }
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
     queue: *const CanvasGPUQueue,
     callback: extern "C" fn(*mut c_char, *mut c_void),
@@ -411,11 +516,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_on_submitted_work_done(
 
     let func = callback as i64;
     let data = callback_data as i64;
-    let done = wgpu_core::device::queue::SubmittedWorkDoneClosure::from_rust(Box::new(move || {
+    let done = Box::new(move || {
         let callback: fn(*mut c_char, *mut c_void) = std::mem::transmute(func as *mut c_void);
         let callback_data = data as *mut c_void;
         callback(std::ptr::null_mut(), callback_data);
-    }));
+    });
 
     global.queue_on_submitted_work_done(queue_id, done);
 }
@@ -447,8 +552,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
         })
         .collect::<Vec<_>>();
 
-    if let Err((_, cause)) = global.queue_submit(queue_id, &command_buffer_ids)
-    {
+    if let Err((_, cause)) = global.queue_submit(queue_id, &command_buffer_ids) {
         handle_error_fatal(global, cause, "canvas_native_webgpu_queue_submit");
     }
 
@@ -488,8 +592,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
         None => &data[data_offset..],
     };
 
-    if let Err(cause) = global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data)
-    {
+    if let Err(cause) = global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data) {
         handle_error(
             global,
             queue.error_sink.as_ref(),
@@ -541,7 +644,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let size: wgt::Extent3d = size.into();
 
-    if let Err(cause) = global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
+    if let Err(cause) =
+        global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
     {
         handle_error(
             global,

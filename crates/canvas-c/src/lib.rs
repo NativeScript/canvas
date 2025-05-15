@@ -49,6 +49,16 @@ pub enum InvalidateState {
     Invalidating,
 }
 
+impl Into<u32> for InvalidateState {
+    fn into(self) -> u32 {
+        match self {
+            InvalidateState::None => 0,
+            InvalidateState::Pending => 1,
+            InvalidateState::Invalidating => 2,
+        }
+    }
+}
+
 /* Helpers */
 
 #[no_mangle]
@@ -83,7 +93,6 @@ pub extern "C" fn canvas_native_font_add_family(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_font_add_family_with_bytes(
     alias: *const c_char,
@@ -106,7 +115,6 @@ pub extern "C" fn canvas_native_font_add_family_with_bytes(
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_2d_test(context: i64) {
     if context == 0 {
@@ -123,7 +131,6 @@ pub extern "C" fn canvas_native_context_2d_test(context: i64) {
     }
     context.render();
 }
-
 
 #[no_mangle]
 pub extern "C" fn canvas_native_context_2d_path_test(context: i64) {
@@ -157,7 +164,6 @@ pub extern "C" fn canvas_native_context_2d_path_test(context: i64) {
     context.render();
 }
 
-
 #[no_mangle]
 pub extern "C" fn canvas_native_context_2d_conic_test(context: i64) {
     if context == 0 {
@@ -184,7 +190,9 @@ pub extern "C" fn canvas_native_context_2d_conic_test(context: i64) {
         gradient.add_color_stop(1., Color::BLUE);
 
         // Set the fill style and draw a rectangle
-        ctx.set_fill_style(canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient));
+        ctx.set_fill_style(
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient),
+        );
         ctx.fill_rect_xywh(20., 20., 200., 200.);
     }
     context.render();

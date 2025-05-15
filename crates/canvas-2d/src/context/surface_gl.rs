@@ -34,6 +34,7 @@ impl Context {
             false,
             false,
             true,
+            false,
         );
 
         let bounds = skia_safe::Rect::from_wh(width, height);

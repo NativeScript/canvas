@@ -26,13 +26,15 @@ futures = "0.3"
 raw-window-handle.workspace = true
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
 infer = "0.16.0"
-image = {version = "0.25.5", optional = true}
+image = { version = "0.25.5", optional = true }
+
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal", "raw-window-handle"] }
 objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
 
 [target.'cfg(target_os="macos")'.dependencies]
+metal = { version = "0.30.0"}
 #display-link = { git = "https://github.com/servo/display-link", branch = "no-transmute" }
 #wgpu-core = { version = "22.0.0", features = ["wgsl", "metal", "raw-window-handle"] }
 #objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }

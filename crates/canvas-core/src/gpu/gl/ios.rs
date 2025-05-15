@@ -1,13 +1,11 @@
 use std::ffi::c_void;
 use std::fmt::Debug;
 use std::ptr::NonNull;
-use std::sync::Arc;
 use std::sync::OnceLock;
 
 use icrate::objc2::ffi::BOOL;
 use icrate::objc2::{class, msg_send, msg_send_id, rc::Id, ClassType, Encode, Encoding};
 use objc2_foundation::{NSData, NSInteger, NSObject, NSUInteger};
-use parking_lot::RwLock;
 
 use crate::context_attributes::ContextAttributes;
 
@@ -41,7 +39,6 @@ impl GLContextRaw {
         }
     }
 }
-
 
 unsafe impl Sync for GLContextInner {}
 
@@ -414,7 +411,7 @@ impl GLContext {
         let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
         match glview {
             None => None,
-            Some(glview) =>{
+            Some(glview) => {
                 let glview = GLKView(glview);
                 GLContext::create_window_context_with_gl_view(context_attrs, glview, None)
             }
@@ -422,29 +419,31 @@ impl GLContext {
     }
 
     pub(crate) fn create_window_context_with_gl_view(
-        _context_attrs: &mut ContextAttributes,
+        context_attrs: &mut ContextAttributes,
         mut view: GLKView,
         shared_context: Option<&GLContext>,
     ) -> Option<Self> {
         let gl_view = view.clone();
-        IS_GL_SYMBOLS_LOADED.get_or_init(||{
+        IS_GL_SYMBOLS_LOADED.get_or_init(|| {
             gl_bindings::load_with(|symbol| super::get_proc_address(symbol).cast());
             true
         });
 
-        let api = EAGLRenderingAPI::GLES3;
+        let api = if context_attrs.get_gl_legacy() {
+            EAGLRenderingAPI::GLES2
+        } else {
+            EAGLRenderingAPI::GLES3
+        };
 
         let share_group = match shared_context {
-            Some(context) => {
-                context.0.sharegroup.clone()
-            }
+            Some(context) => context.0.sharegroup.clone(),
             _ => EAGLSharegroup::new(),
         };
 
         let context = EAGLContext::new_with_api_sharegroup(api, &share_group);
 
         if context.is_none() {
-            return None
+            return None;
         }
 
         view.set_context(context.as_ref());
@@ -460,7 +459,7 @@ impl GLContext {
             view: Some(view),
         };
 
-       Some(GLContext(inner))
+        Some(GLContext(inner))
     }
 
     pub fn create_offscreen_context(
@@ -541,7 +540,7 @@ impl GLContext {
 
     pub fn remove_if_current(&self) -> bool {
         if let Some(context) = self.0.context.as_ref() {
-            return context.remove_if_current()
+            return context.remove_if_current();
         }
         false
     }
@@ -582,7 +581,6 @@ impl GLContext {
 
     pub fn get_surface_dimensions(&self) -> (i32, i32) {
         self.0
-
             .view
             .as_ref()
             .map(|v| {

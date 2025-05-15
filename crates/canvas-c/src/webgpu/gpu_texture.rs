@@ -45,53 +45,69 @@ impl Drop for CanvasGPUTexture {
         }
         match self.surface_id {
             Some(surface_id) => {
-                if !self
+                let has_surface_presented = self
                     .has_surface_presented
-                    .load(std::sync::atomic::Ordering::SeqCst)
-                {
+                    .load(std::sync::atomic::Ordering::SeqCst);
+
+                if !has_surface_presented {
                     let global = self.instance.global();
+
+                    /*
                     match global.surface_texture_discard(surface_id) {
-                        Ok(_) => (),
-                        Err(cause) => handle_error_fatal(
-                            global,
-                            cause,
-                            "canvas_native_webgpu_texture_release",
-                        ),
+                        Ok(_) => {
+                            self.surface_id = None;
+                        }
+                        Err(cause) => {
+                            handle_error_fatal(
+                                global,
+                                cause,
+                                "canvas_native_webgpu_texture_release",
+                            )
+                        },
                     }
+                    */
                 }
             }
             None => {
                 let context = self.instance.global();
                 context.texture_drop(self.texture);
+                self.surface_id = None;
             }
         }
     }
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasCreateTextureViewDescriptor {
-    label: *const c_char,
-    format: CanvasOptionalGPUTextureFormat,
-    dimension: CanvasOptionalTextureViewDimension,
-    range: *const CanvasImageSubresourceRange,
+    pub label: *const c_char,
+    pub format: CanvasOptionalGPUTextureFormat,
+    pub dimension: CanvasOptionalTextureViewDimension,
+    pub range: *const CanvasImageSubresourceRange,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_texture_get_status(texture: *const CanvasGPUTexture) -> SurfaceGetCurrentTextureStatus {
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_status(
+    texture: *const CanvasGPUTexture,
+) -> SurfaceGetCurrentTextureStatus {
     assert!(!texture.is_null());
     let texture = &*texture;
     texture.status
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_texture_get_suboptimal(texture: *const CanvasGPUTexture) -> bool {
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_suboptimal(
+    texture: *const CanvasGPUTexture,
+) -> bool {
     assert!(!texture.is_null());
     let texture = &*texture;
     texture.suboptimal
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_texture_get_label(texture: *const CanvasGPUTexture) -> *mut c_char {
+pub unsafe extern "C" fn canvas_native_webgpu_texture_get_label(
+    texture: *const CanvasGPUTexture,
+) -> *mut c_char {
     if texture.is_null() {
         return std::ptr::null_mut();
     }
@@ -145,8 +161,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
         }
     };
 
-    let (texture_view, error) =
-        global.texture_create_view(texture_id, &desc, None);
+    let (texture_view, error) = global.texture_create_view(texture_id, &desc, None);
 
     let error_sink = texture.error_sink.as_ref();
 

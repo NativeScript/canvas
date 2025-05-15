@@ -8,7 +8,7 @@ use crate::buffers::StringBuffer;
 use crate::ImageAsset;
 
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash,Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct CanvasOrigin3d {
     /// X position of the origin
     pub x: u32,
@@ -105,6 +105,13 @@ pub struct CanvasColor {
     pub a: f64,
 }
 
+
+impl From<CanvasColor> for Vec<f64> {
+    fn from(value: CanvasColor) -> Self {
+        vec![value.r, value.g, value.b, value.a]
+    }
+}
+
 impl CanvasColor {
     pub const TRANSPARENT: Self = Self {
         r: 0.0,
@@ -169,9 +176,9 @@ impl From<wgt::Color> for CanvasColor {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasImageDataLayout {
-    offset: u64,
-    bytes_per_row: i32,
-    rows_per_image: i32,
+    pub offset: u64,
+    pub bytes_per_row: i32,
+    pub rows_per_image: i32,
 }
 
 impl From<wgt::ImageDataLayout> for CanvasImageDataLayout {
@@ -221,6 +228,25 @@ pub struct CanvasImageCopyExternalImage {
     pub height: u32,
 }
 
+#[repr(C)]
+#[derive(Debug)]
+pub struct CanvasImageCopyGPUContext {
+    /// The texture to be copied from. The copy source data is captured at the moment
+    /// the copy is issued.
+    pub source: *const crate::webgpu::gpu_canvas_context::CanvasGPUCanvasContext,
+    /// The base texel used for copying from the external image. Together
+    /// with the `copy_size` argument to copy functions, defines the
+    /// sub-region of the image to copy.
+    ///
+    /// Relative to the top left of the image.
+    ///
+    /// Must be [`Origin2d::ZERO`] if [`DownlevelFlags::UNRESTRICTED_EXTERNAL_TEXTURE_COPIES`] is not supported.
+    pub origin: CanvasOrigin2d,
+    /// If the Y coordinate of the image should be flipped. Even if this is
+    /// true, `origin` is still relative to the top left.
+    pub flip_y: bool,
+}
+
 
 
 #[repr(C)]
@@ -261,7 +287,6 @@ pub struct CanvasImageCopyWebGL {
     /// true, `origin` is still relative to the top left.
     pub flip_y: bool,
 }
-
 
 
 #[repr(C)]
@@ -962,17 +987,17 @@ impl From<SurfaceCapabilities> for CanvasSurfaceCapabilities {
 
 impl Drop for CanvasSurfaceCapabilities {
     fn drop(&mut self) {
-        if !self.formats.is_null() {
-            let _ = unsafe { Box::from_raw(self.formats as *mut StringBuffer) };
-        }
-
-        if !self.present_modes.is_null() {
-            let _ = unsafe { Box::from_raw(self.present_modes as *mut StringBuffer) };
-        }
-
-        if !self.alpha_modes.is_null() {
-            let _ = unsafe { Box::from_raw(self.alpha_modes as *mut StringBuffer) };
-        }
+        // if !self.formats.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.formats as *mut StringBuffer) };
+        // }
+        //
+        // if !self.present_modes.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.present_modes as *mut StringBuffer) };
+        // }
+        //
+        // if !self.alpha_modes.is_null() {
+        //     let _ = unsafe { Box::from_raw(self.alpha_modes as *mut StringBuffer) };
+        // }
     }
 }
 

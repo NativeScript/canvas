@@ -87,8 +87,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				}
 			}
 
-			if (__ANDROID__ && !capabilities.format.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
-				opts.format = capabilities.format[0];
+			if (__ANDROID__ && !capabilities.formats.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
+				opts.format = capabilities.formats[0];
 				// fallback to rgba8unorm ... Android 🤪
 				if (opts.format === 'rgba8unorm-srgb') {
 					opts.format = 'rgba8unorm';
@@ -96,8 +96,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
 			}
 
-			if (__IOS__ && !capabilities.format.includes(options.format)) {
-				opts.format = capabilities.format.filter((value) => {
+			if (__IOS__ && !capabilities.formats.includes(options.format)) {
+				opts.format = capabilities.formats.filter((value) => {
 					return value.indexOf('srgb') === -1;
 				})[0];
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
@@ -165,7 +165,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	getCapabilities(adapter: GPUAdapter): {
-		format: GPUTextureFormat[];
+		formats: GPUTextureFormat[];
 		presentModes: GPUCanvasPresentMode[];
 		alphaModes: GPUCanvasAlphaMode;
 		usages: number;

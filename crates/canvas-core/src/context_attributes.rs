@@ -41,6 +41,7 @@ pub struct ContextAttributes {
     desynchronized: bool,
     xr_compatible: bool,
     is_canvas: bool,
+    gl_legacy: bool,
 }
 
 impl Default for ContextAttributes {
@@ -57,6 +58,7 @@ impl Default for ContextAttributes {
             desynchronized: false,
             xr_compatible: false,
             is_canvas: false,
+            gl_legacy: false,
         }
     }
 }
@@ -74,6 +76,7 @@ impl ContextAttributes {
         desynchronized: bool,
         xr_compatible: bool,
         is_canvas: bool,
+        gl_legacy: bool,
     ) -> Self {
         Self {
             alpha,
@@ -87,7 +90,12 @@ impl ContextAttributes {
             desynchronized,
             xr_compatible,
             is_canvas,
+            gl_legacy,
         }
+    }
+
+    pub fn get_gl_legacy(&self) -> bool {
+        self.gl_legacy
     }
 
     pub fn get_is_canvas(&self) -> bool {

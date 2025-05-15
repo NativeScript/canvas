@@ -147,6 +147,8 @@ impl Context {
     }
 
     pub fn draw_image_dx_dy(&mut self, image: &Image, x: f32, y: f32) {
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
         #[cfg(feature = "gl")]{
             if let Some(ref context) = self.gl_context {
                 context.make_current();
@@ -174,6 +176,8 @@ impl Context {
     }
 
     fn draw_image(&mut self, image: &Image, src_rect: impl Into<Rect>, dst_rect: impl Into<Rect>) {
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
         #[cfg(feature = "gl")]{
             if let Some(ref context) = self.gl_context {
                 context.make_current();
@@ -209,7 +213,8 @@ impl Context {
     }
 
     fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
-
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
         #[cfg(feature = "gl")]{
             if let Some(ref context) = self.gl_context {
                 context.make_current();

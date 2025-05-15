@@ -10,7 +10,7 @@ canvas-2d = { path = "../canvas-2d", features = ["gl", "metal"] }
 gl-bindings = { path = "../gl-bindings" }
 raw-window-handle = "0.6.2"
 rand = "0.8.5"
-reqwest = { version = "0.11.14", features = ["blocking"] }
+reqwest = { version = "0.12.9", features = ["blocking"] }
 chrono = "^0.3"
 canvas-c = { path = "../canvas-c", features = ["2d","webgl"] }
 canvas-ios = { path = "../canvas-ios" }

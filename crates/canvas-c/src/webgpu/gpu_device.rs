@@ -13,10 +13,10 @@ use wgpu_core::id::PipelineLayoutId;
 use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
 //use wgpu_core::gfx_select;
 use wgpu_core::resource::CreateBufferError;
-use wgt::Features;
+use wgt::{Features, PrimitiveTopology};
 
 use crate::buffers::StringBuffer;
-use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasQueryType, SurfaceGetCurrentTextureStatus};
+use crate::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology, CanvasQueryType, SurfaceGetCurrentTextureStatus};
 use crate::webgpu::error::{handle_error, handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
 use crate::webgpu::gpu_bind_group_layout::CanvasGPUBindGroupLayout;
@@ -28,7 +28,7 @@ use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 use super::{
     enums::{
         CanvasCompareFunction, CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat,
-        CanvasOptionalIndexFormat, CanvasPrimitiveTopology, CanvasStencilFaceState,
+        CanvasOptionalIndexFormat, CanvasStencilFaceState,
         CanvasTextureDimension, CanvasVertexStepMode,
     },
     gpu::CanvasWebGPUInstance,
@@ -222,6 +222,9 @@ pub struct CanvasGPUDevice {
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
 }
+
+unsafe impl Sync for CanvasGPUDevice  {}
+unsafe impl Send for CanvasGPUDevice {}
 
 impl Drop for CanvasGPUDevice {
     fn drop(&mut self) {
@@ -420,8 +423,6 @@ impl CanvasGPUDevice {
     }
 }
 
-unsafe impl Send for CanvasGPUDevice {}
-
 #[no_mangle]
 pub unsafe extern "C" fn canvas_native_webgpu_device_get_label(
     device: *const CanvasGPUDevice,
@@ -473,7 +474,7 @@ pub extern "C" fn canvas_native_webgpu_device_get_queue(
         return std::ptr::null();
     }
     let device = unsafe { &*device };
-    Arc::into_raw(device.queue.clone())
+    Arc::into_raw(Arc::clone(&device.queue))
 }
 
 #[no_mangle]
@@ -784,7 +785,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_compute_pipeline(
     let error_sink = pipeline.error_sink.as_ref();
 
     if let Some(cause) = error {
-        println!("Can not create compute pipeline: {:?}", cause);
         if let wgpu_core::pipeline::CreateComputePipelineError::Internal(ref error) = cause {
             #[cfg(target_os = "android")]
             log::warn!(
@@ -1018,13 +1018,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_query_set(
 
 #[repr(C)]
 pub struct CanvasCreateRenderBundleEncoderDescriptor {
-    label: *const c_char,
-    color_formats: *const CanvasGPUTextureFormat,
-    color_formats_size: usize,
-    depth_stencil_format: CanvasOptionalGPUTextureFormat,
-    sample_count: u32,
-    depth_read_only: bool,
-    stencil_read_only: bool,
+    pub label: *const c_char,
+    pub color_formats: *const CanvasGPUTextureFormat,
+    pub color_formats_size: usize,
+    pub depth_stencil_format: CanvasOptionalGPUTextureFormat,
+    pub sample_count: u32,
+    pub depth_read_only: bool,
+    pub stencil_read_only: bool,
 }
 
 #[no_mangle]
@@ -1176,6 +1176,18 @@ pub extern "C" fn canvas_native_webgpu_device_create_buffer(
 #[derive(Clone, Debug, Default)]
 pub struct CanvasConstants(HashMap<String, f64>);
 
+impl Into<HashMap<String, f64>> for CanvasConstants {
+    fn into(self) -> HashMap<String, f64> {
+        self.0
+    }
+}
+
+impl From<HashMap<String, f64>> for CanvasConstants {
+    fn from(value: HashMap<String, f64>) -> Self {
+        Self(value)
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_constants_create() -> *mut CanvasConstants {
     Box::into_raw(Box::new(CanvasConstants(HashMap::new())))
@@ -1210,16 +1222,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(constants: *mut 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CanvasDepthStencilState {
-    format: CanvasGPUTextureFormat,
-    depth_write_enabled: bool,
-    depth_compare: CanvasCompareFunction,
-    stencil_front: CanvasStencilFaceState,
-    stencil_back: CanvasStencilFaceState,
-    stencil_read_mask: u32,
-    stencil_write_mask: u32,
-    depth_bias: i32,
-    depth_bias_slope_scale: f32,
-    depth_bias_clamp: f32,
+    pub format: CanvasGPUTextureFormat,
+    pub depth_write_enabled: bool,
+    pub depth_compare: CanvasCompareFunction,
+    pub stencil_front: CanvasStencilFaceState,
+    pub stencil_back: CanvasStencilFaceState,
+    pub stencil_read_mask: u32,
+    pub stencil_write_mask: u32,
+    pub depth_bias: i32,
+    pub depth_bias_slope_scale: f32,
+    pub depth_bias_clamp: f32,
 }
 
 impl From<wgt::DepthStencilState> for CanvasDepthStencilState {
@@ -1263,7 +1275,7 @@ impl Into<wgt::DepthStencilState> for CanvasDepthStencilState {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct CanvasPrimitiveState {
-    pub topology: CanvasPrimitiveTopology,
+    pub topology: CanvasOptionalPrimitiveTopology,
     pub strip_index_format: CanvasOptionalIndexFormat,
     pub front_face: CanvasFrontFace,
     pub cull_mode: CanvasCullMode,
@@ -1273,7 +1285,7 @@ pub struct CanvasPrimitiveState {
 impl From<wgt::PrimitiveState> for CanvasPrimitiveState {
     fn from(value: wgt::PrimitiveState) -> Self {
         Self {
-            topology: value.topology.into(),
+            topology: CanvasOptionalPrimitiveTopology::Some(value.topology.into()),
             strip_index_format: value.strip_index_format.into(),
             front_face: value.front_face.into(),
             cull_mode: value.cull_mode.into(),
@@ -1285,7 +1297,12 @@ impl From<wgt::PrimitiveState> for CanvasPrimitiveState {
 impl Into<wgt::PrimitiveState> for CanvasPrimitiveState {
     fn into(self) -> wgt::PrimitiveState {
         wgt::PrimitiveState {
-            topology: self.topology.into(),
+            topology: match self.topology {
+                CanvasOptionalPrimitiveTopology::None => PrimitiveTopology::TriangleList,
+                CanvasOptionalPrimitiveTopology::Some(value) => {
+                    value.into()
+                }
+            },
             strip_index_format: self.strip_index_format.into(),
             front_face: self.front_face.into(),
             cull_mode: self.cull_mode.into(),
@@ -1297,6 +1314,7 @@ impl Into<wgt::PrimitiveState> for CanvasPrimitiveState {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasVertexBufferLayout {
     pub array_stride: u64,
     pub step_mode: CanvasVertexStepMode,
@@ -1657,6 +1675,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_pipeline_asyn
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct CanvasCreateTextureDescriptor {
     pub label: *const c_char,
     pub dimension: CanvasTextureDimension,

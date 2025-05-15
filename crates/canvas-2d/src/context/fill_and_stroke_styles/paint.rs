@@ -51,6 +51,7 @@ impl PaintStyle {
         blue
     }
 
+    #[inline]
     pub fn new_color_str(color: &str) -> Option<Self> {
         parse(color)
             .map(|color| {
@@ -201,7 +202,7 @@ impl Paint {
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
-        if !(color != Color::TRANSPARENT && blur > 0.0) {
+        if color == Color::TRANSPARENT && blur > 0.0 {
             return None;
         }
         let mut paint = self.fill_paint().clone();
@@ -215,7 +216,7 @@ impl Paint {
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
-        if !(color != Color::TRANSPARENT && blur > 0.0) {
+        if color == Color::TRANSPARENT && blur > 0.0 {
             return None;
         }
         let mut paint = self.stroke_paint().clone();

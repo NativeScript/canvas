@@ -4,8 +4,10 @@ use std::io::Read;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ImageAsset(pub(crate) canvas_core::image_asset::ImageAsset);
+
+unsafe impl Send for ImageAsset {}
 
 impl ImageAsset {
     pub fn new(asset: canvas_core::image_asset::ImageAsset) -> Self {
@@ -227,7 +229,7 @@ pub extern "C" fn canvas_native_image_asset_load_from_raw(
 ) -> bool {
     let array = unsafe { std::slice::from_raw_parts(array, size) };
     let asset = unsafe { &*asset };
-    asset.load_from_raw_bytes(width, height,4, array.to_vec())
+    asset.load_from_raw_bytes(width, height, 4, array.to_vec())
 }
 
 #[no_mangle]

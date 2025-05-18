@@ -136,6 +136,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             required_features: features,
             required_limits: limits,
             memory_hints: Default::default(),
+            trace: Default::default(),
         };
 
 
@@ -151,7 +152,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
         match global.adapter_request_device(
             adapter_id,
             &descriptor,
-            None,
             None,
             None,
         ) {

@@ -14,6 +14,8 @@ pub struct CanvasGPUSupportedLimits {
     pub max_storage_buffers_per_shader_stage: u32,
     pub max_storage_textures_per_shader_stage: u32,
     pub max_uniform_buffers_per_shader_stage: u32,
+    pub max_binding_array_elements_per_shader_stage: u32,
+    pub max_binding_array_sampler_elements_per_shader_stage: u32,
     pub max_uniform_buffer_binding_size: u32,
     pub max_storage_buffer_binding_size: u32,
     pub max_vertex_buffers: u32,
@@ -55,6 +57,10 @@ impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
             max_storage_buffers_per_shader_stage: self.max_storage_buffers_per_shader_stage,
             max_storage_textures_per_shader_stage: self.max_storage_textures_per_shader_stage,
             max_uniform_buffers_per_shader_stage: self.max_uniform_buffers_per_shader_stage,
+            max_binding_array_elements_per_shader_stage: self
+                .max_binding_array_elements_per_shader_stage,
+            max_binding_array_sampler_elements_per_shader_stage: self
+                .max_binding_array_sampler_elements_per_shader_stage,
             max_uniform_buffer_binding_size: self.max_uniform_buffer_binding_size,
             max_storage_buffer_binding_size: self.max_storage_buffer_binding_size,
             max_vertex_buffers: self.max_vertex_buffers,
@@ -98,6 +104,10 @@ impl From<wgt::Limits> for CanvasGPUSupportedLimits {
             max_storage_buffers_per_shader_stage: value.max_storage_buffers_per_shader_stage,
             max_storage_textures_per_shader_stage: value.max_storage_textures_per_shader_stage,
             max_uniform_buffers_per_shader_stage: value.max_uniform_buffers_per_shader_stage,
+            max_binding_array_elements_per_shader_stage: value
+                .max_binding_array_elements_per_shader_stage,
+            max_binding_array_sampler_elements_per_shader_stage: value
+                .max_binding_array_sampler_elements_per_shader_stage,
             max_uniform_buffer_binding_size: value.max_uniform_buffer_binding_size,
             max_storage_buffer_binding_size: value.max_storage_buffer_binding_size,
             max_vertex_buffers: value.max_vertex_buffers,

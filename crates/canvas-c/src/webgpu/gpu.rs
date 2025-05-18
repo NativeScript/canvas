@@ -1,9 +1,9 @@
-use std::{os::raw::c_void, sync::Arc};
-use std::fmt::{Debug, Formatter};
 ////use wgpu_core::gfx_select;
+use super::gpu_adapter::CanvasGPUAdapter;
+use std::fmt::{Debug, Formatter};
+use std::{os::raw::c_void, sync::Arc};
 use wgpu_core::global::Global;
 use wgpu_core::id::SurfaceId;
-use super::gpu_adapter::CanvasGPUAdapter;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,9 +17,7 @@ impl Into<wgt::PowerPreference> for CanvasGPUPowerPreference {
     fn into(self) -> wgt::PowerPreference {
         match self {
             CanvasGPUPowerPreference::LowPower => wgt::PowerPreference::LowPower,
-            CanvasGPUPowerPreference::HighPerformance => {
-                wgt::PowerPreference::HighPerformance
-            }
+            CanvasGPUPowerPreference::HighPerformance => wgt::PowerPreference::HighPerformance,
             CanvasGPUPowerPreference::None => wgt::PowerPreference::None,
         }
     }
@@ -46,19 +44,19 @@ struct CanvasWebGPUInstanceInner {
     pub(crate) global: Arc<Global>,
 }
 
-impl Debug for CanvasWebGPUInstanceInner  {
+impl Debug for CanvasWebGPUInstanceInner {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CanvasWebGPUInstanceInner")
-            .finish()
+        f.debug_struct("CanvasWebGPUInstanceInner").finish()
     }
 }
-
 
 #[derive(Debug)]
 pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
 impl Clone for CanvasWebGPUInstance {
     fn clone(&self) -> Self {
-        Self(CanvasWebGPUInstanceInner { global: Arc::clone(&self.0.global) })
+        Self(CanvasWebGPUInstanceInner {
+            global: Arc::clone(&self.0.global),
+        })
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -79,15 +77,16 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     let backends = wgt::Backends::METAL;
 
-   #[cfg(target_os = "android")]
-    let backends = wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
+    #[cfg(target_os = "android")]
+    let backends =
+        wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
 
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;
 
     let instance = Global::new(
         "webgpu",
-        wgt::InstanceDescriptor {
+        &wgt::InstanceDescriptor {
             backends,
             ..Default::default()
         },
@@ -140,7 +139,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         compatible_surface: None,
     };
 
-
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let instance = Arc::from_raw(instance);
@@ -155,12 +153,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         #[cfg(target_os = "windows")]
         let backends = wgt::Backends::DX12;
 
-
-        let adapter = global.request_adapter(
-            &opts,
-            backends,
-            None,
-        );
+        let adapter = global.request_adapter(&opts, backends, None);
 
         let adapter = adapter.map(|adapter_id| {
             let features = build_features(global.adapter_features(adapter_id));

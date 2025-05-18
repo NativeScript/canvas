@@ -755,12 +755,12 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
         channel: canvas_c::webgpu::structs::CanvasPassChannelColor {
             load_op: canvas_c::webgpu::structs::CanvasLoadOp::Clear,
             store_op: canvas_c::webgpu::structs::CanvasStoreOp::Store,
-            clear_value: canvas_c::webgpu::structs::CanvasColor {
+            clear_value: Some(canvas_c::webgpu::structs::CanvasColor {
                 r: 0.,
                 g: 0.5,
                 b: 1.,
                 a: 1.,
-            },
+            }).into(),
             read_only: false,
         },
     }];
@@ -1386,12 +1386,12 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         channel: CanvasPassChannelColor {
             load_op: CanvasLoadOp::Clear,
             store_op: CanvasStoreOp::Store,
-            clear_value: CanvasColor {
+            clear_value: Some(CanvasColor {
                 r: 0.0,
                 g: 0.0,
                 b: 0.0,
                 a: 1.0,
-            },
+            }).into(),
             read_only: false,
         },
     }];
@@ -1725,12 +1725,12 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         channel: CanvasPassChannelColor {
             load_op: CanvasLoadOp::Clear,
             store_op: CanvasStoreOp::Store,
-            clear_value: CanvasColor {
+            clear_value: Some(CanvasColor {
                 r: 0.0,
                 g: 0.0,
                 b: 0.0,
                 a: 1.0,
-            },
+            }).into(),
             read_only: false,
         },
     }];

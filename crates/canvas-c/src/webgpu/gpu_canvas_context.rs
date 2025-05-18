@@ -4,7 +4,6 @@ use crate::webgpu::gpu_adapter::CanvasGPUAdapter;
 use crate::webgpu::gpu_device::ErrorSink;
 use crate::webgpu::structs::{CanvasExtent3d, CanvasSurfaceCapabilities};
 use base64::Engine;
-use metal::foreign_types::ForeignType;
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 use std::borrow::Cow;
@@ -280,7 +279,7 @@ fn to_data_url_with_texture(
             return None;
         }
 
-        if let Err(_) = global.device_poll(device.device, wgt::Maintain::Wait) {
+        if let Err(_) = global.device_poll(device.device, wgt::PollType::Wait) {
             return None;
         }
 
@@ -1322,7 +1321,7 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
             let texture = Arc::new(CanvasGPUTexture {
                 label: None,
                 instance: context.instance.clone(),
-                texture: texture.texture_id.unwrap(),
+                texture: texture.texture.unwrap(),
                 surface_id: Some(*surface_id),
                 owned: false,
                 depth_or_array_layers: 1,

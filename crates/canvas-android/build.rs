@@ -76,7 +76,6 @@ fn setup_aarch64_android_workaround() {
             env::var("ANDROID_NDK_HOME").expect("ANDROID_NDK_HOME not set")
         };
 
-
         let build_os = match env::consts::OS {
             "linux" => "linux",
             "macos" => "darwin",
@@ -110,19 +109,31 @@ fn setup_aarch64_android_workaround() {
 
         let linkpath = format!("{android_ndk_home}/{linux_aarch64_lib_dir}");
 
-
         let linux_aarch64_lib_dir_other = format!(
             "toolchains/llvm/prebuilt/{build_os}-x86_64/lib/clang/{clang_version}/lib/linux/"
         );
 
+        let (version, _) = clang_version.split_at(clang_version.find(".").unwrap_or(0));
+        let linux_aarch64_lib_dir_other_27_plus =
+            format!("toolchains/llvm/prebuilt/{build_os}-x86_64/lib/clang/{version}/lib/linux/");
+
         println!("cargo:rustc-link-arg=-Wl,-z,max-page-size=16384");
 
         let linkpath_other = format!("{android_ndk_home}/{linux_aarch64_lib_dir_other}");
+
+        let linkpath_other_27_plus =
+            format!("{android_ndk_home}/{linux_aarch64_lib_dir_other_27_plus}");
+
         if Path::new(&linkpath).exists() {
             println!("cargo:rustc-link-search={android_ndk_home}/{linux_aarch64_lib_dir}");
             println!("cargo:rustc-link-lib=static=clang_rt.builtins-aarch64-android");
-        }else if Path::new(&linkpath_other).exists(){
+        } else if Path::new(&linkpath_other).exists() {
             println!("cargo:rustc-link-search={android_ndk_home}/{linux_aarch64_lib_dir_other}");
+            println!("cargo:rustc-link-lib=static=clang_rt.builtins-aarch64-android");
+        } else if Path::new(&linkpath_other_27_plus).exists() {
+            println!(
+                "cargo:rustc-link-search={android_ndk_home}/{linux_aarch64_lib_dir_other_27_plus}"
+            );
             println!("cargo:rustc-link-lib=static=clang_rt.builtins-aarch64-android");
         } else {
             panic!("Path {linkpath} not exists");

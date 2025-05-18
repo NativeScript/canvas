@@ -88,6 +88,5 @@
 		"**/*.{js,ts,scss,json,html}": [
 			"npx prettier --write"
 		]
-	},
-	"packageManager": "yarn@4.5.2"
+	}
 }

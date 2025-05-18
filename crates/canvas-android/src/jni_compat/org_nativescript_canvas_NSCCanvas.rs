@@ -13,6 +13,7 @@ use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect};
 use std::ffi::c_void;
 use std::ptr;
 use std::ptr::NonNull;
+use canvas_webgl::prelude::WebGLVersion;
 
 fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
     let handle = raw_window_handle::AndroidNdkWindowHandle::new(
@@ -384,6 +385,7 @@ pub extern "system" fn nativeUpdate2DSurface(
                         false,
                         false,
                         true,
+                        false,
                     );
 
                     let handle = raw_window_handle::AndroidNdkWindowHandle::new(

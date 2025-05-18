@@ -50,3 +50,18 @@ GENERATE_ANDROID: $(ARCHS_ANDROID)
 .PHONY: clean
 clean:
 	rm -rf target
+
+
+.PHONY: ios_debug
+ios_debug: $(addsuffix _debug,$(ARCHS_IOS))
+
+.PHONY: android_debug
+android_debug: $(addsuffix _debug,$(ARCHS_ANDROID))
+
+.PHONY: $(addsuffix _debug,$(ARCHS_IOS))
+$(addsuffix _debug,$(ARCHS_IOS)): %_debug:
+	RUSTFLAGS="cargo +nightly build --target $* -p canvas-ios"
+
+.PHONY: $(addsuffix _debug,$(ARCHS_ANDROID))
+$(addsuffix _debug,$(ARCHS_ANDROID)): %_debug:
+	./tools/scripts/build-android.sh $* debug

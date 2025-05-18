@@ -1,10 +1,9 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
 use std::ffi::CString;
+use std::{ffi::CStr, os::raw::c_char};
 
 #[inline]
-pub(crate) fn ptr_into_slice<'a, T>(entries: *const T,
-                                    size: usize) -> &'a [T] {
+pub(crate) fn ptr_into_slice<'a, T>(entries: *const T, size: usize) -> &'a [T] {
     if entries.is_null() || size == 0 {
         return &[];
     }
@@ -28,10 +27,11 @@ pub(crate) fn ptr_into_cstring(ptr: *const std::ffi::c_char) -> Option<CString> 
         if ptr.is_null() {
             return None;
         }
-        CStr::from_ptr(ptr).to_str()
-            .map(|value| {
-                CString::new(value.to_string()).ok()
-            }).ok().flatten()
+        CStr::from_ptr(ptr)
+            .to_str()
+            .map(|value| CString::new(value.to_string()).ok())
+            .ok()
+            .flatten()
     }
 }
 
@@ -41,7 +41,8 @@ pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'stati
         if ptr.is_null() {
             return None;
         }
-        CStr::from_ptr(ptr).to_str()
+        CStr::from_ptr(ptr)
+            .to_str()
             .map(|v| v.into())
             .map(Cow::Owned)
             .ok()
@@ -50,11 +51,14 @@ pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'stati
 
 #[inline]
 pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
-    label.map(|label| {
-        CString::new(label.to_string()).map(|label| label.into_raw()).unwrap_or(std::ptr::null_mut())
-    }).unwrap_or(std::ptr::null_mut())
+    label
+        .map(|label| {
+            CString::new(label.to_string())
+                .map(|label| label.into_raw())
+                .unwrap_or(std::ptr::null_mut())
+        })
+        .unwrap_or(std::ptr::null_mut())
 }
-
 
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];
@@ -130,15 +134,13 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::STORAGE_RESOURCE_BINDING_ARRAY) {
         return_features.push("storage-resource-binding-array");
     }
-    if features.contains(
-        wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
-    ) {
+    if features
+        .contains(wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING)
+    {
         return_features.push("sampled-texture-and-storage-buffer-array-non-uniform-indexing");
     }
-    if features.contains(
-        wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
-    ) {
-        return_features.push("uniform-buffer-and-storage-texture-array-non-uniform-indexing");
+    if features.contains(wgt::Features::STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING) {
+        return_features.push("storage-texture-array-non-uniform-indexing");
     }
     if features.contains(wgt::Features::PARTIALLY_BOUND_BINDING_ARRAY) {
         return_features.push("partially-bound-binding-array");
@@ -297,9 +299,9 @@ pub fn parse_required_features(
                     );
                 }
 
-                "uniform-buffer-and-storage-texture-array-non-uniform-indexing" => {
+                "storage-texture-array-non-uniform-indexing" => {
                     features.set(
-                        wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
+                        wgt::Features::STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
                         true,
                     );
                 }
@@ -377,8 +379,7 @@ pub fn parse_required_features(
                 }
 
                 "dual-source-blending" => {
-                    features.set(
-                        wgt::Features::DUAL_SOURCE_BLENDING, true);
+                    features.set(wgt::Features::DUAL_SOURCE_BLENDING, true);
                 }
 
                 _ => {}

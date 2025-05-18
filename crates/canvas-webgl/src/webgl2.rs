@@ -166,7 +166,6 @@ pub fn canvas_native_webgl2_client_wait_sync(
     ret
 }
 
-
 pub fn canvas_native_webgl2_compressed_tex_image3d_none(
     target: u32,
     level: i32,
@@ -240,7 +239,6 @@ pub fn canvas_native_webgl2_compressed_tex_image3d(
         )
     }
 }
-
 
 pub fn canvas_native_webgl2_compressed_tex_sub_image3d_none(
     target: u32,
@@ -1294,8 +1292,7 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                     utils::gl::flip_in_place_3d(
                         buffer.as_mut_ptr(),
                         buffer.len(),
-                        (bytes_per_pixel(type_, format) * dimensions.0)
-                            as usize,
+                        (bytes_per_pixel(type_, format) * dimensions.0) as usize,
                         dimensions.1 as usize,
                         depth as usize,
                     );
@@ -1349,8 +1346,7 @@ pub fn canvas_native_webgl2_tex_image3d_asset(
                 utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    (bytes_per_pixel(type_, format) as i32 * dimensions.0 as i32)
-                        as usize,
+                    (bytes_per_pixel(type_, format) as i32 * dimensions.0 as i32) as usize,
                     dimensions.1 as usize,
                     depth as usize,
                 );
@@ -1422,8 +1418,7 @@ pub fn canvas_native_webgl2_tex_image3d_canvas2d(
                     utils::gl::flip_in_place_3d(
                         buffer.as_mut_ptr(),
                         buffer.len(),
-                        (bytes_per_pixel(type_, format) * dimensions.0)
-                            as usize,
+                        (bytes_per_pixel(type_, format) * dimensions.0) as usize,
                         dimensions.1 as usize,
                         depth as usize,
                     );
@@ -1764,8 +1759,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                     utils::gl::flip_in_place_3d(
                         buffer.as_mut_ptr(),
                         buffer.len(),
-                        (bytes_per_pixel(type_, format)
-                            * dimensions.0) as usize,
+                        (bytes_per_pixel(type_, format) * dimensions.0) as usize,
                         dimensions.1 as usize,
                         depth as usize,
                     );
@@ -1818,8 +1812,7 @@ pub fn canvas_native_webgl2_tex_sub_image3d_asset(
                 utils::gl::flip_in_place_3d(
                     buffer.as_mut_ptr(),
                     buffer.len(),
-                    (bytes_per_pixel(type_, format)
-                        * dimensions.0) as usize,
+                    (bytes_per_pixel(type_, format) * dimensions.0) as usize,
                     dimensions.0 as usize,
                     depth as usize,
                 );
@@ -2175,7 +2168,6 @@ pub fn canvas_native_webgl2_vertex_attrib_i4uiv(index: u32, value: &[u32], state
     }
 }
 
-
 /* GL_EXT */
 
 pub fn canvas_native_webgl2_tex_image2d_asset(
@@ -2343,7 +2335,6 @@ pub fn canvas_native_webgl2_tex_image2d_asset(
     }
 }
 
-
 pub fn canvas_native_webgl2_tex_image2d_src_data_offset(
     target: i32,
     level: i32,
@@ -2362,11 +2353,18 @@ pub fn canvas_native_webgl2_tex_image2d_src_data_offset(
     unsafe {
         let src = std::slice::from_raw_parts(src_data, src_data_size - offset as usize);
         gl_bindings::TexImage2D(
-            target as u32, level, internalformat, width as i32, height as i32, border, format as u32, type_ as u32, src.as_ptr() as *const c_void,
+            target as u32,
+            level,
+            internalformat,
+            width as i32,
+            height as i32,
+            border,
+            format as u32,
+            type_ as u32,
+            src.as_ptr() as *const c_void,
         )
     }
 }
-
 
 pub fn canvas_native_webgl2_tex_image2d_offset(
     target: i32,
@@ -2383,11 +2381,18 @@ pub fn canvas_native_webgl2_tex_image2d_offset(
     state.make_current();
     unsafe {
         gl_bindings::TexImage2D(
-            target as u32, level, internalformat, width as i32, height as i32, border, format as u32, type_ as u32, offset as *const c_void,
+            target as u32,
+            level,
+            internalformat,
+            width as i32,
+            height as i32,
+            border,
+            format as u32,
+            type_ as u32,
+            offset as *const c_void,
         )
     }
 }
-
 
 // assuming all data passed here is rgba
 pub fn canvas_native_webgl2_tex_image2d_image_asset(
@@ -2401,10 +2406,10 @@ pub fn canvas_native_webgl2_tex_image2d_image_asset(
     type_: i32,
     src_data: &[u8],
     state: &WebGLState,
-) {}
+) {
+}
 
 /* GL_EXT */
-
 
 pub const READ_BUFFER: u32 = 0x0C02;
 

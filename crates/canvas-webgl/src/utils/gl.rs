@@ -64,7 +64,6 @@ pub fn flip_in_place_integer(pixels: *mut u32, length: usize, bytes_per_row: usi
     flip_pixels_integer(slice, height)
 }
 
-
 fn flip_pixels(pixels: &'_ mut [u8], rows: usize) {
     let bytes_per_row = pixels.len() / rows;
     let (first_half, second_half) = pixels.split_at_mut(pixels.len() / 2);
@@ -103,7 +102,6 @@ fn flip_pixels_integer(pixels: &'_ mut [u32], rows: usize) {
     }
 }
 
-
 pub fn bytes_per_pixel(pixel_type: u32, format: u32) -> u32 {
     let bytes_per_component = match pixel_type {
         GL_UNSIGNED_BYTE => 1,
@@ -122,7 +120,7 @@ pub fn bytes_per_pixel(pixel_type: u32, format: u32) -> u32 {
         gl_bindings::RG_INTEGER => 2 * bytes_per_component, // Two components for GL_RG_INTEGER
         GL_RGB => match pixel_type {
             GL_UNSIGNED_BYTE => 3 * bytes_per_component, // 3 components for GL_RGB with GL_UNSIGNED_BYTE
-            GL_UNSIGNED_SHORT_5_6_5 => 2, // Special case for RGB 565 format
+            GL_UNSIGNED_SHORT_5_6_5 => 2,                // Special case for RGB 565 format
             gl_bindings::UNSIGNED_INT_10F_11F_11F_REV => 4, // Special case for RGB 10F 11F 11F format
             _ => 3 * bytes_per_component,
         },

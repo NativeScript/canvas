@@ -3,6 +3,8 @@
 
 TARGET="$1"
 
+MODE=${2:-release}
+
 if [ "$TARGET" = "" ]; then
     echo "missing argument TARGET"
     echo "Usage: $0 TARGET"
@@ -36,14 +38,21 @@ CXX=$TOOLS/bin/${NDK_TARGET}${API_VERSION}-clang++ \
 RANLIB=$TOOLS/bin/llvm-ranlib \
 CXXFLAGS="--target=$NDK_TARGET" \
 
-# RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
+RUSTFLAGS=""
 
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
-    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics"
+    RUSTFLAGS="-C target-feature=-outline-atomics"
 fi
 
-RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-android --release
+if [ "$MODE" = "release" ]; then
+    RUSTFLAGS="$RUSTFLAGS -Zlocation-detail=none -C panic=abort"
+    EXTRA_ARGS="-Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --release"
+else
+    EXTRA_ARGS=""
+fi
+
+RUSTFLAGS="$RUSTFLAGS" cargo +nightly build $EXTRA_ARGS --target $TARGET -p canvas-android
 
 # RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-android
 

@@ -4,7 +4,7 @@ use std::{ffi::CStr, os::raw::c_char};
 
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
-use crate::webgpu::structs::{CanvasLoadOp, CanvasStoreOp};
+use crate::webgpu::structs::{CanvasLoadOp, CanvasOptionalColor, CanvasStoreOp};
 
 //use wgpu_core::gfx_select;
 use super::{
@@ -124,10 +124,10 @@ pub extern "C" fn canvas_native_webgpu_command_encoder_begin_compute_pass(
 
     let desc = wgpu_core::command::ComputePassDescriptor {
         label: label.clone(),
-        timestamp_writes: timestamp_writes.as_ref(),
+        timestamp_writes,
     };
 
-    let (pass, err) = global.command_encoder_create_compute_pass(command_encoder.encoder, &desc);
+    let (pass, err) = global.command_encoder_begin_compute_pass(command_encoder.encoder, &desc);
 
     let error_sink = command_encoder.error_sink.as_ref();
     if let Some(cause) = err {
@@ -183,13 +183,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
                 let view = unsafe { &*value.view };
                 Some(wgpu_core::command::RenderPassColorAttachment {
                     view: view.texture_view,
+                    depth_slice: None,
                     resolve_target,
-                    channel: wgpu_core::command::PassChannel {
-                        load_op: value.channel.load_op.into(),
-                        store_op: value.channel.store_op.into(),
-                        clear_value: value.channel.clear_value.into(),
-                        read_only: value.channel.read_only,
-                    },
+                    load_op: value.channel.load_op.with_default_value(
+                        match value.channel.clear_value {
+                            CanvasOptionalColor::None => None,
+                            CanvasOptionalColor::Some(color) => color.into(),
+                        }
+                        .map(Into::into),
+                    ),
+                    store_op: value.channel.store_op.into(),
                 })
             })
             .collect::<Vec<_>>()
@@ -236,15 +239,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         let stencil_store: Option<CanvasStoreOp> = depth_stencil_attachment.stencil_store_op.into();
 
         let depth = wgpu_core::command::PassChannel {
-            load_op: depth_load.unwrap_or(CanvasLoadOp::Clear).into(),
-            store_op: depth_store.unwrap_or(CanvasStoreOp::Store).into(),
-            clear_value: depth_stencil_attachment.depth_clear_value,
+            load_op: depth_load.map(|load_op| {
+                load_op.with_value(depth_stencil_attachment.depth_clear_value.into())
+            }),
+            store_op: depth_store.map(|value| value.into()),
             read_only: depth_stencil_attachment.depth_read_only,
         };
         let stencil = wgpu_core::command::PassChannel {
-            load_op: stencil_load.unwrap_or(CanvasLoadOp::Clear).into(),
-            store_op: stencil_store.unwrap_or(CanvasStoreOp::Store).into(),
-            clear_value: depth_stencil_attachment.stencil_clear_value,
+            load_op: stencil_load.map(|load_op| {
+                load_op.with_value(Some(depth_stencil_attachment.stencil_clear_value))
+            }),
+            store_op: stencil_store.map(|value| value.into()),
             read_only: depth_stencil_attachment.stencil_read_only,
         };
         Some(wgpu_core::command::RenderPassDepthStencilAttachment {
@@ -265,13 +270,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
 
     let desc = wgpu_core::command::RenderPassDescriptor {
         label: label.clone(),
-        color_attachments: std::borrow::Cow::Owned(color_attachments),
+        color_attachments: Cow::Owned(color_attachments),
         depth_stencil_attachment: depth_stencil_attachment.as_ref(),
         timestamp_writes: timestamp_writes.as_ref(),
         occlusion_query_set,
     };
 
-    let (pass, err) = global.command_encoder_create_render_pass(command_encoder_id, &desc);
+    let (pass, err) = global.command_encoder_begin_render_pass(command_encoder_id, &desc);
 
     let error_sink = command_encoder.error_sink.as_ref();
     if let Some(cause) = err {
@@ -397,17 +402,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
 
     let global = command_encoder.instance.global();
 
-    let layout = wgt::ImageDataLayout {
+    let layout = wgt::TexelCopyBufferLayout {
         offset: src.offset,
         bytes_per_row: src.bytes_per_row.try_into().ok(),
         rows_per_image: src.rows_per_image.try_into().ok(),
     };
-    let image_copy_buffer = wgt::ImageCopyBuffer {
+    let image_copy_buffer = wgt::TexelCopyBufferInfo {
         buffer: src_buffer_id,
         layout,
     };
 
-    let image_copy_texture = wgt::ImageCopyTexture {
+    let image_copy_texture = wgt::TexelCopyTextureInfo {
         texture: dst_texture_id,
         mip_level: dst.mip_level,
         origin: dst.origin.into(),
@@ -461,17 +466,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_bu
 
     let global = command_encoder.instance.global();
 
-    let layout = wgt::ImageDataLayout {
+    let layout = wgt::TexelCopyBufferLayout {
         offset: dst.offset,
         bytes_per_row: dst.bytes_per_row.try_into().ok(),
         rows_per_image: dst.rows_per_image.try_into().ok(),
     };
-    let image_copy_buffer = wgt::ImageCopyBuffer {
+    let image_copy_buffer = wgt::TexelCopyBufferInfo {
         buffer: dst_buffer_id,
         layout,
     };
 
-    let image_copy_texture = wgt::ImageCopyTexture {
+    let image_copy_texture = wgt::TexelCopyTextureInfo {
         texture: src_texture_id,
         mip_level: src.mip_level,
         origin: src.origin.into(),
@@ -524,14 +529,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_texture_to_te
 
     let global = command_encoder.instance.global();
 
-    let image_copy_texture_src = wgt::ImageCopyTexture {
+    let image_copy_texture_src = wgt::TexelCopyTextureInfo {
         texture: src_texture_id,
         mip_level: src.mip_level,
         origin: src.origin.into(),
         aspect: src.aspect.into(),
     };
 
-    let image_copy_texture_dst = wgt::ImageCopyTexture {
+    let image_copy_texture_dst = wgt::TexelCopyTextureInfo {
         texture: dst_texture_id,
         mip_level: dst.mip_level,
         origin: dst.origin.into(),

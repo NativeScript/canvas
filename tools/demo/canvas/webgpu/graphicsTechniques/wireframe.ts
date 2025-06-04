@@ -410,8 +410,6 @@ export async function run(canvas: Canvas) {
 
 		device.queue.submit([commandBuffer]);
 
-		context.presentSurface();
-
 		requestAnimationFrame(render);
 	}
 

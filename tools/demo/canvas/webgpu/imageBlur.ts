@@ -68,16 +68,25 @@ export async function run(canvas: Canvas) {
 	// const response = await fetch('../../assets/img/Di-3d.png');
 	// const imageBitmap = await createImageBitmap(await response.blob());
 
+	const ctxCanvas = document.createElement('canvas');
+	const ctxImage = ctxCanvas.getContext('2d');
+	ctxCanvas.width = 512;
+	ctxCanvas.height = 512;
+
 	const imageBitmap = new ImageAsset();
 	await imageBitmap.fromFile('~/assets/file-assets/webgpu/Di-3d.png');
 
-	const [srcWidth, srcHeight] = [imageBitmap.width, imageBitmap.height];
+	ctxImage.drawImage(imageBitmap as never, 0, 0);
+
+	// const [srcWidth, srcHeight] = [imageBitmap.width, imageBitmap.height];
+	const [srcWidth, srcHeight] = [ctxCanvas.width, ctxCanvas.height];
 	const cubeTexture = device.createTexture({
 		size: [srcWidth, srcHeight, 1],
 		format: 'rgba8unorm',
 		usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 	});
-	device.queue.copyExternalImageToTexture({ source: imageBitmap }, { texture: cubeTexture }, [imageBitmap.width, imageBitmap.height]);
+	// device.queue.copyExternalImageToTexture({ source: imageBitmap }, { texture: cubeTexture }, [imageBitmap.width, imageBitmap.height]);
+	device.queue.copyExternalImageToTexture({ source: ctxCanvas }, { texture: cubeTexture }, [ctxCanvas.width, ctxCanvas.height]);
 
 	const textures = [0, 1].map(() => {
 		return device.createTexture({

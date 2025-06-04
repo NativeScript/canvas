@@ -1,6 +1,18 @@
+import { View } from '@nativescript/core';
+
 let LAF = 0;
 
 export function rainbowOctopus(canvas) {
+	canvas.on(View.unloadedEvent, () => {
+		cancelRainbowOctopus();
+	});
+
+	canvas.on(View.loadedEvent, () => {
+		if (LAF === 0) {
+			initCanvas();
+		}
+	});
+
 	canvas.width = canvas.clientWidth * window.devicePixelRatio;
 	canvas.height = canvas.clientHeight * window.devicePixelRatio;
 	var context = canvas.getContext('2d');

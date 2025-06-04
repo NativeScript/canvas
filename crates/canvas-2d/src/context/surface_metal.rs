@@ -9,6 +9,44 @@ use std::os::raw::c_void;
 
 #[cfg(feature = "metal")]
 impl Context {
+    pub fn draw_on_texture(&mut self, texture: &canvas_core::gpu::metal::MetalTexture) -> bool {
+        let width = texture.width();
+        let height = texture.height();
+        if let Some(context) = self.direct_context.as_mut() {
+            let info = unsafe { TextureInfo::new(texture.texture() as gpu::mtl::Handle) };
+            let bt = unsafe {
+                gpu::backend_textures::make_mtl(
+                    (width as i32, height as i32),
+                    gpu::Mipmapped::No,
+                    &info,
+                    "",
+                )
+            };
+
+            // let snapshot = self.surface.image_snapshot();
+            if let Some(mut surface) = gpu::surfaces::wrap_backend_texture(
+                context,
+                &bt,
+                gpu::SurfaceOrigin::TopLeft,
+                Some(0),
+                ColorType::RGBA8888,
+                None,
+                None,
+            ) {
+                surface.canvas().draw_color(Color::RED, None);
+                
+                // surface
+                //     .canvas()
+                //     .draw_image(snapshot, skia_safe::Point::new(0.0, 0.0), None);
+                 context.flush_surface(&mut surface);
+                 context.flush_submit_and_sync_cpu();
+
+                return true;
+            }
+        }
+        false
+    }
+  
     pub fn new_metal(
         view: *mut c_void,
         density: f32,
@@ -32,10 +70,24 @@ impl Context {
 
         let drawable = mtl_context.drawable().unwrap();
         let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
-        let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, &info, "") };
-        let surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, Some(samples), ColorType::BGRA8888,
-                                                          None,
-                                                          None).unwrap();
+        let bt = unsafe {
+            gpu::backend_textures::make_mtl(
+                (width as i32, height as i32),
+                gpu::Mipmapped::No,
+                &info,
+                "",
+            )
+        };
+        let surface = gpu::surfaces::wrap_backend_texture(
+            &mut context,
+            &bt,
+            gpu::SurfaceOrigin::TopLeft,
+            Some(samples),
+            ColorType::BGRA8888,
+            None,
+            None,
+        )
+        .unwrap();
 
         let mut state = State::default();
         state.direction = TextDirection::from(direction as u32);
@@ -56,6 +108,7 @@ impl Context {
             vulkan_context: None,
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
+            cpu_context: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]
@@ -81,21 +134,31 @@ impl Context {
     ) -> Self {
         let mut mtl_context = unsafe { MetalContext::new_device_queue(view, device, queue) };
         let backend = unsafe {
-            gpu::mtl::BackendContext::new(
-                device as gpu::mtl::Handle,
-                queue as gpu::mtl::Handle,
-            )
+            gpu::mtl::BackendContext::new(device as gpu::mtl::Handle, queue as gpu::mtl::Handle)
         };
         let (width, height) = mtl_context.drawable_size();
 
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
         let drawable = mtl_context.current_drawable().unwrap();
         let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
-        let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, &info, "") };
-        let surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, Some(samples), ColorType::BGRA8888,
-                                                          None,
-                                                          None).unwrap();
-
+        let bt = unsafe {
+            gpu::backend_textures::make_mtl(
+                (width as i32, height as i32),
+                gpu::Mipmapped::No,
+                &info,
+                "",
+            )
+        };
+        let surface = gpu::surfaces::wrap_backend_texture(
+            &mut context,
+            &bt,
+            gpu::SurfaceOrigin::TopLeft,
+            Some(samples),
+            ColorType::BGRA8888,
+            None,
+            None,
+        )
+        .unwrap();
 
         let mut state = State::default();
         state.direction = TextDirection::from(direction as u32);
@@ -116,6 +179,7 @@ impl Context {
             vulkan_context: None,
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
+            cpu_context: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]
@@ -127,7 +191,6 @@ impl Context {
             font_color: Color::new(font_color as u32),
         }
     }
-
 
     pub fn new_metal_offscreen(
         width: f32,
@@ -153,10 +216,24 @@ impl Context {
 
         let drawable = mtl_context.drawable().unwrap();
         let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
-        let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, &info, "") };
-        let surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, Some(samples), ColorType::BGRA8888,
-                                                          None,
-                                                          None).unwrap();
+        let bt = unsafe {
+            gpu::backend_textures::make_mtl(
+                (width as i32, height as i32),
+                gpu::Mipmapped::No,
+                &info,
+                "",
+            )
+        };
+        let surface = gpu::surfaces::wrap_backend_texture(
+            &mut context,
+            &bt,
+            gpu::SurfaceOrigin::TopLeft,
+            Some(samples),
+            ColorType::BGRA8888,
+            None,
+            None,
+        )
+        .unwrap();
 
         let mut state = State::default();
         state.direction = TextDirection::from(direction as u32);
@@ -177,6 +254,7 @@ impl Context {
             vulkan_context: None,
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
+            cpu_context: None,
             metal_context: Some(mtl_context),
             metal_texture_info: Some(info),
             #[cfg(feature = "gl")]
@@ -202,18 +280,34 @@ impl Context {
             }
 
             if let Some(drawable) = context.next_drawable() {
-                info = unsafe { Some(TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle)) };
+                info = unsafe {
+                    Some(TextureInfo::new(
+                        drawable.texture().as_ptr() as gpu::mtl::Handle
+                    ))
+                };
             }
         }
 
-
         let mut surface = None;
         if let (Some(context), Some(info)) = (context.direct_context.as_mut(), info.as_ref()) {
-            let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, info, "") };
+            let bt = unsafe {
+                gpu::backend_textures::make_mtl(
+                    (width as i32, height as i32),
+                    gpu::Mipmapped::No,
+                    info,
+                    "",
+                )
+            };
 
-            surface = gpu::surfaces::wrap_backend_texture(context, &bt, gpu::SurfaceOrigin::TopLeft, Some(samples), ColorType::BGRA8888,
-                                                          None,
-                                                          None);
+            surface = gpu::surfaces::wrap_backend_texture(
+                context,
+                &bt,
+                gpu::SurfaceOrigin::TopLeft,
+                Some(samples),
+                ColorType::BGRA8888,
+                None,
+                None,
+            );
 
             // surface = unsafe {
             //     gpu::surfaces::wrap_mtk_view(
@@ -253,10 +347,18 @@ impl Context {
             }
         }
 
-
         if let Some(info) = info.as_ref() {
-            let bt = unsafe { gpu::backend_textures::make_mtl((width as i32, height as i32), gpu::Mipmapped::No, info, "") };
-            context.surface.replace_backend_texture(&bt, gpu::SurfaceOrigin::TopLeft);
+            let bt = unsafe {
+                gpu::backend_textures::make_mtl(
+                    (width as i32, height as i32),
+                    gpu::Mipmapped::No,
+                    info,
+                    "",
+                )
+            };
+            context
+                .surface
+                .replace_backend_texture(&bt, gpu::SurfaceOrigin::TopLeft);
         }
 
         context.metal_texture_info = info;

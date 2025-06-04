@@ -120,11 +120,9 @@ export class GPUQueue {
 			data = new Uint8Array(data);
 		} else if (ArrayBuffer.isView(data)) {
 			data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-		} else if ((data as any) instanceof ArrayBuffer) {
-			data = new Uint8Array(data);
 		}
 
-		this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, data, dataOffset ?? 0, size ?? -1);
+		this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, data, dataOffset ?? 0, size);
 	}
 
 	writeTexture(destination: GPUImageCopyTexture, data: BufferSource, dataLayout: GPUImageDataLayout, size: GPUExtent3D) {

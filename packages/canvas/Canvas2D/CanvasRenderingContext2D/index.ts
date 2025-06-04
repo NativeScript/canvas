@@ -154,6 +154,153 @@ function drawNativeImage(args: any[], image, context: any) {
 	}
 }
 
+enum CompositeOperationType {
+	SourceOver = 0,
+	SourceIn = 1,
+	SourceOut = 2,
+	SourceAtop = 3,
+	DestinationOver = 4,
+	DestinationIn = 5,
+	DestinationOut = 6,
+	DestinationAtop = 7,
+	Lighter = 8,
+	Copy = 9,
+	Xor = 10,
+	Multiply = 11,
+	Screen = 12,
+	Overlay = 13,
+	Darken = 14,
+	Lighten = 15,
+	ColorDodge = 16,
+	ColorBurn = 17,
+	HardLight = 18,
+	SoftLight = 19,
+	Difference = 20,
+	Exclusion = 21,
+	Hue = 22,
+	Saturation = 23,
+	Color = 24,
+	Luminosity = 25,
+}
+
+function compositeOperationFromString(value: string): CompositeOperationType | null {
+	switch (value) {
+		case 'source-over':
+			return CompositeOperationType.SourceOver;
+		case 'source-in':
+			return CompositeOperationType.SourceIn;
+		case 'source-out':
+			return CompositeOperationType.SourceOut;
+		case 'source-atop':
+			return CompositeOperationType.SourceAtop;
+		case 'destination-over':
+			return CompositeOperationType.DestinationOver;
+		case 'destination-in':
+			return CompositeOperationType.DestinationIn;
+		case 'destination-out':
+			return CompositeOperationType.DestinationOut;
+		case 'destination-atop':
+			return CompositeOperationType.DestinationAtop;
+		case 'lighter':
+			return CompositeOperationType.Lighter;
+		case 'copy':
+			return CompositeOperationType.Copy;
+		case 'xor':
+			return CompositeOperationType.Xor;
+		case 'multiply':
+			return CompositeOperationType.Multiply;
+		case 'screen':
+			return CompositeOperationType.Screen;
+		case 'overlay':
+			return CompositeOperationType.Overlay;
+		case 'darken':
+			return CompositeOperationType.Darken;
+		case 'lighten':
+			return CompositeOperationType.Lighten;
+		case 'color-dodge':
+			return CompositeOperationType.ColorDodge;
+		case 'color-burn':
+			return CompositeOperationType.ColorBurn;
+		case 'hard-light':
+			return CompositeOperationType.HardLight;
+		case 'soft-light':
+			return CompositeOperationType.SoftLight;
+		case 'difference':
+			return CompositeOperationType.Difference;
+		case 'exclusion':
+			return CompositeOperationType.Exclusion;
+		case 'hue':
+			return CompositeOperationType.Hue;
+		case 'saturation':
+			return CompositeOperationType.Saturation;
+		case 'color':
+			return CompositeOperationType.Color;
+		case 'luminosity':
+			return CompositeOperationType.Luminosity;
+		default:
+			return null;
+	}
+}
+
+export function compositeOperationToString(value: number): string | null {
+	switch (value) {
+		case 0:
+			return 'source-over';
+		case 1:
+			return 'source-in';
+		case 2:
+			return 'source-out';
+		case 3:
+			return 'source-atop';
+		case 4:
+			return 'destination-over';
+		case 5:
+			return 'destination-in';
+		case 6:
+			return 'destination-out';
+		case 7:
+			return 'destination-atop';
+		case 8:
+			return 'lighter';
+		case 9:
+			return 'copy';
+		case 10:
+			return 'xor';
+		case 11:
+			return 'multiply';
+		case 12:
+			return 'screen';
+		case 13:
+			return 'overlay';
+		case 14:
+			return 'darken';
+		case 15:
+			return 'lighten';
+		case 16:
+			return 'color-dodge';
+		case 17:
+			return 'color-burn';
+		case 18:
+			return 'hard-light';
+		case 19:
+			return 'soft-light';
+		case 20:
+			return 'difference';
+		case 21:
+			return 'exclusion';
+		case 22:
+			return 'hue';
+		case 23:
+			return 'saturation';
+		case 24:
+			return 'color';
+		case 25:
+			return 'luminosity';
+		default:
+			return null;
+	}
+}
+
 export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	public static isDebug = true;
 	private context;
@@ -316,11 +463,15 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	get globalCompositeOperation() {
-		return this.context.globalCompositeOperation;
+		return compositeOperationToString(this.context.globalCompositeOperation);
 	}
 
 	set globalCompositeOperation(composite: string) {
-		this.context.globalCompositeOperation = composite;
+		const value = compositeOperationFromString(composite);
+		if (value === null) {
+			return;
+		}
+		this.context.globalCompositeOperation = value;
 	}
 
 	get fillStyle() {
@@ -563,7 +714,6 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 
 	drawImage(...args): void {
 		//const drawImage = this.context.drawImage; //this._getMethod('drawImage');
-
 		let image = args[0];
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
 			image = (image as any).native;
@@ -763,10 +913,13 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	fill(...args: any): void {
 		if (typeof args[0] === 'string') {
 			this.context.fill(ruleToEnum(args[0]));
-		} else if (args[0] instanceof Path2D && typeof args[1] === 'string') {
-			this.context.fill(args[0].native, ruleToEnum(args[1]));
 		} else if (args[0] instanceof Path2D) {
-			this.context.fill(args[0].native);
+			const path = args[0] as Path2D;
+			if (typeof args[1] === 'string') {
+				this.context.fill(path.native, ruleToEnum(args[1]));
+			} else {
+				this.context.fill(path.native);
+			}
 		} else {
 			this.context.fill();
 		}

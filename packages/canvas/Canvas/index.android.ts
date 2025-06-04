@@ -24,6 +24,7 @@ const defaultOpts = {
 	stencil: false,
 	desynchronized: false,
 	xrCompatible: false,
+	willReadFrequently: false,
 };
 
 // declare const org;
@@ -360,7 +361,6 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
-
 		if (typeof type === 'string') {
 			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context || this._gpuContext) {
@@ -374,8 +374,9 @@ export class Canvas extends CanvasBase {
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
 
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
+					// @ts-ignore
 					(this._2dContext as any)._canvas = this;
 					this._2dContext._type = '2d';
 					this._contextType = ContextType.Canvas;

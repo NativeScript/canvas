@@ -12,8 +12,8 @@ pub fn get_sdk_version() -> i32 {
 }
 
 pub(crate) fn init_with_custom_surface(
-    width: jfloat,
-    height: jfloat,
+    width: jint,
+    height: jint,
     density: jfloat,
     alpha: jboolean,
     font_color: jint,
@@ -22,8 +22,8 @@ pub(crate) fn init_with_custom_surface(
 ) -> jlong {
     Box::into_raw(Box::new(canvas_c::CanvasRenderingContext2D::new(
         context::Context::new(
-            width,
-            height,
+            width as f32,
+            height as f32,
             density,
             alpha == jni::sys::JNI_TRUE,
             font_color,
@@ -36,8 +36,8 @@ pub(crate) fn init_with_custom_surface(
 
 #[no_mangle]
 pub extern "system" fn nativeInitContextWithCustomSurface(
-    width: jfloat,
-    height: jfloat,
+    width: jint,
+    height: jint,
     density: jfloat,
     alpha: jboolean,
     font_color: jint,
@@ -51,8 +51,8 @@ pub extern "system" fn nativeInitContextWithCustomSurface(
 pub extern "system" fn nativeInitContextWithCustomSurfaceNormal(
     _env: JNIEnv,
     _: JClass,
-    width: jfloat,
-    height: jfloat,
+    width: jint,
+    height: jint,
     density: jfloat,
     alpha: jboolean,
     font_color: jint,
@@ -65,8 +65,8 @@ pub extern "system" fn nativeInitContextWithCustomSurfaceNormal(
 #[no_mangle]
 pub extern "system" fn nativeResizeCustomSurface(
     context: jlong,
-    width: jfloat,
-    height: jfloat,
+    width: jint,
+    height: jint,
     _density: jfloat,
     _alpha: jboolean,
     _ppi: jfloat,
@@ -76,7 +76,7 @@ pub extern "system" fn nativeResizeCustomSurface(
     }
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
-    context.resize(width, height);
+    context.resize(width as f32, height as f32);
 }
 
 #[no_mangle]
@@ -84,8 +84,8 @@ pub extern "system" fn nativeResizeCustomSurfaceNormal(
     _env: JNIEnv,
     _: JClass,
     context: jlong,
-    width: jfloat,
-    height: jfloat,
+    width: jint,
+    height: jint,
     _density: jfloat,
     _alpha: jboolean,
     _ppi: jfloat,
@@ -95,7 +95,7 @@ pub extern "system" fn nativeResizeCustomSurfaceNormal(
     }
     let context = context as *mut canvas_c::CanvasRenderingContext2D;
     let context = unsafe { &mut *context };
-    context.resize(width, height);
+    context.resize(width as f32, height as f32);
 }
 
 /*

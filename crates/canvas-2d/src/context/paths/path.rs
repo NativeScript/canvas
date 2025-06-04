@@ -1,11 +1,12 @@
 use std::f32::consts::PI;
+use std::f32::EPSILON;
 use std::os::raw::c_float;
 
 use skia_safe::{PathEffect, Point, RRect, Rect};
 
 use crate::context::drawing_paths::fill_rule::FillRule;
 use crate::context::matrix::Matrix;
-use crate::utils::geometry::{almost_equal, to_degrees};
+use crate::utils::geometry::to_degrees;
 
 #[derive(Clone)]
 pub struct Path(pub(crate) skia_safe::Path);
@@ -78,7 +79,6 @@ impl Path {
         Self(path.clone())
     }
 
-
     pub fn set_fill_type(&mut self, fill_type: FillRule) {
         self.0.set_fill_type(fill_type.to_fill_type());
     }
@@ -108,45 +108,45 @@ impl Path {
         let start_angle = new_start_angle;
         let mut end_angle = end_angle + delta;
 
-        // Based off of AdjustEndAngle in Chrome.
-        if !ccw && (end_angle - start_angle) >= tau {
-            end_angle = start_angle + tau; // Draw complete ellipse
-        } else if ccw && (start_angle - end_angle) >= tau {
-            end_angle = start_angle - tau; // Draw complete ellipse
-        } else if !ccw && start_angle > end_angle {
+        // Originally based off of AdjustEndAngle in Chrome, but does not limit to 360 degree sweep.
+        if !ccw && start_angle > end_angle {
             end_angle = start_angle + (tau - (start_angle - end_angle) % tau);
         } else if ccw && start_angle < end_angle {
             end_angle = start_angle - (tau - (end_angle - start_angle) % tau);
         }
 
-        // Based off of Chrome's implementation in
-        // https://cs.chromium.org/chromium/src/third_party/blink/renderer/platform/graphics/path.cc
-        // of note, can't use addArc or addOval because they close the arc, which
-        // the spec says not to do (unless the user explicitly calls closePath).
-        // This throws off points being in/out of the arc.
         let oval = Rect::new(x - x_radius, y - y_radius, x + x_radius, y + y_radius);
-        let mut rotated = skia_safe::Matrix::new_identity();
+
+        let mut rotated = skia_safe::matrix::Matrix::new_identity();
         rotated
             .pre_translate((x, y))
             .pre_rotate(to_degrees(rotation), None)
             .pre_translate((-x, -y));
-        let unrotated = rotated.invert().unwrap();
 
-        self.0.transform(&unrotated);
+        self.0.transform(&rotated.invert().unwrap());
+        {
+            // Based off of Chrome's implementation in
+            // https://cs.chromium.org/chromium/src/third_party/blink/renderer/platform/graphics/path.cc
+            // of note, can't use addArc or addOval because they close the arc, which
+            // the spec says not to do (unless the user explicitly calls closePath).
+            // This throws off points being in/out of the arc.
 
-        // draw in 2 180 degree segments because trying to draw all 360 degrees at once
-        // draws nothing.
-        let sweep_deg = to_degrees(end_angle - start_angle);
-        let start_deg = to_degrees(start_angle);
-        if almost_equal(sweep_deg.abs(), 360.0) {
-            let half_sweep = sweep_deg / 2.0;
-            self.0.arc_to(oval, start_deg, half_sweep, false);
-            self.0
-                .arc_to(oval, start_deg + half_sweep, half_sweep, false);
-        } else {
-            self.0.arc_to(oval, start_deg, sweep_deg, false);
+            // rounding degrees to 4 decimals eliminates ambiguity from f32 imprecision dealing with radians
+            let mut sweep_deg = (to_degrees(end_angle - start_angle) * 10000.0).round() / 10000.0;
+            let mut start_deg = (to_degrees(start_angle) * 10000.0).round() / 10000.0;
+
+            // draw 360° ellipses in two 180° segments; trying to draw the full ellipse at once draws nothing.
+            if sweep_deg >= 360.0 - EPSILON {
+                self.0.arc_to(oval, start_deg, 180.0, false);
+                self.0.arc_to(oval, start_deg + 180.0, 180.0, false);
+            } else if sweep_deg <= -360.0 + EPSILON {
+                self.0.arc_to(oval, start_deg, -180.0, false);
+                self.0.arc_to(oval, start_deg - 180.0, -180.0, false);
+            } else {
+                // Draw incomplete (< 360°) ellipses in a single arc.
+                self.0.arc_to(oval, start_deg, sweep_deg, false);
+            }
         }
-
         self.0.transform(&rotated);
     }
 
@@ -194,15 +194,21 @@ impl Path {
             .arc_to_tangent(Point::new(x1, y1), Point::new(x2, y2), radius);
     }
 
+    #[inline]
     pub fn begin_path(&mut self) {
+        if self.0.is_empty() {
+            return;
+        }
         let mut new_path = skia_safe::Path::default();
         self.0.swap(&mut new_path);
     }
 
+    #[inline]
     pub fn move_to(&mut self, x: c_float, y: c_float) {
         self.0.move_to(Point::new(x, y));
     }
 
+    #[inline]
     pub fn line_to(&mut self, x: c_float, y: c_float) {
         // web impl
         let point = Point::new(x, y);
@@ -212,6 +218,7 @@ impl Path {
         self.0.line_to(point);
     }
 
+    #[inline]
     pub fn close_path(&mut self) {
         self.0.close();
     }
@@ -275,10 +282,57 @@ impl Path {
         height: c_float,
         radii: &[c_float],
     ) {
+        let rect = Rect::from_xywh(x, y, width, height);
+        let mut rrect: Option<RRect> = None;
         if radii.len() == 8 {
-            let rect = Rect::from_xywh(x, y, width, height);
             let radii: Vec<Point> = radii.chunks(2).map(|xy| Point::new(xy[0], xy[1])).collect();
-            let rrect = RRect::new_rect_radii(rect, &[radii[0], radii[1], radii[2], radii[3]]);
+            rrect = Some(RRect::new_rect_radii(
+                rect,
+                &[radii[0], radii[1], radii[2], radii[3]],
+            ));
+        } else if radii.len() == 4 {
+            rrect = Some(RRect::new_rect_radii(
+                rect,
+                &[
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[1], radii[1]),
+                    Point::new(radii[2], radii[2]),
+                    Point::new(radii[3], radii[3]),
+                ],
+            ));
+        } else if radii.len() == 3 {
+            rrect = Some(RRect::new_rect_radii(
+                rect,
+                &[
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[1], radii[1]),
+                    Point::new(radii[2], radii[2]),
+                    Point::new(radii[1], radii[1]),
+                ],
+            ));
+        } else if radii.len() == 2 {
+            rrect = Some(RRect::new_rect_radii(
+                rect,
+                &[
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[1], radii[1]),
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[1], radii[1]),
+                ],
+            ));
+        } else if radii.len() == 1 {
+            rrect = Some(RRect::new_rect_radii(
+                rect,
+                &[
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[0], radii[0]),
+                    Point::new(radii[0], radii[0]),
+                ],
+            ));
+        }
+
+        if let Some(rrect) = rrect {
             let direction = if width.signum() == height.signum() {
                 skia_safe::PathDirection::CW
             } else {

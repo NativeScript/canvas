@@ -107,7 +107,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		ctx.fillStyle = c;
 		ctx.arc(x, y, r, 0, 2 * Math.PI, false);
 		ctx.fill();
-		ctx.closePath();
+		// ctx.closePath();
 	};
 
 	// Remove particles that aren't on the canvas
@@ -137,7 +137,6 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		canvas.addEventListener('touchstart', (args: TouchEvent) => {
 			const touches = args.touches.item(0);
 			const first = touches;
-			console.log('first', first.clientX, first.clientY);
 			cleanUpArray();
 			initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
 		});

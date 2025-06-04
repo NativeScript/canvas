@@ -342,7 +342,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_buf
     src_offset: i64,
     dst: *const CanvasGPUBuffer,
     dst_offset: i64,
-    size: u64,
+    size: i64,
 ) {
     if command_encoder.is_null() || src.is_null() || dst.is_null() {
         return;
@@ -360,6 +360,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_buf
 
     let global = command_encoder.instance.global();
     let error_sink = command_encoder.error_sink.as_ref();
+    let size = size.try_into().ok();
     if let Err(cause) = global.command_encoder_copy_buffer_to_buffer(
         command_encoder_id,
         src_id,

@@ -123,6 +123,7 @@ impl Context {
             metal_context: None,
             #[cfg(feature = "metal")]
             metal_texture_info: None,
+            cpu_context: None,
             surface,
             path: Default::default(),
             state,

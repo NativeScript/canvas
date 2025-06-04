@@ -1147,11 +1147,8 @@ void CanvasRenderingContext2DImpl::GetGlobalCompositeOperation(v8::Local<v8::Str
         info.GetReturnValue().Set(0);
         return;
     }
-    auto operation = canvas_native_context_get_global_composition(ptr->GetContext());
-    info.GetReturnValue().Set(
-            ConvertToV8String(info.GetIsolate(), operation));
-
-    canvas_native_string_destroy((char *) operation);
+    auto operation = canvas_native_context_get_global_composition_int(ptr->GetContext());
+		info.GetReturnValue().Set(operation);
 }
 
 void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::String> property,
@@ -1162,8 +1159,15 @@ void CanvasRenderingContext2DImpl::SetGlobalCompositeOperation(v8::Local<v8::Str
         return;
     }
     auto isolate = info.GetIsolate();
-    auto operation = ConvertFromV8String(isolate, value);
-    canvas_native_context_set_global_composition(ptr->GetContext(), operation.c_str());
+	
+	uint32_t operation = 0;
+	auto context = isolate->GetCurrentContext();
+	if (value->Uint32Value(context).To(&operation)) {
+		canvas_native_context_set_global_composition_int(ptr->GetContext(), operation);
+	}
+	
+//    auto operation = ConvertFromV8String(isolate, value);
+//    canvas_native_context_set_global_composition(ptr->GetContext(), operation.c_str());
 }
 
 
@@ -1220,10 +1224,33 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
     auto isolate = info.GetIsolate();
 
     if (value->IsString()) {
-        auto style = ConvertFromV8String(isolate, value);
-        canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(),
-                                                               style.c_str());
-    } else if (value->IsObject()) {
+//        auto style = ConvertFromV8String(isolate, value);
+			
+			auto val = value.As<v8::String>();
+			int len = val->Utf8Length(isolate) + 1;
+			char buffer [len];
+			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+			
+		//	v8::String::Utf8Value result(isolate, value);
+
+//			const char *val = *result;
+
+//			if (buffer == nullptr) {
+//					return;
+//			}
+		
+			canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), buffer);
+		}else if(value->IsStringObject()){
+			
+			auto val = value.As<v8::StringObject>()->ValueOf();
+			
+			int len = val->Utf8Length(isolate) + 1;
+			char buffer [len];
+			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+			
+			canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), buffer);
+			
+		} else if (value->IsObject()) {
 
         auto type = GetNativeType(value);
 
@@ -1300,10 +1327,27 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
     auto isolate = info.GetIsolate();
 
     if (value->IsString()) {
-        auto style = ConvertFromV8String(isolate, value);
-        canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(),
-                                                                 style.c_str());
-    } else if (value->IsObject()) {
+//        auto style = ConvertFromV8String(isolate, value);
+
+			auto val = value.As<v8::String>();
+			
+			int len = val->Utf8Length(isolate) + 1;
+			char buffer [len];
+			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+			
+			
+			canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), buffer);
+			
+		}else if(value->IsStringObject()){
+			auto val = value.As<v8::StringObject>()->ValueOf();
+			
+			int len = val->Utf8Length(isolate) + 1;
+			char buffer [len];
+			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+			
+			
+			canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), buffer);
+		} else if (value->IsObject()) {
 
         auto type = GetNativeType(value);
 

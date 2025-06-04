@@ -586,8 +586,10 @@ void GPURenderPassEncoderImpl::SetBlendConstant(const v8::FunctionCallbackInfo<v
 
         auto color = ParseColor(isolate, colorVal);
 
-
-        canvas_native_webgpu_render_pass_encoder_set_blend_constant(ptr->GetPass(), &color);
+        if (color.tag == CanvasOptionalColorSome) {
+            canvas_native_webgpu_render_pass_encoder_set_blend_constant(ptr->GetPass(),
+                                                                        &color.some);
+        }
     }
 
 }
@@ -702,22 +704,23 @@ void GPURenderPassEncoderImpl::SetViewport(const v8::FunctionCallbackInfo<v8::Va
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
-    
-    
-   auto x = (float) xVal->NumberValue(
-                                   context).FromJust();
-                                                          auto y = (float) yVal->NumberValue(
-                                                                                          context).FromJust();
-                                                          auto width = (float) widthVal->NumberValue(
-                                                                                                  context).FromJust();
-                                                          auto height = (float) heightVal->NumberValue(
-                                                                                                    context).FromJust();
-    
-                                                          auto minDepth = (float) minDepthVal->NumberValue(
-                                                                                                        context).FromJust();
-                                                          auto maxDepth = (float) maxDepthVal->NumberValue(
-                                                                                                        context).FromJust();
 
-    canvas_native_webgpu_render_pass_encoder_set_viewport(ptr->GetPass(),x,y,width,height, minDepth, maxDepth);
+
+    auto x = (float) xVal->NumberValue(
+            context).FromJust();
+    auto y = (float) yVal->NumberValue(
+            context).FromJust();
+    auto width = (float) widthVal->NumberValue(
+            context).FromJust();
+    auto height = (float) heightVal->NumberValue(
+            context).FromJust();
+
+    auto minDepth = (float) minDepthVal->NumberValue(
+            context).FromJust();
+    auto maxDepth = (float) maxDepthVal->NumberValue(
+            context).FromJust();
+
+    canvas_native_webgpu_render_pass_encoder_set_viewport(ptr->GetPass(), x, y, width, height,
+                                                          minDepth, maxDepth);
 
 }

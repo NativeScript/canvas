@@ -127,6 +127,7 @@ impl Context {
             vulkan_context: None,
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
+            cpu_context: None,
             surface_data: SurfaceData {
                 bounds,
                 scale: density,

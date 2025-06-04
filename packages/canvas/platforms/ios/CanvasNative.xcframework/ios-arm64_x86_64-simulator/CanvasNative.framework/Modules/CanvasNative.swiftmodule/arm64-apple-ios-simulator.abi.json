@@ -1,8 +1,8 @@
 {
 	"ABIRoot": {
 		"kind": "Root",
-		"name": "TopLevel",
-		"printedName": "TopLevel",
+		"name": "CanvasNative",
+		"printedName": "CanvasNative",
 		"children": [
 			{
 				"kind": "Import",
@@ -47,7 +47,23 @@
 				"genericSig": "<τ_0_0 : AnyObject>",
 				"sugared_genericSig": "<Self : AnyObject>",
 				"objc_name": "NSCCanvasListener",
-				"declAttributes": ["AccessControl", "ObjC"]
+				"declAttributes": ["AccessControl", "ObjC"],
+				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					}
+				]
 			},
 			{
 				"kind": "Import",
@@ -1381,6 +1397,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -1895,6 +1925,20 @@
 						"conformances": [
 							{
 								"kind": "Conformance",
+								"name": "Copyable",
+								"printedName": "Copyable",
+								"usr": "s:s8CopyableP",
+								"mangledName": "$ss8CopyableP"
+							},
+							{
+								"kind": "Conformance",
+								"name": "Escapable",
+								"printedName": "Escapable",
+								"usr": "s:s9EscapableP",
+								"mangledName": "$ss9EscapableP"
+							},
+							{
+								"kind": "Conformance",
 								"name": "Equatable",
 								"printedName": "Equatable",
 								"usr": "s:SQ",
@@ -2362,6 +2406,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -2469,7 +2527,7 @@
 						"mangledName": "$s12CanvasNative9NSCCanvasC7forceGLSbvpZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["HasInitialValue", "Final", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Final", "HasStorage", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -2823,6 +2881,20 @@
 						"conformances": [
 							{
 								"kind": "Conformance",
+								"name": "Copyable",
+								"printedName": "Copyable",
+								"usr": "s:s8CopyableP",
+								"mangledName": "$ss8CopyableP"
+							},
+							{
+								"kind": "Conformance",
+								"name": "Escapable",
+								"printedName": "Escapable",
+								"usr": "s:s9EscapableP",
+								"mangledName": "$ss9EscapableP"
+							},
+							{
+								"kind": "Conformance",
 								"name": "Equatable",
 								"printedName": "Equatable",
 								"usr": "s:SQ",
@@ -2875,7 +2947,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)fit",
 						"mangledName": "$s12CanvasNative9NSCCanvasC3fitAC0A3FitOvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -2959,7 +3031,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)weblikeScale",
 						"mangledName": "$s12CanvasNative9NSCCanvasC12weblikeScaleSbvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -3044,7 +3116,7 @@
 						"mangledName": "$s12CanvasNative9NSCCanvasC5storeSo19NSMutableDictionaryCvpZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["HasInitialValue", "Final", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Final", "HasStorage", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"isLet": true,
 						"hasStorage": true,
 						"accessors": [
@@ -3102,7 +3174,7 @@
 						"mangledName": "$s12CanvasNative9NSCCanvasC8getViewsSo10NSMapTableCySo8NSStringCACGyFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3121,7 +3193,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)getGlViewPtr",
 						"mangledName": "$s12CanvasNative9NSCCanvasC12getGlViewPtrSvyF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3140,7 +3212,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)getMtlViewPtr",
 						"mangledName": "$s12CanvasNative9NSCCanvasC13getMtlViewPtrSvyF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3159,7 +3231,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)getMtlLayerPtr",
 						"mangledName": "$s12CanvasNative9NSCCanvasC14getMtlLayerPtrSvyF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3178,7 +3250,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)autoScale",
 						"mangledName": "$s12CanvasNative9NSCCanvasC9autoScaleSbvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -3262,7 +3334,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)nativeContext",
 						"mangledName": "$s12CanvasNative9NSCCanvasC13nativeContexts5Int64Vvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "SetterAccess", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "SetterAccess", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -3303,7 +3375,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)is2D",
 						"mangledName": "$s12CanvasNative9NSCCanvasC4is2DSbvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "SetterAccess", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "SetterAccess", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -3330,6 +3402,47 @@
 					},
 					{
 						"kind": "Var",
+						"name": "willReadFrequently",
+						"printedName": "willReadFrequently",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)willReadFrequently",
+						"mangledName": "$s12CanvasNative9NSCCanvasC18willReadFrequentlySbvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "SetterAccess", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Bool",
+										"printedName": "Swift.Bool",
+										"usr": "s:Sb"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)willReadFrequently",
+								"mangledName": "$s12CanvasNative9NSCCanvasC18willReadFrequentlySbvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
+						"kind": "Var",
 						"name": "drawingBufferWidth",
 						"printedName": "drawingBufferWidth",
 						"children": [
@@ -3344,7 +3457,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)drawingBufferWidth",
 						"mangledName": "$s12CanvasNative9NSCCanvasC18drawingBufferWidth12CoreGraphics7CGFloatVvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"accessors": [
 							{
 								"kind": "Accessor",
@@ -3383,7 +3496,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)drawingBufferHeight",
 						"mangledName": "$s12CanvasNative9NSCCanvasC19drawingBufferHeight12CoreGraphics7CGFloatVvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"accessors": [
 							{
 								"kind": "Accessor",
@@ -3422,7 +3535,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)width",
 						"mangledName": "$s12CanvasNative9NSCCanvasC5widthSfvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"accessors": [
 							{
 								"kind": "Accessor",
@@ -3461,7 +3574,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)height",
 						"mangledName": "$s12CanvasNative9NSCCanvasC6heightSfvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"accessors": [
 							{
 								"kind": "Accessor",
@@ -3512,13 +3625,13 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)toDataURL::",
 						"mangledName": "$s12CanvasNative9NSCCanvasC9toDataURLyS2S_SftF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
 						"kind": "Function",
 						"name": "initContext",
-						"printedName": "initContext(_:_:_:_:_:_:_:_:_:_:_:)",
+						"printedName": "initContext(_:_:_:_:_:_:_:_:_:_:_:_:)",
 						"children": [
 							{
 								"kind": "TypeNominal",
@@ -3600,13 +3713,20 @@
 								"printedName": "Swift.Bool",
 								"hasDefaultArg": true,
 								"usr": "s:Sb"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"hasDefaultArg": true,
+								"usr": "s:Sb"
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)initContext:::::::::::",
-						"mangledName": "$s12CanvasNative9NSCCanvasC11initContextyySS_S4bs5Int32VS5btF",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)initContext::::::::::::",
+						"mangledName": "$s12CanvasNative9NSCCanvasC11initContextyySS_S4bs5Int32VS6btF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3630,13 +3750,13 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)initWebGPUContext:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC17initWebGPUContextyys5Int64VF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
 						"kind": "Function",
 						"name": "create2DContext",
-						"printedName": "create2DContext(_:_:_:_:_:_:_:_:_:_:_:)",
+						"printedName": "create2DContext(_:_:_:_:_:_:_:_:_:_:_:_:)",
 						"children": [
 							{
 								"kind": "TypeNominal",
@@ -3709,13 +3829,19 @@
 								"name": "Int32",
 								"printedName": "Swift.Int32",
 								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
 							}
 						],
 						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)create2DContext:::::::::::",
-						"mangledName": "$s12CanvasNative9NSCCanvasC15create2DContextys5Int64VSb_S3bs5Int32VS5bAHtF",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)create2DContext::::::::::::",
+						"mangledName": "$s12CanvasNative9NSCCanvasC15create2DContextys5Int64VSb_S3bs5Int32VS5bAHSbtF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3748,7 +3874,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)snapshot:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC8snapshotySo7UIImageCSgSbF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3767,7 +3893,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)render",
 						"mangledName": "$s12CanvasNative9NSCCanvasC6renderSbyF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "DiscardableResult", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "DiscardableResult", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -3819,7 +3945,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)touchEventListener",
 						"mangledName": "$s12CanvasNative9NSCCanvasC18touchEventListenerySS_So19UIGestureRecognizerCtcSgvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -3977,7 +4103,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "initWithFrame:",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"init_kind": "Designated"
 					},
 					{
@@ -3996,7 +4122,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)ignoreTouchEvents",
 						"mangledName": "$s12CanvasNative9NSCCanvasC17ignoreTouchEventsSbvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -4093,7 +4219,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)setListener:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC11setListeneryyAA0cE0_pSgF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4112,7 +4238,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)surfaceWidth",
 						"mangledName": "$s12CanvasNative9NSCCanvasC12surfaceWidthSivp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -4196,7 +4322,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(py)surfaceHeight",
 						"mangledName": "$s12CanvasNative9NSCCanvasC13surfaceHeightSivp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -4291,7 +4417,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)forceLayout::",
 						"mangledName": "$s12CanvasNative9NSCCanvasC11forceLayoutyy12CoreGraphics7CGFloatV_AGtF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4315,7 +4441,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)context2DTest:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC13context2DTestyys5Int64VF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4339,7 +4465,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)context2DPathTest:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC17context2DPathTestyys5Int64VF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4363,7 +4489,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)NSCCanvas(im)context2DConic:",
 						"mangledName": "$s12CanvasNative9NSCCanvasC14context2DConicyys5Int64VF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4383,7 +4509,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "layoutSubviews",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -4414,7 +4540,7 @@
 						"mangledName": "$s12CanvasNative9NSCCanvasC21getBoundingClientRectyySo6UIViewC_SvtFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Final", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					}
 				],
@@ -4423,12 +4549,26 @@
 				"mangledName": "$s12CanvasNative9NSCCanvasC",
 				"moduleName": "CanvasNative",
 				"objc_name": "NSCCanvas",
-				"declAttributes": ["Custom", "AccessControl", "ObjC", "ObjCMembers"],
+				"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC", "ObjCMembers"],
 				"superclassUsr": "c:objc(cs)UIView",
 				"hasMissingDesignatedInitializers": true,
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["UIKit.UIView", "UIKit.UIResponder", "ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -4804,6 +4944,20 @@
 				"declAttributes": ["AccessControl", "ObjC"],
 				"enumRawTypeName": "Int",
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -5332,6 +5486,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -5581,6 +5749,20 @@
 						"printedName": "Encodable",
 						"usr": "s:SE",
 						"mangledName": "$sSE"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
 					},
 					{
 						"kind": "Conformance",
@@ -5874,6 +6056,20 @@
 				"declAttributes": ["AccessControl", "ObjC"],
 				"enumRawTypeName": "Int",
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -6983,6 +7179,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -7099,6 +7309,20 @@
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -7321,6 +7545,20 @@
 				"declAttributes": ["AccessControl", "ObjC"],
 				"enumRawTypeName": "Int",
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -7945,6 +8183,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -8106,6 +8358,20 @@
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -8461,6 +8727,20 @@
 						"conformances": [
 							{
 								"kind": "Conformance",
+								"name": "Copyable",
+								"printedName": "Copyable",
+								"usr": "s:s8CopyableP",
+								"mangledName": "$ss8CopyableP"
+							},
+							{
+								"kind": "Conformance",
+								"name": "Escapable",
+								"printedName": "Escapable",
+								"usr": "s:s9EscapableP",
+								"mangledName": "$ss9EscapableP"
+							},
+							{
+								"kind": "Conformance",
 								"name": "Error",
 								"printedName": "Error",
 								"usr": "s:s5ErrorP",
@@ -8540,6 +8820,20 @@
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -8864,6 +9158,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -9141,6 +9449,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -9232,7 +9554,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)CanvasGLKView(py)canvas",
 						"mangledName": "$s12CanvasNative0A7GLKViewC6canvasAA9NSCCanvasCSgvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "ReferenceOwnership", "AccessControl", "SetterAccess", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "ReferenceOwnership", "AccessControl", "SetterAccess", "ObjC"],
 						"ownership": 1,
 						"hasStorage": true,
 						"accessors": [
@@ -9284,7 +9606,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "init",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "AccessControl"],
 						"init_kind": "Designated"
 					},
 					{
@@ -9311,7 +9633,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "initWithFrame:",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"init_kind": "Designated"
 					},
 					{
@@ -9331,7 +9653,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "bindDrawable",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -9351,7 +9673,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "deleteDrawable",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -9382,7 +9704,7 @@
 						"mangledName": "$s12CanvasNative0A7GLKViewC7glkView_6drawInySo0C0C_So6CGRectVtF",
 						"moduleName": "CanvasNative",
 						"objc_name": "glkView:drawInRect:",
-						"declAttributes": ["ObjC", "Custom", "AccessControl"],
+						"declAttributes": ["ObjC", "Preconcurrency", "Custom", "AccessControl"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -9416,7 +9738,7 @@
 						"overriding": true,
 						"implicit": true,
 						"objc_name": "initWithFrame:context:",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override"],
 						"init_kind": "Designated"
 					}
 				],
@@ -9425,11 +9747,25 @@
 				"mangledName": "$s12CanvasNative0A7GLKViewC",
 				"moduleName": "CanvasNative",
 				"objc_name": "CanvasGLKView",
-				"declAttributes": ["Custom", "AccessControl", "ObjC", "ObjCMembers"],
+				"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC", "ObjCMembers"],
 				"superclassUsr": "c:objc(cs)GLKView",
 				"hasMissingDesignatedInitializers": true,
 				"superclassNames": ["GLKit.GLKView", "UIKit.UIView", "UIKit.UIResponder", "ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -9523,7 +9859,7 @@
 						"usr": "c:@M@CanvasNative@objc(cs)CanvasCPUView(py)ignorePixelScaling",
 						"mangledName": "$s12CanvasNative0A7CPUViewC18ignorePixelScalingSbvp",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["HasInitialValue", "HasStorage", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "ObjC"],
 						"hasStorage": true,
 						"accessors": [
 							{
@@ -9592,6 +9928,63 @@
 						]
 					},
 					{
+						"kind": "Var",
+						"name": "data",
+						"printedName": "data",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Optional",
+								"printedName": "Foundation.NSMutableData?",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "NSMutableData",
+										"printedName": "Foundation.NSMutableData",
+										"usr": "c:objc(cs)NSMutableData"
+									}
+								],
+								"usr": "s:Sq"
+							}
+						],
+						"declKind": "Var",
+						"usr": "c:@M@CanvasNative@objc(cs)CanvasCPUView(py)data",
+						"mangledName": "$s12CanvasNative0A7CPUViewC4dataSo13NSMutableDataCSgvp",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["HasInitialValue", "Preconcurrency", "Custom", "HasStorage", "AccessControl", "SetterAccess", "ObjC"],
+						"hasStorage": true,
+						"accessors": [
+							{
+								"kind": "Accessor",
+								"name": "Get",
+								"printedName": "Get()",
+								"children": [
+									{
+										"kind": "TypeNominal",
+										"name": "Optional",
+										"printedName": "Foundation.NSMutableData?",
+										"children": [
+											{
+												"kind": "TypeNominal",
+												"name": "NSMutableData",
+												"printedName": "Foundation.NSMutableData",
+												"usr": "c:objc(cs)NSMutableData"
+											}
+										],
+										"usr": "s:Sq"
+									}
+								],
+								"declKind": "Accessor",
+								"usr": "c:@M@CanvasNative@objc(cs)CanvasCPUView(im)data",
+								"mangledName": "$s12CanvasNative0A7CPUViewC4dataSo13NSMutableDataCSgvg",
+								"moduleName": "CanvasNative",
+								"implicit": true,
+								"declAttributes": ["ObjC"],
+								"accessorKind": "get"
+							}
+						]
+					},
+					{
 						"kind": "Constructor",
 						"name": "init",
 						"printedName": "init()",
@@ -9609,7 +10002,7 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "init",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "AccessControl"],
 						"init_kind": "Designated"
 					},
 					{
@@ -9636,34 +10029,8 @@
 						"moduleName": "CanvasNative",
 						"overriding": true,
 						"objc_name": "initWithFrame:",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
+						"declAttributes": ["Dynamic", "ObjC", "Preconcurrency", "Custom", "Override", "AccessControl"],
 						"init_kind": "Designated"
-					},
-					{
-						"kind": "Function",
-						"name": "draw",
-						"printedName": "draw(_:)",
-						"children": [
-							{
-								"kind": "TypeNominal",
-								"name": "Void",
-								"printedName": "()"
-							},
-							{
-								"kind": "TypeNominal",
-								"name": "CGRect",
-								"printedName": "CoreFoundation.CGRect",
-								"usr": "c:@S@CGRect"
-							}
-						],
-						"declKind": "Func",
-						"usr": "c:@M@CanvasNative@objc(cs)CanvasCPUView(im)drawRect:",
-						"mangledName": "$s12CanvasNative0A7CPUViewC4drawyySo6CGRectVF",
-						"moduleName": "CanvasNative",
-						"overriding": true,
-						"objc_name": "drawRect:",
-						"declAttributes": ["Dynamic", "ObjC", "Custom", "Override", "AccessControl"],
-						"funcSelfKind": "NonMutating"
 					}
 				],
 				"declKind": "Class",
@@ -9671,12 +10038,26 @@
 				"mangledName": "$s12CanvasNative0A7CPUViewC",
 				"moduleName": "CanvasNative",
 				"objc_name": "CanvasCPUView",
-				"declAttributes": ["Custom", "AccessControl", "ObjC", "ObjCMembers"],
+				"declAttributes": ["Preconcurrency", "Custom", "AccessControl", "ObjC", "ObjCMembers"],
 				"superclassUsr": "c:objc(cs)UIView",
 				"hasMissingDesignatedInitializers": true,
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["UIKit.UIView", "UIKit.UIResponder", "ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -9966,6 +10347,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -10063,6 +10458,20 @@
 				"conformances": [
 					{
 						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
+					{
+						"kind": "Conformance",
 						"name": "Equatable",
 						"printedName": "Equatable",
 						"usr": "s:SQ",
@@ -10138,7 +10547,7 @@
 						"usr": "c:@CM@CanvasNative@@objc(cs)UIView(im)getBoundingClientRect:",
 						"mangledName": "$sSo6UIViewC12CanvasNativeE21getBoundingClientRectyySvF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Dynamic", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Dynamic", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"isFromExtension": true,
 						"funcSelfKind": "NonMutating"
 					}
@@ -10149,12 +10558,26 @@
 				"isOpen": true,
 				"intro_iOS": "2.0",
 				"objc_name": "UIView",
-				"declAttributes": ["Available", "ObjC", "NonSendable", "Custom", "Dynamic"],
+				"declAttributes": ["Preconcurrency", "Available", "ObjC", "NonSendable", "Custom", "Dynamic"],
 				"superclassUsr": "c:objc(cs)UIResponder",
 				"isExternal": true,
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["UIKit.UIResponder", "ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -10246,7 +10669,7 @@
 						"usr": "c:@CM@CanvasNative@@objc(cs)GLKView(im)snapshotWithData:",
 						"mangledName": "$sSo7GLKViewC12CanvasNativeE16snapshotWithDatayy10Foundation0F0VF",
 						"moduleName": "CanvasNative",
-						"declAttributes": ["Dynamic", "Custom", "AccessControl", "ObjC"],
+						"declAttributes": ["Dynamic", "Preconcurrency", "Custom", "AccessControl", "ObjC"],
 						"isFromExtension": true,
 						"funcSelfKind": "NonMutating"
 					}
@@ -10256,12 +10679,26 @@
 				"moduleName": "GLKit",
 				"isOpen": true,
 				"objc_name": "GLKView",
-				"declAttributes": ["Custom", "ObjC", "Dynamic"],
+				"declAttributes": ["Preconcurrency", "Custom", "ObjC", "Dynamic"],
 				"superclassUsr": "c:objc(cs)UIView",
 				"isExternal": true,
 				"inheritsConvenienceInitializers": true,
 				"superclassNames": ["UIKit.UIView", "UIKit.UIResponder", "ObjectiveC.NSObject"],
 				"conformances": [
+					{
+						"kind": "Conformance",
+						"name": "Copyable",
+						"printedName": "Copyable",
+						"usr": "s:s8CopyableP",
+						"mangledName": "$ss8CopyableP"
+					},
+					{
+						"kind": "Conformance",
+						"name": "Escapable",
+						"printedName": "Escapable",
+						"usr": "s:s9EscapableP",
+						"mangledName": "$ss9EscapableP"
+					},
 					{
 						"kind": "Conformance",
 						"name": "Equatable",
@@ -10395,13 +10832,6 @@
 			"value": "8"
 		},
 		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvasVideoFrame.swift",
-			"kind": "StringLiteral",
-			"offset": 190,
-			"length": 13,
-			"value": "\"CanvasNative.NSCVideoFrame\""
-		},
-		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
 			"offset": 296,
@@ -10474,98 +10904,112 @@
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 5931,
+			"offset": 3223,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
+			"kind": "BooleanLiteral",
+			"offset": 6335,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 5965,
+			"offset": 6369,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 5995,
+			"offset": 6399,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6048,
+			"offset": 6452,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 6090,
+			"offset": 6494,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6130,
+			"offset": 6534,
 			"length": 4,
 			"value": "true"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6176,
+			"offset": 6580,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6209,
+			"offset": 6613,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6249,
+			"offset": 6653,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 6287,
+			"offset": 6691,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 15566,
+			"offset": 6731,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "BooleanLiteral",
-			"offset": 16001,
+			"offset": 17006,
+			"length": 5,
+			"value": "false"
+		},
+		{
+			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
+			"kind": "BooleanLiteral",
+			"offset": 17441,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 16052,
+			"offset": 17492,
 			"length": 3,
 			"value": "300"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCCanvas.swift",
 			"kind": "IntegerLiteral",
-			"offset": 16229,
+			"offset": 17669,
 			"length": 3,
 			"value": "150"
 		},
@@ -10652,13 +11096,6 @@
 			"offset": 1247,
 			"length": 5,
 			"value": "8"
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
-			"kind": "StringLiteral",
-			"offset": 2878,
-			"length": 18,
-			"value": "\"CanvasNative.NSCFontDescriptors\""
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
@@ -10752,13 +11189,6 @@
 			"value": "false"
 		},
 		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFace.swift",
-			"kind": "StringLiteral",
-			"offset": 6746,
-			"length": 11,
-			"value": "\"CanvasNative.NSCFontFace\""
-		},
-		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/NSCFontFaceSet.swift",
 			"kind": "IntegerLiteral",
 			"offset": 227,
@@ -10829,13 +11259,6 @@
 			"value": "false"
 		},
 		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCTouchHandler.swift",
-			"kind": "StringLiteral",
-			"offset": 133,
-			"length": 15,
-			"value": "\"CanvasNative.NSCTouchHandler\""
-		},
-		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/NSCImageBitmap.swift",
 			"kind": "StringLiteral",
 			"offset": 233,
@@ -10866,28 +11289,21 @@
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/GLRenderer.swift",
 			"kind": "IntegerLiteral",
-			"offset": 352,
+			"offset": 351,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/GLRenderer.swift",
-			"kind": "StringLiteral",
-			"offset": 180,
-			"length": 13,
-			"value": "\"CanvasNative.CanvasGLKView\""
-		},
-		{
-			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/GLRenderer.swift",
 			"kind": "BooleanLiteral",
-			"offset": 2255,
+			"offset": 2766,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/CanvasNative/Source/GLRenderer.swift",
 			"kind": "BooleanLiteral",
-			"offset": 2331,
+			"offset": 2840,
 			"length": 5,
 			"value": "false"
 		},

@@ -23,6 +23,7 @@ const defaultOpts = {
 	stencil: false,
 	desynchronized: false,
 	xrCompatible: false,
+	willReadFrequently: false,
 };
 
 enum ContextType {
@@ -413,7 +414,7 @@ export class Canvas extends CanvasBase {
 				if (!this._2dContext) {
 					const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor);
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false);
 
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 
@@ -434,7 +435,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webglContext) {
 					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, options) };
 
-					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -450,7 +451,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, options) };
 
-					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

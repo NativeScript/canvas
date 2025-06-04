@@ -6,7 +6,9 @@ use regex::bytes::Replacer;
 use skia_safe::image::CachingHint;
 use skia_safe::BlendMode;
 pub use skia_safe::ColorType;
-use skia_safe::{AlphaType, Color, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface};
+use skia_safe::{
+    AlphaType, Color, EncodedImageFormat, IPoint, ISize, Image, ImageInfo, Point, Surface,
+};
 
 use compositing::composite_operation_type::CompositeOperationType;
 use fill_and_stroke_styles::paint::Paint;
@@ -20,7 +22,6 @@ use text_styles::{
 };
 
 use crate::context::drawing_text::typography::Font;
-
 
 use bitflags::bitflags;
 use bytes::Buf;
@@ -57,7 +58,6 @@ pub mod surface_vulkan;
 
 #[cfg(feature = "metal")]
 pub mod surface_metal;
-
 
 #[derive(Clone)]
 pub struct State {
@@ -145,7 +145,6 @@ pub enum SurfaceEngine {
     Metal,
 }
 
-
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct SurfaceState: u8 {
@@ -206,6 +205,7 @@ pub struct Context {
     pub metal_texture_info: Option<skia_safe::gpu::mtl::TextureInfo>,
     #[cfg(feature = "gl")]
     pub gl_context: Option<canvas_core::gpu::gl::GLContext>,
+    pub cpu_context: Option<canvas_core::cpu::CPUContext>,
     #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
     pub(crate) direct_context: Option<skia_safe::gpu::DirectContext>,
     pub(crate) path: Path,
@@ -214,31 +214,42 @@ pub struct Context {
     pub(crate) font_color: Color,
 }
 
-
 impl Context {
-    pub fn get_pixels(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>) {
+    pub fn get_pixels(
+        &mut self,
+        buffer: &mut [u8],
+        origin: impl Into<IPoint>,
+        size: impl Into<ISize>,
+    ) {
         let origin = origin.into();
         let size = size.into();
-        let mut info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+        let info = ImageInfo::new(size, ColorType::RGBA8888, AlphaType::Unpremul, None);
+        if let Some(img) = self.get_image() {
+            let row_bytes = (info.width() * 4) as usize;
+            if let Some(pixels) = img.peek_pixels() {
+                pixels.read_pixels(&info, buffer, row_bytes, origin);
+            } else {
+                img.read_pixels(&info, buffer, row_bytes, origin, CachingHint::Allow);
+            }
+        }
+    }
+
+    pub fn get_pixels_format(
+        &mut self,
+        buffer: &mut [u8],
+        origin: impl Into<IPoint>,
+        size: impl Into<ISize>,
+        color_type: ColorType,
+    ) {
+        let origin = origin.into();
+        let size = size.into();
+        let info = ImageInfo::new(size, color_type, AlphaType::Unpremul, None);
 
         if let Some(img) = self.get_image() {
             let row_bytes = (info.width() * 4) as usize;
             img.read_pixels(&info, buffer, row_bytes, origin, CachingHint::Allow);
         }
     }
-
-
-    pub fn get_pixels_format(&mut self, buffer: &mut [u8], origin: impl Into<IPoint>, size: impl Into<ISize>, color_type: ColorType) {
-        let origin = origin.into();
-        let size = size.into();
-        let mut info = ImageInfo::new(size, color_type, AlphaType::Unpremul, None);
-
-        if let Some(img) = self.get_image() {
-            let row_bytes = (info.width() * 4) as usize;
-            img.read_pixels(&info, buffer, row_bytes, origin, CachingHint::Allow);
-        }
-    }
-
 
     pub fn submit(&mut self) {
         #[cfg(any(feature = "gl", feature = "vulkan", feature = "metal"))]
@@ -262,6 +273,10 @@ impl Context {
             }
             _ => {}
         }
+
+        if let Some(ctx) = self.cpu_context.as_ref() {
+            ctx.render();
+        }
     }
 
     pub fn flush_submit_and_sync_cpu(&mut self) {
@@ -271,6 +286,10 @@ impl Context {
                 ctx.flush_submit_and_sync_cpu();
             }
             _ => {}
+        }
+
+        if let Some(ctx) = self.cpu_context.as_ref() {
+            ctx.render();
         }
     }
 
@@ -294,7 +313,10 @@ impl Context {
     }
 
     pub fn dimensions(&self) -> (f32, f32) {
-        (self.surface_data.bounds.width(), self.surface_data.bounds.height())
+        (
+            self.surface_data.bounds.width(),
+            self.surface_data.bounds.height(),
+        )
     }
 
     pub fn width(&self) -> f32 {
@@ -307,6 +329,7 @@ impl Context {
         self.surface_data.scale
     }
 
+    #[inline]
     pub fn with_canvas<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
@@ -314,6 +337,7 @@ impl Context {
         f(self.surface.canvas());
     }
 
+    #[inline]
     pub fn with_canvas_dirty<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
@@ -322,13 +346,23 @@ impl Context {
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
+    #[inline]
+    pub fn with_canvas_dirty_paint<F>(&mut self, f: F)
+    where
+        F: FnOnce(&skia_safe::Canvas, &Paint),
+    {
+        f(self.surface.canvas(), &self.state.paint);
+        self.surface_state = self.surface_state | SurfaceState::Pending;
+    }
 
     pub fn set_bounds(&mut self, bounds: skia_safe::Rect) {}
 
+    #[inline]
     pub fn update_bounds(&mut self, bounds: skia_safe::Rect) {
         self.surface_data.bounds = bounds;
     }
 
+    #[inline]
     pub fn append<F>(&mut self, f: F)
     where
         F: FnOnce(&skia_safe::Canvas),
@@ -337,7 +371,7 @@ impl Context {
         self.surface_state = self.surface_state | SurfaceState::Pending;
     }
 
-
+    #[inline]
     pub fn flush(&mut self) {
         let state = self.surface_state & SurfaceState::Pending;
         if state == SurfaceState::Pending {
@@ -347,6 +381,7 @@ impl Context {
         }
     }
 
+    #[inline]
     pub fn flush_and_sync_cpu(&mut self) {
         let state = self.surface_state & SurfaceState::Pending;
 
@@ -358,7 +393,8 @@ impl Context {
     }
 
     pub fn get_image(&mut self) -> Option<Image> {
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
@@ -367,29 +403,33 @@ impl Context {
         self.flush();
 
         let snapshot = self.surface.image_snapshot();
-        if self.surface_data.engine == SurfaceEngine::GL || self.surface_data.engine == SurfaceEngine::Vulkan || self.surface_data.engine == SurfaceEngine::Metal {
-            snapshot.make_raster_image(
-                self.direct_context.as_mut(),
-                Some(CachingHint::Allow),
-            )
+
+        let ret = if self.surface_data.engine == SurfaceEngine::GL
+            || self.surface_data.engine == SurfaceEngine::Vulkan
+            || self.surface_data.engine == SurfaceEngine::Metal
+        {
+            snapshot.make_raster_image(self.direct_context.as_mut(), CachingHint::Allow)
         } else {
             Some(snapshot)
-        }
+        };
+
+        ret
     }
 
     pub fn get_image_no_flush(&mut self) -> Option<Image> {
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
         }
 
         let snapshot = self.surface.image_snapshot();
-        if self.surface_data.engine == SurfaceEngine::GL || self.surface_data.engine == SurfaceEngine::Vulkan || self.surface_data.engine == SurfaceEngine::Metal {
-            snapshot.make_raster_image(
-                self.direct_context.as_mut(),
-                Some(CachingHint::Allow),
-            )
+        if self.surface_data.engine == SurfaceEngine::GL
+            || self.surface_data.engine == SurfaceEngine::Vulkan
+            || self.surface_data.engine == SurfaceEngine::Metal
+        {
+            snapshot.make_raster_image(self.direct_context.as_mut(), Some(CachingHint::Allow))
         } else {
             Some(snapshot)
         }
@@ -473,8 +513,7 @@ impl Context {
                 if encoded_data.is_empty() {
                     return "data:,".to_string();
                 }
-                let mut encoded =
-                    String::with_capacity(encoded_prefix.len() + encoded_data.len());
+                let mut encoded = String::with_capacity(encoded_prefix.len() + encoded_data.len());
                 encoded.push_str(&encoded_prefix);
                 encoded.push_str(&encoded_data);
                 encoded
@@ -489,9 +528,12 @@ impl Context {
     {
         let blend = self.state.global_composite_operation.get_blend_mode();
         match blend {
-            BlendMode::SrcIn | BlendMode::SrcOut |
-            BlendMode::DstIn | BlendMode::DstOut |
-            BlendMode::DstATop | BlendMode::Src => {
+            BlendMode::SrcIn
+            | BlendMode::SrcOut
+            | BlendMode::DstIn
+            | BlendMode::DstOut
+            | BlendMode::DstATop
+            | BlendMode::Src => {
                 let mut layer_paint = paint.clone();
                 layer_paint.set_anti_alias(true);
                 layer_paint.set_blend_mode(BlendMode::SrcOver);
@@ -503,21 +545,25 @@ impl Context {
                     f(layer, &layer_paint);
                 }
 
-                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
+                if let Some(pict) =
+                    layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds))
+                {
                     let canvas = self.surface.canvas();
                     canvas.save();
                     let mut blend_paint = skia_safe::Paint::default();
                     blend_paint.set_anti_alias(true);
                     blend_paint.set_blend_mode(blend);
-                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
+                    canvas.draw_picture(
+                        &pict,
+                        Some(&skia_safe::Matrix::new_identity()),
+                        Some(&blend_paint),
+                    );
                     canvas.restore();
                     self.surface_state = self.surface_state | SurfaceState::Pending;
                 }
             }
             _ => {
-                self.with_canvas_dirty(|canvas| {
-                    f(canvas, paint)
-                });
+                self.with_canvas_dirty(|canvas| f(canvas, paint));
             }
         };
     }
@@ -528,9 +574,12 @@ impl Context {
     {
         let blend = self.state.global_composite_operation.get_blend_mode();
         match blend {
-            BlendMode::SrcIn | BlendMode::SrcOut |
-            BlendMode::DstIn | BlendMode::DstOut |
-            BlendMode::DstATop | BlendMode::Src => {
+            BlendMode::SrcIn
+            | BlendMode::SrcOut
+            | BlendMode::DstIn
+            | BlendMode::DstOut
+            | BlendMode::DstATop
+            | BlendMode::Src => {
                 let mut layer_paint = paint.clone();
                 layer_paint.set_anti_alias(true);
                 layer_paint.set_blend_mode(BlendMode::SrcOver);
@@ -542,13 +591,19 @@ impl Context {
                     f(layer, &layer_paint, &self.state.font_style);
                 }
 
-                if let Some(pict) = layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds)) {
+                if let Some(pict) =
+                    layer_recorder.finish_recording_as_picture(Some(&self.surface_data.bounds))
+                {
                     let canvas = self.surface.canvas();
                     canvas.save();
                     let mut blend_paint = skia_safe::Paint::default();
                     blend_paint.set_anti_alias(true);
                     blend_paint.set_blend_mode(blend);
-                    canvas.draw_picture(&pict, Some(&skia_safe::Matrix::new_identity()), Some(&blend_paint));
+                    canvas.draw_picture(
+                        &pict,
+                        Some(&skia_safe::Matrix::new_identity()),
+                        Some(&blend_paint),
+                    );
                     canvas.restore();
                     self.surface_state = self.surface_state | SurfaceState::Pending;
                 }
@@ -580,7 +635,6 @@ impl Context {
             canvas.clear(Color::TRANSPARENT);
         });
     }
-
 
     pub fn draw_on_surface(&mut self, surface: &mut Surface) {
         let src_surface = &mut self.surface;

@@ -7,9 +7,11 @@ use base64::Engine;
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 use std::borrow::Cow;
+use std::error::Error;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
+use wgpu_core::present::SurfaceError;
 use wgt::{SurfaceCapabilities, SurfaceStatus, TextureFormat};
 
 use super::{
@@ -67,6 +69,45 @@ impl Drop for CanvasGPUCanvasContext {
             global.surface_drop(*surface);
         }
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_fallback(
+    context: *const CanvasGPUCanvasContext,
+    format: *const c_char,
+    quality: f32,
+) -> *mut c_char {
+    if context.is_null() {
+        return CString::new("data:,").unwrap().into_raw();
+    }
+
+    let format = if format.is_null() {
+        unsafe { CStr::from_bytes_with_nul_unchecked(b"image/png\0") }
+    } else {
+        CStr::from_ptr(format as *const c_char)
+    };
+
+    let quality: u32 = (quality.clamp(0.0, 1.0) * 100.) as u32;
+    let has_texture = canvas_native_webgpu_context_has_current_texture(context);
+    let ret = unsafe {
+        if has_texture {
+            let texture = canvas_native_webgpu_context_get_current_texture(context);
+            let ret = canvas_native_webgpu_to_data_url_with_texture(
+                context,
+                texture,
+                format.as_ptr(),
+                quality,
+            );
+            super::gpu_texture::canvas_native_webgpu_texture_release(texture);
+            ret
+        } else {
+            canvas_native_webgpu_to_data_url(context, format.as_ptr(), quality)
+        }
+    };
+    if ret.is_null() {
+        return CString::new("data:,").unwrap().into_raw();
+    }
+    ret
 }
 
 #[no_mangle]
@@ -1098,7 +1139,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
                 .to_vec()
                 .into_iter()
                 .map(|v| v.into())
-                .collect::<Vec<wgt::TextureFormat>>()
+                .collect::<Vec<TextureFormat>>()
         }
     } else {
         vec![]
@@ -1259,8 +1300,9 @@ pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
 pub extern "C" fn canvas_native_webgpu_context_has_surface_presented(
     context: *const CanvasGPUCanvasContext,
 ) -> bool {
+    // when null return true to prevent any other usage
     if context.is_null() {
-        return false;
+        return true;
     }
 
     let context = unsafe { &*context };
@@ -1431,6 +1473,23 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     }
 
     if let Err(cause) = global.surface_present(*surface_id) {
+        match cause {
+            SurfaceError::TextureDestroyed => {
+                context
+                    .has_surface_presented
+                    .store(true, std::sync::atomic::Ordering::SeqCst);
+
+                {
+                    let mut current_texture = context.current_texture.lock();
+                    if let Some(current_texture_ref) = current_texture.as_ref() {
+                        if current_texture_ref.texture == texture.texture {
+                            *current_texture = None;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
         handle_error_fatal(
             global,
             cause,

@@ -56,7 +56,6 @@ async function createScene(canvas: Canvas) {
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(WIDTH, HEIGHT, false);
 	await renderer.init();
-	context = canvas.getContext('webgpu');
 
 	//renderer.outputColorSpace = THREE.SRGBColorSpace;
 	//set the size of the renderer to fullscreen

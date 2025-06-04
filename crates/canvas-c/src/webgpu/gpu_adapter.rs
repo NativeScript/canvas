@@ -162,6 +162,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
                 let queue = Arc::new(CanvasGPUQueue {
                     label: descriptor.label,
+                    device_id: device,
                     queue: Arc::new(QueueId {
                         id: queue,
                         instance: Arc::clone(&instance),

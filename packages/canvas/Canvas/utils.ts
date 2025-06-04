@@ -22,6 +22,7 @@ const default2DOptions = {
 	stencil: false,
 	desynchronized: false,
 	xrCompatible: false,
+	willReadFrequently: false,
 };
 
 export function parsePowerPreference(powerPreference: string) {
@@ -50,7 +51,7 @@ export function handleContextOptions(type: '2d' | 'webgl' | 'webgl2' | 'experime
 		if (contextAttributes.alpha !== undefined && typeof contextAttributes.alpha === 'boolean') {
 			return { ...contextAttributes, powerPreference: 0 };
 		} else {
-			return { alpha: true, powerPreference: 0 };
+			return { ...contextAttributes, alpha: true, powerPreference: 0 };
 		}
 	}
 	const glOptions = { ...defaultGLOptions };

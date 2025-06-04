@@ -60,7 +60,7 @@ android_debug: $(addsuffix _debug,$(ARCHS_ANDROID))
 
 .PHONY: $(addsuffix _debug,$(ARCHS_IOS))
 $(addsuffix _debug,$(ARCHS_IOS)): %_debug:
-	RUSTFLAGS="cargo +nightly build --target $* -p canvas-ios"
+	cargo +nightly build --target $* -p canvas-ios
 
 .PHONY: $(addsuffix _debug,$(ARCHS_ANDROID))
 $(addsuffix _debug,$(ARCHS_ANDROID)): %_debug:

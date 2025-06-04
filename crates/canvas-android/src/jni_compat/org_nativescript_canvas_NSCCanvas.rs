@@ -13,7 +13,6 @@ use skia_safe::{AlphaType, ColorType, ISize, ImageInfo, Rect};
 use std::ffi::c_void;
 use std::ptr;
 use std::ptr::NonNull;
-use canvas_webgl::prelude::WebGLVersion;
 
 fn to_raw_window_handler(window: &NativeWindow) -> RawWindowHandle {
     let handle = raw_window_handle::AndroidNdkWindowHandle::new(
@@ -280,7 +279,7 @@ pub extern "system" fn nativeCreate2DContext(
             drop(env);
             return Box::into_raw(Box::new(ctx_2d)) as jlong;
         }
-        return if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             let width = window.width();
             let height = window.height();
 
@@ -323,8 +322,6 @@ pub extern "system" fn nativeCreate2DContext(
             Box::into_raw(Box::new(ctx_2d)) as jlong
         }
     }
-
-    0
 }
 
 #[no_mangle]
@@ -610,7 +607,6 @@ pub extern "system" fn nativeContext2DPathTestNormal(_env: JNIEnv, _: JClass, co
     context.render();
 }
 
-
 #[no_mangle]
 pub extern "system" fn nativeContext2DConicTest(_env: JNIEnv, _: JClass, context: jlong) {
     if context == 0 {
@@ -778,4 +774,27 @@ pub extern "system" fn nativeWebGLC2DRender(
     }
 
     let _ = unsafe { Box::from_raw(state) };
+}
+
+#[no_mangle]
+pub extern "system" fn nativeContext2DSetRenderFunc(
+    env: JNIEnv,
+    _: JClass,
+    context: jlong,
+    render: JObject,
+) {
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    let context = context.get_context_mut();
+    if let (Ok(jvm), Ok(render)) = (env.get_java_vm(), env.new_global_ref(render)) {
+        context.cpu_context = Some(canvas_core::cpu::CPUContext::new(jvm, render));
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn nativeContext2DClearRenderFunc(_env: JNIEnv, _: JClass, context: jlong) {
+    let context = context as *mut canvas_c::CanvasRenderingContext2D;
+    let context = unsafe { &mut *context };
+    let context = context.get_context_mut();
+    context.cpu_context = None;
 }

@@ -63,7 +63,7 @@ export async function run(canvas: Canvas) {
 	const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 
 	const settings = {
-		asteroidCount: 4000,
+		asteroidCount: 100,
 	};
 
 	context.configure({

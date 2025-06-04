@@ -46,8 +46,8 @@ export class GPUCommandEncoder {
 		this[native_].clearBuffer(buffer[native_], offset ?? -1, size ?? -1);
 	}
 
-	copyBufferToBuffer(source: GPUBuffer, sourceOffset: number, destination: GPUBuffer, destinationOffset: number, size: number) {
-		this[native_].copyBufferToBuffer(source[native_], sourceOffset, destination[native_], destinationOffset, size);
+	copyBufferToBuffer(source: GPUBuffer, sourceOffset: number, destination: GPUBuffer, destinationOffset: number, size?: number) {
+		this[native_].copyBufferToBuffer(source[native_], sourceOffset, destination[native_], destinationOffset, size ?? -1);
 	}
 
 	copyBufferToTexture(source: GPUImageCopyBuffer, destination: GPUImageCopyTexture, copySize: GPUExtent3D) {

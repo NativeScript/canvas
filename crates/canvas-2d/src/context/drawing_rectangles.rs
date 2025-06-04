@@ -5,6 +5,7 @@ use skia_safe::{BlendMode, Color, Paint, Rect};
 use crate::context::Context;
 
 impl Context {
+    #[inline]
     pub fn clear_rect(&mut self, x: c_float, y: c_float, width: c_float, height: c_float) {
         let mut paint = Paint::default();
         paint.set_anti_alias(true);
@@ -23,7 +24,8 @@ impl Context {
     }
 
     pub fn fill_rect(&mut self, rect: &Rect) {
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
@@ -50,7 +52,8 @@ impl Context {
     }
 
     pub fn stroke_rect(&mut self, rect: &Rect) {
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }

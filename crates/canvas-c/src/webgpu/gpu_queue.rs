@@ -17,6 +17,7 @@ use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
+use wgpu_core::id::DeviceId;
 
 #[derive(Debug)]
 pub struct QueueId {
@@ -36,6 +37,7 @@ impl Drop for QueueId {
 #[derive(Clone, Debug)]
 pub struct CanvasGPUQueue {
     pub(super) label: Option<Cow<'static, str>>,
+    pub(crate) device_id: DeviceId,
     pub(crate) queue: Arc<QueueId>,
     pub(crate) error_sink: super::gpu_device::ErrorSink,
 }
@@ -202,43 +204,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
 
     let destination_texture = &*destination.texture;
 
-    let mut data = vec![0u8; (width * height * 4.) as usize];
-
-    match destination_texture.format {
-        CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
-            context.context.get_pixels_format(
-                data.as_mut_slice(),
-                (0, 0),
-                (width as i32, height as i32),
-                canvas_2d::context::ColorType::BGRA8888,
-            );
-        }
-        _ => {
-            context
-                .context
-                .get_pixels(data.as_mut_slice(), (0, 0), (width as i32, height as i32));
-        }
-    }
-
-    let destination_texture_id = destination_texture.texture;
-
     let size = *size;
 
     let size: wgt::Extent3d = size.into();
+
+    let destination_texture_id = destination_texture.texture;
 
     let source_width = width as u32;
 
     let source_height = height as u32;
 
-    let bytes_per_row = data.len() / (width as usize * height as usize);
+    let bytes_per_row = 4;
 
-    let data_layout = wgt::ImageDataLayout {
+    let data_layout = wgt::TexelCopyBufferLayout {
         offset: 0,
         bytes_per_row: Some(size.width * bytes_per_row as u32),
         rows_per_image: Some(size.height),
     };
 
-    let destination = wgt::ImageCopyTexture {
+    let destination = wgt::TexelCopyTextureInfo {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -249,19 +233,57 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_context_to_texture(
         || source.origin.y > 0
         || (size.width > source_width || size.height > source_height)
     {
-        // todo use current vec
-        let data = get_offset_image(
-            data.as_slice(),
-            source_width as usize,
-            source_height as usize,
-            source.origin.x as usize,
-            source.origin.y as usize,
-            size.width as usize,
-            size.height as usize,
-        );
+        let mut data = vec![0u8; (size.width * size.height * 4) as usize];
 
+        match destination_texture.format {
+            CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+                context.context.get_pixels_format(
+                    data.as_mut_slice(),
+                    (source.origin.x as i32, source.origin.y as i32),
+                    (size.width as i32, size.height as i32),
+                    canvas_2d::context::ColorType::BGRA8888,
+                );
+            }
+            _ => {
+                context.context.get_pixels(
+                    data.as_mut_slice(),
+                    (source.origin.x as i32, source.origin.y as i32),
+                    (size.width as i32, size.height as i32),
+                );
+            }
+        }
+
+        // todo use current vec
+        // let data = get_offset_image(
+        //     data.as_slice(),
+        //     source_width as usize,
+        //     source_height as usize,
+        //     source.origin.x as usize,
+        //     source.origin.y as usize,
+        //     size.width as usize,
+        //     size.height as usize,
+        // );
         global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
     } else {
+        let mut data = vec![0u8; (width * height * 4.) as usize];
+
+        match destination_texture.format {
+            CanvasGPUTextureFormat::Bgra8Unorm | CanvasGPUTextureFormat::Bgra8UnormSrgb => {
+                context.context.get_pixels_format(
+                    data.as_mut_slice(),
+                    (0, 0),
+                    (width as i32, height as i32),
+                    canvas_2d::context::ColorType::BGRA8888,
+                );
+            }
+            _ => {
+                context.context.get_pixels(
+                    data.as_mut_slice(),
+                    (0, 0),
+                    (width as i32, height as i32),
+                );
+            }
+        }
         global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
     };
 
@@ -372,13 +394,13 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let bytesPerRow = source.source_size / (source.width as usize * source.height as usize);
 
-    let data_layout = wgt::ImageDataLayout {
+    let data_layout = wgt::TexelCopyBufferLayout {
         offset: 0,
         bytes_per_row: Some(source.width * bytesPerRow as u32),
         rows_per_image: Some(source.height),
     };
 
-    let destination = wgt::ImageCopyTexture {
+    let destination = wgt::TexelCopyTextureInfo {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -561,15 +583,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_submit(
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
+unsafe fn write_buffer_size(
     queue: *const CanvasGPUQueue,
     buffer: *const CanvasGPUBuffer,
     buffer_offset: u64,
     data: *const u8,
     data_size: usize,
     data_offset: usize,
-    size: isize,
+    size: Option<usize>,
 ) {
     if queue.is_null() || buffer.is_null() || data.is_null() || data_size == 0 {
         return;
@@ -584,8 +605,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
     let buffer_id = buffer.buffer;
 
     let data = std::slice::from_raw_parts(data, data_size);
-
-    let size: Option<usize> = size.try_into().ok();
 
     let data = match size {
         Some(size) => &data[data_offset..(data_offset + size)],
@@ -602,6 +621,47 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
             "canvas_native_webgpu_queue_write_buffer",
         );
     }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer(
+    queue: *const CanvasGPUQueue,
+    buffer: *const CanvasGPUBuffer,
+    buffer_offset: u64,
+    data: *const u8,
+    data_size: usize,
+    data_offset: usize,
+) {
+    write_buffer_size(
+        queue,
+        buffer,
+        buffer_offset,
+        data,
+        data_size,
+        data_offset,
+        None,
+    );
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn canvas_native_webgpu_queue_write_buffer_size(
+    queue: *const CanvasGPUQueue,
+    buffer: *const CanvasGPUBuffer,
+    buffer_offset: u64,
+    data: *const u8,
+    data_size: usize,
+    data_offset: usize,
+    size: usize,
+) {
+    write_buffer_size(
+        queue,
+        buffer,
+        buffer_offset,
+        data,
+        data_size,
+        data_offset,
+        Some(size),
+    )
 }
 
 #[no_mangle]
@@ -627,7 +687,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
     let destination_texture = &*destination.texture;
     let destination_texture_id = destination_texture.texture;
 
-    let destination = wgt::ImageCopyTexture {
+    let destination = wgt::TexelCopyTextureInfo {
         texture: destination_texture_id,
         mip_level: destination.mip_level,
         origin: destination.origin.into(),
@@ -636,7 +696,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
 
     let data_layout = *data_layout;
 
-    let data_layout: wgt::ImageDataLayout = data_layout.into();
+    let data_layout: wgt::TexelCopyBufferLayout = data_layout.into();
 
     let data = std::slice::from_raw_parts(buf, buf_size);
 

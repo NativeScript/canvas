@@ -128,32 +128,49 @@ public class NSCCanvas: UIView {
     private(set) public var nativeContext: Int64 = 0
     
     private(set) public var is2D = false
+	
+		private(set) public var willReadFrequently = false
     
     internal var engine = Engine.None
     
     internal var mtlView: NSCMTLView
     
     internal var glkView: CanvasGLKView
+	
+		internal var cpuView: CanvasCPUView
     
     
-    public var drawingBufferWidth: CGFloat {
-        if(engine == .GPU){
-            return mtlView.frame.size.width * UIScreen.main.nativeScale
-        }
-        return glkView.frame.size.width * UIScreen.main.nativeScale
-    }
-    
-    public var drawingBufferHeight: CGFloat {
-        if(engine == .GPU){
-            return mtlView.frame.size.height * UIScreen.main.nativeScale
-        }
-        return glkView.frame.size.height * UIScreen.main.nativeScale
-    }
+	public var drawingBufferWidth: CGFloat {
+		if(engine == .GPU){
+			return mtlView.frame.size.width * UIScreen.main.nativeScale
+		}
+		if(is2D && willReadFrequently){
+			return cpuView.frame.size.width * UIScreen.main.nativeScale
+		}
+		return glkView.frame.size.width * UIScreen.main.nativeScale
+	}
+	
+	public var drawingBufferHeight: CGFloat {
+		if(engine == .GPU){
+			return mtlView.frame.size.height * UIScreen.main.nativeScale
+		}
+		
+		if(is2D && willReadFrequently){
+			return cpuView.frame.size.height * UIScreen.main.nativeScale
+		}
+		
+		return glkView.frame.size.height * UIScreen.main.nativeScale
+	}
     
     var drawingBufferWidthRaw: CGFloat {
         if(engine == .GPU){
             return mtlView.frame.size.width
         }
+			
+			if(is2D && willReadFrequently){
+				return cpuView.frame.size.width
+			}
+			
         return glkView.frame.size.width
     }
     
@@ -161,6 +178,11 @@ public class NSCCanvas: UIView {
         if(engine == .GPU){
             return mtlView.frame.size.height
         }
+			
+			if(is2D && willReadFrequently){
+				return cpuView.frame.size.height
+			}
+			
         return glkView.frame.size.height
     }
     
@@ -229,7 +251,8 @@ public class NSCCanvas: UIView {
         _ preserveDrawingBuffer: Bool = false,
         _ stencil: Bool = false,
         _ desynchronized: Bool = false,
-        _ xrCompatible: Bool = false
+        _ xrCompatible: Bool = false,
+				_ willReadFrequently: Bool = false
     ) {
         
         initContextWithContextAttributes(
@@ -243,7 +266,8 @@ public class NSCCanvas: UIView {
             preserveDrawingBuffer,
             stencil,
             desynchronized,
-            xrCompatible
+            xrCompatible,
+						willReadFrequently
         )
     }
     @objc public func initWebGPUContext(_ instance: Int64){
@@ -267,7 +291,8 @@ public class NSCCanvas: UIView {
         _ preserveDrawingBuffer: Bool,
         _ stencil: Bool,
         _ desynchronized: Bool,
-        _ xrCompatible: Bool
+        _ xrCompatible: Bool,
+				_ willReadFrequently: Bool
     ) {
         if (nativeContext != 0) {
             return
@@ -279,6 +304,7 @@ public class NSCCanvas: UIView {
             version = 0
             isCanvas = true
             is2D = isCanvas
+					self.willReadFrequently = willReadFrequently
             break
         case "experimental-webgl", "webgl":
             version = 1
@@ -304,8 +330,17 @@ public class NSCCanvas: UIView {
         if(UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft){
             direction = 1
         }
-        
-        if((is2D && NSCCanvas.forceGL) || version == 1 || version == 2){
+			
+			if(is2D && willReadFrequently){
+				isOpaque = !alpha
+				nativeContext = canvas_native_ios_context_init_context_with_custom_surface(Float(drawingBufferWidth), Float(drawingBufferHeight), density, alpha, -16777216, density * 160, direction)
+				
+				cpuView.data = NSMutableData(length: Int(drawingBufferWidth * drawingBufferHeight) * 4)
+				
+				canvas_native_context_set_render_func(nativeContext, Unmanaged.passRetained(cpuView).toOpaque(), CPURender)
+				engine = .CPU
+				cpuView.isHidden = false
+			}else if((is2D && NSCCanvas.forceGL) || version == 1 || version == 2){
             var properties: [String: Any] = [:]
             let useWebGL = !isCanvas
             if(useWebGL && preserveDrawingBuffer){
@@ -383,7 +418,8 @@ public class NSCCanvas: UIView {
         _ stencil: Bool,
         _ desynchronized: Bool,
         _ xrCompatible: Bool,
-        _ fontColor: Int32
+        _ fontColor: Int32,
+				_ willReadFrequently: Bool
     ) -> Int64 {
         
         if(nativeContext != 0){
@@ -401,7 +437,8 @@ public class NSCCanvas: UIView {
             preserveDrawingBuffer,
             stencil,
             desynchronized,
-            xrCompatible
+            xrCompatible,
+						willReadFrequently
         )
         
         return nativeContext
@@ -410,7 +447,7 @@ public class NSCCanvas: UIView {
     
     
     public func snapshot(_ flip: Bool) -> UIImage?{
-        if(is2D){
+			if(is2D && !willReadFrequently){
             CanvasHelpers.flush2DContext(nativeContext)
         }
         var snapshot: UIImage? = nil
@@ -425,7 +462,9 @@ public class NSCCanvas: UIView {
             // todo
 //            let drawable = mtlView.currentDrawable?.texture
 //            snapshot =  drawable?.toImage()
-        }
+				}else if(engine == .CPU){
+					snapshot = cpuView.snapshot()
+				}
         
         if(flip){
             return snapshot?.withHorizontallyFlippedOrientation()
@@ -475,6 +514,7 @@ public class NSCCanvas: UIView {
         let frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
         mtlView = NSCMTLView(frame: frame)
         glkView = CanvasGLKView(frame: frame)
+				cpuView	= CanvasCPUView(frame: frame)
         mtlView.drawableSize = CGSize(width: 300, height: 150)
         super.init(coder: coder)
         initializeView()
@@ -490,6 +530,7 @@ public class NSCCanvas: UIView {
         
         mtlView = NSCMTLView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
         glkView = CanvasGLKView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
+				cpuView	= CanvasCPUView(frame: CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight))
         mtlView.drawableSize = CGSize(width: 300, height: 150)
         super.init(frame: frame)
         initializeView()
@@ -507,17 +548,21 @@ public class NSCCanvas: UIView {
         
         glkView.canvas = self
         mtlView.canvas = self
+				cpuView.canvas = self
         handler = NSCTouchHandler(canvas: self)
         backgroundColor = .clear
         glkView.enableSetNeedsDisplay = false
         glkView.isHidden = true
         mtlView.isHidden = true
+				cpuView.isHidden = true
         addSubview(glkView)
         addSubview(mtlView)
+				addSubview(cpuView)
         scaleSurface()
         
         self.isOpaque = false
         mtlView.isOpaque = false
+				cpuView.isOpaque = false
         addGestureRecognizer(handler!.gestureRecognizer!)
     }
     
@@ -581,6 +626,10 @@ public class NSCCanvas: UIView {
         }
         
         scaleSurface()
+			
+			if(is2D && willReadFrequently){
+				cpuView.setNeedsDisplay()
+			}
     }
     
     public func forceLayout(_ width: CGFloat, _ height: CGFloat){
@@ -602,10 +651,18 @@ public class NSCCanvas: UIView {
         glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
         mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
         mtlView.drawableSize = CGSize(width: width.rounded(.down), height: height.rounded(.down))
+			
+				cpuView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
+			
+				cpuView.data = NSMutableData(length: Int(drawingBufferWidth * drawingBufferHeight) * 4)
+			
         glkView.setNeedsLayout()
         mtlView.setNeedsLayout()
+				cpuView.setNeedsLayout()
         glkView.layoutIfNeeded()
         mtlView.layoutIfNeeded()
+				cpuView.layoutIfNeeded()
+			
         
     }
     
@@ -691,6 +748,7 @@ public class NSCCanvas: UIView {
         guard let transform = transform else {return}
         glkView.layer.transform = transform
         mtlView.layer.transform = transform
+				cpuView.layer.transform = transform
     }
     
     

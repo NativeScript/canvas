@@ -13,9 +13,9 @@
 #include "GPUBufferImpl.h"
 
 inline static CanvasStoreOp
-ParseCanvasStoreOp(v8::Isolate *isolate, const v8::Local<v8::Value> &obj){
+ParseCanvasStoreOp(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
     auto ret = CanvasStoreOp::CanvasStoreOpStore;
-    if(!obj.IsEmpty()){
+    if (!obj.IsEmpty()) {
         if (obj->IsUint32()) {
             ret = (CanvasStoreOp) obj->Uint32Value(isolate->GetCurrentContext()).ToChecked();
         } else if (obj->IsString()) {
@@ -31,9 +31,9 @@ ParseCanvasStoreOp(v8::Isolate *isolate, const v8::Local<v8::Value> &obj){
 }
 
 inline static CanvasLoadOp
-ParseCanvasLoadOp(v8::Isolate *isolate, const v8::Local<v8::Value> &obj){
+ParseCanvasLoadOp(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
     auto ret = CanvasLoadOp::CanvasLoadOpClear;
-    if(!obj.IsEmpty()){
+    if (!obj.IsEmpty()) {
         if (obj->IsUint32()) {
             ret = (CanvasLoadOp) obj->Uint32Value(isolate->GetCurrentContext()).ToChecked();
         } else if (obj->IsString()) {
@@ -687,65 +687,75 @@ ParseExtent3d(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
 }
 
 
-inline static CanvasColor
+inline static CanvasOptionalColor
 ParseColor(v8::Isolate *isolate, const v8::Local<v8::Value> &obj) {
 
     auto context = isolate->GetCurrentContext();
-    CanvasColor ret{
-            0, 0, 0, 0
+    CanvasOptionalColor ret{
+            CanvasOptionalColorNone
     };
 
     if (!obj.IsEmpty()) {
         if (obj->IsArray()) {
             auto array = obj.As<v8::Array>();
             v8::Local<v8::Value> r;
+            ret.tag = CanvasOptionalColorSome;
+            ret.some = CanvasColor{
+                    0, 0, 0, 0
+            };
             if (array->Get(context, 0).ToLocal(&r) &&
                 r->IsNumber()) {
-                ret.r = r->NumberValue(context).FromJust();
+                ret.some.r = r->NumberValue(context).FromJust();
             }
 
             v8::Local<v8::Value> g;
             if (array->Get(context, 1).ToLocal(&g) &&
                 g->IsNumber()) {
-                ret.g = g->NumberValue(context).FromJust();
+                ret.some.g = g->NumberValue(context).FromJust();
             }
 
             v8::Local<v8::Value> b;
             if (array->Get(context, 2).ToLocal(
                     &b) && b->IsNumber()) {
-                ret.b = b->NumberValue(context).FromJust();
+                ret.some.b = b->NumberValue(context).FromJust();
             }
 
 
             v8::Local<v8::Value> a;
             if (array->Get(context, 3).ToLocal(
                     &a) && a->IsNumber()) {
-                ret.a = a->NumberValue(context).FromJust();
+                ret.some.a = a->NumberValue(context).FromJust();
             }
         } else if (obj->IsObject()) {
             auto colorObj = obj.As<v8::Object>();
             v8::Local<v8::Value> r;
+
+            ret.tag = CanvasOptionalColorSome;
+            ret.some = CanvasColor{
+                    0, 0, 0, 0
+            };
+
             if (colorObj->Get(context, ConvertToV8String(isolate, "r")).ToLocal(&r) &&
                 r->IsNumber()) {
-                ret.r = r->NumberValue(context).FromJust();
+                ret.some.r = r->NumberValue(context).FromJust();
             }
 
             v8::Local<v8::Value> g;
             if (colorObj->Get(context, ConvertToV8String(isolate, "g")).ToLocal(&g) &&
                 g->IsNumber()) {
-                ret.g = g->NumberValue(context).FromJust();
+                ret.some.g = g->NumberValue(context).FromJust();
             }
 
             v8::Local<v8::Value> b;
             if (colorObj->Get(context, ConvertToV8String(isolate, "b")).ToLocal(
                     &b) && b->IsNumber()) {
-                ret.b = b->NumberValue(context).FromJust();
+                ret.some.b = b->NumberValue(context).FromJust();
             }
 
             v8::Local<v8::Value> a;
             if (colorObj->Get(context, ConvertToV8String(isolate, "a")).ToLocal(
                     &a) && a->IsNumber()) {
-                ret.a = a->NumberValue(context).FromJust();
+                ret.some.a = a->NumberValue(context).FromJust();
             }
         }
     }

@@ -741,7 +741,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		//swarm(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -786,7 +786,7 @@ fn main() -> @location(0) vec4f {
 		//arcToAnimation(this.canvas);
 		//ellipse(this.canvas);
 		//fillPath(this.canvas);
-		createChaosLines(this.canvas);
+		//createChaosLines(this.canvas);
 		//flappyBird(this.canvas);
 		//imageBlock(this.canvas);
 		//scale(this.canvas);
@@ -825,6 +825,7 @@ fn main() -> @location(0) vec4f {
 		//colorRain(this.canvas);
 		//particlesLarge(this.canvas);
 		//rainbowOctopus(this.canvas);
+
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
 		//touchParticles(this.canvas);
@@ -2054,8 +2055,12 @@ fn main() -> @location(0) vec4f {
 		// })
 
 		//console.log(sun.width, moon.width, earth.width);
+
+		canvas.width = canvas.clientWidth * window?.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window?.devicePixelRatio;
+
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		//ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 
 		//ctx.scale(3, 3);
 		function init() {

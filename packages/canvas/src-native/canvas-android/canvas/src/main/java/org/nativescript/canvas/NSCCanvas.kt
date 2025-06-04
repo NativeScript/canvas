@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
 import android.widget.FrameLayout
+import androidx.core.graphics.createBitmap
 import androidx.core.text.TextUtilsCompat
 import androidx.core.view.drawToBitmap
 import dalvik.annotation.optimization.CriticalNative
@@ -112,6 +113,7 @@ class NSCCanvas : FrameLayout {
 	private var surfaceType = SurfaceType.Texture
 	lateinit var textureView: GLView
 	lateinit var surfaceView: GLViewSV
+	lateinit var cpuView: CPUView
 
 	private var isAlpha = false
 
@@ -134,6 +136,8 @@ class NSCCanvas : FrameLayout {
 		surfaceView = GLViewSV(context, attrs)
 		surfaceView.canvas = this
 		surfaceType = type
+		cpuView = CPUView(context, attrs)
+		cpuView.canvas = this
 		setBackgroundColor(Color.TRANSPARENT)
 		val internalWidth = 300
 		val internalHeight = 150
@@ -224,7 +228,8 @@ class NSCCanvas : FrameLayout {
 		preserveDrawingBuffer: Boolean = false,
 		stencil: Boolean = false,
 		desynchronized: Boolean = false,
-		xrCompatible: Boolean = false
+		xrCompatible: Boolean = false,
+		willReadFrequently: Boolean = false
 	) {
 		initContextWithContextAttributes(
 			type,
@@ -237,7 +242,8 @@ class NSCCanvas : FrameLayout {
 			preserveDrawingBuffer,
 			stencil,
 			desynchronized,
-			xrCompatible
+			xrCompatible,
+			willReadFrequently
 		)
 	}
 
@@ -351,7 +357,8 @@ class NSCCanvas : FrameLayout {
 		preserveDrawingBuffer: Boolean,
 		stencil: Boolean,
 		desynchronized: Boolean,
-		xrCompatible: Boolean
+		xrCompatible: Boolean,
+		willReadFrequently: Boolean
 	) {
 		if (nativeContext != 0L) {
 			return
@@ -377,6 +384,44 @@ class NSCCanvas : FrameLayout {
 			return
 		}
 
+
+		val density = resources.displayMetrics.density
+		if (is2D && willReadFrequently) {
+			nativeContext = nativeInitContextWithCustomSurface(
+				surfaceWidth,
+				surfaceHeight,
+				density, alpha,
+				Color.BLACK,
+				resources.displayMetrics.densityDpi.toFloat(),
+				direction
+			)
+			nativeContext2DSetRenderFunc(nativeContext, cpuView)
+			engine = Engine.CPU
+			cpuView.bitmap = createBitmap(surfaceWidth, surfaceHeight)
+			when (surfaceType) {
+				SurfaceType.Texture -> {
+					textureView.visibility = View.GONE
+					textureView.surface?.release()
+					textureView.surface = null
+				}
+
+				SurfaceType.Surface -> {
+					surfaceView.visibility = View.GONE
+					surface?.release()
+				}
+			}
+
+			this.isAlpha = alpha
+			this.willReadFrequently = true
+
+			scaleSurface()
+
+			addView(cpuView, surfaceWidth, surfaceHeight)
+			layoutSurface(surfaceWidth, surfaceHeight, this)
+
+			return
+		}
+
 		val surface = if (surfaceType == SurfaceType.Surface) {
 			if (alpha) {
 				surfaceView.setZOrderOnTop(true)
@@ -395,7 +440,6 @@ class NSCCanvas : FrameLayout {
 
 		surface?.let {
 			if (is2D) {
-				val density = resources.displayMetrics.density
 				if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 					nativeContext = nativeCreate2dContextVulkan(
 						surfaceWidth,
@@ -453,7 +497,6 @@ class NSCCanvas : FrameLayout {
 					height = 1
 				}
 				if (is2D) {
-					val density = resources.displayMetrics.density
 
 					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 						nativeContext = nativeCreate2dContextVulkan(
@@ -501,7 +544,6 @@ class NSCCanvas : FrameLayout {
 
 			} else {
 				if (is2D) {
-					val density = resources.displayMetrics.density
 					if (!forceGL && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && vulkanVersion[0] > 1 && vulkanVersion[2] > 0) {
 						nativeContext = nativeCreate2dContextVulkan(
 							surfaceWidth,
@@ -553,6 +595,7 @@ class NSCCanvas : FrameLayout {
 	}
 
 	private var is2D = false
+	private var willReadFrequently = false
 
 	fun create2DContext(
 		alpha: Boolean,
@@ -564,7 +607,8 @@ class NSCCanvas : FrameLayout {
 		preserveDrawingBuffer: Boolean,
 		stencil: Boolean,
 		desynchronized: Boolean,
-		xrCompatible: Boolean
+		xrCompatible: Boolean,
+		willReadFrequently: Boolean
 	): Long {
 
 		if (nativeContext != 0L) {
@@ -582,7 +626,8 @@ class NSCCanvas : FrameLayout {
 			preserveDrawingBuffer,
 			stencil,
 			desynchronized,
-			xrCompatible
+			xrCompatible,
+			willReadFrequently
 		)
 
 		return nativeContext
@@ -651,18 +696,24 @@ class NSCCanvas : FrameLayout {
 			}
 		}
 
-		if (surfaceType == SurfaceType.Surface) {
-			dx = (newWidth - surfaceWidth) / 2f
-			dy = (newHeight - surfaceHeight) / 2f
-			surfaceView.scaleX = scaleX
-			surfaceView.scaleY = scaleY
-			surfaceView.translationX = dx
-			surfaceView.translationY = dy
+		if (is2D && willReadFrequently) {
+			cpuView.matrix.reset()
+			cpuView.matrix.preScale(scaleX, scaleY)
+			cpuView.matrix.postTranslate(dx, dy)
 		} else {
-			val matrix = Matrix()
-			matrix.preScale(scaleX, scaleY)
-			matrix.postTranslate(dx, dy)
-			textureView.setTransform(matrix)
+			if (surfaceType == SurfaceType.Surface) {
+				dx = (newWidth - surfaceWidth) / 2f
+				dy = (newHeight - surfaceHeight) / 2f
+				surfaceView.scaleX = scaleX
+				surfaceView.scaleY = scaleY
+				surfaceView.translationX = dx
+				surfaceView.translationY = dy
+			} else {
+				val matrix = Matrix()
+				matrix.preScale(scaleX, scaleY)
+				matrix.postTranslate(dx, dy)
+				textureView.setTransform(matrix)
+			}
 		}
 	}
 
@@ -695,23 +746,32 @@ class NSCCanvas : FrameLayout {
 				}
 
 				Engine.GPU -> {
-					if (nativeContext != 0L) {
-						surface?.let {
-							if (is2D) {
-								nativeUpdate2DSurface(
-									it, surfaceWidth,
-									surfaceHeight, nativeContext
-								)
-							} else {
-								nativeResizeWebGPU(nativeContext, it, surfaceWidth, surfaceHeight)
-							}
+					surface?.let {
+						if (is2D) {
+							nativeUpdate2DSurface(
+								it, surfaceWidth,
+								surfaceHeight, nativeContext
+							)
+						} else {
+							nativeResizeWebGPU(nativeContext, it, surfaceWidth, surfaceHeight)
 						}
 					}
 				}
 
+				Engine.CPU -> {
+					nativeResizeCustomSurface(
+						nativeContext,
+						surfaceWidth,
+						surfaceHeight,
+						resources.displayMetrics.density,
+						isAlpha,
+						resources.displayMetrics.densityDpi,
+					)
+					cpuView.invalidate()
+				}
+
 				else -> {}
 			}
-
 		}
 		listener?.surfaceResize(surfaceWidth, surfaceHeight)
 	}
@@ -743,12 +803,13 @@ class NSCCanvas : FrameLayout {
 		nativeMakeWebGLCurrent(nativeContext)
 	}
 
+
 	@JvmOverloads
 	fun snapshot(flip: Boolean = false): Bitmap {
 		var bitmap: Bitmap? = null
 		var needsToFlip = false
 		if (is2D) {
-			bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+			bitmap = createBitmap(width, height)
 			nativeCustomWithBitmapFlush(nativeContext, bitmap)
 			return bitmap
 		} else {
@@ -763,7 +824,7 @@ class NSCCanvas : FrameLayout {
 
 			if (bitmap == null) {
 				needsToFlip = true
-				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+				bitmap = createBitmap(width, height)
 				nativeWriteCurrentWebGLContextToBitmap(nativeContext, bitmap)
 			}
 		}
@@ -890,10 +951,14 @@ class NSCCanvas : FrameLayout {
 
 		@JvmStatic
 		fun layoutSurface(width: Int, height: Int, canvas: NSCCanvas) {
-			val view = when (canvas.surfaceType) {
-				SurfaceType.Texture -> canvas.textureView
-				SurfaceType.Surface -> {
-					canvas.surfaceView
+			val view = if (canvas.is2D && canvas.willReadFrequently) {
+				canvas.cpuView
+			} else {
+				when (canvas.surfaceType) {
+					SurfaceType.Texture -> canvas.textureView
+					SurfaceType.Surface -> {
+						canvas.surfaceView
+					}
 				}
 			}
 
@@ -967,6 +1032,12 @@ class NSCCanvas : FrameLayout {
 		internal fun append(key: String, value: Float, sb: StringBuilder, isLast: Boolean = false) {
 			sb.append("\"${key}\": ${value}${if (isLast) "" else ","}")
 		}
+
+		@JvmStatic
+		external fun nativeContext2DSetRenderFunc(context: Long, cpuView: Any)
+
+		@JvmStatic
+		external fun nativeContext2DClearRenderFunc(context: Long)
 
 		@JvmStatic
 		external fun nativeGetVulkanVersion(array: IntArray)
@@ -1103,8 +1174,8 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@CriticalNative
 		external fun nativeInitContextWithCustomSurface(
-			width: Float,
-			height: Float,
+			width: Int,
+			height: Int,
 			density: Float,
 			alpha: Boolean,
 			fontColor: Int,
@@ -1117,18 +1188,16 @@ class NSCCanvas : FrameLayout {
 		@CriticalNative
 		external fun nativeResizeCustomSurface(
 			context: Long,
-			width: Float,
-			height: Float,
+			width: Int,
+			height: Int,
 			density: Float,
 			alpha: Boolean,
 			ppi: Int,
 		)
 
-
 		@JvmStatic
 		@FastNative
 		external fun nativeCustomWithBitmapFlush(context: Long, view: Bitmap)
-
 
 		@JvmStatic
 		@CriticalNative

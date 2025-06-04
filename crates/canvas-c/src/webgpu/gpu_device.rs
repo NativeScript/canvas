@@ -1734,7 +1734,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         usage: wgt::TextureUsages::from_bits_truncate(descriptor.usage),
         view_formats,
     };
-
+    
     let (texture_id, err) = global.device_create_texture(device_id, &desc, None);
 
     if let Some(cause) = err {

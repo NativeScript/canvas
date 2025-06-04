@@ -33,13 +33,6 @@ fi
 
 TOOLS="$NDK/toolchains/llvm/prebuilt/$NDK_HOST"
 
-AR=$TOOLS/bin/llvm-ar \
-CXX=$TOOLS/bin/${NDK_TARGET}${API_VERSION}-clang++ \
-RANLIB=$TOOLS/bin/llvm-ranlib \
-CXXFLAGS="--target=$NDK_TARGET" \
-
-RUSTFLAGS=""
-
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
     RUSTFLAGS="-C target-feature=-outline-atomics"
@@ -47,12 +40,17 @@ fi
 
 if [ "$MODE" = "release" ]; then
     RUSTFLAGS="$RUSTFLAGS -Zlocation-detail=none -C panic=abort"
-    EXTRA_ARGS="-Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --release"
+    EXTRA_ARGS="-Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort --release"
 else
     EXTRA_ARGS=""
 fi
 
-RUSTFLAGS="$RUSTFLAGS" cargo +nightly build $EXTRA_ARGS --target $TARGET -p canvas-android
+AR=$TOOLS/bin/llvm-ar \
+CXX=$TOOLS/bin/${NDK_TARGET}${API_VERSION}-clang++ \
+RANLIB=$TOOLS/bin/llvm-ranlib \
+CXXFLAGS="--target=$NDK_TARGET" \
+RUSTFLAGS="$RUSTFLAGS" \
+cargo +nightly build $EXTRA_ARGS --target $TARGET -p canvas-android
 
 # RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-android
 

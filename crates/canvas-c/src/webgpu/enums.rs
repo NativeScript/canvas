@@ -142,7 +142,6 @@ impl Into<wgt::TextureViewDimension> for CanvasTextureViewDimension {
 pub enum CanvasOptionalTextureViewDimension {
     None,
     D1,
-
     D2,
     D2Array,
     Cube,
@@ -2028,7 +2027,7 @@ impl From<StorageTextureAccess> for CanvasStorageTextureAccess {
             StorageTextureAccess::WriteOnly => Self::WriteOnly,
             StorageTextureAccess::ReadOnly => Self::ReadOnly,
             StorageTextureAccess::ReadWrite => Self::ReadWrite,
-            StorageTextureAccess::Atomic => Self::Atomic
+            StorageTextureAccess::Atomic => Self::Atomic,
         }
     }
 }
@@ -2039,7 +2038,7 @@ impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
             CanvasStorageTextureAccess::WriteOnly => StorageTextureAccess::WriteOnly,
             CanvasStorageTextureAccess::ReadOnly => StorageTextureAccess::ReadOnly,
             CanvasStorageTextureAccess::ReadWrite => StorageTextureAccess::ReadWrite,
-            CanvasStorageTextureAccess::Atomic => StorageTextureAccess::Atomic
+            CanvasStorageTextureAccess::Atomic => StorageTextureAccess::Atomic,
         }
     }
 }

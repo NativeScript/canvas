@@ -15,7 +15,7 @@ public class CanvasGLKView: GLKView, GLKViewDelegate {
     var isDirty: Bool = false
     internal(set) public weak var canvas: NSCCanvas? = nil
     
-    private (set) var fbo: UInt32 = 0
+    private(set) var fbo: UInt32 = 0
     
     public init() {
         super.init(frame: .zero)
@@ -77,12 +77,27 @@ extension GLKView {
     }
 }
 
+
+internal func CPURender(_ ptr: UnsafeRawPointer?) {
+	guard let ptr = ptr else { return }
+		let view: CanvasCPUView = Unmanaged.fromOpaque(ptr).takeUnretainedValue()
+	
+	if let renderer = view.canvas, let data = view.data {
+		let width = renderer.surfaceWidth
+		let height = renderer.surfaceHeight
+		canvas_native_ios_context_custom_with_buffer_flush(renderer.nativeContext, data.mutableBytes, UInt(data.length), Float(width), Float(height), !renderer.isOpaque)
+	}
+	
+		view.layer.contents = view.makeCGImage()
+}
+
 @objcMembers
 @objc(CanvasCPUView)
 public class CanvasCPUView: UIView {
     var isDirty: Bool = false
-    weak var renderer: NSCCanvas?
+    weak var canvas: NSCCanvas?
     public var ignorePixelScaling = false
+	internal(set) public var data: NSMutableData? = nil
     public init() {
         super.init(frame: .zero)
     }
@@ -102,28 +117,42 @@ public class CanvasCPUView: UIView {
         }
         return 1
     }
+	
+	
+	internal func makeCGImage() -> CGImage? {
+		guard let canvas = canvas, let data = data else {return nil}
+		let width = canvas.surfaceWidth
+		let height = canvas.surfaceHeight
+			let bytesPerPixel = 4
+			let bytesPerRow = bytesPerPixel * width
+		guard let provider = CGDataProvider(dataInfo: nil, data: data.bytes, size: bytesPerRow * height, releaseData: { _,_,_ in }) else {
+					return nil
+			}
+
+			return CGImage(
+					width: width,
+					height: height,
+					bitsPerComponent: 8,
+					bitsPerPixel: 32,
+					bytesPerRow: bytesPerRow,
+					space: CGColorSpaceCreateDeviceRGB(),
+					bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
+					provider: provider,
+					decode: nil,
+					shouldInterpolate: true,
+					intent: .defaultIntent
+			)
+	}
     
-    
-    public override func draw(_ rect: CGRect) {
-        if let renderer = renderer {
-            if(renderer.nativeContext != 0){
-                let width = Int(Float(frame.size.width) * deviceScale())
-                let height = Int(Float(frame.size.height) * deviceScale())
-                let size = width * height * 4
-                let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: size)
-                let colorSpace = CGColorSpaceCreateDeviceRGB()
-                let ctx = CGContext(data: buffer, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-                //                context_custom_with_buffer_flush(renderer.context, buffer, UInt(size), Float(width), Float(height))
-                if let image = ctx?.makeImage() {
-                    let currentContext = UIGraphicsGetCurrentContext()
-                    currentContext?.clear(bounds)
-                    currentContext?.translateBy(x: 0, y: bounds.size.height)
-                    currentContext?.scaleBy(x: 1, y: -1)
-                    currentContext?.draw(image, in: bounds)
-                }
-                buffer.deallocate()
-            }
-        }
-        isDirty = false
-    }
+	internal func snapshot()-> UIImage? {
+		if let renderer = canvas, let data = data {
+			let width = renderer.surfaceWidth
+			let height = renderer.surfaceHeight
+			canvas_native_ios_context_custom_with_buffer_flush(renderer.nativeContext, data.mutableBytes, UInt(data.length), Float(width), Float(height), !renderer.isOpaque)
+			guard let cgImage = makeCGImage() else {return nil}
+			return UIImage(cgImage: cgImage)
+		}
+		
+		return nil
+	}
 }

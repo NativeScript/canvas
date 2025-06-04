@@ -16,7 +16,7 @@ use jni::sys::{jfloat, jlong};
 use log::LevelFilter;
 
 // #[cfg(feature = "vulkan")]
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion, nativeContext2DSetRenderFunc, nativeContext2DClearRenderFunc};
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
@@ -95,6 +95,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_method_names.push("nativeCreate2dContextVulkan");
                 canvas_method_names.push("nativeGetVulkanVersion");
           //  }
+                canvas_method_names.push("nativeContext2DSetRenderFunc");
+                canvas_method_names.push("nativeContext2DClearRenderFunc");
 
             let canvas_signatures = if ret >= ANDROID_O {
                 let mut ret = vec![
@@ -108,8 +110,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)Z",
                     "(JLandroid/graphics/Bitmap;)V",
-                    "(FFFZIFI)J",
-                    "(JFFFZI)V",
+                    "(IIFZIFI)J",
+                    "(JIIFZI)V",
                     "(JLandroid/graphics/Bitmap;)V",
                     "(J)V",
                     "(J)V",
@@ -125,6 +127,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     ret.push("([I)V");
                // }
 
+                ret.push("(JLjava/lang/Object;)V");
+                ret.push("(J)V");
+
                 ret
             } else {
                 let mut ret = vec![
@@ -138,8 +143,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)Z",
                     "!(JLandroid/graphics/Bitmap;)V",
-                    "!(FFFZIFI)J",
-                    "!(JFFFZI)V",
+                    "!(IIFZIFI)J",
+                    "!(JIIFZI)V",
                     "!(JLandroid/graphics/Bitmap;)V",
                     "!(J)V",
                     "!(J)V",
@@ -154,6 +159,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                    ret.push("!(IILandroid/view/Surface;ZFIFI)J");
                     ret.push("!([I)V");
              //  }
+
+                ret.push("!(JLjava/lang/Object;)V");
+                ret.push("!(J)V");
                 ret
             };
 
@@ -211,6 +219,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_methods.push(nativeCreate2dContextVulkan as *mut c_void);
                 canvas_methods.push(nativeGetVulkanVersion as *mut c_void);
          //   }
+
+            canvas_methods.push(nativeContext2DSetRenderFunc as *mut c_void);
+            canvas_methods.push(nativeContext2DClearRenderFunc as *mut c_void);
 
             let canvas_native_methods: Vec<NativeMethod> =
                 izip!(canvas_method_names, canvas_signatures, canvas_methods)

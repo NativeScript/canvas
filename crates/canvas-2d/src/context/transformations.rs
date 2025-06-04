@@ -12,6 +12,8 @@ impl Context {
         let mat = self.surface.canvas().local_to_device();
         crate::context::matrix::Matrix(mat)
     }
+    
+    #[inline]
     pub fn rotate(&mut self, angle: f32) {
         // self.with_matrix(|mat| {
         //     mat.pre_rotate(angle * DEG, None);
@@ -20,6 +22,7 @@ impl Context {
         self.surface.canvas().rotate(angle * DEG, None);
     }
 
+    #[inline]
     pub fn scale(&mut self, x: f32, y: f32) {
         // self.with_matrix(|mat| {
         //     mat.pre_scale((x, y), None);
@@ -28,6 +31,7 @@ impl Context {
         self.surface.canvas().scale((x, y));
     }
 
+    #[inline]
     pub fn translate(&mut self, x: f32, y: f32) {
         // self.with_matrix(|mat| {
         //     mat.pre_translate(skia_safe::Vector::new(x, y));
@@ -82,6 +86,7 @@ impl Context {
         // });
     }
 
+    #[inline]
     pub fn reset_transform(&mut self) {
         self.surface.canvas().reset_matrix();
         // self.with_matrix(|mat| {

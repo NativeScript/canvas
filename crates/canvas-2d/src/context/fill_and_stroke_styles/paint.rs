@@ -83,9 +83,9 @@ impl PaintStyle {
 
 #[derive(Clone)]
 pub struct Paint {
-    fill_paint: skia_safe::Paint,
-    stroke_paint: skia_safe::Paint,
-    image_paint: skia_safe::Paint,
+    pub(crate) fill_paint: skia_safe::Paint,
+    pub(crate) stroke_paint: skia_safe::Paint,
+    pub(crate) image_paint: skia_safe::Paint,
     fill_style: PaintStyle,
     stroke_style: PaintStyle,
     image_smoothing_quality: FilterQuality,
@@ -193,7 +193,7 @@ impl Paint {
         let filter =
             skia_safe::image_filters::drop_shadow_only(offset, (sigma, sigma), color, None, None, None);
         paint.set_image_filter(filter);
-        return Some(paint);
+        Some(paint)
     }
 
     pub fn fill_shadow_paint(
@@ -262,8 +262,8 @@ impl Default for Paint {
 
 pub fn paint_style_set_color_with_string(context: &mut Context, is_fill: bool, color: &str) {
     if let Ok(color) = color.parse::<csscolorparser::Color>() {
-        let color = color.rgba_u8();
-        let style = PaintStyle::Color(Color::from_argb(color.3, color.0, color.1, color.2));
+        let color = color.to_rgba8();
+        let style = PaintStyle::Color(Color::from_argb(color[3], color[0], color[1], color[2]));
         if is_fill {
             context.set_fill_style(style);
         } else {

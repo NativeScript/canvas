@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Formatter;
 use wgt::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
 
 use super::{
@@ -76,6 +78,15 @@ pub struct CanvasExtent3d {
     pub depth_or_array_layers: u32,
 }
 
+impl fmt::Display for CanvasExtent3d {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "({}, {}, {})",
+            self.width, self.height, self.depth_or_array_layers
+        )
+    }
+}
 impl Into<wgt::Extent3d> for CanvasExtent3d {
     fn into(self) -> wgt::Extent3d {
         wgt::Extent3d {

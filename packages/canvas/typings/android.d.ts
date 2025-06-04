@@ -205,7 +205,7 @@ declare module org {
 				public textureView: org.nativescript.canvas.GLView;
 				public surfaceView: org.nativescript.canvas.GLViewSV;
 				public static TAG: string = 'CanvasView';
-				public create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean): number;
+				public create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean): number;
 				public makeContextCurrent(): void;
 				public setSurfaceView(value: org.nativescript.canvas.GLViewSV): void;
 				public static context2DTest(context: number): void;

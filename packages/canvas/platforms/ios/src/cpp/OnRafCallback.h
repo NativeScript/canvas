@@ -11,6 +11,7 @@ class OnRafCallback {
     // 0 2d
     // 1 gl
     // 2 gl2
+		// 3 gpu
 public:
     OnRafCallback(intptr_t context, uint32_t version);
 

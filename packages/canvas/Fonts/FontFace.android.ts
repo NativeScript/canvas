@@ -1,4 +1,4 @@
-import { Utils } from '@nativescript/core';
+import { knownFolders, Utils } from '@nativescript/core';
 type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
 
 const url_ex = /url\(([^)]+?)\.(woff2?|ttf|otf|eot)\)/;
@@ -75,9 +75,13 @@ export class FontFace {
 			if (ArrayBuffer.isView(source) || source instanceof ArrayBuffer) {
 				this.native_ = new org.nativescript.canvas.NSCFontFace(family, source as never);
 			} else if (typeof source === 'string') {
-				const matches = source.match(url_ex);
+				const matches = source.match(url_ex) ?? [];
 				this.extension = matches[2];
-				const url = `${matches[1]}.${matches[2]}`;
+				let path = matches[1];
+				if (path && path.startsWith('~/')) {
+					path = path.replace('~/', knownFolders.currentApp().path);
+				}
+				const url = `${path}${this.extension ? '.' + this.extension : ''}`;
 				this.native_ = new org.nativescript.canvas.NSCFontFace(family, url ?? source, null);
 			}
 		} else {

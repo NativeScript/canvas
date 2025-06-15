@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import androidx.core.net.toUri
 
 val FONT_FAMILY_PATTERN = Regex("font-family:\\s*'([^']+)';")
 val FONT_STYLE_PATTERN =
@@ -501,7 +502,7 @@ class NSCFontFace {
 	private fun cacheData(context: Context, source: String): Typeface {
 		val nsFonts = File(context.filesDir, "ns_fonts")
 		nsFonts.mkdir()
-		val uri = Uri.parse(source)
+		val uri = source.toUri()
 		if (uri.lastPathSegment == null) {
 			throw Error("Invalid source $source")
 		}
@@ -559,6 +560,7 @@ class NSCFontFace {
 				callback(null)
 				return
 			}
+
 			else -> {
 				if (fontData == null && localOrRemoteSource == null) {
 					val family = genericFontFamilies[fontFamily]
@@ -603,17 +605,28 @@ class NSCFontFace {
 			}
 		}
 
-		if (localOrRemoteSource?.startsWith("http") == true) {
-			try {
-				val font = cacheData(context, localOrRemoteSource!!)
-				this.font = font
-				status = NSCFontFaceStatus.loaded
-				callback(null)
-				return
-			} catch (e: Exception) {
-				status = NSCFontFaceStatus.error
-				callback(e.localizedMessage)
-				return
+
+		localOrRemoteSource?.let {
+			if (it.startsWith("http")) {
+				try {
+					val font = cacheData(context, localOrRemoteSource!!)
+					this.font = font
+					status = NSCFontFaceStatus.loaded
+					callback(null)
+				} catch (e: Exception) {
+					status = NSCFontFaceStatus.error
+					callback(e.localizedMessage)
+				}
+			} else {
+				try {
+					val fontPath = File(it)
+					this.font = handleFontPath(fontPath)
+					status = NSCFontFaceStatus.loaded
+					callback(null)
+				} catch (e: Exception) {
+					status = NSCFontFaceStatus.error
+					callback(e.localizedMessage)
+				}
 			}
 		}
 	}

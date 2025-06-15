@@ -176,6 +176,8 @@ add_library(
         ${CPP_DIR}/webgpu/GPUSamplerImpl.cpp
         ${CPP_DIR}/webgpu/GPURenderBundleEncoderImpl.cpp
         ${CPP_DIR}/webgpu/GPURenderBundleImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCompilationInfoImpl.cpp
+        ${CPP_DIR}/webgpu/GPUCompilationMessageImpl.cpp
 
 
 

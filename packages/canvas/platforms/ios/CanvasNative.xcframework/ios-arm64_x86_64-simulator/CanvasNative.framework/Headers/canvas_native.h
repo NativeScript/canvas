@@ -277,6 +277,12 @@ typedef enum CanvasGPUAutoLayoutMode {
   CanvasGPUAutoLayoutModeAuto,
 } CanvasGPUAutoLayoutMode;
 
+typedef enum CanvasGPUCompilationMessageType {
+  CanvasGPUCompilationMessageTypeError,
+  CanvasGPUCompilationMessageTypeWarning,
+  CanvasGPUCompilationMessageTypeInfo,
+} CanvasGPUCompilationMessageType;
+
 typedef enum CanvasGPUErrorFilter {
   /**
    * Catch only out-of-memory errors.
@@ -703,6 +709,10 @@ typedef struct CanvasGPUCanvasContext CanvasGPUCanvasContext;
 typedef struct CanvasGPUCommandBuffer CanvasGPUCommandBuffer;
 
 typedef struct CanvasGPUCommandEncoder CanvasGPUCommandEncoder;
+
+typedef struct CanvasGPUCompilationInfo CanvasGPUCompilationInfo;
+
+typedef struct CanvasGPUCompilationMessage CanvasGPUCompilationMessage;
 
 typedef struct CanvasGPUComputePassEncoder CanvasGPUComputePassEncoder;
 
@@ -2003,7 +2013,9 @@ void canvas_native_context_2d_path_test(int64_t context);
 
 void canvas_native_context_2d_conic_test(int64_t context);
 
+#if !defined(TARGET_OS_ANDROID)
 void canvas_native_context_set_render_func(int64_t value, void *data, void (*render)(const void*));
+#endif
 
 void canvas_native_context_clear_render_func(int64_t value);
 
@@ -3703,6 +3715,29 @@ char *canvas_native_webgpu_shader_module_get_label(const struct CanvasGPUShaderM
 void canvas_native_webgpu_shader_module_reference(const struct CanvasGPUShaderModule *shader_module);
 
 void canvas_native_webgpu_shader_module_release(const struct CanvasGPUShaderModule *shader_module);
+
+struct CanvasGPUCompilationInfo *canvas_native_webgpu_device_create_shader_module_get_compilation_info(const struct CanvasGPUShaderModule *shader_module);
+
+uintptr_t canvas_native_webgpu_compilation_info_get_messages_count(struct CanvasGPUCompilationInfo *info);
+
+struct CanvasGPUCompilationMessage *canvas_native_webgpu_compilation_info_get_message_at(struct CanvasGPUCompilationInfo *info,
+                                                                                         uintptr_t index);
+
+void canvas_native_webgpu_compilation_info_release(struct CanvasGPUCompilationInfo *info);
+
+void canvas_native_webgpu_compilation_message_release(struct CanvasGPUCompilationMessage *message);
+
+const char *canvas_native_webgpu_compilation_message_get_message(struct CanvasGPUCompilationMessage *message);
+
+enum CanvasGPUCompilationMessageType canvas_native_webgpu_compilation_message_get_type(struct CanvasGPUCompilationMessage *message);
+
+uint64_t canvas_native_webgpu_compilation_message_get_line_num(struct CanvasGPUCompilationMessage *message);
+
+uint64_t canvas_native_webgpu_compilation_message_get_line_pos(struct CanvasGPUCompilationMessage *message);
+
+uint64_t canvas_native_webgpu_compilation_message_get_offset(struct CanvasGPUCompilationMessage *message);
+
+uint64_t canvas_native_webgpu_compilation_message_get_length(struct CanvasGPUCompilationMessage *message);
 
 struct CanvasGPUSupportedLimits *canvas_native_webgpu_create_limits(void);
 

@@ -3,7 +3,6 @@ use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::{
     borrow::Cow,
-    collections::HashMap,
     ffi::{CStr, CString},
     os::raw::{c_char, c_void},
 };
@@ -734,6 +733,7 @@ unsafe fn parse_compute_pipeline_descriptor(
             label: label.clone(),
             instance: Arc::clone(&module.instance),
             module: module.module,
+            compilation_info: module.compilation_info.clone(),
         },
         entry_point: ptr_into_string(compute.entry_point),
         constants: if !compute.constants.is_null() {
@@ -1129,8 +1129,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
 
     let src = unsafe { CStr::from_ptr(source) };
     let src = src.to_str().unwrap();
-    let src = Cow::Owned(src.to_string());
-    let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(src);
+    let source = wgpu_core::pipeline::ShaderModuleSource::Wgsl(Cow::Owned(src.to_string()));
 
     let device = unsafe { &*device };
     let desc = wgpu_core::pipeline::ShaderModuleDescriptor {
@@ -1143,14 +1142,17 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
 
     let (module, error) = global.device_create_shader_module(device_id, &desc, source, None);
 
+    let messages = error.iter();
+    let mut msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> =
+        Vec::with_capacity(messages.len());
+    for (_, message) in messages.enumerate() {
+        let info = crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::new(
+            message,
+            src,
+        );
+        msgs.push(info);
+    }
     if let Some(cause) = error {
-        // TODO handle validation errors GPUCompilationMessage
-        // match cause {
-        //     CreateShaderModuleError::Parsing(error) => {}
-        //     CreateShaderModuleError::Validation(error) => {}
-        //     _ => {}
-        // }
-
         handle_error(
             global,
             device.error_sink.as_ref(),
@@ -1165,6 +1167,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
         label: desc.label,
         module,
         instance: device.instance.clone(),
+        compilation_info: crate::webgpu::gpu_shader_module::CanvasGPUCompilationInfo::new(msgs),
     };
     Arc::into_raw(Arc::new(shader))
 }
@@ -1734,7 +1737,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_texture(
         usage: wgt::TextureUsages::from_bits_truncate(descriptor.usage),
         view_formats,
     };
-    
+
     let (texture_id, err) = global.device_create_texture(device_id, &desc, None);
 
     if let Some(cause) = err {

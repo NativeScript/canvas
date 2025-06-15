@@ -4,6 +4,7 @@
 
 #include "GPUShaderModuleImpl.h"
 #include "Caches.h"
+#include "GPUCompilationInfoImpl.h"
 
 GPUShaderModuleImpl::GPUShaderModuleImpl(const CanvasGPUShaderModule *shaderModule) : shaderModule_(
         shaderModule) {}
@@ -52,6 +53,10 @@ v8::Local<v8::FunctionTemplate> GPUShaderModuleImpl::GetCtor(v8::Isolate *isolat
             GetLabel
     );
 
+    tmpl->Set(
+            ConvertToV8String(isolate, "getCompilationInfo"),
+            v8::FunctionTemplate::New(isolate, &GetCompilationInfo));
+
     cache->GPUShaderModuleTmpl =
             std::make_unique<v8::Persistent<v8::FunctionTemplate>>(isolate, ctorTmpl);
     return ctorTmpl;
@@ -77,4 +82,22 @@ GPUShaderModuleImpl::GetLabel(v8::Local<v8::Name> name,
     info.GetReturnValue().SetEmptyString();
 }
 
+void
+GPUShaderModuleImpl::GetCompilationInfo(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    auto isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+    GPUShaderModuleImpl *ptr = GetPointer(args.This());
+    auto resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
+    args.GetReturnValue().Set(resolver->GetPromise());
+    if (ptr == nullptr) {
+        resolver->Reject(context, v8::Null(isolate));
+        return;
+    }
+
+    auto info = new GPUCompilationInfoImpl(
+            canvas_native_webgpu_device_create_shader_module_get_compilation_info(
+                    ptr->GetShaderModule()));
+
+    resolver->Resolve(context, GPUCompilationInfoImpl::NewInstance(isolate, info));
+}
 

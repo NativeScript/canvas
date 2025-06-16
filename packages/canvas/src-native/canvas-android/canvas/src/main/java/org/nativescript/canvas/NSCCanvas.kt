@@ -871,7 +871,7 @@ class NSCCanvas : FrameLayout {
 
 	companion object {
 		@JvmStatic
-		var forceGL = true
+		var forceGL = false
 
 		@JvmStatic
 		var views = ConcurrentHashMap<Any?, Any?>()

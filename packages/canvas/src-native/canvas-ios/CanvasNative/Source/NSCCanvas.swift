@@ -13,7 +13,7 @@ import MetalKit
 @objcMembers
 @objc(NSCCanvas)
 public class NSCCanvas: UIView {
-    public static var forceGL = true
+    public static var forceGL = false
     
     enum Engine {
         case None

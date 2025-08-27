@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
-		"setup": "npx rimraf node_modules package-lock.json dist tmp yarn.lock && yarn config set ignore-engines true && ns package-manager set npm && yarn",
+		"setup": "npx rimraf node_modules package-lock.json dist tmp yarn.lock && npm install",
 		"start": "nps",
 		"add": "nx g @nativescript/plugin-tools:add-package",
 		"add-angular": "nx g @nativescript/plugin-tools:add-angular",
@@ -66,7 +66,7 @@
 		"phaser": "3.80.1",
 		"phaser-ce": "^2.20.0",
 		"pixi-filters": "~6.0.4",
-		"pixi-viewport": "^5.0.2",
+		"pixi-viewport": "^6.0.3",
 		"pixi.js": "~8.3.3",
 		"playcanvas": "^1.66.1",
 		"query-selector": "2.0.0",
@@ -88,6 +88,5 @@
 		"**/*.{js,ts,scss,json,html}": [
 			"npx prettier --write"
 		]
-	},
-	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+	}
 }

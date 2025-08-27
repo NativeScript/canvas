@@ -695,7 +695,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			}
 
 			if (hasTouchCallbacks && !preventDefault) {
-				const touches = TouchList.fromList(this._touches);
+				const touches = TouchList.fromList(this._touches.filter((t) => t.identifier !== ptrId));
 
 				const changedTouches = TouchList.fromList([
 					new Touch({

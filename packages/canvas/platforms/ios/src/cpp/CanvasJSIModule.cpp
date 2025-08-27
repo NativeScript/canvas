@@ -51,7 +51,7 @@ public:
 		
 		
 		if (config->Get(context, ConvertToV8String(isolate, "version")).ToLocal(&versionValue) && versionValue->IsInt32()) {
-			this->version = versionValue->Int32Value(context).IsJust();
+			this->version = versionValue->Int32Value(context).FromJust();
 		}
 		
 		v8::Local<v8::Value> alphaValue;
@@ -78,7 +78,7 @@ public:
 		v8::Local<v8::Value> powerPreferenceValue;
 		if (!config->Get(context, ConvertToV8String(isolate, "powerPreference")).ToLocal(
 																																										 &powerPreferenceValue) && powerPreferenceValue->IsInt32()) {
-																																											 this->powerPreference =		 powerPreferenceValue->Int32Value(context).IsJust();
+																																											 this->powerPreference =		 powerPreferenceValue->Int32Value(context).FromJust();
 																																										 }
 		
 		v8::Local<v8::Value> premultipliedAlphaValue;

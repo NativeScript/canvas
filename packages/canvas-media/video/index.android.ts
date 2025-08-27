@@ -70,7 +70,7 @@ export class Video extends VideoBase {
 						owner._notifyVideoFrameCallbacks();
 					}
 				},
-			})
+			}),
 		);
 		this.setNativeView(this._instance.getContainer());
 	}
@@ -88,7 +88,8 @@ export class Video extends VideoBase {
 	}
 	getCurrentFrame(context?: WebGLRenderingContext) {
 		const ctx = arguments[1] as any;
-		const flipY = ctx._flipY;
+		//@ts-ignore
+		const flipY = context?.__flipY ?? false;
 		const ptr = ctx._canvas._canvas.getNativeContext();
 
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);

@@ -77,12 +77,14 @@ export class Video extends VideoBase {
 	}
 
 	getCurrentFrame(context) {
+		//@ts-ignore
+		const flipY = context?.__flipY ?? false;
 		if (!this.helper.isInForeground) {
 			return;
 		}
 		if (this.helper.assetOutput) {
 			try {
-				NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], false);
+				NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
 			} catch (e) {
 				if (Video.IS_DEBUG) {
 					console.error('getCurrentFrame error:', e);

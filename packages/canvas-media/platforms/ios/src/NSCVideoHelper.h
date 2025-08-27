@@ -25,6 +25,7 @@
 @property (nonatomic, strong, readonly) AVPlayerViewController *controller;
 @property (nonatomic, strong, readonly) AVPlayer *player;
 @property (nonatomic, strong, readonly) AVPlayerItem *currentItem;
+@property (nonatomic, readonly) BOOL isInForeground;
 @property (nonatomic, readonly) NSCPlayerState state;
 @property (nonatomic, readonly) NSCPlayerReadyState readyState;
 @property (nonatomic, readonly) CGSize videoSize;

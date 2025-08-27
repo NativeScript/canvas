@@ -12,12 +12,16 @@
 @property (nonatomic, strong) id playEndNotificationId;
 @property (nonatomic, strong) id resumeListenerId;
 @property (nonatomic, strong) id suspendListenerId;
-@property (nonatomic, assign) BOOL isInForeground;
 @property (nonatomic, strong) id playbackFramesObserver;
 @property (nonatomic, strong) id playbackTimeObserver;
 @property (nonatomic, assign) NSCPlayerState state;
 @property (nonatomic, assign) NSCPlayerReadyState readyState;
+@property (nonatomic, assign) BOOL inForeground;
 @end
+
+
+
+
 
 @implementation NSCVideoHelper
 
@@ -25,7 +29,7 @@
     if (self = [super init]) {
         _controller = [[AVPlayerViewController alloc] init];
         _player = [[AVPlayer alloc] init];
-        _isInForeground = YES;
+				_inForeground = YES;
         _readyState = NSCPlayerReadyStateHaveNothing;
         _state = NSCPlayerStateIdle;
         _controller.player = _player;
@@ -35,17 +39,21 @@
                               addObserverForName:UIApplicationDidEnterBackgroundNotification
                               object:nil queue:nil
                               usingBlock:^(NSNotification *note) {
-            weakSelf.isInForeground = NO;
+            weakSelf.inForeground = NO;
         }];
 
         _resumeListenerId = [[NSNotificationCenter defaultCenter]
                              addObserverForName:UIApplicationDidBecomeActiveNotification
                              object:nil queue:nil
                              usingBlock:^(NSNotification *note) {
-            weakSelf.isInForeground = YES;
+            weakSelf.inForeground = YES;
         }];
     }
     return self;
+}
+
+-(BOOL) isInForeground {
+	return _inForeground;
 }
 
 - (void)setSrc:(NSString *)src {

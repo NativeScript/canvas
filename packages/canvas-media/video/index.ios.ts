@@ -77,7 +77,7 @@ export class Video extends VideoBase {
 	}
 
 	getCurrentFrame(context) {
-		if (!this.helper.isInForground) {
+		if (!this.helper.isInForeground) {
 			return;
 		}
 		if (this.helper.assetOutput) {

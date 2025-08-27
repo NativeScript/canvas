@@ -49,7 +49,13 @@ export class EventTarget {
 		}
 	}
 
-	dispatchEvent(event) {
+	/**
+	 * Dispatches an event to this EventTarget.
+	 * https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent
+	 * @param event
+	 * @returns false if event is cancelable, and at least one of the event handlers which received event called Event.preventDefault(). Otherwise true.
+	 */
+	dispatchEvent(event): boolean {
 		let emitter: Observable;
 
 		if (global.isAndroid) {
@@ -63,5 +69,7 @@ export class EventTarget {
 		if (emitter !== null && emitter !== undefined) {
 			emitter.notify({ ...event, eventName: event.type, object: emitter });
 		}
+
+		return !event?.defaultPrevented;
 	}
 }

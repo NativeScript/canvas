@@ -1,4 +1,4 @@
-require('globals');
+require('@nativescript/core/globals');
 
 if (__ANDROID__ && !(global as any).__canvasLoaded) {
 	try {

@@ -73,6 +73,15 @@ export class Event {
 	}
 }
 
+export class CustomEvent extends Event {
+	detail: any;
+
+	constructor(type: string, options?: EventOptions & { detail?: any }) {
+		super(type, options);
+		this.detail = options?.detail ?? null;
+	}
+}
+
 interface UIEventOptions extends EventOptions {
 	detail?: number;
 	view?: any;

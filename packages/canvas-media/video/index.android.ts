@@ -89,7 +89,7 @@ export class Video extends VideoBase {
 	getCurrentFrame(context?: WebGLRenderingContext) {
 		const ctx = arguments[1] as any;
 		const flipY = ctx._flipY;
-		const ptr = ctx._canvas._canvas.getNativeGL();
+		const ptr = ctx._canvas._canvas.getNativeContext();
 
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);
 	}

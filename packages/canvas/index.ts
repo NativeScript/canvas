@@ -1,4 +1,4 @@
-import { TouchEvent, PointerEvent } from './Canvas/common';
+import { TouchEvent, PointerEvent, CustomEvent } from './Canvas/common';
 
 import { TextEncoder } from './TextEncoder';
 import { TextDecoder } from './TextDecoder';
@@ -139,6 +139,12 @@ Object.defineProperty(global, 'GPUMapMode', {
 
 Object.defineProperty(global, 'GPUShaderStage', {
 	value: GPUShaderStage,
+	configurable: true,
+	writable: true,
+});
+
+Object.defineProperty(global, 'CustomEvent', {
+	value: CustomEvent,
 	configurable: true,
 	writable: true,
 });

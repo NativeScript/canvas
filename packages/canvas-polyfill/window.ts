@@ -76,6 +76,7 @@ import { SVGMarkerElement, SVGAnimatedTransformList, SVGUseElement, SVGStopEleme
 
 global.window.URL = global.URL;
 global.parent = window.parent = window;
+global.window.CustomEvent = global.CustomEvent;
 
 function checkEmitter() {
 	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
@@ -204,7 +205,7 @@ declare const __inspectorSendEvent;
 global.chrome.runtime.sendMessage = (
 	extensionId?: string,
 	message?: Record<any, any>, // any
-	options?
+	options?,
 ) => {
 	try {
 		if (typeof extensionId === 'string') {
@@ -212,7 +213,7 @@ global.chrome.runtime.sendMessage = (
 				JSON.stringify({
 					extensionId,
 					message,
-				})
+				}),
 			);
 		} else if (typeof extensionId === 'object') {
 			__inspectorSendEvent(JSON.stringify(message));

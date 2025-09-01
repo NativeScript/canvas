@@ -9,37 +9,547 @@ import Foundation
 import OpenGLES
 import CoreVideo
 import UIKit
+import AVFoundation
 
 
 @objcMembers
 @objc(NSCRender)
 public class NSCRender: NSObject {
-    
-    
-    static func getPixelFormat(_ cgImage: CGImage) -> CGBitmapInfo? {
-        return cgImage.bitmapInfo.intersection(.byteOrderMask)
-    }
-    
-    static func drawFrame(buffer:CVPixelBuffer, width: Int, height: Int, internalFormat: Int32,
-                   format: Int32,
-                   flipYWebGL: Bool) {
-    
-        
-        let surface = CVPixelBufferGetIOSurface(buffer)
-        
-        guard let surface = surface else {return}
+	private var glCache: CVOpenGLESTextureCache?
+	private var mtlCache: CVMetalTextureCache?
+	private var texture: GLuint = 0
+	private var fbo: [GLuint] = [0,0]
+	private var isGL2 = false
+	private var program: GLuint = 0
+	private var quadVBO: GLuint = 0
+	private var context: EAGLContext?
+	private var width: GLuint = 0
+	private var height: GLuint = 0
+	
+	public override init() {
+		super.init()
+		context = EAGLContext.current()
+		guard let context = context else {return}
+#if !targetEnvironment(simulator)
+		CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, nil, context, nil, &glCache)
+#endif
+		
+		 isGL2 = context.api == .openGLES3
+		
+#if targetEnvironment(simulator)
+		glGenFramebuffers(1, &fbo)
+		program = glCreateProgram()
+		setupShaders()
+		setupQuad()
+#else
+		if(isGL2){
+			glGenFramebuffers(2, &fbo)
+		}	else {
+			glGenFramebuffers(1, &fbo)
+			program = glCreateProgram()
+			setupShaders()
+			setupQuad()
+		}
+#endif
+		
+#if targetEnvironment(simulator)
+		glGenTextures(1, &texture)
+#endif
+	}
+	
+	public init(device: MTLDevice) {
+		CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &mtlCache)
+	}
+	
+	
+	func getGLTexture(_ cache: CVOpenGLESTextureCache, _ buffer: CVPixelBuffer,_ width: Int, _ height: Int) -> (name: GLuint, texRef: CVOpenGLESTexture)? {
+		// video px format is set to bgra32
+		var texRef: CVOpenGLESTexture?
+		let w = GLsizei(width), h = GLsizei(height)
+		
+		let status = CVOpenGLESTextureCacheCreateTextureFromImage(
+			kCFAllocatorDefault, cache, buffer, nil,
+			GLenum(GL_TEXTURE_2D), GL_RGBA, w, h,
+			GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE),
+			0, &texRef
+		)
+		
+		guard status == kCVReturnSuccess, let t = texRef else { return nil }
+		return (CVOpenGLESTextureGetName(t), t)
+	}
+	
+	
+	func getMetalTexture(_ buffer: CVPixelBuffer,_ width: Int, _ height: Int) -> (texture: MTLTexture, cvTex: CVMetalTexture)? {
+		guard let cache = mtlCache else {return nil}
+		var cvTex: CVMetalTexture?
+		let status = CVMetalTextureCacheCreateTextureFromImage(
+			kCFAllocatorDefault, cache, buffer, nil,
+			.bgra8Unorm, width, height, 0, &cvTex
+		)
+		guard status == kCVReturnSuccess, let c = cvTex,
+					let tex = CVMetalTextureGetTexture(c) else { return nil }
+		return (tex, c)
+	}
+	
+	public func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
+		let currentTime = player.currentTime()
+		
+		if(!output.hasNewPixelBuffer(forItemTime: currentTime)) {return}
+		
+		var presentationTime = CMTime.zero
+		
+		let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
+		
+		guard let pixel_buffer = buffer else {return}
+		
+		
+		let width = CVPixelBufferGetWidth(pixel_buffer)
+		let height = CVPixelBufferGetHeight(pixel_buffer)
+		
+		drawFrame(buffer: pixel_buffer, width: Int(width), height: Int(height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+	}
+	
+	
+	func drawBuffer(buffer: CVPixelBuffer,
+									width: Int,
+									height: Int,
+									internalFormat: Int32,
+									format: Int32,
+									flipYWebGL: Bool) {
+		
+		CVPixelBufferLockBaseAddress(buffer, .readOnly)
+		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+		
+		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
+		
+		
+		var prevFBO: GLint = 0
+		glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &prevFBO)
+		
+		var prevTexture: GLint = 0
+		glGetIntegerv(GLenum(GL_TEXTURE_BINDING_2D), &prevTexture)
+		
+		var prevProgram: GLint = 0
+		glGetIntegerv(GLenum(GL_CURRENT_PROGRAM), &prevProgram)
+		
+		var prevVBO: GLuint = 0
+		glGetIntegerv(GLenum(GL_ARRAY_BUFFER_BINDING), &prevVBO)
+		
+		var prevActiveTexture: GLint = 0
+		glGetIntegerv(GLenum(GL_ACTIVE_TEXTURE), &prevActiveTexture)
+		
+		var previousVertexArray: GLint = 0
+		glGetIntegerv(GLenum(GL_VERTEX_ARRAY_BINDING), &previousVertexArray)
+		
+		var previousViewPort: [GLint] = [0,0,0,0]
+		glGetIntegerv(GLenum(GL_VIEWPORT), &previousViewPort)
+		
+		
+		var prevAlignment: GLint = 0
+		var prevRowLength: GLint = 0
+		
+		glGetIntegerv(GLenum(GL_UNPACK_ALIGNMENT), &prevAlignment)
+		
+		if(isGL2){
+			glGetIntegerv(GLenum(GL_UNPACK_ROW_LENGTH), &prevRowLength)
+		}
+		
+		let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+		let tightlyPacked = bytesPerRow == width * 4
+		let pixelCount = width * height
+		var uploadPointer: UnsafeMutableRawPointer
+		
+		
+		if(isGL2){
+			uploadPointer = baseAddress
+		}else {
+			if tightlyPacked {
+					uploadPointer = baseAddress
+			} else {
 
-        let ref = surface.takeUnretainedValue()
-        guard let address = IOSurfaceGetBaseAddress(ref) as UnsafeMutableRawPointer? else { return }
-        IOSurfaceLock(ref, .readOnly, nil)
-            glTexImage2D(GLenum(GL_TEXTURE_2D), 0, GL_RGBA, GLsizei(width), GLsizei(height), 0,  GLenum(GL_BGRA), GLenum(0x8367), address)
-        IOSurfaceUnlock(ref, .readOnly, nil)
-            glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAX_LEVEL), 100)
-            glHint(GLenum(GL_GENERATE_MIPMAP_HINT), GLenum(GL_NICEST))
-            glGenerateMipmap(GLenum(GL_TEXTURE_2D))
-            glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_REPEAT)
-            glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_REPEAT)
-            glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
-            glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR_MIPMAP_LINEAR)
-    }
+					let tempBuffer = UnsafeMutableRawPointer.allocate(byteCount: pixelCount * 4, alignment: 1)
+					defer { tempBuffer.deallocate() }
+					
+					for y in 0..<height {
+							let src = baseAddress.advanced(by: y * bytesPerRow)
+							let dst = tempBuffer.advanced(by: y * width * 4)
+							memcpy(dst, src, width * 4)
+					}
+					
+					uploadPointer = tempBuffer
+			}
+		}
+		
+		
+		glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), 1)
+		
+		if(isGL2){
+			glPixelStorei(GLenum(GL_UNPACK_ROW_LENGTH), GLint(bytesPerRow / 4))
+		}
+		
+		
+		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), fbo[0])
+		glFramebufferTexture2D(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), GLuint(prevTexture), 0)
+		
+		glUseProgram(program)
+		glBindBuffer(GLenum(GL_ARRAY_BUFFER), quadVBO)
+		
+		let posLoc = GLuint(glGetAttribLocation(program, "aPosition"))
+		let texLoc = GLuint(glGetAttribLocation(program, "aTexCoord"))
+		
+		glEnableVertexAttribArray(posLoc)
+		glEnableVertexAttribArray(texLoc)
+		
+		let stride = GLsizei(4 * MemoryLayout<GLfloat>.size)
+		glVertexAttribPointer(posLoc, 2, GLenum(GL_FLOAT), GLboolean(GL_FALSE), stride, UnsafeRawPointer(bitPattern: 0))
+		glVertexAttribPointer(texLoc, 2, GLenum(GL_FLOAT), GLboolean(GL_FALSE), stride, UnsafeRawPointer(bitPattern: 2 * MemoryLayout<GLfloat>.size))
+		
+		
+		if(self.width != GLuint(width) || self.height != GLuint(height)){
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+			glTexImage2D(GLenum(GL_TEXTURE_2D),
+									 0,
+									 GL_RGBA,
+									 GLsizei(width),
+									 GLsizei(height),
+									 0,
+									 GLenum(GL_BGRA),
+									 GLenum(GL_UNSIGNED_BYTE),
+									 nil)
+		}
+		
+		
+		glActiveTexture(GLenum(GL_TEXTURE0))
+		glBindTexture(GLenum(GL_TEXTURE_2D), texture)
+		
+		
+		if(self.width != GLuint(width) || self.height != GLuint(height)){
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+			
+			glTexImage2D(GLenum(GL_TEXTURE_2D),
+									 0,
+									 GL_RGBA,
+									 GLsizei(width),
+									 GLsizei(height),
+									 0,
+									 GLenum(GL_BGRA),
+									 GLenum(GL_UNSIGNED_BYTE),
+									 uploadPointer)
+			
+			self.width = GLuint(width)
+			self.height =  GLuint(height)
+		}else {
+			glTexSubImage2D(GLenum(GL_TEXTURE_2D),
+											0,
+											0, 0,
+											GLsizei(width),
+											GLsizei(height),
+											GLenum(GL_BGRA),
+											GLenum(GL_UNSIGNED_BYTE),
+											uploadPointer)
+		}
+		
+		
+		let texUniform = glGetUniformLocation(program, "uTexture")
+		glUniform1i(texUniform, 0)
+		
+		let flipLoc = glGetUniformLocation(program, "uFlipY")
+		glUniform1i(flipLoc, flipYWebGL ? 1 : 0)
+		
+		
+		glViewport(0, 0, GLsizei(width), GLsizei(height))
+		
+		glDrawArrays(GLenum(GL_TRIANGLES), 0, 6)
+		
+		glViewport(
+			previousViewPort[0],
+			previousViewPort[1],
+			previousViewPort[2],
+			previousViewPort[3],
+		)
+		
+		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(prevFBO))
+		glBindTexture(GLenum(GL_TEXTURE_2D), GLuint(prevTexture))
+		glUseProgram(GLuint(prevProgram))
+		glBindBuffer(GLenum(GL_ARRAY_BUFFER), prevVBO)
+		glActiveTexture(GLenum(prevActiveTexture))
+		glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), prevAlignment)
+		
+		if(isGL2){
+			glPixelStorei(GLenum(GL_UNPACK_ROW_LENGTH), GLint(prevRowLength))
+		}
+		
+		if(previousVertexArray != 0){
+			glBindVertexArray(GLuint(previousVertexArray))
+		}
+		
+	}
+	
+	func drawTexture(surface: (name: GLuint, texRef: CVOpenGLESTexture),
+									width: Int,
+									height: Int,
+									internalFormat: Int32,
+									format: Int32,
+									flipYWebGL: Bool) {
+		
+		var prevFBO: GLint = 0
+		glGetIntegerv(GLenum(GL_FRAMEBUFFER_BINDING), &prevFBO)
+		
+		var prevTexture: GLint = 0
+		glGetIntegerv(GLenum(GL_TEXTURE_BINDING_2D), &prevTexture)
+		
+		var prevProgram: GLint = 0
+		glGetIntegerv(GLenum(GL_CURRENT_PROGRAM), &prevProgram)
+		
+		var prevVBO: GLuint = 0
+		glGetIntegerv(GLenum(GL_ARRAY_BUFFER_BINDING), &prevVBO)
+		
+		var prevActiveTexture: GLint = 0
+		glGetIntegerv(GLenum(GL_ACTIVE_TEXTURE), &prevActiveTexture)
+		
+		var previousVertexArray: GLint = 0
+		glGetIntegerv(GLenum(GL_VERTEX_ARRAY_BINDING), &previousVertexArray)
+		
+		var previousViewPort: [GLint] = [0,0,0,0]
+		glGetIntegerv(GLenum(GL_VIEWPORT), &previousViewPort)
+
+				
+		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), fbo[0])
+		glFramebufferTexture2D(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), GLuint(prevTexture), 0)
+		
+	
+		glUseProgram(program)
+		glBindBuffer(GLenum(GL_ARRAY_BUFFER), quadVBO)
+		
+		let posLoc = GLuint(glGetAttribLocation(program, "aPosition"))
+		let texLoc = GLuint(glGetAttribLocation(program, "aTexCoord"))
+		
+		glEnableVertexAttribArray(posLoc)
+		glEnableVertexAttribArray(texLoc)
+		
+		
+		let stride = GLsizei(4 * MemoryLayout<GLfloat>.size)
+		glVertexAttribPointer(posLoc, 2, GLenum(GL_FLOAT), GLboolean(GL_FALSE), stride, UnsafeRawPointer(bitPattern: 0))
+	
+		
+		glVertexAttribPointer(texLoc, 2, GLenum(GL_FLOAT), GLboolean(GL_FALSE), stride, UnsafeRawPointer(bitPattern: 2 * MemoryLayout<GLfloat>.size))
+		
+		if(self.width != GLuint(width) || self.height != GLuint(height)){
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+			glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+			
+			glTexImage2D(GLenum(GL_TEXTURE_2D),
+									 0,
+									 GL_RGBA,
+									 GLsizei(width),
+									 GLsizei(height),
+									 0,
+									 GLenum(GL_BGRA),
+									 GLenum(GL_UNSIGNED_BYTE),
+									 nil)
+			
+			self.width = GLuint(width)
+			self.height = GLuint(height)
+		}
+		
+		
+
+		glBindTexture(GLenum(GL_TEXTURE_2D), surface.name)
+		glActiveTexture(GLenum(GL_TEXTURE0))
+
+		
+		glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+		glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+		glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+		glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+		
+		let texUniform = glGetUniformLocation(program, "uTexture")
+		glUniform1i(texUniform, 0)
+		
+		let flipLoc = glGetUniformLocation(program, "uFlipY")
+		glUniform1i(flipLoc, flipYWebGL ? 1 : 0)
+		
+		
+		glViewport(0, 0, GLsizei(width), GLsizei(height))
+		
+		glDrawArrays(GLenum(GL_TRIANGLES), 0, 6)
+		
+		
+		glViewport(
+			previousViewPort[0],
+			previousViewPort[1],
+			previousViewPort[2],
+			previousViewPort[3],
+		)
+		
+		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(prevFBO))
+		glBindTexture(GLenum(GL_TEXTURE_2D), GLuint(prevTexture))
+		glUseProgram(GLuint(prevProgram))
+		glBindBuffer(GLenum(GL_ARRAY_BUFFER), prevVBO)
+		glActiveTexture(GLenum(prevActiveTexture))
+		
+		if(previousVertexArray != 0){
+			glBindVertexArray(GLuint(previousVertexArray))
+		}
+		
+	}
+	
+	
+	public func drawFrame(buffer:CVPixelBuffer, width: Int, height: Int, internalFormat: Int32,
+												format: Int32,
+												flipYWebGL: Bool){
+#if targetEnvironment(simulator)
+		drawBuffer(buffer: buffer, width: width, height: height, internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+#else
+		var prevTexture: GLint = 0
+		glGetIntegerv(GLenum(GL_TEXTURE_BINDING_2D), &prevTexture)
+		if let glCache = glCache {
+			let srcTexture = getGLTexture(glCache, buffer, width, height)
+			guard let srcTexture = srcTexture else {return}
+			if(isGL2){
+				var prevReadFBO: GLint = 0
+				var prevDrawFBO: GLint = 0
+				
+				var prevActiveTexture: GLint = 0
+				glGetIntegerv(GLenum(GL_ACTIVE_TEXTURE), &prevActiveTexture)
+				
+				
+				if(self.width != GLuint(width) || self.height != GLuint(height)){
+					glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MIN_FILTER), GL_LINEAR)
+					glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_MAG_FILTER), GL_LINEAR)
+					glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_S), GL_CLAMP_TO_EDGE)
+					glTexParameteri(GLenum(GL_TEXTURE_2D), GLenum(GL_TEXTURE_WRAP_T), GL_CLAMP_TO_EDGE)
+					
+					glTexImage2D(GLenum(GL_TEXTURE_2D),
+											 0,
+											 GL_RGBA,
+											 GLsizei(width),
+											 GLsizei(height),
+											 0,
+											 GLenum(GL_BGRA),
+											 GLenum(GL_UNSIGNED_BYTE),
+											 nil)
+					
+					self.width = GLuint(width)
+					self.height = GLuint(height)
+				}
+				
+				
+				glActiveTexture(GLenum(GL_TEXTURE0))
+				glBindTexture(GLenum(GL_TEXTURE_2D), 0)
+				
+				glGetIntegerv(GLenum(GL_READ_FRAMEBUFFER_BINDING), &prevReadFBO)
+				glGetIntegerv(GLenum(GL_DRAW_FRAMEBUFFER_BINDING), &prevDrawFBO)
+				
+				
+				glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), fbo[0])
+				glFramebufferTexture2D(GLenum(GL_READ_FRAMEBUFFER),
+															 GLenum(GL_COLOR_ATTACHMENT0),
+															 GLenum(GL_TEXTURE_2D),
+															 srcTexture.name, 0)
+				
+				
+				glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), fbo[1])
+				glFramebufferTexture2D(GLenum(GL_DRAW_FRAMEBUFFER),
+															 GLenum(GL_COLOR_ATTACHMENT0),
+															 GLenum(GL_TEXTURE_2D),
+															 GLuint(prevTexture), 0)
+				
+				
+				
+				let dstY0: GLint = flipYWebGL ? GLint(height) : 0
+				let dstY1: GLint = flipYWebGL ? 0 : GLint(height)
+				
+				glBlitFramebuffer(0, 0, GLint(width), GLint(height),
+													0, dstY0, GLint(width), dstY1,
+													GLbitfield(GL_COLOR_BUFFER_BIT),
+													GLenum(GL_LINEAR))
+				
+				
+				glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), GLuint(prevReadFBO))
+				glBindFramebuffer(GLenum(GL_DRAW_FRAMEBUFFER), GLuint(prevDrawFBO))
+				glBindTexture(GLenum(GL_TEXTURE_2D), GLuint(prevTexture))
+				glActiveTexture(GLenum(prevActiveTexture))
+				
+			}else {
+				drawTexture(surface: srcTexture, width: width, height: height, internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+			}
+		}else {
+			drawBuffer(buffer: buffer, width: width, height: height, internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
+		}
+		
+#endif
+	}
+	
+	
+	
+	private func setupShaders() {
+		let vertexShaderSource: NSString = """
+ attribute vec2 aPosition;
+ attribute vec2 aTexCoord;
+ varying vec2 vTexCoord;
+ uniform bool uFlipY;
+ 
+ void main() {
+ gl_Position = vec4(aPosition, 0.0, 1.0);
+ if (uFlipY) {
+ vTexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
+ } else {
+ vTexCoord = aTexCoord;
+ }
+ }
+ """
+		
+		let fragmentShaderSource: NSString = """
+ precision mediump float;
+ varying vec2 vTexCoord;
+ uniform sampler2D uTexture;
+ 
+ void main() {
+ gl_FragColor = texture2D(uTexture, vTexCoord);
+ }
+ """
+		
+		let vertexShader = glCreateShader(GLenum(GL_VERTEX_SHADER))
+		var vSource = vertexShaderSource.utf8String
+		glShaderSource(vertexShader, 1, &vSource, nil)
+		glCompileShader(vertexShader)
+		
+		let fragmentShader = glCreateShader(GLenum(GL_FRAGMENT_SHADER))
+		var fSource = fragmentShaderSource.utf8String
+		glShaderSource(fragmentShader, 1, &fSource, nil)
+		glCompileShader(fragmentShader)
+		
+		program = glCreateProgram()
+		glAttachShader(program, vertexShader)
+		glAttachShader(program, fragmentShader)
+		glLinkProgram(program)
+	}
+	
+	private func setupQuad() {
+		let quadData: [GLfloat] = [
+			-1, -1, 0, 0,
+			 1, -1, 1, 0,
+			 -1,  1, 0, 1,
+			 -1,  1, 0, 1,
+			 1, -1, 1, 0,
+			 1,  1, 1, 1
+		]
+		glGenBuffers(1, &quadVBO)
+		glBindBuffer(GLenum(GL_ARRAY_BUFFER), quadVBO)
+		glBufferData(GLenum(GL_ARRAY_BUFFER), quadData.count * MemoryLayout<GLfloat>.size, quadData, GLenum(GL_STATIC_DRAW))
+	}
+	
+	
+	static func getPixelFormat(_ cgImage: CGImage) -> CGBitmapInfo? {
+		return cgImage.bitmapInfo.intersection(.byteOrderMask)
+	}
 }

@@ -13,39 +13,15 @@ import UIKit
 @objc(NSCCanvasUtils)
 public class NSCCanvasUtils: NSObject {
     private static let BYTES_PER_TEXEL = 4
-    @objc public static func createTextureCache() -> CVOpenGLESTextureCache? {
-        var out: CVOpenGLESTextureCache?
-        guard let currentContext = EAGLContext.current() else {return nil}
-        CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, nil, currentContext, nil, &out)
-        return out
-    }
+
     
-    @objc public static func createImage(_ texturecache: CVOpenGLESTextureCache,_ buffer: CVImageBuffer,_ textureAttributes: CFDictionary?, _ target: GLenum,_  internalFormat: GLint,_ width: GLsizei,_ height: GLsizei,_ format: GLenum,_ type: GLenum,_ planeIndex: Int) -> CVOpenGLESTexture?{
-        var textureOut: CVOpenGLESTexture?
-        CVOpenGLESTextureCacheCreateTextureFromImage(kCFAllocatorDefault, texturecache, buffer, textureAttributes, target, internalFormat, width, height, format, type, planeIndex,&textureOut)
-        return textureOut
-    }
-    
-    @objc public static func setupRender() -> NSCRender{
+	public static func setupRender() -> NSCRender{
         return NSCRender()
     }
-    
-    @objc public static func drawFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput,_ videoSize: CGSize, _ internalFormat: Int32,_ format: Int32,_ flipYWebGL: Bool){
-
-        let currentTime = player.currentTime()
-        
-        if(!output.hasNewPixelBuffer(forItemTime: currentTime)) {return}
-        
-        var presentationTime = CMTime.zero
-        
-        let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
-        
-        guard let pixel_buffer = buffer else {return}
-        
-        NSCRender.drawFrame(buffer: pixel_buffer, width: Int(videoSize.width), height: Int(videoSize.height), internalFormat: internalFormat, format: format, flipYWebGL: flipYWebGL)
-    }
-    
-    
+	
+	public static func setupRender(mtl: MTLDevice) -> NSCRender{
+			return NSCRender(device: mtl)
+	}
     
     private static func getParent(_ path: String) -> String {
       //  let fileManager = FileManager.default

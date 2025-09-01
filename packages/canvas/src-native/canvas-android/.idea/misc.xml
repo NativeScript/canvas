@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CMakeSettings">
     <configurations>
@@ -14,6 +15,7 @@
       </map>
     </option>
   </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../../../Testdoc" />
     <option name="OTHER_OPTIONS" value="$ANDROID_HOME/platforms/android-29/android.jar " />

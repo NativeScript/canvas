@@ -12,7 +12,6 @@
 
 #import "NSCPlayerState.h"
 
-@class NSCVideoHelper;
 
 @protocol NSCVideoHelperListener <NSObject>
 - (void)onVideoFrameCallback;
@@ -31,7 +30,8 @@
 @property (nonatomic, readonly) CGSize videoSize;
 @property (nonatomic, strong, readonly) AVPlayerItemVideoOutput *assetOutput;
 @property (nonatomic, weak) id<NSCVideoHelperListener> listener;
-@property (nonatomic) BOOL isLoop;
+@property (nonatomic) BOOL loop;
+@property (nonatomic) BOOL autoplay;
 @property (nonatomic) BOOL muted;
 @property (nonatomic) BOOL controls;
 @property (nonatomic) BOOL playsinline;

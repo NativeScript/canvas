@@ -262,16 +262,16 @@ fn to_data_url_with_texture(
             depth_or_array_layers: 1,
         };
 
-        let texture_copy = wgt::ImageCopyTexture {
+        let texture_copy = wgt::TexelCopyTextureInfo {
             texture,
             mip_level: 0,
             origin: wgt::Origin3d::ZERO,
             aspect: wgt::TextureAspect::All,
         };
 
-        let buffer_copy = wgt::ImageCopyBuffer {
+        let buffer_copy = wgt::TexelCopyBufferInfo {
             buffer: output_buffer,
-            layout: wgt::ImageDataLayout {
+            layout: wgt::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(round_up_to_256(4 * width)),
                 rows_per_image: Some(height),
@@ -303,7 +303,7 @@ fn to_data_url_with_texture(
 
         let desc = wgt::CommandBufferDescriptor { label: None };
 
-        let (id, error) = global.command_encoder_finish(encoder, &desc);
+        let (id, error) = global.command_encoder_finish(encoder, &desc, None);
 
         if let Some(_) = error {
             return None;
@@ -1423,14 +1423,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                     depth_or_array_layers: 1,
                 };
 
-                let texture_src_copy = wgpu_core::command::ImageCopyTexture {
+                let texture_src_copy = wgpu_core::command::TexelCopyTextureInfo {
                     texture: texture.texture,
                     mip_level: 0,
                     origin: wgt::Origin3d::ZERO,
                     aspect: wgt::TextureAspect::All,
                 };
 
-                let texture_dst_copy = wgpu_core::command::ImageCopyTexture {
+                let texture_dst_copy = wgpu_core::command::TexelCopyTextureInfo {
                     texture: dst_texture.texture,
                     mip_level: 0,
                     origin: wgt::Origin3d::ZERO,
@@ -1459,7 +1459,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                         Ok(_) => {
                             let desc = wgt::CommandBufferDescriptor { label: None };
 
-                            let (id, error) = global.command_encoder_finish(encoder, &desc);
+                            let (id, error) = global.command_encoder_finish(encoder, &desc, None);
 
                             if error.is_none() {
                                 global.queue_submit(data.device.queue.queue.id, &[id]).ok();

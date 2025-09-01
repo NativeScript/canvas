@@ -1,7 +1,8 @@
-import { Screen, AddChildFromBuilder, Application, booleanConverter, ContentView, Utils, Property, CSSType, PercentLength } from '@nativescript/core';
+import { Screen, Application, Utils, CSSType, PercentLength } from '@nativescript/core';
+import { MediaBase } from '../common';
 
 @CSSType('Video')
-export abstract class VideoBase extends ContentView implements AddChildFromBuilder {
+export abstract class VideoBase extends MediaBase {
 	public abstract controls: boolean;
 	public loop: boolean;
 	public autoplay: boolean;
@@ -189,6 +190,13 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 			this._videoFrameCallbacks?.push?.(callback);
 		}
 	}
+
+	cancelVideoFrameCallback() {
+		if (this._videoFrameCallbacks.length > 0) {
+			this._videoFrameCallbacks.pop();
+		}
+	}
+
 	_notifyVideoFrameCallbacks() {
 		if (this._videoFrameCallbacks.length !== 0) {
 			const toRemove = this._videoFrameCallbacks.length;
@@ -199,61 +207,3 @@ export abstract class VideoBase extends ContentView implements AddChildFromBuild
 		}
 	}
 }
-
-export const mutedProperty = new Property<VideoBase, boolean>({
-	name: 'muted',
-	valueConverter: booleanConverter,
-	defaultValue: false,
-});
-mutedProperty.register(VideoBase);
-
-export const controlsProperty = new Property<VideoBase, boolean>({
-	name: 'controls',
-	valueConverter: booleanConverter,
-	defaultValue: false,
-});
-controlsProperty.register(VideoBase);
-
-export const loopProperty = new Property<VideoBase, boolean>({
-	name: 'loop',
-	valueConverter: booleanConverter,
-	defaultValue: false,
-});
-
-loopProperty.register(VideoBase);
-
-export const autoplayProperty = new Property<VideoBase, boolean>({
-	name: 'autoplay',
-	valueConverter: booleanConverter,
-	defaultValue: false,
-});
-
-autoplayProperty.register(VideoBase);
-
-export const playsinlineProperty = new Property<VideoBase, boolean>({
-	name: 'playsinline',
-	valueConverter: booleanConverter,
-	defaultValue: false,
-});
-
-playsinlineProperty.register(VideoBase);
-
-export const srcProperty = new Property<VideoBase, string>({
-	name: 'src',
-});
-
-srcProperty.register(VideoBase);
-
-export const currentTimeProperty = new Property<VideoBase, number>({
-	name: 'currentTime',
-	defaultValue: 0,
-});
-
-currentTimeProperty.register(VideoBase);
-
-export const durationProperty = new Property<VideoBase, number>({
-	name: 'duration',
-	defaultValue: NaN,
-});
-
-durationProperty.register(VideoBase);

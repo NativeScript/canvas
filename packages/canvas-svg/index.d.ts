@@ -4,6 +4,7 @@ import { SVGBase } from './common';
 export class Svg extends SVGBase {
 	static fromSrcSync(value: string): SvgData | null;
 	static fromSrc(value: string): Promise<SvgData>;
+	setSvgData(value: SvgData);
 }
 
 export class SvgData {

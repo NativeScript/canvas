@@ -3,12 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use skia_safe::svg::Dom;
 use skia_safe::FontMgr;
 
-#[cfg(target_os = "android")]
-pub mod android;
-#[cfg(target_os = "ios")]
-mod ios;
-
-fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
+pub fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
     let file = std::fs::File::open(path);
     match file {
         Ok(file) => {
@@ -46,7 +41,7 @@ fn draw_svg_from_path(surface: &mut skia_safe::Surface, path: &str) {
     }
 }
 
-fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
+pub fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
     let mgr = FontMgr::new();
     match Dom::from_bytes(svg.as_bytes(), mgr) {
         Ok(mut svg) => {
@@ -61,7 +56,7 @@ fn draw_svg(surface: &mut skia_safe::Surface, svg: &str) {
     }
 }
 
-fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
+pub fn draw_svg_from_bytes(surface: &mut skia_safe::Surface, bytes: &[u8]) {
     let mgr = FontMgr::new();
     match Dom::from_bytes(bytes, mgr) {
         Ok(mut svg) => {

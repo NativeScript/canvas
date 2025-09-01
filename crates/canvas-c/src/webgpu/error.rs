@@ -248,11 +248,6 @@ impl From<wgpu_core::command::CreateRenderBundleError> for CanvasGPUError {
     }
 }
 
-impl From<wgpu_core::command::CopyError> for CanvasGPUError {
-    fn from(err: wgpu_core::command::CopyError) -> Self {
-        CanvasGPUError::Validation(fmt_err(&err))
-    }
-}
 
 impl From<wgpu_core::command::CommandEncoderError> for CanvasGPUError {
     fn from(err: wgpu_core::command::CommandEncoderError) -> Self {

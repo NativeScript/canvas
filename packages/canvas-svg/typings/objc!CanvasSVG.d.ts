@@ -58,11 +58,15 @@ declare class NSCSVG extends UIView {
 
 	static new(): NSCSVG; // inherited from NSObject
 
+	sync: boolean;
+
 	autoScale: boolean;
 
 	src: string;
 
 	srcPath: string;
+
+	loadData(data: NSCSVGData): void;
 
 	toData(): NSData;
 

@@ -588,7 +588,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
         label: label.clone(),
     };
 
-    let (id, err) = global.command_encoder_finish(command_encoder_id, &desc);
+    let (id, err) = global.command_encoder_finish(command_encoder_id, &desc, None);
 
     let error_sink = command_encoder.error_sink.as_ref();
     if let Some(cause) = err {

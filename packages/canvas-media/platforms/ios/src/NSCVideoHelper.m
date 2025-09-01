@@ -5,27 +5,12 @@
 //  Created by Osei Fortune on 20/05/2025.
 //
 #import "NSCVideoHelper.h"
-
-@interface NSCVideoHelper ()
-@property (nonatomic, strong) AVURLAsset *asset;
-@property (nonatomic, copy) NSString *currentSrc;
-@property (nonatomic, strong) id playEndNotificationId;
-@property (nonatomic, strong) id resumeListenerId;
-@property (nonatomic, strong) id suspendListenerId;
-@property (nonatomic, strong) id playbackFramesObserver;
-@property (nonatomic, strong) id playbackTimeObserver;
-@property (nonatomic, assign) NSCPlayerState state;
-@property (nonatomic, assign) NSCPlayerReadyState readyState;
-@property (nonatomic, assign) BOOL inForeground;
-@end
-
-
-
-
+#import "NSCVideoHelper+Internal.h"
 
 @implementation NSCVideoHelper
 
 - (instancetype)init {
+	_isLoop = NO;
     if (self = [super init]) {
         _controller = [[AVPlayerViewController alloc] init];
         _player = [[AVPlayer alloc] init];
@@ -51,6 +36,17 @@
     }
     return self;
 }
+
+-(BOOL) loop {
+	return _isLoop;
+}
+
+
+- (void)setLoop:(BOOL)loop {
+	_isLoop = loop;
+}
+
+
 
 -(BOOL) isInForeground {
 	return _inForeground;
@@ -94,20 +90,22 @@
 					strongSelf->_currentItem = item;
 
             NSDictionary *outputSettings = @{
-                (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
-                (__bridge NSString *)kCVPixelBufferOpenGLESCompatibilityKey: @YES,
-                (__bridge NSString *)kCVPixelBufferOpenGLCompatibilityKey: @YES
+							(NSString *)kCVPixelBufferIOSurfacePropertiesKey:  @{},
+                (NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+                (NSString *)kCVPixelBufferOpenGLESCompatibilityKey: @YES,
+                (NSString *)kCVPixelBufferOpenGLCompatibilityKey: @YES,
+                (NSString *)kCVPixelBufferMetalCompatibilityKey: @YES,
             };
 
 					strongSelf->_assetOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:outputSettings];
 
-            [item addObserver:weakSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-            [item addObserver:weakSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
+            [item addObserver:strongSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+            [item addObserver:strongSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
 
 					strongSelf->_playEndNotificationId = [[NSNotificationCenter defaultCenter]
                                                  addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
                                                  object:item queue:nil usingBlock:^(NSNotification *note) {
-                if (weakSelf.isLoop) {
+                if (weakSelf != NULL && weakSelf.isLoop) {
                     [weakSelf.player seekToTime:kCMTimeZero];
                     [weakSelf.player play];
                     weakSelf.state = NSCPlayerStatePlaying;
@@ -117,7 +115,7 @@
 
             [weakSelf.player replaceCurrentItemWithPlayerItem:item];
             weakSelf.readyState = NSCPlayerReadyStateHaveMetadata;
-            if (weakSelf.isLoop) {
+            if (weakSelf.autoplay) {
                 [weakSelf play];
             }
         });

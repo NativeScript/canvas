@@ -1,6 +1,7 @@
-import { controlsProperty, VideoBase, playsinlineProperty, mutedProperty, srcProperty, currentTimeProperty, loopProperty, autoplayProperty } from './common';
-import { Source } from '../common';
-import { knownFolders, path } from '@nativescript/core';
+import { VideoBase } from './common';
+import { Source, srcProperty } from '../source';
+import { controlsProperty, playsinlineProperty, mutedProperty, currentTimeProperty, loopProperty, autoplayProperty } from '../common';
+import { booleanConverter, knownFolders, path } from '@nativescript/core';
 declare const NSCCanvasUtils, NSCVideoHelper;
 
 interface NSCVideoHelperListener {}
@@ -48,12 +49,13 @@ export class Video extends VideoBase {
 	_isInForground = true;
 	_ctx: any;
 	static IS_DEBUG = false;
+	_renderer: NSCRender;
 	get _player() {
 		return this.helper.player;
 	}
 	constructor() {
 		super();
-		this.helper = NSCVideoHelper.alloc().init();
+		this.helper = NSCVideoHelper.new();
 		try {
 			AVAudioSession.sharedInstance().setCategoryError(AVAudioSessionCategoryPlayback);
 		} catch (e) {}
@@ -84,11 +86,13 @@ export class Video extends VideoBase {
 		}
 		if (this.helper.assetOutput) {
 			try {
-				NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
-			} catch (e) {
-				if (Video.IS_DEBUG) {
-					console.error('getCurrentFrame error:', e);
+				if (!this._renderer) {
+					this._renderer = NSCRender.alloc().init();
 				}
+				this._renderer.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
+				//	NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
+			} catch (e) {
+				console.error('getCurrentFrame error:', e);
 			}
 		}
 	}
@@ -184,8 +188,25 @@ export class Video extends VideoBase {
 		this.helper.pause();
 	}
 
-	[loopProperty.setNative](value: boolean) {
-		this.helper.isLoop = value;
+	// @ts-ignore
+	get loop() {
+		return this.helper.isLoop;
+	}
+
+	// @ts-ignore
+	set loop(value: boolean | string) {
+		let loopValue: boolean;
+		switch (typeof value) {
+			case 'string':
+				loopValue = value.toLowerCase() === 'true';
+				break;
+			case 'boolean':
+				loopValue = value as boolean;
+				break;
+			default:
+				loopValue = Boolean(value);
+		}
+		this.helper.loop = loopValue;
 	}
 
 	private static get rootViewController(): UIViewController | undefined {

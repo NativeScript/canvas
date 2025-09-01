@@ -4,10 +4,7 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgt::{
-    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode, QueryType,
-    SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType, VertexFormat,
-};
+use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType, VertexFormat};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
@@ -327,6 +324,23 @@ pub enum CanvasGPUTextureFormat {
     /// [`Features::TEXTURE_FORMAT_NV12`] must be enabled to use this texture format.
     NV12,
 
+    /// YUV 4:2:0 chroma subsampled format.
+    ///
+    /// Contains two planes:
+    /// - 0: Single 16 bit channel luminance, of which only the high 10 bits
+    ///   are used.
+    /// - 1: Dual 16 bit channel chrominance at half width and half height, of
+    ///   which only the high 10 bits are used.
+    ///
+    /// Valid view formats for luminance are [`TextureFormat::R16Unorm`].
+    ///
+    /// Valid view formats for chrominance are [`TextureFormat::Rg16Unorm`].
+    ///
+    /// Width and height must be even.
+    ///
+    /// [`Features::TEXTURE_FORMAT_P010`] must be enabled to use this texture format.
+    P010,
+
     // Compressed textures usable with `TEXTURE_COMPRESSION_BC` feature.
     /// 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
     /// [0, 63] ([0, 1] for alpha) converted to/from float [0, 1] in shader.
@@ -573,6 +587,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
                 block: block.into(),
                 channel: channel.into(),
             },
+            TextureFormat::P010 => CanvasGPUTextureFormat::P010
         }
     }
 }
@@ -633,6 +648,7 @@ impl Into<wgt::TextureFormat> for CanvasGPUTextureFormat {
                 wgt::TextureFormat::Depth32FloatStencil8
             }
             CanvasGPUTextureFormat::NV12 => wgt::TextureFormat::NV12,
+            CanvasGPUTextureFormat::P010 => wgt::TextureFormat::P010,
             CanvasGPUTextureFormat::Bc1RgbaUnorm => wgt::TextureFormat::Bc1RgbaUnorm,
             CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => wgt::TextureFormat::Bc1RgbaUnormSrgb,
             CanvasGPUTextureFormat::Bc2RgbaUnorm => wgt::TextureFormat::Bc2RgbaUnorm,
@@ -742,6 +758,7 @@ impl Into<String> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Depth24Plus => "depth24plus",
             CanvasGPUTextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
             CanvasGPUTextureFormat::NV12 => "nv12",
+            CanvasGPUTextureFormat::P010 => "p010",
             CanvasGPUTextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
             CanvasGPUTextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
             CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",
@@ -855,6 +872,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
         CanvasGPUTextureFormat::Depth24Plus => "depth24plus",
         CanvasGPUTextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
         CanvasGPUTextureFormat::NV12 => "nv12",
+        CanvasGPUTextureFormat::P010 => "p010",
         CanvasGPUTextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
         CanvasGPUTextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
         CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",

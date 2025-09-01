@@ -175,7 +175,7 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::CLEAR_TEXTURE) {
         return_features.push("clear-texture");
     }
-    if features.contains(wgt::Features::SPIRV_SHADER_PASSTHROUGH) {
+    if features.contains(wgt::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS) {
         return_features.push("spirv-shader-passthrough");
     }
     if features.contains(wgt::Features::MULTIVIEW) {
@@ -351,7 +351,7 @@ pub fn parse_required_features(
                 }
 
                 "pirv-shader-passthrough" => {
-                    features.set(wgt::Features::SPIRV_SHADER_PASSTHROUGH, true);
+                    features.set(wgt::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS, true);
                 }
 
                 "multiview" => {

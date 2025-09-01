@@ -44,7 +44,7 @@ fi
 
 
 
-RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-svg --release
+RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-svg-android --release
 
 #RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-svg
 

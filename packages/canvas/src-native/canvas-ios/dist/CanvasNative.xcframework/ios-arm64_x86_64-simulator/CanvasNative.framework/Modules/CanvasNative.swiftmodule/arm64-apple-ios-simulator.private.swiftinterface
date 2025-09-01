@@ -1,7 +1,7 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.0.2 effective-5.10 (swiftlang-6.0.2.1.2 clang-1600.0.26.4)
-// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-bare-slash-regex -module-name CanvasNative
-// swift-module-flags-ignorable: -no-verify-emitted-module-interface
+// swift-compiler-version: Apple Swift version 6.1.2 effective-5.10 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)
+// swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasNative
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -interface-compiler-version 6.1.2
 import AVFoundation
 @_exported import CanvasNative
 import CoreVideo
@@ -270,6 +270,9 @@ extension UIKit.UIView {
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
   @objc override dynamic public init()
+  @objc public init(device: any Metal.MTLDevice)
+  @objc public func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public func drawFrame(buffer: CoreVideo.CVPixelBuffer, width: Swift.Int, height: Swift.Int, internalFormat: Swift.Int32, format: Swift.Int32, flipYWebGL: Swift.Bool)
   @objc deinit
 }
 @objc(NSCFontFaceSetStatus) public enum NSCFontFaceSetStatus : Swift.Int, Swift.RawRepresentable {
@@ -304,10 +307,8 @@ extension UIKit.UIView {
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objc(NSCCanvasUtils) public class NSCCanvasUtils : ObjectiveC.NSObject {
-  @objc public static func createTextureCache() -> CoreVideo.CVOpenGLESTextureCache?
-  @objc public static func createImage(_ texturecache: CoreVideo.CVOpenGLESTextureCache, _ buffer: CoreVideo.CVImageBuffer, _ textureAttributes: CoreFoundation.CFDictionary?, _ target: OpenGLES.GLenum, _ internalFormat: OpenGLES.GLint, _ width: OpenGLES.GLsizei, _ height: OpenGLES.GLsizei, _ format: OpenGLES.GLenum, _ type: OpenGLES.GLenum, _ planeIndex: Swift.Int) -> CoreVideo.CVOpenGLESTexture?
-  @objc public static func setupRender() -> CanvasNative.NSCRender
-  @objc public static func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  public static func setupRender() -> CanvasNative.NSCRender
+  public static func setupRender(mtl: any Metal.MTLDevice) -> CanvasNative.NSCRender
   public enum NSCError : Swift.Error {
     case customError(Swift.String)
   }
@@ -353,6 +354,7 @@ extension GLKit.GLKView {
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCImageAsset) public class NSCImageAsset : ObjectiveC.NSObject {
+  @objc public static func getImageFromPlayer(_ context: Swift.Int64, _ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ flipX: Swift.Bool, _ flipY: Swift.Bool, _ callback: @escaping (Swift.Bool) -> Swift.Void)
   @objc public static func loadImageFromImageSync(_ context: Swift.Int64, _ image: UIKit.UIImage) -> Swift.Bool
   @objc public static func loadImageFromImage(_ context: Swift.Int64, _ image: UIKit.UIImage, _ callback: @escaping (Swift.Bool) -> ())
   @objc public static func loadImageFromPathSync(_ asset: Swift.Int64, _ path: Swift.String) -> Swift.Bool

@@ -12,6 +12,8 @@ members = [
     "crates/canvas-c",
     "crates/canvas-svg",
     "crates/canvas-napi",
+    "crates/canvas-svg-ios",
+    "crates/canvas-svg-android",
 ]
 
 [profile.release]
@@ -27,7 +29,7 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "5b4f231697c7808bfade1206c4d420a1221ac0a5"
+rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5"
 
 
 
@@ -40,11 +42,12 @@ raw-window-handle = "0.6.2"
 canvas-2d = { path = "./crates/canvas-2d" }
 canvas-core = { path = "./crates/canvas-core" }
 canvas-webgl = { path = "./crates/canvas-webgl" }
+canvas-svg = { path = "./crates/canvas-svg" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { version = "0.86.0", features = ["textlayout"] }
+skia-safe = { version = "0.87.0", features = ["textlayout"] }
 itertools = "0.14.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "5b4f231697c7808bfade1206c4d420a1221ac0a5", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "5b4f231697c7808bfade1206c4d420a1221ac0a5", features = ["metal", "vulkan"] }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5", features = ["metal", "vulkan"] }
 ureq = "2.10.1"
 jni = "0.21.1"

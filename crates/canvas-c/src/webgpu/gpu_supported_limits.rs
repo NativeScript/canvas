@@ -37,6 +37,14 @@ pub struct CanvasGPUSupportedLimits {
     pub max_subgroup_size: u32,
     pub max_push_constant_size: u32,
     pub max_non_sampler_bindings: u32,
+    pub max_task_workgroup_total_count: u32,
+    pub max_task_workgroups_per_dimension: u32,
+    pub max_mesh_output_layers: u32,
+    pub max_mesh_multiview_count: u32,
+    pub max_blas_primitive_count: u32,
+    pub max_blas_geometry_count: u32,
+    pub max_tlas_instance_count: u32,
+    pub max_acceleration_structures_per_shader_stage: u32
 }
 
 impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
@@ -82,6 +90,14 @@ impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
             max_subgroup_size: self.max_subgroup_size,
             max_push_constant_size: self.max_push_constant_size,
             max_non_sampler_bindings: self.max_non_sampler_bindings,
+            max_task_workgroup_total_count: self.max_task_workgroup_total_count,
+            max_task_workgroups_per_dimension: self.max_task_workgroups_per_dimension,
+            max_mesh_output_layers: self.max_mesh_output_layers,
+            max_mesh_multiview_count: self.max_mesh_multiview_count,
+            max_blas_primitive_count: self.max_blas_primitive_count,
+            max_blas_geometry_count: self.max_blas_geometry_count,
+            max_tlas_instance_count: self.max_tlas_instance_count,
+            max_acceleration_structures_per_shader_stage: self.max_acceleration_structures_per_shader_stage,
         }
     }
 }
@@ -129,6 +145,14 @@ impl From<wgt::Limits> for CanvasGPUSupportedLimits {
             max_subgroup_size: value.max_subgroup_size,
             max_push_constant_size: value.max_push_constant_size,
             max_non_sampler_bindings: value.max_non_sampler_bindings,
+            max_task_workgroup_total_count: value.max_task_workgroup_total_count,
+            max_task_workgroups_per_dimension: value.max_task_workgroups_per_dimension,
+            max_mesh_output_layers: value.max_mesh_output_layers,
+            max_mesh_multiview_count: value.max_mesh_multiview_count,
+            max_blas_primitive_count: value.max_blas_primitive_count,
+            max_blas_geometry_count: value.max_blas_geometry_count,
+            max_tlas_instance_count: value.max_tlas_instance_count,
+            max_acceleration_structures_per_shader_stage: value.max_acceleration_structures_per_shader_stage,
         }
     }
 }

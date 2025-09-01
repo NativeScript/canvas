@@ -155,10 +155,11 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 
 		*/
 
-		const svgView: Svg = (<any>svg).nativeElement;
-		svgView.rowSpan = 2;
-		svgView.colSpan = 2;
-		view.addChild(svgView);
+		// const svgView: Svg = (<any>svg).nativeElement;
+		// svgView.rowSpan = 2;
+		// svgView.colSpan = 2;
+		// view.addChild(svgView);
+		// svgView.setSvgData(data);
 		// svgView.src = 'https://upload.wikimedia.org/wikipedia/commons/8/85/Australian_Census_2011_demographic_map_-_Australia_by_SLA_-_BCP_field_0001_Total_Persons_Males.svg';
 	}
 
@@ -209,7 +210,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 		-->
 		<rect x='10' y='10' width='30' height='20' fill='red'
 		transform='matrix(3 1 -1 3 30 40)' />
-		</svg>`
+		</svg>`,
 		);
 	}
 
@@ -234,7 +235,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
   <rect x='5' y='5' width='40' height='40' fill='yellow'
          transform='translate(50,50)' />
 </svg>
-			`
+			`,
 		);
 	}
 
@@ -258,7 +259,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 				  <!-- No scale -->
 				  <circle cx='0' cy='0' r='10' fill='black' />
 				</svg>
-			`
+			`,
 		);
 	}
 
@@ -277,7 +278,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 			  <rect x='0' y='0' width='10' height='10' fill='green'
 			        transform='rotate(100,10,10)' />
 			</svg>
-		`
+		`,
 		);
 	}
 
@@ -291,7 +292,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 			  <rect x='-3' y='-3' width='6' height='6' fill='red'
 			        transform='skewX(30)' />
 			</svg>
-		`
+		`,
 		);
 	}
 
@@ -305,7 +306,7 @@ export class DemoSharedCanvasSvg extends DemoSharedBase {
 			  <rect x='-3' y='-3' width='6' height='6' fill='red'
 			        transform='skewY(30)' />
 			</svg>
-		`
+		`,
 		);
 	}
 

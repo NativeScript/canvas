@@ -698,7 +698,7 @@ fn main() -> @location(0) vec4f {
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
-		//handleVideo(this.canvas);
+		handleVideo(this.canvas);
 		/*	const worker = new Worker('./canvas.worker.js');
 		global.CanvasWorker = worker;
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
@@ -741,7 +741,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		//swarm(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -1187,7 +1187,7 @@ fn main() -> @location(0) vec4f {
 				if (itemsLoaded < itemsTotal) {
 					// nanobar.go(itemsLoaded / itemsTotal * 100);
 				}
-			}
+			},
 		);
 
 		var loader = new zen3d.GLTFLoader(loadingManager);
@@ -1701,8 +1701,8 @@ fn main() -> @location(0) vec4f {
 						count: inputs.count,
 						section: 3,
 					},
-					config || {}
-				)
+					config || {},
+				),
 			);
 		};
 

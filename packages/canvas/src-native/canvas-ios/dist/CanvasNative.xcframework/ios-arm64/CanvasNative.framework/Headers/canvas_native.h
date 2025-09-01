@@ -1083,6 +1083,24 @@ typedef enum CanvasGPUTextureFormat_Tag {
    */
   CanvasGPUTextureFormatNV12,
   /**
+   * YUV 4:2:0 chroma subsampled format.
+   *
+   * Contains two planes:
+   * - 0: Single 16 bit channel luminance, of which only the high 10 bits
+   *   are used.
+   * - 1: Dual 16 bit channel chrominance at half width and half height, of
+   *   which only the high 10 bits are used.
+   *
+   * Valid view formats for luminance are [`TextureFormat::R16Unorm`].
+   *
+   * Valid view formats for chrominance are [`TextureFormat::Rg16Unorm`].
+   *
+   * Width and height must be even.
+   *
+   * [`Features::TEXTURE_FORMAT_P010`] must be enabled to use this texture format.
+   */
+  CanvasGPUTextureFormatP010,
+  /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
    * [0, 63] ([0, 1] for alpha) converted to/from float [0, 1] in shader.
    *
@@ -1362,6 +1380,14 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_subgroup_size;
   uint32_t max_push_constant_size;
   uint32_t max_non_sampler_bindings;
+  uint32_t max_task_workgroup_total_count;
+  uint32_t max_task_workgroups_per_dimension;
+  uint32_t max_mesh_output_layers;
+  uint32_t max_mesh_multiview_count;
+  uint32_t max_blas_primitive_count;
+  uint32_t max_blas_geometry_count;
+  uint32_t max_tlas_instance_count;
+  uint32_t max_acceleration_structures_per_shader_stage;
 } CanvasGPUSupportedLimits;
 
 typedef struct CanvasExtent3d {
@@ -5620,4 +5646,4 @@ void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
                                                  const struct ImageData *image_data,
                                                  struct WebGLState *state);
 
-#endif /* CANVAS_C_H */
+#endif  /* CANVAS_C_H */

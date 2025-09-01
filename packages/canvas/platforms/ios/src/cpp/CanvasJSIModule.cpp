@@ -384,7 +384,7 @@ void CanvasJSIModule::Base64DecodeAsync(const v8::FunctionCallbackInfo<v8::Value
 				auto funcData = func->getData();
 				
 				if (funcData == nullptr) {
-					callback->Resolve(context, v8::String::Empty(isolate));
+					callback->Resolve(context, v8::String::Empty(isolate)).IsJust();
 				} else {
 					auto decoded = static_cast<U8Buffer *>(funcData);
 					

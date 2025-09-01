@@ -762,7 +762,7 @@ unsafe fn create_compute_pipeline(
     let global = device.instance.global();
 
     let (pipeline, error) =
-        global.device_create_compute_pipeline(device_id, &descriptor, None, None);
+        global.device_create_compute_pipeline(device_id, &descriptor, None);
 
     let pipeline = CanvasGPUComputePipeline {
         label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
@@ -1526,7 +1526,7 @@ unsafe fn create_render_pipeline(
     Option<CreateRenderPipelineError>,
 ) {
     let global = global.global();
-    global.device_create_render_pipeline(device_id, &descriptor, None, None)
+    global.device_create_render_pipeline(device_id, &descriptor, None)
 }
 
 #[no_mangle]

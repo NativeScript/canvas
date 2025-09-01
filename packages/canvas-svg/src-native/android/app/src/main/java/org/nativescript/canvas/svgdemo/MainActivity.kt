@@ -19,13 +19,19 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 
-		val svg = NSCSVG.fromRemoteSync(
+		val data = NSCSVG.fromRemoteSync(
 			this,
 			"https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")
 
 
+
+		val svg = NSCSVG(this)
+		svg.setSrc("https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/tiger.svg")
+//		data?.let {
+//			svg.loadData(it)
+//		}
 		val content = findViewById<ViewGroup>(android.R.id.content)
-		content.addView(svg!!)
+		content.addView(svg)
 
 //		NSCSVG.fromRemote(
 //			this,

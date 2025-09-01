@@ -1,6 +1,7 @@
-import { VideoBase, controlsProperty, autoplayProperty, loopProperty, srcProperty, currentTimeProperty, durationProperty } from './common';
+import { VideoBase } from './common';
 import { Screen, Application, Utils, knownFolders, path } from '@nativescript/core';
 import { Source } from '..';
+import { durationProperty, currentTimeProperty } from '../common';
 declare var com, org;
 export class Video extends VideoBase {
 	_container: android.widget.LinearLayout;
@@ -90,6 +91,9 @@ export class Video extends VideoBase {
 		const ctx = arguments[1] as any;
 		//@ts-ignore
 		const flipY = context?.__flipY ?? false;
+		if (!ctx._canvas._canvas) {
+			return;
+		}
 		const ptr = ctx._canvas._canvas.getNativeContext();
 
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);

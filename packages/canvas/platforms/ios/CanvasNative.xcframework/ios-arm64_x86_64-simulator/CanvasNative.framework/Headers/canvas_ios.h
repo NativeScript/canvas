@@ -181,4 +181,4 @@ void canvas_native_resize_ios_webgpu_uiview(int64_t context,
                                             uint32_t height);
 #endif
 
-#endif /* CANVAS_IOS_H */
+#endif  /* CANVAS_IOS_H */

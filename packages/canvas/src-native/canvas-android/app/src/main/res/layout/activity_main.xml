@@ -6,40 +6,6 @@
 	android:layout_height="match_parent"
 	tools:context="org.nativescript.canvasdemo.MainActivity">
 
-<LinearLayout
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	app:layout_constraintBottom_toBottomOf="parent"
-	app:layout_constraintEnd_toEndOf="parent"
-	app:layout_constraintHorizontal_bias="0.498"
-	app:layout_constraintStart_toStartOf="parent"
-	app:layout_constraintTop_toTopOf="parent"
-	app:layout_constraintVertical_bias="0.5"
-	android:orientation="vertical"
-	android:gravity="center"
-	>
-	<Button
-		android:layout_width="110dp"
-		android:layout_height="80dp"
-		android:layout_marginStart="8dp"
-		android:layout_marginTop="8dp"
-		android:layout_marginEnd="8dp"
-		android:layout_marginBottom="8dp"
-		android:onClick="goToWebGl"
-		android:text="@string/go_to_webgl"
-		 />
-
-
-	<Button
-		android:layout_width="110dp"
-		android:layout_height="80dp"
-		android:layout_marginStart="8dp"
-		android:layout_marginTop="8dp"
-		android:layout_marginEnd="8dp"
-		android:layout_marginBottom="8dp"
-		android:onClick="goToVideo"
-		android:text="@string/go_to_video" />
-</LinearLayout>
 
 
 		<Button
@@ -67,6 +33,41 @@
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent" />
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_bias="0.498"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintVertical_bias="0.5"
+		android:orientation="vertical"
+		android:gravity="center"
+		>
+		<Button
+			android:layout_width="110dp"
+			android:layout_height="80dp"
+			android:layout_marginStart="8dp"
+			android:layout_marginTop="8dp"
+			android:layout_marginEnd="8dp"
+			android:layout_marginBottom="8dp"
+			android:onClick="goToWebGl"
+			android:text="@string/go_to_webgl"
+			/>
+
+
+		<Button
+			android:layout_width="110dp"
+			android:layout_height="80dp"
+			android:layout_marginStart="8dp"
+			android:layout_marginTop="8dp"
+			android:layout_marginEnd="8dp"
+			android:layout_marginBottom="8dp"
+			android:onClick="goToVideo"
+			android:text="@string/go_to_video" />
+	</LinearLayout>
 
 
 <!--<org.nativescript.canvas.NSCSVG

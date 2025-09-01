@@ -36,7 +36,11 @@ export class HTMLVideoElement extends HTMLElement {
 	}
 
 	requestVideoFrameCallback(callback: Function) {
-		this._video?.requestVideoFrameCallback(callback);
+		this._video?.requestVideoFrameCallback?.(callback);
+	}
+
+	cancelVideoFrameCallback(callback: Function) {
+		this._video?.cancelVideoFrameCallback?.(callback);
 	}
 
 	get autoplay() {

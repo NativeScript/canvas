@@ -273,7 +273,7 @@ public class NSCRender: NSObject {
 			previousViewPort[0],
 			previousViewPort[1],
 			previousViewPort[2],
-			previousViewPort[3],
+			previousViewPort[3]
 		)
 		
 		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(prevFBO))
@@ -389,7 +389,7 @@ public class NSCRender: NSObject {
 			previousViewPort[0],
 			previousViewPort[1],
 			previousViewPort[2],
-			previousViewPort[3],
+			previousViewPort[3]
 		)
 		
 		glBindFramebuffer(GLenum(GL_FRAMEBUFFER), GLuint(prevFBO))

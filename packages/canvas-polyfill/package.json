@@ -36,7 +36,7 @@
 		"@nativescript/canvas": "*",
 		"@nativescript/canvas-media": "*",
 		"@nativescript/canvas-svg": "*",
-		"@xmldom/xmldom": "0.8.10",
+		"@xmldom/xmldom": ">=0.8.12",
 		"query-selector": "2.0.0",
 		"set-value": "4.1.0"
 	}

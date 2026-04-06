@@ -1,7 +1,7 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.1.2 effective-5.10 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)
+// swift-compiler-version: Apple Swift version 6.2.3 effective-5.10 (swiftlang-6.2.3.3.21 clang-1700.6.3.2)
 // swift-module-flags: -target x86_64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasSVG
-// swift-module-flags-ignorable: -no-verify-emitted-module-interface -interface-compiler-version 6.1.2
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.3
 @_exported import CanvasSVG
 import Foundation
 import Swift
@@ -19,10 +19,14 @@ import _SwiftConcurrencyShims
   @objc public var height: CoreFoundation.CGFloat {
     @objc get
   }
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc public var rawData: Swift.UnsafeMutableRawPointer? {
     @objc get
   }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc public func getImage() -> UIKit.UIImage?
+  #endif
   @objc override dynamic public init()
   @objc deinit
 }
@@ -45,13 +49,29 @@ import _SwiftConcurrencyShims
   @_Concurrency.MainActor @preconcurrency @objc override dynamic public func layoutSubviews()
   @_Concurrency.MainActor @preconcurrency @objc override dynamic public init(frame: CoreFoundation.CGRect)
   @_Concurrency.MainActor @preconcurrency @objc override dynamic public func draw(_ rect: CoreFoundation.CGRect)
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public func toImage() -> UIKit.UIImage?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public func toData() -> Foundation.NSData?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromStringSync(_ source: Swift.String) -> CanvasSVG.NSCSVGData?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromPathSync(_ path: Swift.String) -> CanvasSVG.NSCSVGData?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromRemoteSync(_ path: Swift.String) -> CanvasSVG.NSCSVGData?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromString(_ source: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromPath(_ path: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public static func fromRemote(_ path: Swift.String, _ callback: @escaping (CanvasSVG.NSCSVGData?) -> Swift.Void)
+  #endif
   @objc deinit
 }

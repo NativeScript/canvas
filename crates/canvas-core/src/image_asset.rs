@@ -10,7 +10,7 @@ enum CanvasImage {
     #[cfg(not(feature = "2d"))]
     Stb(stb_image::image::Image<u8>),
     #[cfg(feature = "2d")]
-    Skia(skia_safe::Bitmap, Arc<skia_safe::Pixmap<'static>>, Vec<u8>),
+    Skia(skia_safe::Bitmap, Vec<u8>),
 }
 
 
@@ -25,7 +25,7 @@ impl CanvasImage {
                 f(image.data.as_slice(), (image.width as u32, image.height as u32))
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, data) => {
+            CanvasImage::Skia(image, data) => {
                 let dimensions = (image.width() as u32, image.height() as u32);
                 f(data.as_slice(), dimensions)
             }
@@ -51,7 +51,7 @@ impl CanvasImage {
                 f(image.data.as_mut_slice(), (image.width as u32, image.height as u32))
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, data) => {
+            CanvasImage::Skia(image, data) => {
                 let dimensions = (image.width() as u32, image.height() as u32);
                 f(data.as_mut_slice(), dimensions)
             }
@@ -72,11 +72,12 @@ impl CanvasImage {
     pub fn new(info: &skia_safe::ImageInfo, mut data: Vec<u8>) -> Self {
         let mut bitmap = skia_safe::Bitmap::new();
         let min_row_bytes = info.min_row_bytes();
-        let size = data.len();
-        let slice = unsafe { std::slice::from_raw_parts_mut(data.as_mut_ptr(), size) };
-        let pixmap = Arc::new(skia_safe::Pixmap::new(info, slice, min_row_bytes).unwrap());
-        unsafe { bitmap.install_pixels(info, pixmap.writable_addr(), min_row_bytes) };
-        Self::Skia(bitmap, pixmap, data)
+        // SAFETY: `data` outlives the Bitmap because both are stored in the same
+        // enum variant. We install the raw pointer so Skia can read pixels without
+        // an extra copy. `data` must never be resized or dropped while `bitmap` lives.
+        let data_ptr = data.as_mut_ptr() as *mut c_void;
+        unsafe { bitmap.install_pixels(info, data_ptr, min_row_bytes) };
+        Self::Skia(bitmap, data)
     }
 
     #[cfg(not(feature = "2d"))]
@@ -92,7 +93,7 @@ impl CanvasImage {
                 image.width as u32
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, _) => {
+            CanvasImage::Skia(image, _) => {
                 image.width() as u32
             }
         }
@@ -105,7 +106,7 @@ impl CanvasImage {
                 image.height as u32
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, _) => {
+            CanvasImage::Skia(image, _) => {
                 image.height() as u32
             }
         }
@@ -119,7 +120,7 @@ impl CanvasImage {
             }
 
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, _) => {
+            CanvasImage::Skia(image, _) => {
                 let dimensions = image.dimensions();
                 (dimensions.width as u32, dimensions.height as u32)
             }
@@ -131,7 +132,7 @@ impl CanvasImage {
             #[cfg(not(feature = "2d"))]
             CanvasImage::Stb(image) => image.data.len(),
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, _) => image.compute_byte_size()
+            CanvasImage::Skia(image, _) => image.compute_byte_size()
         }
     }
 }
@@ -147,7 +148,7 @@ impl Clone for CanvasImage {
                 Self::Stb(image)
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, data) => {
+            CanvasImage::Skia(image, data) => {
                 let data = data.clone();
                 CanvasImage::new(image.info(), data)
             }
@@ -170,7 +171,7 @@ impl Debug for CanvasImage {
                 d.finish()
             }
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _, _) => {
+            CanvasImage::Skia(image, _) => {
                 let mut d = f.debug_struct("Image");
                 d.field("width", &image.width());
                 d.field("height", &image.height());
@@ -247,16 +248,13 @@ impl ImageAsset {
     where
         F: FnOnce(Option<&skia_safe::Bitmap>),
     {
-        let mut lock = self.0.lock();
-        match lock.image.as_mut() {
-            None => {
-                f(None)
-            }
+        let lock = self.0.lock();
+        match lock.image.as_ref() {
+            None => f(None),
             Some(image) => {
                 match image {
                     #[cfg(not(feature = "2d"))]
                     CanvasImage::Stb(image) => {
-                        // should always be rgba
                         let info = skia_safe::ImageInfo::new(
                             (image.width as i32, image.height as i32),
                             skia_safe::ColorType::RGBA8888,
@@ -264,38 +262,29 @@ impl ImageAsset {
                             None,
                         );
                         let mut bm = skia_safe::Bitmap::new();
-                        let success = unsafe { bm.install_pixels(&info, image.data.as_mut_ptr() as *mut c_void, info.min_row_bytes()) };
-
-                        if success {
-                            f(Some(&bm))
-                        } else {
-                            f(None)
-                        }
+                        let success = unsafe {
+                            bm.install_pixels(&info, image.data.as_ptr() as *mut c_void, info.min_row_bytes())
+                        };
+                        if success { f(Some(&bm)) } else { f(None) }
                     }
                     #[cfg(feature = "2d")]
-                    CanvasImage::Skia(image, _, _) => {
-                        f(Some(image))
-                    }
+                    CanvasImage::Skia(image, _) => f(Some(image)),
                 }
             }
         }
     }
 
-
     pub fn with_skia_image<F>(&self, f: F)
     where
         F: FnOnce(Option<&skia_safe::Image>),
     {
-        let mut lock = self.0.lock();
-        match lock.image.as_mut() {
-            None => {
-                f(None)
-            }
+        let lock = self.0.lock();
+        match lock.image.as_ref() {
+            None => f(None),
             Some(image) => {
                 match image {
                     #[cfg(not(feature = "2d"))]
                     CanvasImage::Stb(image) => {
-                        // should always be rgba
                         let info = skia_safe::ImageInfo::new(
                             (image.width as i32, image.height as i32),
                             skia_safe::ColorType::RGBA8888,
@@ -303,13 +292,13 @@ impl ImageAsset {
                             None,
                         );
                         let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
-                        let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                        f(image.as_ref())
+                        let img = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                        f(img.as_ref())
                     }
                     #[cfg(feature = "2d")]
-                    CanvasImage::Skia(bitmap, _, _) => {
-                        let image = skia_safe::images::raster_from_bitmap(bitmap);
-                        f(image.as_ref())
+                    CanvasImage::Skia(bitmap, _) => {
+                        let img = skia_safe::images::raster_from_bitmap(bitmap);
+                        f(img.as_ref())
                     }
                 }
             }
@@ -343,7 +332,7 @@ impl ImageAsset {
                         f(image.as_ref(), Some((dimensions, slice)))
                     }
                     #[cfg(feature = "2d")]
-                    CanvasImage::Skia(bitmap, _, bytes) => {
+                    CanvasImage::Skia(bitmap, bytes) => {
                         let image = skia_safe::images::raster_from_bitmap(bitmap);
                         let dimensions = bitmap.dimensions();
                         // should not fail to cast
@@ -732,7 +721,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_rgb(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -754,7 +743,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_luminance(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -776,7 +765,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_luminance_alpha(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -798,7 +787,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_alpha(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -820,7 +809,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_red(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -842,7 +831,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_rg(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -864,7 +853,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_rgba_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -886,7 +875,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_rgb_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -908,7 +897,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_red_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -930,7 +919,7 @@ use core_foundation::string::CFString;
                     Self::rgba_to_rg_integer(slice, width, height)
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
                     let width = image.width() as usize;
@@ -963,7 +952,7 @@ use core_foundation::string::CFString;
                     image.data.clone()
                 }
                 #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _, _) => {
+                CanvasImage::Skia(image, _) => {
                     let size = image.compute_byte_size();
                     let pixmap = image.pixmap();
                     let data = unsafe { std::slice::from_raw_parts(pixmap.addr() as *const u8, size) };

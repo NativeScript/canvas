@@ -190,10 +190,11 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto isolate = args.GetIsolate();
         auto reference = canvas_native_image_asset_reference(ptr->GetImageAsset());
         auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
+        canvas_native_image_asset_release(reference);
         args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
         return;
     }
-    
+
     args.GetReturnValue().SetEmptyString();
 }
 
@@ -573,9 +574,6 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
     auto size = bytes->ByteLength();
 
-    // Retain the shared_ptr — do NOT call GetBackingStore()->Data() in one expression.
-    // The temporary shared_ptr would be destroyed immediately, leaving `data` dangling
-    // if V8 GC collects the JS ArrayBuffer before the background task reads it.
     auto store = bytes->GetBackingStore();
     auto data = (uint8_t *) store->Data();
 
@@ -648,15 +646,12 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
     auto queue = new NSOperationQueueWrapper(false);
 
-    // Capture `store` in the lambda to keep the backing store alive on the background thread.
-    // Without this, the JS ArrayBuffer can be GC'd (and its backing store freed) via the
-    // CFRunLoopPerformBlock gap before the background task reads `data`.
+   
     auto task = [jsi_callback, current_queue, queue, asset, store, width, height, data, size]() {
 
         auto done = canvas_native_image_asset_load_from_raw(asset, width, height, data, size);
 
         canvas_native_image_asset_release(asset);
-        // `store` goes out of scope in main_task after use, not here, so keep it alive
         auto main_task = [jsi_callback, current_queue, queue, store, done]() {
 
             v8::Isolate *isolate = jsi_callback->isolate_;
@@ -734,10 +729,6 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
 
     auto size = bytes->ByteLength();
 
-    // Same fix as FromBytesCb: retain the shared_ptr to keep the backing store alive.
-    // GetBackingStore()->Data() in one expression creates a temporary shared_ptr that is
-    // destroyed immediately, making `data` a dangling pointer once the JS ArrayBuffer
-    // is GC'd between CFRunLoopPerformBlock scheduling and background task execution.
     auto store = bytes->GetBackingStore();
     auto data = (uint8_t *) store->Data();
 

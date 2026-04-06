@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::sync::Arc;
 
-use skia_safe::{surfaces, EncodedImageFormat};
+use skia_safe::surfaces;
 
 use canvas_core::image_asset::ImageAsset;
 
@@ -201,91 +201,90 @@ pub(crate) fn create_image_bitmap_internal(
     resize_height: f32,
     output: &ImageAsset,
 ) {
-    let mut out_width = image.width() as f32;
-    let mut out_height = image.height() as f32;
+    let img_w = image.width() as f32;
+    let img_h = image.height() as f32;
 
-    if resize_width <= 0. && resize_height > 0. {
-        out_width = image.width() as f32 + resize_height / image.height() as f32;
-    }
-
-    if resize_height <= 0. && resize_width > 0. {
-        out_height = image.height() as f32 + resize_width / image.width() as f32;
-    }
+    // Only one of resize_width / resize_height being set means proportional scale.
+    let (mut out_width, mut out_height) = (img_w, img_h);
 
     if resize_width > 0. && resize_height > 0. {
         out_width = resize_width;
         out_height = resize_height;
+    } else if resize_width > 0. {
+        let ratio = resize_width / img_w;
+        out_width = resize_width;
+        out_height = img_h * ratio;
+    } else if resize_height > 0. {
+        let ratio = resize_height / img_h;
+        out_width = img_w * ratio;
+        out_height = resize_height;
     }
 
-    let source_rect;
-
-    match rect {
-        None => {
-            source_rect =
-                skia_safe::Rect::from_xywh(0., 0., image.width() as f32, image.height() as f32);
-        }
-        Some(rect) => {
-            source_rect = skia_safe::Rect::from_xywh(rect.0, rect.1, rect.2, rect.3);
+    let source_rect = match rect {
+        None => skia_safe::Rect::from_xywh(0., 0., img_w, img_h),
+        Some(r) => {
+            let sr = skia_safe::Rect::from_xywh(r.0, r.1, r.2, r.3);
             if resize_width == 0. && resize_height == 0. {
-                out_width = rect.1;
-                out_height = rect.2;
+                out_width = sr.width();
+                out_height = sr.height();
             }
+            sr
         }
-    }
+    };
+
+    let alpha_type = ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into();
+    let color_space = ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space();
 
     let image_info = skia_safe::ImageInfo::new(
         (source_rect.width() as i32, source_rect.height() as i32),
         skia_safe::ColorType::RGBA8888,
-        ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into(),
-        ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
+        alpha_type,
+        color_space,
     );
 
-    match surfaces::raster(&image_info, Some((source_rect.width() * 4.) as usize), None) {
-        None => {}
-        Some(mut surface) => {
-            let canvas = surface.canvas();
-            if flip_y {
-                canvas.translate(skia_safe::Vector::new(0., source_rect.height()));
-                canvas.scale((1., -1.));
-            }
+    let mut surface = match surfaces::raster(&image_info, Some((source_rect.width() * 4.) as usize), None) {
+        None => return,
+        Some(s) => s,
+    };
 
-            let mut paint = skia_safe::Paint::default();
-            paint.set_anti_alias(true);
+    {
+        let canvas = surface.canvas();
+        if flip_y {
+            canvas.translate(skia_safe::Vector::new(0., source_rect.height()));
+            canvas.scale((1., -1.));
+        }
+        let mut paint = skia_safe::Paint::default();
+        paint.set_anti_alias(true);
+        canvas.draw_image(&image, (-source_rect.x(), -source_rect.y()), Some(&paint));
+    }
 
-            surface
-                .canvas()
-                .draw_image(&image, (source_rect.x(), source_rect.y()), Some(&paint));
+    let snapshot = surface.image_snapshot();
+    let needs_resize = snapshot.width() != out_width as i32 || snapshot.height() != out_height as i32;
 
-            let image = surface.image_snapshot();
+    if needs_resize {
+        let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
+        let row_bytes = (out_width * 4.) as usize;
+        let mut pixels = vec![0_u8; out_height as usize * row_bytes];
 
-            if image.width() != out_width as i32 && image.height() != out_height as i32 {
-                let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
-
-                let mut bytes = vec![0_u8; (out_width * out_height * 4.) as usize];
-                if let Some(pixel_map) = skia_safe::Pixmap::new(
-                    &resize_info,
-                    bytes.as_mut_slice(),
-                    (out_width * 4.) as usize,
-                ) {
-                    let _ = image.scale_pixels(
-                        &pixel_map,
-                        ImageBitmapResizeQuality::from(resize_quality).to_quality(),
-                        None,
-                    );
-
-                    let data = pixel_map.encode(EncodedImageFormat::PNG, 75);
-
-                    if let Some(data) = data {
-                        output.load_from_bytes(data.as_slice());
-                    };
-                }
-            } else {
-                let encoded = image.encode(None, EncodedImageFormat::PNG, 75);
-
-                if let Some(encoded) = encoded {
-                    output.load_from_bytes(encoded.as_bytes());
-                }
-            }
+        if let Some(pixel_map) = skia_safe::Pixmap::new(&resize_info, pixels.as_mut_slice(), row_bytes) {
+            let _ = snapshot.scale_pixels(
+                &pixel_map,
+                ImageBitmapResizeQuality::from(resize_quality).to_quality(),
+                None,
+            );
+        }
+        output.load_from_raw_bytes_rgba(out_width as u32, out_height as u32, pixels);
+    } else {
+        let row_bytes = (snapshot.width() * 4) as usize;
+        let mut pixels = vec![0_u8; snapshot.height() as usize * row_bytes];
+        let read_info = skia_safe::ImageInfo::new(
+            snapshot.dimensions(),
+            skia_safe::ColorType::RGBA8888,
+            alpha_type,
+            None,
+        );
+        if snapshot.read_pixels(&read_info, pixels.as_mut_slice(), row_bytes, (0, 0), skia_safe::image::CachingHint::Allow) {
+            output.load_from_raw_bytes_rgba(snapshot.width() as u32, snapshot.height() as u32, pixels);
         }
     }
 }
@@ -492,7 +491,7 @@ pub fn create_image_asset_encoded_raw(
         premultiply_alpha,
         color_space_conversion,
         resize_quality,
-        resize_height,
         resize_width,
+        resize_height,
     ))) as i64
 }

@@ -234,6 +234,7 @@ ImageBitmapImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto isolate = args.GetIsolate();
         auto reference = canvas_native_image_asset_reference(ptr->GetImageAsset());
         auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
+        canvas_native_image_asset_release(reference);
         args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
         return;
     }

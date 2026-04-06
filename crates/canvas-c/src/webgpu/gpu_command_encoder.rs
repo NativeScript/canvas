@@ -274,6 +274,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_begin_render_pass(
         depth_stencil_attachment: depth_stencil_attachment.as_ref(),
         timestamp_writes: timestamp_writes.as_ref(),
         occlusion_query_set,
+        multiview_mask: None,
     };
 
     let (pass, err) = global.command_encoder_begin_render_pass(command_encoder_id, &desc);
@@ -591,7 +592,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_finish(
     let (id, err) = global.command_encoder_finish(command_encoder_id, &desc, None);
 
     let error_sink = command_encoder.error_sink.as_ref();
-    if let Some(cause) = err {
+    if let Some((_msg, cause)) = err {
         handle_error(
             global,
             error_sink,

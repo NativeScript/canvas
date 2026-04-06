@@ -320,7 +320,7 @@ fn to_data_url_with_texture(
             return None;
         }
 
-        if let Err(_) = global.device_poll(device.device, wgt::PollType::Wait) {
+        if let Err(_) = global.device_poll(device.device, wgt::PollType::wait_indefinitely()) {
             return None;
         }
 

@@ -77,7 +77,7 @@ if [[ $CURRENT_ARCH == arm64 ]]; then
   fi
 fi
 
-export RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
+export RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort"
 export RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
 export DYLD_LIBRARY_PATH="$(rustc --print sysroot)/lib:$DYLD_LIBRARY_PATH:$DYLD_FALLBACK_LIBRARY_PATH"
 export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
@@ -85,5 +85,5 @@ export RUST_BUILD_TARGET="$RUST_BUILD_TARGET"
 cbindgen --config "$CWD/canvas-svg-ios/cbindgen.toml"  "$CWD/canvas-svg-ios/src/lib.rs" -l c >"$SRCROOT/CanvasSVG/include/canvas_svg.h"
 
 
-RUSTFLAGS="-Zlocation-detail=none -C panic=abort" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort  --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-svg
+RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-svg
 popd

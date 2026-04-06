@@ -274,8 +274,8 @@ impl Context {
                 let color = color.to_string_lossy();
                 csscolorparser::Color::from_html(color.as_ref())
                     .map(|color| {
-                        let color = color.rgba_u8();
-                        Color::from_argb(color.3, color.0, color.1, color.2)
+                        let color = color.to_rgba8();
+                        Color::from_argb(color[3], color[0], color[1], color[2])
                     })
                     .ok()
             })

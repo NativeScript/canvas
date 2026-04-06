@@ -597,7 +597,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		//const createPattern = this.context.createPattern;
 		let img;
 
-		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			img = (image as any).native;
 		} else if (image instanceof ImageSource) {
 			//const ptr = this.context.__getPointer; //this._getMethod('__getPointer');
@@ -715,7 +715,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	drawImage(...args): void {
 		//const drawImage = this.context.drawImage; //this._getMethod('drawImage');
 		let image = args[0];
-		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			image = (image as any).native;
 		} else if (image instanceof ImageAsset) {
 			image = image.native;
@@ -759,14 +759,8 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			} else if (image._asset instanceof ImageAsset) {
 				image = image._asset.native;
 			} else if (typeof image.src === 'string') {
-				image = ImageSource.fromFileSync(image.src).android;
-				if (__ANDROID__) {
-					drawNativeImage(args, image.android, this);
-				}
-				if (__IOS__) {
-					drawNativeImage(args, image.ios, this);
-				}
-				return;
+				image = new ImageAsset();
+				image.fromFileSync(image.src);
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			image = image._canvas.native;
@@ -793,10 +787,10 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		}[],
 		tex: { x: number; y: number; width: number; height: number }[],
 		colors?: string[],
-		blendMode: GlobalCompositeOperation = 'destination-over'
+		blendMode: GlobalCompositeOperation = 'destination-over',
 	): void {
 		let isNativeSource = false;
-		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1) {
+		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			image = (image as any).native;
 		} else if (image instanceof ImageAsset) {
 			image = image.native;
@@ -1105,4 +1099,12 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	translate(x: number, y: number): void {
 		this.context.translate(x, y);
 	}
+}
+
+// Backend type constants for video pipeline
+export enum CanvasBackendType {
+	CPU = 0,
+	GL = 1,
+	Vulkan = 2,
+	Metal = 3,
 }

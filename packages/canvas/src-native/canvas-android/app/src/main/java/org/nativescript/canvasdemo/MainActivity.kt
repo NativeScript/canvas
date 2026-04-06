@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		NSCCanvas.forceGL = true
+		NSCCanvas.forceGL = false
 
 
 		NSCFontFace.importFromRemote(
@@ -51,12 +51,12 @@ class MainActivity : AppCompatActivity() {
 				Log.d("com.test", "Font Failed $error")
 			} else {
 				val checked = NSCFontFaceSet.instance.check("16px \"Pinyon Script\"", null)
-				Log.d("com.test", "checked $checked")
+//				Log.d("com.test", "checked $checked")
 				for (font in fonts) {
 					if (font.font != null) {
-						Log.d("com.test", "Font loaded $font ${font.fontFamily}")
+					//	Log.d("com.test", "Font loaded $font ${font.fontFamily}")
 					} else {
-						Log.d("com.test", "Font Failed $font")
+						// Log.d("com.test", "Font Failed $font")
 					}
 				}
 			}
@@ -66,9 +66,9 @@ class MainActivity : AppCompatActivity() {
 			.setFontWeight("700")
 		font.load(this) {
 			if (it != null) {
-				Log.d("com.test", "Font Failed $it")
+			//	Log.d("com.test", "Font Failed $it")
 			} else {
-				Log.d("com.test", "Font loaded $font ${font.font?.weight}")
+			//	Log.d("com.test", "Font loaded $font ${font.font?.weight}")
 			}
 		}
 
@@ -117,7 +117,8 @@ class MainActivity : AppCompatActivity() {
 						false,
 						false,
 						false,
-						true
+						false,
+						1
 					)
 //						canvas.surfaceWidth = 600
 //							canvas.surfaceHeight = 900

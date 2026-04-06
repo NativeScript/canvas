@@ -99,6 +99,38 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	static int BUFFER_MS = 500;
 	public static boolean IS_DEBUG = true;
 
+	// --- GL fast-path state (2D canvas only) ------------------------------------
+	// These fields are initialised lazily on the first drawVideoFrame2D call with
+	// backendType == 1 (GL).  The OES texture lives in the 2D canvas's EGL context
+	// so Skia can sample from it directly without a CPU round-trip.
+	SurfaceTexture _glSt;
+	Surface _glSurface;
+	int _glTextureId = -1;
+	volatile boolean _glHasFrame = false;
+	Object _glRender; // TextureRender — kept alive to own the OES texture
+	// ---------------------------------------------------------------------------
+
+	// Cached reflection for drawVideoFrame2D — resolved once, reused per frame
+	private static Class<?> _drawImageClass;
+	private static Method _drawImageDxDy;
+	private static Method _drawImageDxDyDwDh;
+	private static Method _drawImageSrcDst;
+	private static boolean _drawImageResolved = false;
+
+	private static void ensureDrawImageMethods() {
+		if (_drawImageResolved) return;
+		try {
+			_drawImageClass = Class.forName("org.nativescript.canvas.NSCCanvasRenderingContext2D");
+			_drawImageDxDy = _drawImageClass.getMethod("drawImage", long.class, android.graphics.Bitmap.class, float.class, float.class);
+			_drawImageDxDyDwDh = _drawImageClass.getMethod("drawImage", long.class, android.graphics.Bitmap.class, float.class, float.class, float.class, float.class);
+			_drawImageSrcDst = _drawImageClass.getMethod("drawImage", long.class, android.graphics.Bitmap.class, float.class, float.class, float.class, float.class, float.class, float.class, float.class, float.class);
+		} catch (Exception ignored) {}
+		_drawImageResolved = true;
+	}
+
+	// Reusable bitmap for getCurrentBitmap to avoid per-frame allocation
+	private android.graphics.Bitmap _reusableBitmap;
+
 	public interface Callback {
 		void onDurationChange(long duration);
 
@@ -265,6 +297,10 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 		private Method canvasUpdateTexImage;
 
+		// GL fast-path helpers (2D canvas only)
+		private Method canvasCreate2DContextSurfaceTexture;
+		private Method canvasDrawVideoFrameGL;
+
 		Utils() {
 			try {
 				canvasUtils = Class.forName("org.nativescript.canvas.Utils");
@@ -274,6 +310,32 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			} catch (Exception e) {
 				if (IS_DEBUG) {
 					android.util.Log.d("JS", "" + e);
+				}
+			}
+			// GL fast-path methods — resolved separately so a missing method
+			// does not break the CPU path.
+			try {
+				canvasCreate2DContextSurfaceTexture = canvasUtils.getDeclaredMethod(
+						"create2DContextSurfaceTexture", Long.TYPE);
+				canvasDrawVideoFrameGL = canvasUtils.getDeclaredMethod(
+						"drawVideoFrameGL",
+						Long.TYPE,          // context
+						Integer.TYPE,       // textureId
+						SurfaceTexture.class,
+						Integer.TYPE,       // videoWidth
+						Integer.TYPE,       // videoHeight
+						Float.TYPE,         // sx
+						Float.TYPE,         // sy
+						Float.TYPE,         // sw
+						Float.TYPE,         // sh
+						Float.TYPE,         // dx
+						Float.TYPE,         // dy
+						Float.TYPE,         // dw
+						Float.TYPE          // dh
+				);
+			} catch (Exception e) {
+				if (IS_DEBUG) {
+					android.util.Log.d("JS", "GL fast-path unavailable: " + e);
 				}
 			}
 		}
@@ -305,6 +367,43 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			} catch (IllegalAccessException ignored) {
 			} catch (InvocationTargetException ignored) {
 			} catch (ClassNotFoundException ignored) {
+			}
+		}
+
+		/** Create a GL OES texture + SurfaceTexture inside the 2D canvas EGL context.
+		 *  Returns [SurfaceTexture, Integer textureId, TextureRender], or null on failure. */
+		Object[] create2DContextSurfaceTexture(long context) {
+			if (canvasCreate2DContextSurfaceTexture == null) return null;
+			try {
+				return (Object[]) canvasCreate2DContextSurfaceTexture.invoke(null, context);
+			} catch (IllegalAccessException ignored) {
+				return null;
+			} catch (InvocationTargetException e) {
+				if (IS_DEBUG) android.util.Log.d("JS", "create2DContextSurfaceTexture: " + e.getCause());
+				return null;
+			}
+		}
+
+		/** Draw a video frame via the GL fast-path (OES texture → Skia GPU, zero CPU copy).
+		 *  Returns true when the frame was drawn. */
+		boolean drawVideoFrameGL(
+				long context, int textureId, SurfaceTexture surfaceTexture,
+				int videoWidth, int videoHeight,
+				float sx, float sy, float sw, float sh,
+				float dx, float dy, float dw, float dh) {
+			if (canvasDrawVideoFrameGL == null) return false;
+			try {
+				Object result = canvasDrawVideoFrameGL.invoke(
+						null, context, textureId, surfaceTexture,
+						videoWidth, videoHeight,
+						sx, sy, sw, sh,
+						dx, dy, dw, dh);
+				return result instanceof Boolean && (Boolean) result;
+			} catch (IllegalAccessException ignored) {
+				return false;
+			} catch (InvocationTargetException e) {
+				if (IS_DEBUG) android.util.Log.d("JS", "drawVideoFrameGL: " + e.getCause());
+				return false;
 			}
 		}
 	}
@@ -350,6 +449,131 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 	public PlayerView getPlayerView() {
 		return this._playerView;
+	}
+
+	public android.graphics.Bitmap getCurrentBitmap() {
+		View surfaceView = this._playerView.getVideoSurfaceView();
+		if (surfaceView instanceof TextureView) {
+			TextureView tv = (TextureView) surfaceView;
+			if (tv.isAvailable()) {
+				int w = tv.getWidth();
+				int h = tv.getHeight();
+				if (w > 0 && h > 0) {
+					if (_reusableBitmap == null || _reusableBitmap.getWidth() != w || _reusableBitmap.getHeight() != h) {
+						if (_reusableBitmap != null) {
+							_reusableBitmap.recycle();
+						}
+						_reusableBitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+					}
+					return tv.getBitmap(_reusableBitmap);
+				}
+			}
+		}
+		return null;
+	}
+
+	private boolean drawFrame2DBitmap(long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
+		android.graphics.Bitmap bitmap = getCurrentBitmap();
+		if (bitmap == null) return false;
+		ensureDrawImageMethods();
+		if (_drawImageSrcDst == null) return false;
+		try {
+			Object result = _drawImageSrcDst.invoke(null, context, bitmap, sx, sy, sw, sh, dx, dy, dw, dh);
+			return result instanceof Boolean && (Boolean) result;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Draw the current video frame into a 2D canvas context.
+	 *
+	 * @param backendType  Rendering backend of the target context:
+	 *                     0 = CPU  — CPU bitmap readback (TextureView → Bitmap → Skia).
+	 *                     1 = GL   — GL fast-path: OES texture → Skia GPU image (zero CPU copy).
+	 *                     2 = Vulkan — falls back to CPU bitmap path (TODO: AHardwareBuffer path).
+	 *                     3 = Metal  — iOS only; not reached on Android.
+	 * @param context      Native pointer to the CanvasRenderingContext2D Rust struct.
+	 */
+	public boolean drawVideoFrame2D(int backendType, long context, float dx, float dy) {
+		float w = (float) _videoWidth;
+		float h = (float) _videoHeight;
+		if (backendType == 1) {
+			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, w, h);
+		}
+		return drawFrame2DBitmap(context, 0, 0, w, h, dx, dy, w, h);
+	}
+
+	public boolean drawVideoFrame2D(int backendType, long context, float dx, float dy, float dw, float dh) {
+		float w = (float) _videoWidth;
+		float h = (float) _videoHeight;
+		if (backendType == 1) {
+			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, dw, dh);
+		}
+		return drawFrame2DBitmap(context, 0, 0, w, h, dx, dy, dw, dh);
+	}
+
+	public boolean drawVideoFrame2D(int backendType, long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
+		if (backendType == 1) {
+			return drawFrame2DGL(context, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+		return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
+	}
+
+	/**
+	 * GL fast-path: draw the current video frame by having Skia sample an OES texture
+	 * directly, with no CPU round-trip.
+	 *
+	 * On the first call the method:
+	 *  1. Calls into Rust to make the 2D canvas EGL context current.
+	 *  2. Creates a TextureRender (generates an OES texture) inside that EGL context.
+	 *  3. Wraps the OES texture in a SurfaceTexture and directs the player to it.
+	 *
+	 * On every subsequent call it delegates to Utils.drawVideoFrameGL which:
+	 *  1. Makes the 2D context current.
+	 *  2. Calls SurfaceTexture.updateTexImage() to latch the newest frame.
+	 *  3. Calls into Rust/Skia to draw the OES texture directly (no Bitmap).
+	 *
+	 * Falls back to the CPU bitmap path if the GL resources cannot be initialised.
+	 */
+	private boolean drawFrame2DGL(long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
+		// Lazy initialisation — runs only once per VideoHelper instance.
+		if (_glSt == null) {
+			Object[] result = _utils.create2DContextSurfaceTexture(context);
+			if (result == null) {
+				// GL init failed; fall back to CPU path.
+				return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
+			}
+			_glSt = (SurfaceTexture) result[0];
+			_glTextureId = (Integer) result[1];
+			_glRender = result[2];
+
+			_glSt.setOnFrameAvailableListener(st -> {
+				_glHasFrame = true;
+				if (_callback != null) {
+					_callback.onVideoFrame();
+				}
+			});
+
+			_glSurface = new Surface(_glSt);
+			_player.setVideoSurface(_glSurface);
+		}
+
+		if (!_glHasFrame) {
+			// No new decoded frame yet; nothing to draw.
+			return false;
+		}
+
+		boolean drawn = _utils.drawVideoFrameGL(
+				context, _glTextureId, _glSt,
+				_videoWidth, _videoHeight,
+				sx, sy, sw, sh,
+				dx, dy, dw, dh);
+
+		if (drawn) {
+			_glHasFrame = false;
+		}
+		return drawn;
 	}
 
 	public void setPlayer() {
@@ -399,12 +623,12 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		return this._player.getDuration();
 	}
 
-	public long getCurrentTime() {
-		return this._player.getCurrentPosition() / 1000;
+	public double getCurrentTime() {
+		return this._player.getCurrentPosition() / 1000.0;
 	}
 
-	public void setCurrentTime(long value) {
-		this._player.seekTo((int) (value * 1000), 0);
+	public void setCurrentTime(int value) {
+		this._player.seekTo((value * 1000), 0);
 	}
 
 	public String getSrc() {

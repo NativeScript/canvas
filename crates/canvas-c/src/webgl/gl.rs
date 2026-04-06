@@ -7,7 +7,7 @@ use crate::image_asset::ImageAsset;
 use crate::webgl::result::WebGLResultType;
 use crate::BoolBuffer;
 use canvas_2d::utils::image::from_image_slice;
-use canvas_core::context_attributes::PowerPreference;
+use canvas_core::context_attributes::{ColorSpace, PowerPreference};
 use canvas_core::gpu::gl::GLContext;
 use canvas_webgl::prelude::WebGLVersion;
 use std::ffi::{CStr, CString};
@@ -267,10 +267,10 @@ impl WebGLState {
     }
 
     pub fn get_version(&self) -> i32 {
-        match  self.0.get_version() {
+        match self.0.get_version() {
             WebGLVersion::V1 => 1,
             WebGLVersion::V2 => 2,
-            WebGLVersion::NONE => 0
+            WebGLVersion::NONE => 0,
         }
     }
 }
@@ -315,6 +315,7 @@ impl WebGLState {
             xr_compatible,
             false,
             version == WebGLVersion::V1,
+            ColorSpace::Srgb,
         );
 
         let context = if !view.is_null() {
@@ -375,6 +376,7 @@ impl WebGLState {
             xr_compatible,
             false,
             version == WebGLVersion::V1,
+            ColorSpace::Srgb,
         );
         let context = GLContext::create_window_context(&mut attr, NonNull::new(view)?);
         Some(Self(
@@ -1795,6 +1797,7 @@ pub(crate) fn canvas_native_webgl_create_no_window_internal(
         xr_compatible,
         is_canvas,
         version == WebGLVersion::V1,
+        ColorSpace::Srgb,
     );
 
     let ctx = GLContext::create_offscreen_context(&mut attrs, width, height)?;

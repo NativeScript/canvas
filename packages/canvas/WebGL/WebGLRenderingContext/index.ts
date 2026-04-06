@@ -832,6 +832,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				pixels._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (pixels && typeof pixels.getCurrentFrame === 'function') {
 				pixels.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
+			} else if (pixels?._type === '2d' || pixels?._type?.indexOf('webgl') > -1 || pixels?._type === 'webgpu') {
+				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, (pixels as any).native);
 			} else if (pixels instanceof ImageAsset) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (pixels instanceof ImageBitmap) {
@@ -892,6 +894,8 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				border._video.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
 			} else if (border && typeof border.getCurrentFrame === 'function') {
 				border.getCurrentFrame(this.native, this, target, level, internalformat, width, height);
+			} else if (border?._type === '2d' || border?._type?.indexOf('webgl') > -1 || border?._type === 'webgpu') {
+				this.native.texImage2D(target, level, internalformat, width, height, (border as any).native);
 			} else if (border instanceof ImageAsset) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof ImageBitmap) {
@@ -966,9 +970,21 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	texSubImage2D(target: any, level: any, xoffset: any, yoffset: any, width: any, height: any, format: any, type?: any, pixels?: any) {
 		const length = arguments.length;
 		if (length === 9) {
-			this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+			if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'VID' || pixels.tagName === 'VIDEO') && pixels._video && typeof pixels._video.getCurrentFrame === 'function') {
+				pixels._video.getCurrentFrame(this.native, this, target, level, format, format);
+			} else if (pixels && typeof pixels.getCurrentFrame === 'function') {
+				pixels.getCurrentFrame(this.native, this, target, level, format, format);
+			} else {
+				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+			}
 		} else if (length === 7) {
-			if (global.isAndroid && format instanceof android.graphics.Bitmap) {
+			if (format?._type === '2d' || format?._type?.indexOf('webgl') > -1 || format?._type === 'webgpu') {
+				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, (format as any).native);
+			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'VID' || format.tagName === 'VIDEO') && format._video && typeof format._video.getCurrentFrame === 'function') {
+				format._video.getCurrentFrame(this.native, this, target, level, width, height);
+			} else if (format && typeof format.getCurrentFrame === 'function') {
+				format.getCurrentFrame(this.native, this, target, level, width, height);
+			} else if (global.isAndroid && format instanceof android.graphics.Bitmap) {
 				// todo
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {

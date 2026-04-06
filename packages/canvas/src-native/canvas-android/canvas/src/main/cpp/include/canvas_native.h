@@ -236,6 +236,11 @@ typedef enum CanvasBufferBindingType {
   CanvasBufferBindingTypeReadOnlyStorage,
 } CanvasBufferBindingType;
 
+typedef enum CanvasColorSpace {
+  CanvasColorSpaceSrgb,
+  CanvasColorSpaceP3,
+} CanvasColorSpace;
+
 typedef enum CanvasCompareFunction {
   CanvasCompareFunctionNever = 1,
   CanvasCompareFunctionLess = 2,
@@ -622,6 +627,7 @@ typedef enum PaintStyleType {
   PaintStyleTypeColor,
   PaintStyleTypeGradient,
   PaintStyleTypePattern,
+  PaintStyleTypeColor4f,
 } PaintStyleType;
 
 typedef enum SurfaceGetCurrentTextureStatus {
@@ -1083,6 +1089,24 @@ typedef enum CanvasGPUTextureFormat_Tag {
    */
   CanvasGPUTextureFormatNV12,
   /**
+   * YUV 4:2:0 chroma subsampled format.
+   *
+   * Contains two planes:
+   * - 0: Single 16 bit channel luminance, of which only the high 10 bits
+   *   are used.
+   * - 1: Dual 16 bit channel chrominance at half width and half height, of
+   *   which only the high 10 bits are used.
+   *
+   * Valid view formats for luminance are [`TextureFormat::R16Unorm`].
+   *
+   * Valid view formats for chrominance are [`TextureFormat::Rg16Unorm`].
+   *
+   * Width and height must be even.
+   *
+   * [`Features::TEXTURE_FORMAT_P010`] must be enabled to use this texture format.
+   */
+  CanvasGPUTextureFormatP010,
+  /**
    * 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
    * [0, 63] ([0, 1] for alpha) converted to/from float [0, 1] in shader.
    *
@@ -1347,9 +1371,9 @@ typedef struct CanvasGPUSupportedLimits {
   uint64_t max_buffer_size;
   uint32_t max_vertex_attributes;
   uint32_t max_vertex_buffer_array_stride;
+  uint32_t max_inter_stage_shader_variables;
   uint32_t min_uniform_buffer_offset_alignment;
   uint32_t min_storage_buffer_offset_alignment;
-  uint32_t max_inter_stage_shader_components;
   uint32_t max_color_attachments;
   uint32_t max_color_attachment_bytes_per_sample;
   uint32_t max_compute_workgroup_storage_size;
@@ -1358,10 +1382,24 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_compute_workgroup_size_y;
   uint32_t max_compute_workgroup_size_z;
   uint32_t max_compute_workgroups_per_dimension;
-  uint32_t min_subgroup_size;
-  uint32_t max_subgroup_size;
-  uint32_t max_push_constant_size;
+  uint32_t max_immediate_size;
   uint32_t max_non_sampler_bindings;
+  uint32_t max_task_mesh_workgroup_total_count;
+  uint32_t max_task_mesh_workgroups_per_dimension;
+  uint32_t max_task_invocations_per_workgroup;
+  uint32_t max_task_invocations_per_dimension;
+  uint32_t max_mesh_invocations_per_workgroup;
+  uint32_t max_mesh_invocations_per_dimension;
+  uint32_t max_task_payload_size;
+  uint32_t max_mesh_output_vertices;
+  uint32_t max_mesh_output_primitives;
+  uint32_t max_mesh_output_layers;
+  uint32_t max_mesh_multiview_view_count;
+  uint32_t max_blas_primitive_count;
+  uint32_t max_blas_geometry_count;
+  uint32_t max_tlas_instance_count;
+  uint32_t max_acceleration_structures_per_shader_stage;
+  uint32_t max_multiview_view_count;
 } CanvasGPUSupportedLimits;
 
 typedef struct CanvasExtent3d {
@@ -2052,7 +2090,8 @@ struct CanvasRenderingContext2D *canvas_native_context_create(float width,
                                                               bool alpha,
                                                               int32_t font_color,
                                                               float ppi,
-                                                              uint32_t direction);
+                                                              uint32_t direction,
+                                                              enum CanvasColorSpace color_space);
 
 struct CanvasRenderingContext2D *canvas_native_context_create_gl(void *view,
                                                                  float width,
@@ -2061,7 +2100,8 @@ struct CanvasRenderingContext2D *canvas_native_context_create_gl(void *view,
                                                                  bool alpha,
                                                                  int32_t font_color,
                                                                  float ppi,
-                                                                 uint32_t direction);
+                                                                 uint32_t direction,
+                                                                 enum CanvasColorSpace color_space);
 
 struct CanvasRenderingContext2D *canvas_native_context_create_with_pointer(int64_t pointer);
 
@@ -2231,10 +2271,24 @@ struct PaintStyle *canvas_native_context_get_fill_style(const struct CanvasRende
 void canvas_native_context_set_fill_style(struct CanvasRenderingContext2D *context,
                                           const struct PaintStyle *style);
 
+/**
+ * Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
+ * The caller must NOT use or release the style pointer after this call.
+ */
+void canvas_native_context_set_fill_style_owned(struct CanvasRenderingContext2D *context,
+                                                struct PaintStyle *style);
+
 struct PaintStyle *canvas_native_context_get_stroke_style(const struct CanvasRenderingContext2D *context);
 
 void canvas_native_context_set_stroke_style(struct CanvasRenderingContext2D *context,
                                             const struct PaintStyle *style);
+
+/**
+ * Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
+ * The caller must NOT use or release the style pointer after this call.
+ */
+void canvas_native_context_set_stroke_style_owned(struct CanvasRenderingContext2D *context,
+                                                  struct PaintStyle *style);
 
 float canvas_native_context_get_line_width(const struct CanvasRenderingContext2D *context);
 
@@ -2921,6 +2975,17 @@ struct PaintStyle *canvas_native_paint_style_from_bytes(const struct CanvasRende
 struct PaintStyle *canvas_native_pattern_from_ptr(int64_t ptr);
 
 void canvas_native_gradient_add_color_stop(struct PaintStyle *style, float stop, const char *color);
+
+/**
+ * Add a color stop using pre-parsed RGBA values (0-255 each).
+ * Skips CSS color string parsing entirely.
+ */
+void canvas_native_gradient_add_color_stop_rgba(struct PaintStyle *style,
+                                                float stop,
+                                                uint8_t r,
+                                                uint8_t g,
+                                                uint8_t b,
+                                                uint8_t a);
 
 void canvas_native_pattern_set_transform(struct PaintStyle *pattern, const struct Matrix *matrix);
 
@@ -5620,4 +5685,4 @@ void canvas_native_webgl2_tex_image2d_image_data(int32_t target,
                                                  const struct ImageData *image_data,
                                                  struct WebGLState *state);
 
-#endif /* CANVAS_C_H */
+#endif  /* CANVAS_C_H */

@@ -1,3 +1,5 @@
+use skia_safe::named_transfer_fn;
+
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
 pub enum PowerPreference {
     Default,
@@ -28,6 +30,24 @@ impl Into<i32> for PowerPreference {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ColorSpace {
+    Srgb,
+    P3,
+}
+
+impl Into<Option<skia_safe::ColorSpace>> for ColorSpace {
+    fn into(self) -> Option<skia_safe::ColorSpace> {
+        match self {
+            ColorSpace::Srgb => Some(skia_safe::ColorSpace::new_srgb()),
+            ColorSpace::P3 => skia_safe::ColorSpace::new_cicp(
+                skia_safe::named_primaries::CicpId::SMPTE_EG_432_1,
+                named_transfer_fn::CicpId::SRGB,
+            ),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct ContextAttributes {
     alpha: bool,
@@ -42,6 +62,7 @@ pub struct ContextAttributes {
     xr_compatible: bool,
     is_canvas: bool,
     gl_legacy: bool,
+    color_space: ColorSpace,
 }
 
 impl Default for ContextAttributes {
@@ -59,11 +80,13 @@ impl Default for ContextAttributes {
             xr_compatible: false,
             is_canvas: false,
             gl_legacy: false,
+            color_space: ColorSpace::Srgb,
         }
     }
 }
 
 impl ContextAttributes {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         alpha: bool,
         antialias: bool,
@@ -77,6 +100,7 @@ impl ContextAttributes {
         xr_compatible: bool,
         is_canvas: bool,
         gl_legacy: bool,
+        color_space: ColorSpace,
     ) -> Self {
         Self {
             alpha,
@@ -91,7 +115,12 @@ impl ContextAttributes {
             xr_compatible,
             is_canvas,
             gl_legacy,
+            color_space,
         }
+    }
+
+    pub fn get_color_space(&self) -> ColorSpace {
+        self.color_space
     }
 
     pub fn get_gl_legacy(&self) -> bool {

@@ -205,10 +205,11 @@ declare module org {
 				public textureView: org.nativescript.canvas.GLView;
 				public surfaceView: org.nativescript.canvas.GLViewSV;
 				public static TAG: string = 'CanvasView';
-				public create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean): number;
+				public create2DContext(alpha: boolean, antialias: boolean, depth: boolean, failIfMajorPerformanceCaveat: boolean, powerPreference: number, premultipliedAlpha: boolean, preserveDrawingBuffer: boolean, stencil: boolean, desynchronized: boolean, xrCompatible: boolean, willReadFrequently: boolean, colorSpace: number): number;
 				public makeContextCurrent(): void;
 				public setSurfaceView(value: org.nativescript.canvas.GLViewSV): void;
 				public static context2DTest(context: number): void;
+				public setSurfaceSize(width: number, height: number): void;
 				// public initContextWithContextAttributes($i$a$-let-NSCCanvas$initContextWithContextAttributes$1: string, it: boolean, density: boolean, width: boolean, height: boolean, density: number, $i$a$-run-NSCCanvas$initContextWithContextAttributes$2: boolean, $this$initContextWithContextAttributes_u24lambda_u244: boolean, version: boolean, surface: boolean, this_: boolean): void;
 				public static nativeUpdateWebGLSurface(param0: globalAndroid.view.Surface, param1: number): void;
 				public static setStore(value: java.util.concurrent.ConcurrentHashMap<any, any>): void;

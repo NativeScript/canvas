@@ -38,7 +38,8 @@ int64_t canvas_native_ios_create_2d_context(void *view,
                                             float density,
                                             int32_t font_color,
                                             float ppi,
-                                            int32_t direction);
+                                            int32_t direction,
+                                            CanvasColorSpace color_space);
 
 void canvas_native_ios_update_2d_webgpu_surface(int64_t view,
                                                 float width,
@@ -95,6 +96,47 @@ bool canvas_native_ios_context_draw_image_with_bytes(int64_t context,
                                                      float d_width,
                                                      float d_height);
 
+/**
+ * Draw BGRA pixel data (e.g. from CVPixelBuffer) to a Canvas 2D context — dx, dy variant
+ */
+bool canvas_native_ios_context_draw_image_dx_dy_with_bgra_bytes(int64_t context,
+                                                                uint8_t *bytes,
+                                                                uintptr_t size,
+                                                                float width,
+                                                                float height,
+                                                                float dx,
+                                                                float dy);
+
+/**
+ * Draw BGRA pixel data to a Canvas 2D context — dx, dy, dw, dh variant
+ */
+bool canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_bgra_bytes(int64_t context,
+                                                                      uint8_t *bytes,
+                                                                      uintptr_t size,
+                                                                      float width,
+                                                                      float height,
+                                                                      float dx,
+                                                                      float dy,
+                                                                      float d_width,
+                                                                      float d_height);
+
+/**
+ * Draw BGRA pixel data to a Canvas 2D context — full src/dst rect variant
+ */
+bool canvas_native_ios_context_draw_image_with_bgra_bytes(int64_t context,
+                                                          uint8_t *bytes,
+                                                          uintptr_t size,
+                                                          float width,
+                                                          float height,
+                                                          float sx,
+                                                          float sy,
+                                                          float s_width,
+                                                          float s_height,
+                                                          float dx,
+                                                          float dy,
+                                                          float d_width,
+                                                          float d_height);
+
 void canvas_native_ios_context_custom_with_buffer_flush(int64_t context,
                                                         uint8_t *bytes,
                                                         uintptr_t size,
@@ -108,7 +150,8 @@ long long canvas_native_ios_context_init_context_with_custom_surface(float width
                                                                      bool alpha,
                                                                      int font_color,
                                                                      float ppi,
-                                                                     int direction);
+                                                                     int direction,
+                                                                     CanvasColorSpace color_space);
 
 void canvas_native_ios_webgl_tex_image_2d(int64_t context,
                                           int32_t target,
@@ -135,13 +178,46 @@ void canvas_native_ios_webgl_tex_sub_image_2d(int64_t context,
                                               float height,
                                               bool flip_y);
 
+bool canvas_native_ios_context_draw_image_dx_dy_with_gl_texture(int64_t context,
+                                                                uint32_t gl_texture_id,
+                                                                uint32_t gl_target,
+                                                                float width,
+                                                                float height,
+                                                                float dx,
+                                                                float dy);
+
+bool canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_gl_texture(int64_t context,
+                                                                      uint32_t gl_texture_id,
+                                                                      uint32_t gl_target,
+                                                                      float width,
+                                                                      float height,
+                                                                      float dx,
+                                                                      float dy,
+                                                                      float d_width,
+                                                                      float d_height);
+
+bool canvas_native_ios_context_draw_image_with_gl_texture(int64_t context,
+                                                          uint32_t gl_texture_id,
+                                                          uint32_t gl_target,
+                                                          float width,
+                                                          float height,
+                                                          float sx,
+                                                          float sy,
+                                                          float s_width,
+                                                          float s_height,
+                                                          float dx,
+                                                          float dy,
+                                                          float d_width,
+                                                          float d_height);
+
 int64_t canvas_native_ios_create_2d_context_metal(void *view,
                                                   bool alpha,
                                                   float density,
                                                   uintptr_t samples,
                                                   int32_t font_color,
                                                   float ppi,
-                                                  int32_t direction);
+                                                  int32_t direction,
+                                                  CanvasColorSpace color_space);
 
 int64_t canvas_native_ios_create_2d_context_metal_offscreen(float width,
                                                             float height,
@@ -150,7 +226,8 @@ int64_t canvas_native_ios_create_2d_context_metal_offscreen(float width,
                                                             uintptr_t samples,
                                                             int32_t font_color,
                                                             float ppi,
-                                                            int32_t direction);
+                                                            int32_t direction,
+                                                            CanvasColorSpace color_space);
 
 int64_t canvas_native_ios_create_2d_context_metal_device_queue(void *view,
                                                                void *device,
@@ -160,7 +237,8 @@ int64_t canvas_native_ios_create_2d_context_metal_device_queue(void *view,
                                                                uintptr_t samples,
                                                                int32_t font_color,
                                                                float ppi,
-                                                               int32_t direction);
+                                                               int32_t direction,
+                                                               CanvasColorSpace color_space);
 
 long long canvas_native_init_ios_webgpu(int64_t instance,
                                         void *view,
@@ -180,5 +258,34 @@ void canvas_native_resize_ios_webgpu_uiview(int64_t context,
                                             uint32_t width,
                                             uint32_t height);
 #endif
+
+bool canvas_native_ios_context_draw_image_dx_dy_with_metal_texture(int64_t context,
+                                                                   void *mtl_texture,
+                                                                   float width,
+                                                                   float height,
+                                                                   float dx,
+                                                                   float dy);
+
+bool canvas_native_ios_context_draw_image_dx_dy_dw_dh_with_metal_texture(int64_t context,
+                                                                         void *mtl_texture,
+                                                                         float width,
+                                                                         float height,
+                                                                         float dx,
+                                                                         float dy,
+                                                                         float d_width,
+                                                                         float d_height);
+
+bool canvas_native_ios_context_draw_image_with_metal_texture(int64_t context,
+                                                             void *mtl_texture,
+                                                             float width,
+                                                             float height,
+                                                             float sx,
+                                                             float sy,
+                                                             float s_width,
+                                                             float s_height,
+                                                             float dx,
+                                                             float dy,
+                                                             float d_width,
+                                                             float d_height);
 
 #endif  /* CANVAS_IOS_H */

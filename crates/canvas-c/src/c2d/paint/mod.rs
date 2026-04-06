@@ -39,9 +39,11 @@ impl PaintStyle {
             canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {
                 PaintStyleType::Pattern
             }
+            canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(_) => {
+                PaintStyleType::Color4f
+            }
         }
     }
-
 
     pub fn add_color_stop(&mut self, offset: c_float, color: &str) {
         match &mut self.0 {
@@ -58,7 +60,9 @@ pub extern "C" fn canvas_native_paint_style_release(value: *mut PaintStyle) {
     if value.is_null() {
         return;
     }
-    unsafe { drop(Box::from_raw(value)) };
+    unsafe {
+        let _ = Box::from_raw(value);
+    };
 }
 
 #[repr(C)]
@@ -67,6 +71,7 @@ pub enum PaintStyleType {
     Color,
     Gradient,
     Pattern,
+    Color4f,
 }
 
 #[no_mangle]

@@ -4,6 +4,7 @@ require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
+
 /*
 
 

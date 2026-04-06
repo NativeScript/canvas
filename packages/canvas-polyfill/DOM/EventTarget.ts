@@ -29,7 +29,16 @@ export class EventTarget {
 			emitter = this._emitter?.deref?.();
 		}
 		if (emitter !== null && emitter !== undefined) {
-			emitter.addEventListener(event, handler, this);
+			switch (typeof handler) {
+				case 'object':
+					if (handler !== null) {
+						emitter.addEventListener(event, handler[`on${event}`], this);
+					}
+					break;
+				default:
+					emitter.addEventListener(event, handler, this);
+					break;
+			}
 		}
 	}
 
@@ -45,6 +54,17 @@ export class EventTarget {
 		}
 
 		if (emitter !== null && emitter !== undefined) {
+			switch (typeof handler) {
+				case 'object':
+					if (handler !== null) {
+						emitter.removeEventListener(event, handler[`on${event}`]);
+					}
+					break;
+				default:
+					emitter.removeEventListener(event, handler);
+					break;
+			}
+
 			emitter.removeEventListener(event, handler);
 		}
 	}

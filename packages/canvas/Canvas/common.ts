@@ -383,6 +383,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 
 	_lastPointerEventById: Map<number, { pointerId: number; x: number; y: number }> = new Map();
 
+	private _nodeName = 'CANVAS';
+
 	protected constructor() {
 		super();
 		this._classList = new Set();
@@ -390,13 +392,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		this.style.height = 'auto';
 	}
 
+	get nodeName() {
+		return this._nodeName;
+	}
+
 	get isConnected() {
 		return this.parent !== null && this.parent !== undefined;
 	}
 
 	get ownerDocument() {
-		//return window?.document ?? doc;
-		return this;
+		return window?.document ?? doc;
 	}
 
 	emit() {}
@@ -413,7 +418,18 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 				capture: thisArg,
 			};
 		}
-		super.addEventListener(arg, callback, thisArg);
+
+		switch (typeof callback) {
+			case 'object':
+				if (callback !== null) {
+					super.addEventListener(arg, callback[`on${arg}`], thisArg);
+				}
+				break;
+			default:
+				super.addEventListener(arg, callback, thisArg);
+				break;
+		}
+
 		if (typeof arg !== 'string') {
 			return;
 		}
@@ -477,7 +493,16 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 			};
 		}
 
-		super.removeEventListener(arg, callback, thisArg);
+		switch (typeof callback) {
+			case 'object':
+				if (callback !== null) {
+					super.removeEventListener(arg, callback[`on${arg}`], thisArg);
+				}
+				break;
+			default:
+				super.removeEventListener(arg, callback, thisArg);
+				break;
+		}
 
 		switch (arg) {
 			case 'mousemove':
@@ -579,7 +604,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							screenY: pointer.y,
 							pageX: pointer.x,
 							pageY: pointer.y,
-						})
+						}),
 					);
 				}
 
@@ -978,7 +1003,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							screenY: pointer.y,
 							pageX: pointer.x,
 							pageY: pointer.y,
-						})
+						}),
 					);
 				}
 

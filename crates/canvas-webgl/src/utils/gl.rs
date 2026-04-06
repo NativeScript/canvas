@@ -43,11 +43,12 @@ pub fn flip_in_place_3d(
     height: usize,
     depth: usize,
 ) {
+    let slice_size = bytes_per_row * height;
     unsafe {
-        let mut data = pixels;
-        for _ in 0..depth {
-            flip_in_place(data, length, bytes_per_row, height);
-            data = pixels.offset((bytes_per_row * height) as isize);
+        for d in 0..depth {
+            let data = pixels.add(d * slice_size);
+            let remaining = length.saturating_sub(d * slice_size).min(slice_size);
+            flip_in_place(data, remaining, bytes_per_row, height);
         }
     }
 }
@@ -70,14 +71,15 @@ fn flip_pixels(pixels: &'_ mut [u8], rows: usize) {
     let top_rows = first_half.chunks_mut(bytes_per_row);
     let bot_rows = second_half.chunks_mut(bytes_per_row).rev();
     for (top, bot) in top_rows.zip(bot_rows) {
-        const SWAP_SIZE: usize = 4;
+        // Use cache-line-sized swaps (64 bytes) for better memory throughput
+        const SWAP_SIZE: usize = 64;
         let mut i_tops = top.chunks_exact_mut(SWAP_SIZE);
         let mut i_bots = bot.chunks_exact_mut(SWAP_SIZE);
         for (i_top, i_bot) in Iterator::zip(i_tops.by_ref(), i_bots.by_ref()) {
-            type SwapBlock = [u8; SWAP_SIZE];
-            let i_top: &mut SwapBlock = i_top.try_into().unwrap();
-            let i_bot: &mut SwapBlock = i_bot.try_into().unwrap();
-            std::mem::swap(i_top, i_bot);
+            // swap_nonoverlapping is optimized by the compiler for large blocks
+            unsafe {
+                std::ptr::swap_nonoverlapping(i_top.as_mut_ptr(), i_bot.as_mut_ptr(), SWAP_SIZE);
+            }
         }
         for (b_top, b_bot) in Iterator::zip(
             i_tops.into_remainder().iter_mut(),

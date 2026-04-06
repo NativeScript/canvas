@@ -13,6 +13,7 @@ use canvas_2d::context::text_styles::text_direction::TextDirection;
 use canvas_2d::context::Context;
 use canvas_2d::utils::color::{parse_color, to_parsed_color};
 use canvas_2d::utils::image::{from_bitmap_slice, from_image_slice, from_image_slice_encoded};
+use canvas_core::context_attributes::ColorSpace;
 use canvas_webgl::utils::gl::bytes_per_pixel;
 
 use crate::buffers::{F32Buffer, U8Buffer};
@@ -23,6 +24,7 @@ use crate::c2d::paint::{PaintStyle, PaintStyleType};
 use crate::c2d::path::Path;
 use crate::c2d::text_base_line::TextBaseLine;
 use crate::c2d::text_metrics::TextMetrics;
+use crate::CanvasColorSpace;
 use crate::image_asset::ImageAsset;
 use crate::webgl::WebGLState;
 
@@ -362,6 +364,7 @@ pub extern "C" fn canvas_native_context_create(
     font_color: i32,
     ppi: f32,
     direction: u32,
+    color_space: CanvasColorSpace
 ) -> *mut CanvasRenderingContext2D {
     Box::into_raw(Box::new(CanvasRenderingContext2D {
         context: Context::new(
@@ -372,6 +375,7 @@ pub extern "C" fn canvas_native_context_create(
             font_color,
             ppi,
             TextDirection::from(direction),
+            color_space.into()
         ),
         alpha,
         engine: Engine::CPU,
@@ -388,18 +392,24 @@ pub extern "C" fn canvas_native_context_create_gl(
     font_color: i32,
     ppi: f32,
     direction: u32,
+    color_space: CanvasColorSpace
 ) -> *mut CanvasRenderingContext2D {
+    let context = match Context::new_gl(
+        view,
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        ppi,
+        TextDirection::from(direction),
+        color_space.into(),
+    ) {
+        Some(ctx) => ctx,
+        None => return std::ptr::null_mut(),
+    };
     Box::into_raw(Box::new(CanvasRenderingContext2D {
-        context: Context::new_gl(
-            view,
-            width,
-            height,
-            density,
-            alpha,
-            font_color,
-            ppi,
-            TextDirection::from(direction),
-        ),
+        context,
         alpha,
         engine: Engine::GL,
     }))
@@ -427,7 +437,7 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
     direction: u32,
     alpha: bool,
 ) -> *mut CanvasRenderingContext2D {
-    let context = Context::new_gl(
+    let context = match Context::new_gl(
         std::ptr::null_mut(),
         width,
         height,
@@ -436,7 +446,11 @@ pub extern "C" fn canvas_native_context_create_gl_no_window(
         font_color,
         ppi,
         TextDirection::from(direction),
-    );
+        ColorSpace::Srgb,
+    ) {
+        Some(ctx) => ctx,
+        None => return std::ptr::null_mut(),
+    };
 
     Box::into_raw(Box::new(CanvasRenderingContext2D {
         context,
@@ -1103,6 +1117,9 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_string(
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             CString::new(to_parsed_color(*stroke)).unwrap().into_raw()
         }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            CString::new(to_parsed_color(color.to_color())).unwrap().into_raw()
+        }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             std::ptr::null()
         }
@@ -1120,6 +1137,9 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_buf(
     let ret = match context.context.stroke_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
+        }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            to_parsed_color(color.to_color()).into_bytes()
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             Vec::with_capacity(0)
@@ -1148,6 +1168,13 @@ pub extern "C" fn canvas_native_paint_style_get_current_stroke_color_r_g_b_a(
             *b = stroke.b();
             *a = stroke.a();
         }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            let c = color.to_color();
+            *r = c.r();
+            *g = c.g();
+            *b = c.b();
+            *a = c.a();
+        }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
     }
@@ -1169,6 +1196,13 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_r_g_b_a(
             *b = stroke.b();
             *a = stroke.a();
         }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            let c = color.to_color();
+            *r = c.r();
+            *g = c.g();
+            *b = c.b();
+            *a = c.a();
+        }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {}
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Pattern(_) => {}
     }
@@ -1183,6 +1217,9 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_string(
     match context.context.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             CString::new(to_parsed_color(*stroke)).unwrap().into_raw()
+        }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            CString::new(to_parsed_color(color.to_color())).unwrap().into_raw()
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             std::ptr::null()
@@ -1202,6 +1239,9 @@ pub extern "C" fn canvas_native_paint_style_get_current_fill_color_buf(
     let ret = match context.context.fill_style() {
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(stroke) => {
             to_parsed_color(*stroke).into_bytes()
+        }
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(color) => {
+            to_parsed_color(color.to_color()).into_bytes()
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
             Vec::with_capacity(0)
@@ -1227,7 +1267,8 @@ pub extern "C" fn canvas_native_context_get_current_fill_style_type(
     assert!(!context.is_null());
     let context = unsafe { &*context };
     return match context.context.fill_style() {
-        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) |
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(_) => {
             PaintStyleType::Color
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
@@ -1246,7 +1287,8 @@ pub extern "C" fn canvas_native_context_get_current_stroke_style_type(
     assert!(!context.is_null());
     let context = unsafe { &*context };
     return match context.context.fill_style() {
-        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) => {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color(_) |
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Color4f(_) => {
             PaintStyleType::Color
         }
         canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(_) => {
@@ -1279,6 +1321,20 @@ pub extern "C" fn canvas_native_context_set_fill_style(
     context.context.set_fill_style(style.0.clone())
 }
 
+/// Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
+/// The caller must NOT use or release the style pointer after this call.
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_fill_style_owned(
+    context: *mut CanvasRenderingContext2D,
+    style: *mut PaintStyle,
+) {
+    assert!(!context.is_null());
+    assert!(!style.is_null());
+    let context = unsafe { &mut *context };
+    let style = unsafe { Box::from_raw(style) };
+    context.context.set_fill_style(style.0)
+}
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_get_stroke_style(
     context: *const CanvasRenderingContext2D,
@@ -1298,6 +1354,20 @@ pub extern "C" fn canvas_native_context_set_stroke_style(
     let context = unsafe { &mut *context };
     let style = unsafe { &*style };
     context.context.set_stroke_style(style.0.clone())
+}
+
+/// Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
+/// The caller must NOT use or release the style pointer after this call.
+#[no_mangle]
+pub extern "C" fn canvas_native_context_set_stroke_style_owned(
+    context: *mut CanvasRenderingContext2D,
+    style: *mut PaintStyle,
+) {
+    assert!(!context.is_null());
+    assert!(!style.is_null());
+    let context = unsafe { &mut *context };
+    let style = unsafe { Box::from_raw(style) };
+    context.context.set_stroke_style(style.0)
 }
 
 #[no_mangle]

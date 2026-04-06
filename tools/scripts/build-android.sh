@@ -18,7 +18,7 @@ NDK_TARGET=$TARGET
  fi
 
 API_VERSION="21"
-NDK_VERSION="26.3.11579264"
+NDK_VERSION="27.3.13750724"
 
 # needed so we can overwrite it in the CI
 if [ -z "$NDK" ]; then
@@ -33,14 +33,17 @@ fi
 
 TOOLS="$NDK/toolchains/llvm/prebuilt/$NDK_HOST"
 
+RUSTFLAGS="-C link-arg=-Wl,--hash-style=sysv -C link-arg=-Wl,-z,max-page-size=16384"
+
+
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
-    RUSTFLAGS="-C target-feature=-outline-atomics"
+    RUSTFLAGS="$RUSTFLAGS -C target-feature=-outline-atomics"
 fi
 
 if [ "$MODE" = "release" ]; then
-    RUSTFLAGS="$RUSTFLAGS -Zlocation-detail=none -C panic=abort"
-    EXTRA_ARGS="-Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort --release"
+    RUSTFLAGS="$RUSTFLAGS -Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort"
+    EXTRA_ARGS="-Z build-std=std,panic_abort --release"
 else
     EXTRA_ARGS=""
 fi

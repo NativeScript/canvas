@@ -13,8 +13,8 @@
 extern "C" {
 #endif
 
-#include <CanvasNative/canvas_ios.h>
 #include <CanvasNative/canvas_native.h>
+#include <CanvasNative/canvas_ios.h>
 
 #ifdef __cplusplus
 }

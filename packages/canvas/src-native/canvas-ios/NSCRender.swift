@@ -10,6 +10,7 @@ import OpenGLES
 import CoreVideo
 import UIKit
 import AVFoundation
+import Metal
 
 
 @objcMembers
@@ -551,5 +552,161 @@ public class NSCRender: NSObject {
 	
 	static func getPixelFormat(_ cgImage: CGImage) -> CGBitmapInfo? {
 		return cgImage.bitmapInfo.intersection(.byteOrderMask)
+	}
+	
+	// MARK: - Canvas 2D Video Frame Support
+	
+	/// Shared Metal texture cache for static drawVideoFrame methods
+	private static var sharedMtlCache: CVMetalTextureCache? = {
+		guard let device = MTLCreateSystemDefaultDevice() else { return nil }
+		var cache: CVMetalTextureCache?
+		CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &cache)
+		return cache
+	}()
+	
+	/// Get a CVPixelBuffer for the current video frame. Returns nil if no new frame is available.
+	private static func copyCurrentPixelBuffer(
+		_ player: AVPlayer,
+		_ output: AVPlayerItemVideoOutput
+	) -> CVPixelBuffer? {
+		let currentTime = player.currentTime()
+		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return nil }
+		var presentationTime = CMTime.zero
+		return output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
+	}
+	
+	/// Try to create a Metal texture from a CVPixelBuffer and draw it via the GPU path.
+	/// Returns true if successful, false if we should fall back to the BGRA bytes path.
+	private static func drawWithMetalTexture(
+		_ buffer: CVPixelBuffer,
+		_ context: Int64,
+		_ sx: Float, _ sy: Float, _ sw: Float, _ sh: Float,
+		_ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float
+	) -> Bool {
+		guard let cache = sharedMtlCache else { return false }
+		let width = CVPixelBufferGetWidth(buffer)
+		let height = CVPixelBufferGetHeight(buffer)
+		
+		var cvTex: CVMetalTexture?
+		let status = CVMetalTextureCacheCreateTextureFromImage(
+			kCFAllocatorDefault, cache, buffer, nil,
+			.bgra8Unorm, width, height, 0, &cvTex
+		)
+		guard status == kCVReturnSuccess,
+					let cvMetalTex = cvTex,
+					let mtlTexture = CVMetalTextureGetTexture(cvMetalTex) else { return false }
+		
+		// Pass the MTLTexture pointer to Rust — Skia wraps it as a BackendTexture (GPU, zero-copy)
+		let texPtr = Unmanaged.passUnretained(mtlTexture).toOpaque()
+		return canvas_native_ios_context_draw_image_with_metal_texture(
+			context, texPtr,
+			Float(width), Float(height),
+			sx, sy, sw, sh,
+			dx, dy, dw, dh
+		)
+	}
+	
+	/// Fallback: lock pixel buffer, copy BGRA bytes, draw via CPU raster path.
+	private static func drawWithBGRABytes(
+		_ buffer: CVPixelBuffer,
+		_ context: Int64,
+		_ sx: Float, _ sy: Float, _ sw: Float, _ sh: Float,
+		_ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float
+	) -> Bool {
+		CVPixelBufferLockBaseAddress(buffer, .readOnly)
+		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+		
+		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return false }
+		let width = CVPixelBufferGetWidth(buffer)
+		let height = CVPixelBufferGetHeight(buffer)
+		let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+		let tightSize = width * 4
+		if bytesPerRow == tightSize {
+			return canvas_native_ios_context_draw_image_with_bgra_bytes(
+				context,
+				baseAddress.assumingMemoryBound(to: UInt8.self),
+				UInt(width * height * 4),
+				Float(width), Float(height),
+				sx, sy, sw, sh,
+				dx, dy, dw, dh
+			)
+		} else {
+			let totalBytes = width * height * 4
+			let compact = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+			defer { compact.deallocate() }
+			for y in 0..<height {
+				memcpy(compact.advanced(by: y * tightSize),
+							 baseAddress.advanced(by: y * bytesPerRow),
+							 tightSize)
+			}
+			return canvas_native_ios_context_draw_image_with_bgra_bytes(
+				context,
+				compact.assumingMemoryBound(to: UInt8.self),
+				UInt(totalBytes),
+				Float(width), Float(height),
+				sx, sy, sw, sh,
+				dx, dy, dw, dh
+			)
+		}
+	}
+	
+	/// Draw a video frame to a Canvas2D context (dx, dy)
+	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ dx: Float, _ dy: Float) -> Bool {
+		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
+		let w = Float(CVPixelBufferGetWidth(buffer))
+		let h = Float(CVPixelBufferGetHeight(buffer))
+		if drawWithMetalTexture(buffer, context, 0, 0, w, h, dx, dy, w, h) { return true }
+		return drawWithBGRABytes(buffer, context, 0, 0, w, h, dx, dy, w, h)
+	}
+	
+	/// Draw a video frame to a Canvas2D context (dx, dy, dw, dh)
+	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float) -> Bool {
+		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
+		let w = Float(CVPixelBufferGetWidth(buffer))
+		let h = Float(CVPixelBufferGetHeight(buffer))
+		if drawWithMetalTexture(buffer, context, 0, 0, w, h, dx, dy, dw, dh) { return true }
+		return drawWithBGRABytes(buffer, context, 0, 0, w, h, dx, dy, dw, dh)
+	}
+	
+	/// Draw a video frame to a Canvas2D context (sx, sy, sw, sh, dx, dy, dw, dh)
+	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ sx: Float, _ sy: Float, _ sw: Float, _ sh: Float, _ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float) -> Bool {
+		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
+		if drawWithMetalTexture(buffer, context, sx, sy, sw, sh, dx, dy, dw, dh) { return true }
+		return drawWithBGRABytes(buffer, context, sx, sy, sw, sh, dx, dy, dw, dh)
+	}
+	
+	/// Get current video frame as raw BGRA pixel data for WebGPU.
+	/// Returns NSDictionary with "data" (NSData), "width" (NSNumber), "height" (NSNumber), or nil.
+	@objc public static func getVideoFrameData(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize) -> NSDictionary? {
+		guard let buffer = copyCurrentPixelBuffer(player, output) else { return nil }
+		CVPixelBufferLockBaseAddress(buffer, .readOnly)
+		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+		
+		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return nil }
+		let width = CVPixelBufferGetWidth(buffer)
+		let height = CVPixelBufferGetHeight(buffer)
+		let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+		let tightSize = width * 4
+		let totalBytes = width * height * 4
+		
+		let data: NSData
+		if bytesPerRow == tightSize {
+			data = NSData(bytes: baseAddress, length: totalBytes)
+		} else {
+			let compact = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+			defer { compact.deallocate() }
+			for y in 0..<height {
+				memcpy(compact.advanced(by: y * tightSize),
+							 baseAddress.advanced(by: y * bytesPerRow),
+							 tightSize)
+			}
+			data = NSData(bytes: compact, length: totalBytes)
+		}
+		
+		return [
+			"data": data,
+			"width": NSNumber(value: width),
+			"height": NSNumber(value: height)
+		]
 	}
 }

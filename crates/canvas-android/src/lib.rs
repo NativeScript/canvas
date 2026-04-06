@@ -46,7 +46,13 @@ const NSC_CANVAS_RENDERING_CONTEXT2D_CLASS: &str =
 const ANDROID_O: i32 = 26;
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
-    android_logger::init_once(Config::default().with_max_level(LevelFilter::Trace));
+    android_logger::init_once(
+        Config::default().with_max_level(if cfg!(debug_assertions) {
+            LevelFilter::Debug
+        } else {
+            LevelFilter::Warn
+        }),
+    );
 
     if let Ok(mut env) = vm.get_env() {
         API_LEVEL.get_or_init(|| {
@@ -102,7 +108,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 let mut ret = vec![
                     "(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "(IIZZZZIZZZZZI)J",
-                    "(IILandroid/view/Surface;ZFIFI)J",
+                    "(IILandroid/view/Surface;ZFIFII)J",
                     "(Landroid/view/Surface;J)V",
                     "(Landroid/view/Surface;IIJ)V",
                     "(IIJ)V",
@@ -110,7 +116,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)Z",
                     "(JLandroid/graphics/Bitmap;)V",
-                    "(IIFZIFI)J",
+                    "(IIFZIFII)J",
                     "(JIIFZI)V",
                     "(JLandroid/graphics/Bitmap;)V",
                     "(J)V",
@@ -123,7 +129,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ];
 
            //     #[cfg(feature = "vulkan")]{
-                    ret.push("(IILandroid/view/Surface;ZFIFI)J");
+                    ret.push("(IILandroid/view/Surface;ZFIFII)J");
                     ret.push("([I)V");
                // }
 
@@ -135,7 +141,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 let mut ret = vec![
                     "!(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "!(IIZZZZIZZZZZI)J",
-                    "!(IILandroid/view/Surface;ZFIFI)J",
+                    "!(IILandroid/view/Surface;ZFIFII)J",
                     "!(Landroid/view/Surface;J)V",
                     "!(Landroid/view/Surface;IIJ)V",
                     "!(IIJ)V",
@@ -143,7 +149,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)Z",
                     "!(JLandroid/graphics/Bitmap;)V",
-                    "!(IIFZIFI)J",
+                    "!(IIFZIFII)J",
                     "!(JIIFZI)V",
                     "!(JLandroid/graphics/Bitmap;)V",
                     "!(J)V",
@@ -156,7 +162,7 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ];
 
              //  #[cfg(feature = "vulkan")]{
-                   ret.push("!(IILandroid/view/Surface;ZFIFI)J");
+                   ret.push("!(IILandroid/view/Surface;ZFIFII)J");
                     ret.push("!([I)V");
              //  }
 

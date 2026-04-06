@@ -87,7 +87,12 @@ unsafe extern "C" fn default_uncaptured_error_handler(
     message: *mut ::std::os::raw::c_char,
     _userdata: *mut ::std::os::raw::c_void,
 ) {
-    let message = unsafe { CStr::from_ptr(message) }.to_str().unwrap();
+    // Guard against null pointer and non-UTF-8 content from the C side.
+    let message = if message.is_null() {
+        "<null>"
+    } else {
+        unsafe { CStr::from_ptr(message) }.to_str().unwrap_or("<invalid utf-8>")
+    };
 
     #[cfg(target_os = "android")]
     log::warn!("Handling webgpu uncaptured errors as fatal by default");
@@ -110,7 +115,11 @@ pub(crate) unsafe extern "C" fn default_device_lost_handler(
     message: *mut c_char,
     _userdata: *mut c_void,
 ) {
-    let message = unsafe { CStr::from_ptr(message) }.to_str().unwrap();
+    let message = if message.is_null() {
+        "<null>"
+    } else {
+        unsafe { CStr::from_ptr(message) }.to_str().unwrap_or("<invalid utf-8>")
+    };
 
     #[cfg(target_os = "android")]
     log::warn!("Handling webgpu device lost errors as fatal by default");
@@ -161,7 +170,9 @@ impl ErrorSinkRaw {
                 // handle device lost error early
                 if let Some(callback) = self.device_lost_handler.callback {
                     let userdata = self.device_lost_handler.userdata;
-                    let msg = CString::new(err.to_string()).unwrap();
+                    let err_str = err.to_string().replace('\0', "<NUL>");
+                    let msg = CString::new(err_str)
+                        .unwrap_or_else(|_| CString::new("device lost").unwrap());
                     unsafe {
                         callback(
                             wgt::DeviceLostReason::Destroyed as i32,
@@ -208,7 +219,9 @@ impl ErrorSinkRaw {
             None => {
                 if let Some(callback) = self.uncaptured_handler.callback {
                     let userdata = self.uncaptured_handler.userdata;
-                    let msg = CString::new(err.to_string()).unwrap();
+                    let err_str = err.to_string().replace('\0', "<NUL>");
+                    let msg = CString::new(err_str)
+                        .unwrap_or_else(|_| CString::new("uncaptured error").unwrap());
                     unsafe { callback(typ, msg.into_raw(), userdata) };
                 }
             }
@@ -234,7 +247,7 @@ impl Drop for CanvasGPUDevice {
         if !std::thread::panicking() {
             let context = self.instance.global();
 
-            match context.device_poll(self.device, wgt::PollType::Wait) {
+            match context.device_poll(self.device, wgt::PollType::wait_indefinitely()) {
                 Ok(_) => (),
                 Err(err) => handle_error_fatal(context, err, "CanvasGPUDevice::drop"),
             }
@@ -278,12 +291,9 @@ impl CanvasGPUDevice {
                         wgpu_core::binding_model::BindingResource::Buffer(BufferBinding {
                             buffer: buf.buffer,
                             offset: buffer.offset.try_into().ok().unwrap_or_default(),
-                            size: buffer
-                                .size
-                                .try_into()
-                                .map(|value: u64| NonZeroU64::new(value))
-                                .ok()
-                                .flatten(),
+                            // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
+                            // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
+                            size: if buffer.size > 0 { Some(buffer.size as u64) } else { None },
                         })
                     }
                     CanvasBindGroupEntryResource::Sampler(sampler) => {
@@ -526,7 +536,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
     let device = &*device;
     let callback = callback;
     let mut error_sink = device.error_sink.lock();
-    let scope = error_sink.scopes.pop().unwrap();
+    // pop() returns None if the caller calls pop without a matching push.
+    let scope = match error_sink.scopes.pop() {
+        Some(s) => s,
+        None => {
+            // Unbalanced pop — report as no error rather than panicking.
+            if let Some(cb) = callback {
+                cb(CanvasGPUErrorType::None, std::ptr::null_mut(), userdata);
+            }
+            return;
+        }
+    };
 
     match scope.error {
         Some(error) => {
@@ -953,14 +973,14 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
         .iter()
         .map(|group| {
             let group = &**group;
-            group.group_layout
+            Some(group.group_layout)
         })
         .collect::<Vec<_>>();
 
     let desc = wgpu_core::binding_model::PipelineLayoutDescriptor {
         label,
         bind_group_layouts: Cow::Owned(group_layouts),
-        push_constant_ranges: Default::default(),
+        immediate_size: Default::default(),
     };
 
     let (pipeline_layout, error) = global.device_create_pipeline_layout(device_id, &desc, None);
@@ -1091,7 +1111,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
         multiview: None,
     };
 
-    let bundle = RenderBundleEncoder::new(&desc, device_id, None);
+    let bundle = RenderBundleEncoder::new(&desc, device_id);
 
     match bundle {
         Ok(bundle) => Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
@@ -1244,8 +1264,8 @@ impl From<wgt::DepthStencilState> for CanvasDepthStencilState {
     fn from(value: wgt::DepthStencilState) -> Self {
         Self {
             format: value.format.into(),
-            depth_write_enabled: value.depth_write_enabled,
-            depth_compare: value.depth_compare.into(),
+            depth_write_enabled: value.depth_write_enabled.unwrap_or(false),
+            depth_compare: value.depth_compare.unwrap_or(wgt::CompareFunction::Always).into(),
             stencil_front: value.stencil.front.into(),
             stencil_back: value.stencil.back.into(),
             stencil_read_mask: value.stencil.read_mask,
@@ -1261,8 +1281,8 @@ impl Into<wgt::DepthStencilState> for CanvasDepthStencilState {
     fn into(self) -> wgt::DepthStencilState {
         wgt::DepthStencilState {
             format: self.format.into(),
-            depth_write_enabled: self.depth_write_enabled,
-            depth_compare: self.depth_compare.into(),
+            depth_write_enabled: Some(self.depth_write_enabled),
+            depth_compare: Some(self.depth_compare.into()),
             stencil: wgt::StencilState {
                 front: self.stencil_front.into(),
                 back: self.stencil_back.into(),
@@ -1512,7 +1532,7 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
         depth_stencil,
         multisample,
         fragment,
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     }
 }
@@ -1817,7 +1837,10 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
             ],
             mag_filter: descriptor.mag_filter.into(),
             min_filter: descriptor.min_filter.into(),
-            mipmap_filter: descriptor.mipmap_filter.into(),
+            mipmap_filter: match descriptor.mipmap_filter {
+                CanvasFilterMode::Nearest => wgt::MipmapFilterMode::Nearest,
+                CanvasFilterMode::Linear => wgt::MipmapFilterMode::Linear,
+            },
             lod_min_clamp: descriptor.lod_min_clamp,
             lod_max_clamp: descriptor.lod_max_clamp,
             compare: descriptor.compare.into(),
@@ -1834,7 +1857,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_sampler(
             ],
             mag_filter: wgt::FilterMode::Nearest,
             min_filter: wgt::FilterMode::Nearest,
-            mipmap_filter: wgt::FilterMode::Nearest,
+            mipmap_filter: wgt::MipmapFilterMode::Nearest,
             lod_min_clamp: 0f32,
             lod_max_clamp: 32f32,
             compare: None,

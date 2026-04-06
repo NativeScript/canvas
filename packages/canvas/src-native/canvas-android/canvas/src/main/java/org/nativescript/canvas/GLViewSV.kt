@@ -42,11 +42,19 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 	}
 
 	override fun surfaceCreated(holder: SurfaceHolder) {
-		if (!isCreated) {
+		isCreated = true
+		if (wasDestroyed) {
+			wasDestroyed = false
+			// Surface was recreated after being destroyed (e.g. app resume)
+			// Re-connect the new surface to the native context
+			canvas?.let {
+				if (it.nativeContext != 0L) {
+					it.resize()
+				}
+			}
+		} else if (!isReady) {
 			isCreatedWithZeroSized = true
-			isCreated = true
 		}
-		wasDestroyed = false
 		canvas?.listener?.surfaceCreated()
 	}
 

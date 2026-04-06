@@ -114,7 +114,7 @@ public class NSCSVG: UIView {
 	
 	fileprivate static func executeInLoop(_ runloop: CFRunLoop?, _ function: @escaping() -> Void){
 		if let runloop = runloop {
-			CFRunLoopPerformBlock(runloop, CFRunLoopMode.defaultMode.rawValue) {
+			CFRunLoopPerformBlock(runloop, CFRunLoopMode.commonModes.rawValue) {
 				function()
 			}
 			CFRunLoopWakeUp(runloop)

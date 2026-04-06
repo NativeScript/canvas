@@ -22,3 +22,28 @@ pub extern "C" fn canvas_native_gradient_add_color_stop(
         _ => {}
     }
 }
+
+/// Add a color stop using pre-parsed RGBA values (0-255 each).
+/// Skips CSS color string parsing entirely.
+#[no_mangle]
+pub extern "C" fn canvas_native_gradient_add_color_stop_rgba(
+    style: *mut PaintStyle,
+    stop: f32,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+) {
+    if style.is_null() {
+        return;
+    }
+    let style = unsafe { &mut *style };
+    let style = &mut style.0;
+    match style {
+        canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle::Gradient(gradient) => {
+            let color = ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+            gradient.add_color_stop_with_argb(stop, color)
+        }
+        _ => {}
+    }
+}

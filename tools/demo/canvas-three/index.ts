@@ -74,11 +74,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	canvasLoaded(args) {
 		this.canvas = args.object;
 		//x jet game
-		//this.webgpu_backdrop(this.canvas);
+		this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -872,7 +872,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				mrt({
 					output: output,
 					normal: transformedNormalView,
-				})
+				}),
 			);
 
 			scenePassColor = scenePass.getTextureNode('output');
@@ -2712,7 +2712,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 						map: shadow,
 						toneMapped: false,
 						transparent: true,
-					})
+					}),
 				);
 				mesh.rotation.x = -Math.PI / 2;
 				mesh.renderOrder = 2;
@@ -2799,7 +2799,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			undefined,
 			function (e) {
 				console.error(e);
-			}
+			},
 		);
 
 		window.onresize = function () {
@@ -3733,7 +3733,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				new THREE.MeshPhongMaterial({
 					color: 0x999999,
 					depthWrite: false,
-				})
+				}),
 			);
 			mesh.rotation.x = -Math.PI / 2;
 			scene.add(mesh);
@@ -3757,7 +3757,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				undefined,
 				function (e) {
 					console.error(e);
-				}
+				},
 			);
 
 			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });

@@ -8,7 +8,7 @@ use std::os::raw::c_void;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use canvas_core::context_attributes::ContextAttributes;
+use canvas_core::context_attributes::{ColorSpace, ContextAttributes};
 use canvas_core::context_attributes::PowerPreference;
 
 pub fn get_sdk_version() -> i32 {
@@ -211,6 +211,7 @@ impl WebGLState {
                 false,
                 false,
                 version == WebGLVersion::V1,
+                ColorSpace::Srgb
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
@@ -264,6 +265,7 @@ impl WebGLState {
                 xr_compatible,
                 is_canvas,
                 gl_legacy,
+                ColorSpace::Srgb
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version,
@@ -494,6 +496,7 @@ impl Default for WebGLState {
                 false,
                 false,
                 false,
+                ColorSpace::Srgb
             ))),
             state: Rc::new(RefCell::new(WebGLStateInner {
                 version: WebGLVersion::NONE,

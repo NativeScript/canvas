@@ -5,7 +5,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { ImageSource, Utils, Screen } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
-import { handleContextOptions } from './utils';
+import { handleContextOptions, microtask } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
 
 export function createSVGMatrix(): DOMMatrix {
@@ -60,6 +60,8 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 	private _isBatch = false;
+	private _pendingWidth: number | undefined;
+	private _pendingHeight: number | undefined;
 	_didLayout = false;
 
 	static useSurface = false;
@@ -90,7 +92,7 @@ export class Canvas extends CanvasBase {
 				},
 				{
 					protocols: [NSCCanvasListener],
-				}
+				},
 			);
 			this._readyListener = listener.new();
 			this._canvas.setListener(this._readyListener);
@@ -165,6 +167,9 @@ export class Canvas extends CanvasBase {
 
 	// @ts-ignore
 	get width(): number {
+		if (this._pendingWidth !== undefined) {
+			return this._pendingWidth;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return 0;
 		}
@@ -179,14 +184,32 @@ export class Canvas extends CanvasBase {
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
-			this._canvas.surfaceWidth = newValue;
-			const { fit, transform } = this._getFit(this._canvas.frame);
-			this._updateScale(fit, transform ?? CATransform3DIdentity);
+			if (this._pendingHeight !== undefined) {
+				// Height was just set — coalesce into single resize
+				const h = this._pendingHeight;
+				this._pendingHeight = undefined;
+				this._canvas.setSurfaceSize(newValue, h);
+				const { fit, transform } = this._getFit(this._canvas.frame);
+				this._updateScale(fit, transform ?? CATransform3DIdentity);
+			} else {
+				this._pendingWidth = newValue;
+				microtask(() => {
+					if (this._pendingWidth !== undefined) {
+						this._canvas.surfaceWidth = this._pendingWidth;
+						this._pendingWidth = undefined;
+						const { fit, transform } = this._getFit(this._canvas.frame);
+						this._updateScale(fit, transform ?? CATransform3DIdentity);
+					}
+				});
+			}
 		}
 	}
 
 	// @ts-ignore
 	get height(): number {
+		if (this._pendingHeight !== undefined) {
+			return this._pendingHeight;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return 0;
 		}
@@ -201,9 +224,24 @@ export class Canvas extends CanvasBase {
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
 			const newValue = Math.floor(value);
-			this._canvas.surfaceHeight = newValue;
-			const { fit, transform } = this._getFit(this._canvas.frame);
-			this._updateScale(fit, transform ?? CATransform3DIdentity);
+			if (this._pendingWidth !== undefined) {
+				// Width was just set — coalesce into single resize
+				const w = this._pendingWidth;
+				this._pendingWidth = undefined;
+				this._canvas.setSurfaceSize(w, newValue);
+				const { fit, transform } = this._getFit(this._canvas.frame);
+				this._updateScale(fit, transform ?? CATransform3DIdentity);
+			} else {
+				this._pendingHeight = newValue;
+				microtask(() => {
+					if (this._pendingHeight !== undefined) {
+						this._canvas.surfaceHeight = this._pendingHeight;
+						this._pendingHeight = undefined;
+						const { fit, transform } = this._getFit(this._canvas.frame);
+						this._updateScale(fit, transform ?? CATransform3DIdentity);
+					}
+				});
+			}
 		}
 	}
 
@@ -396,8 +434,9 @@ export class Canvas extends CanvasBase {
 	_updateScale(fit: number, transform: CATransform3D) {
 		CATransaction.begin();
 		CATransaction.setDisableActions(true);
-		this._canvas.subviews.objectAtIndex(0).layer.transform = transform;
-		this._canvas.subviews.objectAtIndex(1).layer.transform = transform;
+		this._canvas.subviews.objectAtIndex(0).layer.transform = transform; // glkView
+		this._canvas.subviews.objectAtIndex(1).layer.transform = transform; // mtlView
+		this._canvas.subviews.objectAtIndex(2).layer.transform = transform; // cpuView (willReadFrequently)
 		CATransaction.commit();
 	}
 
@@ -420,7 +459,7 @@ export class Canvas extends CanvasBase {
 				if (!this._2dContext) {
 					const opts = { ...defaultOpts, ...handleContextOptions(type, options), fontColor: this.parent?.style?.color?.android || -16777216 };
 
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false);
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.fontColor, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
 
@@ -441,7 +480,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webglContext) {
 					const opts = { version: 1, ...defaultOpts, ...handleContextOptions(type, options) };
 
-					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 
 					this._webglContext = new (WebGLRenderingContext as any)(this._canvas, opts);
 					(this._webglContext as any)._canvas = this;
@@ -457,7 +496,7 @@ export class Canvas extends CanvasBase {
 				if (!this._webgl2Context) {
 					const opts = { version: 2, ...defaultOpts, ...handleContextOptions(type, options) };
 
-					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false);
+					this._canvas.initContext(type, opts.alpha, false, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, false, opts.colorSpace ?? 0);
 
 					this._webgl2Context = new (WebGL2RenderingContext as any)(this._canvas, opts);
 					(this._webgl2Context as any)._canvas = this;

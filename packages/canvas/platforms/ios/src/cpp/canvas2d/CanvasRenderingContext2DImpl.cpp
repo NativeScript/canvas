@@ -1210,6 +1210,15 @@ void CanvasRenderingContext2DImpl::GetFillStyle(v8::Local<v8::String> property,
             info.GetReturnValue().Set(style);
             break;
         }
+        case PaintStyleType::PaintStyleTypeColor4f: {
+            auto color = canvas_native_paint_style_get_current_fill_color_string(
+                    ptr->GetContext());
+
+            auto value = new OneByteStringResource((char *) color);
+            auto ret = v8::String::NewExternalOneByte(isolate, value);
+            info.GetReturnValue().Set(ret.ToLocalChecked());
+            break;
+        }
     }
 
 }
@@ -1310,6 +1319,15 @@ void CanvasRenderingContext2DImpl::GetStrokeStyle(v8::Local<v8::String> property
                     canvas_native_context_get_stroke_style(ptr->GetContext())));
 
             info.GetReturnValue().Set(style);
+            break;
+        }
+        case PaintStyleType::PaintStyleTypeColor4f: {
+            auto color = canvas_native_paint_style_get_current_stroke_color_string(
+                    ptr->GetContext());
+
+            auto value = new OneByteStringResource((char *) color);
+            auto ret = v8::String::NewExternalOneByte(isolate, value);
+            info.GetReturnValue().Set(ret.ToLocalChecked());
             break;
         }
     }

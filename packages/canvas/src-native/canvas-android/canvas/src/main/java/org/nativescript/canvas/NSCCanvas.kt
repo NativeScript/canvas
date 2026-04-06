@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.opengl.EGL14
 import android.os.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
@@ -31,10 +32,7 @@ import kotlin.math.min
 class NSCCanvas : FrameLayout {
 
 	enum class Engine {
-		None,
-		CPU,
-		GL,
-		GPU
+		None, CPU, GL, GPU
 	}
 
 	var fit = CanvasFit.FitX
@@ -51,17 +49,37 @@ class NSCCanvas : FrameLayout {
 	}
 
 	private var engine = Engine.None
+	private var batchingSizeChange = false
+
 	var surfaceWidth: Int = 300
 		set(value) {
+			if (field == value) return
 			field = value
-			layoutSurface(value, surfaceHeight, this)
+			if (!batchingSizeChange) {
+				layoutSurface(surfaceWidth, surfaceHeight, this)
+			}
 		}
 
 	var surfaceHeight: Int = 150
 		set(value) {
+			if (field == value) return
 			field = value
-			layoutSurface(surfaceWidth, value, this)
+			if (!batchingSizeChange) {
+				layoutSurface(surfaceWidth, surfaceHeight, this)
+			}
 		}
+
+	fun setSurfaceSize(width: Int, height: Int) {
+		if (width == surfaceWidth && height == surfaceHeight) {
+			return
+		}
+		batchingSizeChange = true
+		surfaceWidth = width
+		surfaceHeight = height
+		batchingSizeChange = false
+		layoutSurface(width, height, this)
+		resize()
+	}
 
 
 	var nativeContext: Long = 0
@@ -86,8 +104,7 @@ class NSCCanvas : FrameLayout {
 		}
 
 	enum class SurfaceType {
-		Texture,
-		Surface
+		Texture, Surface
 	}
 
 	private val handler = NSCTouchHandler(this)
@@ -144,17 +161,13 @@ class NSCCanvas : FrameLayout {
 		when (surfaceType) {
 			SurfaceType.Texture -> {
 				addView(
-					textureView,
-					internalWidth,
-					internalHeight
+					textureView, internalWidth, internalHeight
 				)
 			}
 
 			SurfaceType.Surface -> {
 				addView(
-					surfaceView,
-					internalWidth,
-					internalHeight
+					surfaceView, internalWidth, internalHeight
 				)
 			}
 		}
@@ -176,12 +189,10 @@ class NSCCanvas : FrameLayout {
 			makeContextCurrent()
 			val display = EGL14.eglGetCurrentDisplay()
 			EGL14.eglMakeCurrent(
-				display,
-				EGL14.EGL_NO_SURFACE,
-				EGL14.EGL_NO_SURFACE,
-				EGL14.EGL_NO_CONTEXT
+				display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT
 			)
 		}
+		isSurfaceDestroyed = true
 	}
 
 	@Synchronized
@@ -229,7 +240,8 @@ class NSCCanvas : FrameLayout {
 		stencil: Boolean = false,
 		desynchronized: Boolean = false,
 		xrCompatible: Boolean = false,
-		willReadFrequently: Boolean = false
+		willReadFrequently: Boolean = false,
+		colorSpace: Int = 0
 	) {
 		initContextWithContextAttributes(
 			type,
@@ -243,7 +255,8 @@ class NSCCanvas : FrameLayout {
 			stencil,
 			desynchronized,
 			xrCompatible,
-			willReadFrequently
+			willReadFrequently,
+			colorSpace
 		)
 	}
 
@@ -270,6 +283,10 @@ class NSCCanvas : FrameLayout {
 		var desynchronized = false
 
 		var xrCompatible = false
+
+		var willReadFrequently = false
+
+		var colorSpace = 0
 
 		contextAttributes?.let {
 			try {
@@ -322,6 +339,17 @@ class NSCCanvas : FrameLayout {
 							}
 						}
 
+						"willReadFrequently" -> {
+							willReadFrequently = value as? Boolean ?: false
+						}
+
+						"colorSpace" -> {
+							colorSpace = when (value as? String ?: "srgb") {
+								"display-p3" -> 1
+								else -> 0
+							}
+						}
+
 						else -> {}
 					}
 				}
@@ -340,7 +368,9 @@ class NSCCanvas : FrameLayout {
 			preserveDrawingBuffer,
 			stencil,
 			desynchronized,
-			xrCompatible
+			xrCompatible,
+			willReadFrequently,
+			colorSpace
 		)
 
 		this.isAlpha = alpha
@@ -358,7 +388,8 @@ class NSCCanvas : FrameLayout {
 		stencil: Boolean,
 		desynchronized: Boolean,
 		xrCompatible: Boolean,
-		willReadFrequently: Boolean
+		willReadFrequently: Boolean,
+		colorSpace: Int
 	) {
 		if (nativeContext != 0L) {
 			return
@@ -384,16 +415,28 @@ class NSCCanvas : FrameLayout {
 			return
 		}
 
+		val isWideColorGamut = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			resources.configuration.isScreenWideColorGamut
+		} else {
+			false
+		}
+
+		var  cs = colorSpace
+		if (cs != 0 && !isWideColorGamut){
+			cs = 0
+		}
 
 		val density = resources.displayMetrics.density
 		if (is2D && willReadFrequently) {
 			nativeContext = nativeInitContextWithCustomSurface(
 				surfaceWidth,
 				surfaceHeight,
-				density, alpha,
+				density,
+				alpha,
 				Color.BLACK,
 				resources.displayMetrics.densityDpi.toFloat(),
-				direction
+				direction,
+				cs
 			)
 			nativeContext2DSetRenderFunc(nativeContext, cpuView)
 			engine = Engine.CPU
@@ -449,7 +492,8 @@ class NSCCanvas : FrameLayout {
 						density,
 						Color.BLACK,
 						resources.displayMetrics.densityDpi.toFloat(),
-						direction
+						direction,
+						cs
 					)
 					engine = Engine.GPU
 				} else {
@@ -461,7 +505,8 @@ class NSCCanvas : FrameLayout {
 						density,
 						Color.BLACK,
 						resources.displayMetrics.densityDpi.toFloat(),
-						direction
+						direction,
+						cs
 					)
 					engine = Engine.GL
 				}
@@ -507,7 +552,8 @@ class NSCCanvas : FrameLayout {
 							density,
 							Color.BLACK,
 							resources.displayMetrics.densityDpi.toFloat(),
-							direction
+							direction,
+							colorSpace
 						)
 						engine = Engine.GPU
 					} else {
@@ -519,7 +565,8 @@ class NSCCanvas : FrameLayout {
 							density,
 							Color.BLACK,
 							resources.displayMetrics.densityDpi.toFloat(),
-							direction
+							direction,
+							colorSpace
 						)
 						engine = Engine.GL
 					}
@@ -553,7 +600,8 @@ class NSCCanvas : FrameLayout {
 							density,
 							Color.BLACK,
 							resources.displayMetrics.densityDpi.toFloat(),
-							direction
+							direction,
+							cs
 						)
 						engine = Engine.GPU
 					} else {
@@ -565,7 +613,8 @@ class NSCCanvas : FrameLayout {
 							density,
 							Color.BLACK,
 							resources.displayMetrics.densityDpi.toFloat(),
-							direction
+							direction,
+							cs
 						)
 						engine = Engine.GL
 					}
@@ -590,13 +639,11 @@ class NSCCanvas : FrameLayout {
 			}
 		}
 
-
 		this.isAlpha = alpha
 	}
 
 	private var is2D = false
 	private var willReadFrequently = false
-
 	fun create2DContext(
 		alpha: Boolean,
 		antialias: Boolean,
@@ -608,7 +655,8 @@ class NSCCanvas : FrameLayout {
 		stencil: Boolean,
 		desynchronized: Boolean,
 		xrCompatible: Boolean,
-		willReadFrequently: Boolean
+		willReadFrequently: Boolean,
+		colorSpace: Int
 	): Long {
 
 		if (nativeContext != 0L) {
@@ -627,7 +675,8 @@ class NSCCanvas : FrameLayout {
 			stencil,
 			desynchronized,
 			xrCompatible,
-			willReadFrequently
+			willReadFrequently,
+			colorSpace
 		)
 
 		return nativeContext
@@ -636,6 +685,8 @@ class NSCCanvas : FrameLayout {
 	internal var isPaused = false
 
 	internal var isAttachedToWindow = false
+
+	internal var isSurfaceDestroyed = false
 
 	override fun onDetachedFromWindow() {
 		super.onDetachedFromWindow()
@@ -720,13 +771,17 @@ class NSCCanvas : FrameLayout {
 	internal fun resize() {
 		scaleSurface()
 		if (nativeContext != 0L) {
+			// Re-bind EGL context if surface was previously destroyed (e.g. SurfaceView on resume)
+			if (isSurfaceDestroyed && engine == Engine.GL) {
+				makeContextCurrent()
+				isSurfaceDestroyed = false
+			}
 			when (engine) {
 				Engine.GL -> {
 					surface?.let {
 						if (is2D) {
 							nativeUpdate2DSurface(
-								it, surfaceWidth,
-								surfaceHeight, nativeContext
+								it, surfaceWidth, surfaceHeight, nativeContext
 							)
 						} else {
 							nativeUpdateWebGLSurface(it, nativeContext)
@@ -735,9 +790,7 @@ class NSCCanvas : FrameLayout {
 						if (is2D) {
 							//	GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
 							nativeUpdate2DSurfaceNoSurface(
-								surfaceWidth,
-								surfaceHeight,
-								nativeContext
+								surfaceWidth, surfaceHeight, nativeContext
 							)
 						} else {
 							nativeUpdateWebGLNoSurface(surfaceWidth, surfaceHeight, nativeContext)
@@ -749,8 +802,7 @@ class NSCCanvas : FrameLayout {
 					surface?.let {
 						if (is2D) {
 							nativeUpdate2DSurface(
-								it, surfaceWidth,
-								surfaceHeight, nativeContext
+								it, surfaceWidth, surfaceHeight, nativeContext
 							)
 						} else {
 							nativeResizeWebGPU(nativeContext, it, surfaceWidth, surfaceHeight)
@@ -861,7 +913,7 @@ class NSCCanvas : FrameLayout {
 		if (surfaceType == SurfaceType.Texture) {
 			bitmap = textureView.bitmap
 		}
-		val bm = bitmap ?: Bitmap.createBitmap(surfaceWidth, surfaceHeight, Bitmap.Config.ARGB_8888)
+		val bm = bitmap ?: createBitmap(surfaceWidth, surfaceHeight)
 		val byteArrayOutputStream = ByteArrayOutputStream()
 		bm.compress(format, (quality * 100).toInt(), byteArrayOutputStream)
 		val byteArray = byteArrayOutputStream.toByteArray()
@@ -1045,19 +1097,13 @@ class NSCCanvas : FrameLayout {
 		@JvmStatic
 		@FastNative
 		external fun nativeInitWebGPU(
-			instance: Long,
-			surface: Surface,
-			width: Int,
-			height: Int
+			instance: Long, surface: Surface, width: Int, height: Int
 		): Long
 
 		@JvmStatic
 		@FastNative
 		external fun nativeResizeWebGPU(
-			context: Long,
-			surface: Surface,
-			width: Int,
-			height: Int
+			context: Long, surface: Surface, width: Int, height: Int
 		)
 
 		@JvmStatic
@@ -1105,7 +1151,8 @@ class NSCCanvas : FrameLayout {
 			density: Float,
 			fontColor: Int,
 			ppi: Float,
-			direction: Int
+			direction: Int,
+			colorSpace: Int
 		): Long
 
 
@@ -1119,40 +1166,33 @@ class NSCCanvas : FrameLayout {
 			density: Float,
 			fontColor: Int,
 			ppi: Float,
-			direction: Int
+			direction: Int,
+			colorSpace: Int
 		): Long
 
 		@JvmStatic
 		@FastNative
 		external fun nativeUpdateWebGLSurface(
-			surface: Surface,
-			context: Long
+			surface: Surface, context: Long
 		)
 
 		@JvmStatic
 		@FastNative
 		external fun nativeUpdate2DSurface(
-			surface: Surface,
-			width: Int,
-			height: Int,
-			context: Long
+			surface: Surface, width: Int, height: Int, context: Long
 		)
 
 		@JvmStatic
 		@CriticalNative
 		external fun nativeUpdate2DSurfaceNoSurface(
-			width: Int,
-			height: Int,
-			context: Long
+			width: Int, height: Int, context: Long
 		)
 
 
 		@JvmStatic
 		@CriticalNative
 		external fun nativeUpdateWebGLNoSurface(
-			width: Int,
-			height: Int,
-			context: Long
+			width: Int, height: Int, context: Long
 		)
 
 		@JvmStatic
@@ -1180,7 +1220,8 @@ class NSCCanvas : FrameLayout {
 			alpha: Boolean,
 			fontColor: Int,
 			ppi: Float,
-			direction: Int
+			direction: Int,
+			colorSpace: Int
 		): Long
 
 

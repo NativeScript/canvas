@@ -21,9 +21,8 @@ GENERATE_HEADERS:
 # --- iOS builds ---
 .PHONY: $(ARCHS_IOS)
 $(ARCHS_IOS): %:
-	RUSTFLAGS="-Zlocation-detail=none -C panic=abort" \
+	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
-	    -Z build-std-features=panic_immediate_abort \
 	    --target $@ --release -p canvas-ios
 
 $(XCFRAMEWORK): $(ARCHS_IOS)
@@ -39,9 +38,8 @@ GENERATE_ANDROID: $(ARCHS_ANDROID)
 # --- iOS SVG builds ---
 .PHONY: $(addsuffix _svg,$(ARCHS_IOS))
 $(addsuffix _svg,$(ARCHS_IOS)): %_svg:
-	RUSTFLAGS="-Zlocation-detail=none -C panic=abort" \
+	RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort" \
 	cargo +nightly build -Z build-std='std,panic_abort' \
-	    -Z build-std-features=panic_immediate_abort \
 	    --target $* --release -p canvas-svg-ios
 
 .PHONY: GENERATE_IOS_SVG

@@ -4,7 +4,7 @@ use skia_safe::{surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, Rect};
 
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
+use crate::context::{ColorSpace, Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 
 const GR_GL_RGB565: u32 = 0x8D62;
 const GR_GL_RGBA8: u32 = 0x8058;
@@ -18,6 +18,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
+        color_space: ColorSpace
     ) -> Self {
         let mut state = State::default();
         state.direction = direction;
@@ -64,6 +65,7 @@ impl Context {
                 engine: SurfaceEngine::CPU,
                 state: Default::default(),
                 is_opaque: !alpha,
+                color_space
             },
             surface,
             path: Path::default(),
@@ -129,7 +131,7 @@ impl Context {
         }
     }
 
-    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, density: f32, buffer: &mut [u8]) {
+    pub fn flush_buffer(context: &mut Context, width: i32, height: i32, _density: f32, buffer: &mut [u8]) {
         if context.surface_data.bounds.is_empty() {
             return;
         }

@@ -2,7 +2,7 @@ use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::paths::path::Path;
 use canvas_c::webgpu::gpu::CanvasWebGPUInstance;
 use canvas_c::WebGLState;
-use canvas_core::context_attributes::PowerPreference;
+use canvas_core::context_attributes::{ColorSpace, PowerPreference};
 use canvas_core::gpu::gl::GLContext;
 use jni::objects::{JClass, JIntArray, JObject};
 use jni::sys::{jboolean, jfloat, jint, jlong, jobject, JNI_FALSE, JNI_TRUE};
@@ -32,9 +32,10 @@ pub extern "system" fn nativeGetVulkanVersion(mut env: JNIEnv, _: JClass, array:
                 {
                     let size = elements.len();
                     if size >= 3 {
+                        // Length is in elements, not bytes.
                         let buf = std::slice::from_raw_parts_mut(
                             elements.as_ptr() as *mut jint,
-                            size * std::mem::size_of::<i32>(),
+                            size,
                         );
                         buf[0] = version.0 as jint;
                         buf[1] = version.1 as jint;
@@ -120,10 +121,15 @@ pub extern "system" fn nativeCreate2dContextVulkan(
     font_color: jint,
     ppi: jfloat,
     direction: jint,
+    color_space: jint,
 ) -> jlong {
     unsafe {
         let interface = env.get_native_interface();
         if let Some(window) = NativeWindow::from_surface(interface, surface) {
+            let color_space = match color_space {
+                1 => ColorSpace::P3,
+                _ => ColorSpace::Srgb
+            };
             let ctx_2d = canvas_c::CanvasRenderingContext2D::new_vulkan(
                 canvas_2d::context::Context::new_vulkan(
                     width as f32,
@@ -134,6 +140,7 @@ pub extern "system" fn nativeCreate2dContextVulkan(
                     font_color,
                     ppi,
                     direction as u8,
+                    color_space
                 ),
                 alpha == JNI_TRUE,
             );
@@ -257,70 +264,39 @@ pub extern "system" fn nativeCreate2DContext(
     font_color: jint,
     ppi: jfloat,
     direction: jint,
+    color_space: jint,
 ) -> jlong {
     unsafe {
-        if surface.is_null() {
-            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
-                canvas_2d::context::Context::new_gl(
-                    ptr::null_mut(),
-                    width as f32,
-                    height as f32,
-                    density,
-                    alpha == JNI_TRUE,
-                    font_color,
-                    ppi,
-                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
-                        direction as u32,
-                    ),
-                ),
-                alpha == JNI_TRUE,
-            );
-
-            drop(env);
-            return Box::into_raw(Box::new(ctx_2d)) as jlong;
-        }
-        if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
-            let width = window.width();
-            let height = window.height();
-
-            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
-                canvas_2d::context::Context::new_gl(
-                    window.ptr().as_ptr() as _,
-                    width as f32,
-                    height as f32,
-                    density,
-                    alpha == JNI_TRUE,
-                    font_color,
-                    ppi,
-                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
-                        direction as u32,
-                    ),
-                ),
-                alpha == JNI_TRUE,
-            );
-
-            drop(env);
-            Box::into_raw(Box::new(ctx_2d)) as jlong
+        let (view_ptr, w, h, cs) = if surface.is_null() {
+            (ptr::null_mut(), width as f32, height as f32, ColorSpace::Srgb)
+        } else if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            let cs = match color_space { 1 => ColorSpace::P3, _ => ColorSpace::Srgb };
+            (window.ptr().as_ptr() as *mut c_void, window.width() as f32, window.height() as f32, cs)
         } else {
-            let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(
-                canvas_2d::context::Context::new_gl(
-                    ptr::null_mut(),
-                    width as f32,
-                    height as f32,
-                    density,
-                    alpha == JNI_TRUE,
-                    font_color,
-                    ppi,
-                    canvas_2d::context::text_styles::text_direction::TextDirection::from(
-                        direction as u32,
-                    ),
-                ),
-                alpha == JNI_TRUE,
-            );
+            (ptr::null_mut(), width as f32, height as f32, ColorSpace::Srgb)
+        };
 
-            drop(env);
-            Box::into_raw(Box::new(ctx_2d)) as jlong
-        }
+        let context = match canvas_2d::context::Context::new_gl(
+            view_ptr,
+            w,
+            h,
+            density,
+            alpha == JNI_TRUE,
+            font_color,
+            ppi,
+            canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+            cs,
+        ) {
+            Some(ctx) => ctx,
+            None => {
+                drop(env);
+                return 0;
+            }
+        };
+
+        let ctx_2d = canvas_c::CanvasRenderingContext2D::new_gl(context, alpha == JNI_TRUE);
+        drop(env);
+        Box::into_raw(Box::new(ctx_2d)) as jlong
     }
 }
 
@@ -338,10 +314,13 @@ pub extern "system" fn nativeUpdateWebGLSurface(
     let context = unsafe { &mut *context };
     unsafe {
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
+            // NativeWindow::ptr() is NonNull<ANativeWindow>; the as *mut c_void cast
+            // preserves non-nullness, but guard defensively to avoid a panic.
+            let Some(nn_ptr) = NonNull::new(window.ptr().as_ptr() as _) else { return };
             context.get_inner_mut().set_window_surface(
                 window.width(),
                 window.height(),
-                NonNull::new(window.ptr().as_ptr() as _).unwrap(),
+                nn_ptr,
             );
             context.get_inner().make_current();
             drop(env);
@@ -368,6 +347,7 @@ pub extern "system" fn nativeUpdate2DSurface(
         if let Some(window) = NativeWindow::from_surface(env.get_native_interface(), surface) {
             {
                 let context = context.get_context_mut();
+                let color_space = context.surface_data().color_space();
                 let alpha = !context.surface_data().is_opaque();
                 if let Some(context) = context.gl_context.as_mut() {
                     let mut attr = canvas_core::context_attributes::ContextAttributes::new(
@@ -383,14 +363,23 @@ pub extern "system" fn nativeUpdate2DSurface(
                         false,
                         true,
                         false,
+                        color_space
                     );
 
-                    let handle = raw_window_handle::AndroidNdkWindowHandle::new(
-                        NonNull::new(window.ptr().as_ptr() as _).unwrap(),
-                    );
+                    let Some(nn_ptr) = NonNull::new(window.ptr().as_ptr() as _) else { return };
+                    let handle = raw_window_handle::AndroidNdkWindowHandle::new(nn_ptr);
                     let handle = RawWindowHandle::AndroidNdk(handle);
                     context.set_window_surface(&mut attr, width, height, handle);
                     context.make_current();
+                }
+
+                #[cfg(feature = "vulkan")]
+                if let Some(vulkan_context) = context.vulkan_context.as_mut() {
+                    vulkan_context.set_view(
+                        window.ptr().as_ptr() as *mut std::os::raw::c_void,
+                        width as u32,
+                        height as u32,
+                    );
                 }
             }
 
@@ -666,7 +655,12 @@ pub extern "system" fn nativeWriteCurrentWebGLContextToBitmap(
             Box::new(move |cb| {
                 if let Some((image_data, info)) = cb {
                     context.get_inner().make_current();
-                    let mut buf = vec![0u8; (info.width() * info.height() * 4) as usize];
+                    // Use checked arithmetic — width/height are u32 and can overflow on multiply.
+                    let buf_size = (info.width() as usize)
+                        .checked_mul(info.height() as usize)
+                        .and_then(|n| n.checked_mul(4));
+                    let Some(buf_size) = buf_size else { return };
+                    let mut buf = vec![0u8; buf_size];
                     gl_bindings::Flush();
                     gl_bindings::ReadPixels(
                         0,

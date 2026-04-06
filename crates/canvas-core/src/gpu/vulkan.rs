@@ -1,3 +1,4 @@
+use crate::context_attributes::ColorSpace;
 use ash::vk::{Extent2D, Handle, ImageView, SwapchainCreateInfoKHR, SwapchainKHR};
 use ash::{vk, Entry, Instance};
 use skia_safe::wrapper::NativeTransmutableWrapper;
@@ -23,6 +24,7 @@ pub struct AshGraphics {
     pub surface_size: vk::Extent2D,
     pub alpha: bool,
     pub surface_loader: ash::khr::surface::Instance,
+    pub color_space: ColorSpace,
 }
 
 impl Drop for AshGraphics {
@@ -55,7 +57,7 @@ impl AshGraphics {
         })
     }
 
-    pub unsafe fn new(app_name: &str) -> Result<AshGraphics, String> {
+    pub unsafe fn new(app_name: &str, color_space: ColorSpace) -> Result<AshGraphics, String> {
         let entry = Entry::load().or(Err("Failed to load Vulkan entry"))?;
 
         let minimum_version = vk::make_api_version(0, 1, 1, 0);
@@ -73,7 +75,6 @@ impl AshGraphics {
                 .unwrap_or(minimum_version);
 
             let app_name = CString::new(app_name).unwrap();
-
 
             let extension_names_raw = [
                 ash::khr::surface::NAME.as_ptr(),
@@ -102,8 +103,7 @@ impl AshGraphics {
 
             entry.create_instance(&create_info, None)
         }
-            .or(Err("Failed to create a Vulkan instance."))?;
-
+        .or(Err("Failed to create a Vulkan instance."))?;
 
         let (physical_device, queue_family_index) = {
             let physical_devices = instance
@@ -129,7 +129,7 @@ impl AshGraphics {
                 })
                 .find_map(|v| v)
         }
-            .ok_or("Failed to find a Vulkan physical device.")?;
+        .ok_or("Failed to find a Vulkan physical device.")?;
 
         let device: ash::Device = {
             let features = vk::PhysicalDeviceFeatures::default();
@@ -140,9 +140,7 @@ impl AshGraphics {
                 .queue_family_index(queue_family_index as _)
                 .queue_priorities(&priorities)];
 
-            let device_extension_names_raw = [
-                ash::khr::swapchain::NAME.as_ptr()
-            ];
+            let device_extension_names_raw = [ash::khr::swapchain::NAME.as_ptr()];
 
             let device_create_info = vk::DeviceCreateInfo::default()
                 .queue_create_infos(&queue_info)
@@ -151,7 +149,7 @@ impl AshGraphics {
 
             instance.create_device(physical_device, &device_create_info, None)
         }
-            .or(Err("Failed to create Device."))?;
+        .or(Err("Failed to create Device."))?;
 
         let queue_index: usize = 0;
         let queue: vk::Queue = device.get_device_queue(queue_family_index as _, queue_index as _);
@@ -159,7 +157,8 @@ impl AshGraphics {
         let swap_chain_loader = ash::khr::swapchain::Device::new(&instance, &device);
 
         let semaphore_info = vk::SemaphoreCreateInfo::default();
-        let image_available_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
+        let image_available_semaphore =
+            unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
 
         let present_semaphore = unsafe { device.create_semaphore(&semaphore_info, None).unwrap() };
 
@@ -179,9 +178,13 @@ impl AshGraphics {
             present_semaphore,
             swap_chain: None,
             surface: None,
-            surface_size: Extent2D { width: 0, height: 0 },
+            surface_size: Extent2D {
+                width: 0,
+                height: 0,
+            },
             swap_chain_images: None,
-            surface_loader
+            surface_loader,
+            color_space
         })
     }
 }
@@ -194,12 +197,15 @@ pub struct VulkanContext {
 impl Debug for VulkanContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // todo
-        f.debug_struct("VulkanContext")
-            .finish()
+        f.debug_struct("VulkanContext").finish()
     }
 }
 
 impl VulkanContext {
+    pub fn color_space(&self) -> ColorSpace {
+        self.ash.color_space
+    }
+
     pub fn set_alpha(&mut self, alpha: bool) {
         self.ash.alpha = alpha;
     }
@@ -211,10 +217,11 @@ impl VulkanContext {
         AshGraphics::vulkan_version()
     }
 
-    pub fn new(app_name: &str) -> Result<VulkanContext, String> {
+    pub fn new(app_name: &str, color_space: ColorSpace) -> Result<VulkanContext, String> {
         unsafe {
-            AshGraphics::new(app_name).map(|graphics| {
-                Self { ash: graphics, view: std::ptr::null_mut() }
+            AshGraphics::new(app_name, color_space).map(|graphics| Self {
+                ash: graphics,
+                view: std::ptr::null_mut(),
             })
         }
     }
@@ -247,7 +254,9 @@ impl VulkanContext {
         if self.ash.current_index.is_none() {
             unsafe {
                 if let Ok((image_index, _)) = self.ash.swap_chain_loader.acquire_next_image(
-                    self.ash.swap_chain?, u64::MAX, self.ash.image_available_semaphore,
+                    self.ash.swap_chain?,
+                    u64::MAX,
+                    self.ash.image_available_semaphore,
                     vk::Fence::null(),
                 ) {
                     self.ash.current_index = Some(image_index);
@@ -267,18 +276,15 @@ impl VulkanContext {
     }
 
     pub fn current_image_raw(&mut self) -> Option<u64> {
-        match self.current_image() {
-            None => None,
-            Some(image) => {
-                Some(image.as_raw())
-            }
-        }
+        self.current_image().map(|image| image.as_raw())
     }
 
     pub fn next_image(&mut self) -> Option<vk::Image> {
         unsafe {
             if let Ok((image_index, _)) = self.ash.swap_chain_loader.acquire_next_image(
-                self.ash.swap_chain?, u64::MAX, self.ash.image_available_semaphore,
+                self.ash.swap_chain?,
+                u64::MAX,
+                self.ash.image_available_semaphore,
                 vk::Fence::null(),
             ) {
                 self.ash.current_index = Some(image_index);
@@ -297,38 +303,101 @@ impl VulkanContext {
     }
 
     pub fn next_image_raw(&mut self) -> Option<u64> {
-        match self.next_image() {
-            None => None,
-            Some(image) => {
-                Some(image.as_raw())
+        self.next_image().map(|image| image.as_raw())
+    }
+
+    fn choose_surface_format(
+        formats: &[vk::SurfaceFormatKHR],
+        preferred_colorspace: ColorSpace,
+    ) -> (vk::SurfaceFormatKHR, ColorSpace) {
+        // Preference order:
+        // 1) DISPLAY_P3_NONLINEAR_EXT with an 8-bit UNORM format (RGBA or BGRA)
+        // 2) EXTENDED_SRGB_NONLINEAR_EXT (some devices expose this for wide gamut)
+        // 3) SRGB_NONLINEAR_KHR (common)
+        // 4) fallback to first format
+
+        // helper to check good color formats
+        let is_8bit_unorm = |fmt: vk::Format| {
+            matches!(
+                fmt,
+                vk::Format::R8G8B8A8_UNORM
+                    | vk::Format::B8G8R8A8_UNORM
+                    | vk::Format::A2B10G10R10_UNORM_PACK32
+            )
+        };
+
+        if preferred_colorspace == ColorSpace::P3 {
+            if let Some(f) = formats.iter().find(|f| {
+                f.color_space == vk::ColorSpaceKHR::DISPLAY_P3_NONLINEAR_EXT
+                    && is_8bit_unorm(f.format)
+            }) {
+                return (*f, preferred_colorspace);
+            }
+
+            // (some vendors expose this for wide gamut)
+            if let Some(f) = formats.iter().find(|f| {
+                f.color_space == vk::ColorSpaceKHR::EXTENDED_SRGB_NONLINEAR_EXT
+                    && is_8bit_unorm(f.format)
+            }) {
+                return (*f, preferred_colorspace);
             }
         }
+
+        if let Some(f) = formats
+            .iter()
+            .find(|f| f.color_space == vk::ColorSpaceKHR::SRGB_NONLINEAR && is_8bit_unorm(f.format))
+        {
+            return (*f, ColorSpace::Srgb);
+        }
+
+        // fallback to first available
+        (formats[0], ColorSpace::Srgb)
     }
 
     unsafe fn create_swap_chain(&mut self, surface: vk::SurfaceKHR, width: u32, height: u32) {
-        unsafe { self.ash.device.device_wait_idle().unwrap(); }
+        unsafe {
+            self.ash.device.device_wait_idle().unwrap();
+        }
 
         self.ash.current_index = None;
 
         let formats = unsafe {
-            self.ash.surface_loader.get_physical_device_surface_formats(self.ash.physical_device, surface).unwrap()
+            self.ash
+                .surface_loader
+                .get_physical_device_surface_formats(self.ash.physical_device, surface)
+                .unwrap()
         };
 
         let capabilities = unsafe {
-            self.ash.surface_loader.get_physical_device_surface_capabilities(self.ash.physical_device, surface).unwrap()
+            self.ash
+                .surface_loader
+                .get_physical_device_surface_capabilities(self.ash.physical_device, surface)
+                .unwrap()
         };
 
         let present_modes = unsafe {
-            self.ash.surface_loader.get_physical_device_surface_present_modes(self.ash.physical_device, surface).unwrap()
+            self.ash
+                .surface_loader
+                .get_physical_device_surface_present_modes(self.ash.physical_device, surface)
+                .unwrap()
         };
 
         let raw_flags = vk::SwapchainCreateFlagsKHR::empty();
         let composite_alpha = if self.alpha() {
-            if capabilities.supported_composite_alpha.contains(vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED) {
+            if capabilities
+                .supported_composite_alpha
+                .contains(vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED)
+            {
                 vk::CompositeAlphaFlagsKHR::POST_MULTIPLIED
-            } else if (capabilities.supported_composite_alpha.contains(vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED)) {
+            } else if (capabilities
+                .supported_composite_alpha
+                .contains(vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED))
+            {
                 vk::CompositeAlphaFlagsKHR::PRE_MULTIPLIED
-            } else if (capabilities.supported_composite_alpha.contains(vk::CompositeAlphaFlagsKHR::INHERIT)) {
+            } else if (capabilities
+                .supported_composite_alpha
+                .contains(vk::CompositeAlphaFlagsKHR::INHERIT))
+            {
                 vk::CompositeAlphaFlagsKHR::INHERIT
             } else {
                 vk::CompositeAlphaFlagsKHR::OPAQUE
@@ -345,23 +414,31 @@ impl VulkanContext {
         }
 
         if let Some(swap_chain) = self.ash.swap_chain.take() {
-            self.ash.swap_chain_loader.destroy_swapchain(swap_chain, None);
+            self.ash
+                .swap_chain_loader
+                .destroy_swapchain(swap_chain, None);
         }
 
         //  let old_swap_chain = self.ash.swap_chain.unwrap_or_else(|| );
 
         let min_image_count = if capabilities.min_image_count + 1 <= capabilities.max_image_count {
             capabilities.min_image_count + 1
-        }else {
+        } else {
             capabilities.max_image_count
         };
+
+        let (preferred_format, color_space) =
+            Self::choose_surface_format(&formats, self.ash.color_space);
+
+        // update colorspace
+        self.ash.color_space = color_space;
 
         let info = SwapchainCreateInfoKHR::default()
             .flags(raw_flags)
             .surface(surface)
             .min_image_count(min_image_count)
-            .image_format(formats[0].format)
-            .image_color_space(formats[0].color_space)
+            .image_format(preferred_format.format)
+            .image_color_space(preferred_format.color_space)
             .image_extent(Extent2D { width, height })
             .image_array_layers(1)
             .image_usage(capabilities.supported_usage_flags)
@@ -372,49 +449,53 @@ impl VulkanContext {
             .clipped(true)
             .old_swapchain(SwapchainKHR::null());
 
-
-        self.ash.swap_chain = self.ash.swap_chain_loader.create_swapchain(&info, None)
+        self.ash.swap_chain = self
+            .ash
+            .swap_chain_loader
+            .create_swapchain(&info, None)
             .map(|swap_chain| {
-                self.ash.swap_chain_image_view = self.ash.swap_chain_loader.get_swapchain_images(swap_chain).map(|images| {
-                    let views = images.iter()
-                        .map(|image| {
-                            let view_info = vk::ImageViewCreateInfo {
-                                view_type: vk::ImageViewType::TYPE_2D,
-                                format: info.image_format,
-                                components: vk::ComponentMapping {
-                                    r: vk::ComponentSwizzle::IDENTITY,
-                                    g: vk::ComponentSwizzle::IDENTITY,
-                                    b: vk::ComponentSwizzle::IDENTITY,
-                                    a: vk::ComponentSwizzle::IDENTITY,
-                                },
-                                subresource_range: vk::ImageSubresourceRange {
-                                    aspect_mask: vk::ImageAspectFlags::COLOR,
-                                    base_mip_level: 0,
-                                    level_count: 1,
-                                    base_array_layer: 0,
-                                    layer_count: 1,
-                                },
-                                image: *image,
-                                ..Default::default()
-                            };
+                self.ash.swap_chain_image_view = self
+                    .ash
+                    .swap_chain_loader
+                    .get_swapchain_images(swap_chain)
+                    .map(|images| {
+                        let views = images
+                            .iter()
+                            .map(|image| {
+                                let view_info = vk::ImageViewCreateInfo {
+                                    view_type: vk::ImageViewType::TYPE_2D,
+                                    format: info.image_format,
+                                    components: vk::ComponentMapping {
+                                        r: vk::ComponentSwizzle::IDENTITY,
+                                        g: vk::ComponentSwizzle::IDENTITY,
+                                        b: vk::ComponentSwizzle::IDENTITY,
+                                        a: vk::ComponentSwizzle::IDENTITY,
+                                    },
+                                    subresource_range: vk::ImageSubresourceRange {
+                                        aspect_mask: vk::ImageAspectFlags::COLOR,
+                                        base_mip_level: 0,
+                                        level_count: 1,
+                                        base_array_layer: 0,
+                                        layer_count: 1,
+                                    },
+                                    image: *image,
+                                    ..Default::default()
+                                };
 
-                            unsafe {
-                                self.ash.device
-                                    .create_image_view(&view_info, None).unwrap()
-                            }
-                        })
-                        .collect::<Vec<ImageView>>();
-                    self.ash.swap_chain_images = Some(images);
-                    views
-                }).ok();
+                                unsafe {
+                                    self.ash.device.create_image_view(&view_info, None).unwrap()
+                                }
+                            })
+                            .collect::<Vec<ImageView>>();
+                        self.ash.swap_chain_images = Some(images);
+                        views
+                    })
+                    .ok();
                 swap_chain
             })
             .ok();
 
-        self.ash.surface_size = Extent2D {
-            width,
-            height,
-        };
+        self.ash.surface_size = Extent2D { width, height };
     }
 
     pub fn set_view(&mut self, view: *mut c_void, width: u32, height: u32) {
@@ -439,9 +520,7 @@ impl VulkanContext {
                             self.create_swap_chain(surface, width, height);
                             Some(surface)
                         }
-                        Err(_) => {
-                            None
-                        }
+                        Err(_) => None,
                     }
                 }
             }
@@ -451,11 +530,13 @@ impl VulkanContext {
     pub fn resize(&mut self, width: u32, height: u32) {
         let mut surface = None;
         if let Some(value) = self.ash.surface.as_ref() {
-          surface = Some(*value);
+            surface = Some(*value);
         }
 
         if let Some(surface) = surface {
-            unsafe { self.create_swap_chain(surface, width, height); }
+            unsafe {
+                self.create_swap_chain(surface, width, height);
+            }
         }
     }
 
@@ -463,7 +544,9 @@ impl VulkanContext {
         let _ = self.current_image();
         unsafe {
             let wait_semaphores = [self.ash.present_semaphore];
-            if let (Some(image_index), Some(swapchain)) = (self.ash.current_index, self.ash.swap_chain.as_ref()) {
+            if let (Some(image_index), Some(swapchain)) =
+                (self.ash.current_index, self.ash.swap_chain.as_ref())
+            {
                 let swapchains = [*swapchain];
                 let image_indices = [image_index];
 
@@ -473,7 +556,8 @@ impl VulkanContext {
                     .image_indices(&image_indices);
 
                 unsafe {
-                    self.ash.swap_chain_loader
+                    self.ash
+                        .swap_chain_loader
                         .queue_present(self.ash.queue_and_index.0, &present_info)
                         .expect("Queue Present Failed.");
                 }
@@ -483,12 +567,20 @@ impl VulkanContext {
         }
     }
 
-    pub unsafe fn get_instance_proc_addr(&self, instance: *mut c_void, name: *const c_char) -> Option<unsafe extern "system" fn()> {
+    pub unsafe fn get_instance_proc_addr(
+        &self,
+        instance: *mut c_void,
+        name: *const c_char,
+    ) -> Option<unsafe extern "system" fn()> {
         let vk_instance = vk::Instance::from_raw(instance as _);
         self.ash.entry.get_instance_proc_addr(vk_instance, name)
     }
 
-    pub unsafe fn get_device_proc_addr(&self, device: *mut c_void, name: *const c_char) -> Option<unsafe extern "system" fn()> {
+    pub unsafe fn get_device_proc_addr(
+        &self,
+        device: *mut c_void,
+        name: *const c_char,
+    ) -> Option<unsafe extern "system" fn()> {
         let vk_device = vk::Device::from_raw(device as _);
         self.ash.instance.get_device_proc_addr(vk_device, name)
     }

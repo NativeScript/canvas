@@ -111,7 +111,7 @@ export function parseComputePassDescriptor(value?: GPUComputePassDescriptor) {
 	if (value.label) {
 		desc.label = value.label;
 	}
-	if (desc.timestampWrites) {
+	if (value.timestampWrites) {
 		desc.timestampWrites = { beginningOfPassWriteIndex: value.timestampWrites.beginningOfPassWriteIndex, endOfPassWriteIndex: value.timestampWrites.endOfPassWriteIndex, querySet: value.timestampWrites.querySet[native_] };
 	}
 	return desc;
@@ -201,8 +201,14 @@ export function parseBindGroupDescriptor(value: GPUBindGroupDescriptor) {
 				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
 			} else if (entry.resource instanceof GPUExternalTexture) {
 				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
+			} else if (entry?.resource instanceof GPUBuffer) {
+				// Plain GPUBuffer passed directly — bind entire buffer (offset=0, size=buffer.size)
+				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource[native_], offset: 0, size: entry.resource.size } });
 			} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
-				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource.buffer[native_], offset: entry.resource.offset ?? 0, size: entry.resource.size ?? entry.resource.buffer.size - entry.resource.offset } });
+				const offset = entry.resource.offset ?? 0;
+				// When size is omitted, bind from offset to end of buffer. Parentheses are required:
+				// without them, `buffer.size - undefined` evaluates to NaN which becomes 0 in Rust (invalid).
+				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource.buffer[native_], offset, size: entry.resource.size ?? entry.resource.buffer.size - offset } });
 			}
 		}
 	}

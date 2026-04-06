@@ -2,6 +2,7 @@ import { VideoBase } from './common';
 import { Screen, Application, Utils, knownFolders, path } from '@nativescript/core';
 import { Source } from '..';
 import { durationProperty, currentTimeProperty } from '../common';
+
 declare var com, org;
 export class Video extends VideoBase {
 	_container: android.widget.LinearLayout;
@@ -97,6 +98,35 @@ export class Video extends VideoBase {
 		const ptr = ctx._canvas._canvas.getNativeContext();
 
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);
+	}
+
+	drawImageFrame(context2d: any, args: any[]) {
+		if (!this._instance) {
+			return;
+		}
+		const ptr = context2d.context.__getPointer();
+		// 0=CPU, 1=GL, 2=Vulkan — matches CanvasBackendType in @nativescript/canvas.
+		// getEngine() reads the engine field from the native Rust CanvasRenderingContext2D
+		// struct so the video helper can choose the optimal blit path per backend.
+		const backendType: number = context2d._canvas?._canvas?.getEngine?.() ?? 0;
+		let dirty = false;
+		if (args.length === 3) {
+			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2]);
+		} else if (args.length === 5) {
+			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2], args[3], args[4]);
+		} else if (args.length === 9) {
+			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+		if (dirty) {
+			context2d.context.__makeDirty();
+		}
+	}
+
+	getVideoFrameData(): any {
+		if (!this._instance) {
+			return null;
+		}
+		return this._instance.getCurrentBitmap();
 	}
 
 	play() {

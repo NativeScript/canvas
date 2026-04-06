@@ -175,8 +175,15 @@ public class CanvasHelpers: NSObject {
                       _ density:Float,
                    _ fontColor:Int32,
                           _ ppi:Float,
-                                       _ direction:Int32 ) -> Int64 {
-                                           return canvas_native_ios_create_2d_context(view.getGlViewPtr(), width, height, alpha, density, fontColor, ppi, direction)
+                                       _ direction:Int32, _ colorSpace: Int32 ) -> Int64 {
+																				 
+																				 var cs = CanvasColorSpaceSrgb
+																				 
+																				 if colorSpace == 1 {
+																					 cs = CanvasColorSpaceP3
+																				 }
+																				 
+                                           return canvas_native_ios_create_2d_context(view.getGlViewPtr(), width, height, alpha, density, fontColor, ppi, direction, cs)
     }
     
     public static func create2DContextMetal(
@@ -185,11 +192,16 @@ public class CanvasHelpers: NSObject {
                       _ density:Float,
                    _ fontColor:Int32,
                           _ ppi:Float,
-                            _ direction:Int32 ) -> Int64 {
+												_ direction:Int32, _ colorSpace: Int32 ) -> Int64 {
                                 let viewPtr = view.getMtlViewPtr()
                                 let devicePtr = view.mtlView.getDevicePtr()
                                 let queuePtr = view.mtlView.getQueuePtr()
-                                return canvas_native_ios_create_2d_context_metal_device_queue(viewPtr,devicePtr, queuePtr, alpha, density, UInt(view.mtlView.sampleCount), fontColor, ppi, direction)
+													var cs = CanvasColorSpaceSrgb
+													
+													if colorSpace == 1 {
+														cs = CanvasColorSpaceP3
+													}
+                                return canvas_native_ios_create_2d_context_metal_device_queue(viewPtr,devicePtr, queuePtr, alpha, density, UInt(view.mtlView.sampleCount), fontColor, ppi, direction, cs)
     }
 
 

@@ -126,6 +126,24 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
     let label = ptr_into_label(label);
 
+    // Pre-validate: check all requested features against what the adapter supports.
+    // wgpu-core (and some Vulkan drivers, e.g. SwiftShader) can panic internally when
+    // asked to create a device with features the adapter does not expose.
+    {
+        let global = adapter.instance.global();
+        let adapter_features = global.adapter_features(adapter.adapter);
+        if !adapter_features.contains(features) {
+            let missing = features.difference(adapter_features);
+            let err = format!("Adapter does not support required features: {missing:?}");
+            let safe_err = err.replace('\0', "<NUL>");
+            let ret = CString::new(safe_err)
+                .unwrap_or_else(|_| CString::new("unsupported features").unwrap())
+                .into_raw();
+            callback(ret, std::ptr::null_mut(), callback_data);
+            return;
+        }
+    }
+
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let adapter_id = adapter.adapter;
@@ -137,6 +155,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             required_limits: limits,
             memory_hints: Default::default(),
             trace: Default::default(),
+            experimental_features: Default::default(),
         };
 
 
@@ -182,7 +201,11 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             }
             Err(error) => {
                 let error = error.to_string();
-                let ret = CString::new(error).unwrap().into_raw();
+                // Replace any embedded NUL bytes so CString::new never fails.
+                let safe_error = error.replace('\0', "<NUL>");
+                let ret = CString::new(safe_error)
+                    .unwrap_or_else(|_| CString::new("requestDevice failed").unwrap())
+                    .into_raw();
                 callback(ret, std::ptr::null_mut(), callback_data);
             }
         }

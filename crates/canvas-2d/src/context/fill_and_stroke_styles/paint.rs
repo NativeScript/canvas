@@ -1,24 +1,28 @@
 #![allow(non_upper_case_globals)]
 
-use std::os::raw::c_float;
-
-use csscolorparser::parse;
-use skia_safe::{BlendMode, Point};
-pub use skia_safe::Color;
-use skia_safe::paint::{Cap, Style};
-
-use crate::context::Context;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::Pattern;
 use crate::context::filter_quality::FilterQuality;
 use crate::context::image_smoothing::ImageSmoothingQuality;
-use crate::utils::color::to_parsed_color;
+use crate::context::Context;
+use crate::utils::color::{to_parsed_color, to_parsed_color_4f};
+use canvas_core::context_attributes::ColorSpace;
+use csscolorparser::parse;
+use regex::Regex;
+use skia_safe::paint::{Cap, Style};
+pub use skia_safe::Color;
+use skia_safe::{BlendMode, Color4f, Point};
+use std::os::raw::c_float;
+use std::sync::OnceLock;
+
+pub(crate) static COLOR_P3_REGEXP: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Clone)]
 pub enum PaintStyle {
     Color(Color),
     Gradient(Gradient),
     Pattern(Pattern),
+    Color4f(Color4f),
 }
 
 const black: PaintStyle = PaintStyle::Color(Color::BLACK);
@@ -53,6 +57,30 @@ impl PaintStyle {
 
     #[inline]
     pub fn new_color_str(color: &str) -> Option<Self> {
+        // Fast path for common named colors and hex patterns to avoid csscolorparser overhead
+        match color {
+            "black" | "#000" | "#000000" => return Some(Self::Color(Color::BLACK)),
+            "white" | "#fff" | "#FFF" | "#ffffff" | "#FFFFFF" => return Some(Self::Color(Color::WHITE)),
+            "red" | "#f00" | "#ff0000" | "#FF0000" => return Some(Self::Color(Color::RED)),
+            "green" | "#008000" => return Some(Self::Color(Color::from_argb(255, 0, 128, 0))),
+            "blue" | "#00f" | "#0000ff" | "#0000FF" => return Some(Self::Color(Color::BLUE)),
+            "transparent" => return Some(Self::Color(Color::TRANSPARENT)),
+            _ => {}
+        }
+        // Fast path for #RRGGBB hex (most common programmatic format)
+        if color.len() == 7 && color.as_bytes()[0] == b'#' {
+            if let (Ok(r), Ok(g), Ok(b_val)) = (
+                u8::from_str_radix(&color[1..3], 16),
+                u8::from_str_radix(&color[3..5], 16),
+                u8::from_str_radix(&color[5..7], 16),
+            ) {
+                return Some(Self::Color(Color::from_argb(255, r, g, b_val)));
+            }
+        }
+        // Fast path for rgb(r,g,b) and rgba(r,g,b,a) — the most common programmatic formats
+        if let Some(parsed) = Self::parse_rgb_rgba_fast(color) {
+            return Some(parsed);
+        }
         parse(color)
             .map(|color| {
                 Self::Color(Color::from_argb(
@@ -65,6 +93,42 @@ impl PaintStyle {
             .ok()
     }
 
+    /// Fast inline parser for `rgb(r,g,b)` and `rgba(r,g,b,a)` strings.
+    /// Avoids the full csscolorparser overhead for the most common programmatic color format.
+    #[inline]
+    fn parse_rgb_rgba_fast(color: &str) -> Option<Self> {
+        let bytes = color.as_bytes();
+        let len = bytes.len();
+        // Minimum: "rgb(0,0,0)" = 10 chars
+        if len < 10 {
+            return None;
+        }
+        let is_rgba = bytes[0] == b'r' && bytes[1] == b'g' && bytes[2] == b'b' && bytes[3] == b'a' && bytes[4] == b'(';
+        let is_rgb = !is_rgba && bytes[0] == b'r' && bytes[1] == b'g' && bytes[2] == b'b' && bytes[3] == b'(';
+        if !is_rgba && !is_rgb {
+            return None;
+        }
+        // Must end with ')'
+        if bytes[len - 1] != b')' {
+            return None;
+        }
+        let start = if is_rgba { 5 } else { 4 };
+        let inner = &color[start..len - 1];
+
+        let mut parts = inner.splitn(4, ',');
+        let r: u8 = parts.next()?.trim().parse().ok()?;
+        let g: u8 = parts.next()?.trim().parse().ok()?;
+        let b: u8 = parts.next()?.trim().parse().ok()?;
+        let a = if is_rgba {
+            let a_str = parts.next()?.trim();
+            let a_f: f32 = a_str.parse().ok()?;
+            (a_f.clamp(0.0, 1.0) * 255.0) as u8
+        } else {
+            255
+        };
+        Some(Self::Color(Color::from_argb(a, r, g, b)))
+    }
+
     pub fn new_color(color: u32) -> Self {
         Self::Color(Color::from(color))
     }
@@ -73,9 +137,14 @@ impl PaintStyle {
         Self::Color(Color::from_argb(alpha, r, g, b))
     }
 
+    pub fn new_color_rgba_4f(r: f32, g: f32, b: f32, alpha: f32) -> Self {
+        Self::Color4f(Color4f { r, g, b, a: alpha })
+    }
+
     pub fn get_parsed_color(&self) -> Option<String> {
         match self {
             PaintStyle::Color(color) => Some(to_parsed_color(*color)),
+            PaintStyle::Color4f(color) => Some(to_parsed_color_4f(*color)),
             _ => None,
         }
     }
@@ -105,12 +174,23 @@ impl Paint {
         }
         match style {
             PaintStyle::Color(color) => {
-                self.fill_paint.set_shader(None);
-                self.stroke_paint.set_shader(None);
                 if is_fill {
+                    self.fill_paint.set_shader(None);
                     self.fill_paint.set_color(*color);
                 } else {
+                    self.stroke_paint.set_shader(None);
                     self.stroke_paint.set_color(*color);
+                }
+            }
+            PaintStyle::Color4f(color) => {
+                // only the p3 is colorSpace is currently supported on the web
+                let color_space: Option<skia_safe::ColorSpace> = ColorSpace::P3.into();
+                if is_fill {
+                    self.fill_paint.set_shader(None);
+                    self.fill_paint.set_color4f(*color, color_space.as_ref());
+                } else {
+                    self.stroke_paint.set_shader(None);
+                    self.stroke_paint.set_color4f(*color, color_space.as_ref());
                 }
             }
             PaintStyle::Pattern(pattern) => {
@@ -190,19 +270,27 @@ impl Paint {
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
         let sigma = blur / 2.0;
-        let filter =
-            skia_safe::image_filters::drop_shadow_only(offset, (sigma, sigma), color, None, None, None);
+        let filter = skia_safe::image_filters::drop_shadow_only(
+            offset,
+            (sigma, sigma),
+            color,
+            None,
+            None,
+            None,
+        );
         paint.set_image_filter(filter);
         Some(paint)
     }
 
+    #[inline]
     pub fn fill_shadow_paint(
         &self,
         offset: Point,
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
-        if color == Color::TRANSPARENT && blur > 0.0 {
+        // Fast path: skip shadow allocation entirely when no shadow is configured
+        if color == Color::TRANSPARENT || (blur == 0.0 && offset.x == 0.0 && offset.y == 0.0) {
             return None;
         }
         let mut paint = self.fill_paint().clone();
@@ -210,13 +298,15 @@ impl Paint {
         Self::shadow_paint(paint, offset, color, blur)
     }
 
+    #[inline]
     pub fn stroke_shadow_paint(
         &self,
         offset: Point,
         color: Color,
         blur: c_float,
     ) -> Option<skia_safe::Paint> {
-        if color == Color::TRANSPARENT && blur > 0.0 {
+        // Fast path: skip shadow allocation entirely when no shadow is configured
+        if color == Color::TRANSPARENT || (blur == 0.0 && offset.x == 0.0 && offset.y == 0.0) {
             return None;
         }
         let mut paint = self.stroke_paint().clone();
@@ -281,6 +371,22 @@ pub fn paint_style_set_color_with_rgba(
     a: u8,
 ) {
     let style = PaintStyle::Color(Color::from_argb(a, r, g, b));
+    if is_fill {
+        context.set_fill_style(style);
+    } else {
+        context.set_stroke_style(style);
+    }
+}
+
+pub fn paint_style_set_color_with_rgba_4f(
+    context: &mut Context,
+    is_fill: bool,
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+) {
+    let style = PaintStyle::Color4f(Color4f { r, g, b, a });
     if is_fill {
         context.set_fill_style(style);
     } else {

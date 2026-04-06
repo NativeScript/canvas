@@ -455,7 +455,9 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
 				store = dataValue->Buffer()->GetBackingStore();
 				offset = dataValue->ByteOffset();
 				data = static_cast<uint8_t *>(store->Data()) + offset;
-				data_size = store->ByteLength() - offset;
+				// Use the typed array's own byte length, not the backing store's total size.
+				// Example: Float32Array(bigBuffer, 0, 4) has byteLength=16 but store could be 1000 bytes.
+				data_size = dataValue->ByteLength();
 			}else if(args[2]->IsArrayBuffer()){
 				auto dataValue = args[2].As<v8::ArrayBuffer>();
 				store = dataValue->GetBackingStore();

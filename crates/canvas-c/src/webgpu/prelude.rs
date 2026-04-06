@@ -145,14 +145,14 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::PARTIALLY_BOUND_BINDING_ARRAY) {
         return_features.push("partially-bound-binding-array");
     }
-    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT) {
+    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
         return_features.push("multi-draw-indirect");
     }
     if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
         return_features.push("multi-draw-indirect-count");
     }
-    if features.contains(wgt::Features::PUSH_CONSTANTS) {
-        return_features.push("push-constants");
+    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
+        return_features.push("multi-draw-indirect-count");
     }
     if features.contains(wgt::Features::ADDRESS_MODE_CLAMP_TO_ZERO) {
         return_features.push("address-mode-clamp-to-zero");
@@ -175,7 +175,7 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::CLEAR_TEXTURE) {
         return_features.push("clear-texture");
     }
-    if features.contains(wgt::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS) {
+    if features.contains(wgt::Features::PASSTHROUGH_SHADERS) {
         return_features.push("spirv-shader-passthrough");
     }
     if features.contains(wgt::Features::MULTIVIEW) {
@@ -311,7 +311,7 @@ pub fn parse_required_features(
                 }
 
                 "multi-draw-indirect" => {
-                    features.set(wgt::Features::MULTI_DRAW_INDIRECT, true);
+                    features.set(wgt::Features::MULTI_DRAW_INDIRECT_COUNT, true);
                 }
 
                 "multi-draw-indirect-count" => {
@@ -319,7 +319,7 @@ pub fn parse_required_features(
                 }
 
                 "push-constants" => {
-                    features.set(wgt::Features::PUSH_CONSTANTS, true);
+                    // PUSH_CONSTANTS feature removed in newer wgpu
                 }
 
                 "address-mode-clamp-to-zero" => {
@@ -351,7 +351,7 @@ pub fn parse_required_features(
                 }
 
                 "pirv-shader-passthrough" => {
-                    features.set(wgt::Features::EXPERIMENTAL_PASSTHROUGH_SHADERS, true);
+                    features.set(wgt::Features::PASSTHROUGH_SHADERS, true);
                 }
 
                 "multiview" => {

@@ -21,6 +21,30 @@ object Utils {
     @JvmStatic
     private external fun nativeMakeStateContextCurrent(state: Long): Boolean
 
+    /** Makes the EGL context of a [CanvasRenderingContext2D] current on the calling thread.
+     *  [context] is the native pointer returned by [NSCCanvas.nativeContext]. */
+    @JvmStatic
+    private external fun nativeMake2DContextCurrent(context: Long): Boolean
+
+    /** Draw an OES external texture into a 2D canvas context using Skia's GPU path.
+     *  The EGL context must already be current (call [nativeMake2DContextCurrent] first
+     *  and call [SurfaceTexture.updateTexImage] before calling this function). */
+    @JvmStatic
+    private external fun nativeContext2DDrawOESTexture(
+        context: Long,
+        textureId: Int,
+        videoWidth: Int,
+        videoHeight: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean
+
     private var rating = -1
     val isEmulator: Boolean
         get() {
@@ -138,6 +162,67 @@ object Utils {
         return arrayOf(SurfaceTexture(render.textureId), render)
     }
 
+    /**
+     * Create an OES texture + [SurfaceTexture] inside the 2D canvas context's EGL context.
+     *
+     * The player should be directed to output frames to the returned [SurfaceTexture].
+     * After a frame arrives, call [drawVideoFrameGL] to upload and draw it via Skia's
+     * GL fast-path (zero CPU copy).
+     *
+     * @param context Native pointer to `CanvasRenderingContext2D` (from `NSCCanvas.nativeContext`).
+     * @return `[SurfaceTexture, Integer textureId, TextureRender]`, or `null` if the context
+     *         has no GL backend.
+     */
+    @JvmStatic
+    fun create2DContextSurfaceTexture(context: Long): Array<Any>? {
+        if (!nativeMake2DContextCurrent(context)) return null
+        val render = TextureRender()
+        render.surfaceCreated()
+        return arrayOf(SurfaceTexture(render.textureId), render.textureId, render)
+    }
+
+    /**
+     * Draw the latest video frame from [surfaceTexture] into a 2D canvas context via
+     * Skia's GL fast-path (OES texture → Skia GPU image, zero CPU copy).
+     *
+     * Call this from whatever thread owns the 2D canvas context.  The function makes
+     * the context current, calls [SurfaceTexture.updateTexImage], then asks Rust/Skia
+     * to draw the OES texture directly.
+     *
+     * @param context     Native pointer to `CanvasRenderingContext2D`.
+     * @param textureId   OES texture name that backs [surfaceTexture].
+     * @param surfaceTexture The SurfaceTexture receiving decoded video frames.
+     * @param videoWidth  / [videoHeight] Video frame dimensions.
+     * @param sx,sy,sw,sh Source rectangle within the video frame.
+     * @param dx,dy,dw,dh Destination rectangle in canvas coordinates.
+     * @return `true` when the frame was drawn successfully.
+     */
+    @JvmStatic
+    fun drawVideoFrameGL(
+        context: Long,
+        textureId: Int,
+        surfaceTexture: SurfaceTexture,
+        videoWidth: Int,
+        videoHeight: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean {
+        if (!nativeMake2DContextCurrent(context)) return false
+        surfaceTexture.updateTexImage()
+        return nativeContext2DDrawOESTexture(
+            context, textureId,
+            videoWidth, videoHeight,
+            sx, sy, sw, sh,
+            dx, dy, dw, dh,
+        )
+    }
+
 
     @JvmStatic
     fun createRenderAndAttachToGLContext(
@@ -187,6 +272,5 @@ object Utils {
             render.height = height
         }
     }
-
 
 }

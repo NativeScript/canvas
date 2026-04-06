@@ -698,7 +698,7 @@ fn main() -> @location(0) vec4f {
 	ctx.fillStyle = 'gray';
 	ctx.fillRect(0, 0, 80, 80); */
 		//filterBlur(this.canvas);
-		handleVideo(this.canvas);
+		//handleVideo(this.canvas);
 		/*	const worker = new Worker('./canvas.worker.js');
 		global.CanvasWorker = worker;
 		// canvas.parent.on(GestureTypes.touch as any, (args: TouchGestureEventData) => {
@@ -774,7 +774,7 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
-		//this.vulkan(this.canvas);
+		this.vulkan(this.canvas);
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);
@@ -907,7 +907,7 @@ fn main() -> @location(0) vec4f {
 		const vk = new ImageAsset();
 		const ns = new ImageAsset();
 		const skia = new ImageAsset();
-		Promise.allSettled([skia.fromUrl('https://upload.wikimedia.org/wikipedia/en/thumb/3/33/Skia_Project_Logo.svg/1024px-Skia_Project_Logo.svg.png'), vk.fromUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Vulkan_logo.svg/1024px-Vulkan_logo.svg.png'), ns.fromUrl('https://upload.wikimedia.org/wikipedia/commons/8/86/NativeScript_Logo.png')]).then((res) => {
+		Promise.allSettled([skia.fromUrl('https://upload.wikimedia.org/wikipedia/en/thumb/3/33/Skia_Project_Logo.svg/3840px-Skia_Project_Logo.svg.png'), vk.fromUrl('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Vulkan_logo.svg/1024px-Vulkan_logo.svg.png'), ns.fromUrl('https://upload.wikimedia.org/wikipedia/commons/8/86/NativeScript_Logo.png')]).then((res) => {
 			ctx.drawImage(ns as any, canvas.clientWidth / 2 - 50, 60, 100, 100);
 			ctx.drawImage(skia as any, canvas.clientWidth / 2 - 50, 150 + 20, 100, 100);
 			ctx.drawImage(vk as any, canvas.clientWidth / 2 - 50, 250 + 30, 100, 100);

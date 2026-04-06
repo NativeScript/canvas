@@ -1915,18 +1915,14 @@ pub struct CanvasBufferBinding {
 
 impl Into<BufferBinding> for CanvasBufferBinding {
     fn into(self) -> BufferBinding {
-        use std::num::NonZeroU64;
         let buffer = unsafe { &*self.buffer };
         let buffer_id = buffer.buffer;
         BufferBinding {
             buffer: buffer_id,
             offset: self.offset.try_into().unwrap_or_default(),
-            size: self
-                .size
-                .try_into()
-                .map(|value: u64| NonZeroU64::new(value))
-                .ok()
-                .flatten(),
+            // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
+            // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
+            size: if self.size > 0 { Some(self.size as u64) } else { None },
         }
     }
 }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
 use std::io::{BufRead, Read, Seek};
-use std::os::raw::{c_char, c_int, c_uint};
+use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr::null;
 use std::sync::Arc;
 
@@ -629,16 +629,16 @@ use core_foundation::string::CFString;
         }
 
         match stb_image::image::load_from_memory_with_depth(buf, 4, true) {
-            LoadResult::Error(e) => {
+            stb_image::image::LoadResult::Error(e) => {
                 let error = e.to_string();
                 lock.error = Cow::Owned(error);
                 false
             }
-            LoadResult::ImageU8(image) => {
+            stb_image::image::LoadResult::ImageU8(image) => {
                 lock.image = Some(CanvasImage::Stb(image));
                 true
             }
-            LoadResult::ImageF32(_) => {
+            stb_image::image::LoadResult::ImageF32(_) => {
                 lock.image = None;
                 false
             }
@@ -988,14 +988,20 @@ use core_foundation::string::CFString;
 
     pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {
         let mut rgba_data = Vec::with_capacity(data.len() * 2);
-        for chunk in data.chunks(2) {
-            let r = (chunk[0] & 0xF8) >> 3;
-            let g = ((chunk[0] & 0x07) << 5) | ((chunk[1] & 0xE0) >> 3);
-            let b = (chunk[1] & 0x1F) << 3;
+        for chunk in data.chunks_exact(2) {
+            // RGB565 little-endian: pixel = chunk[0] | (chunk[1] << 8)
+            // Layout: RRRRRGGG GGGBBBBB -> pixel bits [15:11]=R, [10:5]=G, [4:0]=B
+            let pixel = (chunk[0] as u16) | ((chunk[1] as u16) << 8);
+            let r5 = ((pixel >> 11) & 0x1F) as u8;
+            let g6 = ((pixel >> 5) & 0x3F) as u8;
+            let b5 = (pixel & 0x1F) as u8;
 
-            let a = 255;
+            // Scale to 8-bit: replicate high bits into low bits for full range
+            let r = (r5 << 3) | (r5 >> 2);
+            let g = (g6 << 2) | (g6 >> 4);
+            let b = (b5 << 3) | (b5 >> 2);
 
-            rgba_data.extend_from_slice(&[r, g, b, a]);
+            rgba_data.extend_from_slice(&[r, g, b, 255]);
         }
         rgba_data
     }

@@ -1,7 +1,8 @@
-use jni::JNIEnv;
+use canvas_2d::context;
+use canvas_core::context_attributes::ColorSpace;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong, jstring};
-use canvas_2d::context;
+use jni::JNIEnv;
 
 pub mod gl;
 pub mod image;
@@ -19,7 +20,13 @@ pub(crate) fn init_with_custom_surface(
     font_color: jint,
     ppi: jfloat,
     direction: jint,
+    color_space: jint,
 ) -> jlong {
+    let color_space = if color_space == 1 {
+        ColorSpace::P3
+    } else {
+        ColorSpace::Srgb
+    };
     Box::into_raw(Box::new(canvas_c::CanvasRenderingContext2D::new(
         context::Context::new(
             width as f32,
@@ -29,6 +36,7 @@ pub(crate) fn init_with_custom_surface(
             font_color,
             ppi,
             canvas_2d::context::text_styles::text_direction::TextDirection::from(direction as u32),
+            color_space,
         ),
         alpha == jni::sys::JNI_TRUE,
     ))) as jlong
@@ -43,8 +51,18 @@ pub extern "system" fn nativeInitContextWithCustomSurface(
     font_color: jint,
     ppi: jfloat,
     direction: jint,
+    color_space: jint,
 ) -> jlong {
-    init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
+    init_with_custom_surface(
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        ppi,
+        direction,
+        color_space,
+    )
 }
 
 #[no_mangle]
@@ -58,8 +76,18 @@ pub extern "system" fn nativeInitContextWithCustomSurfaceNormal(
     font_color: jint,
     ppi: jfloat,
     direction: jint,
+    color_space: jint,
 ) -> jlong {
-    init_with_custom_surface(width, height, density, alpha, font_color, ppi, direction)
+    init_with_custom_surface(
+        width,
+        height,
+        density,
+        alpha,
+        font_color,
+        ppi,
+        direction,
+        color_space,
+    )
 }
 
 #[no_mangle]
@@ -159,10 +187,12 @@ pub extern "system" fn nativeDataURL(
     if let Ok(format) = env.get_string(&format) {
         let format = format.to_string_lossy();
 
-
         return env
-            .new_string(context.get_context_mut().as_data_url(format.as_ref(),
-                                                              (quality * 100f32) as u32))
+            .new_string(
+                context
+                    .get_context_mut()
+                    .as_data_url(format.as_ref(), (quality * 100f32) as u32),
+            )
             .unwrap()
             .into_raw();
     }

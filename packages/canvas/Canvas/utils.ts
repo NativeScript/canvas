@@ -86,3 +86,5 @@ export function removeItemFromArray(array: any[], item) {
 		array.splice(index, 1);
 	}
 }
+
+export const microtask: (cb: () => void) => void = typeof queueMicrotask === 'function' ? queueMicrotask : (cb) => Promise.resolve().then(cb);

@@ -1,11 +1,12 @@
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use canvas_core::gpu::metal::MetalContext;
 use foreign_types_shared::ForeignTypeRef;
 use skia_safe::gpu::mtl::TextureInfo;
 use skia_safe::{gpu, Color, ColorType};
 use std::os::raw::c_void;
+use canvas_core::context_attributes::ColorSpace;
 
 #[cfg(feature = "metal")]
 impl Context {
@@ -55,6 +56,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
+        color_space: ColorSpace
     ) -> Self {
         let mtl_context = MetalContext::new(view);
         let backend = unsafe {
@@ -84,7 +86,7 @@ impl Context {
             gpu::SurfaceOrigin::TopLeft,
             Some(samples),
             ColorType::BGRA8888,
-            None,
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space),
             None,
         )
         .unwrap();
@@ -101,6 +103,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
+                color_space
             },
             surface,
             surface_state: Default::default(),
@@ -131,6 +134,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
+        color_space: ColorSpace
     ) -> Self {
         let mut mtl_context = unsafe { MetalContext::new_device_queue(view, device, queue) };
         let backend = unsafe {
@@ -155,7 +159,7 @@ impl Context {
             gpu::SurfaceOrigin::TopLeft,
             Some(samples),
             ColorType::BGRA8888,
-            None,
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space),
             None,
         )
         .unwrap();
@@ -172,6 +176,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
+                color_space
             },
             surface,
             surface_state: Default::default(),
@@ -201,6 +206,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
+        color_space: ColorSpace
     ) -> Self {
         let mtl_context = MetalContext::new_offscreen(width, height);
         let backend = unsafe {
@@ -230,7 +236,7 @@ impl Context {
             gpu::SurfaceOrigin::TopLeft,
             Some(samples),
             ColorType::BGRA8888,
-            None,
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space),
             None,
         )
         .unwrap();
@@ -247,6 +253,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
+                color_space
             },
             surface,
             surface_state: Default::default(),
@@ -269,6 +276,10 @@ impl Context {
 
     pub fn resize_metal(context: &mut Context, width: f32, height: f32) {
         let _ = MetalContext::new_release_pool();
+
+        // flush any pending draws before resizing
+        context.flush_and_render_to_surface();
+
         let bounds = skia_safe::Rect::from_wh(width, height);
         context.surface_data.bounds = bounds;
         let mut samples = 1;
@@ -287,7 +298,7 @@ impl Context {
                 };
             }
         }
-
+        let color_space: Option<skia_safe::ColorSpace> = context.surface_data.color_space.into();
         let mut surface = None;
         if let (Some(context), Some(info)) = (context.direct_context.as_mut(), info.as_ref()) {
             let bt = unsafe {
@@ -305,7 +316,7 @@ impl Context {
                 gpu::SurfaceOrigin::TopLeft,
                 Some(samples),
                 ColorType::BGRA8888,
-                None,
+                color_space,
                 None,
             );
 
@@ -324,8 +335,11 @@ impl Context {
 
         if let Some(surface) = surface {
             context.surface_data.state = Default::default();
+            context.surface_state = SurfaceState::None;
             context.surface = surface;
             context.metal_texture_info = info;
+            context.path = Path::default();
+            context.reset_state();
         }
     }
 

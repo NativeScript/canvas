@@ -2,7 +2,7 @@ import { VideoBase } from './common';
 import { Source, srcProperty } from '../source';
 import { controlsProperty, playsinlineProperty, mutedProperty, currentTimeProperty, loopProperty, autoplayProperty } from '../common';
 import { booleanConverter, knownFolders, path } from '@nativescript/core';
-declare const NSCCanvasUtils, NSCVideoHelper;
+declare const NSCCanvasUtils, NSCVideoHelper, NSCRender;
 
 interface NSCVideoHelperListener {}
 
@@ -95,6 +95,45 @@ export class Video extends VideoBase {
 				console.error('getCurrentFrame error:', e);
 			}
 		}
+	}
+
+	drawImageFrame(context2d: any, args: any[]) {
+		if (!this.helper.isInForeground) {
+			return;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			try {
+				const ptr = context2d.context.__getPointer();
+				let dirty = false;
+				if (args.length === 3) {
+					dirty = NSCRender.drawVideoFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, ptr, args[1], args[2]);
+				} else if (args.length === 5) {
+					dirty = NSCRender.drawVideoFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, ptr, args[1], args[2], args[3], args[4]);
+				} else if (args.length === 9) {
+					dirty = NSCRender.drawVideoFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, ptr, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+				}
+				if (dirty) {
+					context2d.context.__makeDirty();
+				}
+			} catch (e) {
+				console.error('drawImageFrame error:', e);
+			}
+		}
+	}
+
+	getVideoFrameData(): any {
+		if (!this.helper.isInForeground) {
+			return null;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			try {
+				return NSCRender.getVideoFrameData(this.helper.player, this.helper.assetOutput, this.helper.videoSize);
+			} catch (e) {
+				console.error('getVideoFrameData error:', e);
+				return null;
+			}
+		}
+		return null;
 	}
 
 	createNativeView(): Object {

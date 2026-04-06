@@ -1,7 +1,7 @@
 use std::os::raw::c_void;
 
 use jni::objects::{JClass, JFloatArray, JObject, JValue, ReleaseMode};
-use jni::sys::jint;
+use jni::sys::{jboolean, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 
 #[no_mangle]
@@ -194,10 +194,15 @@ pub unsafe extern "system" fn nativeDrawFrame(
         //     0, // previous_active_texture[0] - gl_bindings::TEXTURE0 as i32,
         // );
 
-        gl_bindings::Uniform1i(
-            sampler_pos,
-            previous_active_texture[0] - gl_bindings::TEXTURE0 as i32,
-        );
+        // TEXTURE0 = 0x84C0. GetIntegerv returns the full enum value; subtract to get
+        // the 0-based texture unit index. Guard against -1 (sentinel / no context).
+        let active_tex = previous_active_texture[0];
+        let texture_unit = if active_tex >= gl_bindings::TEXTURE0 as i32 {
+            active_tex - gl_bindings::TEXTURE0 as i32
+        } else {
+            0
+        };
+        gl_bindings::Uniform1i(sampler_pos, texture_unit);
 
         /*  let name = std::ffi::CString::new("aTexCoord").unwrap();
         let pos = gl_bindings::GetAttribLocation(program as u32, name.as_ptr()) as u32;

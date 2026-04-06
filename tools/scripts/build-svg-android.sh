@@ -35,16 +35,16 @@ CXX=$TOOLS/bin/${NDK_TARGET}${API_VERSION}-clang++ \
 RANLIB=$TOOLS/bin/llvm-ranlib \
 CXXFLAGS="--target=$NDK_TARGET" \
 
-RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
+RUSTFLAGS="-Zlocation-detail=none"
 
 
 if [ "$TARGET" = "aarch64-linux-android" ]; then
-    RUSTFLAGS="-Zlocation-detail=none -C panic=abort -C target-feature=-outline-atomics"
+    RUSTFLAGS="-Zlocation-detail=none -C target-feature=-outline-atomics"
 fi
 
 
 
-RUSTFLAGS="$RUSTFLAGS" cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort --target $TARGET $EXTRA_ARGS -p canvas-svg-android --release
+RUSTFLAGS="$RUSTFLAGS -Zunstable-options -Cpanic=immediate-abort" cargo +nightly build -Z build-std='std,panic_abort' --target $TARGET $EXTRA_ARGS -p canvas-svg-android --release
 
 #RUSTFLAGS="$RUSTFLAGS" cargo +nightly  build --target $TARGET -p canvas-svg
 

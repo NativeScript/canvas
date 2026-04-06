@@ -1,5 +1,6 @@
 use skia_safe::{Image, Point, TileMode};
 
+use canvas_core::context_attributes::ColorSpace;
 use crate::context::fill_and_stroke_styles::gradient::Gradient;
 use crate::context::fill_and_stroke_styles::pattern::{Pattern, Repetition};
 use crate::context::matrix::Matrix;
@@ -10,10 +11,11 @@ impl Context {
         Gradient::Linear {
             start: Point::new(x0, y0),
             stop: Point::new(x1, y1),
-            colors: Vec::new(),
-            stops: Vec::new(),
+            colors: Vec::with_capacity(2),
+            stops: Vec::with_capacity(2),
             matrix: None,
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 
@@ -28,10 +30,11 @@ impl Context {
         Gradient::Linear {
             start: Point::new(x0, y0),
             stop: Point::new(x1, y1),
-            colors: Vec::new(),
-            stops: Vec::new(),
+            colors: Vec::with_capacity(2),
+            stops: Vec::with_capacity(2),
             matrix: Some(matrix),
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 
@@ -40,10 +43,11 @@ impl Context {
         Gradient::Conic {
             center: Point::new(x, y),
             angle,
-            colors: Vec::new(),
-            stops: Vec::new(),
+            colors: Vec::with_capacity(2),
+            stops: Vec::with_capacity(2),
             matrix: None,
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 
@@ -57,11 +61,12 @@ impl Context {
         let angle = crate::utils::geometry::to_degrees(start_angle);
         Gradient::Conic {
             center: Point::new(x, y),
-            angle: start_angle,
-            colors: Vec::new(),
-            stops: Vec::new(),
+            angle,
+            colors: Vec::with_capacity(2),
+            stops: Vec::with_capacity(2),
             matrix: Some(matrix),
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 
@@ -83,10 +88,11 @@ impl Context {
             start_radius: r0,
             stop: Point::new(x1, y1),
             stop_radius: r1,
-            stops: Vec::new(),
-            colors: Vec::new(),
+            stops: Vec::with_capacity(2),
+            colors: Vec::with_capacity(2),
             matrix: None,
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 
@@ -105,10 +111,11 @@ impl Context {
             start_radius: r0,
             stop: Point::new(x1, y1),
             stop_radius: r1,
-            stops: Vec::new(),
-            colors: Vec::new(),
+            stops: Vec::with_capacity(2),
+            colors: Vec::with_capacity(2),
             matrix: Some(matrix),
             tile_mode: TileMode::Clamp,
+            color_space: ColorSpace::Srgb,
         }
     }
 }

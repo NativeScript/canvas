@@ -388,6 +388,8 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source && source.buffer) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
+		} else if (source?._type === '2d' || source?._type?.indexOf('webgl') > -1 || source?._type === 'webgpu') {
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, (source as any).native);
 		} else if (global.isAndroid && source instanceof android.graphics.Bitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {
@@ -431,6 +433,8 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData && srcData.buffer) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);
+		} else if (srcData?._type === '2d' || srcData?._type?.indexOf('webgl') > -1 || srcData?._type === 'webgpu') {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, (srcData as any).native);
 		} else if (global.isAndroid && srcData instanceof android.graphics.Bitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ImageSource) {

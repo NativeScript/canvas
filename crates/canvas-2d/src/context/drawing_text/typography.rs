@@ -145,6 +145,13 @@ pub(crate) fn init_font_regexp() -> Regex {
         .unwrap()
 }
 
+// color(display-p3 0.5 0 0 / 0.75); || color(display-p3 0.5 0 0);
+
+pub(crate) fn init_color_p3_regexp()-> Regex {
+    Regex::new(
+        r"color\(display-p3\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)\s+([0-9]*\.?[0-9]+)(?:\s*/\s*([0-9]*\.?[0-9]+))?\)"
+    ).unwrap()
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FontStyle {
     Normal,

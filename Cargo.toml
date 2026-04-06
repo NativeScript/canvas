@@ -29,7 +29,7 @@ strip = true
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5"
+rev = "9616414f16e5688192f6127f8104d8a07a3b1de6"
 
 
 
@@ -45,9 +45,9 @@ canvas-webgl = { path = "./crates/canvas-webgl" }
 canvas-svg = { path = "./crates/canvas-svg" }
 gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
-skia-safe = { version = "0.87.0", features = ["textlayout"] }
+skia-safe = { version = "0.93.1", features = ["textlayout"] }
 itertools = "0.14.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5", features = ["wgsl", "vulkan", "metal", "raw-window-handle"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "56a46b75f1b400446d0b1139b2435aa95a0d5ab5", features = ["metal", "vulkan"] }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "9616414f16e5688192f6127f8104d8a07a3b1de6", features = ["wgsl", "vulkan", "metal"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "9616414f16e5688192f6127f8104d8a07a3b1de6", features = ["metal", "vulkan"] }
 ureq = "2.10.1"
 jni = "0.21.1"

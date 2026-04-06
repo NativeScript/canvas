@@ -142,6 +142,8 @@ pub unsafe extern "system" fn nativeDrawFrame(
     gl_bindings::ClearColor(0., 0., 0., 1.);
     gl_bindings::Clear(gl_bindings::COLOR_BUFFER_BIT | gl_bindings::DEPTH_BUFFER_BIT);
 
+    // Unbind the caller's VAO before modifying vertex attribute state.
+    gl_bindings::BindVertexArray(0);
     gl_bindings::UseProgram(program as u32);
     gl_bindings::BindBuffer(gl_bindings::ARRAY_BUFFER, array_buffer as u32);
     gl_bindings::VertexAttribPointer(
@@ -183,6 +185,11 @@ pub unsafe extern "system" fn nativeDrawFrame(
             identity(matrix);
         }
 
+        // Correct horizontal mirror from clipSpace.x = 1-2*x (see draw_frame_3d_impl).
+        let sx = matrix[0];
+        matrix[0] = -sx;
+        matrix[12] = sx + matrix[12];
+
         gl_bindings::BindTexture(
             crate::utils::gl::TEXTURE_EXTERNAL_OES,
             external_texture as u32,
@@ -194,10 +201,15 @@ pub unsafe extern "system" fn nativeDrawFrame(
         //     0, // previous_active_texture[0] - gl_bindings::TEXTURE0 as i32,
         // );
 
-        gl_bindings::Uniform1i(
-            sampler_pos,
-            previous_active_texture[0] - gl_bindings::TEXTURE0 as i32,
-        );
+        // TEXTURE0 = 0x84C0. GetIntegerv returns the full enum value; subtract to get
+        // the 0-based texture unit index. Guard against -1 (sentinel / no context).
+        let active_tex = previous_active_texture[0];
+        let texture_unit = if active_tex >= gl_bindings::TEXTURE0 as i32 {
+            active_tex - gl_bindings::TEXTURE0 as i32
+        } else {
+            0
+        };
+        gl_bindings::Uniform1i(sampler_pos, texture_unit);
 
         /*  let name = std::ffi::CString::new("aTexCoord").unwrap();
         let pos = gl_bindings::GetAttribLocation(program as u32, name.as_ptr()) as u32;
@@ -240,6 +252,319 @@ pub unsafe extern "system" fn nativeDrawFrame(
 
     gl_bindings::UseProgram(previous_program[0] as u32);
 
+    gl_bindings::BindVertexArray(previous_vertex_array[0] as u32);
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn nativeDrawFrameTexImage3D(
+    mut env: JNIEnv,
+    _: JClass,
+    surface_texture_object: JObject,
+    flip_y_web_gl: bool,
+    fbo: jint,
+    rbo: jint,
+    program: jint,
+    external_texture: jint,
+    sampler_pos: jint,
+    array_buffer: jint,
+    pos: jint,
+    matrix: JFloatArray,
+    matrix_pos: jint,
+    target: jint, // GL_TEXTURE_3D or GL_TEXTURE_2D_ARRAY
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    depth: jint,
+    border: jint,
+    zoffset: jint,
+    render_width: jint,
+    render_height: jint,
+    draw_count: jint,
+) {
+    draw_frame_3d_impl(
+        &mut env,
+        surface_texture_object,
+        flip_y_web_gl,
+        fbo,
+        rbo,
+        program,
+        external_texture,
+        sampler_pos,
+        array_buffer,
+        pos,
+        matrix,
+        matrix_pos,
+        target,
+        level,
+        internalformat,
+        width,
+        height,
+        depth,
+        border,
+        0,
+        0,
+        zoffset,
+        render_width,
+        render_height,
+        draw_count,
+        true,
+    );
+}
+
+#[no_mangle]
+pub unsafe extern "system" fn nativeDrawFrameTexSubImage3D(
+    mut env: JNIEnv,
+    _: JClass,
+    surface_texture_object: JObject,
+    flip_y_web_gl: bool,
+    fbo: jint,
+    rbo: jint,
+    program: jint,
+    external_texture: jint,
+    sampler_pos: jint,
+    array_buffer: jint,
+    pos: jint,
+    matrix: JFloatArray,
+    matrix_pos: jint,
+    target: jint,
+    level: jint,
+    xoffset: jint,
+    yoffset: jint,
+    zoffset: jint,
+    width: jint,
+    height: jint,
+    render_width: jint,
+    render_height: jint,
+    draw_count: jint,
+) {
+    draw_frame_3d_impl(
+        &mut env,
+        surface_texture_object,
+        flip_y_web_gl,
+        fbo,
+        rbo,
+        program,
+        external_texture,
+        sampler_pos,
+        array_buffer,
+        pos,
+        matrix,
+        matrix_pos,
+        target,
+        level,
+        0,
+        width,
+        height,
+        1,
+        0,
+        xoffset,
+        yoffset,
+        zoffset,
+        render_width,
+        render_height,
+        draw_count,
+        false,
+    );
+}
+
+unsafe fn draw_frame_3d_impl(
+    env: &mut JNIEnv,
+    surface_texture_object: JObject,
+    flip_y_web_gl: bool,
+    fbo: jint,
+    rbo: jint,
+    program: jint,
+    external_texture: jint,
+    sampler_pos: jint,
+    array_buffer: jint,
+    pos: jint,
+    matrix: JFloatArray,
+    matrix_pos: jint,
+    target: jint,
+    level: jint,
+    internalformat: jint,
+    width: jint,
+    height: jint,
+    depth: jint,
+    border: jint,
+    xoffset: jint,
+    yoffset: jint,
+    zoffset: jint,
+    render_width: jint,
+    render_height: jint,
+    draw_count: jint,
+    allocate: bool,
+) {
+    // GL_TEXTURE_3D = 0x806F, GL_TEXTURE_2D_ARRAY = 0x8C1A
+    // GL_TEXTURE_BINDING_3D = 0x806A, GL_TEXTURE_BINDING_2D_ARRAY = 0x8C1D
+    const TEXTURE_3D: u32 = 0x806F;
+    const TEXTURE_2D_ARRAY: u32 = 0x8C1A;
+    const TEXTURE_BINDING_3D: u32 = 0x806A;
+    const TEXTURE_BINDING_2D_ARRAY: u32 = 0x8C1D;
+
+    let binding_query = if target as u32 == TEXTURE_2D_ARRAY {
+        TEXTURE_BINDING_2D_ARRAY
+    } else {
+        TEXTURE_BINDING_3D
+    };
+
+    let mut previous_view_port = [0_i32; 4];
+    let mut previous_active_texture = [-1_i32; 1];
+    let mut previous_texture_2d = [-1_i32; 1];
+    let mut previous_texture_3d = [-1_i32; 1];
+    let mut previous_program = [-1_i32; 1];
+    let mut previous_frame_buffer = [-1_i32; 1];
+    let mut previous_render_buffer = [-1_i32; 1];
+    let mut previous_vertex_array = [-1_i32; 1];
+
+    gl_bindings::GetIntegerv(gl_bindings::VIEWPORT, previous_view_port.as_mut_ptr());
+    gl_bindings::GetIntegerv(
+        gl_bindings::ACTIVE_TEXTURE,
+        previous_active_texture.as_mut_ptr(),
+    );
+    gl_bindings::GetIntegerv(
+        gl_bindings::TEXTURE_BINDING_2D,
+        previous_texture_2d.as_mut_ptr(),
+    );
+    gl_bindings::GetIntegerv(
+        binding_query as i32 as u32,
+        previous_texture_3d.as_mut_ptr(),
+    );
+    gl_bindings::GetIntegerv(gl_bindings::CURRENT_PROGRAM, previous_program.as_mut_ptr());
+    gl_bindings::GetIntegerv(
+        gl_bindings::FRAMEBUFFER_BINDING,
+        previous_frame_buffer.as_mut_ptr(),
+    );
+    gl_bindings::GetIntegerv(
+        gl_bindings::RENDERBUFFER_BINDING,
+        previous_render_buffer.as_mut_ptr(),
+    );
+    gl_bindings::GetIntegerv(
+        gl_bindings::VERTEX_ARRAY_BINDING,
+        previous_vertex_array.as_mut_ptr(),
+    );
+
+    let texture3d_id = previous_texture_3d[0] as u32;
+
+    if allocate && texture3d_id != 0 {
+        gl_bindings::BindTexture(target as u32, texture3d_id);
+        gl_bindings::TexImage3D(
+            target as u32,
+            level,
+            internalformat,
+            width,
+            height,
+            depth,
+            border,
+            gl_bindings::RGBA,
+            gl_bindings::UNSIGNED_BYTE,
+            std::ptr::null(),
+        );
+    }
+
+    gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, fbo as u32);
+    gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, rbo as u32);
+
+    if render_width != width || render_height != height {
+        gl_bindings::RenderbufferStorage(
+            gl_bindings::RENDERBUFFER,
+            gl_bindings::DEPTH24_STENCIL8,
+            width,
+            height,
+        );
+        gl_bindings::FramebufferRenderbuffer(
+            gl_bindings::FRAMEBUFFER,
+            gl_bindings::DEPTH_STENCIL_ATTACHMENT,
+            gl_bindings::RENDERBUFFER,
+            rbo as u32,
+        );
+    }
+
+    gl_bindings::FramebufferTextureLayer(
+        gl_bindings::FRAMEBUFFER,
+        gl_bindings::COLOR_ATTACHMENT0,
+        texture3d_id,
+        level,
+        zoffset,
+    );
+
+    gl_bindings::ClearColor(0., 0., 0., 1.);
+    gl_bindings::Clear(gl_bindings::COLOR_BUFFER_BIT | gl_bindings::DEPTH_BUFFER_BIT);
+
+    gl_bindings::BindVertexArray(0);
+    gl_bindings::UseProgram(program as u32);
+    gl_bindings::BindBuffer(gl_bindings::ARRAY_BUFFER, array_buffer as u32);
+    gl_bindings::VertexAttribPointer(
+        pos as u32,
+        2,
+        gl_bindings::FLOAT,
+        0,
+        2 * std::mem::size_of::<f32>() as i32,
+        std::ptr::null(),
+    );
+    gl_bindings::EnableVertexAttribArray(pos as u32);
+
+    let _ = env.call_method(&surface_texture_object, "updateTexImage", "()V", &[]);
+    let _ = env.call_method(
+        &surface_texture_object,
+        "getTransformMatrix",
+        "([F)V",
+        &[JValue::Object(&matrix)],
+    );
+
+    if let Ok(mat) = env.get_array_elements_critical(&matrix, ReleaseMode::CopyBack) {
+        let size = mat.len();
+        let mat_slice = std::slice::from_raw_parts_mut(mat.as_ptr() as *mut f32, size);
+
+        if flip_y_web_gl {
+            identity(mat_slice);
+        }
+
+        // The TextureRender vertex shader computes `clipSpace.x = 1.0 - 2.0 * aPosition.x`,
+        // which maps aPosition.x=0 → screen RIGHT (+1) and aPosition.x=1 → screen LEFT (-1).
+        // The SurfaceTexture transform matrix was designed for the standard mapping where
+        // x=0 is the LEFT edge, so the video ends up horizontally mirrored in the FBO layer.
+        //
+        // Compensate by flipping the X column of the transform matrix:
+        //   new_mat * pos = original_mat * (1-pos.x, pos.y, pos.z, pos.w)
+        // In column-major layout:
+        //   mat[0]  = X scale       (column 0, row 0)
+        //   mat[12] = X translation (column 3, row 0)
+        // Flip:  new_scale = -old_scale,  new_tx = old_scale + old_tx
+        let sx = mat_slice[0];
+        mat_slice[0] = -sx;
+        mat_slice[12] = sx + mat_slice[12];
+
+        gl_bindings::BindTexture(
+            crate::utils::gl::TEXTURE_EXTERNAL_OES,
+            external_texture as u32,
+        );
+
+        let active_tex = previous_active_texture[0];
+        let texture_unit = if active_tex >= gl_bindings::TEXTURE0 as i32 {
+            active_tex - gl_bindings::TEXTURE0 as i32
+        } else {
+            0
+        };
+        gl_bindings::Uniform1i(sampler_pos, texture_unit);
+        gl_bindings::UniformMatrix4fv(matrix_pos, 1, 0, mat_slice.as_ptr() as _);
+
+        gl_bindings::Viewport(xoffset, yoffset, width, height);
+        gl_bindings::DrawArrays(gl_bindings::TRIANGLE_STRIP, 0, draw_count);
+    }
+
+    gl_bindings::BindRenderbuffer(gl_bindings::RENDERBUFFER, previous_render_buffer[0] as u32);
+    gl_bindings::BindFramebuffer(gl_bindings::FRAMEBUFFER, previous_frame_buffer[0] as u32);
+    gl_bindings::Viewport(
+        previous_view_port[0],
+        previous_view_port[1],
+        previous_view_port[2],
+        previous_view_port[3],
+    );
+    gl_bindings::BindTexture(gl_bindings::TEXTURE_2D, previous_texture_2d[0] as u32);
+    gl_bindings::BindTexture(target as u32, texture3d_id);
+    gl_bindings::UseProgram(previous_program[0] as u32);
     gl_bindings::BindVertexArray(previous_vertex_array[0] as u32);
 }
 

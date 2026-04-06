@@ -235,7 +235,7 @@ pub extern "system" fn nativeDrawAtlasWithBitmap(
 ) {
     let bytes = crate::utils::image::get_bytes_from_bitmap(&env, bitmap);
 
-    if let Some((bytes, info)) = bytes {
+    if let (Some((bytes, info)), Ok(blend_mode)) = (bytes, CompositeOperationType::try_from(blend_mode as u32)) {
         let xform_len = env.get_array_length(&xform).unwrap_or_default();
         let tex_len = env.get_array_length(&tex).unwrap_or_default();
         let colors_len = env.get_array_length(&colors).unwrap_or_default();
@@ -279,7 +279,7 @@ pub extern "system" fn nativeDrawAtlasWithBitmap(
                     xform_buf.as_slice(),
                     tex_buf.as_slice(),
                     colors_value.as_deref(),
-                    CompositeOperationType::from(blend_mode),
+                    blend_mode,
                 )
             }
         }

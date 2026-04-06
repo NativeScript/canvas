@@ -13,10 +13,11 @@ export async function run(canvas: Canvas) {
 	const particleColorOffset = 4 * 4;
 	const particleInstanceByteSize =
 		3 * 4 + // position
-		4 + // lifetime
+		1 * 4 + // lifetime
 		4 * 4 + // color
 		3 * 4 + // velocity
-		4; // padding
+		1 * 4 + // padding
+		0;
 
 	const adapter = await navigator.gpu.requestAdapter();
 	const device: GPUDevice = (await adapter.requestDevice()) as never;
@@ -32,24 +33,16 @@ export async function run(canvas: Canvas) {
 
 	const context: GPUCanvasContext = canvas.getContext('webgpu') as never;
 
-	const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+	const presentationFormat = 'rgba16float'; // navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
 
-	context.configure({
-		device,
-		format: presentationFormat,
-	});
+	context.configure({ device, format: presentationFormat });
 
-	const particlesBuffer = device.createBuffer({
-		size: numParticles * particleInstanceByteSize,
-		usage: global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.STORAGE,
-	});
+	const particlesBuffer = device.createBuffer({ size: numParticles * particleInstanceByteSize, usage: global.GPUBufferUsage.VERTEX | global.GPUBufferUsage.STORAGE });
 
 	const renderPipeline = device.createRenderPipeline({
 		layout: 'auto',
 		vertex: {
-			module: device.createShaderModule({
-				code: particleWGSL,
-			}),
+			module: device.createShaderModule({ code: particleWGSL }),
 			buffers: [
 				{
 					// instanced particles buffer
@@ -86,45 +79,13 @@ export async function run(canvas: Canvas) {
 			],
 			entryPoint: 'vs_main',
 		},
-		fragment: {
-			module: device.createShaderModule({
-				code: particleWGSL,
-			}),
-			targets: [
-				{
-					format: presentationFormat,
-					blend: {
-						color: {
-							srcFactor: 'src-alpha',
-							dstFactor: 'one',
-							operation: 'add',
-						},
-						alpha: {
-							srcFactor: 'zero',
-							dstFactor: 'one',
-							operation: 'add',
-						},
-					},
-				},
-			],
-			entryPoint: 'fs_main',
-		},
-		primitive: {
-			topology: 'triangle-list',
-		},
+		fragment: { module: device.createShaderModule({ code: particleWGSL }), targets: [{ format: presentationFormat, blend: { color: { srcFactor: 'src-alpha', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' } } }], entryPoint: 'fs_main' },
+		primitive: { topology: 'triangle-list' },
 
-		depthStencil: {
-			depthWriteEnabled: false,
-			depthCompare: 'less',
-			format: 'depth24plus',
-		},
+		depthStencil: { depthWriteEnabled: false, depthCompare: 'less', format: 'depth24plus' },
 	});
 
-	const depthTexture = device.createTexture({
-		size: [canvas.width as number, canvas.height as number],
-		format: 'depth24plus',
-		usage: global.GPUTextureUsage.RENDER_ATTACHMENT,
-	});
+	const depthTexture = device.createTexture({ size: [canvas.width as number, canvas.height as number], format: 'depth24plus', usage: global.GPUTextureUsage.RENDER_ATTACHMENT });
 
 	const uniformBufferSize =
 		4 * 4 * 4 + // modelViewProjectionMatrix : mat4x4f
@@ -132,22 +93,9 @@ export async function run(canvas: Canvas) {
 		4 + // padding
 		3 * 4 + // up : vec3f
 		4; // padding
-	const uniformBuffer = device.createBuffer({
-		size: uniformBufferSize,
-		usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
-	});
+	const uniformBuffer = device.createBuffer({ size: uniformBufferSize, usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST });
 
-	const uniformBindGroup = device.createBindGroup({
-		layout: renderPipeline.getBindGroupLayout(0),
-		entries: [
-			{
-				binding: 0,
-				resource: {
-					buffer: uniformBuffer,
-				},
-			},
-		],
-	});
+	const uniformBindGroup = device.createBindGroup({ layout: renderPipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: uniformBuffer } }] });
 
 	const renderPassDescriptor = {
 		colorAttachments: [
@@ -203,12 +151,7 @@ export async function run(canvas: Canvas) {
 			numMipLevels++;
 		}
 
-		texture = device.createTexture({
-			size: [imageBitmap.width, imageBitmap.height, 1],
-			mipLevelCount: numMipLevels,
-			format: 'rgba8unorm',
-			usage: global.GPUTextureUsage.TEXTURE_BINDING | global.GPUTextureUsage.STORAGE_BINDING | global.GPUTextureUsage.COPY_DST | global.GPUTextureUsage.RENDER_ATTACHMENT,
-		});
+		texture = device.createTexture({ size: [imageBitmap.width, imageBitmap.height, 1], mipLevelCount: numMipLevels, format: 'rgba8unorm', usage: global.GPUTextureUsage.TEXTURE_BINDING | global.GPUTextureUsage.STORAGE_BINDING | global.GPUTextureUsage.COPY_DST | global.GPUTextureUsage.RENDER_ATTACHMENT });
 
 		device.queue.copyExternalImageToTexture({ source: imageBitmap }, { texture: texture }, [imageBitmap.width, imageBitmap.height]);
 	}
@@ -220,36 +163,16 @@ export async function run(canvas: Canvas) {
 	// probabilities up to the top 1x1 mip level.
 	//////////////////////////////////////////////////////////////////////////////
 	{
-		const probabilityMapImportLevelPipeline = device.createComputePipeline({
-			layout: 'auto',
-			compute: {
-				module: device.createShaderModule({ code: probabilityMapWGSL }),
-				entryPoint: 'import_level',
-			},
-		});
-		const probabilityMapExportLevelPipeline = device.createComputePipeline({
-			layout: 'auto',
-			compute: {
-				module: device.createShaderModule({ code: probabilityMapWGSL }),
-				entryPoint: 'export_level',
-			},
-		});
+		const probabilityMapImportLevelPipeline = device.createComputePipeline({ layout: 'auto', compute: { module: device.createShaderModule({ code: probabilityMapWGSL }), entryPoint: 'import_level' } });
+		const probabilityMapExportLevelPipeline = device.createComputePipeline({ layout: 'auto', compute: { module: device.createShaderModule({ code: probabilityMapWGSL }), entryPoint: 'export_level' } });
 
 		const probabilityMapUBOBufferSize =
-			4 + // stride
-			3 * 4; // padding
-		const probabilityMapUBOBuffer = device.createBuffer({
-			size: probabilityMapUBOBufferSize,
-			usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
-		});
-		const buffer_a = device.createBuffer({
-			size: textureWidth * textureHeight * 4,
-			usage: global.GPUBufferUsage.STORAGE,
-		});
-		const buffer_b = device.createBuffer({
-			size: textureWidth * textureHeight * 4,
-			usage: global.GPUBufferUsage.STORAGE,
-		});
+			1 * 4 + // stride
+			3 * 4 +
+			0; // padding
+		const probabilityMapUBOBuffer = device.createBuffer({ size: probabilityMapUBOBufferSize, usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST });
+		const buffer_a = device.createBuffer({ size: textureWidth * textureHeight * 4, usage: global.GPUBufferUsage.STORAGE });
+		const buffer_b = device.createBuffer({ size: textureWidth * textureHeight * 4, usage: global.GPUBufferUsage.STORAGE });
 
 		device.queue.writeBuffer(probabilityMapUBOBuffer, 0, new Int32Array([textureWidth]));
 		const commandEncoder = device.createCommandEncoder();
@@ -280,12 +203,7 @@ export async function run(canvas: Canvas) {
 					{
 						// tex_in / tex_out
 						binding: 3,
-						resource: texture.createView({
-							format: 'rgba8unorm',
-							dimension: '2d',
-							baseMipLevel: level,
-							mipLevelCount: 1,
-						}),
+						resource: texture.createView({ format: 'rgba8unorm', dimension: '2d', baseMipLevel: level, mipLevelCount: 1 }),
 					},
 				],
 			});
@@ -310,56 +228,27 @@ export async function run(canvas: Canvas) {
 	//////////////////////////////////////////////////////////////////////////////
 	// Simulation compute pipeline
 	//////////////////////////////////////////////////////////////////////////////
-	const simulationParams = {
-		simulate: true,
-		deltaTime: 0.04,
-	};
+	const simulationParams = { simulate: true, deltaTime: 0.04 };
 
 	const simulationUBOBufferSize =
 		4 + // deltaTime
 		4 + // brightnessFactor
 		3 * 4 + // padding
 		4 * 4; // seed
-	const simulationUBOBuffer = device.createBuffer({
-		size: simulationUBOBufferSize,
-		usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST,
-	});
+	const simulationUBOBuffer = device.createBuffer({ size: simulationUBOBufferSize, usage: global.GPUBufferUsage.UNIFORM | global.GPUBufferUsage.COPY_DST });
 
 	// const gui = new GUI();
 	// gui.add(simulationParams, 'simulate');
 	// gui.add(simulationParams, 'deltaTime');
 
-	const computePipeline = device.createComputePipeline({
-		layout: 'auto',
-		compute: {
-			module: device.createShaderModule({
-				code: particleWGSL,
-			}),
-			entryPoint: 'simulate',
-		},
-	});
+	const computePipeline = device.createComputePipeline({ layout: 'auto', compute: { module: device.createShaderModule({ code: particleWGSL }), entryPoint: 'simulate' } });
 	const tv = texture.createView();
 	const computeBindGroup = device.createBindGroup({
 		layout: computePipeline.getBindGroupLayout(0),
 		entries: [
-			{
-				binding: 0,
-				resource: {
-					buffer: simulationUBOBuffer,
-				},
-			},
-			{
-				binding: 1,
-				resource: {
-					buffer: particlesBuffer,
-					offset: 0,
-					size: numParticles * particleInstanceByteSize,
-				},
-			},
-			{
-				binding: 2,
-				resource: tv,
-			},
+			{ binding: 0, resource: { buffer: simulationUBOBuffer } },
+			{ binding: 1, resource: { buffer: particlesBuffer, offset: 0, size: numParticles * particleInstanceByteSize } },
+			{ binding: 2, resource: tv },
 		],
 	});
 

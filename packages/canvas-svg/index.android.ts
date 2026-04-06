@@ -95,6 +95,12 @@ export class Svg extends SVGBase {
 		return this._svg;
 	}
 
+	setSvgData(value: SvgData) {
+		if (value && value.native) {
+			this._svg.loadData(value.native);
+		}
+	}
+
 	[srcProperty.setNative](value: string) {
 		if (typeof value === 'string') {
 			if (value.indexOf('<svg') > -1) {
@@ -215,7 +221,7 @@ export class Svg extends SVGBase {
 									const ret = SvgData.fromNative(svg);
 									resolve(ret);
 								},
-							})
+							}),
 						);
 						return;
 					}

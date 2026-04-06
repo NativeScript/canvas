@@ -190,10 +190,11 @@ ImageAssetImpl::GetReference(const v8::FunctionCallbackInfo<v8::Value> &args) {
         auto isolate = args.GetIsolate();
         auto reference = canvas_native_image_asset_reference(ptr->GetImageAsset());
         auto ret = std::to_string(canvas_native_image_asset_get_addr(reference));
+        canvas_native_image_asset_release(reference);
         args.GetReturnValue().Set(ConvertToV8String(isolate, ret));
         return;
     }
-    
+
     args.GetReturnValue().SetEmptyString();
 }
 
@@ -570,22 +571,23 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     
     
     auto bytes = args[2].As<v8::ArrayBuffer>();
-    
+
     auto size = bytes->ByteLength();
-    
-    auto data = (uint8_t *) bytes->GetBackingStore()->Data();
-    
+
+    auto store = bytes->GetBackingStore();
+    auto data = (uint8_t *) store->Data();
+
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
-    
+
     auto context = args.GetIsolate()->GetCurrentContext();
-    
+
     uint32_t width;
     uint32_t height;
     args[0]->Uint32Value(context).To(&width);
     args[1]->Uint32Value(context).To(&height);
-    
+
     auto callback = args[3].As<v8::Function>();
-    
+
     auto jsi_callback = new JSICallback(isolate, callback);
     
 #ifdef __ANDROID__
@@ -621,38 +623,37 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
     }, jsi_callback);
     
     std::thread thread(
-                       [jsi_callback, asset, width, height, data, size]() {
-                           
+                       [jsi_callback, asset, store, width, height, data, size]() {
+
                            auto done = canvas_native_image_asset_load_from_raw(asset, width, height, data, size);
-                           
+
                            canvas_native_image_asset_release(asset);
-                           
+
                            write(jsi_callback->fd_[1],
                                  &done,
                                  sizeof(bool));
-                           
+
                        });
-    
+
     thread.detach();
-    
+
 #endif
-    
-    
+
+
 #ifdef __APPLE__
-    
+
     auto current_queue = new NSOperationQueueWrapper(true);
-    
+
     auto queue = new NSOperationQueueWrapper(false);
-    
-    auto task = [jsi_callback, current_queue, queue, asset, width, height,data, size]() {
-        
+
+   
+    auto task = [jsi_callback, current_queue, queue, asset, store, width, height, data, size]() {
+
         auto done = canvas_native_image_asset_load_from_raw(asset, width, height, data, size);
-        
+
         canvas_native_image_asset_release(asset);
-        
-        auto main_task = [jsi_callback, current_queue, queue, done]() {
-            
-            
+        auto main_task = [jsi_callback, current_queue, queue, store, done]() {
+
             v8::Isolate *isolate = jsi_callback->isolate_;
             v8::Locker locker(isolate);
             v8::Isolate::Scope isolate_scope(isolate);
@@ -660,29 +661,26 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
             v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
             v8::Local<v8::Context> context = callback->GetCreationContextChecked();
             v8::Context::Scope context_scope(context);
-            
+
             v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, done)};
-            
-            // v8::TryCatch tc(isolate);
-            
+
             callback->Call(context, context->Global(), 1,
                            args);  // ignore JS return value
-            
-            
+
+
             delete jsi_callback;
             delete queue;
             delete current_queue;
-            
-            
+
         };
-        
+
         current_queue->addOperation(main_task);
-        
+
     };
-    
+
     queue->addOperation(task);
 #endif
-    
+
 }
 
 
@@ -728,19 +726,20 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
     
     
     auto bytes = args[0].As<v8::ArrayBuffer>();
-    
+
     auto size = bytes->ByteLength();
-    
-    auto data = (uint8_t *) bytes->GetBackingStore()->Data();
-    
+
+    auto store = bytes->GetBackingStore();
+    auto data = (uint8_t *) store->Data();
+
     auto asset = canvas_native_image_asset_reference(ptr->GetImageAsset());
-    
+
     auto callback = args[1].As<v8::Function>();
-    
+
     auto jsi_callback = new JSICallback(isolate, callback);
-    
+
 #ifdef __ANDROID__
-    
+
     ALooper_addFd(jsi_callback->looper_,
                   jsi_callback->fd_[0],
                   0,
@@ -751,7 +750,7 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
         bool done;
         read(fd, &done,
              sizeof(bool));
-        
+
         v8::Isolate *isolate = cb->isolate_;
         v8::Locker locker(isolate);
         v8::Isolate::Scope isolate_scope(isolate);
@@ -759,51 +758,48 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
         v8::Local<v8::Function> callback = cb->callback_->Get(isolate);
         v8::Local<v8::Context> context = callback->GetCreationContextChecked();
         v8::Context::Scope context_scope(context);
-        
+
         v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, done)};
-        
-        // v8::TryCatch tc(isolate);
-        
+
         callback->Call(context, context->Global(), 1,
                        args);  // ignore JS return value
-        
+
         delete static_cast<JSICallback *>(data);
         return 0;
     }, jsi_callback);
-    
+
     std::thread thread(
-                       [jsi_callback, asset, data, size]() {
-                           
+                       [jsi_callback, asset, store, data, size]() {
+
                            auto done = canvas_native_image_asset_load_from_raw_encoded(asset, data, size);
-                           
+
                            canvas_native_image_asset_release(asset);
-                           
+
                            write(jsi_callback->fd_[1],
                                  &done,
                                  sizeof(bool));
-                           
+
                        });
-    
+
     thread.detach();
-    
+
 #endif
-    
-    
+
+
 #ifdef __APPLE__
-    
+
     auto current_queue = new NSOperationQueueWrapper(true);
-    
+
     auto queue = new NSOperationQueueWrapper(false);
-    
-    auto task = [jsi_callback, current_queue, queue, asset, data, size]() {
-        
+
+    auto task = [jsi_callback, current_queue, queue, asset, store, data, size]() {
+
         auto done = canvas_native_image_asset_load_from_raw_encoded(asset, data, size);
-        
+
         canvas_native_image_asset_release(asset);
-        
-        auto main_task = [jsi_callback, current_queue, queue, done]() {
-            
-            
+
+        auto main_task = [jsi_callback, current_queue, queue, store, done]() {
+
             v8::Isolate *isolate = jsi_callback->isolate_;
             v8::Locker locker(isolate);
             v8::Isolate::Scope isolate_scope(isolate);
@@ -811,26 +807,23 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
             v8::Local<v8::Function> callback = jsi_callback->callback_->Get(isolate);
             v8::Local<v8::Context> context = callback->GetCreationContextChecked();
             v8::Context::Scope context_scope(context);
-            
+
             v8::Local<v8::Value> args[1] = {v8::Boolean::New(isolate, done)};
-            
-            // v8::TryCatch tc(isolate);
-            
+
             callback->Call(context, context->Global(), 1,
                            args);  // ignore JS return value
-            
-            
+
+
             delete jsi_callback;
             delete queue;
             delete current_queue;
-            
-            
+
         };
-        
+
         current_queue->addOperation(main_task);
-        
+
     };
-    
+
     queue->addOperation(task);
 #endif
     

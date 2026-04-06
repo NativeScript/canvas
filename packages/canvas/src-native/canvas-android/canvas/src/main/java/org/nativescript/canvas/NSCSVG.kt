@@ -52,8 +52,8 @@ class NSCSVG : View {
 		if (sync) {
 			NSCCanvas.nativeResizeCustomSurface(
 				svgCanvas,
-				w.toFloat(),
-				h.toFloat(),
+				w,
+				h,
 				metrics.density,
 				true,
 				metrics.densityDpi
@@ -78,8 +78,8 @@ class NSCSVG : View {
 		currentTask = executor.submit {
 			NSCCanvas.nativeResizeCustomSurface(
 				svgCanvas,
-				w.toFloat(),
-				h.toFloat(),
+				w,
+				h,
 				metrics.density,
 				true,
 				metrics.densityDpi
@@ -116,13 +116,13 @@ class NSCSVG : View {
 				if (sync) {
 
 					svgCanvas = NSCCanvas.nativeInitContextWithCustomSurface(
-						w.toFloat(),
-						h.toFloat(),
+						w,
+						h,
 						metrics.density,
 						true,
 						Color.BLACK,
 						metrics.densityDpi.toFloat(),
-						NSCCanvas.direction
+						NSCCanvas.direction, 0
 					)
 
 					if (srcPath.isNotEmpty() || src.isNotEmpty()) {
@@ -148,13 +148,14 @@ class NSCSVG : View {
 				currentTask = executor.submit {
 					synchronized(lock) {
 						svgCanvas = NSCCanvas.nativeInitContextWithCustomSurface(
-							w.toFloat(),
-							h.toFloat(),
+							w,
+							h,
 							metrics.density,
 							true,
 							Color.BLACK,
 							metrics.densityDpi.toFloat(),
-							NSCCanvas.direction
+							NSCCanvas.direction,
+							0
 						)
 
 						if (srcPath.isNotEmpty() || src.isNotEmpty()) {
@@ -220,7 +221,7 @@ class NSCSVG : View {
 		synchronized(lock) {
 			if (svgCanvas != 0L) {
 				currentTask?.cancel(true)
-				if (sync){
+				if (sync) {
 					if (srcPath.isNotEmpty()) {
 						nativeDrawSVGFromPath(svgCanvas, srcPath)
 						bitmap?.let {

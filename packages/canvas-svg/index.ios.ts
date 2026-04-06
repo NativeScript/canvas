@@ -76,7 +76,7 @@ export class SvgData {
 }
 
 export class Svg extends SVGBase {
-	_svg;
+	_svg: NSCSVG;
 
 	constructor() {
 		super();
@@ -90,6 +90,12 @@ export class Svg extends SVGBase {
 
 	get native() {
 		return this._svg;
+	}
+
+	setSvgData(value: SvgData) {
+		if (value && value.native) {
+			this._svg.loadData(value.native);
+		}
 	}
 
 	[srcProperty.setNative](value: string) {

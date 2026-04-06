@@ -25,5 +25,7 @@ export * from './GPUTexture';
 export * from './GPUTextureView';
 export * from './Errors';
 export * from './GPUTexture';
+export * from './GPUCompilationMessage';
+export * from './GPUCompilationInfo';
 
 export { GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUShaderStage, GPUDeviceLostReason } from './Constants';

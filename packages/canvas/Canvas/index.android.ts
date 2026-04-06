@@ -5,7 +5,7 @@ import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
 import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
-import { handleContextOptions } from './utils';
+import { handleContextOptions, microtask } from './utils';
 
 export function createSVGMatrix(): DOMMatrix {
 	return new DOMMatrix();
@@ -24,6 +24,7 @@ const defaultOpts = {
 	stencil: false,
 	desynchronized: false,
 	xrCompatible: false,
+	willReadFrequently: false,
 };
 
 // declare const org;
@@ -99,6 +100,8 @@ export class Canvas extends CanvasBase {
 	private _contextType = ContextType.None;
 	private _is2D = false;
 	private _isBatch = false;
+	private _pendingWidth: number | undefined;
+	private _pendingHeight: number | undefined;
 	static useSurface = false;
 
 	constructor(nativeInstance?) {
@@ -126,7 +129,7 @@ export class Canvas extends CanvasBase {
 						}
 						owner._handleEvents(event);
 					},
-				})
+				}),
 			);
 		}
 	}
@@ -192,6 +195,9 @@ export class Canvas extends CanvasBase {
 
 	// @ts-ignore
 	get width(): number {
+		if (this._pendingWidth !== undefined) {
+			return this._pendingWidth;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return 0;
 		}
@@ -204,12 +210,28 @@ export class Canvas extends CanvasBase {
 		}
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
-			this._canvas.setSurfaceWidth(value);
+			if (this._pendingHeight !== undefined) {
+				// Height was just set — coalesce into single resize
+				const h = this._pendingHeight;
+				this._pendingHeight = undefined;
+				this._canvas.setSurfaceSize(value, h);
+			} else {
+				this._pendingWidth = value;
+				microtask(() => {
+					if (this._pendingWidth !== undefined) {
+						this._canvas.setSurfaceWidth(this._pendingWidth);
+						this._pendingWidth = undefined;
+					}
+				});
+			}
 		}
 	}
 
 	// @ts-ignore
 	get height(): number {
+		if (this._pendingHeight !== undefined) {
+			return this._pendingHeight;
+		}
 		if (this._canvas === undefined || this._canvas === null) {
 			return 0;
 		}
@@ -222,7 +244,20 @@ export class Canvas extends CanvasBase {
 		}
 		value = valueToNumber(value);
 		if (!Number.isNaN(value)) {
-			this._canvas.setSurfaceHeight(value);
+			if (this._pendingWidth !== undefined) {
+				// Width was just set — coalesce into single resize
+				const w = this._pendingWidth;
+				this._pendingWidth = undefined;
+				this._canvas.setSurfaceSize(w, value);
+			} else {
+				this._pendingHeight = value;
+				microtask(() => {
+					if (this._pendingHeight !== undefined) {
+						this._canvas.setSurfaceHeight(this._pendingHeight);
+						this._pendingHeight = undefined;
+					}
+				});
+			}
 		}
 	}
 
@@ -301,12 +336,18 @@ export class Canvas extends CanvasBase {
 				surfaceResize(width, height) {},
 				surfaceDestroyed() {},
 				surfaceCreated() {},
-			})
+			}),
 		);
 	}
 
 	disposeNativeView(): void {
 		this._canvas.setListener(null);
+		this._2dContext = undefined;
+		this._webglContext = undefined;
+		this._webgl2Context = undefined;
+		this._gpuContext = undefined;
+		this._contextType = ContextType.None;
+		this._is2D = false;
 		this._canvas = undefined;
 		super.disposeNativeView();
 	}
@@ -343,10 +384,10 @@ export class Canvas extends CanvasBase {
 				return this._2dContext.native;
 			case ContextType.WebGL:
 				return this._webglContext.native;
-			case ContextType.Canvas:
+			case ContextType.WebGL2:
 				return this._webgl2Context.native;
 			case ContextType.WebGPU:
-				return this._gpuContext;
+				return this._gpuContext?.native;
 			default:
 				return null;
 		}
@@ -360,7 +401,6 @@ export class Canvas extends CanvasBase {
 		if (!this._canvas) {
 			return null;
 		}
-
 		if (typeof type === 'string') {
 			if (type === '2d') {
 				if (this._webglContext || this._webgl2Context || this._gpuContext) {
@@ -374,12 +414,15 @@ export class Canvas extends CanvasBase {
 						fontColor: this.parent?.style?.color?.android ?? -16777216,
 					};
 
-					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible);
+					const ctx = this._canvas.create2DContext(opts.alpha, opts.antialias, opts.depth, opts.failIfMajorPerformanceCaveat, opts.powerPreference, opts.premultipliedAlpha, opts.preserveDrawingBuffer, opts.stencil, opts.desynchronized, opts.xrCompatible, opts.willReadFrequently ?? false, opts.colorSpace ?? 0);
 					this._2dContext = new (CanvasRenderingContext2D as any)(ctx);
+					// @ts-ignore
 					(this._2dContext as any)._canvas = this;
 					this._2dContext._type = '2d';
 					this._contextType = ContextType.Canvas;
 					this._is2D = true;
+					//@ts-ignore
+					this._2dContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 
 				return this._2dContext;
@@ -394,6 +437,8 @@ export class Canvas extends CanvasBase {
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';
 					this._contextType = ContextType.WebGL;
+					//@ts-ignore
+					this._webglContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._webglContext;
 			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
@@ -407,6 +452,8 @@ export class Canvas extends CanvasBase {
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';
 					this._contextType = ContextType.WebGL2;
+					//@ts-ignore
+					this._webgl2Context.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._webgl2Context;
 			} else if (type === 'webgpu') {
@@ -420,6 +467,8 @@ export class Canvas extends CanvasBase {
 					(this._gpuContext as any)._canvas = this;
 					(this._gpuContext as any)._type = 'webgpu';
 					this._contextType = ContextType.WebGPU;
+					//@ts-ignore
+					this._gpuContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._gpuContext;
 			}

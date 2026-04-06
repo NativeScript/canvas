@@ -255,8 +255,6 @@ impl g_p_u_device {
       })
       .collect::<Vec<_>>();
 
-    //println!("??? {:?} \n", &entries);
-
     let bind_group = unsafe {
       canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
         Arc::as_ptr(&self.device),

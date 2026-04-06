@@ -1,6 +1,6 @@
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
+use crate::context::{ColorSpace, Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use canvas_core::context_attributes::PowerPreference;
 use skia_safe::gpu::gl::Interface;
 use skia_safe::{gpu, surfaces, AlphaType, Color, ColorType, ISize, ImageInfo, PixelGeometry};
@@ -21,7 +21,8 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
-    ) -> Self {
+        color_space: ColorSpace,
+    ) -> Option<Self> {
         let mut attr = canvas_core::context_attributes::ContextAttributes::new(
             alpha,
             false,
@@ -35,6 +36,7 @@ impl Context {
             false,
             true,
             false,
+            color_space
         );
 
         let bounds = skia_safe::Rect::from_wh(width, height);
@@ -65,17 +67,19 @@ impl Context {
             }
         } else {
             canvas_core::gpu::gl::GLContext::create_offscreen_context(&mut attr, width as i32, height as i32)
-        }.unwrap();
+        }?;
 
-        gl_context.make_current();
+        if !gl_context.make_current() {
+            return None;
+        }
 
         let mut buffer_id = [0i32];
 
         unsafe { gl_bindings::GetIntegerv(gl_bindings::FRAMEBUFFER_BINDING, buffer_id.as_mut_ptr()) }
 
-        let interface = Interface::new_native();
+        let interface = Interface::new_native()?;
 
-        let mut ctx = gpu::direct_contexts::make_gl(interface.unwrap(), None).unwrap();
+        let mut ctx = gpu::direct_contexts::make_gl(interface, None)?;
 
         let mut frame_buffer = gpu::gl::FramebufferInfo::from_fboid(buffer_id[0] as u32);
 
@@ -105,10 +109,9 @@ impl Context {
             &target,
             gpu::SurfaceOrigin::BottomLeft,
             color_type,
-            None,
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space),
             Some(&surface_props),
-        )
-            .unwrap();
+        )?;
 
         let direct_context = Some(ctx);
 
@@ -116,7 +119,7 @@ impl Context {
         let mut state = State::default();
         state.direction = direction;
 
-        Context {
+        Some(Context {
             direct_context,
             #[cfg(feature = "metal")]
             metal_context: None,
@@ -127,13 +130,15 @@ impl Context {
             vulkan_context: None,
             #[cfg(feature = "vulkan")]
             vulkan_texture: None,
+            cpu_context: None,
             surface_data: SurfaceData {
                 bounds,
                 scale: density,
                 ppi,
                 engine,
                 state: Default::default(),
-                is_opaque: !alpha
+                is_opaque: !alpha,
+                color_space
             },
             surface,
             path: Path::default(),
@@ -141,7 +146,7 @@ impl Context {
             state_stack: vec![],
             font_color: Color::new(font_color as u32),
             surface_state: SurfaceState::None,
-        }
+        })
     }
 
     pub fn resize_gl(
@@ -154,6 +159,7 @@ impl Context {
         alpha: bool,
         ppi: f32,
     ) {
+        let color_space: Option<skia_safe::ColorSpace> = context.surface_data.color_space.into();
         let bounds = skia_safe::Rect::from_wh(width, height);
         let mut direct_context = None;
         let mut engine = SurfaceEngine::GL;
@@ -182,7 +188,7 @@ impl Context {
 
             engine = SurfaceEngine::CPU;
 
-            let info = ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, None);
+            let info = ImageInfo::new(ISize::new(width as i32, height as i32), color_type, alpha_type, color_space);
 
             surfaces::raster(&info, None, None)
         } else {
@@ -224,7 +230,7 @@ impl Context {
                 &target,
                 gpu::SurfaceOrigin::BottomLeft,
                 color_type,
-                None,
+                color_space,
                 Some(&surface_props),
             );
 

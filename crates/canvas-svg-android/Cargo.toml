@@ -1,0 +1,16 @@
+[package]
+name = "canvas-svg-android"
+version = "2.0.0"
+edition = "2024"
+
+
+[lib]
+name = "canvassvg"
+crate-type = ["cdylib"]
+
+
+[dependencies]
+skia-safe = { workspace = true, features = ["svg", "textlayout"] }
+jni = { workspace = true }
+ndk = { version = "0.7.0", features = ["bitmap"] }
+canvas-svg = { workspace = true }

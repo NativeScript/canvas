@@ -1,4 +1,3 @@
-import {VideoBase} from "./common";
+import { VideoBase } from './common';
 
-export declare class Video extends VideoBase {
-}
+export declare class Video extends VideoBase {}

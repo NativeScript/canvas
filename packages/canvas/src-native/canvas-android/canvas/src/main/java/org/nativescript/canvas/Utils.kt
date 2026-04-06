@@ -21,6 +21,25 @@ object Utils {
     @JvmStatic
     private external fun nativeMakeStateContextCurrent(state: Long): Boolean
 
+    @JvmStatic
+    private external fun nativeMake2DContextCurrent(context: Long): Boolean
+
+    @JvmStatic
+    private external fun nativeContext2DDrawOESTexture(
+        context: Long,
+        textureId: Int,
+        videoWidth: Int,
+        videoHeight: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean
+
     private var rating = -1
     val isEmulator: Boolean
         get() {
@@ -140,6 +159,42 @@ object Utils {
 
 
     @JvmStatic
+    fun create2DContextSurfaceTexture(context: Long): Array<Any>? {
+        if (!nativeMake2DContextCurrent(context)) return null
+        val render = TextureRender()
+        render.surfaceCreated()
+        return arrayOf(SurfaceTexture(render.textureId), render.textureId, render)
+    }
+
+
+    @JvmStatic
+    fun drawVideoFrameGL(
+        context: Long,
+        textureId: Int,
+        surfaceTexture: SurfaceTexture,
+        videoWidth: Int,
+        videoHeight: Int,
+        sx: Float,
+        sy: Float,
+        sw: Float,
+        sh: Float,
+        dx: Float,
+        dy: Float,
+        dw: Float,
+        dh: Float,
+    ): Boolean {
+        if (!nativeMake2DContextCurrent(context)) return false
+        surfaceTexture.updateTexImage()
+        return nativeContext2DDrawOESTexture(
+            context, textureId,
+            videoWidth, videoHeight,
+            sx, sy, sw, sh,
+            dx, dy, dw, dh,
+        )
+    }
+
+
+    @JvmStatic
     fun createRenderAndAttachToGLContext(
         state: Long,
         texture: SurfaceTexture,
@@ -188,5 +243,48 @@ object Utils {
         }
     }
 
+    @JvmStatic
+    fun updateTexImageFor3D(
+        state: Long,
+        flipY: Boolean,
+        texture: SurfaceTexture,
+        render: TextureRender,
+        videoWidth: Int,
+        videoHeight: Int,
+        target: Int,
+        level: Int,
+        internalformat: Int,
+        width: Int,
+        height: Int,
+        depth: Int,
+        border: Int,
+        zoffset: Int,
+    ) {
+        nativeMakeStateContextCurrent(state)
+        render.drawFrameTexImage3D(
+            texture, target, level, internalformat,
+            width, height, depth, border, zoffset, flipY
+        )
+    }
+
+    @JvmStatic
+    fun updateTexSubImageFor3D(
+        state: Long,
+        flipY: Boolean,
+        texture: SurfaceTexture,
+        render: TextureRender,
+        target: Int,
+        level: Int,
+        xoffset: Int,
+        yoffset: Int,
+        zoffset: Int,
+        width: Int,
+        height: Int,
+    ) {
+        nativeMakeStateContextCurrent(state)
+        render.drawFrameTexSubImage3D(
+            texture, target, level, xoffset, yoffset, zoffset, width, height, flipY
+        )
+    }
 
 }

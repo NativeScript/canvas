@@ -4,7 +4,6 @@ var copyVideo = false;
 import { Canvas } from '@nativescript/canvas';
 import * as glMatrix from './gl-matrix';
 const mat4 = glMatrix.mat4;
-import { Video } from '@nativescript/canvas-media';
 //
 // Start here
 //
@@ -85,7 +84,7 @@ export function handleVideo(canvas: Canvas) {
 	const texture = initTexture(gl);
 
 	//https://github.com/mdn/webgl-examples/raw/gh-pages/tutorial/sample8/Firefox.mp4
-	const video = setupVideo('~/assets/file-assets/webgl/Firefox.mp4');
+	const video = setupVideo('~/assets/file-assets/webgl/apple.mp4');
 
 	var then = 0;
 
@@ -126,7 +125,7 @@ function setupVideo(url) {
 			playing = true;
 			checkReady();
 		},
-		true
+		true,
 	);
 
 	video.addEventListener(
@@ -135,7 +134,7 @@ function setupVideo(url) {
 			timeupdate = true;
 			checkReady();
 		},
-		true
+		true,
 	);
 
 	video.src = url;
@@ -310,7 +309,7 @@ function initBuffers(gl) {
 function initTexture(gl, url?) {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);
-
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 	// Because video havs to be download over the internet
 	// they might take a moment until it's ready so
 	// put a single pixel in the texture so we can
@@ -323,6 +322,7 @@ function initTexture(gl, url?) {
 	const srcFormat = gl.RGBA;
 	const srcType = gl.UNSIGNED_BYTE;
 	const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+
 	gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
 	// Turn off mips and set  wrapping to clamp to edge so it
@@ -330,6 +330,7 @@ function initTexture(gl, url?) {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 	return texture;
 }
@@ -390,19 +391,19 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
 	mat4.translate(
 		modelViewMatrix, // destination matrix
 		modelViewMatrix, // matrix to translate
-		[-0.0, 0.0, -6.0]
+		[-0.0, 0.0, -6.0],
 	); // amount to translate
 	mat4.rotate(
 		modelViewMatrix, // destination matrix
 		modelViewMatrix, // matrix to rotate
 		cubeRotation, // amount to rotate in radians
-		[0, 0, 1]
+		[0, 0, 1],
 	); // axis to rotate around (Z)
 	mat4.rotate(
 		modelViewMatrix, // destination matrix
 		modelViewMatrix, // matrix to rotate
 		cubeRotation * 0.7, // amount to rotate in radians
-		[0, 1, 0]
+		[0, 1, 0],
 	); // axis to rotate around (X)
 
 	const normalMatrix = mat4.create();

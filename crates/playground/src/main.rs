@@ -13,6 +13,7 @@ use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
 use canvas_2d::context::compositing::composite_operation_type::CompositeOperationType;
+use canvas_2d::context::Context;
 use canvas_2d::context::fill_and_stroke_styles::paint::PaintStyle;
 use canvas_2d::context::line_styles::line_cap::LineCap;
 use canvas_c::webgpu::enums::{CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource, CanvasBufferBinding, CanvasCullMode, CanvasFilterMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasGPUTextureUsageCopyDst, CanvasGPUTextureUsageRenderAttachment, CanvasGPUTextureUsageStorageBinding, CanvasGPUTextureUsageTextureBinding, CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalIndexFormat, CanvasOptionalPrimitiveTopology, CanvasPrimitiveTopology, CanvasTextureAspect, CanvasTextureDimension};
@@ -28,8 +29,9 @@ use canvas_c::webgpu::gpu_device::{
 };
 use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
-use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasLoadOp, CanvasOptionalBlendState, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
-use canvas_c::CanvasRenderingContext2D;
+use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasLoadOp, CanvasOptionalBlendState, CanvasOptionalColor, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
+use canvas_c::{ CanvasRenderingContext2D};
+use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
 use canvas_webgl::webgl::{
@@ -507,6 +509,8 @@ void main() {
 }
 
 */
+
+#[derive(Debug)]
 struct Data {
     adapter: Option<*const CanvasGPUAdapter>,
     device: Option<*const CanvasGPUDevice>,
@@ -669,8 +673,7 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
             0,
             vertices.as_ptr() as _,
             vertices.len() * 4,
-            0,
-            -1,
+            0
         )
     }
 
@@ -755,12 +758,12 @@ fn webgpu_triangle(data: *mut Data, window: AppKitWindowHandle) {
         channel: canvas_c::webgpu::structs::CanvasPassChannelColor {
             load_op: canvas_c::webgpu::structs::CanvasLoadOp::Clear,
             store_op: canvas_c::webgpu::structs::CanvasStoreOp::Store,
-            clear_value: canvas_c::webgpu::structs::CanvasColor {
+            clear_value: Some(canvas_c::webgpu::structs::CanvasColor {
                 r: 0.,
                 g: 0.5,
                 b: 1.,
                 a: 1.,
-            },
+            }).into(),
             read_only: false,
         },
     }];
@@ -851,8 +854,7 @@ fn update_blur_settings(
             0,
             data.as_ptr() as *const u8,
             data.len() * 4,
-            0,
-            0,
+            0
         );
     }
     unsafe { canvas_native_webgpu_queue_release(queue) }
@@ -1030,6 +1032,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     let srcWidth = width; // canvas_c::canvas_native_image_asset_width(image_bitmap);
     let srcHeight = height; // canvas_c::canvas_native_image_asset_height(image_bitmap);
 
+
     let mut texture_desc = CanvasCreateTextureDescriptor {
         label: ptr::null_mut(),
         dimension: CanvasTextureDimension::D2,
@@ -1050,6 +1053,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     texture_desc.usage = CanvasGPUTextureUsageTextureBinding
         | CanvasGPUTextureUsageCopyDst
         | CanvasGPUTextureUsageRenderAttachment;
+
 
 
     let cube_texture = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_texture(
@@ -1158,7 +1162,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         buffer
     };
 
-    let blurParamsBuffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(
+    let blur_params_buffer = canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_buffer(
         device,
         ptr::null_mut(),
         8,
@@ -1176,14 +1180,14 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         CanvasBindGroupEntry {
             binding: 1,
             resource: CanvasBindGroupEntryResource::Buffer(CanvasBufferBinding {
-                buffer: blurParamsBuffer,
+                buffer: blur_params_buffer,
                 offset: -1,
                 size: -1,
             }),
         },
     ];
 
-    let computeConstants =
+    let compute_constants =
         canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
             device,
             ptr::null_mut(),
@@ -1219,7 +1223,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         },
     ];
 
-    let computeBindGroup0 =
+    let compute_bind_group0 =
         canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
             device,
             ptr::null_mut(),
@@ -1291,7 +1295,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         },
     ];
 
-    let computeBindGroup2 =
+    let compute_bind_group2 =
         canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
             device,
             ptr::null_mut(),
@@ -1318,7 +1322,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         },
     ];
 
-    let showResultBindGroup =
+    let show_result_bind_group =
         canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_bind_group(
             device,
             ptr::null_mut(),
@@ -1333,44 +1337,44 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         blockDim: 0,
     };
 
-    update_blur_settings(&mut settings, device, blurParamsBuffer);
+    update_blur_settings(&mut settings, device, blur_params_buffer);
 
-    let commandEncoder =
+    let command_encoder =
         canvas_c::webgpu::gpu_device::canvas_native_webgpu_device_create_command_encoder(
             device,
             ptr::null(),
         );
 
-    let computePass = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_compute_pass(commandEncoder, ptr::null(), ptr::null(), -1, -1);
+    let compute_pass = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_compute_pass(command_encoder, ptr::null(), ptr::null(), -1, -1);
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_pipeline(computePass, blurPipeline);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_pipeline(compute_pass, blurPipeline);
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 0, computeConstants, ptr::null(), 0, 0, 0);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(compute_pass, 0, compute_constants, ptr::null(), 0, 0, 0);
 
     let blockDim = settings.blockDim;
 
     let batch = [4, 4];
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup0, ptr::null(), 0, 0, 0);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(compute_pass, 1, compute_bind_group0, ptr::null(), 0, 0, 0);
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcWidth / blockDim, srcHeight / batch[1], 1);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(compute_pass, srcWidth / blockDim, srcHeight / batch[1], 1);
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(compute_pass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
 
-    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcHeight / batch[1], srcWidth / blockDim, 1);
+    canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(compute_pass, srcHeight / batch[1], srcWidth / blockDim, 1);
 
     for i in 0..settings.iterations - 1 {
-        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup2, ptr::null(), 0, 0, 0);
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(compute_pass, 1, compute_bind_group2, ptr::null(), 0, 0, 0);
 
-        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcWidth / blockDim, srcHeight / batch[1], 1);
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(compute_pass, srcWidth / blockDim, srcHeight / batch[1], 1);
 
-        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(computePass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_set_bind_group(compute_pass, 1, computeBindGroup1, ptr::null(), 0, 0, 0);
 
-        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(computePass, srcHeight / batch[1], srcWidth / blockDim, 1);
+        canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_dispatch_workgroups(compute_pass, srcHeight / batch[1], srcWidth / blockDim, 1);
     }
 
     canvas_c::webgpu::gpu_compute_pass_encoder::canvas_native_webgpu_compute_pass_encoder_end(
-        computePass,
+        compute_pass,
     );
 
     let texture =
@@ -1386,21 +1390,16 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
         channel: CanvasPassChannelColor {
             load_op: CanvasLoadOp::Clear,
             store_op: CanvasStoreOp::Store,
-            clear_value: CanvasColor {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 1.0,
-            },
+            clear_value: CanvasOptionalColor::None,
             read_only: false,
         },
     }];
 
-    let pass_encoder = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(commandEncoder, ptr::null(), colorAttachments.as_ptr(), colorAttachments.len(), ptr::null(), ptr::null(), ptr::null(), -1, -1);
+    let pass_encoder = canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_begin_render_pass(command_encoder, ptr::null(), colorAttachments.as_ptr(), colorAttachments.len(), ptr::null(), ptr::null(), ptr::null(), -1, -1);
 
     canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_pipeline(pass_encoder, fullscreenQuadPipeline);
 
-    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_bind_group(pass_encoder, 0, showResultBindGroup, ptr::null(), 0, 0, 0);
+    canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_set_bind_group(pass_encoder, 0, show_result_bind_group, ptr::null(), 0, 0, 0);
 
     canvas_c::webgpu::gpu_render_pass_encoder::canvas_native_webgpu_render_pass_encoder_draw(
         pass_encoder,
@@ -1416,7 +1415,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
 
     let command_buffers = [
         canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_finish(
-            commandEncoder,
+            command_encoder,
             ptr::null(),
         ),
     ];
@@ -1468,6 +1467,12 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         size: ptr::null_mut(),
         format: CanvasOptionalGPUTextureFormat::None,
     };
+
+    unsafe {
+        canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_configure(
+            context, device, &config,
+        );
+    }
 
     let entry_point = c"main";
 
@@ -1582,7 +1587,7 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
     let (width, height) = bm.dimensions();
 
 
-    // let c2d = canvas_c::canvas_native_context_create(width as f32, height as f32, 1., true, 0, 0., 1);
+   // let c2d = canvas_c::canvas_native_context_create(width as f32, height as f32, 1., true, 0, 0., 1);
     // let c2d = canvas_c::canvas_native_context_create_gl_no_window(width as f32, height as f32, 1., 0 ,  90., 1, true);
     let c2d = canvas_ios::canvas_native_ios_create_2d_context_metal_offscreen(width as f32, height as f32, true, 1., 1, 0, 90., 1) as *mut CanvasRenderingContext2D;
     unsafe {
@@ -1642,13 +1647,15 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         depth_or_array_layers: 1,
     };
 
+    let start = std::time::Instant::now();
     canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_copy_context_to_texture(
         queue,
         &source,
         &destination,
         &ex,
     );
-
+    let duration = start.elapsed();
+    println!("Method took: {:?}", duration);
 
     let pipeline_layout = canvas_c::webgpu::gpu_render_pipeline::canvas_native_webgpu_render_pipeline_get_bind_group_layout(pipeline, 0);
 
@@ -1672,8 +1679,7 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
             0,
             vertices.as_ptr() as _,
             vertices.len() * 4,
-            0,
-            -1,
+            0
         )
     }
 
@@ -1725,12 +1731,12 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         channel: CanvasPassChannelColor {
             load_op: CanvasLoadOp::Clear,
             store_op: CanvasStoreOp::Store,
-            clear_value: CanvasColor {
+            clear_value: Some(CanvasColor {
                 r: 0.0,
                 g: 0.0,
                 b: 0.0,
                 a: 1.0,
-            },
+            }).into(),
             read_only: false,
         },
     }];
@@ -1783,11 +1789,12 @@ fn main() {
 
     //  let raw_window_handle = window.raw_window_handle();
 
-    /*let mut attrs = ContextAttributes::default();
+    let mut attrs = ContextAttributes::default();
     attrs.set_antialias(false);
 
     let size = window.inner_size();
 
+    /*
     let ocontext = GLContext::create_offscreen_context_with_event_loop(
         &mut attrs,
         size.width as i32,
@@ -1817,9 +1824,9 @@ fn main() {
     //     _ => 0,
     // };
 
-    // let mut done = false;
+     let mut done = false;
 
-    // let mut ctx_2d = Context::new(Context::new_gl(
+    // let mut ctx_2d = Context::new_gl(
     //     size.width as f32,
     //     size.height as f32,
     //     1.,
@@ -1827,9 +1834,8 @@ fn main() {
     //     0,
     //     true,
     //     value,
-    //     0.,
     //     canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
-    // ));
+    // );
 
     // {
     //     let mut ctx = ctx_2d.get_context_mut();
@@ -1887,7 +1893,7 @@ fn main() {
 
     */
 
-    //  let mut ro = RainbowOctopus::new();
+     let mut ro = RainbowOctopus::new();
 
     //  textures(&mut gl_state);
 
@@ -1923,7 +1929,7 @@ fn main() {
     */
 
     let instance = canvas_c::webgpu::gpu::canvas_native_webgpu_instance_create();
-
+    //
     let options = canvas_c::webgpu::gpu::CanvasGPURequestAdapterOptions {
         power_preference: canvas_c::webgpu::gpu::CanvasGPUPowerPreference::None,
         force_fallback_adapter: false,
@@ -1942,7 +1948,7 @@ fn main() {
         width: size.width,
         height: size.height,
     };
-
+    
     let data = Box::into_raw(Box::new(data));
 
     unsafe {
@@ -1961,12 +1967,13 @@ fn main() {
 
     canvas_c::canvas_native_font_add_family_with_bytes(c"ChaChicle".as_ptr(), ChaChicle.as_ptr(), ChaChicle.len());
 
-    canvas_c::canvas_native_webgl_create_no_window(
-        600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false
-    );
+    // canvas_c::canvas_native_webgl_create_no_window(
+    //     600, 300, 1, true, false, false, false, 1, true, false, false, false, false, false
+    // );
 
 
 
+    let mut ctx: Option<Context> = None;
 
     event_loop.run(move |event, target| {
         match event {
@@ -1974,18 +1981,18 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 match event {
                     WindowEvent::Resized(resized) => {
-                        let data_ = unsafe { &*data };
+                       let data_ = unsafe { &*data };
 
-                        match data_.window {
+                        match window.raw_window_handle().unwrap() {
                             RawWindowHandle::AppKit(window) => {
-                                 webgpu_triangle(data, window);
+                               //  webgpu_triangle(data, window);
                                 unsafe {
-                                    //   webgpu_blur(data, window);
+                                  //    webgpu_blur(data, window);
 
-                                  //  webgpu_render_2d(data, window)
+                                    webgpu_render_2d(data, window)
                                 }
 
-                                // let mut ctx_2d = Context::new_metal(
+                                // let ctx_2d = Context::new_metal(
                                 //     window.ns_view.as_ptr(),
                                 //     2.,
                                 //     1,
@@ -1994,6 +2001,7 @@ fn main() {
                                 //     90.,
                                 //     canvas_2d::context::text_styles::text_direction::TextDirection::LTR,
                                 // );
+                                // ctx = Some(ctx_2d);
                                 //
                                 // ctx_2d.set_fill_style_with_color("white");
                                 // ctx_2d.fill_rect_xywh(0., 0., resized.width as f32, resized.height as f32);
@@ -2048,7 +2056,10 @@ fn main() {
                         */
                         // }
 
-                        //  rainbow_octopus(&mut ctx_2d, &mut ro);
+                        // if let Some(ctx) = ctx.as_mut() {
+                        //     rainbow_octopus(ctx, &mut ro);
+                        // }
+                        // 
 
                         // if let (Some(sun), Some(moon), Some(earth)) = (sun.as_ref(), moon.as_ref(), earth.as_ref()) {
                         //     solar(&ctx_2d, earth, moon, sun, fill.clone(), stroke.clone())
@@ -2120,6 +2131,13 @@ fn main() {
                         //  canvas_webgl::webgl::canvas_native_webgl_draw_arrays(canvas_webgl::webgl::POINTS, 0, 1, &mut gl_state);
 
                         //  gl_state.swap_buffers();
+
+                        // if let Some(ctx) = ctx.as_mut() {
+                        //     ctx.flush_and_sync_cpu();
+                        //     if let Some(ctx) = ctx.metal_context.as_mut() {
+                        //         ctx.present_drawable()
+                        //     }
+                        // }
                     }
                     _ => {}
                 }
@@ -2618,9 +2636,9 @@ impl RainbowOctopus {
     }
 }
 
-fn rainbow_octopus(ctx: &mut CanvasRenderingContext2D, ro: &mut RainbowOctopus) {
-    let w = ctx.get_context().width();
-    let h = ctx.get_context().height();
+fn rainbow_octopus(ctx: &mut Context, ro: &mut RainbowOctopus) {
+    let w = ctx.width();
+    let h = ctx.height();
 
     let pi = std::f32::consts::PI;
 
@@ -2632,9 +2650,8 @@ fn rainbow_octopus(ctx: &mut CanvasRenderingContext2D, ro: &mut RainbowOctopus) 
 
     let mut t_step: f32 = 1.0 / 60.0;
 
-    let mut ctx = ctx.get_context_mut();
     ctx.clear_rect(0., 0., w, h);
-
+    
     for i in 0..(n * m) as i32 {
         ro.beta = i as f32 * 2. * pi / (n * m);
         ro.x0 = 0.;
@@ -2649,6 +2666,7 @@ fn rainbow_octopus(ctx: &mut CanvasRenderingContext2D, ro: &mut RainbowOctopus) 
         ctx.set_fill_style(
             PaintStyle::new_color_str(&format!("hsl({},100%,65%)", ro.hue)).unwrap(),
         );
+
         for j in 0..p as i32 {
             let j = j as f32;
             let p = p as f32;

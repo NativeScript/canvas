@@ -8,6 +8,7 @@ import * as PIXI from 'pixi.js';
 import { device } from '@nativescript/core/platform';
 import { initDevtools } from '@pixi/devtools';
 import { Canvas, importFontsFromCSS, loadFontsFromCSS } from '@nativescript/canvas';
+import { runOnCanvas } from './perf-test';
 
 // import { Viewport } from 'pixi-viewport';
 
@@ -106,13 +107,13 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.advance(canvas);
 		//this.container(canvas);
 		//this.explosion(canvas);
-		// this.bitmapFont(canvas);
+		//this.bitmapFont(canvas);
 
 		//this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
-		//this.starWarp(canvas);
+		this.starWarp(canvas);
 		//this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);
@@ -124,7 +125,8 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.simplePlane(canvas);
 		//this.animatedJet(canvas);
 		//this.viewPort(canvas);
-		this.svg(canvas);
+		//this.svg(canvas);
+		//runOnCanvas(canvas)
 	}
 
 	/* Graphics */
@@ -138,15 +140,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 			preference: 'webgpu',
 			width: canvas.width,
 			height: canvas.height,
-		});
-
-		// grab context to present
-		const ctx = canvas.getContext('webgpu');
-
-		app.ticker.add((delta) => {
-			if (ctx) {
-				ctx.presentSurface();
-			}
 		});
 
 		const graphics = new Graphics();
@@ -317,14 +310,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 				app.stage.addChild(sprite);
 			} catch (error) {}
 
-			const ctx = canvas.getContext('webgpu');
-			app.ticker.add((delta) => {
-				const texture = ctx.getCurrentTexture();
-				if (texture) {
-					ctx.presentSurface();
-				}
-			});
-
 			/*
 			const img = new Image();
 			img.src = url;
@@ -372,14 +357,6 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 
 			//app.stage.addChild(sprite);
 
-			const ctx = canvas.getContext('webgpu');
-
-			app.ticker.add((delta) => {
-				const texture = ctx.getCurrentTexture();
-				if (texture) {
-					ctx.presentSurface();
-				}
-			});
 
 			*/
 
@@ -1081,8 +1058,6 @@ void main()
 		// Used for spinning!
 		let count = 0;
 
-		const ctx = canvas.getContext('webgpu');
-
 		app.ticker.add(() => {
 			for (let i = 0; i < items.length; i++) {
 				// rotate each item
@@ -1113,8 +1088,6 @@ void main()
 				target: renderTexture2,
 				clear: false,
 			});
-
-			ctx.presentSurface();
 		});
 	}
 
@@ -1277,8 +1250,6 @@ void main()
 			graphics.stroke({ width: Math.random() * 30, color: Math.random() * 0xffffff });
 		});
 
-		const ctx = canvas.getContext('webgpu');
-
 		// Animate the moving shape
 		app.ticker.add(() => {
 			count += 0.1;
@@ -1295,11 +1266,6 @@ void main()
 				.stroke({ width: 10, color: 0xff0000 });
 
 			thing.rotation = count * 0.1;
-
-			const texture = ctx.getCurrentTexture();
-			if (texture) {
-				ctx.presentSurface();
-			}
 		});
 	}
 
@@ -1350,16 +1316,6 @@ void main()
 		app.stage.addChild(text2);
 		app.stage.addChild(text3);
 		app.stage.addChild(text4);
-
-		const ctx = canvas.getContext('webgpu');
-
-		// Animate the moving shape
-		app.ticker.add(() => {
-			const texture = ctx.getCurrentTexture();
-			if (texture) {
-				ctx.presentSurface();
-			}
-		});
 	}
 
 	async explosion(canvas) {
@@ -1411,7 +1367,7 @@ void main()
 		} catch (error) {
 			console.log(error);
 		}
-		console.log('??');
+
 		// Create an array to store the textures
 		const explosionTextures = [];
 		let i;
@@ -1436,15 +1392,6 @@ void main()
 			app.stage.addChild(explosion);
 		}
 
-		const ctx = canvas.getContext('webgpu');
-
-		app.ticker.add(() => {
-			const texture = ctx.getCurrentTexture();
-			if (texture) {
-				ctx.presentSurface();
-			}
-		});
-
 		app.start();
 	}
 
@@ -1460,12 +1407,10 @@ void main()
 			height: canvas.height,
 		});
 
-		const ctx = canvas.getContext('webgpu');
-
 		// Get the texture for rope.
 		const starTexture = await PIXI.Assets.load(this.root + '/images/star.png');
 
-		const starAmount = 1000;
+		const starAmount = 5000;
 		let cameraZ = 0;
 		const fov = 20;
 		const baseSpeed = 0.025;
@@ -1536,12 +1481,6 @@ void main()
 				// and depending on how far away it is from the center.
 				star.sprite.scale.y = distanceScale * starBaseSize + (distanceScale * speed * starStretch * distanceCenter) / app.renderer.screen.width;
 				star.sprite.rotation = Math.atan2(dyCenter, dxCenter) + Math.PI / 2;
-			}
-
-			const texture = ctx.getCurrentTexture();
-
-			if (texture != null) {
-				ctx.presentSurface();
 			}
 		});
 	}
@@ -1931,14 +1870,6 @@ void main()
 		//app.loader.add('bg_grass', this.root + '/images/bg_grass.jpg').load(build);
 		const texture = await PIXI.Assets.load('https://pixijs.com/assets/bg_grass.jpg');
 
-		const ctx = canvas.getContext('webgpu');
-
-		app.ticker.add((delta) => {
-			if (ctx) {
-				ctx.presentSurface();
-			}
-		});
-
 		const plane = new PIXI.MeshPlane({ texture, verticesX: 10, verticesY: 10 });
 		plane.x = 100;
 		plane.y = 100;
@@ -2023,6 +1954,7 @@ void main()
 		await app.init({
 			background: '#1099bb',
 			canvas,
+			preference: 'webgpu',
 			width: canvas.width,
 			height: canvas.height,
 		});

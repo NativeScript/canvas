@@ -1295,7 +1295,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
     auto options = optionsVal.As<v8::Object>();
 
     v8::Local<v8::Value> stencilValue;
-    auto hasDepthStencil = options->Get(context, ConvertToV8String(isolate, "depthStencil")).ToLocal(
+    auto hasDepthStencil = options->Get(context,
+                                        ConvertToV8String(isolate, "depthStencil")).ToLocal(
             &stencilValue);
 
     CanvasDepthStencilState *stencil = nullptr;
@@ -1533,7 +1534,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
             v8::Local<v8::Value> writeMaskVal;
 
-            auto hasWriteMask = state->Get(context, ConvertToV8String(isolate, "writeMask")).ToLocal(&writeMaskVal);
+            auto hasWriteMask = state->Get(context,
+                                           ConvertToV8String(isolate, "writeMask")).ToLocal(
+                    &writeMaskVal);
 
             if (hasWriteMask && writeMaskVal->IsUint32()) {
                 writeMask = writeMaskVal->Uint32Value(context).FromJust();
@@ -1545,7 +1548,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
             v8::Local<v8::Value> blendVal;
 
-            auto hasBlend = state->Get(context, ConvertToV8String(isolate, "blend")).ToLocal(&blendVal);
+            auto hasBlend = state->Get(context, ConvertToV8String(isolate, "blend")).ToLocal(
+                    &blendVal);
 
             if (hasBlend && blendVal->IsObject()) {
                 auto blendObj = blendVal.As<v8::Object>();
@@ -1639,7 +1643,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         v8::Local<v8::Value> constantsVal;
-        auto hasConstants = fragmentValueObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(
+        auto hasConstants = fragmentValueObj->Get(context,
+                                                  ConvertToV8String(isolate, "constants")).ToLocal(
                 &constantsVal);
 
         if (hasConstants && constantsVal->IsMap()) {
@@ -1676,7 +1681,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
         v8::Local<v8::Value> entryPoint;
-        auto hasEntryPoint = fragmentValueObj->Get(context, ConvertToV8String(isolate, "entryPoint")).ToLocal(
+        auto hasEntryPoint = fragmentValueObj->Get(context, ConvertToV8String(isolate,
+                                                                              "entryPoint")).ToLocal(
                 &entryPoint);
 
 
@@ -1755,7 +1761,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         v8::Local<v8::Value> count;
         v8::Local<v8::Value> mask;
 
-        auto hasAlphaToCoverageEnabled = multisampleObj->Get(context, ConvertToV8String(isolate, "alphaToCoverageEnabled")).
+        auto hasAlphaToCoverageEnabled = multisampleObj->Get(context, ConvertToV8String(isolate,
+                                                                                        "alphaToCoverageEnabled")).
                 ToLocal(&alphaToCoverageEnabled);
 
         if (hasAlphaToCoverageEnabled && alphaToCoverageEnabled->IsBoolean()) {
@@ -1802,7 +1809,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 CanvasOptionalIndexFormatNone
         };
 
-        primitive->topology = CanvasPrimitiveTopologyTriangleList;
+        primitive->topology = CanvasOptionalPrimitiveTopology{
+                CanvasOptionalPrimitiveTopologyNone
+        };
 
         primitive->unclipped_depth = false;
 
@@ -1919,19 +1928,24 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
                 auto topology = topologyValue.As<v8::Uint32>()->Value();
                 switch (topology) {
                     case 0:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
                         break;
                     case 1:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
                         break;
                     case 2:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
                         break;
                     case 3:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
                         break;
                     case 4:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
                         break;
                     default:
                         break;
@@ -1939,15 +1953,20 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
             } else if (topologyValue->IsString()) {
                 auto topology = ConvertFromV8String(isolate, topologyValue);
                 if (topology == "line-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
                 } else if (topology == "line-strip") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
                 } else if (topology == "point-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
                 } else if (topology == "triangle-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
                 } else if (topology == "triangle-strip") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
                 }
             }
 
@@ -1968,7 +1987,7 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
 
     v8::Local<v8::Value> vertexValue;
-   auto hasVertex = options->Get(context, ConvertToV8String(isolate, "vertex")).ToLocal(
+    auto hasVertex = options->Get(context, ConvertToV8String(isolate, "vertex")).ToLocal(
             &vertexValue);
 
 
@@ -1990,7 +2009,9 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         vertex->module = module->GetShaderModule();
 
         v8::Local<v8::Value> constantsVal;
-        auto hasConstants = vertexObj->Get(context, ConvertToV8String(isolate, "constants")).ToLocal(&constantsVal);
+        auto hasConstants = vertexObj->Get(context,
+                                           ConvertToV8String(isolate, "constants")).ToLocal(
+                &constantsVal);
 
         if (hasConstants && constantsVal->IsMap()) {
             auto constants = constantsVal.As<v8::Map>();
@@ -2027,7 +2048,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
         }
 
         v8::Local<v8::Value> buffersVal;
-        auto hasBuffers = vertexObj->Get(context, ConvertToV8String(isolate, "buffers")).ToLocal(&buffersVal);
+        auto hasBuffers = vertexObj->Get(context, ConvertToV8String(isolate, "buffers")).ToLocal(
+                &buffersVal);
 
         uint64_t stride = 0;
         if (hasBuffers && buffersVal->IsArray()) {
@@ -2039,7 +2061,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
                 v8::Local<v8::Value> arrayStride;
 
-                auto hasArrayStride = buffer->Get(context, ConvertToV8String(isolate, "arrayStride")).ToLocal(
+                auto hasArrayStride = buffer->Get(context, ConvertToV8String(isolate,
+                                                                             "arrayStride")).ToLocal(
                         &arrayStride);
 
                 if (hasArrayStride && arrayStride->IsNumber()) {
@@ -2050,7 +2073,8 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
                 v8::Local<v8::Value> attributesValue;
 
-                auto hasAttributes = buffer->Get(context, ConvertToV8String(isolate, "attributes")).ToLocal(
+                auto hasAttributes = buffer->Get(context,
+                                                 ConvertToV8String(isolate, "attributes")).ToLocal(
                         &attributesValue);
 
                 if (hasAttributes && attributesValue->IsArray()) {
@@ -2629,7 +2653,6 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
     descriptor.label = *label;
 
 
-
     v8::Local<v8::Value> layoutVal;
     options->Get(context, ConvertToV8String(isolate, "layout")).ToLocal(
             &layoutVal);
@@ -2721,7 +2744,9 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
                 CanvasOptionalIndexFormatNone
         };
 
-        primitive->topology = CanvasPrimitiveTopologyTriangleList;
+        primitive->topology = CanvasOptionalPrimitiveTopology{
+                CanvasOptionalPrimitiveTopologyNone
+        };
 
         primitive->unclipped_depth = false;
 
@@ -2838,19 +2863,24 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
                 auto topology = topologyValue.As<v8::Uint32>()->Value();
                 switch (topology) {
                     case 0:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
                         break;
                     case 1:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
                         break;
                     case 2:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
                         break;
                     case 3:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
                         break;
                     case 4:
-                        primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
+                        primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                        primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
                         break;
                     default:
                         break;
@@ -2858,15 +2888,20 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
             } else if (topologyValue->IsString()) {
                 auto topology = ConvertFromV8String(isolate, topologyValue);
                 if (topology == "line-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineList;
                 } else if (topology == "line-strip") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyLineStrip;
                 } else if (topology == "point-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyPointList;
                 } else if (topology == "triangle-list") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleList;
                 } else if (topology == "triangle-strip") {
-                    primitive->topology = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
+                    primitive->topology.tag = CanvasOptionalPrimitiveTopologySome;
+                    primitive->topology.some = CanvasPrimitiveTopology::CanvasPrimitiveTopologyTriangleStrip;
                 }
             }
 

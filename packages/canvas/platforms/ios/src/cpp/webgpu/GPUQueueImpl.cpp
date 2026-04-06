@@ -199,7 +199,7 @@ void GPUQueueImpl::CopyExternalImageToTexture(const v8::FunctionCallbackInfo<v8:
         auto textureVal = destinationObj->Get(context, ConvertToV8String(isolate,
                                                                          "texture")).ToLocalChecked();
         auto texture = GPUTextureImpl::GetPointer(textureVal.As<v8::Object>())->GetTexture();
-        
+
 
         uint32_t mipLevel = 0;
         CanvasOrigin3d origin{0, 0, 0};
@@ -442,31 +442,59 @@ void GPUQueueImpl::WriteBuffer(const v8::FunctionCallbackInfo<v8::Value> &args) 
         auto buffer = GPUBufferImpl::GetPointer(bufferValue.As<v8::Object>());
 
         auto bufferOffset = (uint64_t) args[1].As<v8::Number>()->Value();
+			
+				std::shared_ptr<v8::BackingStore> store;
+			
+				uint8_t * data = nullptr;
+				
+				size_t offset = 0;
+				size_t data_size = 0;
+			
+			if(args[2]->IsTypedArray()){
+				auto dataValue = args[2].As<v8::TypedArray>();
+				store = dataValue->Buffer()->GetBackingStore();
+				offset = dataValue->ByteOffset();
+				data = static_cast<uint8_t *>(store->Data()) + offset;
+				// Use the typed array's own byte length, not the backing store's total size.
+				// Example: Float32Array(bigBuffer, 0, 4) has byteLength=16 but store could be 1000 bytes.
+				data_size = dataValue->ByteLength();
+			}else if(args[2]->IsArrayBuffer()){
+				auto dataValue = args[2].As<v8::ArrayBuffer>();
+				store = dataValue->GetBackingStore();
+				data = static_cast<uint8_t *>(store->Data());
+				data_size = store->ByteLength();
+			}else {
+				return;
+			}
 
-        auto dataValue = args[2].As<v8::TypedArray>();
-
-        auto offset = dataValue->ByteOffset();
-
-        auto store = dataValue->Buffer()->GetBackingStore();
-
-        auto data = static_cast<uint8_t *>(store->Data()) + offset;
-
-        auto data_size = store->ByteLength() - offset;
+      
 
         auto dataOffset = (uint64_t) args[3].As<v8::Number>()->Value();
 
-        int64_t size = -1;
         auto sizeValue = args[4];
-
-        if (sizeValue->IsNumber()) {
-            size = (int64_t) sizeValue->ToNumber(context).ToLocalChecked()->Value();
-        }
 
 
         if (buffer != nullptr) {
-            canvas_native_webgpu_queue_write_buffer(ptr->GetGPUQueue(), buffer->GetGPUBuffer(),
-                                                    bufferOffset, data, data_size, dataOffset,
-                                                    size);
+
+
+            if (sizeValue->IsNumber()) {
+                int64_t size = (int64_t) sizeValue->ToNumber(context).ToLocalChecked()->Value();
+								
+							if(size < 0){
+								canvas_native_webgpu_queue_write_buffer(ptr->GetGPUQueue(), buffer->GetGPUBuffer(),
+																												bufferOffset, data, data_size, dataOffset);
+							}else {
+								canvas_native_webgpu_queue_write_buffer_size(ptr->GetGPUQueue(),
+																														 buffer->GetGPUBuffer(),
+																														 bufferOffset, data, data_size,
+																														 dataOffset,
+																														 size);
+							}
+              
+            } else {
+                canvas_native_webgpu_queue_write_buffer(ptr->GetGPUQueue(), buffer->GetGPUBuffer(),
+                                                        bufferOffset, data, data_size, dataOffset);
+            }
         }
     }
 

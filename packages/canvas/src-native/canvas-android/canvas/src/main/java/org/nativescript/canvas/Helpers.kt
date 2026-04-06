@@ -7,17 +7,14 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.VectorDrawable
 import android.os.Build
+import androidx.core.graphics.createBitmap
 
 object Helpers {
 	val emptyFloat = FloatArray(0)
 
 	fun getBitmap(src: Drawable): Bitmap {
 		return (src as? BitmapDrawable)?.bitmap ?: run {
-			val bitmap = Bitmap.createBitmap(
-				src.intrinsicWidth,
-				src.intrinsicHeight,
-				Bitmap.Config.ARGB_8888
-			)
+			val bitmap = createBitmap(src.intrinsicWidth, src.intrinsicHeight)
 			val canvas = Canvas(bitmap)
 			var previousBounds: Rect? = null
 			(src as? VectorDrawable)?.let {

@@ -1,0 +1,5 @@
+ module NSCCanvasMedia {
+  umbrella header "NSCCanvasMediaUmbrella.h"
+  export *
+  module * { export * }
+}

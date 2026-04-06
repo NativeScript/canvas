@@ -1,12 +1,43 @@
-use foreign_types_shared::ForeignTypeRef;
+// use foreign_types_shared::ForeignTypeRef;
 use icrate::objc2;
-use icrate::objc2::__framework_prelude::Retained;
 use icrate::objc2::ffi::BOOL;
-use icrate::objc2::{msg_send, msg_send_id};
+use icrate::objc2::msg_send;
+use icrate::objc2::rc::Retained;
 use metal::foreign_types::ForeignType;
 use metal::{MTLResourceOptions, MetalDrawable, MetalDrawableRef};
 use objc2_foundation::{NSAutoreleasePool, NSObject};
 use std::os::raw::c_void;
+#[derive(Debug)]
+pub struct MetalTexture {
+    pool: Retained<NSAutoreleasePool>,
+    texture: metal::Texture,
+}
+
+impl MetalTexture {
+    pub fn width(&self) -> u64 {
+        self.texture.width()
+    }
+
+    pub fn height(&self) -> u64 {
+        self.texture.height()
+    }
+
+    pub unsafe fn from_texture(texture: *mut c_void) -> Option<Self> {
+        if texture.is_null() {
+            return None;
+        }
+
+        let texture = metal::Texture::from_ptr(texture as *mut _);
+        Some(Self {
+            texture,
+            pool: NSAutoreleasePool::new(),
+        })
+    }
+
+    pub fn texture(&self) -> *mut c_void {
+        self.texture.as_ptr() as _
+    }
+}
 
 #[derive(Debug)]
 pub struct MetalContext {
@@ -34,24 +65,21 @@ impl MetalContext {
         let view = unsafe { Retained::from_raw(view as _).unwrap() };
 
         let layer = if cfg!(target_os = "macos") {
-            let mut layer: *mut NSObject = unsafe { msg_send![&view, layer] };
+            let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
 
             if let Some(clazz) = objc2::runtime::AnyClass::get("CAMetalLayer") {
-
                 let is_metal: BOOL = unsafe { msg_send![layer, isKindOfClass: clazz] };
                 if is_metal == objc2::ffi::NO {
-                    let _: () = unsafe {
-                        msg_send![&view,  setWantsLayer: objc2::ffi::YES]
-                    };
+                    let _: () = unsafe { msg_send![&view,  setWantsLayer: objc2::ffi::YES] };
                     let mtl_layer = metal::MetalLayer::new();
                     mtl_layer.set_device(&device);
                     mtl_layer.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
                     mtl_layer.set_presents_with_transaction(false);
+                    mtl_layer.set_framebuffer_only(false);
                     mtl_layer.set_opaque(false);
 
-                    let _: () = unsafe {
-                        msg_send![&view, setLayer: mtl_layer.as_ptr() as *mut NSObject ]
-                    };
+                    let _: () =
+                        unsafe { msg_send![&view, setLayer: mtl_layer.as_ptr() as *mut NSObject ] };
 
                     mtl_layer
                 } else {
@@ -61,12 +89,10 @@ impl MetalContext {
                 unsafe { metal::MetalLayer::from_ptr(layer as _) }
             }
         } else {
-            let mut layer: *mut NSObject = unsafe { msg_send![&view, layer] };
+            let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
             unsafe { metal::MetalLayer::from_ptr(layer as _) }
         };
-        let current_drawable = layer.next_drawable().map(|drawable| {
-            drawable.to_owned()
-        });
+        let current_drawable = layer.next_drawable().map(|drawable| drawable.to_owned());
 
         Self {
             queue,
@@ -78,7 +104,6 @@ impl MetalContext {
             is_offscreen: false,
         }
     }
-
 
     pub fn new_offscreen(width: f32, height: f32) -> Self {
         let pool = unsafe { NSAutoreleasePool::new() };
@@ -95,11 +120,9 @@ impl MetalContext {
         layer.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
         layer.set_presents_with_transaction(false);
         layer.set_opaque(false);
+        layer.set_framebuffer_only(false);
 
-
-        let current_drawable = layer.next_drawable().map(|drawable| {
-            drawable.to_owned()
-        });
+        let current_drawable = layer.next_drawable().map(|drawable| drawable.to_owned());
 
         Self {
             queue,
@@ -112,16 +135,18 @@ impl MetalContext {
         }
     }
 
-    pub unsafe fn new_device_queue(view: *mut c_void, device: *mut c_void, queue: *mut c_void) -> Self {
+    pub unsafe fn new_device_queue(
+        view: *mut c_void,
+        device: *mut c_void,
+        queue: *mut c_void,
+    ) -> Self {
         let pool = NSAutoreleasePool::new();
         let device = metal::Device::from_ptr(device as _);
         let view = Retained::from_raw(view as _).unwrap();
         let queue = metal::CommandQueue::from_ptr(queue as _);
         let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
         let layer = unsafe { metal::MetalLayer::from_ptr(layer as _) };
-        let current_drawable = layer.next_drawable().map(|drawable| {
-            drawable.to_owned()
-        });
+        let current_drawable = layer.next_drawable().map(|drawable| drawable.to_owned());
 
         Self {
             queue,
@@ -144,9 +169,7 @@ impl MetalContext {
 
     pub fn sample_count(&self) -> usize {
         match &self.view {
-            None => {
-                1
-            }
+            None => 1,
             Some(view) => {
                 let count: usize = unsafe { msg_send![view, sampleCount] };
                 count
@@ -157,7 +180,7 @@ impl MetalContext {
     pub fn present(&mut self) {
         if let Some(view) = self.view.as_ref() {
             let _: () = unsafe { msg_send![view, present] };
-        } else {}
+        }
     }
 
     pub fn draw(&self) {
@@ -180,10 +203,7 @@ impl MetalContext {
             layer.set_presents_with_transaction(false);
             layer.set_opaque(false);
 
-
-            let current_drawable = layer.next_drawable().map(|drawable| {
-                drawable.to_owned()
-            });
+            let current_drawable = layer.next_drawable().map(|drawable| drawable.to_owned());
 
             self.current_drawable = current_drawable;
             self.layer = layer;
@@ -197,10 +217,8 @@ impl MetalContext {
 
                 if let Some(clazz) = objc2::runtime::AnyClass::get("CAMetalLayer") {
                     let is_metal: BOOL = unsafe { msg_send![layer, isKindOfClass: clazz] };
-                    if  is_metal == objc2::ffi::YES {
-                        let _: () = unsafe {
-                            msg_send![&view,  setWantsLayer: objc2::ffi::YES]
-                        };
+                    if is_metal == objc2::ffi::YES {
+                        let _: () = unsafe { msg_send![&view,  setWantsLayer: objc2::ffi::YES] };
                         let mtl_layer = metal::MetalLayer::new();
                         mtl_layer.set_device(self.device.as_ref());
                         mtl_layer.set_pixel_format(metal::MTLPixelFormat::BGRA8Unorm);
@@ -219,12 +237,10 @@ impl MetalContext {
                     unsafe { metal::MetalLayer::from_ptr(layer as _) }
                 }
             } else {
-                let mut layer: *mut NSObject = unsafe { msg_send![&view, layer] };
+                let layer: *mut NSObject = unsafe { msg_send![&view, layer] };
                 unsafe { metal::MetalLayer::from_ptr(layer as _) }
             };
-            let current_drawable = layer.next_drawable().map(|drawable| {
-                drawable.to_owned()
-            });
+            let current_drawable = layer.next_drawable().map(|drawable| drawable.to_owned());
             self.current_drawable = current_drawable;
             self.layer = layer;
             self.view = Some(view);
@@ -234,9 +250,7 @@ impl MetalContext {
     pub unsafe fn view(&self) -> *mut c_void {
         match &self.view {
             None => std::ptr::null_mut(),
-            Some(view) => {
-                Retained::into_raw(view.clone()) as _
-            }
+            Some(view) => Retained::into_raw(view.clone()) as _,
         }
     }
 
@@ -248,7 +262,7 @@ impl MetalContext {
         let _ = unsafe { NSAutoreleasePool::new() };
         if let Some(drawable) = self.current_drawable.take() {
             let cmd = self.queue.new_command_buffer();
-            cmd.present_drawable(&*drawable);
+            cmd.present_drawable(&drawable);
             cmd.commit();
         }
     }
@@ -256,9 +270,9 @@ impl MetalContext {
     pub fn current_drawable(&mut self) -> Option<&MetalDrawable> {
         if self.current_drawable.is_none() {
             self.current_drawable = unsafe {
-                self.layer.next_drawable().map(|drawable| {
-                    drawable.to_owned()
-                })
+                self.layer
+                    .next_drawable()
+                    .map(|drawable| drawable.to_owned())
             }
         }
         self.current_drawable.as_ref()
@@ -267,9 +281,9 @@ impl MetalContext {
     pub fn next_drawable(&mut self) -> Option<&MetalDrawable> {
         let _ = unsafe { NSAutoreleasePool::new() };
         self.current_drawable = unsafe {
-            self.layer.next_drawable().map(|drawable| {
-                drawable.to_owned()
-            })
+            self.layer
+                .next_drawable()
+                .map(|drawable| drawable.to_owned())
         };
         self.current_drawable.as_ref()
     }
@@ -290,7 +304,11 @@ impl MetalContext {
         self.layer.set_drawable_size(size)
     }
 
-    fn blit(device: metal::Device, queue: metal::CommandQueue, drawable: &MetalDrawable) -> Option<Vec<u8>> {
+    fn blit(
+        device: metal::Device,
+        queue: metal::CommandQueue,
+        drawable: &MetalDrawable,
+    ) -> Option<Vec<u8>> {
         unsafe {
             if drawable.presented_time() == 0.0 {
                 let texture = drawable.texture();
@@ -300,8 +318,16 @@ impl MetalContext {
                 let blit_encoder = command_buffer.new_blit_command_encoder();
                 let region = metal::MTLRegion::new_2d(0, 0, texture.width(), texture.height());
                 blit_encoder.copy_from_texture_to_buffer(
-                    texture, 0, 0, region.origin, region.size, &buffer,
-                    0, 4 * texture.width(), 0, metal::MTLBlitOption::empty(),
+                    texture,
+                    0,
+                    0,
+                    region.origin,
+                    region.size,
+                    &buffer,
+                    0,
+                    4 * texture.width(),
+                    0,
+                    metal::MTLBlitOption::empty(),
                 );
                 blit_encoder.end_encoding();
                 command_buffer.commit();
@@ -320,14 +346,10 @@ impl MetalContext {
         let queue = self.queue.clone();
         match self.current_drawable.as_ref() {
             None => match self.next_drawable() {
-                Some(drawable) => {
-                    Self::blit(device, queue, drawable)
-                }
-                _ => None
-            }
-            Some(drawable) => {
-                Self::blit(device, queue, drawable)
-            }
+                Some(drawable) => Self::blit(device, queue, drawable),
+                _ => None,
+            },
+            Some(drawable) => Self::blit(device, queue, drawable),
         }
     }
 }

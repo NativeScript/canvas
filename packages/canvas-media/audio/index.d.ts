@@ -1,4 +1,3 @@
-import {AudioBase} from "./common";
+import { AudioBase } from './common';
 
-export declare class Audio extends AudioBase {
-}
+export declare class Audio extends AudioBase {}

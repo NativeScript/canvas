@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Build
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import java.io.BufferedReader
 import java.io.File
@@ -19,6 +20,8 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import kotlin.math.min
+import androidx.core.graphics.createBitmap
+import java.nio.ByteOrder
 
 
 class NSCSVGData {
@@ -28,13 +31,13 @@ class NSCSVGData {
 	internal var mSize: Int = 0
 	internal var mBitmap: Bitmap? = null
 
-
 	fun resize(width: Int, height: Int) {
 		if (width > 0 && height > 0) {
 			mData = null
 			mBitmap = null
 			val size = (width * height * 4)
 			mData = ByteBuffer.allocateDirect(size)
+			mData?.order(ByteOrder.nativeOrder())
 			mSize = size
 			this.mWidth = width
 			this.mHeight = height
@@ -65,9 +68,11 @@ class NSCSVGData {
 		if (mBitmap == null) {
 			if (mWidth > 0 && mHeight > 0) {
 				mData?.let { data ->
-					val bitmap = Bitmap.createBitmap(mWidth.toInt(), mHeight.toInt(), Bitmap.Config.ARGB_8888)
+					val bitmap = createBitmap(mWidth, mHeight)
 					data.rewind()
 					bitmap.copyPixelsFromBuffer(data)
+					data.rewind()
+					mBitmap = bitmap
 				}
 			}
 		}
@@ -85,6 +90,7 @@ class NSCSVG : View {
 	internal var src: String = ""
 	internal var srcPath: String = ""
 	private var mMatrix = Matrix()
+	internal var isPreloaded = false
 
 	var sync: Boolean = false
 
@@ -129,6 +135,10 @@ class NSCSVG : View {
 	private fun doDraw() {
 		data?.toImage()?.let {
 			currentTask?.cancel(true)
+			if(isPreloaded){
+				invalidate()
+				return@let
+			}
 			if (sync) {
 				if (srcPath.isNotEmpty()) {
 					nativeDrawSVGFromPath(it, resources.displayMetrics.density, srcPath)
@@ -173,6 +183,14 @@ class NSCSVG : View {
 		doDraw()
 	}
 
+
+	fun loadData(data: NSCSVGData){
+		this.data = data
+		this.src = ""
+		this.srcPath = ""
+		this.isPreloaded = true
+		doDraw()
+	}
 
 	interface Callback {
 		fun onSuccess(view: NSCSVGData?)

@@ -209,11 +209,8 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
 
         v8::Local<v8::Value> requiredFeaturesValue;
 
-        options->Get(context, ConvertToV8String(isolate, "requiredFeatures")).ToLocal(
-                &requiredFeaturesValue);
-
-
-        if (!requiredFeaturesValue.IsEmpty() && requiredFeaturesValue->IsArray()) {
+        if ( options->Get(context, ConvertToV8String(isolate, "requiredFeatures")).ToLocal(
+																																													 &requiredFeaturesValue) && requiredFeaturesValue->IsArray()) {
             v8::Local<v8::Array> requiredFeatures = requiredFeaturesValue.As<v8::Array>();
             auto len = requiredFeatures->Length();
             for (int i = 0; i < len; i++) {
@@ -229,10 +226,9 @@ void GPUAdapterImpl::RequestDevice(const v8::FunctionCallbackInfo<v8::Value> &ar
 
         v8::Local<v8::Value> limitsValue;
 
-        options->Get(context, ConvertToV8String(isolate, "requiredLimits")).ToLocal(
-                &limitsValue);
 
-        if (!limitsValue.IsEmpty() && limitsValue->IsObject()) {
+        if (options->Get(context, ConvertToV8String(isolate, "requiredLimits")).ToLocal(
+																																												&limitsValue) && limitsValue->IsObject()) {
             auto limits_ptr = GPUSupportedLimitsImpl::GetPointer(limitsValue.As<v8::Object>());
             if (limits_ptr != nullptr) {
                 limits = limits_ptr->GetLimits();

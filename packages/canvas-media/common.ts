@@ -1,18 +1,53 @@
-import { View, Property } from '@nativescript/core';
+import { View, Property, AddChildFromBuilder, booleanConverter, ContentView } from '@nativescript/core';
 
-export class Source extends View {
-	public src: string;
-	public type: string;
-}
+export class MediaBase extends ContentView implements AddChildFromBuilder {}
 
-export const srcProperty = new Property<Source, string>({
-	name: 'src',
+export const mutedProperty = new Property<MediaBase, boolean>({
+	name: 'muted',
+	valueConverter: booleanConverter,
+	defaultValue: false,
+});
+mutedProperty.register(MediaBase);
+
+export const controlsProperty = new Property<MediaBase, boolean>({
+	name: 'controls',
+	valueConverter: booleanConverter,
+	defaultValue: false,
+});
+controlsProperty.register(MediaBase);
+
+export const loopProperty = new Property<MediaBase, boolean>({
+	name: 'loop',
 });
 
-srcProperty.register(Source);
+loopProperty.register(MediaBase);
 
-export const typeProperty = new Property<Source, string>({
-	name: 'type',
+export const autoplayProperty = new Property<MediaBase, boolean>({
+	name: 'autoplay',
+	valueConverter: booleanConverter,
+	defaultValue: false,
 });
 
-typeProperty.register(Source);
+autoplayProperty.register(MediaBase);
+
+export const playsinlineProperty = new Property<MediaBase, boolean>({
+	name: 'playsinline',
+	valueConverter: booleanConverter,
+	defaultValue: false,
+});
+
+playsinlineProperty.register(MediaBase);
+
+export const currentTimeProperty = new Property<MediaBase, number>({
+	name: 'currentTime',
+	defaultValue: 0,
+});
+
+currentTimeProperty.register(MediaBase);
+
+export const durationProperty = new Property<MediaBase, number>({
+	name: 'duration',
+	defaultValue: NaN,
+});
+
+durationProperty.register(MediaBase);

@@ -10,76 +10,96 @@ import { GPUBindGroupDescriptor, GPUComputePassDescriptor, GPUComputePipelineDes
 
 export function parseVertexFormat(value: string) {
 	switch (value) {
-		case 'uint8x2':
+		case 'uint8':
 			return 0;
-		case 'uint8x4':
+		case 'uint8x2':
 			return 1;
-		case 'sint8x2':
+		case 'uint8x4':
 			return 2;
-		case 'sint8x4':
+		case 'sint8':
 			return 3;
-		case 'unorm8x2':
+		case 'sint8x2':
 			return 4;
-		case 'unorm8x4':
+		case 'sint8x4':
 			return 5;
-		case 'snorm8x2':
+		case 'unorm8':
 			return 6;
-		case 'snorm8x4':
+		case 'unorm8x2':
 			return 7;
-		case 'uint16x2':
+		case 'unorm8x4':
 			return 8;
-		case 'uint16x4':
+		case 'snorm8':
 			return 9;
-		case 'sint16x2':
+		case 'snorm8x2':
 			return 10;
-		case 'sint16x4':
+		case 'snorm8x4':
 			return 11;
-		case 'unorm16x2':
+		case 'uint16':
 			return 12;
-		case 'unorm16x4':
+		case 'uint16x2':
 			return 13;
-		case 'snorm16x2':
+		case 'uint16x4':
 			return 14;
-		case 'snorm16x4':
+		case 'sint16':
 			return 15;
-		case 'float16x2':
+		case 'sint16x2':
 			return 16;
-		case 'float16x4':
+		case 'sint16x4':
 			return 17;
-		case 'float32':
+		case 'unorm16':
 			return 18;
-		case 'float32x2':
+		case 'unorm16x2':
 			return 19;
-		case 'float32x3':
+		case 'unorm16x4':
 			return 20;
-		case 'float32x4':
+		case 'snorm16':
 			return 21;
-		case 'uint32':
+		case 'snorm16x2':
 			return 22;
-		case 'uint32x2':
+		case 'snorm16x4':
 			return 23;
-		case 'uint32x3':
+		case 'float16':
 			return 24;
-		case 'uint32x4':
+		case 'float16x2':
 			return 25;
-		case 'sint32':
+		case 'float16x4':
 			return 26;
-		case 'sint32x2':
+		case 'float32':
 			return 27;
-		case 'sint32x3':
+		case 'float32x2':
 			return 28;
-		case 'sint32x4':
+		case 'float32x3':
 			return 29;
-		case 'float64':
+		case 'float32x4':
 			return 30;
-		case 'float64x2':
+		case 'uint32':
 			return 31;
-		case 'float64x3':
+		case 'uint32x2':
 			return 32;
-		case 'float64x4':
+		case 'uint32x3':
 			return 33;
-		case 'unorm10-10-10-2':
+		case 'uint32x4':
 			return 34;
+		case 'sint32':
+			return 35;
+		case 'sint32x2':
+			return 36;
+		case 'sint32x3':
+			return 37;
+		case 'sint32x4':
+			return 38;
+		case 'float64':
+			return 39;
+		case 'float64x2':
+			return 40;
+		case 'float64x3':
+			return 41;
+		case 'float64x4':
+			return 42;
+		case 'unorm10-10-10-2':
+			return 43;
+		case 'unorm8x4-bgra':
+			return 44;
 	}
 }
 
@@ -91,20 +111,14 @@ export function parseComputePassDescriptor(value?: GPUComputePassDescriptor) {
 	if (value.label) {
 		desc.label = value.label;
 	}
-	if (desc.timestampWrites) {
-		desc.timestampWrites = {
-			beginningOfPassWriteIndex: value.timestampWrites.beginningOfPassWriteIndex,
-			endOfPassWriteIndex: value.timestampWrites.endOfPassWriteIndex,
-			querySet: value.timestampWrites.querySet[native_],
-		};
+	if (value.timestampWrites) {
+		desc.timestampWrites = { beginningOfPassWriteIndex: value.timestampWrites.beginningOfPassWriteIndex, endOfPassWriteIndex: value.timestampWrites.endOfPassWriteIndex, querySet: value.timestampWrites.querySet[native_] };
 	}
 	return desc;
 }
 
 export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
-	const desc: GPURenderPassDescriptor = {
-		colorAttachments: new Array(value?.colorAttachments?.length ?? 0),
-	};
+	const desc: GPURenderPassDescriptor = { colorAttachments: new Array(value?.colorAttachments?.length ?? 0) };
 
 	if (typeof value.maxDrawCount === 'number') {
 		desc.maxDrawCount = value.maxDrawCount;
@@ -115,11 +129,7 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 	}
 
 	value.colorAttachments.forEach((attachment, i) => {
-		const newAttachment: GPURenderPassColorAttachment = {
-			loadOp: 'load',
-			storeOp: 'store',
-			view: null,
-		};
+		const newAttachment: GPURenderPassColorAttachment = { loadOp: 'load', storeOp: 'store', view: null };
 
 		if (Array.isArray(attachment.clearValue)) {
 			newAttachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
@@ -170,21 +180,14 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 	}
 
 	if (value?.timestampWrites) {
-		desc.timestampWrites = {
-			beginningOfPassWriteIndex: value.timestampWrites.beginningOfPassWriteIndex,
-			endOfPassWriteIndex: value.timestampWrites.endOfPassWriteIndex,
-			querySet: value.timestampWrites.querySet[native_],
-		};
+		desc.timestampWrites = { beginningOfPassWriteIndex: value.timestampWrites.beginningOfPassWriteIndex, endOfPassWriteIndex: value.timestampWrites.endOfPassWriteIndex, querySet: value.timestampWrites.querySet[native_] };
 	}
 
 	return desc;
 }
 
 export function parseBindGroupDescriptor(value: GPUBindGroupDescriptor) {
-	const desc: GPUBindGroupDescriptor = {
-		layout: value.layout[native_],
-		entries: [],
-	};
+	const desc: GPUBindGroupDescriptor = { layout: value.layout[native_], entries: [] };
 
 	if (typeof value.label === 'string') {
 		desc.label = value?.label;
@@ -193,29 +196,19 @@ export function parseBindGroupDescriptor(value: GPUBindGroupDescriptor) {
 	if (Array.isArray(value.entries)) {
 		for (const entry of value.entries) {
 			if (entry.resource instanceof GPUTextureView) {
-				desc.entries.push({
-					binding: entry.binding,
-					resource: entry.resource[native_],
-				});
+				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
 			} else if (entry.resource instanceof GPUSampler) {
-				desc.entries.push({
-					binding: entry.binding,
-					resource: entry.resource[native_],
-				});
+				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
 			} else if (entry.resource instanceof GPUExternalTexture) {
-				desc.entries.push({
-					binding: entry.binding,
-					resource: entry.resource[native_],
-				});
+				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
+			} else if (entry?.resource instanceof GPUBuffer) {
+				// Plain GPUBuffer passed directly — bind entire buffer (offset=0, size=buffer.size)
+				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource[native_], offset: 0, size: entry.resource.size } });
 			} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
-				desc.entries.push({
-					binding: entry.binding,
-					resource: {
-						buffer: entry.resource.buffer[native_],
-						offset: entry.resource.offset ?? 0,
-						size: entry.resource.size ?? entry.resource.buffer.size - entry.resource.offset,
-					},
-				});
+				const offset = entry.resource.offset ?? 0;
+				// When size is omitted, bind from offset to end of buffer. Parentheses are required:
+				// without them, `buffer.size - undefined` evaluates to NaN which becomes 0 in Rust (invalid).
+				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource.buffer[native_], offset, size: entry.resource.size ?? entry.resource.buffer.size - offset } });
 			}
 		}
 	}
@@ -224,12 +217,7 @@ export function parseBindGroupDescriptor(value: GPUBindGroupDescriptor) {
 }
 
 export function parseComputePipelineDescriptor(value: GPUComputePipelineDescriptor) {
-	const desc: GPUComputePipelineDescriptor = {
-		compute: {
-			module: value.compute.module[native_],
-		},
-		layout: 'auto',
-	};
+	const desc: GPUComputePipelineDescriptor = { compute: { module: value.compute.module[native_] }, layout: 'auto' };
 
 	if (value.compute?.constants) {
 		desc.compute.constants = value.compute.constants;
@@ -273,12 +261,7 @@ function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: str
 }
 
 export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor, method: string) {
-	const desc: GPURenderPipelineDescriptor = {
-		vertex: {
-			module: value.vertex.module[native_],
-		},
-		layout: 'auto',
-	};
+	const desc: GPURenderPipelineDescriptor = { vertex: { module: value.vertex.module[native_] }, layout: 'auto' };
 
 	if (Array.isArray(value.vertex?.buffers)) {
 		desc.vertex.buffers = [...value.vertex.buffers].map((source) => {
@@ -302,10 +285,7 @@ export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor
 	}
 
 	if (value.fragment) {
-		desc.fragment = {
-			module: value.fragment.module[native_],
-			targets: value.fragment.targets,
-		};
+		desc.fragment = { module: value.fragment.module[native_], targets: value.fragment.targets };
 
 		if (value.fragment.constants) {
 			desc.fragment.constants = value.fragment.constants;

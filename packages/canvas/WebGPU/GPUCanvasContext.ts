@@ -87,8 +87,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				}
 			}
 
-			if (__ANDROID__ && !capabilities.formats.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
-				opts.format = capabilities.formats[0];
+			if (__ANDROID__ && !capabilities.format.includes(options.format) && (options.format === 'bgra8unorm' || options.format === 'bgra8unorm-srgb')) {
+				opts.format = capabilities.format[0];
 				// fallback to rgba8unorm ... Android 🤪
 				if (opts.format === 'rgba8unorm-srgb') {
 					opts.format = 'rgba8unorm';
@@ -96,8 +96,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
 			}
 
-			if (__IOS__ && !capabilities.formats.includes(options.format)) {
-				opts.format = capabilities.formats.filter((value) => {
+			if (__IOS__ && !capabilities.format.includes(options.format)) {
+				opts.format = capabilities.format.filter((value) => {
 					return value.indexOf('srgb') === -1;
 				})[0];
 				console.warn(`GPUCanvasContext: configure format ${options.format} unsupported falling back to ${opts.format}`);
@@ -128,6 +128,10 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 				opts.usage = capabilities.usages;
 				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
 			}
+
+			if (__IOS__) {
+				opts.usage = opts.usage & ~GPUTextureUsage.TEXTURE_BINDING;
+			}
 		}
 
 		opts.device = options?.device?.[native_];
@@ -139,33 +143,17 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		this[native_].unconfigure();
 	}
 
-	private _currentTexture: GPUTexture;
 	getCurrentTexture() {
-		if (this._currentTexture) {
-			return this._currentTexture;
-		}
 		const texture = this[native_].getCurrentTexture();
-
-		if (texture) {
-			this._currentTexture = GPUTexture.fromNative(texture);
-		} else {
-			this._currentTexture = null;
-		}
-
-		return this._currentTexture;
+		return GPUTexture.fromNative(texture);
 	}
 
 	presentSurface() {
-		if (this._currentTexture) {
-			this[native_].presentSurface(this._currentTexture[native_]);
-			this._currentTexture = null;
-		} else {
-			console.warn('call getCurrentTexture: before presentSurface');
-		}
+		this[native_].presentSurface();
 	}
 
 	getCapabilities(adapter: GPUAdapter): {
-		formats: GPUTextureFormat[];
+		format: GPUTextureFormat[];
 		presentModes: GPUCanvasPresentMode[];
 		alphaModes: GPUCanvasAlphaMode;
 		usages: number;
@@ -174,7 +162,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 	__toDataURL(type: string, quality: number) {
 		if (this[device_]) {
-			return this.native.__toDataURL(type, quality, this[device_]?.[native_], this._currentTexture?.[native_]);
+			return this.native.__toDataURL(type, quality);
 		} else {
 			return (<any>this.canvas)._canvas.toDataURL(type, quality);
 		}

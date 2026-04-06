@@ -1,4 +1,3 @@
-use std::ops::Range;
 use std::os::raw::c_float;
 
 use skia_safe::{Canvas, Paint};
@@ -33,7 +32,13 @@ impl Context {
             self.state.shadow_blur,
         );
 
-        let text = text.replace('\n', " ");
+        let owned;
+        let text = if text.contains('\n') {
+            owned = text.replace('\n', " ");
+            owned.as_str()
+        } else {
+            text
+        };
 
         let paint = self.state.paint.fill_paint().clone();
         let shadow_offset_x = self.state.shadow_offset.x;
@@ -53,11 +58,11 @@ impl Context {
                     shadow_offset_x,
                     shadow_offset_y,
                 );
-                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text, x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text, x, y, width, None, paint);
         });
     }
 
@@ -74,7 +79,13 @@ impl Context {
             self.state.shadow_blur,
         );
 
-        let text = text.replace('\n', " ");
+        let owned;
+        let text = if text.contains('\n') {
+            owned = text.replace('\n', " ");
+            owned.as_str()
+        } else {
+            text
+        };
 
         let paint = self.state.paint.stroke_paint().clone();
         let shadow_offset_x = self.state.shadow_offset.x;
@@ -93,11 +104,11 @@ impl Context {
                     shadow_offset_x,
                     shadow_offset_y,
                 );
-                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, shadow_paint);
+                Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text, x, y, width, None, shadow_paint);
                 canvas.restore();
             }
 
-            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text.as_str(), x, y, width, None, paint);
+            Context::draw_text(Some(canvas), font, direction, word_spacing, letter_spacing, text_baseline, text_align, text, x, y, width, None, paint);
         });
     }
 
@@ -159,7 +170,6 @@ impl Context {
 
         let mut builder =
             skia_safe::textlayout::ParagraphBuilder::new(&paragraph_style, font_collection);
-        builder.peek_style();
         builder.add_text(text);
 
         let mut paragraph = builder.build();
@@ -175,17 +185,10 @@ impl Context {
 
         let font = paragraph.get_font_at(0);
         let (_, font_metrics) = font.metrics();
-        if font_metrics.has_bounds() {}
-        let glyphs = font.str_to_glyphs_vec(text);
-        let glyphs_size = glyphs.len();
-        if glyphs_size == 0 {
-            return;
-        }
-        let mut bounds = vec![skia_safe::Rect::default(); glyphs_size];
-        font.get_bounds(glyphs.as_slice(), bounds.as_mut_slice(), None);
-        let range: Range<usize> = 0_usize..glyphs_size;
+
+        // Use text byte length for range (Skia paragraph uses UTF-8 byte offsets)
         let text_box = paragraph.get_rects_for_range(
-            range,
+            0..text.len(),
             skia_safe::textlayout::RectHeightStyle::Tight,
             skia_safe::textlayout::RectWidthStyle::Tight,
         );
@@ -201,24 +204,6 @@ impl Context {
             return;
         }
 
-        let first_char_bounds = bounds[0];
-        let mut descent = first_char_bounds.bottom;
-        let mut ascent = first_char_bounds.top;
-        let last_char_bounds = bounds[glyphs_size - 1];
-        let last_char_pos_x = last_char_bounds.x();
-
-        let until = glyphs_size - 1;
-        for i in 1..=until {
-            let char_bounds = bounds[i];
-            let char_bottom = char_bounds.bottom;
-            if char_bottom > descent {
-                descent = char_bottom;
-            }
-            let char_top = char_bounds.top;
-            if char_top < ascent {
-                ascent = char_top;
-            }
-        }
         let alphabetic_baseline = paragraph.alphabetic_baseline();
 
         let css_baseline = text_baseline;
@@ -306,8 +291,6 @@ impl Context {
                 }
                 let paint_y = y + baseline_offset;
 
-                text_style.set_foreground_paint(paint);
-
                 paragraph.paint(
                     canvas,
                     (
@@ -323,6 +306,31 @@ impl Context {
                 canvas.restore();
             }
             (Some(text_metrics), _) => {
+                // Compute glyph bounds only for metrics (expensive - skip during draw)
+                let glyphs = font.str_to_glyphs_vec(text);
+                let glyphs_size = glyphs.len();
+                if glyphs_size == 0 {
+                    return;
+                }
+                let mut bounds = vec![skia_safe::Rect::default(); glyphs_size];
+                font.get_bounds(glyphs.as_slice(), bounds.as_mut_slice(), None);
+
+                let first_char_bounds = bounds[0];
+                let mut descent = first_char_bounds.bottom;
+                let mut ascent = first_char_bounds.top;
+                let last_char_bounds = bounds[glyphs_size - 1];
+                let last_char_pos_x = last_char_bounds.x();
+
+                for i in 1..glyphs_size {
+                    let char_bounds = bounds[i];
+                    if char_bounds.bottom > descent {
+                        descent = char_bounds.bottom;
+                    }
+                    if char_bounds.top < ascent {
+                        ascent = char_bounds.top;
+                    }
+                }
+
                 let offset = -baseline_offset - alphabetic_baseline;
                 text_metrics.actual_bounding_box_ascent = -ascent + offset;
                 text_metrics.actual_bounding_box_descent = descent - offset;

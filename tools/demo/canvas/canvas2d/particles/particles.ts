@@ -61,7 +61,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 	width = w || canvas.width;
 	height = h || canvas.height;
 
-	const context = canvas.getContext ? canvas.getContext('2d') : canvas;
+	const context = canvas.getContext ? canvas.getContext('2d', { colorSpace: 'display-p3' }) : canvas;
 
 	//context.scale(window.devicePixelRatio, window.devicePixelRatio);
 
@@ -107,7 +107,7 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		ctx.fillStyle = c;
 		ctx.arc(x, y, r, 0, 2 * Math.PI, false);
 		ctx.fill();
-		ctx.closePath();
+		// ctx.closePath();
 	};
 
 	// Remove particles that aren't on the canvas
@@ -120,6 +120,9 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		LAF = requestAnimFrame(frame);
 		// Draw background first
 		drawBg(ctx, colorPalette.bg);
+
+		cleanUpArray();
+
 		// Update Particle models to new position
 		particles.map((p) => {
 			return updateParticleModel(p);
@@ -137,7 +140,6 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 		canvas.addEventListener('touchstart', (args: TouchEvent) => {
 			const touches = args.touches.item(0);
 			const first = touches;
-			console.log('first', first.clientX, first.clientY);
 			cleanUpArray();
 			initParticles(first.clientX * window.devicePixelRatio, first.clientY * window.devicePixelRatio);
 		});
@@ -167,9 +169,14 @@ function touchParticles(canvas, w?, h?, nativeCanvas?) {
 }
 
 function cleanUpArray() {
-	particles = particles.filter((p) => {
-		return p.x > -100 && p.y > -100;
+	const margin = 100 * window.devicePixelRatio;
+	const updatedParticles = particles.filter((p) => {
+		return p.x > -margin && p.x < width + margin && p.y > -margin && p.y < height + margin;
 	});
+
+	if (particles.length > config.particleNumber) {
+		particles = updatedParticles;
+	}
 }
 
 function initParticles(x = 0, y = 0) {

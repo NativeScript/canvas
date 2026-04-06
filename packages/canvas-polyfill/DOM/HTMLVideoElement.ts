@@ -36,7 +36,15 @@ export class HTMLVideoElement extends HTMLElement {
 	}
 
 	requestVideoFrameCallback(callback: Function) {
-		this._video?.requestVideoFrameCallback(callback);
+		this._video?.requestVideoFrameCallback?.(callback);
+	}
+
+	cancelVideoFrameCallback(callback: Function) {
+		this._video?.cancelVideoFrameCallback?.(callback);
+	}
+
+	get readyState() {
+		return this._video?.readyState ?? 0;
 	}
 
 	get autoplay() {
@@ -66,6 +74,16 @@ export class HTMLVideoElement extends HTMLElement {
 	set controls(value: boolean) {
 		if (this._video) {
 			this._video.controls = value;
+		}
+	}
+
+	get currentTime() {
+		return this._video?.currentTime ?? 0;
+	}
+
+	set currentTime(value: number) {
+		if (this._video) {
+			this._video.currentTime = value;
 		}
 	}
 
@@ -111,8 +129,9 @@ export class HTMLVideoElement extends HTMLElement {
 
 	play() {
 		if (this._video) {
-			this._video.play();
+			return this._video.play();
 		}
+		return Promise.reject('Video element is not supported');
 	}
 
 	pause() {

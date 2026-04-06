@@ -175,6 +175,7 @@ export interface GPUTextureViewDescriptor {
 	format?: GPUTextureFormat;
 	label?: string;
 	mipLevelCount?: number;
+	usage?: number;
 }
 
 export interface GPUDeviceDescriptor {

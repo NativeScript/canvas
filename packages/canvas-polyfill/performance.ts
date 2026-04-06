@@ -28,7 +28,6 @@ if (!(global as any).performance || !(global as any).performance.now) {
 			if (global.isIOS) {
 				return performance.now();
 			}
-
 			return __time();
 		},
 		toJSON() {
@@ -47,34 +46,55 @@ if (!(global as any).performance || !(global as any).performance.now) {
 			totalJSHeapSize: -1,
 			usedJSHeapSize: -1,
 		},
-		measure() {
-			console.warn('window.performance.measure is not implemented');
+		_marks: new Map<string, number>(),
+		_measures: new Map<string, { duration: number; startTime: number }>(),
+		measure(name: string, startMark?: string, endMark?: string) {
+			const start = startMark ? (this._marks.get(startMark) ?? 0) : 0;
+			const end = endMark ? (this._marks.get(endMark) ?? this.now()) : this.now();
+			this._measures.set(name, { duration: end - start, startTime: start });
 		},
-		mark() {
-			console.warn('window.performance.mark is not implemented');
+		mark(name: string) {
+			this._marks.set(name, this.now());
 		},
-		clearMeasures() {
-			console.warn('window.performance.clearMeasures is not implemented');
+		clearMeasures(name?: string) {
+			if (name) {
+				this._measures.delete(name);
+			} else {
+				this._measures.clear();
+			}
 		},
-		clearMarks() {
-			console.warn('window.performance.clearMarks is not implemented');
+		clearMarks(name?: string) {
+			if (name) {
+				this._marks.delete(name);
+			} else {
+				this._marks.clear();
+			}
 		},
-		clearResourceTimings() {
-			console.warn('window.performance.clearResourceTimings is not implemented');
-		},
-		setResourceTimingBufferSize() {
-			console.warn('window.performance.setResourceTimingBufferSize is not implemented');
-		},
-		getEntriesByType() {
-			console.warn('window.performance.getEntriesByType is not implemented');
+		clearResourceTimings() {},
+		setResourceTimingBufferSize() {},
+		getEntriesByType(type: string) {
+			if (type === 'measure') {
+				return Array.from(this._measures.entries()).map(([name, v]) => ({ name, ...v, entryType: 'measure' }));
+			}
+			if (type === 'mark') {
+				return Array.from(this._marks.entries()).map(([name, startTime]) => ({ name, startTime, duration: 0, entryType: 'mark' }));
+			}
 			return [];
 		},
-		getEntriesByName() {
-			console.warn('window.performance.getEntriesByName is not implemented');
-			return [];
+		getEntriesByName(name: string) {
+			const entries = [];
+			if (this._marks.has(name)) {
+				entries.push({ name, startTime: this._marks.get(name), duration: 0, entryType: 'mark' });
+			}
+			if (this._measures.has(name)) {
+				entries.push({ name, ...this._measures.get(name), entryType: 'measure' });
+			}
+			return entries;
 		},
 		getEntries() {
-			console.warn('window.performance.getEntries is not implemented');
+			const marks = Array.from(this._marks.entries()).map(([name, startTime]) => ({ name, startTime, duration: 0, entryType: 'mark' }));
+			const measures = Array.from(this._measures.entries()).map(([name, v]) => ({ name, ...v, entryType: 'measure' }));
+			return [...marks, ...measures];
 		},
 	};
 }

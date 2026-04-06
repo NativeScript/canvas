@@ -279,9 +279,9 @@ let srcPattern = #"src:\s*url\(([^)]+)\)\s*format\('([^']+)'\);"#
 @objcMembers
 @objc(NSCFontFace)
 public class NSCFontFace: NSObject {
-    public internal (set) var font: CGFont? = nil
+    public internal(set) var font: CGFont? = nil
     private var fontFamily: String
-    public internal (set) var fontData: NSData? = nil
+    public internal(set) var fontData: NSData? = nil
     private var localOrRemoteSource: String? = nil
     private var fontDescriptors: NSCFontDescriptors
     private var loaderQueue = DispatchQueue(label: "NSCFontFace Loader Queue")

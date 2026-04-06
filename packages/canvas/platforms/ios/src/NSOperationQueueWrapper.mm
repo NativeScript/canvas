@@ -1,4 +1,5 @@
 #import "NSOperationQueueWrapper.h"
+#include <CoreFoundation/CFRunLoop.h>
 #include <Foundation/Foundation.h>
 
 @interface NSOperationQueueWrapperObjC : NSObject
@@ -45,7 +46,7 @@
         if(current == CFRunLoopGetCurrent()){
             task();
         }else {
-            CFRunLoopPerformBlock(current, kCFRunLoopDefaultMode, ^{
+            CFRunLoopPerformBlock(current, kCFRunLoopCommonModes, ^{
                 task();
             });
             CFRunLoopWakeUp(current);

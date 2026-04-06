@@ -40,6 +40,8 @@ public:
     static void GetLabel(v8::Local<v8::Name> name,
                          const v8::PropertyCallbackInfo<v8::Value> &info);
 
+    static void GetCompilationInfo(const v8::FunctionCallbackInfo<v8::Value> &args);
+
 private:
     const CanvasGPUShaderModule *shaderModule_;
 };

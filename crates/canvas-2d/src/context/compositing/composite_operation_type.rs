@@ -36,8 +36,8 @@ impl Default for CompositeOperationType {
     }
 }
 
-impl Into<i32> for CompositeOperationType {
-    fn into(self) -> i32 {
+impl Into<u32> for CompositeOperationType {
+    fn into(self) -> u32 {
         match self {
             CompositeOperationType::SourceOver => 0,
             CompositeOperationType::SourceIn => 1,
@@ -69,36 +69,38 @@ impl Into<i32> for CompositeOperationType {
     }
 }
 
-impl From<i32> for CompositeOperationType {
-    fn from(value: i32) -> Self {
+impl TryFrom<u32> for CompositeOperationType {
+    type Error = &'static str;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            0 => CompositeOperationType::SourceOver,
-            1 => CompositeOperationType::SourceIn,
-            2 => CompositeOperationType::SourceOut,
-            3 => CompositeOperationType::SourceAtop,
-            4 => CompositeOperationType::DestinationOver,
-            5 => CompositeOperationType::DestinationIn,
-            6 => CompositeOperationType::DestinationOut,
-            7 => CompositeOperationType::DestinationAtop,
-            8 => CompositeOperationType::Lighter,
-            9 => CompositeOperationType::Copy,
-            10 => CompositeOperationType::Xor,
-            11 => CompositeOperationType::Multiply,
-            12 => CompositeOperationType::Screen,
-            13 => CompositeOperationType::Overlay,
-            14 => CompositeOperationType::Darken,
-            15 => CompositeOperationType::Lighten,
-            16 => CompositeOperationType::ColorDodge,
-            17 => CompositeOperationType::ColorBurn,
-            18 => CompositeOperationType::HardLight,
-            19 => CompositeOperationType::SoftLight,
-            20 => CompositeOperationType::Difference,
-            21 => CompositeOperationType::Exclusion,
-            22 => CompositeOperationType::Hue,
-            23 => CompositeOperationType::Saturation,
-            24 => CompositeOperationType::Color,
-            25 => CompositeOperationType::Luminosity,
-            _ => CompositeOperationType::SourceOver,
+            0 => Ok(CompositeOperationType::SourceOver),
+            1 => Ok(CompositeOperationType::SourceIn),
+            2 => Ok(CompositeOperationType::SourceOut),
+            3 => Ok(CompositeOperationType::SourceAtop),
+            4 => Ok(CompositeOperationType::DestinationOver),
+            5 => Ok(CompositeOperationType::DestinationIn),
+            6 => Ok(CompositeOperationType::DestinationOut),
+            7 => Ok(CompositeOperationType::DestinationAtop),
+            8 => Ok(CompositeOperationType::Lighter),
+            9 => Ok(CompositeOperationType::Copy),
+            10 => Ok(CompositeOperationType::Xor),
+            11 => Ok(CompositeOperationType::Multiply),
+            12 => Ok(CompositeOperationType::Screen),
+            13 => Ok(CompositeOperationType::Overlay),
+            14 => Ok(CompositeOperationType::Darken),
+            15 => Ok(CompositeOperationType::Lighten),
+            16 => Ok(CompositeOperationType::ColorDodge),
+            17 => Ok(CompositeOperationType::ColorBurn),
+            18 => Ok(CompositeOperationType::HardLight),
+            19 => Ok(CompositeOperationType::SoftLight),
+            20 => Ok(CompositeOperationType::Difference),
+            21 => Ok(CompositeOperationType::Exclusion),
+            22 => Ok(CompositeOperationType::Hue),
+            23 => Ok(CompositeOperationType::Saturation),
+            24 => Ok(CompositeOperationType::Color),
+            25 => Ok(CompositeOperationType::Luminosity),
+            _ => Err("Invalid CompositeOperationType"),
         }
     }
 }
@@ -134,6 +136,8 @@ impl CompositeOperationType {
             CompositeOperationType::Luminosity => "luminosity",
         }
     }
+
+    #[inline]
     pub fn get_blend_mode(&self) -> BlendMode {
         match self {
             CompositeOperationType::SourceIn => BlendMode::SrcIn,

@@ -7,7 +7,6 @@ const internalSaveData = function (storage: Storage) {
 	try {
 		file.writeText(JSON.stringify(storage._localStorageData));
 	} catch (err) {
-		// This should never happen on normal data, but if they tried to put non JS stuff it won't serialize
 		console.log('localStorage: unable to write storage, error: ', err);
 	}
 };
@@ -17,97 +16,99 @@ const saveData = function (storage: Storage) {
 		clearTimeout(localStorageTimeout);
 	}
 	localStorageTimeout = setTimeout(() => {
+		localStorageTimeout = null;
 		internalSaveData(storage);
 	}, 250);
 };
 
 class Storage {
-	_localStorageData = {};
-	getItem(name) {
-		if (this._localStorageData.hasOwnProperty(name)) {
-			return this._localStorageData[name];
-		}
-		return null;
-	}
-	key(id) {
-		const keys = Object.keys(this._localStorageData);
-		if (id >= keys.length) {
-			return null;
-		}
-		return keys[id];
+	_localStorageData: Record<string, string> = {};
+	// Track length explicitly to avoid Object.keys() on every read
+	private _length: number = 0;
+
+	getItem(name: string): string | null {
+		const val = this._localStorageData[name];
+		return val !== undefined ? val : null;
 	}
 
-	setItemObject(name, value) {
+	key(id: number): string | null {
+		const keys = Object.keys(this._localStorageData);
+		return id < keys.length ? keys[id] : null;
+	}
+
+	setItemObject(name: string, value: any) {
+		if (!(name in this._localStorageData)) {
+			this._length++;
+		}
 		this._localStorageData[name] = value;
 		saveData(this);
 	}
 
-	setItem(name, value) {
+	setItem(name: string, value: any) {
+		if (!(name in this._localStorageData)) {
+			this._length++;
+		}
 		if (value == null) {
-			if (value === null) {
-				this._localStorageData[name] = 'null';
-			} else {
-				this._localStorageData[name] = 'undefined';
-			}
+			this._localStorageData[name] = value === null ? 'null' : 'undefined';
 		} else {
 			this._localStorageData[name] = value.toString();
 		}
 		saveData(this);
 	}
-	removeItem(name) {
-		if (this._localStorageData[name]) {
+
+	removeItem(name: string) {
+		// Use `in` operator — not truthy check — so falsy values (0, '') are handled correctly
+		if (name in this._localStorageData) {
 			delete this._localStorageData[name];
+			this._length--;
 			saveData(this);
 		}
 	}
 
 	clear() {
 		this._localStorageData = {};
+		this._length = 0;
 		saveData(this);
 	}
 
-	get length() {
-		return Object.keys(this._localStorageData).length;
+	get length(): number {
+		return this._length;
 	}
 }
 
 class SessionStorage {
-	private _storage = new Map();
-	getItem(name) {
+	private _storage = new Map<string, string>();
+
+	getItem(name: string): string | null {
 		return this._storage.get(name) ?? null;
 	}
-	key(id) {
+
+	key(id: number): string | null {
 		const keys = Array.from(this._storage.keys());
-		if (id >= keys.length) {
-			return null;
-		}
-		return keys[id];
+		return id < keys.length ? keys[id] : null;
 	}
 
-	setItemObject(name, value) {
+	setItemObject(name: string, value: any) {
 		this._storage.set(name, value);
 	}
 
-	setItem(name, value) {
+	setItem(name: string, value: any) {
 		if (value == null) {
-			if (value === null) {
-				this._storage.set(name, 'null');
-			} else {
-				this._storage.set(name, 'undefined');
-			}
+			this._storage.set(name, value === null ? 'null' : 'undefined');
 		} else {
 			this._storage.set(name, value.toString());
 		}
 	}
 
-	removeItem(name) {
+	removeItem(name: string) {
 		this._storage.delete(name);
 	}
+
 	clear() {
 		this._storage.clear();
 	}
 
-	get length() {
+	get length(): number {
 		return this._storage.size;
 	}
 }
@@ -125,15 +126,15 @@ if (!global.localStorage || (<any>module).hot) {
 		if (!File.exists(path)) {
 			return;
 		}
-
-		let data;
 		if (file.size === 0) {
 			return;
 		}
 		try {
-			let textData = file.readTextSync();
-			data = JSON.parse(textData);
+			const textData = file.readTextSync();
+			const data = JSON.parse(textData);
 			storage._localStorageData = data;
+			// Sync the length counter after loading from disk
+			(<any>storage)._length = Object.keys(data).length;
 		} catch (err) {
 			console.log('localStorage: error reading storage, Error: ', err);
 		}
@@ -153,6 +154,14 @@ export default global.localStorage;
 if ((<any>module).hot) {
 	(<any>module).hot.accept();
 	(<any>module).hot.dispose(() => {
+		// Flush any pending writes before dispose
+		if (localStorageTimeout !== null) {
+			clearTimeout(localStorageTimeout);
+			localStorageTimeout = null;
+			if (global.localStorage) {
+				internalSaveData(global.localStorage as any);
+			}
+		}
 		global.localStorage = undefined;
 	});
 }

@@ -104,3 +104,29 @@ pub fn from_image_slice_encoded(image_slice: &[u8]) -> Option<Image> {
 pub fn from_image_slice_encoded_no_copy(image_slice: &[u8]) -> Option<Image> {
     unsafe { Image::from_encoded(Data::new_bytes(image_slice)) }
 }
+
+pub fn from_image_slice_bgra(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
+    let info = ImageInfo::new(
+        ISize::new(width, height),
+        ColorType::BGRA8888,
+        AlphaType::Unpremul,
+        None,
+    );
+    skia_safe::images::raster_from_data(&info, Data::new_copy(image_slice), info.min_row_bytes())
+}
+
+pub fn from_image_slice_bgra_no_copy(image_slice: &[u8], width: c_int, height: c_int) -> Option<Image> {
+    let info = ImageInfo::new(
+        ISize::new(width, height),
+        ColorType::BGRA8888,
+        AlphaType::Unpremul,
+        None,
+    );
+    unsafe {
+        skia_safe::images::raster_from_data(
+            &info,
+            Data::new_bytes(image_slice),
+            info.min_row_bytes(),
+        )
+    }
+}

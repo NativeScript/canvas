@@ -1,5 +1,4 @@
-import { Helpers } from '../../helpers';
-let ctor;
+import { Helpers } from '@nativescript/canvas/helpers';
 
 export class DOMMatrix {
 	static {
@@ -312,3 +311,283 @@ export class DOMMatrix {
 		};
 	}
 }
+
+/*
+export class DOMMatrix {
+	private matrix: Float64Array;
+	constructor(init?) {
+		if (init instanceof DOMMatrix) {
+			this.matrix = init.matrix.slice();
+		} else {
+			this.matrix = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+		}
+	}
+
+	setIdentity() {
+		const m = this.matrix;
+		m[0] = m[5] = m[10] = m[15] = 1;
+		for (let i = 0; i < 16; i++) {
+			if (![0, 5, 10, 15].includes(i)) m[i] = 0;
+		}
+	}
+
+	get is2D() {
+		const m = this.matrix;
+		return m[2] === 0 && m[3] === 0 && m[6] === 0 && m[7] === 0 && m[8] === 0 && m[9] === 0 && m[10] === 1 && m[11] === 0 && m[14] === 0 && m[15] === 1;
+	}
+
+	get a() {
+		return this.m11;
+	}
+	set a(v) {
+		this.m11 = v;
+	}
+
+	get b() {
+		return this.m12;
+	}
+	set b(v) {
+		this.m12 = v;
+	}
+
+	get c() {
+		return this.m21;
+	}
+	set c(v) {
+		this.m21 = v;
+	}
+
+	get d() {
+		return this.m22;
+	}
+	set d(v) {
+		this.m22 = v;
+	}
+
+	get e() {
+		return this.m41;
+	}
+	set e(v) {
+		this.m41 = v;
+	}
+
+	get f() {
+		return this.m42;
+	}
+	set f(v) {
+		this.m42 = v;
+	}
+
+	get m11() {
+		return this.matrix[0];
+	}
+	set m11(v) {
+		this.matrix[0] = v;
+	}
+
+	get m12() {
+		return this.matrix[1];
+	}
+	set m12(v) {
+		this.matrix[1] = v;
+	}
+
+	get m13() {
+		return this.matrix[2];
+	}
+	set m13(v) {
+		this.matrix[2] = v;
+	}
+
+	get m14() {
+		return this.matrix[3];
+	}
+	set m14(v) {
+		this.matrix[3] = v;
+	}
+
+	get m21() {
+		return this.matrix[4];
+	}
+	set m21(v) {
+		this.matrix[4] = v;
+	}
+
+	get m22() {
+		return this.matrix[5];
+	}
+	set m22(v) {
+		this.matrix[5] = v;
+	}
+
+	get m23() {
+		return this.matrix[6];
+	}
+	set m23(v) {
+		this.matrix[6] = v;
+	}
+
+	get m24() {
+		return this.matrix[7];
+	}
+	set m24(v) {
+		this.matrix[7] = v;
+	}
+
+	get m31() {
+		return this.matrix[8];
+	}
+	set m31(v) {
+		this.matrix[8] = v;
+	}
+
+	get m32() {
+		return this.matrix[9];
+	}
+	set m32(v) {
+		this.matrix[9] = v;
+	}
+
+	get m33() {
+		return this.matrix[10];
+	}
+	set m33(v) {
+		this.matrix[10] = v;
+	}
+
+	get m34() {
+		return this.matrix[11];
+	}
+	set m34(v) {
+		this.matrix[11] = v;
+	}
+
+	get m41() {
+		return this.matrix[12];
+	}
+	set m41(v) {
+		this.matrix[12] = v;
+	}
+
+	get m42() {
+		return this.matrix[13];
+	}
+	set m42(v) {
+		this.matrix[13] = v;
+	}
+
+	get m43() {
+		return this.matrix[14];
+	}
+	set m43(v) {
+		this.matrix[14] = v;
+	}
+
+	get m44() {
+		return this.matrix[15];
+	}
+	set m44(v) {
+		this.matrix[15] = v;
+	}
+
+	static multiply(a, b) {
+		const result = new DOMMatrix();
+		for (let row = 0; row < 4; row++) {
+			for (let col = 0; col < 4; col++) {
+				for (let i = 0; i < 4; i++) {
+					result.matrix[col * 4 + row] += a.m[i * 4 + row] * b.m[col * 4 + i];
+				}
+			}
+		}
+
+		return result;
+	}
+
+	multiplySelf(matrix) {
+		this.matrix = DOMMatrix.multiply(this, matrix).matrix;
+		return this;
+	}
+
+	preMultiplySelf(matrix) {
+		this.matrix = DOMMatrix.multiply(matrix, this).matrix;
+		return this;
+	}
+
+	translateSelf(tx, ty, tz = 0) {
+		return this.multiplySelf(DOMMatrix.translation(tx, ty, tz));
+	}
+
+	scaleSelf(sx, sy = sx, sz = 1) {
+		return this.multiplySelf(DOMMatrix.scaling(sx, sy, sz));
+	}
+
+	rotateSelf(angleX, angleY = 0, angleZ = 0) {
+		const rx = DOMMatrix.rotationX(angleX);
+		const ry = DOMMatrix.rotationY(angleY);
+		const rz = DOMMatrix.rotationZ(angleZ);
+		return this.multiplySelf(rx).multiplySelf(ry).multiplySelf(rz);
+	}
+
+	static translation(tx, ty, tz) {
+		const m = new DOMMatrix();
+		m.matrix[12] = tx;
+		m.matrix[13] = ty;
+		m.matrix[14] = tz;
+		return m;
+	}
+
+	static scaling(sx, sy, sz) {
+		const m = new DOMMatrix();
+		m.matrix[0] = sx;
+		m.matrix[5] = sy;
+		m.matrix[10] = sz;
+		return m;
+	}
+
+	static rotationX(angle) {
+		const rad = (angle * Math.PI) / 180;
+		const c = Math.cos(rad),
+			s = Math.sin(rad);
+		const m = new DOMMatrix();
+		m.matrix[5] = c;
+		m.matrix[6] = s;
+		m.matrix[9] = -s;
+		m.matrix[10] = c;
+		return m;
+	}
+
+	static rotationY(angle) {
+		const rad = (angle * Math.PI) / 180;
+		const c = Math.cos(rad),
+			s = Math.sin(rad);
+		const m = new DOMMatrix();
+		m.matrix[0] = c;
+		m.matrix[2] = -s;
+		m.matrix[8] = s;
+		m.matrix[10] = c;
+		return m;
+	}
+
+	static rotationZ(angle) {
+		const rad = (angle * Math.PI) / 180;
+		const c = Math.cos(rad),
+			s = Math.sin(rad);
+		const m = new DOMMatrix();
+		m.matrix[0] = c;
+		m.matrix[1] = s;
+		m.matrix[4] = -s;
+		m.matrix[5] = c;
+		return m;
+	}
+
+	clone() {
+		return new DOMMatrix(this);
+	}
+
+	toString() {
+		return `DOMMatrix(${Array.from(this.matrix)
+			.map((n) => n.toFixed(2))
+			.join(', ')})`;
+	}
+}
+*/

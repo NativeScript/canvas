@@ -78,7 +78,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.webgpu_1m_particles(this.canvas);
 		//this.webgpu_cube(this.canvas);
 		//this.webGPUGtlfLoader(this.canvas);
-		//this.webgpu_tsl_galaxy(this.canvas);
+		this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -114,7 +114,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		// 	console.log(NSString.alloc().initWithDataEncoding(base, NSUTF8StringEncoding));
 		// }, 10000);
 		//this.threeCube(this.canvas);
-		this.threeCar(this.canvas);
+		//this.threeCar(this.canvas);
 		//this.threeKeyframes(this.canvas);
 		//tiny_poly_world(this.canvas);
 		//tiny_poly_world_webgpu(this.canvas);
@@ -148,8 +148,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mesh.rotation.y += 0.02;
 
 			renderer.render(scene, camera);
-
-			context.presentSurface();
 		}
 
 		async function init() {
@@ -297,8 +295,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			controls.update();
 
 			renderer.render(scene, camera);
-
-			context.presentSurface();
 		}
 	}
 
@@ -485,8 +481,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			controls.target.set(0, 0, -0.2);
 			controls.update();
 
-			context = canvas.getContext('webgpu');
-
 			//	onWindowResize();
 			window.addEventListener('resize', onWindowResize, false);
 		};
@@ -504,7 +498,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		function render() {
 			renderer.render(scene, camera);
-			context.presentSurface();
 		}
 
 		function animate() {
@@ -513,7 +506,11 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			requestAnimationFrame(animate);
 		}
 
-		init();
+		try {
+			await init();
+		} catch (error) {
+			console.error('Error initializing WebGPUGlTFLoader:', error);
+		}
 	}
 
 	async webgpu_1m_particles(canvas: Canvas) {
@@ -642,7 +639,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
-			context = canvas.getContext('webgpu');
 			renderer.setAnimationLoop(animate);
 
 			//document.body.appendChild(renderer.domElement);
@@ -734,8 +730,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			await renderer.computeAsync(computeParticles);
 
 			await renderer.renderAsync(scene, camera);
-
-			context.presentSurface();
 
 			// throttle the logging
 
@@ -878,7 +872,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				mrt({
 					output: output,
 					normal: transformedNormalView,
-				})
+				}),
 			);
 
 			scenePassColor = scenePass.getTextureNode('output');
@@ -1010,8 +1004,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			controls.update();
 
 			postProcessing.render();
-
-			context.presentSurface();
 		}
 	}
 
@@ -1142,8 +1134,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			mixer.update(delta);
 
 			postProcessing.render();
-
-			context.presentSurface();
 		}
 	}
 
@@ -2722,7 +2712,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 						map: shadow,
 						toneMapped: false,
 						transparent: true,
-					})
+					}),
 				);
 				mesh.rotation.x = -Math.PI / 2;
 				mesh.renderOrder = 2;
@@ -2809,7 +2799,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			undefined,
 			function (e) {
 				console.error(e);
-			}
+			},
 		);
 
 		window.onresize = function () {
@@ -3743,7 +3733,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				new THREE.MeshPhongMaterial({
 					color: 0x999999,
 					depthWrite: false,
-				})
+				}),
 			);
 			mesh.rotation.x = -Math.PI / 2;
 			scene.add(mesh);
@@ -3767,7 +3757,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				undefined,
 				function (e) {
 					console.error(e);
-				}
+				},
 			);
 
 			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
@@ -3918,8 +3908,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer.render(scene, camera);
 
 			//stats.update();
-
-			context.presentSurface();
 
 			last = d;
 		}

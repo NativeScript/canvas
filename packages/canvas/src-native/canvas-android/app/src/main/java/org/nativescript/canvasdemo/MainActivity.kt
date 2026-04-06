@@ -39,20 +39,24 @@ class MainActivity : AppCompatActivity() {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		canvas = findViewById(R.id.canvasView)
-		NSCCanvas.forceGL = true
+		NSCCanvas.forceGL = false
 
 
-		NSCFontFace.importFromRemote(this,"https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+TC:wght@200..900&family=Pinyon+Script&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap", true) { fonts, error ->
+		NSCFontFace.importFromRemote(
+			this,
+			"https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+TC:wght@200..900&family=Pinyon+Script&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap",
+			true
+		) { fonts, error ->
 			if (error != null) {
 				Log.d("com.test", "Font Failed $error")
 			} else {
 				val checked = NSCFontFaceSet.instance.check("16px \"Pinyon Script\"", null)
-				Log.d("com.test", "checked $checked")
+//				Log.d("com.test", "checked $checked")
 				for (font in fonts) {
 					if (font.font != null) {
-						Log.d("com.test", "Font loaded $font ${font.fontFamily}")
+					//	Log.d("com.test", "Font loaded $font ${font.fontFamily}")
 					} else {
-						Log.d("com.test", "Font Failed $font")
+						// Log.d("com.test", "Font Failed $font")
 					}
 				}
 			}
@@ -62,9 +66,9 @@ class MainActivity : AppCompatActivity() {
 			.setFontWeight("700")
 		font.load(this) {
 			if (it != null) {
-				Log.d("com.test", "Font Failed $it")
+			//	Log.d("com.test", "Font Failed $it")
 			} else {
-				Log.d("com.test", "Font loaded $font ${font.font?.weight}")
+			//	Log.d("com.test", "Font loaded $font ${font.font?.weight}")
 			}
 		}
 
@@ -88,13 +92,13 @@ class MainActivity : AppCompatActivity() {
 			}
 		}
 
-		/*
+
 		canvas?.listener = object : NSCCanvas.Listener {
 			override fun contextReady() {
 				Log.d("com.test", "Is Ready")
-						canvas?.let { canvas ->
+				canvas?.let { canvas ->
 
-							canvas.initContext("webgl2", true)
+					//		canvas.initContext("webgl2", true)
 
 //				val gl = canvas!!.nativeContext
 //
@@ -102,27 +106,28 @@ class MainActivity : AppCompatActivity() {
 //				NSCCanvas.WebGLContextRender(gl, ctx, GLES20.GL_ALPHA, GLES20.GL_ALPHA)
 
 
-
-//					val context = canvas.create2DContext(
-//						true,
-//						true,
-//						true,
-//						false,
-//						0,
-//						true,
-//						false,
-//						false,
-//						false,
-//						false
-//					)
+					val context = canvas.create2DContext(
+						true,
+						true,
+						true,
+						false,
+						0,
+						true,
+						false,
+						false,
+						false,
+						false,
+						false,
+						1
+					)
 //						canvas.surfaceWidth = 600
 //							canvas.surfaceHeight = 900
 //
-//							NSCCanvas.nativeContext2DConicTest(context)
+					NSCCanvas.nativeContext2DConicTest(context)
 //
 //					NSCCanvas.context2DImageTest(context)
-				//	NSCCanvas.context2DPathTest(context)
-				//			NSCCanvas.context2DTest(context)
+					//	NSCCanvas.context2DPathTest(context)
+					//			NSCCanvas.context2DTest(context)
 //
 //                    Log.d("com.test", "windows $context")
 
@@ -134,49 +139,48 @@ class MainActivity : AppCompatActivity() {
 //                    canvas.requestLayout()
 
 
-							/*
+					/*
 
-					executor.execute {
-						try {
-							//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-							val file = File(filesDir, "canvas_createpattern.jpeg")
-							if (file.exists()) {
-								file.delete()
-							}
-
-							val url =
-								URL("https://picsum.photos/seed/picsum/600/600")
-							val fs = FileOutputStream(file)
-							url.openStream().use { input ->
-								fs.use { output ->
-									input.copyTo(output)
-								}
-							}
-							val bm = BitmapFactory.decodeFile(file.absolutePath)
-
-							val asset = NSCImageAsset.createImageAsset()
-							//val done = NSCImageAsset.loadImageFromBitmap(asset, bm)
-							val done = NSCImageAsset.loadFromPath(asset, file.absolutePath)
-							val dim = NSCImageAsset.getDimensions(asset)
-							var error = ""
-							if (!done) {
-								error = NSCImageAsset.getError(asset)
-							}
-							runOnUiThread {
-								NSCCanvasRenderingContext2D.drawImage(context, asset, 0F, 0F)
-								NSCCanvas.context2DRender(context)
-
-								//	NSCCanvas.context2DPathTest(context)
-							}
-						} catch (e: IOException) {
-							e.printStackTrace()
-						}
+			executor.execute {
+				try {
+					//	val docs = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+					val file = File(filesDir, "canvas_createpattern.jpeg")
+					if (file.exists()) {
+						file.delete()
 					}
 
-							*/
+					val url =
+						URL("https://picsum.photos/seed/picsum/600/600")
+					val fs = FileOutputStream(file)
+					url.openStream().use { input ->
+						fs.use { output ->
+							input.copyTo(output)
+						}
+					}
+					val bm = BitmapFactory.decodeFile(file.absolutePath)
+
+					val asset = NSCImageAsset.createImageAsset()
+					//val done = NSCImageAsset.loadImageFromBitmap(asset, bm)
+					val done = NSCImageAsset.loadFromPath(asset, file.absolutePath)
+					val dim = NSCImageAsset.getDimensions(asset)
+					var error = ""
+					if (!done) {
+						error = NSCImageAsset.getError(asset)
+					}
+					runOnUiThread {
+						NSCCanvasRenderingContext2D.drawImage(context, asset, 0F, 0F)
+						NSCCanvas.context2DRender(context)
+
+						//	NSCCanvas.context2DPathTest(context)
+					}
+				} catch (e: IOException) {
+					e.printStackTrace()
+				}
+			}
+
+					*/
 
 				}
-
 
 
 				//	draw2D()
@@ -204,7 +208,7 @@ class MainActivity : AppCompatActivity() {
 //
 				val opts = BitmapFactory.Options()
 				opts.inScaled = false
-				val bm =	BitmapFactory.decodeResource(resources, R.drawable.di_3d, opts)
+				val bm = BitmapFactory.decodeResource(resources, R.drawable.di_3d, opts)
 //
 //				val scale = resources.displayMetrics.density
 //
@@ -335,7 +339,6 @@ class MainActivity : AppCompatActivity() {
 			override fun surfaceCreated() {}
 		}
 
-		*/
 
 		//	val offscreen  = NSCCanvas(this, NSCCanvas.SurfaceType.Surface)
 

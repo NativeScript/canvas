@@ -314,8 +314,6 @@ export async function run(canvas: Canvas) {
 				.catch((e) => console.log(e));
 		}
 
-		context.presentSurface();
-
 		requestAnimationFrame(render);
 	}
 

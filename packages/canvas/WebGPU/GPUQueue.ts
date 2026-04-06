@@ -25,21 +25,46 @@ export class GPUQueue {
 		const src: GPUImageCopyExternalImage = {
 			source: undefined,
 		};
+
+		// Hold explicit GC roots for all JS wrapper objects until after the native call.
+		// Extracting .native (a raw pointer) drops the only reference V8 sees, making the
+		// wrapper eligible for collection mid-call in aggressive GC environments.
+		let _keepAlive: unknown;
+
 		if (source.source) {
 			if (source.source instanceof ImageBitmap) {
+				_keepAlive = source.source;
 				src.source = (source.source as any).native;
 			} else if (source.source instanceof ImageData) {
+				_keepAlive = source.source;
 				src.source = (source.source as any).native;
 			} else if (source.source instanceof ImageAsset) {
+				_keepAlive = source.source;
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'IMG' || source.source.tagName === 'IMAGE')) {
 				if (source.source._asset instanceof ImageAsset) {
+					_keepAlive = source.source._asset;
 					src.source = source.source._asset.native;
 				}
+			} else if (typeof source.source.tagName === 'string' && (source.source.tagName === 'VID' || source.source.tagName === 'VIDEO') && source.source._video && typeof source.source._video.getVideoFrameData === 'function') {
+				const frame = source.source._video.getVideoFrameData();
+				if (frame) {
+					src.source = frame;
+				}
+			} else if (source.source && typeof source.source.getVideoFrameData === 'function') {
+				const frame = source.source.getVideoFrameData();
+				if (frame) {
+					src.source = frame;
+				}
+			} else if (source.source?._type === '2d' || source.source?._type?.indexOf('webgl') > -1 || source.source?._type === 'webgpu') {
+				_keepAlive = source.source;
+				src.source = (source.source as any).native;
 			} else if (source.source instanceof Canvas) {
+				_keepAlive = source.source;
 				src.source = source.source.native;
 			} else if (typeof source.source.tagName === 'string' && source.source.tagName === 'CANVAS') {
 				if (source.source._canvas instanceof Canvas) {
+					_keepAlive = source.source._canvas;
 					src.source = source.source._canvas.native;
 				}
 			}
@@ -95,6 +120,8 @@ export class GPUQueue {
 		}
 
 		this[native_].copyExternalImageToTexture(src, dst, size);
+		// Prevent dead-variable elimination from hoisting the GC root drop before the call.
+		void _keepAlive;
 	}
 
 	submit(commands: GPUCommandBuffer[]) {
@@ -102,7 +129,7 @@ export class GPUQueue {
 			this[native_].submit(
 				commands.map((command) => {
 					return command[native_];
-				})
+				}),
 			);
 		}
 	}
@@ -116,15 +143,20 @@ export class GPUQueue {
 	}
 
 	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset?: number, size?: number) {
+		// Avoid creating an unnecessary Uint8Array view — the native layer handles any TypedArray
+		// or ArrayBuffer directly. Only Array<number> needs to be converted.
+		// The C++ side now correctly uses dataValue->ByteLength() so any view over a larger
+		// backing store is handled safely.
+		let nativeData: BufferSource;
 		if (Array.isArray(data)) {
-			data = new Uint8Array(data);
-		} else if (ArrayBuffer.isView(data)) {
-			data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-		} else if ((data as any) instanceof ArrayBuffer) {
-			data = new Uint8Array(data);
+			nativeData = new Uint8Array(data);
+		} else {
+			nativeData = data as BufferSource;
 		}
-
-		this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, data, dataOffset ?? 0, size ?? -1);
+		this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, nativeData, dataOffset ?? 0, size);
+		// Keep nativeData alive past the call to prevent the backing store being freed
+		// before the native synchronous copy completes in GC-aggressive environments.
+		void nativeData;
 	}
 
 	writeTexture(destination: GPUImageCopyTexture, data: BufferSource, dataLayout: GPUImageDataLayout, size: GPUExtent3D) {
@@ -132,13 +164,17 @@ export class GPUQueue {
 			...destination,
 			texture: destination.texture[native_],
 		};
-		let ext = { ...size };
-		if (Array.isArray(ext)) {
+		// Must check Array.isArray on `size` before spreading — spreading an array produces
+		// a plain object with numeric keys, so the check would always be false afterwards.
+		let ext: GPUExtent3D;
+		if (Array.isArray(size)) {
 			ext = {
-				width: ext[0],
-				height: ext[1] ?? 1,
-				depthOrArrayLayers: ext[2] ?? 1,
+				width: size[0],
+				height: size[1] ?? 1,
+				depthOrArrayLayers: size[2] ?? 1,
 			};
+		} else {
+			ext = { ...size };
 		}
 		this[native_].writeTexture(dst, data, dataLayout, ext);
 	}

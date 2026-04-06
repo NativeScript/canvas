@@ -6,7 +6,7 @@
 	<dict>
 		<key>Headers/CanvasNative-Swift.h</key>
 		<data>
-		+APbHZiMPHx5TgL18m5r4H6EAOE=
+		qo22WQRS4s9/LdtmBZwwjIqAL5w=
 		</data>
 		<key>Headers/CanvasNative.h</key>
 		<data>
@@ -18,63 +18,63 @@
 		</data>
 		<key>Headers/canvas_ios.h</key>
 		<data>
-		A+PioKlp3AUUGdfk8pwOkeoEQcY=
+		R7p9P2c9YfdqnQkbvoZwJNdkYjI=
 		</data>
 		<key>Headers/canvas_native.h</key>
 		<data>
-		XAvx2AgcZxoWSmPi27cs/EvqZfQ=
+		ohepfLi6AzGbkclDgUFKZ2+nimA=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		3d2YNrhKI3hpfe4iKzbCFwOeyXo=
+		JxO6gbH9tg+N03jHlvoptng4FnY=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo</key>
 		<data>
-		g3pwc2U+k6r4Vwz52ZQ2A4FaR0U=
+		JCxT5Bgm+3bsn2Vsbzo1J20Ajs8=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo</key>
 		<data>
-		+qYTSVibb+ut3Ppt9SFGHb9z+WU=
+		JosOIK6e1lEPWoY3CU6Wn66wEFE=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<data>
-		Vay3bc1YANwTGa8KgMLKKRQ+nMw=
+		+U9i13q0tLk0Q6puCCOOratc9Q4=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
-		+edLnbI139HrRjD8ewoishdOxD0=
+		JvNC8ysaZu4W6YKRQB+n1YVB9bI=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftdoc</key>
 		<data>
-		xaGbnsDBddhlFu8I/stxPd6Z2h8=
+		/Pl8skeB0qdMeCLcodLTPNOLTBg=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftinterface</key>
 		<data>
-		+edLnbI139HrRjD8ewoishdOxD0=
+		JvNC8ysaZu4W6YKRQB+n1YVB9bI=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		2fHUVdzi4Vg4PTsV3R5hozYSiYc=
+		fu/iDJNgVtmt7THxK8KZcNwyBxk=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<data>
-		Vay3bc1YANwTGa8KgMLKKRQ+nMw=
+		+U9i13q0tLk0Q6puCCOOratc9Q4=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
 		<data>
-		M0ZsKzb3RnAaUhS6sEwqL8Lo3d4=
+		DAZDMk3j/2q4so7EzNSDATaJj4c=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
 		<data>
-		xbG7aWIKuOuS3h6ivxFiiAaIad4=
+		bHnft3G5xdzxl/ePNLC+kwzaeNg=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftinterface</key>
 		<data>
-		M0ZsKzb3RnAaUhS6sEwqL8Lo3d4=
+		DAZDMk3j/2q4so7EzNSDATaJj4c=
 		</data>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<data>
-		tWLwT3xm9ZrRR1iFv0s0pA0ieHA=
+		lrkaGEO+FH2TzUjwE4aFy/7eHUk=
 		</data>
 		<key>Modules/module.modulemap</key>
 		<data>
@@ -127,7 +127,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			6LwSpCocR+p0Bm6EGA9M9LvzqhqvWQ+je4dX7M7EYgc=
+			E8WFCQ36Se19W22oc/Ccg69WSmDGfm+VYGQoI1/MyYs=
 			</data>
 		</dict>
 		<key>Headers/CanvasNative.h</key>
@@ -148,98 +148,98 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			sZ/ZXmuCo0p+NA6xP1PtbAC48sn9RUIZgoNmnluCDtM=
+			BaVjHKrXbv66NvYZllsZAQkYtKgOO471hJVr9tp1x0g=
 			</data>
 		</dict>
 		<key>Headers/canvas_native.h</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			l3aajO5W9mgxb/wEIYAMC3vnLLTxzua6h/MDdmDn4+k=
+			tgpB3gqFzmI9Rz2NfT8r3a/sNUMeMdNiF0ocnGk+fDc=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			m42mQ40OWgIRTEMfzwcbfaipoCbnspsOMryknlV142k=
+			pZXkjq+UILXGVV3mieb6uoGQmjPMS1+i+5pHstCq1ig=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/Project/x86_64-apple-ios-simulator.swiftsourceinfo</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			tWEx4bI2pakLNPZ51PG3EUIlzeXx3dB+DCVLz07LA0k=
+			aTklUdJFCDi30xQnpM/juh8pSbjJmQTum8HS8rMeYvY=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			kAK3gPA6s3fX6wpI0C4NI/fJo6nRITDrHwk+hMgRJiU=
+			5sjDZoayrY1jE2/z1V3B+KRKtrGN1UWs58BbO4evN9k=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7qmcUX5tcV9qN2zy4cqYZPcIYP/2hEWlPR/EVnCwg7w=
+			fcSU412TVmsU3JSKLYsE8zH453ZBLccBp4WCsGSZb8Y=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7/gAHv5mNZ642Ws5/fS1DukogAGrq+ojZDOAvwgqiqY=
+			hBo7Ine81xC0mwa5vh1cga7aV85AlK3Z0KQpH8VhJcQ=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			7qmcUX5tcV9qN2zy4cqYZPcIYP/2hEWlPR/EVnCwg7w=
+			fcSU412TVmsU3JSKLYsE8zH453ZBLccBp4WCsGSZb8Y=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/arm64-apple-ios-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ujBPrgUkz2R+oNamtGUBanJGGYoxVK2hXYWzTYbWyD8=
+			peFAQwxzTi3+r0srxExz0eEC3/aKTPziOhcZ3Tnkxgo=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.abi.json</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			kAK3gPA6s3fX6wpI0C4NI/fJo6nRITDrHwk+hMgRJiU=
+			5sjDZoayrY1jE2/z1V3B+KRKtrGN1UWs58BbO4evN9k=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.private.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			DMsAKyDLMUErlSKDD/bq93KhECuxpbiB7eFHN9Fvg4U=
+			p+kqXk6hOiT40xGNSdkLYXwKcYS3NdNMhB9ro5F0f48=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftdoc</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			rjEHkCzVxcaS2Az+4Ex7Dmd0+ZPXfbeyOXarPBVE/t8=
+			kZzBDActD3VCuA4AoIl0qJQHLxQNU8z8yaPifMEkrfw=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftinterface</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			DMsAKyDLMUErlSKDD/bq93KhECuxpbiB7eFHN9Fvg4U=
+			p+kqXk6hOiT40xGNSdkLYXwKcYS3NdNMhB9ro5F0f48=
 			</data>
 		</dict>
 		<key>Modules/CanvasNative.swiftmodule/x86_64-apple-ios-simulator.swiftmodule</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			MVw6TQHVYVhVHVB6sqlesot3oOJTb+sKltZqJxOmKvo=
+			a+3cQYASumm8KPqn01I1095TexA9eKoutxWXvOYA7pQ=
 			</data>
 		</dict>
 		<key>Modules/module.modulemap</key>

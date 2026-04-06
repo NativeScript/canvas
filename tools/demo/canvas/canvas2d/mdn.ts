@@ -366,9 +366,9 @@ export function arcTo(canvas) {
 }
 
 export function arcToAnimation(canvas) {
-	const ctx = canvas.getContext('2d');
 	canvas.width = canvas.clientWidth * Screen.mainScreen.scale;
 	canvas.height = canvas.clientHeight * Screen.mainScreen.scale;
+	const ctx = canvas.getContext('2d');
 	ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 	const mouse = { x: 0, y: 0 };
 

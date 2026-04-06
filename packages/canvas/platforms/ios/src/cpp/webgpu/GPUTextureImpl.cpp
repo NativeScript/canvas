@@ -364,6 +364,17 @@ void GPUTextureImpl::CreateView(const v8::FunctionCallbackInfo<v8::Value> &args)
             }
         }
 
+
+        v8::Local<v8::Value> usageVal;
+        uint32_t usage = 0;
+        if (descObj->Get(context, ConvertToV8String(isolate, "usage")).ToLocal(
+                &usageVal) && usageVal->IsUint32()) {
+            usage = usageVal->Uint32Value(context).FromJust();
+        }
+
+        descriptor->usage = usage;
+
+
         descriptor->dimension = dimension;
 
 

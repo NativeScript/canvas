@@ -1,6 +1,6 @@
 [package]
 name = "canvas-2d"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 
 [features]
@@ -12,11 +12,11 @@ default = ["gl"]
 [dependencies]
 canvas-core = { workspace = true, features = ["2d"] }
 parking_lot.workspace = true
-regex = "1.10.6"
+regex = "1.11.1"
 base64 = "0.22.1"
-encoding_rs = "0.8.34"
+encoding_rs = "0.8.35"
 gl-bindings = { workspace = true }
-csscolorparser = { git = "https://github.com/triniwiz/csscolorparser-rs.git", rev = "c8c7e86", features = ["named-colors"] }
+csscolorparser = { version = "0.7.1", features = ["named-colors", "rust-rgb"] }
 log.workspace = true
 skia-safe = { workspace = true, features = ["textlayout"] }
 bytes = "1.7.2"

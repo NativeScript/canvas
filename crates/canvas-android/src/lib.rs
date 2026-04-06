@@ -16,7 +16,7 @@ use jni::sys::{jfloat, jlong};
 use log::LevelFilter;
 
 // #[cfg(feature = "vulkan")]
-use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion};
+use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeCreate2dContextVulkan, nativeGetVulkanVersion, nativeContext2DSetRenderFunc, nativeContext2DClearRenderFunc};
 
 use crate::jni_compat::org_nativescript_canvas_NSCCanvas::{nativeContext2DPathTest, nativeContext2DPathTestNormal, nativeContext2DRender, nativeContext2DTest, nativeContext2DTestNormal, nativeCreate2DContext, nativeCustomWithBitmapFlush, nativeInitWebGL, nativeInitWebGLNoSurface, nativeInitWebGPU, nativeMakeWebGLCurrent, nativeMakeWebGLCurrentNormal, nativeReleaseWebGL, nativeReleaseWebGLNormal, nativeResizeWebGPU, nativeUpdate2DSurface, nativeUpdate2DSurfaceNoSurface, nativeUpdate2DSurfaceNoSurfaceNormal, nativeUpdateGLNoSurface, nativeUpdateWebGLNoSurfaceNormal, nativeUpdateWebGLSurface, nativeWebGLC2DRender, nativeWriteCurrentWebGLContextToBitmap, nativeContext2DConicTest};
 use crate::jni_compat::org_nativescript_canvas_NSCCanvasRenderingContext2D::{nativeCreatePattern, nativeDrawAtlasWithBitmap, nativeDrawImageDxDyDwDhWithAsset, nativeDrawImageDxDyDwDhWithBitmap, nativeDrawImageDxDyWithAsset, nativeDrawImageDxDyWithBitmap, nativeDrawImageWithAsset, nativeDrawImageWithBitmap, nativeScale};
@@ -30,7 +30,7 @@ use crate::utils::{
     nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
 };
 use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
-use crate::utils::gl::texture_render::nativeDrawFrame;
+use crate::utils::gl::texture_render::{nativeDrawFrame, nativeDrawFrameTexImage3D, nativeDrawFrameTexSubImage3D};
 
 mod jni_compat;
 pub mod utils;
@@ -46,7 +46,13 @@ const NSC_CANVAS_RENDERING_CONTEXT2D_CLASS: &str =
 const ANDROID_O: i32 = 26;
 #[no_mangle]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint {
-    android_logger::init_once(Config::default().with_max_level(LevelFilter::Trace));
+    android_logger::init_once(
+        Config::default().with_max_level(if cfg!(debug_assertions) {
+            LevelFilter::Debug
+        } else {
+            LevelFilter::Warn
+        }),
+    );
 
     if let Ok(mut env) = vm.get_env() {
         API_LEVEL.get_or_init(|| {
@@ -95,12 +101,14 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_method_names.push("nativeCreate2dContextVulkan");
                 canvas_method_names.push("nativeGetVulkanVersion");
           //  }
+                canvas_method_names.push("nativeContext2DSetRenderFunc");
+                canvas_method_names.push("nativeContext2DClearRenderFunc");
 
             let canvas_signatures = if ret >= ANDROID_O {
                 let mut ret = vec![
                     "(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "(IIZZZZIZZZZZI)J",
-                    "(IILandroid/view/Surface;ZFIFI)J",
+                    "(IILandroid/view/Surface;ZFIFII)J",
                     "(Landroid/view/Surface;J)V",
                     "(Landroid/view/Surface;IIJ)V",
                     "(IIJ)V",
@@ -108,8 +116,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "(J)V",
                     "(J)Z",
                     "(JLandroid/graphics/Bitmap;)V",
-                    "(FFFZIFI)J",
-                    "(JFFFZI)V",
+                    "(IIFZIFII)J",
+                    "(JIIFZI)V",
                     "(JLandroid/graphics/Bitmap;)V",
                     "(J)V",
                     "(J)V",
@@ -121,16 +129,19 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ];
 
            //     #[cfg(feature = "vulkan")]{
-                    ret.push("(IILandroid/view/Surface;ZFIFI)J");
+                    ret.push("(IILandroid/view/Surface;ZFIFII)J");
                     ret.push("([I)V");
                // }
+
+                ret.push("(JLjava/lang/Object;)V");
+                ret.push("(J)V");
 
                 ret
             } else {
                 let mut ret = vec![
                     "!(Landroid/view/Surface;ZZZZIZZZZZI)J",
                     "!(IIZZZZIZZZZZI)J",
-                    "!(IILandroid/view/Surface;ZFIFI)J",
+                    "!(IILandroid/view/Surface;ZFIFII)J",
                     "!(Landroid/view/Surface;J)V",
                     "!(Landroid/view/Surface;IIJ)V",
                     "!(IIJ)V",
@@ -138,8 +149,8 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                     "!(J)V",
                     "!(J)Z",
                     "!(JLandroid/graphics/Bitmap;)V",
-                    "!(FFFZIFI)J",
-                    "!(JFFFZI)V",
+                    "!(IIFZIFII)J",
+                    "!(JIIFZI)V",
                     "!(JLandroid/graphics/Bitmap;)V",
                     "!(J)V",
                     "!(J)V",
@@ -151,9 +162,12 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 ];
 
              //  #[cfg(feature = "vulkan")]{
-                   ret.push("!(IILandroid/view/Surface;ZFIFI)J");
+                   ret.push("!(IILandroid/view/Surface;ZFIFII)J");
                     ret.push("!([I)V");
              //  }
+
+                ret.push("!(JLjava/lang/Object;)V");
+                ret.push("!(J)V");
                 ret
             };
 
@@ -212,6 +226,9 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 canvas_methods.push(nativeGetVulkanVersion as *mut c_void);
          //   }
 
+            canvas_methods.push(nativeContext2DSetRenderFunc as *mut c_void);
+            canvas_methods.push(nativeContext2DClearRenderFunc as *mut c_void);
+
             let canvas_native_methods: Vec<NativeMethod> =
                 izip!(canvas_method_names, canvas_signatures, canvas_methods)
                     .map(|(name, signature, method)| NativeMethod {
@@ -233,13 +250,38 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIII)V"
             };
 
+            // nativeDrawFrame — signature varies by API level (Android O+ uses direct buffers)
+            let nativeDrawFrameTexImage3DMethod = if ret >= ANDROID_O {
+                "(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIIII)V"
+            } else {
+                "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIIII)V"
+            };
+
+            let nativeDrawFrameTexSubImage3DMethod = if ret >= ANDROID_O {
+                "(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIII)V"
+            } else {
+                "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIII)V"
+            };
+
             let _ = env.register_native_methods(
                 &text_render_class,
-                &[NativeMethod {
-                    name: "nativeDrawFrame".into(),
-                    sig: nativeDrawFrameMethod.into(),
-                    fn_ptr: nativeDrawFrame as *mut c_void,
-                }],
+                &[
+                    NativeMethod {
+                        name: "nativeDrawFrame".into(),
+                        sig: nativeDrawFrameMethod.into(),
+                        fn_ptr: nativeDrawFrame as *mut c_void,
+                    },
+                    NativeMethod {
+                        name: "nativeDrawFrameTexImage3D".into(),
+                        sig: nativeDrawFrameTexImage3DMethod.into(),
+                        fn_ptr: nativeDrawFrameTexImage3D as *mut c_void,
+                    },
+                    NativeMethod {
+                        name: "nativeDrawFrameTexSubImage3D".into(),
+                        sig: nativeDrawFrameTexSubImage3DMethod.into(),
+                        fn_ptr: nativeDrawFrameTexSubImage3D as *mut c_void,
+                    },
+                ],
             );
 
             let canvas_rendering_context_2d_class = env

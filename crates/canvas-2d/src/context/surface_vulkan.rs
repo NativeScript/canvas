@@ -1,5 +1,6 @@
+use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
-use crate::context::{Context, State, SurfaceData, SurfaceEngine};
+use crate::context::{ColorSpace, Context, State, SurfaceData, SurfaceEngine, SurfaceState};
 use skia_safe::wrapper::PointerWrapper;
 use skia_safe::{gpu, ColorType};
 use std::ffi::CStr;
@@ -16,14 +17,17 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: u8,
+        color_space: ColorSpace,
     ) -> Self {
-        let mut vulkan_context = canvas_core::gpu::vulkan::VulkanContext::new("ns-app").unwrap();
+        let mut vulkan_context = canvas_core::gpu::vulkan::VulkanContext::new("ns-app", color_space).unwrap();
         vulkan_context.set_alpha(alpha);
         let mut context = {
             let get_proc = |of| unsafe {
                 let ret = match of {
                     gpu::vk::GetProcOf::Instance(instance, name) => {
-                        if let Some(ret) = vulkan_context.get_instance_proc_addr(instance as _, name) {
+                        if let Some(ret) =
+                            vulkan_context.get_instance_proc_addr(instance as _, name)
+                        {
                             (Some(ret), None)
                         } else {
                             let name = unsafe { CStr::from_ptr(name) };
@@ -51,9 +55,7 @@ impl Context {
                         println!("resolve of {} failed", name);
                         std::ptr::null()
                     }
-                    (_, _) => {
-                        std::ptr::null()
-                    }
+                    (_, _) => std::ptr::null(),
                 }
             };
 
@@ -62,19 +64,19 @@ impl Context {
                     vulkan_context.instance_handle() as _,
                     vulkan_context.physical_device() as _,
                     vulkan_context.device_handle() as _,
-                    (
-                        vulkan_context.queue() as _,
-                        vulkan_context.index(),
-                    ),
+                    (vulkan_context.queue() as _, vulkan_context.index()),
                     &get_proc,
                 )
             };
 
             gpu::direct_contexts::make_vulkan(&backend_context, None)
         }
-            .unwrap();
+        .unwrap();
+
 
         vulkan_context.set_view(view, width as u32, height as u32);
+
+        let color_space = vulkan_context.color_space();
 
         let image = vulkan_context.current_image_raw();
 
@@ -94,12 +96,20 @@ impl Context {
             )
         };
 
-        let bt = unsafe { gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "") };
+        let bt = unsafe {
+            gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "")
+        };
 
-
-        let mut surface = gpu::surfaces::wrap_backend_texture(&mut context, &bt, gpu::SurfaceOrigin::TopLeft, None, ColorType::N32,
-                                                              None,
-                                                              None).unwrap();
+        let mut surface = gpu::surfaces::wrap_backend_texture(
+            &mut context,
+            &bt,
+            gpu::SurfaceOrigin::TopLeft,
+            None,
+            ColorType::N32,
+            <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space),
+            None,
+        )
+        .unwrap();
 
         let mut state = State::default();
         state.direction = TextDirection::from(direction as u32);
@@ -114,6 +124,7 @@ impl Context {
                 engine: SurfaceEngine::Vulkan,
                 state: Default::default(),
                 is_opaque: !alpha,
+                color_space,
             },
             vulkan_context: Some(vulkan_context),
             vulkan_texture: Some(bt),
@@ -123,6 +134,7 @@ impl Context {
             metal_context: None,
             #[cfg(feature = "metal")]
             metal_texture_info: None,
+            cpu_context: None,
             surface,
             path: Default::default(),
             state,
@@ -131,7 +143,6 @@ impl Context {
             surface_state: crate::context::SurfaceState::None,
         }
     }
-
 
     pub fn replace_backend_texture(&mut self) {
         let size = self.surface_data.bounds;
@@ -155,23 +166,27 @@ impl Context {
                     )
                 };
 
-                texture = Some(unsafe { gpu::backend_textures::make_vk((size.width() as i32, size.height() as i32), &image_info, "") });
+                texture = Some(unsafe {
+                    gpu::backend_textures::make_vk(
+                        (size.width() as i32, size.height() as i32),
+                        &image_info,
+                        "",
+                    )
+                });
             }
         }
 
         if let Some(texture) = texture {
-            self.surface.replace_backend_texture(&texture, gpu::SurfaceOrigin::TopLeft);
+            self.surface
+                .replace_backend_texture(&texture, gpu::SurfaceOrigin::TopLeft);
             self.vulkan_texture = Some(texture);
         }
     }
 
+    pub fn resize_vulkan(context: &mut Context, width: f32, height: f32, alpha: bool) {
+        // flush any pending draws before resizing
+        context.flush_and_render_to_surface();
 
-    pub fn resize_vulkan(
-        context: &mut Context,
-        width: f32,
-        height: f32,
-        alpha: bool,
-    ) {
         let mut image = None;
         let mut queue = None;
         if let Some(vulkan_context) = context.vulkan_context.as_mut() {
@@ -179,6 +194,8 @@ impl Context {
             image = vulkan_context.current_image_raw();
             queue = Some(vulkan_context.index() as u32);
         }
+
+        let color_space = context.surface_data.color_space;
 
         if let Some(direct_context) = context.direct_context.as_mut() {
             let alloc = gpu::vk::Alloc::default();
@@ -197,19 +214,30 @@ impl Context {
                 )
             };
 
-            let bt = unsafe { gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "") };
+            let bt = unsafe {
+                gpu::backend_textures::make_vk((width as i32, height as i32), &image_info, "")
+            };
 
-
-            let surface = gpu::surfaces::wrap_backend_texture(direct_context, &bt, gpu::SurfaceOrigin::TopLeft, None, ColorType::N32,
-                                                              None,
-                                                              None).unwrap();
+            let surface = gpu::surfaces::wrap_backend_texture(
+                direct_context,
+                &bt,
+                gpu::SurfaceOrigin::TopLeft,
+                None,
+                ColorType::N32,
+                <ColorSpace as Into<Option<skia_safe::ColorSpace>>>::into(color_space) ,
+                None,
+            )
+            .unwrap();
 
             let bounds = skia_safe::Rect::from_wh(width, height);
             context.surface_data.state = Default::default();
             context.surface_data.is_opaque = !alpha;
             context.surface_data.bounds = bounds;
+            context.surface_state = SurfaceState::None;
             context.surface = surface;
             context.vulkan_texture = Some(bt);
+            context.path = Path::default();
+            context.reset_state();
         }
     }
 }

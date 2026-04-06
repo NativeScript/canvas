@@ -71,6 +71,17 @@ impl EAGLSharegroup {
             Self(sharegroup)
         }
     }
+
+    pub fn legacy() -> Self {
+        unsafe {
+            let cls = class!(EAGLSharegroup);
+            let sharegroup = msg_send_id![cls, alloc];
+            let sharegroup: Id<NSObject> =
+                msg_send_id![sharegroup, initWithAPI: EAGLRenderingAPI::GLES2];
+
+            Self(sharegroup)
+        }
+    }
 }
 
 impl Default for EAGLSharegroup {
@@ -408,7 +419,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
     ) -> Option<Self> {
-        let glview = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
+        let glview = unsafe { Id::<NSObject>::from_raw(view.as_ptr() as _) };
         match glview {
             None => None,
             Some(glview) => {
@@ -429,7 +440,8 @@ impl GLContext {
             true
         });
 
-        let api = if context_attrs.get_gl_legacy() {
+        let legacy = context_attrs.get_gl_legacy();
+        let api = if legacy {
             EAGLRenderingAPI::GLES2
         } else {
             EAGLRenderingAPI::GLES3
@@ -437,7 +449,13 @@ impl GLContext {
 
         let share_group = match shared_context {
             Some(context) => context.0.sharegroup.clone(),
-            _ => EAGLSharegroup::new(),
+            _ => {
+                if legacy {
+                    EAGLSharegroup::legacy()
+                } else {
+                    EAGLSharegroup::new()
+                }
+            }
         };
 
         let context = EAGLContext::new_with_api_sharegroup(api, &share_group);

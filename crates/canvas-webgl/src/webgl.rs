@@ -913,9 +913,7 @@ pub fn canvas_native_webgl_enable(cap: u32, state: &mut WebGLState) {
 
 pub fn canvas_native_webgl_enable_vertex_attrib_array(index: u32, state: &mut WebGLState) {
     state.make_current();
-    unsafe {
-        gl_bindings::EnableVertexAttribArray(index)
-    }
+    unsafe { gl_bindings::EnableVertexAttribArray(index) }
 }
 
 pub fn canvas_native_webgl_finish(state: &mut WebGLState) {
@@ -1676,14 +1674,12 @@ pub fn canvas_native_webgl_get_shader_source(shader: u32, state: &mut WebGLState
 pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> Vec<String> {
     state.make_current();
 
-
     let mut max_ext = -1;
 
     unsafe {
         #[cfg(target_os = "macos")]
         {
             gl_bindings::GetIntegerv(gl_bindings::NUM_EXTENSIONS, &mut max_ext);
-
 
             if max_ext > 0 {
                 let mut ret = Vec::with_capacity(max_ext as usize);
@@ -1703,7 +1699,8 @@ pub fn canvas_native_webgl_get_supported_extensions(state: &mut WebGLState) -> V
         if ext.is_null() {
             return Vec::with_capacity(0);
         }
-        let version = unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap() };
+        let version =
+            unsafe { String::from_utf8(CStr::from_ptr(ext).to_bytes().to_vec()).unwrap() };
 
         version.split(" ").map(|f| f.into()).collect()
     }

@@ -4,6 +4,7 @@ require('@nativescript/canvas-polyfill');
 */
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
+
 /*
 
 
@@ -89,7 +90,7 @@ class CustomPage extends ProtocolWrapper {
 // import { ImageAsset } from '@nativescript/canvas';
 declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
-import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen } from '@nativescript/core';
+import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen, Color } from '@nativescript/core';
 
 Canvas.useSurface = false;
 // Canvas.forceGL = false;

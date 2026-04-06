@@ -46,10 +46,10 @@ println "Runtime using NDK_PATH: " + NDK_PATH
 
 android {
 	namespace "org.nativescript.canvas"
-	compileSdkVersion 34
+	compileSdkVersion 36
 	defaultConfig {
 		minSdkVersion 21
-		targetSdkVersion 34
+		targetSdkVersion 36
 		versionCode 1
 		versionName "1.0"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -58,7 +58,7 @@ android {
 			cmake {
 				cppFlags "-std=c++17"
 				arguments "-DANDROID_TOOLCHAIN=clang",
-					"-DANDROID_STL=c++_shared",
+					"-DANDROID_STL=c++_static",
 					"-DANDROID_NDK_ROOT=${NDK_PATH}",
 				"-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
 			}
@@ -90,7 +90,7 @@ android {
 		}
 	}
 
-	ndkVersion '26.3.11579264'
+	ndkVersion '27.3.13750724'
 
 }
 

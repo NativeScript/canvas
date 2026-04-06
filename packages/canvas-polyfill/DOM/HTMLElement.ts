@@ -129,7 +129,7 @@ export class HTMLElement extends Element {
 	}
 
 	get isConnected() {
-		return this.nativeElement?.isConnected ?? !!this.nativeElement?.parent ?? false;
+		return this.nativeElement?.isConnected || !!this.nativeElement?.parent || false;
 	}
 
 	get lang() {

@@ -80,4 +80,6 @@ export declare class Canvas extends CanvasBase {
 	snapshot(): ImageSource | null;
 
 	snapshot(flip?: boolean): ImageSource | null;
+
+	toHTMLCanvas?(): any;
 }

@@ -53,6 +53,49 @@ class TextureRender {
 		this.height = height
 	}
 
+	fun drawFrameTexImage3D(
+		st: SurfaceTexture,
+		target: Int,
+		level: Int,
+		internalformat: Int,
+		width: Int,
+		height: Int,
+		depth: Int,
+		border: Int,
+		zoffset: Int,
+		flipYWebGL: Boolean
+	) {
+		nativeDrawFrameTexImage3D(
+			st, flipYWebGL,
+			fbo, rbo, mProgram, textureId, samplerPos, ab, pos, matrix, matrixPos,
+			target, level, internalformat, width, height, depth, border, zoffset,
+			this.width, this.height, 4
+		)
+		this.width = width
+		this.height = height
+	}
+
+	fun drawFrameTexSubImage3D(
+		st: SurfaceTexture,
+		target: Int,
+		level: Int,
+		xoffset: Int,
+		yoffset: Int,
+		zoffset: Int,
+		width: Int,
+		height: Int,
+		flipYWebGL: Boolean
+	) {
+		nativeDrawFrameTexSubImage3D(
+			st, flipYWebGL,
+			fbo, rbo, mProgram, textureId, samplerPos, ab, pos, matrix, matrixPos,
+			target, level, xoffset, yoffset, zoffset, width, height,
+			this.width, this.height, 4
+		)
+		this.width = width
+		this.height = height
+	}
+
 	fun surfaceCreated() {
 		mProgram = GLES20.glCreateProgram()
 		val vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER)
@@ -156,6 +199,57 @@ class TextureRender {
 			renderHeight: Int,
 			internalFormat: Int,
 			format: Int,
+			drawCount: Int,
+		)
+
+		@JvmStatic
+		private external fun nativeDrawFrameTexImage3D(
+			surfaceTexture: SurfaceTexture,
+			flipYWebGL: Boolean,
+			fbo: Int,
+			rbo: Int,
+			program: Int,
+			externalTexture: Int,
+			samplerPos: Int,
+			arrayBuffer: Int,
+			pos: Int,
+			matrix: FloatArray,
+			matrixPos: Int,
+			target: Int,
+			level: Int,
+			internalformat: Int,
+			width: Int,
+			height: Int,
+			depth: Int,
+			border: Int,
+			zoffset: Int,
+			renderWidth: Int,
+			renderHeight: Int,
+			drawCount: Int,
+		)
+
+		@JvmStatic
+		private external fun nativeDrawFrameTexSubImage3D(
+			surfaceTexture: SurfaceTexture,
+			flipYWebGL: Boolean,
+			fbo: Int,
+			rbo: Int,
+			program: Int,
+			externalTexture: Int,
+			samplerPos: Int,
+			arrayBuffer: Int,
+			pos: Int,
+			matrix: FloatArray,
+			matrixPos: Int,
+			target: Int,
+			level: Int,
+			xoffset: Int,
+			yoffset: Int,
+			zoffset: Int,
+			width: Int,
+			height: Int,
+			renderWidth: Int,
+			renderHeight: Int,
 			drawCount: Int,
 		)
 

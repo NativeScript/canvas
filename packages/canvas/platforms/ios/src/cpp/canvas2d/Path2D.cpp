@@ -355,7 +355,7 @@ void Path2D::RoundRect(const v8::FunctionCallbackInfo<v8::Value> &args) {
                 auto array = radii.As<v8::Array>();
                 auto size = array->Length();
 
-                if (size > 1) {
+                if (size >= 1) {
                     std::vector<float> store;
                     store.reserve(size);
                     for (int i = 0;

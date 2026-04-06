@@ -4,12 +4,11 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureSampleType};
+use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType, VertexFormat};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -21,7 +20,7 @@ pub enum SurfaceGetCurrentTextureStatus {
     OutOfMemory = 0x00000004,
     DeviceLost = 0x00000005,
     Force32 = 0x7FFFFFFF,
-    Unknown = 0x00000006
+    Unknown = 0x00000006,
 }
 
 #[repr(C)]
@@ -140,7 +139,6 @@ impl Into<wgt::TextureViewDimension> for CanvasTextureViewDimension {
 pub enum CanvasOptionalTextureViewDimension {
     None,
     D1,
-
     D2,
     D2Array,
     Cube,
@@ -170,12 +168,8 @@ impl Into<Option<wgt::TextureViewDimension>> for CanvasOptionalTextureViewDimens
             CanvasOptionalTextureViewDimension::None => None,
             CanvasOptionalTextureViewDimension::D1 => Some(wgt::TextureViewDimension::D1),
             CanvasOptionalTextureViewDimension::D2 => Some(wgt::TextureViewDimension::D2),
-            CanvasOptionalTextureViewDimension::D2Array => {
-                Some(wgt::TextureViewDimension::D2Array)
-            }
-            CanvasOptionalTextureViewDimension::Cube => {
-                Some(wgt::TextureViewDimension::Cube)
-            }
+            CanvasOptionalTextureViewDimension::D2Array => Some(wgt::TextureViewDimension::D2Array),
+            CanvasOptionalTextureViewDimension::Cube => Some(wgt::TextureViewDimension::Cube),
             CanvasOptionalTextureViewDimension::CubeArray => {
                 Some(wgt::TextureViewDimension::CubeArray)
             }
@@ -268,6 +262,8 @@ pub enum CanvasGPUTextureFormat {
     Rg11b10UFloat,
 
     // Normal 64 bit formats
+    R64Uint,
+
     /// Red and green channels. 32 bit integer per channel. Unsigned in shader.
     Rg32Uint,
     /// Red and green channels. 32 bit integer per channel. Signed in shader.
@@ -327,6 +323,23 @@ pub enum CanvasGPUTextureFormat {
     ///
     /// [`Features::TEXTURE_FORMAT_NV12`] must be enabled to use this texture format.
     NV12,
+
+    /// YUV 4:2:0 chroma subsampled format.
+    ///
+    /// Contains two planes:
+    /// - 0: Single 16 bit channel luminance, of which only the high 10 bits
+    ///   are used.
+    /// - 1: Dual 16 bit channel chrominance at half width and half height, of
+    ///   which only the high 10 bits are used.
+    ///
+    /// Valid view formats for luminance are [`TextureFormat::R16Unorm`].
+    ///
+    /// Valid view formats for chrominance are [`TextureFormat::Rg16Unorm`].
+    ///
+    /// Width and height must be even.
+    ///
+    /// [`Features::TEXTURE_FORMAT_P010`] must be enabled to use this texture format.
+    P010,
 
     // Compressed textures usable with `TEXTURE_COMPRESSION_BC` feature.
     /// 4x4 block compressed texture. 8 bytes per block (4 bit/px). 4 color + alpha pallet. 5 bit R + 6 bit G + 5 bit B + 1 bit alpha.
@@ -525,6 +538,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
             wgt::TextureFormat::Rgb10a2Uint => CanvasGPUTextureFormat::Rgb10a2Uint,
             wgt::TextureFormat::Rgb10a2Unorm => CanvasGPUTextureFormat::Rgb10a2Unorm,
             wgt::TextureFormat::Rg11b10Ufloat => CanvasGPUTextureFormat::Rg11b10UFloat,
+            wgt::TextureFormat::R64Uint => CanvasGPUTextureFormat::R64Uint,
             wgt::TextureFormat::Rg32Uint => CanvasGPUTextureFormat::Rg32Uint,
             wgt::TextureFormat::Rg32Sint => CanvasGPUTextureFormat::Rg32Sint,
             wgt::TextureFormat::Rg32Float => CanvasGPUTextureFormat::Rg32Float,
@@ -539,9 +553,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
             wgt::TextureFormat::Stencil8 => CanvasGPUTextureFormat::Stencil8,
             wgt::TextureFormat::Depth16Unorm => CanvasGPUTextureFormat::Depth16Unorm,
             wgt::TextureFormat::Depth24Plus => CanvasGPUTextureFormat::Depth24Plus,
-            wgt::TextureFormat::Depth24PlusStencil8 => {
-                CanvasGPUTextureFormat::Depth24PlusStencil8
-            }
+            wgt::TextureFormat::Depth24PlusStencil8 => CanvasGPUTextureFormat::Depth24PlusStencil8,
             wgt::TextureFormat::Depth32Float => CanvasGPUTextureFormat::Depth32Float,
             wgt::TextureFormat::Depth32FloatStencil8 => {
                 CanvasGPUTextureFormat::Depth32FloatStencil8
@@ -562,17 +574,11 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
             wgt::TextureFormat::Bc7RgbaUnorm => CanvasGPUTextureFormat::Bc7RgbaUnorm,
             wgt::TextureFormat::Bc7RgbaUnormSrgb => CanvasGPUTextureFormat::Bc7RgbaUnormSrgb,
             wgt::TextureFormat::Etc2Rgb8Unorm => CanvasGPUTextureFormat::Etc2Rgb8Unorm,
-            wgt::TextureFormat::Etc2Rgb8UnormSrgb => {
-                CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb
-            }
+            wgt::TextureFormat::Etc2Rgb8UnormSrgb => CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb,
             wgt::TextureFormat::Etc2Rgb8A1Unorm => CanvasGPUTextureFormat::Etc2Rgb8A1Unorm,
-            wgt::TextureFormat::Etc2Rgb8A1UnormSrgb => {
-                CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb
-            }
+            wgt::TextureFormat::Etc2Rgb8A1UnormSrgb => CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb,
             wgt::TextureFormat::Etc2Rgba8Unorm => CanvasGPUTextureFormat::Etc2Rgba8Unorm,
-            wgt::TextureFormat::Etc2Rgba8UnormSrgb => {
-                CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb
-            }
+            wgt::TextureFormat::Etc2Rgba8UnormSrgb => CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb,
             wgt::TextureFormat::EacR11Unorm => CanvasGPUTextureFormat::EacR11Unorm,
             wgt::TextureFormat::EacR11Snorm => CanvasGPUTextureFormat::EacR11Snorm,
             wgt::TextureFormat::EacRg11Unorm => CanvasGPUTextureFormat::EacRg11Unorm,
@@ -581,6 +587,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
                 block: block.into(),
                 channel: channel.into(),
             },
+            TextureFormat::P010 => CanvasGPUTextureFormat::P010
         }
     }
 }
@@ -620,6 +627,7 @@ impl Into<wgt::TextureFormat> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Rgb10a2Uint => wgt::TextureFormat::Rgb10a2Uint,
             CanvasGPUTextureFormat::Rgb10a2Unorm => wgt::TextureFormat::Rgb10a2Unorm,
             CanvasGPUTextureFormat::Rg11b10UFloat => wgt::TextureFormat::Rg11b10Ufloat,
+            CanvasGPUTextureFormat::R64Uint => wgt::TextureFormat::R64Uint,
             CanvasGPUTextureFormat::Rg32Uint => wgt::TextureFormat::Rg32Uint,
             CanvasGPUTextureFormat::Rg32Sint => wgt::TextureFormat::Rg32Sint,
             CanvasGPUTextureFormat::Rg32Float => wgt::TextureFormat::Rg32Float,
@@ -634,14 +642,13 @@ impl Into<wgt::TextureFormat> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Stencil8 => wgt::TextureFormat::Stencil8,
             CanvasGPUTextureFormat::Depth16Unorm => wgt::TextureFormat::Depth16Unorm,
             CanvasGPUTextureFormat::Depth24Plus => wgt::TextureFormat::Depth24Plus,
-            CanvasGPUTextureFormat::Depth24PlusStencil8 => {
-                wgt::TextureFormat::Depth24PlusStencil8
-            }
+            CanvasGPUTextureFormat::Depth24PlusStencil8 => wgt::TextureFormat::Depth24PlusStencil8,
             CanvasGPUTextureFormat::Depth32Float => wgt::TextureFormat::Depth32Float,
             CanvasGPUTextureFormat::Depth32FloatStencil8 => {
                 wgt::TextureFormat::Depth32FloatStencil8
             }
             CanvasGPUTextureFormat::NV12 => wgt::TextureFormat::NV12,
+            CanvasGPUTextureFormat::P010 => wgt::TextureFormat::P010,
             CanvasGPUTextureFormat::Bc1RgbaUnorm => wgt::TextureFormat::Bc1RgbaUnorm,
             CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => wgt::TextureFormat::Bc1RgbaUnormSrgb,
             CanvasGPUTextureFormat::Bc2RgbaUnorm => wgt::TextureFormat::Bc2RgbaUnorm,
@@ -657,17 +664,11 @@ impl Into<wgt::TextureFormat> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Bc7RgbaUnorm => wgt::TextureFormat::Bc7RgbaUnorm,
             CanvasGPUTextureFormat::Bc7RgbaUnormSrgb => wgt::TextureFormat::Bc7RgbaUnormSrgb,
             CanvasGPUTextureFormat::Etc2Rgb8Unorm => wgt::TextureFormat::Etc2Rgb8Unorm,
-            CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb => {
-                wgt::TextureFormat::Etc2Rgb8UnormSrgb
-            }
+            CanvasGPUTextureFormat::Etc2Rgb8UnormSrgb => wgt::TextureFormat::Etc2Rgb8UnormSrgb,
             CanvasGPUTextureFormat::Etc2Rgb8A1Unorm => wgt::TextureFormat::Etc2Rgb8A1Unorm,
-            CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb => {
-                wgt::TextureFormat::Etc2Rgb8A1UnormSrgb
-            }
+            CanvasGPUTextureFormat::Etc2Rgb8A1UnormSrgb => wgt::TextureFormat::Etc2Rgb8A1UnormSrgb,
             CanvasGPUTextureFormat::Etc2Rgba8Unorm => wgt::TextureFormat::Etc2Rgba8Unorm,
-            CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb => {
-                wgt::TextureFormat::Etc2Rgba8UnormSrgb
-            }
+            CanvasGPUTextureFormat::Etc2Rgba8UnormSrgb => wgt::TextureFormat::Etc2Rgba8UnormSrgb,
             CanvasGPUTextureFormat::EacR11Unorm => wgt::TextureFormat::EacR11Unorm,
             CanvasGPUTextureFormat::EacR11Snorm => wgt::TextureFormat::EacR11Snorm,
             CanvasGPUTextureFormat::EacRg11Unorm => wgt::TextureFormat::EacRg11Unorm,
@@ -738,6 +739,7 @@ impl Into<String> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Rgb10a2Uint => "rgb10a2uint",
             CanvasGPUTextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
             CanvasGPUTextureFormat::Rg11b10UFloat => "rg11b10ufloat",
+            CanvasGPUTextureFormat::R64Uint => "r64uint",
             CanvasGPUTextureFormat::Rg32Uint => "rg32uint",
             CanvasGPUTextureFormat::Rg32Sint => "rg32sint",
             CanvasGPUTextureFormat::Rg32Float => "rg32float",
@@ -756,6 +758,7 @@ impl Into<String> for CanvasGPUTextureFormat {
             CanvasGPUTextureFormat::Depth24Plus => "depth24plus",
             CanvasGPUTextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
             CanvasGPUTextureFormat::NV12 => "nv12",
+            CanvasGPUTextureFormat::P010 => "p010",
             CanvasGPUTextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
             CanvasGPUTextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
             CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",
@@ -850,6 +853,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
         CanvasGPUTextureFormat::Rgb10a2Uint => "rgb10a2uint",
         CanvasGPUTextureFormat::Rgb10a2Unorm => "rgb10a2unorm",
         CanvasGPUTextureFormat::Rg11b10UFloat => "rg11b10ufloat",
+        CanvasGPUTextureFormat::R64Uint => "r64uint",
         CanvasGPUTextureFormat::Rg32Uint => "rg32uint",
         CanvasGPUTextureFormat::Rg32Sint => "rg32sint",
         CanvasGPUTextureFormat::Rg32Float => "rg32float",
@@ -868,6 +872,7 @@ pub extern "C" fn canvas_native_webgpu_enum_gpu_texture_to_string(
         CanvasGPUTextureFormat::Depth24Plus => "depth24plus",
         CanvasGPUTextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
         CanvasGPUTextureFormat::NV12 => "nv12",
+        CanvasGPUTextureFormat::P010 => "p010",
         CanvasGPUTextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
         CanvasGPUTextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
         CanvasGPUTextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",
@@ -977,6 +982,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_enum_string_to_gpu_texture(
         "rg11b10ufloat" => {
             CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg11b10UFloat)
         }
+        "r64uint" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::R64Uint),
         "rg32uint" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg32Uint),
         "rg32sint" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg32Sint),
         "rg32float" => CanvasOptionalGPUTextureFormat::Some(CanvasGPUTextureFormat::Rg32Float),
@@ -1357,47 +1363,66 @@ impl Into<wgt::VertexStepMode> for CanvasVertexStepMode {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasVertexFormat {
-    Uint8x2 = 0,
-    Uint8x4 = 1,
-    Sint8x2 = 2,
-    Sint8x4 = 3,
-    Unorm8x2 = 4,
-    Unorm8x4 = 5,
-    Snorm8x2 = 6,
-    Snorm8x4 = 7,
-    Uint16x2 = 8,
-    Uint16x4 = 9,
-    Sint16x2 = 10,
-    Sint16x4 = 11,
-    Unorm16x2 = 12,
-    Unorm16x4 = 13,
-    Snorm16x2 = 14,
-    Snorm16x4 = 15,
-    Float16x2 = 16,
-    Float16x4 = 17,
-    Float32 = 18,
-    Float32x2 = 19,
-    Float32x3 = 20,
-    Float32x4 = 21,
-    Uint32 = 22,
-    Uint32x2 = 23,
-    Uint32x3 = 24,
-    Uint32x4 = 25,
-    Sint32 = 26,
-    Sint32x2 = 27,
-    Sint32x3 = 28,
-    Sint32x4 = 29,
-    Float64 = 30,
-    Float64x2 = 31,
-    Float64x3 = 32,
-    Float64x4 = 33,
-    Unorm10_10_10_2 = 34,
+    Uint8 = 0,
+    Uint8x2 = 1,
+    Uint8x4 = 2,
+    Sint8 = 3,
+    Sint8x2 = 4,
+    Sint8x4 = 5,
+    Unorm8 = 6,
+    Unorm8x2 = 7,
+    Unorm8x4 = 8,
+    Snorm8 = 9,
+    Snorm8x2 = 10,
+    Snorm8x4 = 11,
+    Uint16 = 12,
+    Uint16x2 = 13,
+    Uint16x4 = 14,
+    Sint16 = 15,
+    Sint16x2 = 16,
+    Sint16x4 = 17,
+    Unorm16 = 18,
+    Unorm16x2 = 19,
+    Unorm16x4 = 20,
+    Snorm16 = 21,
+    Snorm16x2 = 22,
+    Snorm16x4 = 23,
+    Float16 = 24,
+    Float16x2 = 25,
+    Float16x4 = 26,
+    Float32 = 27,
+    Float32x2 = 28,
+    Float32x3 = 29,
+    Float32x4 = 30,
+    Uint32 = 31,
+    Uint32x2 = 32,
+    Uint32x3 = 33,
+    Uint32x4 = 34,
+    Sint32 = 35,
+    Sint32x2 = 36,
+    Sint32x3 = 37,
+    Sint32x4 = 38,
+    Float64 = 39,
+    Float64x2 = 40,
+    Float64x3 = 41,
+    Float64x4 = 42,
+    Unorm10_10_10_2 = 43,
+    Unorm8x4Bgra = 44,
 }
 
 impl CanvasVertexFormat {
     pub const fn size(&self) -> u64 {
         match self {
-            Self::Uint8x2 | Self::Sint8x2 | Self::Unorm8x2 | Self::Snorm8x2 => 2,
+            Self::Uint8 | Self::Sint8 | Self::Unorm8 | Self::Snorm8 => 1,
+            Self::Uint8x2
+            | Self::Sint8x2
+            | Self::Unorm8x2
+            | Self::Snorm8x2
+            | Self::Uint16
+            | Self::Sint16
+            | Self::Unorm16
+            | Self::Snorm16
+            | Self::Float16 => 2,
             Self::Uint8x4
             | Self::Sint8x4
             | Self::Unorm8x4
@@ -1410,7 +1435,8 @@ impl CanvasVertexFormat {
             | Self::Float32
             | Self::Uint32
             | Self::Sint32
-            | Self::Unorm10_10_10_2 => 4,
+            | Self::Unorm10_10_10_2
+            | Self::Unorm8x4Bgra => 4,
             Self::Uint16x4
             | Self::Sint16x4
             | Self::Unorm16x4
@@ -1466,6 +1492,16 @@ impl From<wgt::VertexFormat> for CanvasVertexFormat {
             wgt::VertexFormat::Float64x3 => Self::Float64x3,
             wgt::VertexFormat::Float64x4 => Self::Float64x4,
             wgt::VertexFormat::Unorm10_10_10_2 => Self::Unorm10_10_10_2,
+            VertexFormat::Uint8 => Self::Uint8,
+            VertexFormat::Sint8 => Self::Sint8,
+            VertexFormat::Unorm8 => Self::Unorm8,
+            VertexFormat::Snorm8 => Self::Snorm8,
+            VertexFormat::Uint16 => Self::Uint16,
+            VertexFormat::Sint16 => Self::Sint16,
+            VertexFormat::Unorm16 => Self::Unorm16,
+            VertexFormat::Snorm16 => Self::Snorm16,
+            VertexFormat::Float16 => Self::Float16,
+            VertexFormat::Unorm8x4Bgra => Self::Unorm8x4Bgra,
         }
     }
 }
@@ -1508,6 +1544,16 @@ impl Into<wgt::VertexFormat> for CanvasVertexFormat {
             Self::Float64x3 => wgt::VertexFormat::Float64x3,
             Self::Float64x4 => wgt::VertexFormat::Float64x4,
             Self::Unorm10_10_10_2 => wgt::VertexFormat::Unorm10_10_10_2,
+            Self::Uint8 => VertexFormat::Uint8,
+            Self::Sint8 => VertexFormat::Sint8,
+            Self::Unorm8 => VertexFormat::Unorm8,
+            Self::Snorm8 => VertexFormat::Snorm8,
+            Self::Uint16 => VertexFormat::Uint16,
+            Self::Sint16 => VertexFormat::Sint16,
+            Self::Unorm16 => VertexFormat::Unorm16,
+            Self::Snorm16 => VertexFormat::Snorm16,
+            Self::Float16 => VertexFormat::Float16,
+            Self::Unorm8x4Bgra => VertexFormat::Unorm8x4Bgra,
         }
     }
 }
@@ -1684,17 +1730,14 @@ pub enum CanvasOptionalCanvasCullMode {
     Some(CanvasCullMode),
 }
 
-
 impl From<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
     fn from(value: Option<wgt::Face>) -> Self {
         match value {
             None => Self::None,
-            Some(value) => {
-                match value {
-                    wgt::Face::Front => Self::Some(CanvasCullMode::Front),
-                    wgt::Face::Back => Self::Some(CanvasCullMode::Back),
-                }
-            }
+            Some(value) => match value {
+                wgt::Face::Front => Self::Some(CanvasCullMode::Front),
+                wgt::Face::Back => Self::Some(CanvasCullMode::Back),
+            },
         }
     }
 }
@@ -1703,17 +1746,14 @@ impl Into<Option<wgt::Face>> for CanvasOptionalCanvasCullMode {
     fn into(self) -> Option<wgt::Face> {
         match self {
             CanvasOptionalCanvasCullMode::None => None,
-            CanvasOptionalCanvasCullMode::Some(value) => {
-                match value {
-                    CanvasCullMode::None => None,
-                    CanvasCullMode::Front => Some(wgt::Face::Front),
-                    CanvasCullMode::Back => Some(wgt::Face::Back),
-                }
-            }
+            CanvasOptionalCanvasCullMode::Some(value) => match value {
+                CanvasCullMode::None => None,
+                CanvasCullMode::Front => Some(wgt::Face::Front),
+                CanvasCullMode::Back => Some(wgt::Face::Back),
+            },
         }
     }
 }
-
 
 impl From<CanvasCullMode> for Option<wgt::Face> {
     fn from(value: CanvasCullMode) -> Option<wgt::Face> {
@@ -1786,12 +1826,8 @@ impl From<Option<wgt::PrimitiveTopology>> for CanvasOptionalPrimitiveTopology {
                 wgt::PrimitiveTopology::PointList => CanvasPrimitiveTopology::PointList,
                 wgt::PrimitiveTopology::LineList => CanvasPrimitiveTopology::LineList,
                 wgt::PrimitiveTopology::LineStrip => CanvasPrimitiveTopology::LineStrip,
-                wgt::PrimitiveTopology::TriangleList => {
-                    CanvasPrimitiveTopology::TriangleList
-                }
-                wgt::PrimitiveTopology::TriangleStrip => {
-                    CanvasPrimitiveTopology::TriangleStrip
-                }
+                wgt::PrimitiveTopology::TriangleList => CanvasPrimitiveTopology::TriangleList,
+                wgt::PrimitiveTopology::TriangleStrip => CanvasPrimitiveTopology::TriangleStrip,
             }),
             None => Self::None,
         }
@@ -1806,12 +1842,8 @@ impl Into<Option<wgt::PrimitiveTopology>> for CanvasOptionalPrimitiveTopology {
                 CanvasPrimitiveTopology::PointList => wgt::PrimitiveTopology::PointList,
                 CanvasPrimitiveTopology::LineList => wgt::PrimitiveTopology::LineList,
                 CanvasPrimitiveTopology::LineStrip => wgt::PrimitiveTopology::LineStrip,
-                CanvasPrimitiveTopology::TriangleList => {
-                    wgt::PrimitiveTopology::TriangleList
-                }
-                CanvasPrimitiveTopology::TriangleStrip => {
-                    wgt::PrimitiveTopology::TriangleStrip
-                }
+                CanvasPrimitiveTopology::TriangleList => wgt::PrimitiveTopology::TriangleList,
+                CanvasPrimitiveTopology::TriangleStrip => wgt::PrimitiveTopology::TriangleStrip,
             }),
         }
     }
@@ -1883,18 +1915,14 @@ pub struct CanvasBufferBinding {
 
 impl Into<BufferBinding> for CanvasBufferBinding {
     fn into(self) -> BufferBinding {
-        use std::num::NonZeroU64;
         let buffer = unsafe { &*self.buffer };
         let buffer_id = buffer.buffer;
         BufferBinding {
-            buffer_id,
+            buffer: buffer_id,
             offset: self.offset.try_into().unwrap_or_default(),
-            size: self
-                .size
-                .try_into()
-                .map(|value: u64| NonZeroU64::new(value))
-                .ok()
-                .flatten(),
+            // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
+            // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
+            size: if self.size > 0 { Some(self.size as u64) } else { None },
         }
     }
 }
@@ -1993,6 +2021,18 @@ pub enum CanvasStorageTextureAccess {
     /// layout(set=0, binding=0, r32f) uniform image2D myStorageImage;
     /// ```
     ReadWrite,
+    /// The texture can be both read and written in the shader via atomics and must be annotated
+    /// with `read_write` in WGSL.
+    ///
+    /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] must be enabled to use this access
+    /// mode.  This is a nonstandard, native-only extension.
+    ///
+    /// Example WGSL syntax:
+    /// ```rust,ignore
+    /// @group(0) @binding(0)
+    /// var my_storage_image: texture_storage_2d<r32uint, atomic>;
+    /// ```
+    Atomic,
 }
 
 impl From<StorageTextureAccess> for CanvasStorageTextureAccess {
@@ -2001,6 +2041,7 @@ impl From<StorageTextureAccess> for CanvasStorageTextureAccess {
             StorageTextureAccess::WriteOnly => Self::WriteOnly,
             StorageTextureAccess::ReadOnly => Self::ReadOnly,
             StorageTextureAccess::ReadWrite => Self::ReadWrite,
+            StorageTextureAccess::Atomic => Self::Atomic,
         }
     }
 }
@@ -2011,6 +2052,7 @@ impl Into<StorageTextureAccess> for CanvasStorageTextureAccess {
             CanvasStorageTextureAccess::WriteOnly => StorageTextureAccess::WriteOnly,
             CanvasStorageTextureAccess::ReadOnly => StorageTextureAccess::ReadOnly,
             CanvasStorageTextureAccess::ReadWrite => StorageTextureAccess::ReadWrite,
+            CanvasStorageTextureAccess::Atomic => StorageTextureAccess::Atomic,
         }
     }
 }

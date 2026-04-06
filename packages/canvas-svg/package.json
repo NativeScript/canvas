@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-svg",
-	"version": "2.0.0-rc.10",
+	"version": "2.0.0",
 	"description": "Add a plugin description",
 	"main": "index",
 	"typings": "index.d.ts",
@@ -33,7 +33,7 @@
 	"readmeFilename": "README.md",
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
-		"@xmldom/xmldom": "0.8.10",
+		"@xmldom/xmldom": ">=0.8.12",
 		"query-selector": "2.0.0",
 		"set-value": "4.1.0"
 	}

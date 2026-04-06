@@ -1,8 +1,8 @@
 use std::os::raw::c_float;
 
 use skia_safe::gradient_shader::GradientShaderColors;
-use skia_safe::{Color, Point, Shader, TileMode};
-
+use skia_safe::{Color, Color4f, Point, Shader, TileMode};
+use canvas_core::context_attributes::ColorSpace;
 use crate::context::matrix::Matrix;
 
 #[derive(Clone, Debug)]
@@ -14,6 +14,7 @@ pub enum Gradient {
         colors: Vec<Color>,
         matrix: Option<Matrix>,
         tile_mode: TileMode,
+        color_space: ColorSpace
     },
     Radial {
         start: Point,
@@ -24,6 +25,7 @@ pub enum Gradient {
         colors: Vec<Color>,
         matrix: Option<Matrix>,
         tile_mode: TileMode,
+        color_space: ColorSpace
     },
     Conic {
         center: Point,
@@ -32,6 +34,7 @@ pub enum Gradient {
         colors: Vec<Color>,
         matrix: Option<Matrix>,
         tile_mode: TileMode,
+        color_space: ColorSpace
     },
 }
 
@@ -224,7 +227,6 @@ impl Gradient {
 
         //   rotated
 
-
         Shader::sweep_gradient(
             center,
             color_array,
@@ -238,8 +240,8 @@ impl Gradient {
 
     pub fn add_color_stop_str(&mut self, offset: c_float, color: &str) {
         if let Ok(color) = color.parse::<csscolorparser::Color>() {
-            let color = color.rgba_u8();
-            self.add_color_stop(offset, Color::from_argb(color.3, color.0, color.1, color.2))
+            let color = color.to_rgba8();
+            self.add_color_stop(offset, Color::from_argb(color[3], color[0], color[1], color[2]))
         }
     }
 
@@ -268,5 +270,16 @@ impl Gradient {
                 stops.insert(idx, offset);
             }
         };
+    }
+
+    pub fn add_color4f_stop(&mut self, offset: c_float, color: Color4f) {
+        let color = color.to_color();
+        self.add_color_stop(offset, color);
+    }
+
+    /// Add a color stop from a packed ARGB u32 value.
+    /// Avoids needing skia_safe::Color in the caller.
+    pub fn add_color_stop_with_argb(&mut self, offset: c_float, argb: u32) {
+        self.add_color_stop(offset, Color::from(argb));
     }
 }

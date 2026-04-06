@@ -34,26 +34,31 @@ class ViewController: UIViewController {
         canvas?.frame = view.frame
         view.backgroundColor = .white
         
-        let emoji = NSCFontFace(family: "emoji")
-        
-        emoji.load { error in
-            print("emoji Font load error \(error ?? "") \(emoji.font.debugDescription)")
-                }
-                
-        
-        
-        NSCFontFace.loadFromRemote(url: "https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swa") { fonts, error in
-            if let fonts = fonts {
-                for font in fonts {
-                    NSCFontFaceSet.instance.add(font)
-                }
-                print(NSCFontFaceSet.instance.size)
-                NSCFontFaceSet.instance.load("italic bold 16px 'Noto Serif TC'", nil){f,err in
-                    print("NSCFontFaceSet: load",f, err)
-                }
-            }
-           
-        }
+//        let emoji = NSCFontFace(family: "emoji")
+//        
+//        emoji.load { error in
+//            print("emoji Font load error \(error ?? "") \(emoji.font.debugDescription)")
+//                }
+//                
+//        
+//			NSCFontFace.importFromRemote(url: "https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swa", load: false, callback: { fonts, error in
+//				if let fonts = fonts {
+//						for font in fonts {
+//								NSCFontFaceSet.instance.add(font)
+//						}
+//						print(NSCFontFaceSet.instance.size)
+//						NSCFontFaceSet.instance.load("italic bold 16px 'Noto Serif TC'", nil){f,err in
+//								print("NSCFontFaceSet: load",f, err)
+//						}
+//				}
+//			})
+			
+		//	canvas!.initContext("2d", true, true,  true, false, 0, true, false, false, false,false, false, 1)
+			
+			// canvas!.initContext("webgl")
+			
+	//		print(canvas?.nativeContext)
+			
         
         /*
         NSCFontFace.loadFromRemote(url: "https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&family=Noto+Serif+TC:wght@200..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap") { fonts, error in
@@ -114,24 +119,29 @@ class ViewController: UIViewController {
        // canvas = NSCCanvas(frame: view.bounds)
         //view.addSubview(canvas!)
 //        canvas?.frame = view.frame
-//        canvas?.layoutIfNeeded()
-//       let ctx = canvas!.create2DContext(
-//                                    true,
-//                                    true,
-//                                    true,
-//                                    false,
-//                                    0,
-//                                    true,
-//                                    false,
-//                                    false,
-//                                    false,
-//                                    false,
-//                                    -16777216
-//        )
-        
-        
-       // canvas?.context2DConic(ctx)
-        
+//        canvas?.layoutIfNeeded()x
+       let ctx = canvas!.create2DContext(
+                                    true,
+                                    true,
+                                    true,
+                                    false,
+                                    0,
+                                    true,
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    -16777216,
+																		false,
+																		1
+        )
+			
+			canvas?.setSurfaceSize(Int(view.frame.size.width * UIScreen.main.scale), Int(view.frame.size.height * UIScreen.main.scale))
+//
+//        
+        canvas?.context2DConic(ctx)
+			
+			
         
 //        let ss = canvas?.snapshot(false)
 //        
@@ -139,7 +149,7 @@ class ViewController: UIViewController {
 //        view.addSubview(v)
 //        v.frame = CGRect(origin: CGPoint(x: v.frame.origin.x, y: 400), size: v.frame.size)
         
-      //  canvas?.context2DTest(ctx)
+        //canvas?.context2DTest(ctx)
      
         
       

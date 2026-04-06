@@ -1,6 +1,8 @@
-import { VideoBase, controlsProperty, autoplayProperty, loopProperty, srcProperty, currentTimeProperty, durationProperty } from './common';
+import { VideoBase } from './common';
 import { Screen, Application, Utils, knownFolders, path } from '@nativescript/core';
 import { Source } from '..';
+import { durationProperty, currentTimeProperty } from '../common';
+
 declare var com, org;
 export class Video extends VideoBase {
 	_container: android.widget.LinearLayout;
@@ -44,6 +46,13 @@ export class Video extends VideoBase {
 				onPlaying() {
 					const owner = ref.get();
 					if (owner) {
+						owner._playing = true;
+						if (owner._playResolve) {
+							owner._playResolve();
+							owner._playResolve = null;
+							owner._playReject = null;
+							owner._playPromise = null;
+						}
 						owner._notifyListener(Video.playingEvent);
 					}
 				},
@@ -70,7 +79,28 @@ export class Video extends VideoBase {
 						owner._notifyVideoFrameCallbacks();
 					}
 				},
-			})
+
+				onLoadedData() {
+					const owner = ref.get();
+					if (owner) {
+						owner._readyState = Video.HAVE_CURRENT_DATA;
+						owner._notifyListener(Video.loadeddataEvent);
+					}
+				},
+
+				onError(message: string) {
+					const owner = ref.get();
+					if (owner) {
+						owner._playing = false;
+						if (owner._playReject) {
+							owner._playReject(new Error(message ?? 'Playback error'));
+						}
+						owner._playResolve = null;
+						owner._playReject = null;
+						owner._playPromise = null;
+					}
+				},
+			}),
 		);
 		this.setNativeView(this._instance.getContainer());
 	}
@@ -88,14 +118,112 @@ export class Video extends VideoBase {
 	}
 	getCurrentFrame(context?: WebGLRenderingContext) {
 		const ctx = arguments[1] as any;
-		const flipY = ctx._flipY;
-		const ptr = ctx._canvas._canvas.getNativeGL();
+		//@ts-ignore
+		const flipY = context?.__flipY ?? false;
+		if (!ctx._canvas._canvas) {
+			return;
+		}
+		const ptr = ctx._canvas._canvas.getNativeContext();
 
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);
 	}
 
+	getFrameForTexImage3D(nativeCtx: any, ctx: any, target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number) {
+		if (!ctx._canvas._canvas) {
+			return;
+		}
+		const ptr = ctx._canvas._canvas.getNativeContext();
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+
+		const drawn = this._instance.getFrameForTexImage3D(!!this.isLoaded, ptr, flipY, target, level, internalformat, width, height, depth, border);
+		if (drawn) {
+			return;
+		}
+
+		const bitmap = this._instance.getCurrentBitmap();
+		if (bitmap) {
+			const bw = bitmap.getWidth();
+			const bh = bitmap.getHeight();
+			const upload = bw !== width || bh !== height ? android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true) : bitmap;
+			ctx.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, upload);
+			if (upload !== bitmap) {
+				upload.recycle();
+			}
+		}
+	}
+
+	getFrameForTexSubImage3D(nativeCtx: any, ctx: any, target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number) {
+		if (!ctx._canvas._canvas) {
+			return;
+		}
+		const ptr = ctx._canvas._canvas.getNativeContext();
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+
+		const drawn = this._instance.getFrameForTexSubImage3D(!!this.isLoaded, ptr, flipY, target, level, xoffset, yoffset, zoffset, width, height);
+		if (drawn) {
+			return;
+		}
+
+		const bitmap = this._instance.getCurrentBitmap();
+		if (bitmap) {
+			const bw = bitmap.getWidth();
+			const bh = bitmap.getHeight();
+			const upload = bw !== width || bh !== height ? android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true) : bitmap;
+			ctx.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, upload);
+			if (upload !== bitmap) {
+				upload.recycle();
+			}
+		}
+	}
+
+	drawImageFrame(context2d: any, args: any[]) {
+		if (!this._instance) {
+			return;
+		}
+		const ptr = context2d.context.__getPointer();
+		const nativePtr = long(ptr);
+		const backendType: number = context2d.__engine ?? 0;
+		let dirty = false;
+		if (args.length === 3) {
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2]);
+		} else if (args.length === 5) {
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2], args[3], args[4]);
+		} else if (args.length === 9) {
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+		}
+		if (dirty) {
+			context2d.context.__makeDirty();
+		}
+	}
+
+	getVideoFrameData(): any {
+		if (!this._instance) {
+			return null;
+		}
+		return this._instance.getCurrentBitmap();
+	}
+
+	_playResolve;
+	_playReject;
+	_playPromise: Promise<void> | null = null;
+
 	play() {
-		this._instance.play();
+		if (this._playing) {
+			return Promise.resolve();
+		}
+
+		if (this._playPromise) {
+			return this._playPromise;
+		}
+
+		this._playPromise = new Promise<void>((resolve, reject) => {
+			this._playResolve = resolve;
+			this._playReject = reject;
+			this._instance.play();
+		});
+		return this._playPromise;
 	}
 
 	pause() {

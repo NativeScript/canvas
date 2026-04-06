@@ -14,6 +14,7 @@
       </map>
     </option>
   </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/../../../Testdoc" />
     <option name="OTHER_OPTIONS" value="$ANDROID_HOME/platforms/android-29/android.jar " />

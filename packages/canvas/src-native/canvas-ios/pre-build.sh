@@ -88,8 +88,8 @@ cbindgen --config "$CWD/canvas-ios/cbindgen.toml"  "$CWD/canvas-ios/src/lib.rs" 
 
 
 if $IS_RELEASE; then
-  export RUSTFLAGS="-Zlocation-detail=none -C panic=abort"
-  cargo +nightly build -Z build-std='std,panic_abort' -Z build-std-features=panic_immediate_abort  --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
+  export RUSTFLAGS="-Zlocation-detail=none -Zunstable-options -Cpanic=immediate-abort"
+  cargo +nightly build -Z build-std='std,panic_abort' --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios
 
 else 
   cargo build --manifest-path Cargo.toml --target $RUST_BUILD_TARGET $RUST_BUILD_TYPE -p canvas-ios

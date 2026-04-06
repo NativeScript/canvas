@@ -925,7 +925,7 @@ void GPUSupportedLimitsImpl::GetMaxInterStageShaderComponents(v8::Local<v8::Stri
 
     auto limits = ptr->GetLimits();
 
-    info.GetReturnValue().Set(limits->max_inter_stage_shader_components);
+    info.GetReturnValue().Set(limits->max_inter_stage_shader_variables);
 
 }
 
@@ -940,7 +940,7 @@ void GPUSupportedLimitsImpl::SetMaxInterStageShaderComponents(v8::Local<v8::Stri
     auto isolate = info.GetIsolate();
     auto context = isolate->GetCurrentContext();
     if (value->IsInt32()) {
-        ptr->limits_->max_inter_stage_shader_components = value->Int32Value(context).ToChecked();
+        ptr->limits_->max_inter_stage_shader_variables = value->Int32Value(context).ToChecked();
     }
 }
 
@@ -1187,90 +1187,39 @@ void GPUSupportedLimitsImpl::SetMaxComputeWorkgroupsPerDimension(v8::Local<v8::S
 
 void GPUSupportedLimitsImpl::GetMinSubgroupSize(v8::Local<v8::String> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        // return default ??
-        info.GetReturnValue().Set(0);
-        return;
-    }
-
-    auto limits = ptr->GetLimits();
-
-    info.GetReturnValue().Set(limits->min_subgroup_size);
+    info.GetReturnValue().Set(0);
 }
 
 
 void GPUSupportedLimitsImpl::SetMinSubgroupSize(v8::Local<v8::String> property,
                                                 v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        return;
-    }
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    if (value->IsInt32()) {
-        ptr->limits_->min_subgroup_size = value->Int32Value(context).ToChecked();
-    }
+    // min_subgroup_size no longer exists in CanvasGPUSupportedLimits
 }
 
 void GPUSupportedLimitsImpl::GetMaxSubgroupSize(v8::Local<v8::String> property,
                                                 const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        // return default ??
-        info.GetReturnValue().Set(0);
-        return;
-    }
-
-    auto limits = ptr->GetLimits();
-
-    info.GetReturnValue().Set(limits->max_subgroup_size);
+    info.GetReturnValue().Set(0);
 }
 
 
 void GPUSupportedLimitsImpl::SetMaxSubgroupSize(v8::Local<v8::String> property,
                                                 v8::Local<v8::Value> value,
                                                 const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        return;
-    }
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    if (value->IsInt32()) {
-        ptr->limits_->max_subgroup_size = value->Int32Value(context).ToChecked();
-    }
+    // max_subgroup_size no longer exists in CanvasGPUSupportedLimits
 }
 
 
 void GPUSupportedLimitsImpl::GetMaxPushConstantSize(v8::Local<v8::String> property,
                                                     const v8::PropertyCallbackInfo<v8::Value> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        // return default ??
-        info.GetReturnValue().Set(0);
-        return;
-    }
-
-    auto limits = ptr->GetLimits();
-
-    info.GetReturnValue().Set(limits->max_push_constant_size);
+    info.GetReturnValue().Set(0);
 }
 
 
 void GPUSupportedLimitsImpl::SetMaxPushConstantSize(v8::Local<v8::String> property,
                                                     v8::Local<v8::Value> value,
                                                     const v8::PropertyCallbackInfo<void> &info) {
-    GPUSupportedLimitsImpl *ptr = GetPointer(info.This());
-    if (ptr == nullptr) {
-        return;
-    }
-    auto isolate = info.GetIsolate();
-    auto context = isolate->GetCurrentContext();
-    if (value->IsInt32()) {
-        ptr->limits_->max_push_constant_size = value->Int32Value(context).ToChecked();
-    }
+    // max_push_constant_size no longer exists in CanvasGPUSupportedLimits
 }
 
 void GPUSupportedLimitsImpl::GetMaxNonSamplerBindings(v8::Local<v8::String> property,

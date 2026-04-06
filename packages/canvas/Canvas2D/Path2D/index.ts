@@ -1,5 +1,4 @@
 import { DOMMatrix } from '../DOMMatrix';
-
 import { Helpers } from '../../helpers';
 
 export class Path2D {

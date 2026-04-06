@@ -22,6 +22,8 @@ pub mod choreographer;
 
 mod buffers;
 pub use buffers::*;
+use canvas_core::context_attributes::ColorSpace;
+
 mod helper;
 pub use helper::*;
 mod image_asset;
@@ -40,6 +42,23 @@ pub mod impl_test;
 #[derive(Clone)]
 pub struct Raf(raf::Raf);
 /* Raf */
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum CanvasColorSpace {
+    Srgb,
+    P3,
+}
+
+impl Into<ColorSpace> for CanvasColorSpace {
+    fn into(self) -> ColorSpace {
+        match self {
+            CanvasColorSpace::Srgb => ColorSpace::Srgb,
+            CanvasColorSpace::P3 => ColorSpace::P3
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]

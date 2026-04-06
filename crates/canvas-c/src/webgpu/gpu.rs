@@ -1,9 +1,9 @@
-use std::{os::raw::c_void, sync::Arc};
-use std::fmt::{Debug, Formatter};
 ////use wgpu_core::gfx_select;
+use super::gpu_adapter::CanvasGPUAdapter;
+use std::fmt::{Debug, Formatter};
+use std::{os::raw::c_void, sync::Arc};
 use wgpu_core::global::Global;
 use wgpu_core::id::SurfaceId;
-use super::gpu_adapter::CanvasGPUAdapter;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,9 +17,7 @@ impl Into<wgt::PowerPreference> for CanvasGPUPowerPreference {
     fn into(self) -> wgt::PowerPreference {
         match self {
             CanvasGPUPowerPreference::LowPower => wgt::PowerPreference::LowPower,
-            CanvasGPUPowerPreference::HighPerformance => {
-                wgt::PowerPreference::HighPerformance
-            }
+            CanvasGPUPowerPreference::HighPerformance => wgt::PowerPreference::HighPerformance,
             CanvasGPUPowerPreference::None => wgt::PowerPreference::None,
         }
     }
@@ -46,19 +44,19 @@ struct CanvasWebGPUInstanceInner {
     pub(crate) global: Arc<Global>,
 }
 
-impl Debug for CanvasWebGPUInstanceInner  {
+impl Debug for CanvasWebGPUInstanceInner {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CanvasWebGPUInstanceInner")
-            .finish()
+        f.debug_struct("CanvasWebGPUInstanceInner").finish()
     }
 }
-
 
 #[derive(Debug)]
 pub struct CanvasWebGPUInstance(CanvasWebGPUInstanceInner);
 impl Clone for CanvasWebGPUInstance {
     fn clone(&self) -> Self {
-        Self(CanvasWebGPUInstanceInner { global: Arc::clone(&self.0.global) })
+        Self(CanvasWebGPUInstanceInner {
+            global: Arc::clone(&self.0.global),
+        })
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -79,8 +77,9 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     let backends = wgt::Backends::METAL;
 
-   #[cfg(target_os = "android")]
-    let backends = wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
+    #[cfg(target_os = "android")]
+    let backends =
+        wgt::Backends::from_bits(wgt::Backends::VULKAN.bits() | wgt::Backends::GL.bits()).unwrap();
 
     #[cfg(target_os = "windows")]
     let backends = wgt::Backends::DX12;
@@ -91,6 +90,7 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
             backends,
             ..Default::default()
         },
+        None,
     );
 
     let inner = CanvasWebGPUInstanceInner {
@@ -140,33 +140,49 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         compatible_surface: None,
     };
 
-
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let instance = Arc::from_raw(instance);
     let global = Arc::clone(instance.global());
     std::thread::spawn(move || {
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
-        let backends = wgt::Backends::METAL;
+        let adapter_id = {
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            {
+                global.request_adapter(&opts, wgt::Backends::METAL, None)
+            }
 
-        #[cfg(target_os = "android")]
-        let backends = wgt::Backends::VULKAN | wgt::Backends::GL;
+            #[cfg(target_os = "android")]
+            {
+                // Try Vulkan first, but reject software renderers (SwiftShader/llvmpipe).
+                // They crash inside wgpu on device creation with certain feature combinations.
+                // Fall back to the GLES backend which is more robust on emulators.
+                let vulkan_adapter = global.request_adapter(&opts, wgt::Backends::VULKAN, None);
 
-        #[cfg(target_os = "windows")]
-        let backends = wgt::Backends::DX12;
+                let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |id| {
+                    // device_type == Cpu means SwiftShader or similar software renderer.
+                    global.adapter_get_info(*id).device_type != wgt::DeviceType::Cpu
+                });
 
+                if is_hardware_vulkan {
+                    vulkan_adapter
+                } else {
+                    // Drop the software Vulkan adapter (if any) and try GLES instead.
+                    if let Ok(id) = vulkan_adapter {
+                        global.adapter_drop(id);
+                    }
+                    global.request_adapter(&opts, wgt::Backends::GL, None)
+                }
+            }
 
-        let adapter = global.request_adapter(
-            &opts,
-            backends,
-            None,
-        );
+            #[cfg(target_os = "windows")]
+            {
+                global.request_adapter(&opts, wgt::Backends::DX12, None)
+            }
+        };
 
-        let adapter = adapter.map(|adapter_id| {
+        let adapter = adapter_id.map(|adapter_id| {
             let features = build_features(global.adapter_features(adapter_id));
-
             let limits = global.adapter_limits(adapter_id);
-
             let ret = CanvasGPUAdapter {
                 instance,
                 adapter: adapter_id,
@@ -174,9 +190,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
                 features,
                 limits,
             };
-
             Arc::into_raw(Arc::new(ret))
         });
+
         let callback = unsafe {
             std::mem::transmute::<*const i64, fn(*const CanvasGPUAdapter, *mut c_void)>(
                 callback as _,

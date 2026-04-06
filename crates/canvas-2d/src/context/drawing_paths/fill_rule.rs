@@ -1,4 +1,4 @@
-use skia_safe::path::FillType;
+use skia_safe::PathFillType;
 
 #[derive(Copy, Clone, Debug)]
 pub enum FillRule {
@@ -63,10 +63,10 @@ impl FillRule {
             _ => None,
         }
     }
-    pub fn to_fill_type(&self) -> FillType {
+    pub fn to_fill_type(&self) -> PathFillType {
         match self {
-            FillRule::EvenOdd => FillType::EvenOdd,
-            FillRule::NonZero => FillType::Winding,
+            FillRule::EvenOdd => PathFillType::EvenOdd,
+            FillRule::NonZero => PathFillType::Winding,
         }
     }
 }

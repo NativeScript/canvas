@@ -84,6 +84,7 @@ pub struct CanvasCreateTextureViewDescriptor {
     pub format: CanvasOptionalGPUTextureFormat,
     pub dimension: CanvasOptionalTextureViewDimension,
     pub range: *const CanvasImageSubresourceRange,
+    pub usage: u32
 }
 
 #[no_mangle]
@@ -157,6 +158,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_texture_create_texture_view(
             label,
             format: descriptor.format.into(),
             dimension: descriptor.dimension.into(),
+            usage: None,
             range: range.into(),
         }
     };

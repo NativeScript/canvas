@@ -81,7 +81,9 @@ enum class NativeType {
     GPUComputePipeline,
     GPUSampler,
     GPURenderBundleEncoder,
-    GPURenderBundle
+    GPURenderBundle,
+    GPUCompilationInfo,
+    GPUCompilationMessage
 };
 
 #endif //CANVAS_ANDROID_NATIVETYPE_H

@@ -384,10 +384,28 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	texImage3D(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, offset: any);
 
 	texImage3D(target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number, source: any): void {
+		if (source === null || source === undefined) {
+			if (__ANDROID__) {
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, 0);
+			} else {
+				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, null);
+			}
+			return;
+		}
+		if (source && typeof source.tagName === 'string' && (source.tagName === 'VID' || source.tagName === 'VIDEO') && source._video && typeof source._video.getFrameForTexImage3D === 'function') {
+			source._video.getFrameForTexImage3D(this.native, this, target, level, internalformat, width, height, depth, border, format, type);
+			return;
+		}
+		if (source && typeof source.getFrameForTexImage3D === 'function') {
+			source.getFrameForTexImage3D(this.native, this, target, level, internalformat, width, height, depth, border, format, type);
+			return;
+		}
 		if (typeof source === 'number') {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source && source.buffer) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
+		} else if (source?._type === '2d' || source?._type?.indexOf('webgl') > -1 || source?._type === 'webgpu') {
+			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, (source as any).native);
 		} else if (global.isAndroid && source instanceof android.graphics.Bitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {
@@ -427,10 +445,20 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: any);
 
 	texSubImage3D(target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number, srcData: any, srcOffset: number = 0): void {
+		if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'VID' || srcData.tagName === 'VIDEO') && srcData._video && typeof srcData._video.getFrameForTexSubImage3D === 'function') {
+			srcData._video.getFrameForTexSubImage3D(this.native, this, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type);
+			return;
+		}
+		if (srcData && typeof srcData.getFrameForTexSubImage3D === 'function') {
+			srcData.getFrameForTexSubImage3D(this.native, this, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type);
+			return;
+		}
 		if (typeof srcData === 'number') {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData && srcData.buffer) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);
+		} else if (srcData?._type === '2d' || srcData?._type?.indexOf('webgl') > -1 || srcData?._type === 'webgpu') {
+			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, (srcData as any).native);
 		} else if (global.isAndroid && srcData instanceof android.graphics.Bitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ImageSource) {

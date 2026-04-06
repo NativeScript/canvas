@@ -1,10 +1,9 @@
-use std::{ffi::CStr, os::raw::c_char};
 use std::borrow::Cow;
 use std::ffi::CString;
+use std::{ffi::CStr, os::raw::c_char};
 
 #[inline]
-pub(crate) fn ptr_into_slice<'a, T>(entries: *const T,
-                                    size: usize) -> &'a [T] {
+pub(crate) fn ptr_into_slice<'a, T>(entries: *const T, size: usize) -> &'a [T] {
     if entries.is_null() || size == 0 {
         return &[];
     }
@@ -28,10 +27,11 @@ pub(crate) fn ptr_into_cstring(ptr: *const std::ffi::c_char) -> Option<CString> 
         if ptr.is_null() {
             return None;
         }
-        CStr::from_ptr(ptr).to_str()
-            .map(|value| {
-                CString::new(value.to_string()).ok()
-            }).ok().flatten()
+        CStr::from_ptr(ptr)
+            .to_str()
+            .map(|value| CString::new(value.to_string()).ok())
+            .ok()
+            .flatten()
     }
 }
 
@@ -41,7 +41,8 @@ pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'stati
         if ptr.is_null() {
             return None;
         }
-        CStr::from_ptr(ptr).to_str()
+        CStr::from_ptr(ptr)
+            .to_str()
             .map(|v| v.into())
             .map(Cow::Owned)
             .ok()
@@ -50,11 +51,14 @@ pub(crate) fn ptr_into_string(ptr: *const std::ffi::c_char) -> Option<Cow<'stati
 
 #[inline]
 pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
-    label.map(|label| {
-        CString::new(label.to_string()).map(|label| label.into_raw()).unwrap_or(std::ptr::null_mut())
-    }).unwrap_or(std::ptr::null_mut())
+    label
+        .map(|label| {
+            CString::new(label.to_string())
+                .map(|label| label.into_raw())
+                .unwrap_or(std::ptr::null_mut())
+        })
+        .unwrap_or(std::ptr::null_mut())
 }
-
 
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];
@@ -130,27 +134,25 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::STORAGE_RESOURCE_BINDING_ARRAY) {
         return_features.push("storage-resource-binding-array");
     }
-    if features.contains(
-        wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
-    ) {
+    if features
+        .contains(wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING)
+    {
         return_features.push("sampled-texture-and-storage-buffer-array-non-uniform-indexing");
     }
-    if features.contains(
-        wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
-    ) {
-        return_features.push("uniform-buffer-and-storage-texture-array-non-uniform-indexing");
+    if features.contains(wgt::Features::STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING) {
+        return_features.push("storage-texture-array-non-uniform-indexing");
     }
     if features.contains(wgt::Features::PARTIALLY_BOUND_BINDING_ARRAY) {
         return_features.push("partially-bound-binding-array");
     }
-    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT) {
+    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
         return_features.push("multi-draw-indirect");
     }
     if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
         return_features.push("multi-draw-indirect-count");
     }
-    if features.contains(wgt::Features::PUSH_CONSTANTS) {
-        return_features.push("push-constants");
+    if features.contains(wgt::Features::MULTI_DRAW_INDIRECT_COUNT) {
+        return_features.push("multi-draw-indirect-count");
     }
     if features.contains(wgt::Features::ADDRESS_MODE_CLAMP_TO_ZERO) {
         return_features.push("address-mode-clamp-to-zero");
@@ -173,7 +175,7 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::CLEAR_TEXTURE) {
         return_features.push("clear-texture");
     }
-    if features.contains(wgt::Features::SPIRV_SHADER_PASSTHROUGH) {
+    if features.contains(wgt::Features::PASSTHROUGH_SHADERS) {
         return_features.push("spirv-shader-passthrough");
     }
     if features.contains(wgt::Features::MULTIVIEW) {
@@ -297,9 +299,9 @@ pub fn parse_required_features(
                     );
                 }
 
-                "uniform-buffer-and-storage-texture-array-non-uniform-indexing" => {
+                "storage-texture-array-non-uniform-indexing" => {
                     features.set(
-                        wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
+                        wgt::Features::STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
                         true,
                     );
                 }
@@ -309,7 +311,7 @@ pub fn parse_required_features(
                 }
 
                 "multi-draw-indirect" => {
-                    features.set(wgt::Features::MULTI_DRAW_INDIRECT, true);
+                    features.set(wgt::Features::MULTI_DRAW_INDIRECT_COUNT, true);
                 }
 
                 "multi-draw-indirect-count" => {
@@ -317,7 +319,7 @@ pub fn parse_required_features(
                 }
 
                 "push-constants" => {
-                    features.set(wgt::Features::PUSH_CONSTANTS, true);
+                    // PUSH_CONSTANTS feature removed in newer wgpu
                 }
 
                 "address-mode-clamp-to-zero" => {
@@ -349,7 +351,7 @@ pub fn parse_required_features(
                 }
 
                 "pirv-shader-passthrough" => {
-                    features.set(wgt::Features::SPIRV_SHADER_PASSTHROUGH, true);
+                    features.set(wgt::Features::PASSTHROUGH_SHADERS, true);
                 }
 
                 "multiview" => {
@@ -377,8 +379,7 @@ pub fn parse_required_features(
                 }
 
                 "dual-source-blending" => {
-                    features.set(
-                        wgt::Features::DUAL_SOURCE_BLENDING, true);
+                    features.set(wgt::Features::DUAL_SOURCE_BLENDING, true);
                 }
 
                 _ => {}

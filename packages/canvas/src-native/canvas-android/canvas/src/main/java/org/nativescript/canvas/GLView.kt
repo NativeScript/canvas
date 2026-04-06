@@ -25,6 +25,7 @@ class GLView : TextureView, SurfaceTextureListener {
 	constructor(context: Context, attrs: AttributeSet?) : super(
 		context, attrs
 	) {
+
 		init()
 	}
 

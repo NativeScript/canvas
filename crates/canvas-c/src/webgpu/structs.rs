@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Formatter;
 use wgt::{CompositeAlphaMode, PresentMode, SurfaceCapabilities};
 
 use super::{
@@ -76,6 +78,15 @@ pub struct CanvasExtent3d {
     pub depth_or_array_layers: u32,
 }
 
+impl fmt::Display for CanvasExtent3d {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "({}, {}, {})",
+            self.width, self.height, self.depth_or_array_layers
+        )
+    }
+}
 impl Into<wgt::Extent3d> for CanvasExtent3d {
     fn into(self) -> wgt::Extent3d {
         wgt::Extent3d {
@@ -98,13 +109,28 @@ impl From<wgt::Extent3d> for CanvasExtent3d {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub enum CanvasOptionalColor {
+    None,
+    Some(CanvasColor),
+}
+
+impl Into<CanvasOptionalColor> for Option<CanvasColor> {
+    fn into(self) -> CanvasOptionalColor {
+        match self {
+            Some(value) => CanvasOptionalColor::Some(value),
+            None => CanvasOptionalColor::None,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CanvasColor {
     pub r: f64,
     pub g: f64,
     pub b: f64,
     pub a: f64,
 }
-
 
 impl From<CanvasColor> for Vec<f64> {
     fn from(value: CanvasColor) -> Self {
@@ -181,8 +207,8 @@ pub struct CanvasImageDataLayout {
     pub rows_per_image: i32,
 }
 
-impl From<wgt::ImageDataLayout> for CanvasImageDataLayout {
-    fn from(value: wgt::ImageDataLayout) -> Self {
+impl From<wgt::TexelCopyBufferLayout> for CanvasImageDataLayout {
+    fn from(value: wgt::TexelCopyBufferLayout) -> Self {
         Self {
             offset: value.offset,
             bytes_per_row: value.bytes_per_row.unwrap_or_default() as i32,
@@ -191,12 +217,12 @@ impl From<wgt::ImageDataLayout> for CanvasImageDataLayout {
     }
 }
 
-impl Into<wgt::ImageDataLayout> for CanvasImageDataLayout {
-    fn into(self) -> wgt::ImageDataLayout {
+impl Into<wgt::TexelCopyBufferLayout> for CanvasImageDataLayout {
+    fn into(self) -> wgt::TexelCopyBufferLayout {
         let bytes_per_row: Option<u32> = self.bytes_per_row.try_into().ok();
         let rows_per_image: Option<u32> = self.rows_per_image.try_into().ok();
 
-        wgt::ImageDataLayout {
+        wgt::TexelCopyBufferLayout {
             offset: self.offset,
             bytes_per_row,
             rows_per_image,
@@ -247,8 +273,6 @@ pub struct CanvasImageCopyGPUContext {
     pub flip_y: bool,
 }
 
-
-
 #[repr(C)]
 #[derive(Debug)]
 pub struct CanvasImageCopyCanvasRenderingContext2D {
@@ -268,7 +292,6 @@ pub struct CanvasImageCopyCanvasRenderingContext2D {
     pub flip_y: bool,
 }
 
-
 #[repr(C)]
 #[derive(Debug)]
 pub struct CanvasImageCopyWebGL {
@@ -287,7 +310,6 @@ pub struct CanvasImageCopyWebGL {
     /// true, `origin` is still relative to the top left.
     pub flip_y: bool,
 }
-
 
 #[repr(C)]
 #[derive(Debug)]
@@ -751,30 +773,8 @@ pub struct CanvasRenderPassColorAttachment {
 pub struct CanvasPassChannelColor {
     pub load_op: CanvasLoadOp,
     pub store_op: CanvasStoreOp,
-    pub clear_value: CanvasColor,
+    pub clear_value: CanvasOptionalColor,
     pub read_only: bool,
-}
-
-impl From<wgpu_core::command::PassChannel<wgt::Color>> for CanvasPassChannelColor {
-    fn from(value: wgpu_core::command::PassChannel<wgt::Color>) -> Self {
-        Self {
-            load_op: value.load_op.into(),
-            store_op: value.store_op.into(),
-            clear_value: value.clear_value.into(),
-            read_only: value.read_only,
-        }
-    }
-}
-
-impl Into<wgpu_core::command::PassChannel<wgt::Color>> for CanvasPassChannelColor {
-    fn into(self) -> wgpu_core::command::PassChannel<wgt::Color> {
-        wgpu_core::command::PassChannel {
-            load_op: self.load_op.into(),
-            store_op: self.store_op.into(),
-            clear_value: self.clear_value.into(),
-            read_only: self.read_only,
-        }
-    }
 }
 
 #[repr(C)]
@@ -784,20 +784,27 @@ pub enum CanvasLoadOp {
     Load = 1,
 }
 
-impl From<wgpu_core::command::LoadOp> for CanvasLoadOp {
-    fn from(value: wgpu_core::command::LoadOp) -> Self {
-        match value {
-            wgpu_core::command::LoadOp::Clear => Self::Clear,
-            wgpu_core::command::LoadOp::Load => Self::Load,
+impl Into<Option<CanvasLoadOp>> for CanvasOptionalLoadOp {
+    fn into(self) -> Option<CanvasLoadOp> {
+        match self {
+            CanvasOptionalLoadOp::None => None,
+            CanvasOptionalLoadOp::Some(value) => Some(value),
         }
     }
 }
 
-impl Into<wgpu_core::command::LoadOp> for CanvasLoadOp {
-    fn into(self) -> wgpu_core::command::LoadOp {
+impl CanvasLoadOp {
+    pub fn with_default_value<V: Default>(self, val: Option<V>) -> wgpu_core::command::LoadOp<V> {
         match self {
-            CanvasLoadOp::Clear => wgpu_core::command::LoadOp::Clear,
             CanvasLoadOp::Load => wgpu_core::command::LoadOp::Load,
+            CanvasLoadOp::Clear => wgpu_core::command::LoadOp::Clear(val.unwrap_or_default()),
+        }
+    }
+
+    pub fn with_value<V>(self, val: V) -> wgpu_core::command::LoadOp<V> {
+        match self {
+            CanvasLoadOp::Load => wgpu_core::command::LoadOp::Load,
+            CanvasLoadOp::Clear => wgpu_core::command::LoadOp::Clear(val),
         }
     }
 }
@@ -807,6 +814,15 @@ impl Into<wgpu_core::command::LoadOp> for CanvasLoadOp {
 pub enum CanvasStoreOp {
     Discard = 0,
     Store = 1,
+}
+
+impl Into<Option<CanvasStoreOp>> for CanvasOptionalStoreOp {
+    fn into(self) -> Option<CanvasStoreOp> {
+        match self {
+            CanvasOptionalStoreOp::None => None,
+            CanvasOptionalStoreOp::Some(value) => Some(value),
+        }
+    }
 }
 
 impl From<wgpu_core::command::StoreOp> for CanvasStoreOp {
@@ -834,42 +850,6 @@ pub enum CanvasOptionalLoadOp {
     Some(CanvasLoadOp),
 }
 
-impl From<Option<CanvasLoadOp>> for CanvasOptionalLoadOp {
-    fn from(value: Option<CanvasLoadOp>) -> Self {
-        match value {
-            Some(value) => Self::Some(value),
-            None => Self::None,
-        }
-    }
-}
-
-impl Into<Option<CanvasLoadOp>> for CanvasOptionalLoadOp {
-    fn into(self) -> Option<CanvasLoadOp> {
-        match self {
-            CanvasOptionalLoadOp::None => None,
-            CanvasOptionalLoadOp::Some(value) => Some(value),
-        }
-    }
-}
-
-impl From<Option<wgpu_core::command::LoadOp>> for CanvasOptionalLoadOp {
-    fn from(value: Option<wgpu_core::command::LoadOp>) -> Self {
-        match value {
-            Some(value) => Self::Some(value.into()),
-            None => Self::None,
-        }
-    }
-}
-
-impl Into<Option<wgpu_core::command::LoadOp>> for CanvasOptionalLoadOp {
-    fn into(self) -> Option<wgpu_core::command::LoadOp> {
-        match self {
-            CanvasOptionalLoadOp::None => None,
-            CanvasOptionalLoadOp::Some(value) => Some(value.into()),
-        }
-    }
-}
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanvasOptionalStoreOp {
@@ -882,15 +862,6 @@ impl From<Option<CanvasStoreOp>> for CanvasOptionalStoreOp {
         match value {
             Some(value) => Self::Some(value),
             None => Self::None,
-        }
-    }
-}
-
-impl Into<Option<CanvasStoreOp>> for CanvasOptionalStoreOp {
-    fn into(self) -> Option<CanvasStoreOp> {
-        match self {
-            CanvasOptionalStoreOp::None => None,
-            CanvasOptionalStoreOp::Some(value) => Some(value),
         }
     }
 }
@@ -914,9 +885,41 @@ impl Into<Option<wgpu_core::command::StoreOp>> for CanvasOptionalStoreOp {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CanvasOptionUint32 {
+    None,
+    Some(u32),
+}
+
+impl Into<Option<u32>> for CanvasOptionUint32 {
+    fn into(self) -> Option<u32> {
+        match self {
+            CanvasOptionUint32::None => None,
+            CanvasOptionUint32::Some(value) => Some(value),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CanvasOptionF32 {
+    None,
+    Some(f32),
+}
+
+impl Into<Option<f32>> for CanvasOptionF32 {
+    fn into(self) -> Option<f32> {
+        match self {
+            Self::None => None,
+            Self::Some(value) => Some(value),
+        }
+    }
+}
+
+#[repr(C)]
 pub struct CanvasRenderPassDepthStencilAttachment {
     pub view: *const CanvasGPUTextureView,
-    pub depth_clear_value: f32,
+    pub depth_clear_value: CanvasOptionF32,
     pub depth_load_op: CanvasOptionalLoadOp,
     pub depth_store_op: CanvasOptionalStoreOp,
     pub depth_read_only: bool,

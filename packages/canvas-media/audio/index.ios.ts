@@ -1,6 +1,7 @@
-import { AudioBase, controlsProperty } from './common';
-import { Source } from '../common';
-import { Button, Color, Frame, GridLayout, GridUnitType, ItemSpec, Label, Slider, Utils } from '@nativescript/core';
+import { AudioBase } from './common';
+import { controlsProperty } from '../common';
+import { Button, Color, GridLayout, GridUnitType, ItemSpec, Slider } from '@nativescript/core';
+import { Source } from '../source';
 
 export class Audio extends AudioBase {
 	#player: AVQueuePlayer;

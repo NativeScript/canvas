@@ -1,9 +1,10 @@
 import { Node } from './Node';
-import { eachDescendant, Frame, StackLayout, View, ViewBase } from '@nativescript/core';
+import { Frame, StackLayout, View, ViewBase } from '@nativescript/core';
 import setValue from 'set-value';
 import querySelector from 'query-selector';
 import { HTMLCollection } from './HTMLCollection';
 import { Canvas } from '@nativescript/canvas';
+import { domGetElementsByClassName, domGetElementsByTagName } from './domUtils';
 declare const NSCanvas;
 
 export class DOMRectReadOnly {
@@ -117,96 +118,6 @@ export function parseChildren(element, children) {
 			}
 		}
 	}
-}
-
-function getElementsByClassName(v, clsName) {
-	var retVal = [];
-	if (!v) {
-		return retVal;
-	}
-
-	if (v.classList.contains(clsName)) {
-		retVal.push(v);
-	}
-
-	const classNameCallback = function (child) {
-		if (child.classList.contains(clsName)) {
-			retVal.push(child);
-		}
-
-		// Android patch for ListView
-		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
-			for (var key in child._realizedItems) {
-				if (child._realizedItems.hasOwnProperty(key)) {
-					classNameCallback(child._realizedItems[key]);
-				}
-			}
-		}
-
-		return true;
-	};
-
-	eachDescendant(v, classNameCallback);
-
-	// Android patch for ListView
-	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
-		for (var key in v._realizedItems) {
-			if (v._realizedItems.hasOwnProperty(key)) {
-				classNameCallback(v._realizedItems[key]);
-			}
-		}
-	}
-
-	return retVal;
-}
-
-function getElementsByTagName(v, tagName) {
-	// TagName is case-Insensitive
-	var tagNameLC = tagName.toLowerCase();
-
-	var retVal = [],
-		allTags = false;
-	if (!v) {
-		return retVal;
-	}
-
-	if (tagName === '*') {
-		allTags = true;
-	}
-
-	if ((v.typeName && v.typeName.toLowerCase() === tagNameLC) || allTags) {
-		retVal.push(v);
-	}
-
-	const tagNameCallback = function (child) {
-		if ((child.typeName && child.typeName.toLowerCase() === tagNameLC) || allTags) {
-			retVal.push(child);
-		}
-
-		// Android patch for ListView
-		if (child._realizedItems && child._realizedItems.size !== child._childrenCount) {
-			for (var key in child._realizedItems) {
-				if (child._realizedItems.hasOwnProperty(key)) {
-					tagNameCallback(child._realizedItems[key]);
-				}
-			}
-		}
-
-		return true;
-	};
-
-	eachDescendant(v, tagNameCallback);
-
-	// Android patch for ListView
-	if (v._realizedItems && v._realizedItems.size !== v._childrenCount) {
-		for (var key in v._realizedItems) {
-			if (v._realizedItems.hasOwnProperty(key)) {
-				tagNameCallback(v._realizedItems[key]);
-			}
-		}
-	}
-
-	return retVal;
 }
 
 type NativeElement = View & { __domElement?: Element; isConnected?: boolean };
@@ -340,10 +251,10 @@ export class Element extends Node {
 		const topmost = Frame.topmost();
 		if (topmost) {
 			let nativeElement;
-			if (topmost.currentPage && topmost.currentPage.modal) {
-				nativeElement = topmost.getViewById(id);
-			} else {
+			if (topmost.currentPage?.modal) {
 				nativeElement = topmost.currentPage.modal.getViewById(id);
+			} else {
+				nativeElement = topmost.currentPage?.getViewById(id) ?? topmost.getViewById(id);
 			}
 
 			if (nativeElement) {
@@ -370,15 +281,8 @@ export class Element extends Node {
 		}
 		const topmost = Frame.topmost();
 		if (topmost) {
-			let view;
-			if (topmost.currentPage && topmost.currentPage.modal) {
-				view = topmost;
-			} else {
-				view = topmost.currentPage.modal;
-			}
-			const elements = getElementsByTagName(view, tagname);
-
-			return elements;
+			const view = topmost.currentPage?.modal ?? topmost.currentPage ?? topmost;
+			return domGetElementsByTagName(view, tagname);
 		}
 		return [];
 	}
@@ -393,15 +297,8 @@ export class Element extends Node {
 		}
 		const topmost = Frame.topmost();
 		if (topmost) {
-			let view;
-			if (topmost.currentPage && topmost.currentPage.modal) {
-				view = topmost;
-			} else {
-				view = topmost.currentPage.modal;
-			}
-			const elements = getElementsByClassName(view, className);
-
-			return elements;
+			const view = topmost.currentPage?.modal ?? topmost.currentPage ?? topmost;
+			return domGetElementsByClassName(view, className);
 		}
 		return [];
 	}

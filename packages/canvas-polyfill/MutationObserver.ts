@@ -1,30 +1,39 @@
 export class MutationObserver {
 	private callback: any;
 	private element: any;
-	private interval: any;
+	private _rafHandle: any;
+	private _active: boolean = false;
 	private oldHtml: any;
+
 	constructor(callback: () => void) {
 		this.callback = callback;
 	}
 
-	observe(element, options) {
+	observe(element, _options?) {
 		this.element = element;
-		return (this.interval = setInterval(
-			(function (_this) {
-				return function () {
-					var html;
-					html = _this.element.innerHTML;
-					if (html !== _this.oldHtml) {
-						_this.oldHtml = html;
-						return _this.callback(null);
-					}
-				};
-			})(this),
-			200
-		));
+		this._active = true;
+		this.oldHtml = this.element.innerHTML;
+		this._poll();
+	}
+
+	private _poll() {
+		if (!this._active) {
+			return;
+		}
+		const html = this.element?.innerHTML;
+		if (html !== this.oldHtml) {
+			this.oldHtml = html;
+			this.callback(null);
+		}
+		this._rafHandle = requestAnimationFrame(() => this._poll());
 	}
 
 	disconnect() {
-		return clearInterval(this.interval);
+		this._active = false;
+		if (this._rafHandle !== undefined) {
+			cancelAnimationFrame(this._rafHandle);
+			this._rafHandle = undefined;
+		}
+		this.element = null;
 	}
 }

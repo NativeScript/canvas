@@ -78,50 +78,56 @@ global.window.URL = global.URL;
 global.parent = window.parent = window;
 global.window.CustomEvent = global.CustomEvent;
 
-function checkEmitter() {
-	if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
-		(global as any).window.emitter = (global as any).emitter = fromObject({});
+// Initialize emitter once at startup instead of checking on every addEventListener call
+if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
+	(global as any).window.emitter = (global as any).emitter = fromObject({});
+}
+
+let _loadFired = false;
+
+function _emitOn(eventName: string, listener: Function) {
+	const emitter = (global as any).emitter;
+	if (emitter.on) {
+		emitter.on(eventName, listener);
+	} else if (emitter.addEventListener) {
+		emitter.addEventListener(eventName, listener);
+	} else if (emitter.addListener) {
+		emitter.addListener(eventName, listener);
+	}
+}
+
+function _emitOff(eventName: string, listener: Function) {
+	const emitter = (global as any).emitter;
+	if (emitter.off) {
+		emitter.off(eventName, listener);
+	} else if (emitter.removeEventListener) {
+		emitter.removeEventListener(eventName, listener);
+	} else if (emitter.removeListener) {
+		emitter.removeListener(eventName, listener);
 	}
 }
 
 (global as any).window.scrollTo = (global as any).scrollTo = (global as any).scrollTo || (() => ({}));
 
-(global as any).window.addEventListener = (global as any).addEventListener = (eventName, listener) => {
-	checkEmitter();
-	const addListener = () => {
-		if ((global as any).emitter.on) {
-			(global as any).emitter.on(eventName, listener);
-		} else if ((global as any).emitter.addEventListener) {
-			(global as any).emitter.addEventListener(eventName, listener);
-		} else if ((global as any).emitter.addListener) {
-			(global as any).emitter.addListener(eventName, listener);
-		}
-	};
-
+(global as any).window.addEventListener = (global as any).addEventListener = (eventName: string, listener) => {
 	if (typeof listener !== 'function') {
 		return;
 	}
-
-	addListener();
-
-	if (eventName.toLowerCase() === 'load') {
-		if ((global as any).emitter && (global as any).emitter.emit) {
+	_emitOn(eventName, listener);
+	// Fire 'load' once for any late registrants
+	if (eventName.toLowerCase() === 'load' && !_loadFired) {
+		_loadFired = true;
+		const emitter = (global as any).emitter;
+		if (emitter?.emit) {
 			setTimeout(() => {
-				(global as any).emitter.emit('load');
+				emitter.emit('load');
 			}, 1);
 		}
 	}
 };
 
-(global as any).window.removeEventListener = (global as any).removeEventListener = (eventName, listener) => {
-	checkEmitter();
-	if ((global as any).emitter.off) {
-		(global as any).emitter.off(eventName, listener);
-	} else if ((global as any).emitter.removeEventListener) {
-		(global as any).emitter.removeEventListener(eventName, listener);
-	} else if ((global as any).emitter.removeListener) {
-		(global as any).emitter.removeListener(eventName, listener);
-	}
+(global as any).window.removeEventListener = (global as any).removeEventListener = (eventName: string, listener) => {
+	_emitOff(eventName, listener);
 };
 
 import { DOMParser as Parser } from '@xmldom/xmldom';

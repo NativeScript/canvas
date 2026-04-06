@@ -9,7 +9,7 @@ on:
 env:
   NPM_TAG: "pr"
   EMULATOR_NAME: "runtime-emu"
-  NDK_VERSION: r23c
+  NDK_VERSION: r27d
   ANDROID_API: 29
   ANDROID_ABI: x86_64
   NDK_ARCH: linux
@@ -24,6 +24,24 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          ~/.cache
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
     - name: Install Rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
@@ -137,6 +155,24 @@ jobs:
     runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          ~/.cache
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
     - name: Install Rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
@@ -190,6 +226,7 @@ jobs:
         npm run build.canvas.ios.framework.release 
   npm:
     name: Npm Build
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-22.04
     needs: [android, ios]
     outputs:
@@ -251,4 +288,20 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ../../.npmrc
           echo "Publishing @nativescript/canvas@$NPM_VERSION to NPM with tag $NPM_TAG..."
           npm run publish-packages --name $NPM_PACKAGES --verify true --version $NPM_VERSION
+  pr-notice:
+    name: PR Publish Notice
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs: [ android, ios ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Post PR comment about publishing
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            :information_source: Note: npm publishing is disabled for pull requests.
+            Publishing is performed only from tag pushes via the `Publish Packages` workflow.
+            If you need a test publish, create a tag `v0.0.0-rc.test` and push it to trigger a release run.
     

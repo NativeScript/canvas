@@ -2398,6 +2398,24 @@ void WebGL2RenderingContext::TexImage3D(const v8::FunctionCallbackInfo<v8::Value
 
         auto imageOrPixelsOrOffset = args[9];
 
+        if (imageOrPixelsOrOffset->IsNullOrUndefined()) {
+            // Allocate storage without initialising pixel data (valid WebGL2 usage)
+            canvas_native_webgl2_tex_image3d_none(
+                                                  target,
+                                                  level,
+                                                  internalformat,
+                                                  width,
+                                                  height,
+                                                  depth,
+                                                  border,
+                                                  format,
+                                                  type,
+                                                  0,
+                                                  ptr->GetState()
+                                                  );
+            return;
+        }
+
         if (imageOrPixelsOrOffset->IsNumber()) {
             auto offset = imageOrPixelsOrOffset->NumberValue(
                                                              context).ToChecked();

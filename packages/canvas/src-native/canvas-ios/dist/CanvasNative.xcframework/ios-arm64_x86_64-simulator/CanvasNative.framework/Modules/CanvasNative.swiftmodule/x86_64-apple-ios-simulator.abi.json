@@ -7341,6 +7341,13 @@
 				"moduleName": "CanvasNative"
 			},
 			{
+				"kind": "Import",
+				"name": "Accelerate",
+				"printedName": "Accelerate",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
 				"kind": "TypeDecl",
 				"name": "NSCRender",
 				"printedName": "NSCRender",
@@ -7501,6 +7508,204 @@
 					},
 					{
 						"kind": "Function",
+						"name": "drawFrameTexImage3D",
+						"printedName": "drawFrameTexImage3D(_:_:_:_:_:_:_:_:_:_:_:_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayer",
+								"printedName": "AVFoundation.AVPlayer",
+								"usr": "c:objc(cs)AVPlayer"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayerItemVideoOutput",
+								"printedName": "AVFoundation.AVPlayerItemVideoOutput",
+								"usr": "c:objc(cs)AVPlayerItemVideoOutput"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CGSize",
+								"printedName": "CoreFoundation.CGSize",
+								"usr": "c:@S@CGSize"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCRender(im)drawFrameTexImage3D:::::::::::::",
+						"mangledName": "$s12CanvasNative9NSCRenderC19drawFrameTexImage3DyySo8AVPlayerC_So0H15ItemVideoOutputCSo6CGSizeVs5Int32VA8LSbtF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
+						"name": "drawFrameTexSubImage3D",
+						"printedName": "drawFrameTexSubImage3D(_:_:_:_:_:_:_:_:_:_:_:_:_:_:)",
+						"children": [
+							{
+								"kind": "TypeNominal",
+								"name": "Void",
+								"printedName": "()"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayer",
+								"printedName": "AVFoundation.AVPlayer",
+								"usr": "c:objc(cs)AVPlayer"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "AVPlayerItemVideoOutput",
+								"printedName": "AVFoundation.AVPlayerItemVideoOutput",
+								"usr": "c:objc(cs)AVPlayerItemVideoOutput"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "CGSize",
+								"printedName": "CoreFoundation.CGSize",
+								"usr": "c:@S@CGSize"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Int32",
+								"printedName": "Swift.Int32",
+								"usr": "s:s5Int32V"
+							},
+							{
+								"kind": "TypeNominal",
+								"name": "Bool",
+								"printedName": "Swift.Bool",
+								"usr": "s:Sb"
+							}
+						],
+						"declKind": "Func",
+						"usr": "c:@M@CanvasNative@objc(cs)NSCRender(im)drawFrameTexSubImage3D::::::::::::::",
+						"mangledName": "$s12CanvasNative9NSCRenderC22drawFrameTexSubImage3DyySo8AVPlayerC_So0I15ItemVideoOutputCSo6CGSizeVs5Int32VA9LSbtF",
+						"moduleName": "CanvasNative",
+						"declAttributes": ["AccessControl", "ObjC"],
+						"funcSelfKind": "NonMutating"
+					},
+					{
+						"kind": "Function",
 						"name": "drawVideoFrame",
 						"printedName": "drawVideoFrame(_:_:_:_:_:_:)",
 						"children": [
@@ -7552,7 +7757,7 @@
 						"mangledName": "$s12CanvasNative9NSCRenderC14drawVideoFrameySbSo8AVPlayerC_So0g4ItemE6OutputCSo6CGSizeVs5Int64VS2ftFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -7620,7 +7825,7 @@
 						"mangledName": "$s12CanvasNative9NSCRenderC14drawVideoFrameySbSo8AVPlayerC_So0g4ItemE6OutputCSo6CGSizeVs5Int64VS4ftFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -7712,7 +7917,7 @@
 						"mangledName": "$s12CanvasNative9NSCRenderC14drawVideoFrameySbSo8AVPlayerC_So0g4ItemE6OutputCSo6CGSizeVs5Int64VS8ftFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					},
 					{
@@ -7758,7 +7963,7 @@
 						"mangledName": "$s12CanvasNative9NSCRenderC17getVideoFrameDataySo12NSDictionaryCSgSo8AVPlayerC_So0i4ItemE6OutputCSo6CGSizeVtFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
+						"declAttributes": ["Final", "AccessControl", "ObjC"],
 						"funcSelfKind": "NonMutating"
 					}
 				],
@@ -11617,49 +11822,49 @@
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "IntegerLiteral",
-			"offset": 375,
+			"offset": 393,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "Array",
-			"offset": 406,
+			"offset": 424,
 			"length": 5,
 			"value": "[0, 0]"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "BooleanLiteral",
-			"offset": 433,
+			"offset": 451,
 			"length": 5,
 			"value": "false"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "IntegerLiteral",
-			"offset": 470,
+			"offset": 488,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "IntegerLiteral",
-			"offset": 503,
+			"offset": 521,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "IntegerLiteral",
-			"offset": 569,
+			"offset": 587,
 			"length": 1,
 			"value": "0"
 		},
 		{
 			"filePath": "\/Users\/triniwiz\/Documents\/GitHub\/canvas\/packages\/canvas\/src-native\/canvas-ios\/NSCRender.swift",
 			"kind": "IntegerLiteral",
-			"offset": 601,
+			"offset": 619,
 			"length": 1,
 			"value": "0"
 		},

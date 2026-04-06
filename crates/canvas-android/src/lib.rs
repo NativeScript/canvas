@@ -30,7 +30,7 @@ use crate::utils::{
     nativeResizeCustomSurface, nativeResizeCustomSurfaceNormal,
 };
 use crate::utils::gl::st::{SURFACE_TEXTURE, SurfaceTexture};
-use crate::utils::gl::texture_render::nativeDrawFrame;
+use crate::utils::gl::texture_render::{nativeDrawFrame, nativeDrawFrameTexImage3D, nativeDrawFrameTexSubImage3D};
 
 mod jni_compat;
 pub mod utils;
@@ -250,13 +250,38 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *const c_void) -> jint 
                 "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIII)V"
             };
 
+            // nativeDrawFrame — signature varies by API level (Android O+ uses direct buffers)
+            let nativeDrawFrameTexImage3DMethod = if ret >= ANDROID_O {
+                "(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIIII)V"
+            } else {
+                "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIIII)V"
+            };
+
+            let nativeDrawFrameTexSubImage3DMethod = if ret >= ANDROID_O {
+                "(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIII)V"
+            } else {
+                "!(Landroid/graphics/SurfaceTexture;ZIIIIIII[FIIIIIIIIIII)V"
+            };
+
             let _ = env.register_native_methods(
                 &text_render_class,
-                &[NativeMethod {
-                    name: "nativeDrawFrame".into(),
-                    sig: nativeDrawFrameMethod.into(),
-                    fn_ptr: nativeDrawFrame as *mut c_void,
-                }],
+                &[
+                    NativeMethod {
+                        name: "nativeDrawFrame".into(),
+                        sig: nativeDrawFrameMethod.into(),
+                        fn_ptr: nativeDrawFrame as *mut c_void,
+                    },
+                    NativeMethod {
+                        name: "nativeDrawFrameTexImage3D".into(),
+                        sig: nativeDrawFrameTexImage3DMethod.into(),
+                        fn_ptr: nativeDrawFrameTexImage3D as *mut c_void,
+                    },
+                    NativeMethod {
+                        name: "nativeDrawFrameTexSubImage3D".into(),
+                        sig: nativeDrawFrameTexSubImage3DMethod.into(),
+                        fn_ptr: nativeDrawFrameTexSubImage3D as *mut c_void,
+                    },
+                ],
             );
 
             let canvas_rendering_context_2d_class = env

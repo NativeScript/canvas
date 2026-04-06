@@ -5,9 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
 import android.opengl.EGL14
-import android.os.*
+import android.os.Build
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
@@ -21,7 +20,7 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.min
 
@@ -31,8 +30,8 @@ import kotlin.math.min
  */
 class NSCCanvas : FrameLayout {
 
-	enum class Engine {
-		None, CPU, GL, GPU
+	enum class Engine(val value: Int) {
+		None(0), CPU(1), GL(2), GPU(3)
 	}
 
 	var fit = CanvasFit.FitX
@@ -48,7 +47,8 @@ class NSCCanvas : FrameLayout {
 		resize()
 	}
 
-	private var engine = Engine.None
+	var engine = Engine.None
+		private set
 	private var batchingSizeChange = false
 
 	var surfaceWidth: Int = 300
@@ -421,8 +421,8 @@ class NSCCanvas : FrameLayout {
 			false
 		}
 
-		var  cs = colorSpace
-		if (cs != 0 && !isWideColorGamut){
+		var cs = colorSpace
+		if (cs != 0 && !isWideColorGamut) {
 			cs = 0
 		}
 

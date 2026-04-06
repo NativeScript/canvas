@@ -3,6 +3,7 @@
 // swift-module-flags: -target arm64-apple-ios12.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasNative
 // swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.3
 import AVFoundation
+import Accelerate
 @_exported import CanvasNative
 import CoreVideo
 import Foundation
@@ -311,6 +312,8 @@ extension UIKit.UIView {
   @objc public init(device: any Metal.MTLDevice)
   @objc public func drawFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ internalFormat: Swift.Int32, _ format: Swift.Int32, _ flipYWebGL: Swift.Bool)
   @objc public func drawFrame(buffer: CoreVideo.CVPixelBuffer, width: Swift.Int, height: Swift.Int, internalFormat: Swift.Int32, format: Swift.Int32, flipYWebGL: Swift.Bool)
+  @objc public func drawFrameTexImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ internalFormat: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ border: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool)
+  @objc public func drawFrameTexSubImage3D(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ target: Swift.Int32, _ level: Swift.Int32, _ xoffset: Swift.Int32, _ yoffset: Swift.Int32, _ zoffset: Swift.Int32, _ width: Swift.Int32, _ height: Swift.Int32, _ depth: Swift.Int32, _ format: Swift.Int32, _ type: Swift.Int32, _ flipYWebGL: Swift.Bool)
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ sx: Swift.Float, _ sy: Swift.Float, _ sw: Swift.Float, _ sh: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool

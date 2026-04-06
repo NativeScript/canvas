@@ -1,0 +1,236 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: 'NPM tag to publish as (overrides default)'
+        required: false
+        default: 'latest'
+      dry_run:
+        description: 'Set to "true" to skip publishing and release upload (dry run)'
+        required: false
+        default: 'false'
+
+env:
+  NPM_TAG: "latest"
+  NPM_PACKAGES: canvas,canvas-babylon,canvas-media,canvas-phaser,canvas-phaser-ce,canvas-pixi,canvas-polyfill,canvas-three,canvas-svg
+
+jobs:
+  build-linux:
+    name: Build Linux native artifacts
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Use Rust nightly
+        run: rustup default nightly
+      - name: Install deps (root)
+        run: npm ci
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build Android (make android)
+        run: |
+          set -e
+          make android
+
+      - name: Copy AAR into package
+        run: |
+          set -e
+          ./tools/scripts/copy-android.sh
+
+      - name: Upload Android platforms
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-platforms
+          path: packages/canvas/platforms/android
+
+  build-macos:
+    name: Build macOS native artifacts
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Use Rust nightly
+        run: rustup default nightly
+      - name: Install root deps
+        run: npm ci
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build iOS (make ios)
+        run: |
+          set -e
+          make ios
+
+      - name: Build and copy iOS XCFramework
+        run: |
+          set -e
+          ./tools/scripts/canvas-build.sh
+
+      - name: Upload iOS platforms
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-platforms
+          path: packages/canvas/platforms/ios
+
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-22.04
+    needs: [ build-linux, build-macos ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: napi-linux-artifacts
+          path: ./artifacts/linux
+
+        - name: Cache cargo
+          uses: actions/cache@v4
+          with:
+            path: |
+              ~/.cargo/registry
+              ~/.cargo/git
+            key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-cargo-
+
+      - name: Download mac artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: napi-macos-artifacts
+          path: ./artifacts/macos
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Compute NPM_VERSION
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "Detected tag $TAG"
+            echo "NPM_VERSION=$TAG" >> $GITHUB_ENV
+            # set NPM_TAG to prefix of tag (e.g. rc/, beta) or the tag itself
+            echo "NPM_TAG=${TAG%%-*}" >> $GITHUB_ENV
+          else
+            if [ -n "${{ github.event.inputs.npm_tag }}" ]; then
+              NT="${{ github.event.inputs.npm_tag }}"
+            else
+              NT="$NPM_TAG"
+            fi
+            echo "NPM_TAG=$NT" >> $GITHUB_ENV
+            echo "NPM_VERSION=$(node -e \"console.log(require('./packages/canvas/package.json').version)\")-$NT-$(date +\"%Y%m%d\")-$GITHUB_RUN_ID" >> $GITHUB_ENV
+          fi
+
+      - name: Bump packages (no git tags)
+        run: |
+          for pkg in packages/canvas packages/canvas-babylon packages/canvas-media packages/canvas-phaser packages/canvas-phaser-ce packages/canvas-pixi packages/canvas-polyfill packages/canvas-three packages/canvas-svg; do
+            if [ -f "$pkg/package.json" ]; then
+              (cd "$pkg" && npm --no-git-tag-version version "$NPM_VERSION")
+            fi
+          done
+
+      - name: Create project .npmrc (in-repo)
+        if: ${{ secrets.NPM_PUBLISH_TOKEN != '' }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" > .npmrc
+
+      - name: Build all packages
+        run: |
+          npx nx run canvas:build.all
+
+      - name: Publish packages
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "NPM token missing. Set secrets.NPM_PUBLISH_TOKEN to proceed." && exit 1
+          fi
+          echo "Publishing packages with version $NPM_VERSION and tag $NPM_TAG"
+          npm run publish-packages --name "$NPM_PACKAGES" --verify true --version "$NPM_VERSION" --tag "$NPM_TAG"
+
+      - name: Clean up .npmrc
+        if: always()
+        run: rm -f .npmrc || true
+
+      - name: Create release tarball
+        if: startsWith(github.ref, 'refs/tags/') && github.event.inputs.dry_run != 'true'
+        run: |
+          set -e
+          TAR_NAME=release-${NPM_VERSION}.tar.gz
+          tar -czf ${TAR_NAME} dist packages/canvas/platforms || true
+          echo "Created ${TAR_NAME}"
+
+      - name: Create GitHub release and upload assets
+        if: startsWith(github.ref, 'refs/tags/') && github.event.inputs.dry_run != 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-${NPM_VERSION}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,9 @@
 package org.nativescript.canvas.media;
 
 import android.content.Context;
+import android.graphics.ImageFormat;
+import android.media.Image;
+import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -20,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import android.view.TextureView;
@@ -84,6 +88,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	private CacheDataSource.Factory _cdsf;
 	boolean _isCustom = false;
 	boolean _playing = false;
+	private final AtomicBoolean _loadedDataFired = new AtomicBoolean(false);
 	Timer _timer;
 	SurfaceTexture _st;
 	Surface _surface;
@@ -95,19 +100,24 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	int _videoWidth = 0;
 	int _videoHeight = 0;
 
-	boolean _hasFrame = false;
+	volatile boolean _hasFrame = false;
 	static int BUFFER_MS = 500;
 	public static boolean IS_DEBUG = true;
 
-	// --- GL fast-path state (2D canvas only) ------------------------------------
-	// These fields are initialised lazily on the first drawVideoFrame2D call with
-	// backendType == 1 (GL).  The OES texture lives in the 2D canvas's EGL context
-	// so Skia can sample from it directly without a CPU round-trip.
 	SurfaceTexture _glSt;
 	Surface _glSurface;
 	int _glTextureId = -1;
 	volatile boolean _glHasFrame = false;
 	Object _glRender; // TextureRender — kept alive to own the OES texture
+	private boolean _glInitFailed = false;
+	// Tracks which path currently owns the player's video surface to prevent conflicts.
+	private enum SurfaceOwner { NONE, WEBGL, GL2D, BITMAP }
+	private SurfaceOwner _surfaceOwner = SurfaceOwner.NONE;
+
+	// ImageReader-backed surface for the CPU/Vulkan bitmap path.
+	// Provides video frames without requiring any view hierarchy or window attachment —
+	// the Android equivalent of a detached <video> element on the web.
+	private ImageReader _imageReader;
 	// ---------------------------------------------------------------------------
 
 	// Cached reflection for drawVideoFrame2D — resolved once, reused per frame
@@ -141,6 +151,10 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		void onCurrentTimeChanged(long time);
 
 		void onVideoFrame();
+
+		void onLoadedData();
+
+		void onError(String message);
 	}
 
 	private Callback _callback;
@@ -222,6 +236,9 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		if (VideoHelper.IS_DEBUG) {
 			android.util.Log.d("JS", "" + error);
 		}
+		if (this._callback != null) {
+			this._callback.onError(error.getMessage());
+		}
 	}
 
 
@@ -297,9 +314,11 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 		private Method canvasUpdateTexImage;
 
-		// GL fast-path helpers (2D canvas only)
 		private Method canvasCreate2DContextSurfaceTexture;
 		private Method canvasDrawVideoFrameGL;
+
+		private Method canvasUpdateTexImageFor3D;
+		private Method canvasUpdateTexSubImageFor3D;
 
 		Utils() {
 			try {
@@ -312,8 +331,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 					android.util.Log.d("JS", "" + e);
 				}
 			}
-			// GL fast-path methods — resolved separately so a missing method
-			// does not break the CPU path.
+
 			try {
 				canvasCreate2DContextSurfaceTexture = canvasUtils.getDeclaredMethod(
 						"create2DContextSurfaceTexture", Long.TYPE);
@@ -336,6 +354,45 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			} catch (Exception e) {
 				if (IS_DEBUG) {
 					android.util.Log.d("JS", "GL fast-path unavailable: " + e);
+				}
+			}
+	
+			try {
+				Class<?> TextureRenderClass = Class.forName("org.nativescript.canvas.TextureRender");
+				canvasUpdateTexImageFor3D = canvasUtils.getDeclaredMethod(
+						"updateTexImageFor3D",
+						Long.TYPE,           // state
+						Boolean.TYPE,        // flipY
+						SurfaceTexture.class,
+						TextureRenderClass,
+						Integer.TYPE,        // videoWidth
+						Integer.TYPE,        // videoHeight
+						Integer.TYPE,        // target
+						Integer.TYPE,        // level
+						Integer.TYPE,        // internalformat
+						Integer.TYPE,        // width
+						Integer.TYPE,        // height
+						Integer.TYPE,        // depth
+						Integer.TYPE,        // border
+						Integer.TYPE         // zoffset
+				);
+				canvasUpdateTexSubImageFor3D = canvasUtils.getDeclaredMethod(
+						"updateTexSubImageFor3D",
+						Long.TYPE,           // state
+						Boolean.TYPE,        // flipY
+						SurfaceTexture.class,
+						TextureRenderClass,
+						Integer.TYPE,        // target
+						Integer.TYPE,        // level
+						Integer.TYPE,        // xoffset
+						Integer.TYPE,        // yoffset
+						Integer.TYPE,        // zoffset
+						Integer.TYPE,        // width
+						Integer.TYPE         // height
+				);
+			} catch (Exception e) {
+				if (IS_DEBUG) {
+					android.util.Log.d("JS", "3D texture fast-path unavailable: " + e);
 				}
 			}
 		}
@@ -370,8 +427,41 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			}
 		}
 
-		/** Create a GL OES texture + SurfaceTexture inside the 2D canvas EGL context.
-		 *  Returns [SurfaceTexture, Integer textureId, TextureRender], or null on failure. */
+		
+		public boolean updateTexImageFor3D(long state, boolean flipY, SurfaceTexture st, Object render,
+		                                    int videoWidth, int videoHeight,
+		                                    int target, int level, int internalformat,
+		                                    int width, int height, int depth, int border, int zoffset) {
+			if (canvasUpdateTexImageFor3D == null) return false;
+			try {
+				Class<?> TextureRender = Class.forName("org.nativescript.canvas.TextureRender");
+				canvasUpdateTexImageFor3D.invoke(null, state, flipY, st, TextureRender.cast(render),
+						videoWidth, videoHeight, target, level, internalformat,
+						width, height, depth, border, zoffset);
+				return true;
+			} catch (Exception e) {
+				if (IS_DEBUG) android.util.Log.d("JS", "updateTexImageFor3D: " + e);
+				return false;
+			}
+		}
+
+		public boolean updateTexSubImageFor3D(long state, boolean flipY, SurfaceTexture st, Object render,
+		                                       int target, int level,
+		                                       int xoffset, int yoffset, int zoffset,
+		                                       int width, int height) {
+			if (canvasUpdateTexSubImageFor3D == null) return false;
+			try {
+				Class<?> TextureRender = Class.forName("org.nativescript.canvas.TextureRender");
+				canvasUpdateTexSubImageFor3D.invoke(null, state, flipY, st, TextureRender.cast(render),
+						target, level, xoffset, yoffset, zoffset, width, height);
+				return true;
+			} catch (Exception e) {
+				if (IS_DEBUG) android.util.Log.d("JS", "updateTexSubImageFor3D: " + e);
+				return false;
+			}
+		}
+
+
 		Object[] create2DContextSurfaceTexture(long context) {
 			if (canvasCreate2DContextSurfaceTexture == null) return null;
 			try {
@@ -384,8 +474,6 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			}
 		}
 
-		/** Draw a video frame via the GL fast-path (OES texture → Skia GPU, zero CPU copy).
-		 *  Returns true when the frame was drawn. */
 		boolean drawVideoFrameGL(
 				long context, int textureId, SurfaceTexture surfaceTexture,
 				int videoWidth, int videoHeight,
@@ -430,11 +518,16 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			Object[] result = _utils.createSurfaceTexture(state);
 			assert result != null;
 			this._st = (SurfaceTexture) result[0];
-
 			this._st.setOnFrameAvailableListener(this);
-
 			this._surface = new Surface(this._st);
+			// Release ImageReader if the bitmap path claimed the surface first.
+			if (_surfaceOwner == SurfaceOwner.BITMAP) {
+				if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
+				_surfaceOwner = SurfaceOwner.NONE;
+			}
+			// Claim the surface for the WebGL path; GL2D path must not override this.
 			this._player.setVideoSurface(this._surface);
+			_surfaceOwner = SurfaceOwner.WEBGL;
 			this._render = result[1];
 		}
 
@@ -447,28 +540,159 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		}
 	}
 
+
+	public boolean getFrameForTexImage3D(boolean isLoaded, long state, boolean flipY,
+	                                      int target, int level, int internalformat,
+	                                      int width, int height, int depth, int border) {
+		ensureGLResources3D(state, width, height);
+		if (this._st == null || !this._hasFrame) return false;
+
+		boolean drawn = _utils.updateTexImageFor3D(state, flipY, this._st, this._render,
+				this._videoWidth, this._videoHeight,
+				target, level, internalformat, width, height, depth, border, 0);
+		this._hasFrame = false;
+		return drawn;
+	}
+
+	public boolean getFrameForTexSubImage3D(boolean isLoaded, long state, boolean flipY,
+	                                         int target, int level,
+	                                         int xoffset, int yoffset, int zoffset,
+	                                         int width, int height) {
+		ensureGLResources3D(state, width, height);
+		if (this._st == null || !this._hasFrame) return false;
+
+		boolean drawn = _utils.updateTexSubImageFor3D(state, flipY, this._st, this._render,
+				target, level, xoffset, yoffset, zoffset, width, height);
+		this._hasFrame = false;
+		return drawn;
+	}
+
+
+	private void ensureGLResources3D(long state, int width, int height) {
+		if (this._st != null && this._render != null) return; // already set up
+
+		Object[] result = _utils.createSurfaceTexture(state);
+		if (result == null) return;
+		this._st = (SurfaceTexture) result[0];
+		this._st.setDefaultBufferSize(width, height);
+		this._st.setOnFrameAvailableListener(this);
+		this._surface = new Surface(this._st);
+		// Release the ImageReader if the bitmap path previously claimed the surface.
+		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
+			_surfaceOwner = SurfaceOwner.NONE;
+		}
+		this._player.setVideoSurface(this._surface);
+		_surfaceOwner = SurfaceOwner.WEBGL;
+		this._render = result[1];
+	}
+
 	public PlayerView getPlayerView() {
 		return this._playerView;
 	}
 
+	/**
+	 * Initialise the ImageReader-based video surface for the CPU/Vulkan bitmap path.
+	 * Called lazily once video dimensions are known. Works without any window or
+	 * view-hierarchy attachment — the Android equivalent of a detached web <video>.
+	 */
+	private void setupBitmapSurface() {
+		if (IS_DEBUG) android.util.Log.d("JS", "setupBitmapSurface: owner=" + _surfaceOwner + " vw=" + _videoWidth + " vh=" + _videoHeight + " reader=" + (_imageReader != null));
+		if (_surfaceOwner != SurfaceOwner.NONE) return;
+		if (_videoWidth <= 0 || _videoHeight <= 0) return;
+		if (_imageReader != null) return;
+
+		try {
+			// PRIVATE format lets the hardware decoder keep frames in GPU memory.
+			// On API 33+ we can wrap the HardwareBuffer as a Bitmap at zero copy.
+			// On older APIs we fall back to RGBA_8888 (may force software decode on
+			// some devices, but keeps things readable without a GL readback pass).
+			int format = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+					? ImageFormat.PRIVATE
+					: android.graphics.PixelFormat.RGBA_8888;
+
+			_imageReader = ImageReader.newInstance(_videoWidth, _videoHeight, format, 2);
+			_imageReader.setOnImageAvailableListener(reader -> {
+				_hasFrame = true;
+				if (_callback != null) _callback.onVideoFrame();
+			}, handler);
+			_player.setVideoSurface(_imageReader.getSurface());
+			_surfaceOwner = SurfaceOwner.BITMAP;
+		} catch (Exception e) {
+			if (IS_DEBUG) android.util.Log.d("JS", "setupBitmapSurface failed: " + e);
+		}
+	}
+
 	public android.graphics.Bitmap getCurrentBitmap() {
-		View surfaceView = this._playerView.getVideoSurfaceView();
-		if (surfaceView instanceof TextureView) {
-			TextureView tv = (TextureView) surfaceView;
-			if (tv.isAvailable()) {
-				int w = tv.getWidth();
-				int h = tv.getHeight();
-				if (w > 0 && h > 0) {
-					if (_reusableBitmap == null || _reusableBitmap.getWidth() != w || _reusableBitmap.getHeight() != h) {
-						if (_reusableBitmap != null) {
-							_reusableBitmap.recycle();
-						}
-						_reusableBitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+		// Lazily set up the ImageReader surface when dimensions are first known.
+		if (_imageReader == null && _surfaceOwner == SurfaceOwner.NONE) {
+			setupBitmapSurface();
+		}
+
+		if (_imageReader != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+				// API 33+: PRIVATE format → HardwareBuffer → blit into software Bitmap.
+				// wrapHardwareBuffer() gives a Config.HARDWARE bitmap whose pixels are
+				// not CPU-accessible. Blitting it via Canvas copies it to the software
+				// _reusableBitmap so callers (texSubImage3D, drawImage…) can lockPixels.
+				try (Image image = _imageReader.acquireLatestImage()) {
+					if (image == null) return null;
+					android.hardware.HardwareBuffer hb = image.getHardwareBuffer();
+					if (hb == null) return null;
+					android.graphics.Bitmap hwBmp = android.graphics.Bitmap.wrapHardwareBuffer(hb, null);
+					hb.close();
+					int w = hwBmp.getWidth(), h = hwBmp.getHeight();
+					if (_reusableBitmap == null
+							|| _reusableBitmap.getWidth() != w
+							|| _reusableBitmap.getHeight() != h) {
+						if (_reusableBitmap != null) _reusableBitmap.recycle();
+						_reusableBitmap = android.graphics.Bitmap.createBitmap(
+								w, h, android.graphics.Bitmap.Config.ARGB_8888);
 					}
-					return tv.getBitmap(_reusableBitmap);
+					new android.graphics.Canvas(_reusableBitmap).drawBitmap(hwBmp, 0, 0, null);
+					hwBmp.recycle();
+					return _reusableBitmap;
+				} catch (Exception e) {
+					if (IS_DEBUG) android.util.Log.d("JS", "getCurrentBitmap HW: " + e);
+				}
+			} else {
+				// API < 33: RGBA_8888 format → read pixels from plane[0].
+				try (Image image = _imageReader.acquireLatestImage()) {
+					if (image == null) return null;
+					Image.Plane plane = image.getPlanes()[0];
+					java.nio.ByteBuffer buf = plane.getBuffer();
+					int w = image.getWidth();
+					int h = image.getHeight();
+					if (_reusableBitmap == null
+							|| _reusableBitmap.getWidth() != w
+							|| _reusableBitmap.getHeight() != h) {
+						if (_reusableBitmap != null) _reusableBitmap.recycle();
+						_reusableBitmap = android.graphics.Bitmap.createBitmap(
+								w, h, android.graphics.Bitmap.Config.ARGB_8888);
+					}
+					_reusableBitmap.copyPixelsFromBuffer(buf);
+					return _reusableBitmap;
+				} catch (Exception e) {
+					if (IS_DEBUG) android.util.Log.d("JS", "getCurrentBitmap SW: " + e);
 				}
 			}
 		}
+
+		// Last-resort fallback: PlayerView's TextureView, only reachable when the
+		// player IS in the window (createNativeView() was called and view is visible).
+		View surfaceView = this._playerView.getVideoSurfaceView();
+		if (surfaceView instanceof TextureView && ((TextureView) surfaceView).isAvailable()) {
+			TextureView tv = (TextureView) surfaceView;
+			int w = _videoWidth > 0 ? _videoWidth : tv.getWidth();
+			int h = _videoHeight > 0 ? _videoHeight : tv.getHeight();
+			if (w <= 0 || h <= 0) return null;
+			if (_reusableBitmap == null || _reusableBitmap.getWidth() != w || _reusableBitmap.getHeight() != h) {
+				if (_reusableBitmap != null) _reusableBitmap.recycle();
+				_reusableBitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+			}
+			return tv.getBitmap(_reusableBitmap);
+		}
+
 		return null;
 	}
 
@@ -485,78 +709,85 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		}
 	}
 
-	/**
-	 * Draw the current video frame into a 2D canvas context.
-	 *
-	 * @param backendType  Rendering backend of the target context:
-	 *                     0 = CPU  — CPU bitmap readback (TextureView → Bitmap → Skia).
-	 *                     1 = GL   — GL fast-path: OES texture → Skia GPU image (zero CPU copy).
-	 *                     2 = Vulkan — falls back to CPU bitmap path (TODO: AHardwareBuffer path).
-	 *                     3 = Metal  — iOS only; not reached on Android.
-	 * @param context      Native pointer to the CanvasRenderingContext2D Rust struct.
-	 */
 	public boolean drawVideoFrame2D(int backendType, long context, float dx, float dy) {
+		if (context == 0) return false;
+		// Ensure the player surface is set up even before dimensions are known.
+		// On some devices onVideoSizeChanged only fires after the first rendered frame,
+		// so we must give ExoPlayer a surface first to break the deadlock.
+		if (backendType == 2) ensureGL2DSurface(context);
 		float w = (float) _videoWidth;
 		float h = (float) _videoHeight;
-		if (backendType == 1) {
+		if (w <= 0 || h <= 0) return false;
+		if (backendType == 2) {
 			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, w, h);
 		}
 		return drawFrame2DBitmap(context, 0, 0, w, h, dx, dy, w, h);
 	}
 
 	public boolean drawVideoFrame2D(int backendType, long context, float dx, float dy, float dw, float dh) {
+		if (context == 0) return false;
+		if (backendType == 2) ensureGL2DSurface(context);
 		float w = (float) _videoWidth;
 		float h = (float) _videoHeight;
-		if (backendType == 1) {
+		if (w <= 0 || h <= 0) return false;
+		if (backendType == 2) {
 			return drawFrame2DGL(context, 0, 0, w, h, dx, dy, dw, dh);
 		}
 		return drawFrame2DBitmap(context, 0, 0, w, h, dx, dy, dw, dh);
 	}
 
 	public boolean drawVideoFrame2D(int backendType, long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
-		if (backendType == 1) {
+		if (context == 0) return false;
+		if (backendType == 2) ensureGL2DSurface(context);
+		if (_videoWidth <= 0 || _videoHeight <= 0) return false;
+		if (backendType == 2) {
 			return drawFrame2DGL(context, sx, sy, sw, sh, dx, dy, dw, dh);
 		}
 		return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
 	}
 
-	/**
-	 * GL fast-path: draw the current video frame by having Skia sample an OES texture
-	 * directly, with no CPU round-trip.
-	 *
-	 * On the first call the method:
-	 *  1. Calls into Rust to make the 2D canvas EGL context current.
-	 *  2. Creates a TextureRender (generates an OES texture) inside that EGL context.
-	 *  3. Wraps the OES texture in a SurfaceTexture and directs the player to it.
-	 *
-	 * On every subsequent call it delegates to Utils.drawVideoFrameGL which:
-	 *  1. Makes the 2D context current.
-	 *  2. Calls SurfaceTexture.updateTexImage() to latch the newest frame.
-	 *  3. Calls into Rust/Skia to draw the OES texture directly (no Bitmap).
-	 *
-	 * Falls back to the CPU bitmap path if the GL resources cannot be initialised.
-	 */
+
+	private void ensureGL2DSurface(long context) {
+		if (_glInitFailed || _glSt != null) return;
+		if (IS_DEBUG) android.util.Log.d("JS", "ensureGL2DSurface: context=" + context);
+		Object[] result = _utils.create2DContextSurfaceTexture(context);
+		if (result == null) {
+			if (IS_DEBUG) android.util.Log.d("JS", "ensureGL2DSurface: create2DContextSurfaceTexture returned null → bitmap fallback");
+			_glInitFailed = true;
+			return;
+		}
+		if (IS_DEBUG) android.util.Log.d("JS", "ensureGL2DSurface: created ok, textureId=" + result[1]);
+		_glSt = (SurfaceTexture) result[0];
+		_glTextureId = (Integer) result[1];
+		_glRender = result[2];
+		_glSt.setOnFrameAvailableListener(st -> {
+			_glHasFrame = true;
+			if (_callback != null) _callback.onVideoFrame();
+		});
+		_glSurface = new Surface(_glSt);
+		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
+			_surfaceOwner = SurfaceOwner.NONE;
+		}
+		if (_surfaceOwner != SurfaceOwner.WEBGL) {
+			_player.setVideoSurface(_glSurface);
+			_surfaceOwner = SurfaceOwner.GL2D;
+		}
+	}
+
 	private boolean drawFrame2DGL(long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
-		// Lazy initialisation — runs only once per VideoHelper instance.
+		// Permanently fall back to CPU path if GL init previously failed.
+		if (_glInitFailed) {
+			return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
+		}
+
+		// Surface should already be set up by ensureGL2DSurface() called from
+		// drawVideoFrame2D. If it somehow isn't (e.g. called directly), init now.
 		if (_glSt == null) {
-			Object[] result = _utils.create2DContextSurfaceTexture(context);
-			if (result == null) {
-				// GL init failed; fall back to CPU path.
+			ensureGL2DSurface(context);
+			if (_glSt == null) {
 				return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
 			}
-			_glSt = (SurfaceTexture) result[0];
-			_glTextureId = (Integer) result[1];
-			_glRender = result[2];
-
-			_glSt.setOnFrameAvailableListener(st -> {
-				_glHasFrame = true;
-				if (_callback != null) {
-					_callback.onVideoFrame();
-				}
-			});
-
-			_glSurface = new Surface(_glSt);
-			_player.setVideoSurface(_glSurface);
 		}
 
 		if (!_glHasFrame) {
@@ -572,8 +803,23 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 		if (drawn) {
 			_glHasFrame = false;
+			return true;
 		}
-		return drawn;
+
+		// drawVideoFrameGL failed with a live frame (Skia OES path not supported —
+		// common on emulators and some Vulkan-only devices). Permanently fall back to
+		// the CPU bitmap path via ImageReader so subsequent frames actually render.
+		if (IS_DEBUG) android.util.Log.d("JS", "drawVideoFrameGL: OES draw failed, switching to bitmap path");
+		_glInitFailed = true;
+		_glHasFrame = false;
+		// Release the GL surface so the player can be redirected to ImageReader.
+		if (_glSurface != null) { _glSurface.release(); _glSurface = null; }
+		if (_glSt != null) { _glSt.release(); _glSt = null; }
+		_surfaceOwner = SurfaceOwner.NONE;
+		// Set up ImageReader and redirect the player.
+		setupBitmapSurface();
+		// First frame after transition may be null (decoder just switched surfaces).
+		return drawFrame2DBitmap(context, sx, sy, sw, sh, dx, dy, dw, dh);
 	}
 
 	public void setPlayer() {
@@ -612,11 +858,11 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	}
 
 	public boolean getMuted() {
-		return this._player.isDeviceMuted();
+		return this._player.getVolume() == 0f;
 	}
 
 	public void setMuted(boolean value) {
-		this._player.setDeviceMuted(value);
+		this._player.setVolume(value ? 0f : 1f);
 	}
 
 	public long getDuration() {
@@ -627,8 +873,8 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		return this._player.getCurrentPosition() / 1000.0;
 	}
 
-	public void setCurrentTime(int value) {
-		this._player.seekTo((value * 1000), 0);
+	public void setCurrentTime(double value) {
+		this._player.seekTo((long) (value * 1000.0));
 	}
 
 	public String getSrc() {
@@ -637,6 +883,13 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 
 	public void setSrc(String value) {
 		this._src = value;
+		this._loadedDataFired.set(false);
+		// Video dimensions will change — release the ImageReader so setupBitmapSurface()
+		// recreates it at the new size once onVideoSizeChanged fires.
+		if (_surfaceOwner == SurfaceOwner.BITMAP) {
+			if (_imageReader != null) { _imageReader.close(); _imageReader = null; }
+			_surfaceOwner = SurfaceOwner.NONE;
+		}
 		this._setSrc(value);
 	}
 
@@ -761,9 +1014,19 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	@UnstableApi
 	@Override
 	public void  onPlayerStateChanged(boolean playWhenReady, @Player.State int playbackState) {}
-	
+
+
 	@Override
-	public void  onPlaybackStateChanged(@Player.State int playbackState) {}
+	public void  onPlaybackStateChanged(@Player.State int playbackState) {
+		if (playbackState == Player.STATE_READY) {
+			this._readyState = 2; // HAVE_CURRENT_DATA
+			if (_loadedDataFired.compareAndSet(false, true)) {
+				if (this._callback != null) {
+					this._callback.onLoadedData();
+				}
+			}
+		}
+	}
 	
 	@Override
 	public void  onPlayWhenReadyChanged(
@@ -826,7 +1089,13 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	public void  onSurfaceSizeChanged(int width, int height) {}
 	
 	@Override
-	public void  onRenderedFirstFrame() {}
+	public void  onRenderedFirstFrame() {
+		if (_loadedDataFired.compareAndSet(false, true)) {
+			if (this._callback != null) {
+				this._callback.onLoadedData();
+			}
+		}
+	}
 
 	
 	@Deprecated

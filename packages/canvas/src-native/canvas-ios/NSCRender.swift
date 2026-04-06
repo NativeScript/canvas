@@ -11,6 +11,7 @@ import CoreVideo
 import UIKit
 import AVFoundation
 import Metal
+import Accelerate
 
 
 @objcMembers
@@ -554,8 +555,183 @@ public class NSCRender: NSObject {
 		return cgImage.bitmapInfo.intersection(.byteOrderMask)
 	}
 	
-	// MARK: - Canvas 2D Video Frame Support
-	
+	public func drawFrameTexImage3D(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize,
+	                                 _ target: Int32, _ level: Int32, _ internalFormat: Int32,
+	                                 _ width: Int32, _ height: Int32, _ depth: Int32, _ border: Int32,
+	                                 _ format: Int32, _ type: Int32, _ flipYWebGL: Bool) {
+		let currentTime = player.currentTime()
+		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return }
+		var presentationTime = CMTime.zero
+		guard let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime) else { return }
+		uploadPixelBufferTexImage3D(buffer: buffer, target: target, level: level,
+		                            internalFormat: internalFormat, width: width, height: height,
+		                            depth: depth, border: border, flipYWebGL: flipYWebGL)
+	}
+
+	public func drawFrameTexSubImage3D(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize,
+	                                    _ target: Int32, _ level: Int32,
+	                                    _ xoffset: Int32, _ yoffset: Int32, _ zoffset: Int32,
+	                                    _ width: Int32, _ height: Int32, _ depth: Int32,
+	                                    _ format: Int32, _ type: Int32, _ flipYWebGL: Bool) {
+		let currentTime = player.currentTime()
+		guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return }
+		var presentationTime = CMTime.zero
+		guard let buffer = output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime) else { return }
+		uploadPixelBufferTexSubImage3D(buffer: buffer, target: target, level: level,
+		                               xoffset: xoffset, yoffset: yoffset, zoffset: zoffset,
+		                               width: width, height: height, depth: depth, flipYWebGL: flipYWebGL)
+	}
+
+
+	private func decodeBGRAtoRGBA(baseAddress: UnsafeMutableRawPointer,
+	                               pixelWidth: Int, pixelHeight: Int,
+	                               srcBytesPerRow: Int) -> UnsafeMutableRawPointer {
+		let tightBytesPerRow = pixelWidth * 4
+		let totalBytes = pixelWidth * pixelHeight * 4
+
+		let bgraBuf = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+		if srcBytesPerRow == tightBytesPerRow {
+			memcpy(bgraBuf, baseAddress, totalBytes)
+		} else {
+			for y in 0..<pixelHeight {
+				memcpy(bgraBuf.advanced(by: y * tightBytesPerRow),
+				       baseAddress.advanced(by: y * srcBytesPerRow),
+				       tightBytesPerRow)
+			}
+		}
+
+		let rgbaBuf = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+		var srcVImg = vImage_Buffer(data: bgraBuf, height: vImagePixelCount(pixelHeight),
+		                            width: vImagePixelCount(pixelWidth), rowBytes: tightBytesPerRow)
+		var dstVImg = vImage_Buffer(data: rgbaBuf, height: vImagePixelCount(pixelHeight),
+		                            width: vImagePixelCount(pixelWidth), rowBytes: tightBytesPerRow)
+		// BGRA[0,1,2,3] → RGBA: channel 2→0, 1→1, 0→2, 3→3
+		vImagePermuteChannels_ARGB8888(&srcVImg, &dstVImg, [2, 1, 0, 3], 0)
+		bgraBuf.deallocate()
+		return rgbaBuf
+	}
+
+
+	private func scaleRGBA(_ src: UnsafeMutableRawPointer,
+	                        srcWidth: Int, srcHeight: Int,
+	                        destWidth: Int, destHeight: Int) -> UnsafeMutableRawPointer {
+		let srcRowBytes  = srcWidth  * 4
+		let destRowBytes = destWidth * 4
+		let destBytes    = destWidth * destHeight * 4
+		let destBuf = UnsafeMutableRawPointer.allocate(byteCount: destBytes, alignment: 1)
+		var srcVImg  = vImage_Buffer(data: src, height: vImagePixelCount(srcHeight),
+		                             width: vImagePixelCount(srcWidth), rowBytes: srcRowBytes)
+		var destVImg = vImage_Buffer(data: destBuf, height: vImagePixelCount(destHeight),
+		                             width: vImagePixelCount(destWidth), rowBytes: destRowBytes)
+		vImageScale_ARGB8888(&srcVImg, &destVImg, nil, vImage_Flags(kvImageHighQualityResampling))
+		return destBuf
+	}
+
+
+	private func flipRGBAVertically(_ src: UnsafeMutableRawPointer,
+	                                 width: Int, height: Int) -> UnsafeMutableRawPointer {
+		let rowBytes  = width * 4
+		let totalBytes = width * height * 4
+		let flipped = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
+		let fp = flipped.assumingMemoryBound(to: UInt8.self)
+		let rp = src.assumingMemoryBound(to: UInt8.self)
+		for y in 0..<height {
+			memcpy(fp.advanced(by: (height - 1 - y) * rowBytes),
+			       rp.advanced(by: y * rowBytes),
+			       rowBytes)
+		}
+		return flipped
+	}
+
+	private func uploadPixelBufferTexImage3D(buffer: CVPixelBuffer,
+	                                          target: Int32, level: Int32, internalFormat: Int32,
+	                                          width: Int32, height: Int32, depth: Int32, border: Int32,
+	                                          flipYWebGL: Bool) {
+		CVPixelBufferLockBaseAddress(buffer, .readOnly)
+		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
+
+		let pixelWidth  = CVPixelBufferGetWidth(buffer)
+		let pixelHeight = CVPixelBufferGetHeight(buffer)
+		let srcBytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+		let destWidth  = Int(width)
+		let destHeight = Int(height)
+
+		var rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
+		                                pixelHeight: pixelHeight, srcBytesPerRow: srcBytesPerRow)
+		defer { rgbaBuf.deallocate() }
+
+		var scaledBuf: UnsafeMutableRawPointer? = nil
+		var uploadBuf = rgbaBuf
+		if pixelWidth != destWidth || pixelHeight != destHeight {
+			scaledBuf = scaleRGBA(rgbaBuf, srcWidth: pixelWidth, srcHeight: pixelHeight,
+			                      destWidth: destWidth, destHeight: destHeight)
+			uploadBuf = scaledBuf!
+		}
+		defer { scaledBuf?.deallocate() }
+
+		var flippedBuf: UnsafeMutableRawPointer? = nil
+		if flipYWebGL {
+			flippedBuf = flipRGBAVertically(uploadBuf, width: destWidth, height: destHeight)
+			uploadBuf = flippedBuf!
+		}
+		defer { flippedBuf?.deallocate() }
+
+		var prevAlignment: GLint = 0
+		glGetIntegerv(GLenum(GL_UNPACK_ALIGNMENT), &prevAlignment)
+		glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), 1)
+		defer { glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), prevAlignment) }
+
+		glTexImage3D(GLenum(target), level, internalFormat,
+		             GLsizei(destWidth), GLsizei(destHeight), GLsizei(depth),
+		             border, GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), uploadBuf)
+	}
+
+	private func uploadPixelBufferTexSubImage3D(buffer: CVPixelBuffer,
+	                                             target: Int32, level: Int32,
+	                                             xoffset: Int32, yoffset: Int32, zoffset: Int32,
+	                                             width: Int32, height: Int32, depth: Int32,
+	                                             flipYWebGL: Bool) {
+		CVPixelBufferLockBaseAddress(buffer, .readOnly)
+		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return }
+
+		let pixelWidth  = CVPixelBufferGetWidth(buffer)
+		let pixelHeight = CVPixelBufferGetHeight(buffer)
+		let srcBytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+		let destWidth  = Int(width)
+		let destHeight = Int(height)
+
+		var rgbaBuf = decodeBGRAtoRGBA(baseAddress: baseAddress, pixelWidth: pixelWidth,
+		                                pixelHeight: pixelHeight, srcBytesPerRow: srcBytesPerRow)
+		defer { rgbaBuf.deallocate() }
+
+		var scaledBuf: UnsafeMutableRawPointer? = nil
+		var uploadBuf = rgbaBuf
+		if pixelWidth != destWidth || pixelHeight != destHeight {
+			scaledBuf = scaleRGBA(rgbaBuf, srcWidth: pixelWidth, srcHeight: pixelHeight,
+			                      destWidth: destWidth, destHeight: destHeight)
+			uploadBuf = scaledBuf!
+		}
+		defer { scaledBuf?.deallocate() }
+
+		var flippedBuf: UnsafeMutableRawPointer? = nil
+		if flipYWebGL {
+			flippedBuf = flipRGBAVertically(uploadBuf, width: destWidth, height: destHeight)
+			uploadBuf = flippedBuf!
+		}
+		defer { flippedBuf?.deallocate() }
+
+		var prevAlignment: GLint = 0
+		glGetIntegerv(GLenum(GL_UNPACK_ALIGNMENT), &prevAlignment)
+		glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), 1)
+		defer { glPixelStorei(GLenum(GL_UNPACK_ALIGNMENT), prevAlignment) }
+
+		glTexSubImage3D(GLenum(target), level, xoffset, yoffset, zoffset,
+		                GLsizei(destWidth), GLsizei(destHeight), GLsizei(depth),
+		                GLenum(GL_RGBA), GLenum(GL_UNSIGNED_BYTE), uploadBuf)
+	}
+
 	/// Shared Metal texture cache for static drawVideoFrame methods
 	private static var sharedMtlCache: CVMetalTextureCache? = {
 		guard let device = MTLCreateSystemDefaultDevice() else { return nil }
@@ -564,7 +740,6 @@ public class NSCRender: NSObject {
 		return cache
 	}()
 	
-	/// Get a CVPixelBuffer for the current video frame. Returns nil if no new frame is available.
 	private static func copyCurrentPixelBuffer(
 		_ player: AVPlayer,
 		_ output: AVPlayerItemVideoOutput
@@ -575,8 +750,6 @@ public class NSCRender: NSObject {
 		return output.copyPixelBuffer(forItemTime: currentTime, itemTimeForDisplay: &presentationTime)
 	}
 	
-	/// Try to create a Metal texture from a CVPixelBuffer and draw it via the GPU path.
-	/// Returns true if successful, false if we should fall back to the BGRA bytes path.
 	private static func drawWithMetalTexture(
 		_ buffer: CVPixelBuffer,
 		_ context: Int64,
@@ -596,7 +769,6 @@ public class NSCRender: NSObject {
 					let cvMetalTex = cvTex,
 					let mtlTexture = CVMetalTextureGetTexture(cvMetalTex) else { return false }
 		
-		// Pass the MTLTexture pointer to Rust — Skia wraps it as a BackendTexture (GPU, zero-copy)
 		let texPtr = Unmanaged.passUnretained(mtlTexture).toOpaque()
 		return canvas_native_ios_context_draw_image_with_metal_texture(
 			context, texPtr,
@@ -606,7 +778,6 @@ public class NSCRender: NSObject {
 		)
 	}
 	
-	/// Fallback: lock pixel buffer, copy BGRA bytes, draw via CPU raster path.
 	private static func drawWithBGRABytes(
 		_ buffer: CVPixelBuffer,
 		_ context: Int64,
@@ -650,7 +821,6 @@ public class NSCRender: NSObject {
 		}
 	}
 	
-	/// Draw a video frame to a Canvas2D context (dx, dy)
 	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ dx: Float, _ dy: Float) -> Bool {
 		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
 		let w = Float(CVPixelBufferGetWidth(buffer))
@@ -659,7 +829,6 @@ public class NSCRender: NSObject {
 		return drawWithBGRABytes(buffer, context, 0, 0, w, h, dx, dy, w, h)
 	}
 	
-	/// Draw a video frame to a Canvas2D context (dx, dy, dw, dh)
 	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float) -> Bool {
 		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
 		let w = Float(CVPixelBufferGetWidth(buffer))
@@ -668,15 +837,12 @@ public class NSCRender: NSObject {
 		return drawWithBGRABytes(buffer, context, 0, 0, w, h, dx, dy, dw, dh)
 	}
 	
-	/// Draw a video frame to a Canvas2D context (sx, sy, sw, sh, dx, dy, dw, dh)
 	@objc public static func drawVideoFrame(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize, _ context: Int64, _ sx: Float, _ sy: Float, _ sw: Float, _ sh: Float, _ dx: Float, _ dy: Float, _ dw: Float, _ dh: Float) -> Bool {
 		guard let buffer = copyCurrentPixelBuffer(player, output) else { return false }
 		if drawWithMetalTexture(buffer, context, sx, sy, sw, sh, dx, dy, dw, dh) { return true }
 		return drawWithBGRABytes(buffer, context, sx, sy, sw, sh, dx, dy, dw, dh)
 	}
 	
-	/// Get current video frame as raw BGRA pixel data for WebGPU.
-	/// Returns NSDictionary with "data" (NSData), "width" (NSNumber), "height" (NSNumber), or nil.
 	@objc public static func getVideoFrameData(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize) -> NSDictionary? {
 		guard let buffer = copyCurrentPixelBuffer(player, output) else { return nil }
 		CVPixelBufferLockBaseAddress(buffer, .readOnly)

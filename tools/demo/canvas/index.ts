@@ -58,7 +58,7 @@ import {
 } from './canvas2d';
 const Chart = require('chart.js').Chart;
 import { handleVideo, cancelInteractiveCube, cancelMain, cubeRotation, cubeRotationRotation, drawElements, drawModes, imageFilter, interactiveCube, main, textures, points, triangle, scaleTriangle, imageProcessing, createChaosLines } from './webgl';
-import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog } from './webgl2';
+import { cancelEnvironmentMap, cancelFog, draw_image_space, draw_instanced, environmentMap, fog, texImage3DDemo, cancelTexImage3DDemo, texSubImage3DDemo, cancelTexSubImage3DDemo, videoTex3DDemo, cancelVideoTex3DDemo } from './webgl2';
 // declare var com, java;
 let zen3d;
 import { drawChart, issue127, issue54, issue93 } from './issues';
@@ -267,6 +267,98 @@ export class DemoSharedCanvas extends DemoSharedBase {
 			ctx.drawImage(bm, 0, 0, canvas.width, canvas.height);
 			//ctx.drawImage(c2, 0, 0, canvas.width, canvas.height);
 		});
+	}
+
+	videoDrawFrames(canvas) {
+		const ctx = canvas.getContext('2d');
+		const dpr = window.devicePixelRatio || 1;
+
+		const video = document.createElement('video');
+		video.crossOrigin = 'anonymous';
+		video.loop = true;
+		video.muted = true;
+		video.playsInline = true;
+		video.autoplay = true;
+		video.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
+		let rafId = 0;
+		let started = false;
+		let hasFrame = false;
+
+		function resize() {
+			canvas.width = canvas.clientWidth * dpr;
+			canvas.height = canvas.clientHeight * dpr;
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		}
+
+		function render() {
+			const w = canvas.width / dpr;
+			const h = canvas.height / dpr;
+
+			try {
+				ctx.clearRect(0, 0, w, h);
+
+				if (hasFrame && video.readyState >= 2) {
+					ctx.drawImage(video, 0, 0, w, h);
+				}
+
+				// simple overlay so it's clearly canvas
+				ctx.fillStyle = 'rgba(0,0,0,0.4)';
+				ctx.fillRect(10, 10, 140, 30);
+
+				ctx.fillStyle = '#00ffcc';
+				ctx.font = '12px monospace';
+				ctx.fillText(`t: ${video.currentTime.toFixed(2)}`, 20, 30);
+			} catch (err) {
+				console.log('drawImage error', err);
+			}
+
+			rafId = requestAnimationFrame(render);
+		}
+
+		function start() {
+			if (started) return;
+			started = true;
+			rafId = requestAnimationFrame(render);
+		}
+
+		video.addEventListener('loadeddata', () => {
+			resize();
+			video.play().catch((e) => console.log('video play failed', e));
+		});
+
+		video.addEventListener(
+			'timeupdate',
+			() => {
+				hasFrame = true;
+			},
+			true,
+		);
+
+		video.addEventListener('playing', start);
+
+		window.addEventListener('resize', resize);
+
+		(canvas as any)._videoDemo = {
+			video,
+			stop() {
+				cancelAnimationFrame(rafId);
+				video.pause();
+			},
+		};
+	}
+
+	cancelVideoDraw() {
+		const refs = (this.canvas as any)?._videoDemo;
+		if (refs) {
+			try {
+				refs.video.pause();
+				cancelAnimationFrame(refs.rafId);
+			} catch (e) {
+				console.log('cancelVideoDraw error', e);
+			}
+			delete (this.canvas as any)._videoDemo;
+		}
 	}
 
 	pathIssue(canvas) {
@@ -774,7 +866,12 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
-		this.vulkan(this.canvas);
+		//this.vulkan(this.canvas);
+		//texImage3DDemo(this.canvas);
+		//texSubImage3DDemo(this.canvas);
+		videoTex3DDemo(this.canvas);
+		//this.videoDrawFrames(this.canvas);
+
 		//shadowOffsetX(this.canvas);
 		//shadowOffsetY(this.canvas);
 		//strokeStyle(this.canvas);

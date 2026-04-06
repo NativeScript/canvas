@@ -28,7 +28,7 @@ use raw_window_handle::{AndroidDisplayHandle, RawDisplayHandle, RawWindowHandle}
 
 pub static IS_GL_SYMBOLS_LOADED: OnceLock<bool> = OnceLock::new();
 
-// Thread-local cache to skip redundant eglMakeCurrent calls (~5-10µs each)
+
 thread_local! {
     static CURRENT_EGL_CONTEXT: Cell<usize> = const { Cell::new(0) };
 }
@@ -51,7 +51,6 @@ impl GLContextRaw {
     pub fn make_current(&self) -> bool {
         match (self.display, self.surface, self.context) {
             (RawDisplay::Egl(display), RawSurface::Egl(surface), RawContext::Egl(context)) => {
-                // Skip redundant eglMakeCurrent if this context is already current on this thread
                 let ctx_id = context as usize;
                 let is_current = CURRENT_EGL_CONTEXT.with(|c| {
                     if c.get() == ctx_id {
@@ -583,9 +582,7 @@ impl GLContext {
 
                         let ret = GLContext(gl_context);
 
-                        // Disable vsync blocking in eglSwapBuffers — Choreographer
-                        // already provides frame pacing, so blocking here causes
-                        // double-throttling and wastes the main thread's time budget.
+                        ret.make_current();
                         ret.set_vsync(false);
 
                         Some(ret)

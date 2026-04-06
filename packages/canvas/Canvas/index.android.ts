@@ -421,6 +421,8 @@ export class Canvas extends CanvasBase {
 					this._2dContext._type = '2d';
 					this._contextType = ContextType.Canvas;
 					this._is2D = true;
+					//@ts-ignore
+					this._2dContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 
 				return this._2dContext;
@@ -435,6 +437,8 @@ export class Canvas extends CanvasBase {
 					(this._webglContext as any)._canvas = this;
 					this._webglContext._type = 'webgl';
 					this._contextType = ContextType.WebGL;
+					//@ts-ignore
+					this._webglContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._webglContext;
 			} else if (type === 'webgl2' || type === 'experimental-webgl2') {
@@ -448,6 +452,8 @@ export class Canvas extends CanvasBase {
 					(this._webgl2Context as any)._canvas = this;
 					(this._webgl2Context as any)._type = 'webgl2';
 					this._contextType = ContextType.WebGL2;
+					//@ts-ignore
+					this._webgl2Context.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._webgl2Context;
 			} else if (type === 'webgpu') {
@@ -461,6 +467,8 @@ export class Canvas extends CanvasBase {
 					(this._gpuContext as any)._canvas = this;
 					(this._gpuContext as any)._type = 'webgpu';
 					this._contextType = ContextType.WebGPU;
+					//@ts-ignore
+					this._gpuContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}
 				return this._gpuContext;
 			}

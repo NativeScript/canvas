@@ -21,6 +21,12 @@ class NSCVideoHelperListenerImpl extends NSObject implements NSCVideoHelperListe
 		const owner = this._owner.deref();
 		if (owner) {
 			if (state === 1) {
+				if (owner._playResolve) {
+					owner._playResolve();
+					owner._playResolve = null;
+					owner._playReject = null;
+					owner._playPromise = null;
+				}
 				owner._notifyListener(Video.playingEvent);
 			}
 		}
@@ -37,6 +43,13 @@ class NSCVideoHelperListenerImpl extends NSObject implements NSCVideoHelperListe
 		const owner = this._owner.deref();
 		if (owner) {
 			owner._notifyVideoFrameCallbacks();
+		}
+	}
+
+	public onLoadedData() {
+		const owner = this._owner.deref();
+		if (owner) {
+			owner._notifyListener(Video.loadeddataEvent);
 		}
 	}
 }
@@ -93,6 +106,88 @@ export class Video extends VideoBase {
 				//	NSCCanvasUtils.drawFrame(this.helper.player, this.helper.assetOutput, this.helper.videoSize, arguments[4], arguments[5], flipY);
 			} catch (e) {
 				console.error('getCurrentFrame error:', e);
+			}
+		}
+	}
+
+	getFrameForTexImage3D(nativeCtx: any, ctx: any, target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number) {
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+		if (!this.helper.isInForeground) {
+			return;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			if (!this._renderer) {
+				this._renderer = NSCRender.alloc().init();
+			}
+			try {
+				//@ts-ignore
+				this._renderer.drawFrameTexImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, internalformat, width, height, depth, border, format, type, flipY);
+				return;
+			} catch (e) {
+				console.error('getFrameForTexImage3D error:', e);
+			}
+			// Simulator / CPU fallback: read raw BGRA pixel data and upload via texImage3D
+			try {
+				const frameData = NSCRender.getVideoFrameData(this.helper.player, this.helper.assetOutput, this.helper.videoSize);
+				if (frameData) {
+					const nsData = frameData.objectForKey('data') as NSData;
+					const fw = (frameData.objectForKey('width') as NSNumber).intValue;
+					const fh = (frameData.objectForKey('height') as NSNumber).intValue;
+					if (nsData && fw > 0 && fh > 0) {
+						const pixels = new Uint8Array(interop.bufferFromData(nsData));
+						// NSCRender returns BGRA; swap B↔R to get RGBA
+						for (let i = 0; i < pixels.length; i += 4) {
+							const b = pixels[i];
+							pixels[i] = pixels[i + 2];
+							pixels[i + 2] = b;
+						}
+						ctx.native.texImage3D(target, level, internalformat, fw, fh, depth, border, format, type, pixels);
+					}
+				}
+			} catch (fe) {
+				console.error('getFrameForTexImage3D fallback error:', fe);
+			}
+		}
+	}
+
+	getFrameForTexSubImage3D(nativeCtx: any, ctx: any, target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number) {
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+		if (!this.helper.isInForeground) {
+			return;
+		}
+		if (this.helper.assetOutput && this.helper.player) {
+			if (!this._renderer) {
+				this._renderer = NSCRender.alloc().init();
+			}
+			try {
+				//@ts-ignore
+				this._renderer.drawFrameTexSubImage3D(this.helper.player, this.helper.assetOutput, this.helper.videoSize, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, flipY);
+				return;
+			} catch (e) {
+				console.error('getFrameForTexSubImage3D error:', e);
+			}
+			// Simulator / CPU fallback: read raw BGRA pixel data and upload via texSubImage3D
+			try {
+				const frameData = NSCRender.getVideoFrameData(this.helper.player, this.helper.assetOutput, this.helper.videoSize);
+				if (frameData) {
+					const nsData = frameData.objectForKey('data') as NSData;
+					const fw = (frameData.objectForKey('width') as NSNumber).intValue;
+					const fh = (frameData.objectForKey('height') as NSNumber).intValue;
+					if (nsData && fw > 0 && fh > 0) {
+						const pixels = new Uint8Array(interop.bufferFromData(nsData));
+						// NSCRender returns BGRA; swap B↔R to get RGBA
+						for (let i = 0; i < pixels.length; i += 4) {
+							const b = pixels[i];
+							pixels[i] = pixels[i + 2];
+							pixels[i + 2] = b;
+						}
+						ctx.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, fw, fh, depth, format, type, pixels);
+					}
+				}
+			} catch (fe) {
+				console.error('getFrameForTexSubImage3D fallback error:', fe);
 			}
 		}
 	}
@@ -219,8 +314,24 @@ export class Video extends VideoBase {
 		this.helper.controls = enabled;
 	}
 
+	_playPromise: Promise<void> | null = null;
+	_playResolve: (() => void) | null = null;
+	_playReject: (() => void) | null = null;
+
 	play() {
-		this.helper.play();
+		if (this.helper.state === 1) {
+			return Promise.resolve();
+		}
+		if (this._playPromise) {
+			return this._playPromise;
+		}
+		this._playPromise = new Promise<void>((resolve, reject) => {
+			this._playResolve = resolve;
+			this._playReject = reject;
+			this.helper.play();
+		});
+
+		return this._playPromise;
 	}
 
 	pause() {

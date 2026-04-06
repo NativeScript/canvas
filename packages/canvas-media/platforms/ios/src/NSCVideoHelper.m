@@ -55,6 +55,7 @@
 - (void)setSrc:(NSString *)src {
     _currentSrc = src;
     _readyState = NSCPlayerReadyStateHaveNothing;
+    self.loadedDataFired = NO;
     
     if (!src) return;
 
@@ -90,10 +91,12 @@
 					strongSelf->_currentItem = item;
 
             NSDictionary *outputSettings = @{
-							(NSString *)kCVPixelBufferIOSurfacePropertiesKey:  @{},
                 (NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+#if !TARGET_OS_SIMULATOR
+                (NSString *)kCVPixelBufferIOSurfacePropertiesKey:  @{},
                 (NSString *)kCVPixelBufferOpenGLESCompatibilityKey: @YES,
                 (NSString *)kCVPixelBufferOpenGLCompatibilityKey: @YES,
+#endif
                 (NSString *)kCVPixelBufferMetalCompatibilityKey: @YES,
             };
 
@@ -115,6 +118,7 @@
 
             [weakSelf.player replaceCurrentItemWithPlayerItem:item];
             weakSelf.readyState = NSCPlayerReadyStateHaveMetadata;
+            [weakSelf performSelectorOnMainThread:@selector(_scheduleFirstFrameCheck) withObject:nil waitUntilDone:NO];
             if (weakSelf.autoplay) {
                 [weakSelf play];
             }
@@ -135,8 +139,38 @@
         if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
             self->_videoSize = [[self.asset tracksWithMediaType:AVMediaTypeVideo] firstObject].naturalSize;
             [self.player.currentItem addOutput:self.assetOutput];
+            self.readyState = NSCPlayerReadyStateHaveCurrentData;
         }
     }
+}
+
+- (void)_scheduleFirstFrameCheck {
+   [self _checkForFirstFrameWithAttempts:10 delayMs:50];
+}
+
+- (void)_checkForFirstFrameWithAttempts:(int)attemptsRemaining delayMs:(int)delayMs {
+    if (self.loadedDataFired || attemptsRemaining <= 0) return;
+
+    CMTime current = [self.player currentTime];
+    CVPixelBufferRef buffer = NULL;
+    if (self.assetOutput) {
+        buffer = [self.assetOutput copyPixelBufferForItemTime:current itemTimeForDisplay:NULL];
+    }
+
+    if (buffer != NULL) {
+        CFRelease(buffer);
+        self.loadedDataFired = YES;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if ([self.listener respondsToSelector:@selector(onLoadedData)]) {
+                [self.listener onLoadedData];
+            }
+        });
+        return;
+    }
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayMs * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        [self _checkForFirstFrameWithAttempts:attemptsRemaining - 1 delayMs:delayMs];
+    });
 }
 
 - (double)duration {

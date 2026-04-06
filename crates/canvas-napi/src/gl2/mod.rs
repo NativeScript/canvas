@@ -1179,15 +1179,32 @@ impl web_g_l_2_rendering_context {
     border: i32,
     format: u32,
     type_: u32,
-    offset_or_source_or_src_data: Either5<
+    offset_or_source_or_src_data: Option<Either5<
       i64,
       Buffer,
       &crate::c2d::CanvasRenderingContext2D,
       &web_g_l_rendering_context,
       &web_g_l_2_rendering_context,
-    >,
+    >>,
     src_offset: Option<i64>,
   ) {
+    let Some(offset_or_source_or_src_data) = offset_or_source_or_src_data else {
+      // null passed — allocate storage without initialising pixel data
+      canvas_c::canvas_native_webgl2_tex_image3d_none(
+        target,
+        level,
+        internalformat,
+        width,
+        height,
+        depth,
+        border,
+        format,
+        type_,
+        0,
+        self.state,
+      );
+      return;
+    };
     match offset_or_source_or_src_data {
       Either5::A(offset) => canvas_c::canvas_native_webgl2_tex_image3d_none(
         target,

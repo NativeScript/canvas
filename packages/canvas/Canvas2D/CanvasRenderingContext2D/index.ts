@@ -764,6 +764,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
 			image = image._canvas.native;
+		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'VIDEO' || image.tagName === 'VID' || image.tagName.toLowerCase() === 'video') && image._video && typeof image._video.drawImageFrame === 'function') {
+			image._video.drawImageFrame(this, args);
+			return;
 		} else if (image instanceof ImageBitmap) {
 			image = (image as any).native;
 		}
@@ -1099,12 +1102,4 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	translate(x: number, y: number): void {
 		this.context.translate(x, y);
 	}
-}
-
-// Backend type constants for video pipeline
-export enum CanvasBackendType {
-	CPU = 0,
-	GL = 1,
-	Vulkan = 2,
-	Metal = 3,
 }

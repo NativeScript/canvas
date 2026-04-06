@@ -17,6 +17,7 @@
 - (void)onVideoFrameCallback;
 - (void)onTimeUpdate:(double)seconds;
 - (void)onStateChange:(NSCPlayerState)state;
+- (void)onLoadedData;
 @end
 
 @interface NSCVideoHelper : NSObject

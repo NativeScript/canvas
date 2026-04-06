@@ -572,14 +572,11 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (nonnull instancetype)initWithDevice:(id <MTLDevice> _Nonnull)device OBJC_DESIGNATED_INITIALIZER;
 - (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 - (void)drawFrameWithBuffer:(CVPixelBufferRef _Nonnull)buffer width:(NSInteger)width height:(NSInteger)height internalFormat:(int32_t)internalFormat format:(int32_t)format flipYWebGL:(BOOL)flipYWebGL;
-/// Draw a video frame to a Canvas2D context (dx, dy)
+- (void)drawFrameTexImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
+- (void)drawFrameTexSubImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
-/// Draw a video frame to a Canvas2D context (dx, dy, dw, dh)
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
-/// Draw a video frame to a Canvas2D context (sx, sy, sw, sh, dx, dy, dw, dh)
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)sx :(float)sy :(float)sw :(float)sh :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
-/// Get current video frame as raw BGRA pixel data for WebGPU.
-/// Returns NSDictionary with “data” (NSData), “width” (NSNumber), “height” (NSNumber), or nil.
 + (NSDictionary * _Nullable)getVideoFrameData:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize SWIFT_WARN_UNUSED_RESULT;
 @end
 
@@ -1194,14 +1191,11 @@ SWIFT_CLASS_NAMED("NSCRender")
 - (nonnull instancetype)initWithDevice:(id <MTLDevice> _Nonnull)device OBJC_DESIGNATED_INITIALIZER;
 - (void)drawFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)internalFormat :(int32_t)format :(BOOL)flipYWebGL;
 - (void)drawFrameWithBuffer:(CVPixelBufferRef _Nonnull)buffer width:(NSInteger)width height:(NSInteger)height internalFormat:(int32_t)internalFormat format:(int32_t)format flipYWebGL:(BOOL)flipYWebGL;
-/// Draw a video frame to a Canvas2D context (dx, dy)
+- (void)drawFrameTexImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)internalFormat :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)border :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
+- (void)drawFrameTexSubImage3D:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int32_t)target :(int32_t)level :(int32_t)xoffset :(int32_t)yoffset :(int32_t)zoffset :(int32_t)width :(int32_t)height :(int32_t)depth :(int32_t)format :(int32_t)type :(BOOL)flipYWebGL;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
-/// Draw a video frame to a Canvas2D context (dx, dy, dw, dh)
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
-/// Draw a video frame to a Canvas2D context (sx, sy, sw, sh, dx, dy, dw, dh)
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)sx :(float)sy :(float)sw :(float)sh :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
-/// Get current video frame as raw BGRA pixel data for WebGPU.
-/// Returns NSDictionary with “data” (NSData), “width” (NSNumber), “height” (NSNumber), or nil.
 + (NSDictionary * _Nullable)getVideoFrameData:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize SWIFT_WARN_UNUSED_RESULT;
 @end
 

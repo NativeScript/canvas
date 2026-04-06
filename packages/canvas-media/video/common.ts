@@ -16,6 +16,7 @@ export abstract class VideoBase extends MediaBase {
 	public static pauseEvent = 'pause';
 	public static timeupdateEvent = 'timeupdate';
 	public static durationchangeEvent = 'durationchange';
+	public static loadeddataEvent = 'loadeddata';
 	public static readonly HAVE_NOTHING = 0;
 	public static readonly HAVE_METADATA = 1;
 	public static readonly HAVE_CURRENT_DATA = 2;
@@ -57,7 +58,7 @@ export abstract class VideoBase extends MediaBase {
 		}
 	}
 
-	abstract play(): void;
+	abstract play(): Promise<void>;
 	abstract pause(): void;
 	_capturedListeners = {};
 	_listeners = {};
@@ -160,27 +161,15 @@ export abstract class VideoBase extends MediaBase {
 	removeEventListener(type: string, listener: Function, useCapture: boolean | any) {
 		let isCapture = false;
 		if (typeof useCapture === 'boolean') {
-			isCapture = true;
+			isCapture = useCapture;
 		} else if (typeof useCapture === 'object') {
 			isCapture = useCapture?.capture ?? false;
 		}
 
 		if (isCapture) {
-			if (!this._listenerExist(type, listener, this._capturedListeners)) {
-				if (Array.isArray(this._capturedListeners[type])) {
-					this._capturedListeners?.[type]?.push?.(listener);
-				} else {
-					this._capturedListeners[type] = [listener];
-				}
-			}
+			this._removeListener(type, listener, this._capturedListeners);
 		} else {
-			if (!this._listenerExist(type, listener, this._listeners)) {
-				if (Array.isArray(this._listeners[type])) {
-					this._listeners?.[type]?.push?.(listener);
-				} else {
-					this._listeners[type] = [listener];
-				}
-			}
+			this._removeListener(type, listener, this._listeners);
 		}
 	}
 

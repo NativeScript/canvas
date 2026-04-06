@@ -46,6 +46,13 @@ export class Video extends VideoBase {
 				onPlaying() {
 					const owner = ref.get();
 					if (owner) {
+						owner._playing = true;
+						if (owner._playResolve) {
+							owner._playResolve();
+							owner._playResolve = null;
+							owner._playReject = null;
+							owner._playPromise = null;
+						}
 						owner._notifyListener(Video.playingEvent);
 					}
 				},
@@ -70,6 +77,27 @@ export class Video extends VideoBase {
 					const owner = ref.get();
 					if (owner) {
 						owner._notifyVideoFrameCallbacks();
+					}
+				},
+
+				onLoadedData() {
+					const owner = ref.get();
+					if (owner) {
+						owner._readyState = Video.HAVE_CURRENT_DATA;
+						owner._notifyListener(Video.loadeddataEvent);
+					}
+				},
+
+				onError(message: string) {
+					const owner = ref.get();
+					if (owner) {
+						owner._playing = false;
+						if (owner._playReject) {
+							owner._playReject(new Error(message ?? 'Playback error'));
+						}
+						owner._playResolve = null;
+						owner._playReject = null;
+						owner._playPromise = null;
 					}
 				},
 			}),
@@ -100,22 +128,70 @@ export class Video extends VideoBase {
 		this._instance.getCurrentFrame(!!this.isLoaded, ptr, flipY, arguments[4], arguments[5]);
 	}
 
+	getFrameForTexImage3D(nativeCtx: any, ctx: any, target: number, level: number, internalformat: number, width: number, height: number, depth: number, border: number, format: number, type: number) {
+		if (!ctx._canvas._canvas) {
+			return;
+		}
+		const ptr = ctx._canvas._canvas.getNativeContext();
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+
+		const drawn = this._instance.getFrameForTexImage3D(!!this.isLoaded, ptr, flipY, target, level, internalformat, width, height, depth, border);
+		if (drawn) {
+			return;
+		}
+
+		const bitmap = this._instance.getCurrentBitmap();
+		if (bitmap) {
+			const bw = bitmap.getWidth();
+			const bh = bitmap.getHeight();
+			const upload = bw !== width || bh !== height ? android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true) : bitmap;
+			ctx.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, upload);
+			if (upload !== bitmap) {
+				upload.recycle();
+			}
+		}
+	}
+
+	getFrameForTexSubImage3D(nativeCtx: any, ctx: any, target: number, level: number, xoffset: number, yoffset: number, zoffset: number, width: number, height: number, depth: number, format: number, type: number) {
+		if (!ctx._canvas._canvas) {
+			return;
+		}
+		const ptr = ctx._canvas._canvas.getNativeContext();
+		//@ts-ignore
+		const flipY = nativeCtx?.__flipY ?? false;
+
+		const drawn = this._instance.getFrameForTexSubImage3D(!!this.isLoaded, ptr, flipY, target, level, xoffset, yoffset, zoffset, width, height);
+		if (drawn) {
+			return;
+		}
+
+		const bitmap = this._instance.getCurrentBitmap();
+		if (bitmap) {
+			const bw = bitmap.getWidth();
+			const bh = bitmap.getHeight();
+			const upload = bw !== width || bh !== height ? android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true) : bitmap;
+			ctx.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, upload);
+			if (upload !== bitmap) {
+				upload.recycle();
+			}
+		}
+	}
+
 	drawImageFrame(context2d: any, args: any[]) {
 		if (!this._instance) {
 			return;
 		}
 		const ptr = context2d.context.__getPointer();
-		// 0=CPU, 1=GL, 2=Vulkan — matches CanvasBackendType in @nativescript/canvas.
-		// getEngine() reads the engine field from the native Rust CanvasRenderingContext2D
-		// struct so the video helper can choose the optimal blit path per backend.
-		const backendType: number = context2d._canvas?._canvas?.getEngine?.() ?? 0;
+		const nativePtr = long(ptr);
+		const backendType: number = context2d.__engine ?? 0;
 		let dirty = false;
 		if (args.length === 3) {
-			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2]);
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2]);
 		} else if (args.length === 5) {
-			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2], args[3], args[4]);
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2], args[3], args[4]);
 		} else if (args.length === 9) {
-			dirty = this._instance.drawVideoFrame2D(backendType, java.lang.Long.valueOf(ptr), args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+			dirty = this._instance.drawVideoFrame2D(backendType, nativePtr, args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
 		}
 		if (dirty) {
 			context2d.context.__makeDirty();
@@ -129,8 +205,25 @@ export class Video extends VideoBase {
 		return this._instance.getCurrentBitmap();
 	}
 
+	_playResolve;
+	_playReject;
+	_playPromise: Promise<void> | null = null;
+
 	play() {
-		this._instance.play();
+		if (this._playing) {
+			return Promise.resolve();
+		}
+
+		if (this._playPromise) {
+			return this._playPromise;
+		}
+
+		this._playPromise = new Promise<void>((resolve, reject) => {
+			this._playResolve = resolve;
+			this._playReject = reject;
+			this._instance.play();
+		});
+		return this._playPromise;
 	}
 
 	pause() {

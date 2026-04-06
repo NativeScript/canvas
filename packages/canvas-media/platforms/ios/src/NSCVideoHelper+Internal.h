@@ -22,4 +22,5 @@
 @property (nonatomic, assign) NSCPlayerReadyState readyState;
 @property (nonatomic, assign) BOOL inForeground;
 @property (nonatomic, assign) BOOL isLoop;
+@property (nonatomic, assign) BOOL loadedDataFired;
 @end

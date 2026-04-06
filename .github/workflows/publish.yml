@@ -19,6 +19,8 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: read
 env:
   NPM_TAG: "latest"
   NPM_PACKAGES: canvas,canvas-babylon,canvas-media,canvas-phaser,canvas-phaser-ce,canvas-pixi,canvas-polyfill,canvas-three,canvas-svg

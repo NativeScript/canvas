@@ -4,11 +4,40 @@ use std::{
 };
 
 use wgpu_core::binding_model::{BindGroupEntry, BufferBinding};
-use wgt::{AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode, QueryType, SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType, VertexFormat};
+use wgt::{
+    AddressMode, BindGroupLayoutEntry, BufferBindingType, CompareFunction, Features, FilterMode,
+    QueryType, SamplerBindingType, StorageTextureAccess, TextureFormat, TextureSampleType,
+    VertexFormat,
+};
 
 use crate::webgpu::gpu_buffer::CanvasGPUBuffer;
 use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 use crate::webgpu::gpu_texture_view::CanvasGPUTextureView;
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum CanvasOptionalBool {
+    None,
+    Some(bool),
+}
+
+impl From<Option<bool>> for CanvasOptionalBool {
+    fn from(val: Option<bool>) -> Self {
+        match val {
+            None => CanvasOptionalBool::None,
+            Some(value) => CanvasOptionalBool::Some(value),
+        }
+    }
+}
+
+impl Into<Option<bool>> for CanvasOptionalBool {
+    fn into(self) -> Option<bool> {
+        match self {
+            CanvasOptionalBool::None => None,
+            CanvasOptionalBool::Some(value) => Some(value),
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -20,7 +49,8 @@ pub enum SurfaceGetCurrentTextureStatus {
     OutOfMemory = 0x00000004,
     DeviceLost = 0x00000005,
     Force32 = 0x7FFFFFFF,
-    Unknown = 0x00000006,
+    Occluded = 0x00000007,
+    Validation = 0x00000008,
 }
 
 #[repr(C)]
@@ -587,7 +617,7 @@ impl From<wgt::TextureFormat> for CanvasGPUTextureFormat {
                 block: block.into(),
                 channel: channel.into(),
             },
-            TextureFormat::P010 => CanvasGPUTextureFormat::P010
+            TextureFormat::P010 => CanvasGPUTextureFormat::P010,
         }
     }
 }
@@ -1922,7 +1952,11 @@ impl Into<BufferBinding> for CanvasBufferBinding {
             offset: self.offset.try_into().unwrap_or_default(),
             // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
             // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
-            size: if self.size > 0 { Some(self.size as u64) } else { None },
+            size: if self.size > 0 {
+                Some(self.size as u64)
+            } else {
+                None
+            },
         }
     }
 }
@@ -2344,7 +2378,7 @@ impl From<wgt::FilterMode> for CanvasFilterMode {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum CanvasOptionalCompareFunction {
     None,
     Some(CanvasCompareFunction),

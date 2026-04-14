@@ -35,7 +35,7 @@ function getMIMEforBase64String(b64) {
 }
 
 function getUUID() {
-	if (global.isIOS) {
+	if (__IOS__) {
 		return NSUUID.UUID().UUIDString;
 	}
 	return java.util.UUID.randomUUID().toString();
@@ -324,7 +324,7 @@ export class HTMLImageElement extends HTMLElement {
 										owner._dispatchDecode?.();
 									}
 								},
-							})
+							}),
 						);
 					}
 				} catch (error) {

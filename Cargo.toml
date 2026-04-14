@@ -20,24 +20,53 @@ members = [
 panic = "abort"
 codegen-units = 1
 lto = true
-opt-level = 3
+opt-level = "s"    # size-optimized default; hot rendering crates overridden below
 debug = false
 incremental = false
 strip = true
+
+# Keep rendering-critical crates at full speed
+[profile.release.package.canvas-2d]
+opt-level = 3
+
+[profile.release.package.canvas-core]
+opt-level = 3
+
+[profile.release.package.canvas-webgl]
+opt-level = 3
+
+[profile.release.package.skia-safe]
+opt-level = 3
+
+[profile.release.package.skia-bindings]
+opt-level = 3
+
+# Aggressively size-optimize heavy utility crates
+[profile.release.package.regex]
+opt-level = "z"
+
+[profile.release.package.regex-lite]
+opt-level = "z"
+
+[profile.release.package.ureq]
+opt-level = "z"
+
+[profile.release.package.image]
+opt-level = "z"
 
 
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "9616414f16e5688192f6127f8104d8a07a3b1de6"
+rev = "4fb84f5a325d73d21416a2244d1cc062925350ef"
 
 
 
 
 [workspace.dependencies]
 env_logger = "0.11.5"
-log = "0.4.22"
-parking_lot = { version = "0.12.3", features = ["deadlock_detection"] }
+log = "0.4.29"
+parking_lot = { version = "0.12.3" }
 raw-window-handle = "0.6.2"
 canvas-2d = { path = "./crates/canvas-2d" }
 canvas-core = { path = "./crates/canvas-core" }
@@ -47,7 +76,7 @@ gl-bindings = { path = "./crates/gl-bindings" }
 canvas-c = { path = "./crates/canvas-c" }
 skia-safe = { version = "0.93.1", features = ["textlayout"] }
 itertools = "0.14.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "9616414f16e5688192f6127f8104d8a07a3b1de6", features = ["wgsl", "vulkan", "metal"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "9616414f16e5688192f6127f8104d8a07a3b1de6", features = ["metal", "vulkan"] }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "4fb84f5a325d73d21416a2244d1cc062925350ef", features = ["wgsl"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "4fb84f5a325d73d21416a2244d1cc062925350ef" }
 ureq = "2.10.1"
 jni = "0.21.1"

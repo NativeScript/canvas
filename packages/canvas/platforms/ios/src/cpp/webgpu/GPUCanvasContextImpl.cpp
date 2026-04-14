@@ -388,14 +388,12 @@ void GPUCanvasContextImpl::PresentSurface(const v8::FunctionCallbackInfo<v8::Val
 		return;
 	}
 	auto context = ptr->GetContext();
-	if(canvas_native_webgpu_context_has_current_texture(context) && !canvas_native_webgpu_context_has_surface_presented(context)){
-		auto texture = canvas_native_webgpu_context_get_current_texture(context);
-		if(texture != nullptr){
-			canvas_native_webgpu_context_present_surface(context, texture);
-		}
+	auto texture = canvas_native_webgpu_context_has_current_texture(context);
+	if(texture != nullptr && !canvas_native_webgpu_context_has_surface_presented(context)){
+		canvas_native_webgpu_context_present_surface(context, texture);
+	} else if (texture != nullptr) {
+		canvas_native_webgpu_texture_release(texture);
 	}
-	
-	
 }
 
 void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -468,11 +466,11 @@ void GPUCanvasContextImpl::GetCapabilities(const v8::FunctionCallbackInfo<v8::Va
 
 void GPUCanvasContextImpl::Flush() {
 	auto context = this->GetContext();
-	if(canvas_native_webgpu_context_has_current_texture(context) && !canvas_native_webgpu_context_has_surface_presented(context)){
-		auto texture = canvas_native_webgpu_context_get_current_texture(context);
-		if(texture != nullptr){
-			canvas_native_webgpu_context_present_surface(context, texture);
-		}
+	auto texture = canvas_native_webgpu_context_has_current_texture(context);
+	if(texture != nullptr && !canvas_native_webgpu_context_has_surface_presented(context)){
+		canvas_native_webgpu_context_present_surface(context, texture);
+	} else if (texture != nullptr) {
+		canvas_native_webgpu_texture_release(texture);
 	}
 }
 

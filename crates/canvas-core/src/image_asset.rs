@@ -13,6 +13,32 @@ enum CanvasImage {
     Skia(skia_safe::Bitmap, Vec<u8>),
 }
 
+#[cfg(test)]
+mod simd_tests {
+    use super::*;
+
+    #[test]
+    fn simd_rgba_to_bgra() {
+        let mut data: Vec<u8> = vec![
+            1, 2, 3, 4, // pixel0 r,g,b,a
+            5, 6, 7, 8, // pixel1
+            9, 10, 11, 12, // pixel2
+            13, 14, 15, 16, // pixel3
+            17, 18, 19, 20, // pixel4
+            21, 22, 23, 24, // pixel5
+            25, 26, 27, 28, // pixel6
+            29, 30, 31, 32, // pixel7
+        ];
+
+        let expected = vec![
+            3, 2, 1, 4, 7, 6, 5, 8, 11, 10, 9, 12, 15, 14, 13, 16, 19, 18, 17, 20, 23, 22, 21, 24,
+            27, 26, 25, 28, 31, 30, 29, 32,
+        ];
+
+        ImageAsset::rgba_to_bgra_in_place(&mut data);
+        assert_eq!(&data[..], &expected[..]);
+    }
+}
 
 impl CanvasImage {
     pub fn with_bytes_dimension<F>(&self, f: F)
@@ -21,9 +47,10 @@ impl CanvasImage {
     {
         match self {
             #[cfg(not(feature = "2d"))]
-            CanvasImage::Stb(image) => {
-                f(image.data.as_slice(), (image.width as u32, image.height as u32))
-            }
+            CanvasImage::Stb(image) => f(
+                image.data.as_slice(),
+                (image.width as u32, image.height as u32),
+            ),
             #[cfg(feature = "2d")]
             CanvasImage::Skia(image, data) => {
                 let dimensions = (image.width() as u32, image.height() as u32);
@@ -36,9 +63,7 @@ impl CanvasImage {
     where
         F: FnOnce(&[u8]),
     {
-        self.with_bytes_dimension(|bytes, _| {
-            f(bytes)
-        })
+        self.with_bytes_dimension(|bytes, _| f(bytes))
     }
 
     pub fn with_bytes_mut_dimension<F>(&mut self, f: F)
@@ -47,9 +72,10 @@ impl CanvasImage {
     {
         match self {
             #[cfg(not(feature = "2d"))]
-            CanvasImage::Stb(image) => {
-                f(image.data.as_mut_slice(), (image.width as u32, image.height as u32))
-            }
+            CanvasImage::Stb(image) => f(
+                image.data.as_mut_slice(),
+                (image.width as u32, image.height as u32),
+            ),
             #[cfg(feature = "2d")]
             CanvasImage::Skia(image, data) => {
                 let dimensions = (image.width() as u32, image.height() as u32);
@@ -58,14 +84,11 @@ impl CanvasImage {
         }
     }
 
-
     pub fn with_bytes_mut<F>(&mut self, f: F)
     where
         F: FnOnce(&mut [u8]),
     {
-        self.with_bytes_mut_dimension(|bytes, _| {
-            f(bytes)
-        })
+        self.with_bytes_mut_dimension(|bytes, _| f(bytes))
     }
 
     #[cfg(feature = "2d")]
@@ -89,35 +112,25 @@ impl CanvasImage {
     pub fn width(&self) -> u32 {
         match self {
             #[cfg(not(feature = "2d"))]
-            CanvasImage::Stb(image) => {
-                image.width as u32
-            }
+            CanvasImage::Stb(image) => image.width as u32,
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _) => {
-                image.width() as u32
-            }
+            CanvasImage::Skia(image, _) => image.width() as u32,
         }
     }
 
     pub fn height(&self) -> u32 {
         match self {
             #[cfg(not(feature = "2d"))]
-            CanvasImage::Stb(image) => {
-                image.height as u32
-            }
+            CanvasImage::Stb(image) => image.height as u32,
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _) => {
-                image.height() as u32
-            }
+            CanvasImage::Skia(image, _) => image.height() as u32,
         }
     }
 
     pub fn dimensions(&self) -> (u32, u32) {
         match self {
             #[cfg(not(feature = "2d"))]
-            CanvasImage::Stb(image) => {
-                (image.width as u32, image.height as u32)
-            }
+            CanvasImage::Stb(image) => (image.width as u32, image.height as u32),
 
             #[cfg(feature = "2d")]
             CanvasImage::Skia(image, _) => {
@@ -132,7 +145,7 @@ impl CanvasImage {
             #[cfg(not(feature = "2d"))]
             CanvasImage::Stb(image) => image.data.len(),
             #[cfg(feature = "2d")]
-            CanvasImage::Skia(image, _) => image.compute_byte_size()
+            CanvasImage::Skia(image, _) => image.compute_byte_size(),
         }
     }
 }
@@ -143,7 +156,10 @@ impl Clone for CanvasImage {
             #[cfg(not(feature = "2d"))]
             CanvasImage::Stb(image) => {
                 let image = stb_image::image::Image::new(
-                    image.width, image.height, image.depth, image.data.clone(),
+                    image.width,
+                    image.height,
+                    image.depth,
+                    image.data.clone(),
                 );
                 Self::Stb(image)
             }
@@ -202,12 +218,8 @@ impl ImageAsset {
     {
         let lock = self.0.lock();
         match lock.image.as_ref() {
-            None => {
-                f(&[], (0, 0))
-            }
-            Some(image) => {
-                image.with_bytes_dimension(f)
-            }
+            None => f(&[], (0, 0)),
+            Some(image) => image.with_bytes_dimension(f),
         }
     }
 
@@ -215,9 +227,7 @@ impl ImageAsset {
     where
         F: FnOnce(&[u8]),
     {
-        self.with_bytes_dimension(|bytes, _| {
-            f(bytes)
-        })
+        self.with_bytes_dimension(|bytes, _| f(bytes))
     }
 
     pub fn with_bytes_mut_dimension<F>(&self, f: F)
@@ -226,12 +236,8 @@ impl ImageAsset {
     {
         let mut lock = self.0.lock();
         match lock.image.as_mut() {
-            None => {
-                f(&mut [], (0, 0))
-            }
-            Some(image) => {
-                image.with_bytes_mut_dimension(f)
-            }
+            None => f(&mut [], (0, 0)),
+            Some(image) => image.with_bytes_mut_dimension(f),
         }
     }
 
@@ -239,9 +245,7 @@ impl ImageAsset {
     where
         F: FnOnce(&mut [u8]),
     {
-        self.with_bytes_mut_dimension(|bytes, _| {
-            f(bytes)
-        })
+        self.with_bytes_mut_dimension(|bytes, _| f(bytes))
     }
 
     pub fn with_skia_bitmap<F>(&self, f: F)
@@ -251,26 +255,32 @@ impl ImageAsset {
         let lock = self.0.lock();
         match lock.image.as_ref() {
             None => f(None),
-            Some(image) => {
-                match image {
-                    #[cfg(not(feature = "2d"))]
-                    CanvasImage::Stb(image) => {
-                        let info = skia_safe::ImageInfo::new(
-                            (image.width as i32, image.height as i32),
-                            skia_safe::ColorType::RGBA8888,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-                        let mut bm = skia_safe::Bitmap::new();
-                        let success = unsafe {
-                            bm.install_pixels(&info, image.data.as_ptr() as *mut c_void, info.min_row_bytes())
-                        };
-                        if success { f(Some(&bm)) } else { f(None) }
+            Some(image) => match image {
+                #[cfg(not(feature = "2d"))]
+                CanvasImage::Stb(image) => {
+                    let info = skia_safe::ImageInfo::new(
+                        (image.width as i32, image.height as i32),
+                        skia_safe::ColorType::RGBA8888,
+                        skia_safe::AlphaType::Unpremul,
+                        None,
+                    );
+                    let mut bm = skia_safe::Bitmap::new();
+                    let success = unsafe {
+                        bm.install_pixels(
+                            &info,
+                            image.data.as_ptr() as *mut c_void,
+                            info.min_row_bytes(),
+                        )
+                    };
+                    if success {
+                        f(Some(&bm))
+                    } else {
+                        f(None)
                     }
-                    #[cfg(feature = "2d")]
-                    CanvasImage::Skia(image, _) => f(Some(image)),
                 }
-            }
+                #[cfg(feature = "2d")]
+                CanvasImage::Skia(image, _) => f(Some(image)),
+            },
         }
     }
 
@@ -281,27 +291,26 @@ impl ImageAsset {
         let lock = self.0.lock();
         match lock.image.as_ref() {
             None => f(None),
-            Some(image) => {
-                match image {
-                    #[cfg(not(feature = "2d"))]
-                    CanvasImage::Stb(image) => {
-                        let info = skia_safe::ImageInfo::new(
-                            (image.width as i32, image.height as i32),
-                            skia_safe::ColorType::RGBA8888,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-                        let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
-                        let img = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                        f(img.as_ref())
-                    }
-                    #[cfg(feature = "2d")]
-                    CanvasImage::Skia(bitmap, _) => {
-                        let img = skia_safe::images::raster_from_bitmap(bitmap);
-                        f(img.as_ref())
-                    }
+            Some(image) => match image {
+                #[cfg(not(feature = "2d"))]
+                CanvasImage::Stb(image) => {
+                    let info = skia_safe::ImageInfo::new(
+                        (image.width as i32, image.height as i32),
+                        skia_safe::ColorType::RGBA8888,
+                        skia_safe::AlphaType::Unpremul,
+                        None,
+                    );
+                    let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
+                    let img =
+                        skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                    f(img.as_ref())
                 }
-            }
+                #[cfg(feature = "2d")]
+                CanvasImage::Skia(bitmap, _) => {
+                    let img = skia_safe::images::raster_from_bitmap(bitmap);
+                    f(img.as_ref())
+                }
+            },
         }
     }
 
@@ -311,9 +320,7 @@ impl ImageAsset {
     {
         let lock = self.0.lock();
         match lock.image.as_ref() {
-            None => {
-                f(None, None)
-            }
+            None => f(None, None),
             Some(image) => {
                 match image {
                     #[cfg(not(feature = "2d"))]
@@ -328,7 +335,8 @@ impl ImageAsset {
                         let dimensions = (image.width as u32, image.height as u32);
                         let slice = image.data.as_slice();
                         let data = unsafe { skia_safe::Data::new_bytes(slice) };
-                        let image = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                        let image =
+                            skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
                         f(image.as_ref(), Some((dimensions, slice)))
                     }
                     #[cfg(feature = "2d")]
@@ -336,13 +344,15 @@ impl ImageAsset {
                         let image = skia_safe::images::raster_from_bitmap(bitmap);
                         let dimensions = bitmap.dimensions();
                         // should not fail to cast
-                        f(image.as_ref(), Some(((dimensions.width as u32, dimensions.height as u32), bytes)))
+                        f(
+                            image.as_ref(),
+                            Some(((dimensions.width as u32, dimensions.height as u32), bytes)),
+                        )
                     }
                 }
             }
         }
     }
-
 
     pub fn close(&self) {
         let mut lock = self.0.lock();
@@ -353,7 +363,13 @@ impl ImageAsset {
     }
 
     #[cfg(feature = "2d")]
-    pub fn from_raw_bytes(width: usize, height: usize, color_type: skia_safe::ColorType, alpha_type: skia_safe::AlphaType, data: Vec<u8>) -> Self {
+    pub fn from_raw_bytes(
+        width: usize,
+        height: usize,
+        color_type: skia_safe::ColorType,
+        alpha_type: skia_safe::AlphaType,
+        data: Vec<u8>,
+    ) -> Self {
         let info = skia_safe::ImageInfo::new(
             skia_safe::ISize::new(width as i32, height as i32),
             color_type,
@@ -529,7 +545,6 @@ impl ImageAsset {
         self.load_from_bytes(std::slice::from_raw_parts(buffer, size))
     }
 
-
     #[cfg(feature = "2d")]
     pub fn load_from_bytes(&self, buf: &[u8]) -> bool {
         let mut lock = self.0.lock();
@@ -543,47 +558,46 @@ impl ImageAsset {
                 false
             }
             Some(image) => {
-
                 /*
 
-                // todo
+                                // todo
 
-                use core_foundation::base::TCFType;
-use core_foundation::dictionary::CFDictionary;
-use core_foundation::string::CFString;
+                                use core_foundation::base::TCFType;
+                use core_foundation::dictionary::CFDictionary;
+                use core_foundation::string::CFString;
 
-                  unsafe {
-                    let width = core_foundation::number::CFNumber::from(image.width());
-                    let height = core_foundation::number::CFNumber::from(image.height());
-                    let bytes_per_element = core_foundation::number::CFNumber::from(4);
-                    let is_global = core_foundation::number::CFNumber::from(1);
+                                  unsafe {
+                                    let width = core_foundation::number::CFNumber::from(image.width());
+                                    let height = core_foundation::number::CFNumber::from(image.height());
+                                    let bytes_per_element = core_foundation::number::CFNumber::from(4);
+                                    let is_global = core_foundation::number::CFNumber::from(1);
 
-                    let surface_width = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceWidth);
-                    let surface_height = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceHeight);
-                    let surface_bytes_per_element = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceBytesPerElement);
-                    let surface_is_global = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceIsGlobal);
+                                    let surface_width = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceWidth);
+                                    let surface_height = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceHeight);
+                                    let surface_bytes_per_element = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceBytesPerElement);
+                                    let surface_is_global = CFString::wrap_under_create_rule(crate::io_surface::kIOSurfaceIsGlobal);
 
-                    let dict = CFDictionary::from_CFType_pairs(&[
-                        (
-                            surface_width, width.as_CFType()
-                        ),
-                        (
-                            surface_height, height.as_CFType()
-                        ),
-                        (
-                            surface_bytes_per_element, bytes_per_element.as_CFType()
-                        ),
-                        (
-                            surface_is_global, is_global.as_CFType()
-                        )
-                    ]);
+                                    let dict = CFDictionary::from_CFType_pairs(&[
+                                        (
+                                            surface_width, width.as_CFType()
+                                        ),
+                                        (
+                                            surface_height, height.as_CFType()
+                                        ),
+                                        (
+                                            surface_bytes_per_element, bytes_per_element.as_CFType()
+                                        ),
+                                        (
+                                            surface_is_global, is_global.as_CFType()
+                                        )
+                                    ]);
 
-                    let surface = crate::io_surface::new(&dict);
-                    surface.upload(buf);
+                                    let surface = crate::io_surface::new(&dict);
+                                    surface.upload(buf);
 
-                }
+                                }
 
-                 */
+                                 */
                 let info = skia_safe::ImageInfo::new(
                     image.dimensions(),
                     skia_safe::ColorType::RGBA8888,
@@ -593,7 +607,13 @@ use core_foundation::string::CFString;
                 let row_bytes = (info.width() * 4) as usize;
                 let size = info.height() as usize * row_bytes;
                 let mut buffer = vec![0u8; size];
-                let success = image.read_pixels(image.image_info(), buffer.as_mut_slice(), row_bytes, (0i32, 0i32), skia_safe::image::CachingHint::Allow);
+                let success = image.read_pixels(
+                    image.image_info(),
+                    buffer.as_mut_slice(),
+                    row_bytes,
+                    (0i32, 0i32),
+                    skia_safe::image::CachingHint::Allow,
+                );
                 if success {
                     lock.image = Some(CanvasImage::new(&info, buffer));
                 } else {
@@ -604,13 +624,11 @@ use core_foundation::string::CFString;
         }
     }
 
-
     #[cfg(not(feature = "2d"))]
     pub fn load_from_bytes(&self, buf: &[u8]) -> bool {
         let mut lock = self.0.lock();
         lock.error = Cow::default();
         lock.image = None;
-
 
         unsafe {
             stb_image::stb_image::stbi_set_unpremultiply_on_load(1);
@@ -634,18 +652,12 @@ use core_foundation::string::CFString;
         }
     }
 
-
     pub fn load_from_bytes_int(&self, buf: &mut [i8]) -> bool {
         self.load_from_bytes(unsafe { std::mem::transmute::<&mut [i8], &[u8]>(buf) })
     }
 
     #[cfg(feature = "2d")]
-    pub fn load_from_raw_bytes_rgba(
-        &self,
-        width: u32,
-        height: u32,
-        data: Vec<u8>,
-    ) -> bool {
+    pub fn load_from_raw_bytes_rgba(&self, width: u32, height: u32, data: Vec<u8>) -> bool {
         let info = skia_safe::ImageInfo::new(
             (width as i32, height as i32),
             skia_safe::ColorType::RGBA8888,
@@ -656,11 +668,7 @@ use core_foundation::string::CFString;
     }
 
     #[cfg(feature = "2d")]
-    pub fn load_from_raw_bytes(
-        &self,
-        info: &skia_safe::ImageInfo,
-        data: Vec<u8>,
-    ) -> bool {
+    pub fn load_from_raw_bytes(&self, info: &skia_safe::ImageInfo, data: Vec<u8>) -> bool {
         let has_alpha = !info.is_opaque();
         let mut lock = self.0.lock();
         lock.error = Cow::default();
@@ -668,7 +676,6 @@ use core_foundation::string::CFString;
         lock.has_alpha = has_alpha;
         true
     }
-
 
     #[cfg(not(feature = "2d"))]
     pub fn load_from_raw_bytes(
@@ -678,12 +685,131 @@ use core_foundation::string::CFString;
         depth: usize,
         data: Vec<u8>,
     ) -> bool {
-        let image = stb_image::image::Image::new(width, height, depth, data);
+        // Normalize stored image data to 4 channels (RGBA) so later GPU
+        // uploads can be zero-copy (no per-pixel format conversion).
+        let normalized: Vec<u8> = match depth {
+            4 => data,
+            3 => {
+                // RGB -> RGBA (append 0xFF alpha)
+                let num_pixels = width * height;
+                let mut out = Vec::with_capacity(num_pixels * 4);
+                // Unrolled loop to improve throughput and aid auto-vectorization.
+                let mut i = 0usize;
+                let src = data.as_slice();
+                out.resize(num_pixels * 4, 0u8);
+                let dst = out.as_mut_slice();
+                while i + 7 < num_pixels {
+                    let s0 = i * 3;
+                    let d0 = i * 4;
+
+                    dst[d0] = src[s0];
+                    dst[d0 + 1] = src[s0 + 1];
+                    dst[d0 + 2] = src[s0 + 2];
+                    dst[d0 + 3] = 255u8;
+
+                    let s1 = s0 + 3;
+                    let d1 = d0 + 4;
+                    dst[d1] = src[s1];
+                    dst[d1 + 1] = src[s1 + 1];
+                    dst[d1 + 2] = src[s1 + 2];
+                    dst[d1 + 3] = 255u8;
+
+                    let s2 = s1 + 3;
+                    let d2 = d1 + 4;
+                    dst[d2] = src[s2];
+                    dst[d2 + 1] = src[s2 + 1];
+                    dst[d2 + 2] = src[s2 + 2];
+                    dst[d2 + 3] = 255u8;
+
+                    let s3 = s2 + 3;
+                    let d3 = d2 + 4;
+                    dst[d3] = src[s3];
+                    dst[d3 + 1] = src[s3 + 1];
+                    dst[d3 + 2] = src[s3 + 2];
+                    dst[d3 + 3] = 255u8;
+
+                    let s4 = s3 + 3;
+                    let d4 = d3 + 4;
+                    dst[d4] = src[s4];
+                    dst[d4 + 1] = src[s4 + 1];
+                    dst[d4 + 2] = src[s4 + 2];
+                    dst[d4 + 3] = 255u8;
+
+                    let s5 = s4 + 3;
+                    let d5 = d4 + 4;
+                    dst[d5] = src[s5];
+                    dst[d5 + 1] = src[s5 + 1];
+                    dst[d5 + 2] = src[s5 + 2];
+                    dst[d5 + 3] = 255u8;
+
+                    let s6 = s5 + 3;
+                    let d6 = d5 + 4;
+                    dst[d6] = src[s6];
+                    dst[d6 + 1] = src[s6 + 1];
+                    dst[d6 + 2] = src[s6 + 2];
+                    dst[d6 + 3] = 255u8;
+
+                    let s7 = s6 + 3;
+                    let d7 = d6 + 4;
+                    dst[d7] = src[s7];
+                    dst[d7 + 1] = src[s7 + 1];
+                    dst[d7 + 2] = src[s7 + 2];
+                    dst[d7 + 3] = 255u8;
+
+                    i += 8;
+                }
+
+                while i < num_pixels {
+                    let s = i * 3;
+                    let d = i * 4;
+                    dst[d] = src[s];
+                    dst[d + 1] = src[s + 1];
+                    dst[d + 2] = src[s + 2];
+                    dst[d + 3] = 255u8;
+                    i += 1;
+                }
+
+                out
+            }
+            2 => {
+                // Luminance + Alpha -> replicate luminance to RGB, keep alpha
+                let num_pixels = width * height;
+                let mut out = Vec::with_capacity(num_pixels * 4);
+                for chunk in data.chunks_exact(2) {
+                    let l = chunk[0];
+                    let a = chunk[1];
+                    out.push(l);
+                    out.push(l);
+                    out.push(l);
+                    out.push(a);
+                }
+                out
+            }
+            1 => {
+                // Grayscale -> replicate to RGB, alpha = 0xFF
+                let num_pixels = width * height;
+                let mut out = Vec::with_capacity(num_pixels * 4);
+                for &g in data.iter() {
+                    out.push(g);
+                    out.push(g);
+                    out.push(g);
+                    out.push(255u8);
+                }
+                out
+            }
+            _ => {
+                // Unknown depth: attempt best-effort by treating as 4-channel blob
+                data
+            }
+        };
+
+        let image = stb_image::image::Image::new(width, height, 4usize, normalized);
 
         let mut lock = self.0.lock();
         lock.error = Cow::default();
         lock.image = Some(CanvasImage::Stb(image));
-        lock.has_alpha = depth > 3;
+        // has_alpha is true if original depth included alpha (depth == 2 or 4)
+        lock.has_alpha = depth == 2 || depth == 4;
 
         true
     }
@@ -711,225 +837,204 @@ use core_foundation::string::CFString;
     }
 
     pub fn get_rgb_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_rgb(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_rgb(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_rgb(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_rgb(slice, width, height)
             }
         })
     }
 
     pub fn get_luminance_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_luminance(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_luminance(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_luminance(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_luminance(slice, width, height)
             }
         })
     }
 
     pub fn get_luminance_alpha_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_luminance_alpha(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_luminance_alpha(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_luminance_alpha(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_luminance_alpha(slice, width, height)
             }
         })
     }
 
     pub fn get_alpha_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_alpha(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_alpha(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_alpha(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_alpha(slice, width, height)
             }
         })
     }
 
     pub fn get_red_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_red(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_red(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_red(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_red(slice, width, height)
             }
         })
     }
 
     pub fn get_rg_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_rg(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_rg(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_rg(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_rg(slice, width, height)
             }
         })
     }
 
     pub fn get_rgba_integers(&self) -> Option<Vec<u32>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_rgba_integer(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_rgba_integer(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_rgba_integer(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_rgba_integer(slice, width, height)
             }
         })
     }
 
     pub fn get_rgb_integers(&self) -> Option<Vec<u32>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_rgb_integer(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_rgb_integer(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_rgb_integer(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_rgb_integer(slice, width, height)
             }
         })
     }
 
     pub fn get_red_integers(&self) -> Option<Vec<u32>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_red_integer(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_red_integer(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_red_integer(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_red_integer(slice, width, height)
             }
         })
     }
 
     pub fn get_rg_integers(&self) -> Option<Vec<u32>> {
-        self.0.lock().image.as_mut().map(|image| {
-            match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let slice = image.data.as_slice();
-                    let width = image.width;
-                    let height = image.height;
-                    Self::rgba_to_rg_integer(slice, width, height)
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
-                    let width = image.width() as usize;
-                    let height = image.height() as usize;
-                    Self::rgba_to_rg_integer(slice, width, height)
-                }
+        self.0.lock().image.as_mut().map(|image| match image {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => {
+                let slice = image.data.as_slice();
+                let width = image.width;
+                let height = image.height;
+                Self::rgba_to_rg_integer(slice, width, height)
+            }
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let slice = unsafe { std::slice::from_raw_parts(image.pixels() as *mut u8, size) };
+                let width = image.width() as usize;
+                let height = image.height() as usize;
+                Self::rgba_to_rg_integer(slice, width, height)
             }
         })
     }
-
 
     pub fn len(&self) -> usize {
         self.0
@@ -945,19 +1050,15 @@ use core_foundation::string::CFString;
     }
 
     pub fn copy_bytes(&self) -> Option<Vec<u8>> {
-        self.0.lock().image.as_ref().map(|d| {
-            match d {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    image.data.clone()
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(image, _) => {
-                    let size = image.compute_byte_size();
-                    let pixmap = image.pixmap();
-                    let data = unsafe { std::slice::from_raw_parts(pixmap.addr() as *const u8, size) };
-                    data.to_vec()
-                }
+        self.0.lock().image.as_ref().map(|d| match d {
+            #[cfg(not(feature = "2d"))]
+            CanvasImage::Stb(image) => image.data.clone(),
+            #[cfg(feature = "2d")]
+            CanvasImage::Skia(image, _) => {
+                let size = image.compute_byte_size();
+                let pixmap = image.pixmap();
+                let data = unsafe { std::slice::from_raw_parts(pixmap.addr() as *const u8, size) };
+                data.to_vec()
             }
         })
     }
@@ -969,11 +1070,30 @@ use core_foundation::string::CFString;
     }
 
     pub fn rgba_to_bgra_in_place(data: &mut [u8]) {
-        for chunk in data.chunks_exact_mut(4) {
-            chunk.swap(0, 2);
+        // Portable, stable accelerated swizzle using 32-bit word operations.
+        // For each pixel interpret 4 bytes as a little-endian u32, then
+        // compute: result = (v & 0xFF00FF00) | ((v & 0x000000FF) << 16) |
+        // ((v & 0x00FF0000) >> 16), which swaps the low and mid bytes
+        // corresponding to R and B in little-endian layout.
+        let len = data.len() / 4;
+        let mut i = 0usize;
+
+        // Process per-pixel with u32 ops; LLVM can auto-vectorize this loop.
+        while i < len {
+            let base = i * 4;
+            // read u32 in little-endian order
+            let v =
+                u32::from_le_bytes([data[base], data[base + 1], data[base + 2], data[base + 3]]);
+
+            let res =
+                (v & 0xFF00_FF00u32) | ((v & 0x0000_00FFu32) << 16) | ((v & 0x00FF_0000u32) >> 16);
+
+            let out = res.to_le_bytes();
+            data[base..base + 4].copy_from_slice(&out);
+
+            i += 1;
         }
     }
-
 
     pub fn rgb565_to_rgba8888(data: &[u8]) -> Vec<u8> {
         let mut rgba_data = Vec::with_capacity(data.len() * 2);

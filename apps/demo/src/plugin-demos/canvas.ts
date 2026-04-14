@@ -168,7 +168,7 @@ export class DemoModel extends DemoSharedCanvas {
 			const maxHeight = view.parent.getMeasuredHeight() / Screen.mainScreen.scale;
 			const maxX = maxWidth - width;
 			const maxY = maxHeight - height;
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				const animator = android.animation.ValueAnimator.ofFloat([0, 1] as any);
 				animator.setDuration(3000);
 
@@ -179,7 +179,7 @@ export class DemoModel extends DemoSharedCanvas {
 							view.x = maxX * progress;
 							view.y = maxY * progress;
 						},
-					})
+					}),
 				);
 
 				animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());

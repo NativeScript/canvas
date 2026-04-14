@@ -141,6 +141,10 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	// Reusable bitmap for getCurrentBitmap to avoid per-frame allocation
 	private android.graphics.Bitmap _reusableBitmap;
 
+	// Dimensions of the most-recently returned getRgbaBytes() frame
+	private int _lastRgbaWidth = 0;
+	private int _lastRgbaHeight = 0;
+
 	public interface Callback {
 		void onDurationChange(long duration);
 
@@ -696,6 +700,121 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		return null;
 	}
 
+	public java.nio.ByteBuffer getRgbaBuffer() {
+		if (_imageReader == null && _surfaceOwner == SurfaceOwner.NONE) {
+			setupBitmapSurface();
+		}
+
+		if (_imageReader != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+				// ── API 33+: PRIVATE → HardwareBuffer → software Bitmap → RGBA ──────────
+				try (Image image = _imageReader.acquireLatestImage()) {
+					if (image == null) return null;
+					android.hardware.HardwareBuffer hb = image.getHardwareBuffer();
+					if (hb == null) return null;
+					android.graphics.Bitmap hwBmp = android.graphics.Bitmap.wrapHardwareBuffer(hb, null);
+					hb.close();
+					int w = hwBmp.getWidth(), h = hwBmp.getHeight();
+					android.graphics.Bitmap softBmp = android.graphics.Bitmap.createBitmap(
+							w, h, android.graphics.Bitmap.Config.ARGB_8888);
+					new android.graphics.Canvas(softBmp).drawBitmap(hwBmp, 0, 0, null);
+					hwBmp.recycle();
+
+					// copyPixelsToBuffer requires native byte order; on ARM (little-endian)
+					// ARGB_8888 int 0xAARRGGBB → bytes [B, G, R, A].  Swap B↔R → RGBA.
+					java.nio.ByteBuffer buf = java.nio.ByteBuffer
+							.allocateDirect(w * h * 4)
+							.order(java.nio.ByteOrder.nativeOrder());
+					softBmp.copyPixelsToBuffer(buf);
+					softBmp.recycle();
+
+					for (int i = 0, n = w * h * 4; i < n; i += 4) {
+						byte b = buf.get(i);
+						buf.put(i,     buf.get(i + 2)); // R → position 0
+						buf.put(i + 2, b);              // B → position 2
+						// G (i+1) and A (i+3) are already correct
+					}
+					buf.rewind();
+					_lastRgbaWidth  = w;
+					_lastRgbaHeight = h;
+					return buf;
+				} catch (Exception e) {
+					if (IS_DEBUG) android.util.Log.d("JS", "getRgbaBuffer HW: " + e);
+				}
+			} else {
+				// API < 33: RGBA_8888 plane → direct buffer, strip row padding
+				try (Image image = _imageReader.acquireLatestImage()) {
+					if (image == null) return null;
+					Image.Plane plane   = image.getPlanes()[0];
+					java.nio.ByteBuffer srcBuf    = plane.getBuffer();
+					int w           = image.getWidth();
+					int h           = image.getHeight();
+					int pixelStride = plane.getPixelStride(); // typically 4 for RGBA_8888
+					int rowStride   = plane.getRowStride();   // may include alignment padding
+					int rowBytes    = w * 4;
+
+					java.nio.ByteBuffer dst = java.nio.ByteBuffer.allocateDirect(rowBytes * h);
+					if (pixelStride == 4 && rowStride == rowBytes) {
+						// No padding — single bulk copy
+						srcBuf.rewind();
+						dst.put(srcBuf);
+					} else {
+						// Padding present — strip it row by row using absolute-position reads,
+						// which work correctly when writing into a direct ByteBuffer on older APIs.
+						for (int row = 0; row < h; row++) {
+							for (int col = 0; col < w; col++) {
+								int srcOff = row * rowStride + col * pixelStride;
+								dst.put(srcBuf.get(srcOff));
+								dst.put(srcBuf.get(srcOff + 1));
+								dst.put(srcBuf.get(srcOff + 2));
+								dst.put(srcBuf.get(srcOff + 3));
+							}
+						}
+					}
+					dst.rewind();
+					_lastRgbaWidth  = w;
+					_lastRgbaHeight = h;
+					return dst;
+				} catch (Exception e) {
+					if (IS_DEBUG) android.util.Log.d("JS", "getRgbaBuffer SW: " + e);
+				}
+			}
+		}
+
+		View surfaceView = this._playerView.getVideoSurfaceView();
+		if (surfaceView instanceof TextureView && ((TextureView) surfaceView).isAvailable()) {
+			TextureView tv = (TextureView) surfaceView;
+			int w = _videoWidth  > 0 ? _videoWidth  : tv.getWidth();
+			int h = _videoHeight > 0 ? _videoHeight : tv.getHeight();
+			if (w <= 0 || h <= 0) return null;
+			android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
+					w, h, android.graphics.Bitmap.Config.ARGB_8888);
+			tv.getBitmap(bmp);
+
+			java.nio.ByteBuffer buf = java.nio.ByteBuffer
+					.allocateDirect(w * h * 4)
+					.order(java.nio.ByteOrder.nativeOrder());
+			bmp.copyPixelsToBuffer(buf);
+			bmp.recycle();
+
+			// BGRA → RGBA
+			for (int i = 0, n = w * h * 4; i < n; i += 4) {
+				byte b = buf.get(i);
+				buf.put(i,     buf.get(i + 2));
+				buf.put(i + 2, b);
+			}
+			buf.rewind();
+			_lastRgbaWidth  = w;
+			_lastRgbaHeight = h;
+			return buf;
+		}
+
+		return null;
+	}
+
+	public int getLastRgbaWidth()  { return _lastRgbaWidth; }
+	public int getLastRgbaHeight() { return _lastRgbaHeight; }
+
 	private boolean drawFrame2DBitmap(long context, float sx, float sy, float sw, float sh, float dx, float dy, float dw, float dh) {
 		android.graphics.Bitmap bitmap = getCurrentBitmap();
 		if (bitmap == null) return false;
@@ -891,6 +1010,31 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			_surfaceOwner = SurfaceOwner.NONE;
 		}
 		this._setSrc(value);
+	}
+
+	public void load() {
+		try {
+			this.pause();
+
+			if (_timer != null) { _timer.cancel(); _timer.purge(); _timer = null; }
+			if (_frameTimer != null) { _frameTimer.cancel(); _frameTimer.purge(); _frameTimer = null; }
+
+			if (_glSurface != null) { _glSurface.release(); _glSurface = null; }
+			if (_glSt != null) { _glSt.release(); _glSt = null; }
+
+			if (_imageReader != null) { try { _imageReader.close(); } catch (Exception ignored) {} _imageReader = null; }
+
+			_surfaceOwner = SurfaceOwner.NONE;
+			_hasFrame = false;
+			_glHasFrame = false;
+			_loadedDataFired.set(false);
+
+			if (this._src != null && !this._src.isEmpty()) {
+				this._setSrc(this._src);
+			}
+		} catch (Exception e) {
+			if (IS_DEBUG) android.util.Log.d("JS", "VideoHelper.load() error: " + e);
+		}
 	}
 
 	public boolean getAutoplay() {

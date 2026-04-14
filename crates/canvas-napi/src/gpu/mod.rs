@@ -50,6 +50,9 @@ const GPU_INSTANCE: std::sync::OnceLock<Arc<canvas_c::webgpu::gpu::CanvasWebGPUI
 pub struct GPURequestAdapterOptions {
   pub power_preference: Option<String>,
   pub is_fallback_adapter: Option<bool>,
+  /// `"core"` (default) or `"compatibility"`.
+  /// Mirrors the WebGPU spec `featureLevel` option on `GPURequestAdapterOptions`.
+  pub feature_level: Option<String>,
 }
 #[napi]
 pub struct g_p_u {
@@ -103,15 +106,16 @@ impl Task for AsyncRequestAdapterTask {
     let (tx, rx) = channel();
     let mut options = CanvasGPURequestAdapterOptions::default();
     if let Some(opts) = self.options.as_ref() {
-      if let Some(power_preference) = opts.power_preference.as_deref() {
-        options.power_preference = match power_preference {
-          "low-power" => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::LowPower,
-          "high-performance" => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::HighPerformance,
-          _ => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::None,
-        };
-
-        options.force_fallback_adapter = opts.is_fallback_adapter.unwrap_or_default();
-      }
+      options.power_preference = match opts.power_preference.as_deref() {
+        Some("low-power") => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::LowPower,
+        Some("high-performance") => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::HighPerformance,
+        _ => canvas_c::webgpu::gpu::CanvasGPUPowerPreference::None,
+      };
+      options.force_fallback_adapter = opts.is_fallback_adapter.unwrap_or_default();
+      options.feature_level = match opts.feature_level.as_deref() {
+        Some("compatibility") => canvas_c::webgpu::gpu::CanvasGPUFeatureLevel::Compatibility,
+        _ => canvas_c::webgpu::gpu::CanvasGPUFeatureLevel::Core,
+      };
     }
     let data = Box::into_raw(Box::new(Sender { tx }));
     unsafe {

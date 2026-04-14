@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use regex::Regex;
+use regex_lite::Regex;
 use skia_safe::font_style::Width;
 use std::sync::OnceLock;
 

@@ -30,7 +30,7 @@ use canvas_c::webgpu::gpu_device::{
 use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
 use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasLoadOp, CanvasOptionalBlendState, CanvasOptionalColor, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
-use canvas_c::{ CanvasRenderingContext2D};
+use canvas_c::{CanvasColorSpace, CanvasRenderingContext2D};
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
@@ -1023,7 +1023,7 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     let (width, height) = bm.dimensions();
 
 
-    let c2d = canvas_c::canvas_native_context_create(width as f32, height as f32, 1., true, 0, 0., 1);
+    let c2d = canvas_c::canvas_native_context_create(width as f32, height as f32, 1., true, 0, 0., 1, CanvasColorSpace::Srgb);
     unsafe {
         canvas_c::canvas_native_context_draw_image_dx_dy_asset(c2d, image_bitmap, 0., 0.);
     }

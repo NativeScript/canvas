@@ -1,7 +1,7 @@
 import { View } from '@nativescript/core';
 
 export class SVGItem extends View {
-	__domElement: Element;
+	__domElement: any;
 	_attached: boolean = false;
 
 	//@ts-ignore

@@ -3,7 +3,7 @@ export class Utils {
 	static _IS_SUPPORTED_VERSION = false;
 	static _CHECKED_FOR_SUPPORT = false;
 	public static toJSArray(array) {
-		if (global.isIOS) {
+		if (__IOS__) {
 			if (array instanceof NSArray) {
 				const jsArray = [];
 				const count = array.count;
@@ -14,7 +14,7 @@ export class Utils {
 			}
 		}
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			const jsArray = [];
 			if (array instanceof java.util.ArrayList) {
 				const count = array.size();
@@ -48,11 +48,10 @@ export class Utils {
 		return this._IS_SUPPORTED_VERSION;
 	}
 
-	static isTypedArray(value){
-		return value instanceof Uint8ClampedArray || value instanceof Uint8Array || value instanceof Int8Array || value instanceof Uint16Array || value instanceof Int16Array || value instanceof Uint32Array || value instanceof Int32Array || value instanceof Float32Array
+	static isTypedArray(value) {
+		return value instanceof Uint8ClampedArray || value instanceof Uint8Array || value instanceof Int8Array || value instanceof Uint16Array || value instanceof Int16Array || value instanceof Uint32Array || value instanceof Int32Array || value instanceof Float32Array;
 	}
 }
-
 
 export default function lazy<T>(action: () => T): () => T {
 	let _value: T;

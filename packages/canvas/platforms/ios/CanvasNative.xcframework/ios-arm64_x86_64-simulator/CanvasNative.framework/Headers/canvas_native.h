@@ -311,6 +311,19 @@ typedef enum CanvasGPUErrorType {
   CanvasGPUErrorTypeInternal,
 } CanvasGPUErrorType;
 
+/**
+ * Mirrors the WebGPU spec `featureLevel` option on `GPURequestAdapterOptions`.
+ *
+ * - `Core` (default) — full WebGPU feature set.
+ * - `Compatibility` — relaxed capability set; on Android this selects the GLES
+ *   backend which provides the widest device coverage (mirrors what a browser
+ *   would do on devices that lack Vulkan 1.1+).
+ */
+typedef enum CanvasGPUFeatureLevel {
+  CanvasGPUFeatureLevelCore,
+  CanvasGPUFeatureLevelCompatibility,
+} CanvasGPUFeatureLevel;
+
 typedef enum CanvasGPUPowerPreference {
   CanvasGPUPowerPreferenceNone,
   CanvasGPUPowerPreferenceLowPower,
@@ -638,7 +651,8 @@ typedef enum SurfaceGetCurrentTextureStatus {
   SurfaceGetCurrentTextureStatusOutOfMemory = 4,
   SurfaceGetCurrentTextureStatusDeviceLost = 5,
   SurfaceGetCurrentTextureStatusForce32 = 2147483647,
-  SurfaceGetCurrentTextureStatusUnknown = 6,
+  SurfaceGetCurrentTextureStatusOccluded = 7,
+  SurfaceGetCurrentTextureStatusValidation = 8,
 } SurfaceGetCurrentTextureStatus;
 
 typedef enum TextBaseLine {
@@ -1347,6 +1361,10 @@ typedef struct CanvasOptionalGPUTextureFormat {
 typedef struct CanvasGPURequestAdapterOptions {
   enum CanvasGPUPowerPreference power_preference;
   bool force_fallback_adapter;
+  /**
+   * Requested feature level. Defaults to `Core`.
+   */
+  enum CanvasGPUFeatureLevel feature_level;
 } CanvasGPURequestAdapterOptions;
 
 typedef struct CanvasGPUSupportedLimits {
@@ -1365,8 +1383,8 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_uniform_buffers_per_shader_stage;
   uint32_t max_binding_array_elements_per_shader_stage;
   uint32_t max_binding_array_sampler_elements_per_shader_stage;
-  uint32_t max_uniform_buffer_binding_size;
-  uint32_t max_storage_buffer_binding_size;
+  uint64_t max_uniform_buffer_binding_size;
+  uint64_t max_storage_buffer_binding_size;
   uint32_t max_vertex_buffers;
   uint64_t max_buffer_size;
   uint32_t max_vertex_attributes;
@@ -1384,8 +1402,6 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_compute_workgroups_per_dimension;
   uint32_t max_immediate_size;
   uint32_t max_non_sampler_bindings;
-  uint32_t max_task_mesh_workgroup_total_count;
-  uint32_t max_task_mesh_workgroups_per_dimension;
   uint32_t max_task_invocations_per_workgroup;
   uint32_t max_task_invocations_per_dimension;
   uint32_t max_mesh_invocations_per_workgroup;
@@ -1732,6 +1748,34 @@ typedef struct CanvasPrimitiveState {
   bool unclipped_depth;
 } CanvasPrimitiveState;
 
+typedef enum CanvasOptionalBool_Tag {
+  CanvasOptionalBoolNone,
+  CanvasOptionalBoolSome,
+} CanvasOptionalBool_Tag;
+
+typedef struct CanvasOptionalBool {
+  CanvasOptionalBool_Tag tag;
+  union {
+    struct {
+      bool some;
+    };
+  };
+} CanvasOptionalBool;
+
+typedef enum CanvasOptionalCompareFunction_Tag {
+  CanvasOptionalCompareFunctionNone,
+  CanvasOptionalCompareFunctionSome,
+} CanvasOptionalCompareFunction_Tag;
+
+typedef struct CanvasOptionalCompareFunction {
+  CanvasOptionalCompareFunction_Tag tag;
+  union {
+    struct {
+      enum CanvasCompareFunction some;
+    };
+  };
+} CanvasOptionalCompareFunction;
+
 typedef struct CanvasStencilFaceState {
   enum CanvasCompareFunction compare;
   enum CanvasStencilOperation fail_op;
@@ -1745,8 +1789,8 @@ typedef struct CanvasStencilFaceState {
 
 typedef struct CanvasDepthStencilState {
   struct CanvasGPUTextureFormat format;
-  bool depth_write_enabled;
-  enum CanvasCompareFunction depth_compare;
+  struct CanvasOptionalBool depth_write_enabled;
+  struct CanvasOptionalCompareFunction depth_compare;
   struct CanvasStencilFaceState stencil_front;
   struct CanvasStencilFaceState stencil_back;
   uint32_t stencil_read_mask;
@@ -1850,20 +1894,6 @@ typedef struct CanvasCreateTextureDescriptor {
   const struct CanvasGPUTextureFormat *view_formats;
   uintptr_t view_formats_size;
 } CanvasCreateTextureDescriptor;
-
-typedef enum CanvasOptionalCompareFunction_Tag {
-  CanvasOptionalCompareFunctionNone,
-  CanvasOptionalCompareFunctionSome,
-} CanvasOptionalCompareFunction_Tag;
-
-typedef struct CanvasOptionalCompareFunction {
-  CanvasOptionalCompareFunction_Tag tag;
-  union {
-    struct {
-      enum CanvasCompareFunction some;
-    };
-  };
-} CanvasOptionalCompareFunction;
 
 typedef struct CanvasCreateSamplerDescriptor {
   const char *label;
@@ -3267,7 +3297,14 @@ void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext 
 
 void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context);
 
-bool canvas_native_webgpu_context_has_current_texture(const struct CanvasGPUCanvasContext *context);
+/**
+ * Returns the cached surface texture if one has been acquired but not yet presented,
+ * or null if no texture is currently held.  Unlike `get_current_texture`, this
+ * function never acquires a new texture from the wgpu surface — it only peeks at
+ * the already-stored one.  The caller owns the returned Arc reference and must
+ * eventually release it via `canvas_native_webgpu_texture_release`.
+ */
+const struct CanvasGPUTexture *canvas_native_webgpu_context_has_current_texture(const struct CanvasGPUCanvasContext *context);
 
 bool canvas_native_webgpu_context_has_surface_presented(const struct CanvasGPUCanvasContext *context);
 

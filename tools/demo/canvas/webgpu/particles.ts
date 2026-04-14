@@ -270,7 +270,7 @@ export async function run(canvas: Canvas) {
 				Math.random() * 100, // seed.xy
 				1 + Math.random(),
 				1 + Math.random(), // seed.zw
-			])
+			]),
 		);
 
 		mat4.identity(view);
@@ -321,8 +321,6 @@ export async function run(canvas: Canvas) {
 		}
 
 		device.queue.submit([commandEncoder.finish()]);
-
-		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

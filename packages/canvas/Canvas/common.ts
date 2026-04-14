@@ -1113,8 +1113,8 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this[attrib];
 	}
 
-	setAttribute(attrib) {
-		this[attrib] = attrib;
+	setAttribute(attrib, value?) {
+		this[attrib] = value ?? attrib;
 	}
 
 	public abstract getContext(type: string, contextAttributes?: any): CanvasRenderingContext | null;

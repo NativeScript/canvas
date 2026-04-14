@@ -10,6 +10,10 @@ const NSCAdapter: Pixii.Adapter = {
 		canvas.height = height;
 		return canvas as never;
 	},
+
+	createImage() {
+		return document.createElement('img');
+	},
 	getCanvasRenderingContext2D() {
 		return CanvasRenderingContext2D as never;
 	},

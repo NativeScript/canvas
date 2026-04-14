@@ -16,17 +16,20 @@ export class GPU {
 	}
 
 	getPreferredCanvasFormat() {
-		if (global.isIOS) {
+		if (__IOS__) {
 			return 'bgra8unorm';
 		}
 		return 'rgba8unorm';
 	}
 
-	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean } = { powerPreference: undefined, isFallbackAdapter: false }) {
-		return new Promise<GPUAdapter>((resolve, reject) => {
+	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean; featureLevel?: 'core' | 'compatibility' } = { powerPreference: undefined, isFallbackAdapter: false }) {
+		return new Promise<GPUAdapter | null>((resolve, reject) => {
 			this.native.requestAdapter(options, (error, adapter) => {
 				if (error) {
 					reject(error);
+				} else if (!adapter) {
+					// No adapter available (no hardware Vulkan, GL fallback also unavailable).
+					resolve(null);
 				} else {
 					resolve(GPUAdapter.fromNative(adapter));
 				}

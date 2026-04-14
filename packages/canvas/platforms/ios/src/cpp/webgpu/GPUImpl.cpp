@@ -90,6 +90,7 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
     CanvasGPURequestAdapterOptions opts{};
     opts.force_fallback_adapter = false;
+    opts.feature_level = CanvasGPUFeatureLevel::CanvasGPUFeatureLevelCore;
     opts.power_preference = CanvasGPUPowerPreference::CanvasGPUPowerPreferenceNone;
     auto optionsValue = args[0];
 
@@ -115,6 +116,18 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
         options->Get(context, ConvertToV8String(isolate, "forceFallbackAdapter")).ToLocal(
                 &forceFallbackValue);
+
+        v8::Local<v8::Value> featureLevelValue;
+
+        options->Get(context, ConvertToV8String(isolate, "featureLevel")).ToLocal(
+                &featureLevelValue);
+
+        if (!featureLevelValue.IsEmpty() && featureLevelValue->IsString()) {
+            auto view = ConvertFromV8StringView(isolate, featureLevelValue);
+            if (view == "compatibility") {
+                opts.feature_level = CanvasGPUFeatureLevel::CanvasGPUFeatureLevelCompatibility;
+            }
+        }
 
 
         if (!forceFallbackValue.IsEmpty()) {
@@ -154,7 +167,7 @@ void GPUImpl::RequestAdapter(const v8::FunctionCallbackInfo<v8::Value> &args) {
                             callback->Call(context, context->Global(),
                                            2,
                                            args);  // ignore JS return value
-                            
+
                             delete static_cast<AsyncCallback *>(data);
 
                         } else {

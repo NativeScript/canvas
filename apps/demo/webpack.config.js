@@ -12,8 +12,12 @@ module.exports = (env) => {
 		//	config.resolve.alias.set('three/tsl', 'three/tsl');
 
 		config.resolve.alias.set('three/examples', resolve(__dirname, '..', '..', 'node_modules', 'three', 'examples'));
+		config.resolve.alias.set('three/addons', resolve(__dirname, '..', '..', 'node_modules', 'three', 'examples', 'jsm'));
+		config.resolve.alias.set('three/src', resolve(__dirname, '..', '..', 'node_modules', 'three', 'src'));
+		//config.resolve.alias.set('three', resolve(__dirname, '..', '..', 'node_modules', 'three', 'src', 'Three.js'));
+		//		config.resolve.alias.set('three', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.module.js'));
 		config.resolve.alias.set('three', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.webgpu.js'));
-		config.resolve.alias.set('three/tsl', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.webgpu.js'));
+		config.resolve.alias.set('three/tsl', resolve(__dirname, '..', '..', 'node_modules', 'three', 'build', 'three.tsl.js'));
 	});
 
 	webpack.Utils.addCopyRule('**/*.svg');

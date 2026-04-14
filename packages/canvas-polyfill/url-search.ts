@@ -5,383 +5,383 @@
  * @licence MIT
  */
 //@ts-nocheck
-(function(self) {
-    'use strict';
+(function (self) {
+	'use strict';
 
-    var nativeURLSearchParams = (function() {
-            // #41 Fix issue in RN
-            try {
-                if (self.URLSearchParams && (new self.URLSearchParams('foo=bar')).get('foo') === 'bar') {
-                    return self.URLSearchParams;
-                }
-            } catch (e) {}
-            return null;
-        })(),
-        isSupportObjectConstructor = nativeURLSearchParams && (new nativeURLSearchParams({a: 1})).toString() === 'a=1',
-        // There is a bug in safari 10.1 (and earlier) that incorrectly decodes `%2B` as an empty space and not a plus.
-        decodesPlusesCorrectly = nativeURLSearchParams && (new nativeURLSearchParams('s=%2B').get('s') === '+'),
-        isSupportSize = nativeURLSearchParams && 'size' in nativeURLSearchParams.prototype,
-        __URLSearchParams__ = "__URLSearchParams__",
-        // Fix bug in Edge which cannot encode ' &' correctly
-        encodesAmpersandsCorrectly = nativeURLSearchParams ? (function() {
-            var ampersandTest = new nativeURLSearchParams();
-            ampersandTest.append('s', ' &');
-            return ampersandTest.toString() === 's=+%26';
-        })() : true,
-        prototype = URLSearchParamsPolyfill.prototype,
-        iterable = !!(self.Symbol && self.Symbol.iterator);
+	var nativeURLSearchParams = (function () {
+			// #41 Fix issue in RN
+			try {
+				if (self.URLSearchParams && new self.URLSearchParams('foo=bar').get('foo') === 'bar') {
+					return self.URLSearchParams;
+				}
+			} catch (e) {}
+			return null;
+		})(),
+		isSupportObjectConstructor = nativeURLSearchParams && new nativeURLSearchParams({ a: 1 }).toString() === 'a=1',
+		// There is a bug in safari 10.1 (and earlier) that incorrectly decodes `%2B` as an empty space and not a plus.
+		decodesPlusesCorrectly = nativeURLSearchParams && new nativeURLSearchParams('s=%2B').get('s') === '+',
+		isSupportSize = nativeURLSearchParams && 'size' in nativeURLSearchParams.prototype,
+		__URLSearchParams__ = '__URLSearchParams__',
+		// Fix bug in Edge which cannot encode ' &' correctly
+		encodesAmpersandsCorrectly = nativeURLSearchParams
+			? (function () {
+					var ampersandTest = new nativeURLSearchParams();
+					ampersandTest.append('s', ' &');
+					return ampersandTest.toString() === 's=+%26';
+				})()
+			: true,
+		prototype = URLSearchParamsPolyfill.prototype,
+		iterable = !!(self.Symbol && self.Symbol.iterator);
 
-    if (nativeURLSearchParams && isSupportObjectConstructor && decodesPlusesCorrectly && encodesAmpersandsCorrectly && isSupportSize) {
-        return;
-    }
+	if (nativeURLSearchParams && isSupportObjectConstructor && decodesPlusesCorrectly && encodesAmpersandsCorrectly && isSupportSize) {
+		return;
+	}
 
+	/**
+	 * Make a URLSearchParams instance
+	 *
+	 * @param {object|string|URLSearchParams} search
+	 * @constructor
+	 */
+	function URLSearchParamsPolyfill(search) {
+		search = search || '';
 
-    /**
-     * Make a URLSearchParams instance
-     *
-     * @param {object|string|URLSearchParams} search
-     * @constructor
-     */
-    function URLSearchParamsPolyfill(search) {
-        search = search || "";
+		// support construct object with another URLSearchParams instance
+		if (search instanceof URLSearchParams || search instanceof URLSearchParamsPolyfill) {
+			search = search.toString();
+		}
+		if (search.indexOf('%') > -1 || search.indexOf('%20') > -1) {
+			search = decodeURIComponent(search);
+		}
+		this[__URLSearchParams__] = parseToDict(search);
+	}
 
-        // support construct object with another URLSearchParams instance
-        if (search instanceof URLSearchParams || search instanceof URLSearchParamsPolyfill) {
-            search = search.toString();
-        }
+	/**
+	 * Appends a specified key/value pair as a new search parameter.
+	 *
+	 * @param {string} name
+	 * @param {string} value
+	 */
+	prototype.append = function (name, value) {
+		appendTo(this[__URLSearchParams__], name, value);
+	};
 
-        console.log(search, search.indexOf('%') > -1, decodeURIComponent(search));
-        if(search.indexOf('%') > -1 || search.indexOf("%20") > -1){
-            search = decodeURIComponent(search);
-        }
-        this [__URLSearchParams__] = parseToDict(search);
-    }
+	/**
+	 * Deletes the given search parameter, and its associated value,
+	 * from the list of all search parameters.
+	 *
+	 * @param {string} name
+	 */
+	prototype['delete'] = function (name) {
+		delete this[__URLSearchParams__][name];
+	};
 
+	/**
+	 * Returns the first value associated to the given search parameter.
+	 *
+	 * @param {string} name
+	 * @returns {string|null}
+	 */
+	prototype.get = function (name) {
+		var dict = this[__URLSearchParams__];
+		return this.has(name) ? dict[name][0] : null;
+	};
 
-    /**
-     * Appends a specified key/value pair as a new search parameter.
-     *
-     * @param {string} name
-     * @param {string} value
-     */
-    prototype.append = function(name, value) {
-        appendTo(this [__URLSearchParams__], name, value);
-    };
+	/**
+	 * Returns all the values association with a given search parameter.
+	 *
+	 * @param {string} name
+	 * @returns {Array}
+	 */
+	prototype.getAll = function (name) {
+		var dict = this[__URLSearchParams__];
+		return this.has(name) ? dict[name].slice(0) : [];
+	};
 
-    /**
-     * Deletes the given search parameter, and its associated value,
-     * from the list of all search parameters.
-     *
-     * @param {string} name
-     */
-    prototype['delete'] = function(name) {
-        delete this [__URLSearchParams__] [name];
-    };
+	/**
+	 * Returns a Boolean indicating if such a search parameter exists.
+	 *
+	 * @param {string} name
+	 * @returns {boolean}
+	 */
+	prototype.has = function (name) {
+		return hasOwnProperty(this[__URLSearchParams__], name);
+	};
 
-    /**
-     * Returns the first value associated to the given search parameter.
-     *
-     * @param {string} name
-     * @returns {string|null}
-     */
-    prototype.get = function(name) {
-        var dict = this [__URLSearchParams__];
-        return this.has(name) ? dict[name][0] : null;
-    };
+	/**
+	 * Sets the value associated to a given search parameter to
+	 * the given value. If there were several values, delete the
+	 * others.
+	 *
+	 * @param {string} name
+	 * @param {string} value
+	 */
+	prototype.set = function set(name, value) {
+		this[__URLSearchParams__][name] = ['' + value];
+	};
 
-    /**
-     * Returns all the values association with a given search parameter.
-     *
-     * @param {string} name
-     * @returns {Array}
-     */
-    prototype.getAll = function(name) {
-        var dict = this [__URLSearchParams__];
-        return this.has(name) ? dict [name].slice(0) : [];
-    };
+	/**
+	 * Returns a string containg a query string suitable for use in a URL.
+	 *
+	 * @returns {string}
+	 */
+	prototype.toString = function () {
+		var dict = this[__URLSearchParams__],
+			query = [],
+			i,
+			key,
+			name,
+			value;
+		for (key in dict) {
+			name = encode(key);
+			for (i = 0, value = dict[key]; i < value.length; i++) {
+				query.push(name + '=' + encode(value[i]));
+			}
+		}
+		return query.join('&');
+	};
 
-    /**
-     * Returns a Boolean indicating if such a search parameter exists.
-     *
-     * @param {string} name
-     * @returns {boolean}
-     */
-    prototype.has = function(name) {
-        return hasOwnProperty(this [__URLSearchParams__], name);
-    };
+	// There is a bug in Safari 10.1 and `Proxy`ing it is not enough.
+	var useProxy = self.Proxy && nativeURLSearchParams && (!decodesPlusesCorrectly || !encodesAmpersandsCorrectly || !isSupportObjectConstructor || !isSupportSize);
+	var propValue;
+	if (useProxy) {
+		// Safari 10.0 doesn't support Proxy, so it won't extend URLSearchParams on safari 10.0
+		propValue = new Proxy(nativeURLSearchParams, {
+			construct: function (target, args) {
+				return new target(new URLSearchParamsPolyfill(args[0]).toString());
+			},
+		});
+		// Chrome <=60 .toString() on a function proxy got error "Function.prototype.toString is not generic"
+		propValue.toString = Function.prototype.toString.bind(URLSearchParamsPolyfill);
+	} else {
+		propValue = URLSearchParamsPolyfill;
+	}
 
-    /**
-     * Sets the value associated to a given search parameter to
-     * the given value. If there were several values, delete the
-     * others.
-     *
-     * @param {string} name
-     * @param {string} value
-     */
-    prototype.set = function set(name, value) {
-        this [__URLSearchParams__][name] = ['' + value];
-    };
+	/*
+	 * Apply polyfill to global object and append other prototype into it
+	 */
+	Object.defineProperty(self, 'URLSearchParams', {
+		value: propValue,
+	});
 
-    /**
-     * Returns a string containg a query string suitable for use in a URL.
-     *
-     * @returns {string}
-     */
-    prototype.toString = function() {
-        var dict = this[__URLSearchParams__], query = [], i, key, name, value;
-        for (key in dict) {
-            name = encode(key);
-            for (i = 0, value = dict[key]; i < value.length; i++) {
-                query.push(name + '=' + encode(value[i]));
-            }
-        }
-        return query.join('&');
-    };
+	var USPProto = self.URLSearchParams.prototype;
 
-    // There is a bug in Safari 10.1 and `Proxy`ing it is not enough.
-    var useProxy = self.Proxy && nativeURLSearchParams && (!decodesPlusesCorrectly || !encodesAmpersandsCorrectly || !isSupportObjectConstructor || !isSupportSize);
-    var propValue;
-    if (useProxy) {
-        // Safari 10.0 doesn't support Proxy, so it won't extend URLSearchParams on safari 10.0
-        propValue = new Proxy(nativeURLSearchParams, {
-            construct: function (target, args) {
-                return new target((new URLSearchParamsPolyfill(args[0]).toString()));
-            }
-        })
-        // Chrome <=60 .toString() on a function proxy got error "Function.prototype.toString is not generic"
-        propValue.toString = Function.prototype.toString.bind(URLSearchParamsPolyfill);
-    } else {
-        propValue = URLSearchParamsPolyfill;
-    }
+	USPProto.polyfill = true;
 
-    /*
-     * Apply polyfill to global object and append other prototype into it
-     */
-    Object.defineProperty(self, 'URLSearchParams', {
-        value: propValue
-    });
+	// Fix #54, `toString.call(new URLSearchParams)` will return correct value when Proxy not used
+	if (!useProxy && self.Symbol) {
+		USPProto[self.Symbol.toStringTag] = 'URLSearchParams';
+	}
 
-    var USPProto = self.URLSearchParams.prototype;
+	/**
+	 *
+	 * @param {function} callback
+	 * @param {object} thisArg
+	 */
+	if (!('forEach' in USPProto)) {
+		USPProto.forEach = function (callback, thisArg) {
+			var dict = parseToDict(this.toString());
+			Object.getOwnPropertyNames(dict).forEach(function (name) {
+				dict[name].forEach(function (value) {
+					callback.call(thisArg, value, name, this);
+				}, this);
+			}, this);
+		};
+	}
 
-    USPProto.polyfill = true;
+	/**
+	 * Sort all name-value pairs
+	 */
+	if (!('sort' in USPProto)) {
+		USPProto.sort = function () {
+			var dict = parseToDict(this.toString()),
+				keys = [],
+				k,
+				i,
+				j;
+			for (k in dict) {
+				keys.push(k);
+			}
+			keys.sort();
 
-    // Fix #54, `toString.call(new URLSearchParams)` will return correct value when Proxy not used
-    if (!useProxy && self.Symbol) {
-        USPProto[self.Symbol.toStringTag] = 'URLSearchParams';
-    }
+			for (i = 0; i < keys.length; i++) {
+				this['delete'](keys[i]);
+			}
+			for (i = 0; i < keys.length; i++) {
+				var key = keys[i],
+					values = dict[key];
+				for (j = 0; j < values.length; j++) {
+					this.append(key, values[j]);
+				}
+			}
+		};
+	}
 
-    /**
-     *
-     * @param {function} callback
-     * @param {object} thisArg
-     */
-    if (!('forEach' in USPProto)) {
-        USPProto.forEach = function(callback, thisArg) {
-            var dict = parseToDict(this.toString());
-            Object.getOwnPropertyNames(dict).forEach(function(name) {
-                dict[name].forEach(function(value) {
-                    callback.call(thisArg, value, name, this);
-                }, this);
-            }, this);
-        };
-    }
+	/**
+	 * Returns an iterator allowing to go through all keys of
+	 * the key/value pairs contained in this object.
+	 *
+	 * @returns {function}
+	 */
+	if (!('keys' in USPProto)) {
+		USPProto.keys = function () {
+			var items = [];
+			this.forEach(function (item, name) {
+				items.push(name);
+			});
+			return makeIterator(items);
+		};
+	}
 
-    /**
-     * Sort all name-value pairs
-     */
-    if (!('sort' in USPProto)) {
-        USPProto.sort = function() {
-            var dict = parseToDict(this.toString()), keys = [], k, i, j;
-            for (k in dict) {
-                keys.push(k);
-            }
-            keys.sort();
+	/**
+	 * Returns an iterator allowing to go through all values of
+	 * the key/value pairs contained in this object.
+	 *
+	 * @returns {function}
+	 */
+	if (!('values' in USPProto)) {
+		USPProto.values = function () {
+			var items = [];
+			this.forEach(function (item) {
+				items.push(item);
+			});
+			return makeIterator(items);
+		};
+	}
 
-            for (i = 0; i < keys.length; i++) {
-                this['delete'](keys[i]);
-            }
-            for (i = 0; i < keys.length; i++) {
-                var key = keys[i], values = dict[key];
-                for (j = 0; j < values.length; j++) {
-                    this.append(key, values[j]);
-                }
-            }
-        };
-    }
+	/**
+	 * Returns an iterator allowing to go through all key/value
+	 * pairs contained in this object.
+	 *
+	 * @returns {function}
+	 */
+	if (!('entries' in USPProto)) {
+		USPProto.entries = function () {
+			var items = [];
+			this.forEach(function (item, name) {
+				items.push([name, item]);
+			});
+			return makeIterator(items);
+		};
+	}
 
-    /**
-     * Returns an iterator allowing to go through all keys of
-     * the key/value pairs contained in this object.
-     *
-     * @returns {function}
-     */
-    if (!('keys' in USPProto)) {
-        USPProto.keys = function() {
-            var items = [];
-            this.forEach(function(item, name) {
-                items.push(name);
-            });
-            return makeIterator(items);
-        };
-    }
+	if (iterable) {
+		USPProto[self.Symbol.iterator] = USPProto[self.Symbol.iterator] || USPProto.entries;
+	}
 
-    /**
-     * Returns an iterator allowing to go through all values of
-     * the key/value pairs contained in this object.
-     *
-     * @returns {function}
-     */
-    if (!('values' in USPProto)) {
-        USPProto.values = function() {
-            var items = [];
-            this.forEach(function(item) {
-                items.push(item);
-            });
-            return makeIterator(items);
-        };
-    }
+	if (!('size' in USPProto)) {
+		Object.defineProperty(USPProto, 'size', {
+			get: function () {
+				var dict = parseToDict(this.toString());
+				if (USPProto === this) {
+					throw new TypeError('Illegal invocation at URLSearchParams.invokeGetter');
+				}
+				return Object.keys(dict).reduce(function (prev, cur) {
+					return prev + dict[cur].length;
+				}, 0);
+			},
+		});
+	}
 
-    /**
-     * Returns an iterator allowing to go through all key/value
-     * pairs contained in this object.
-     *
-     * @returns {function}
-     */
-    if (!('entries' in USPProto)) {
-        USPProto.entries = function() {
-            var items = [];
-            this.forEach(function(item, name) {
-                items.push([name, item]);
-            });
-            return makeIterator(items);
-        };
-    }
+	function encode(str) {
+		var replace = {
+			'!': '%21',
+			"'": '%27',
+			'(': '%28',
+			')': '%29',
+			'~': '%7E',
+			'%20': '+',
+			'%00': '\x00',
+		};
+		return encodeURIComponent(str).replace(/[!'\(\)~]|%20|%00/g, function (match) {
+			return replace[match];
+		});
+	}
 
-    if (iterable) {
-        USPProto[self.Symbol.iterator] = USPProto[self.Symbol.iterator] || USPProto.entries;
-    }
+	function decode(str) {
+		return str.replace(/[ +]/g, '%20').replace(/(%[a-f0-9]{2})+/gi, function (match) {
+			return decodeURIComponent(match);
+		});
+	}
 
-    if (!('size' in USPProto)) {
-        Object.defineProperty(USPProto, 'size', {
-            get: function () {
-                var dict = parseToDict(this.toString())
-                if (USPProto === this) {
-                    throw new TypeError('Illegal invocation at URLSearchParams.invokeGetter')
-                }
-                return Object.keys(dict).reduce(function (prev, cur) {
-                    return prev + dict[cur].length;
-                }, 0);
-            }
-        });
-    }
+	function makeIterator(arr) {
+		var iterator = {
+			next: function () {
+				var value = arr.shift();
+				return { done: value === undefined, value: value };
+			},
+		};
 
-    function encode(str) {
-        var replace = {
-            '!': '%21',
-            "'": '%27',
-            '(': '%28',
-            ')': '%29',
-            '~': '%7E',
-            '%20': '+',
-            '%00': '\x00'
-        };
-        return encodeURIComponent(str).replace(/[!'\(\)~]|%20|%00/g, function(match) {
-            return replace[match];
-        });
-    }
+		if (iterable) {
+			iterator[self.Symbol.iterator] = function () {
+				return iterator;
+			};
+		}
 
-    function decode(str) {
-        return str
-            .replace(/[ +]/g, '%20')
-            .replace(/(%[a-f0-9]{2})+/ig, function(match) {
-                return decodeURIComponent(match);
-            });
-    }
+		return iterator;
+	}
 
-    function makeIterator(arr) {
-        var iterator = {
-            next: function() {
-                var value = arr.shift();
-                return {done: value === undefined, value: value};
-            }
-        };
+	function parseToDict(search) {
+		var dict = {};
 
-        if (iterable) {
-            iterator[self.Symbol.iterator] = function() {
-                return iterator;
-            };
-        }
+		if (typeof search === 'object') {
+			// if `search` is an array, treat it as a sequence
+			if (isArray(search)) {
+				for (var i = 0; i < search.length; i++) {
+					var item = search[i];
+					if (isArray(item) && item.length === 2) {
+						appendTo(dict, item[0], item[1]);
+					} else {
+						throw new TypeError("Failed to construct 'URLSearchParams': Sequence initializer must only contain pair elements");
+					}
+				}
+			} else {
+				for (var key in search) {
+					if (search.hasOwnProperty(key)) {
+						appendTo(dict, key, search[key]);
+					}
+				}
+			}
+		} else {
+			// remove first '?'
+			if (search.indexOf('?') === 0) {
+				search = search.slice(1);
+			}
 
-        return iterator;
-    }
+			var pairs = search.split('&');
+			for (var j = 0; j < pairs.length; j++) {
+				var value = pairs[j],
+					index = value.indexOf('=');
 
-    function parseToDict(search) {
-        var dict = {};
+				if (-1 < index) {
+					appendTo(dict, decode(value.slice(0, index)), decode(value.slice(index + 1)));
+				} else {
+					if (value) {
+						appendTo(dict, decode(value), '');
+					}
+				}
+			}
+		}
 
-        if (typeof search === "object") {
-            // if `search` is an array, treat it as a sequence
-            if (isArray(search)) {
-                for (var i = 0; i < search.length; i++) {
-                    var item = search[i];
-                    if (isArray(item) && item.length === 2) {
-                        appendTo(dict, item[0], item[1]);
-                    } else {
-                        throw new TypeError("Failed to construct 'URLSearchParams': Sequence initializer must only contain pair elements");
-                    }
-                }
+		return dict;
+	}
 
-            } else {
-                for (var key in search) {
-                    if (search.hasOwnProperty(key)) {
-                        appendTo(dict, key, search[key]);
-                    }
-                }
-            }
+	function appendTo(dict, name, value) {
+		var val = typeof value === 'string' ? value : value !== null && value !== undefined && typeof value.toString === 'function' ? value.toString() : JSON.stringify(value);
 
-        } else {
-            // remove first '?'
-            if (search.indexOf("?") === 0) {
-                search = search.slice(1);
-            }
+		// #47 Prevent using `hasOwnProperty` as a property name
+		if (hasOwnProperty(dict, name)) {
+			dict[name].push(val);
+		} else {
+			dict[name] = [val];
+		}
+	}
 
-            var pairs = search.split("&");
-            for (var j = 0; j < pairs.length; j++) {
-                var value = pairs [j],
-                    index = value.indexOf('=');
+	function isArray(val) {
+		return !!val && '[object Array]' === Object.prototype.toString.call(val);
+	}
 
-                if (-1 < index) {
-                    appendTo(dict, decode(value.slice(0, index)), decode(value.slice(index + 1)));
-
-                } else {
-                    if (value) {
-                        appendTo(dict, decode(value), '');
-                    }
-                }
-            }
-        }
-
-        return dict;
-    }
-
-    function appendTo(dict, name, value) {
-        var val = typeof value === 'string' ? value : (
-            value !== null && value !== undefined && typeof value.toString === 'function' ? value.toString() : JSON.stringify(value)
-        );
-
-        // #47 Prevent using `hasOwnProperty` as a property name
-        if (hasOwnProperty(dict, name)) {
-            dict[name].push(val);
-        } else {
-            dict[name] = [val];
-        }
-    }
-
-    function isArray(val) {
-        return !!val && '[object Array]' === Object.prototype.toString.call(val);
-    }
-
-    function hasOwnProperty(obj, prop) {
-        return Object.prototype.hasOwnProperty.call(obj, prop);
-    }
-
-})(typeof global !== 'undefined' ? global : (typeof window !== 'undefined' ? window : this));
+	function hasOwnProperty(obj, prop) {
+		return Object.prototype.hasOwnProperty.call(obj, prop);
+	}
+})(typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this);

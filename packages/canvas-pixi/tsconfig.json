@@ -1,8 +1,7 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"outDir": "../../dist/out-tsc",
-		"rootDir": "."
+		"outDir": "../../dist/out-tsc"
 	},
 	"exclude": ["**/*.spec.ts", "angular"],
 	"include": ["**/*.ts", "references.d.ts"]

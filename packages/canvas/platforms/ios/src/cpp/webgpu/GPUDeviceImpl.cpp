@@ -1369,28 +1369,56 @@ void GPUDeviceImpl::CreateRenderPipeline(const v8::FunctionCallbackInfo<v8::Valu
 
         auto depthCompareStr = ConvertFromV8String(isolate, depthCompareVal);
 
+        CanvasOptionalCompareFunction depthCompare = CanvasOptionalCompareFunction{
+                CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionNone
+        };
         if (depthCompareStr == "never") {
-            stencil->depth_compare = CanvasCompareFunctionNever;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionNever;
         } else if (depthCompareStr == "less") {
-            stencil->depth_compare = CanvasCompareFunctionLess;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionLess;
         } else if (depthCompareStr == "equal") {
-            stencil->depth_compare = CanvasCompareFunctionEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionEqual;
         } else if (depthCompareStr == "less-equal") {
-            stencil->depth_compare = CanvasCompareFunctionLessEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionLessEqual;
         } else if (depthCompareStr == "greater") {
-            stencil->depth_compare = CanvasCompareFunctionGreater;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionGreater;
         } else if (depthCompareStr == "not-equal") {
-            stencil->depth_compare = CanvasCompareFunctionNotEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionNotEqual;
         } else if (depthCompareStr == "greater-equal") {
-            stencil->depth_compare = CanvasCompareFunctionGreaterEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionGreaterEqual;
         } else if (depthCompareStr == "always") {
-            stencil->depth_compare = CanvasCompareFunctionAlways;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionAlways;
+        };
+
+        stencil->depth_compare = depthCompare;
+
+        v8::Local<v8::Value> depthWriteValue;
+
+
+        CanvasOptionalBool depthWriteEnabled = CanvasOptionalBool{
+                CanvasOptionalBool_Tag::CanvasOptionalBoolNone
+        };
+
+
+        if (
+                stencilObj->Get(context, ConvertToV8String(isolate,
+                                                           "depthWriteEnabled")).ToLocal(
+                        &depthWriteValue)
+                ) {
+            depthWriteEnabled.tag = CanvasOptionalBool_Tag::CanvasOptionalBoolSome;
+            depthWriteEnabled.some = depthWriteValue->BooleanValue(
+                    isolate);
         }
 
-        stencil->depth_write_enabled = stencilObj->Get(context, ConvertToV8String(isolate,
-                                                                                  "depthWriteEnabled")).ToLocalChecked()->BooleanValue(
-                isolate);
-
+        stencil->depth_write_enabled = depthWriteEnabled;
 
         v8::Local<v8::Value> stencilBackVal;
         stencilObj->Get(context, ConvertToV8String(isolate, "stencilBack")).ToLocal(
@@ -2311,27 +2339,56 @@ void GPUDeviceImpl::CreateRenderPipelineAsync(const v8::FunctionCallbackInfo<v8:
 
         auto depthCompareStr = ConvertFromV8String(isolate, depthCompareVal);
 
+        CanvasOptionalCompareFunction depthCompare = CanvasOptionalCompareFunction{
+                CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionNone
+        };
         if (depthCompareStr == "never") {
-            stencil->depth_compare = CanvasCompareFunctionNever;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionNever;
         } else if (depthCompareStr == "less") {
-            stencil->depth_compare = CanvasCompareFunctionLess;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionLess;
         } else if (depthCompareStr == "equal") {
-            stencil->depth_compare = CanvasCompareFunctionEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionEqual;
         } else if (depthCompareStr == "less-equal") {
-            stencil->depth_compare = CanvasCompareFunctionLessEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionLessEqual;
         } else if (depthCompareStr == "greater") {
-            stencil->depth_compare = CanvasCompareFunctionGreater;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionGreater;
         } else if (depthCompareStr == "not-equal") {
-            stencil->depth_compare = CanvasCompareFunctionNotEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionNotEqual;
         } else if (depthCompareStr == "greater-equal") {
-            stencil->depth_compare = CanvasCompareFunctionGreaterEqual;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionGreaterEqual;
         } else if (depthCompareStr == "always") {
-            stencil->depth_compare = CanvasCompareFunctionAlways;
+            depthCompare.tag = CanvasOptionalCompareFunction_Tag::CanvasOptionalCompareFunctionSome;
+            depthCompare.some = CanvasCompareFunctionAlways;
+        };
+
+        stencil->depth_compare = depthCompare;
+
+        v8::Local<v8::Value> depthWriteValue;
+
+
+        CanvasOptionalBool depthWriteEnabled = CanvasOptionalBool{
+                CanvasOptionalBool_Tag::CanvasOptionalBoolNone
+        };
+
+
+        if (
+                stencilObj->Get(context, ConvertToV8String(isolate,
+                                                           "depthWriteEnabled")).ToLocal(
+                        &depthWriteValue)
+                ) {
+            depthWriteEnabled.tag = CanvasOptionalBool_Tag::CanvasOptionalBoolSome;
+            depthWriteEnabled.some = depthWriteValue->BooleanValue(
+                    isolate);
         }
 
-        stencil->depth_write_enabled = stencilObj->Get(context, ConvertToV8String(isolate,
-                                                                                  "depthWriteEnabled")).ToLocalChecked()->BooleanValue(
-                isolate);
+        stencil->depth_write_enabled = depthWriteEnabled;
 
 
         v8::Local<v8::Value> stencilBackVal;

@@ -111,7 +111,7 @@ Application.on('uncaughtError', (args) => {
 
 Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		jp.wasabeef.takt.Takt.stock(Utils.android.getApplicationContext()).seat(jp.wasabeef.takt.Seat.TOP_CENTER).color(-65536);
 	} else {
 		monitor = GDPerformanceMonitor.new();

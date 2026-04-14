@@ -843,36 +843,65 @@ public class NSCRender: NSObject {
 		return drawWithBGRABytes(buffer, context, sx, sy, sw, sh, dx, dy, dw, dh)
 	}
 	
+	/// Captures the current video frame and returns it as tightly-packed **RGBA8888** bytes.
+	///
+	/// The BGRA→RGBA channel swap is performed in Swift using
+	/// `vImagePermuteChannels_ARGB8888` from the Accelerate framework, which exploits
+	/// SIMD instructions and is substantially faster than a JS-side byte-swap loop.
+	///
+	/// - Returns: `NSDictionary` with keys `"data"` (NSData, RGBA), `"width"`, `"height"`,
+	///   or `nil` when no frame is available.
 	@objc public static func getVideoFrameData(_ player: AVPlayer, _ output: AVPlayerItemVideoOutput, _ videoSize: CGSize) -> NSDictionary? {
 		guard let buffer = copyCurrentPixelBuffer(player, output) else { return nil }
 		CVPixelBufferLockBaseAddress(buffer, .readOnly)
 		defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
-		
+
 		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else { return nil }
-		let width = CVPixelBufferGetWidth(buffer)
-		let height = CVPixelBufferGetHeight(buffer)
-		let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-		let tightSize = width * 4
-		let totalBytes = width * height * 4
-		
-		let data: NSData
-		if bytesPerRow == tightSize {
-			data = NSData(bytes: baseAddress, length: totalBytes)
+		let width       = CVPixelBufferGetWidth(buffer)
+		let height      = CVPixelBufferGetHeight(buffer)
+		let srcRowBytes = CVPixelBufferGetBytesPerRow(buffer)
+		let dstRowBytes = width * 4
+		let totalBytes  = height * dstRowBytes
+
+		// NSMutableData owns the RGBA output buffer.
+		guard let outData = NSMutableData(length: totalBytes) else { return nil }
+		let dstPtr = outData.mutableBytes
+
+		// Permute map for BGRA → RGBA:
+		//   dst[0] = src[2] (R), dst[1] = src[1] (G),
+		//   dst[2] = src[0] (B), dst[3] = src[3] (A)
+		let permuteMap: [UInt8] = [2, 1, 0, 3]
+
+		if srcRowBytes == dstRowBytes {
+			// No row padding — single-pass SIMD conversion
+			var src = vImage_Buffer(data: baseAddress,
+			                        height: vImagePixelCount(height),
+			                        width:  vImagePixelCount(width),
+			                        rowBytes: srcRowBytes)
+			var dst = vImage_Buffer(data: dstPtr,
+			                        height: vImagePixelCount(height),
+			                        width:  vImagePixelCount(width),
+			                        rowBytes: dstRowBytes)
+			vImagePermuteChannels_ARGB8888(&src, &dst, permuteMap, 0)
 		} else {
-			let compact = UnsafeMutableRawPointer.allocate(byteCount: totalBytes, alignment: 1)
-			defer { compact.deallocate() }
+			// Padded rows — compact and convert in one row-by-row pass
 			for y in 0..<height {
-				memcpy(compact.advanced(by: y * tightSize),
-							 baseAddress.advanced(by: y * bytesPerRow),
-							 tightSize)
+				var src = vImage_Buffer(data: baseAddress.advanced(by: y * srcRowBytes),
+				                        height: 1,
+				                        width:  vImagePixelCount(width),
+				                        rowBytes: srcRowBytes)
+				var dst = vImage_Buffer(data: dstPtr.advanced(by: y * dstRowBytes),
+				                        height: 1,
+				                        width:  vImagePixelCount(width),
+				                        rowBytes: dstRowBytes)
+				vImagePermuteChannels_ARGB8888(&src, &dst, permuteMap, 0)
 			}
-			data = NSData(bytes: compact, length: totalBytes)
 		}
-		
+
 		return [
-			"data": data,
-			"width": NSNumber(value: width),
-			"height": NSNumber(value: height)
+			"data":   outData,
+			"width":  NSNumber(value: width),
+			"height": NSNumber(value: height),
 		]
 	}
 }

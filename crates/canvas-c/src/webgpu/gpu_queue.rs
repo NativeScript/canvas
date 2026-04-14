@@ -16,7 +16,7 @@ use crate::webgpu::structs::{
 use canvas_webgl::utils::gl::bytes_per_pixel;
 use std::borrow::Cow;
 use std::os::raw::{c_char, c_void};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use wgpu_core::id::DeviceId;
 
 #[derive(Debug)]
@@ -109,6 +109,169 @@ fn get_offset_image(
     }
 
     result
+}
+
+// Prepare and align upload buffer for WebGPU (expand to RGBA and pad rows to 256)
+fn prepare_external_image_upload(data: &[u8], width: u32, height: u32) -> (Vec<u8>, u32) {
+    let mut bpp = 0usize;
+    if width != 0 && height != 0 {
+        bpp = data.len() / (width as usize * height as usize);
+    }
+
+    fn round_up_to_256_u32(v: u32) -> u32 { (v + 255) & !255 }
+
+    if bpp == 4 {
+        let bpr = round_up_to_256_u32(width * 4);
+        if bpr as usize == (width as usize * 4) {
+            return (data.to_vec(), bpr);
+        }
+        let mut out = vec![0u8; (bpr as usize) * (height as usize)];
+        for row in 0..height as usize {
+            let src_start = row * (width as usize) * 4;
+            let dst_start = row * (bpr as usize);
+            let len = (width as usize) * 4;
+            out[dst_start..dst_start + len].copy_from_slice(&data[src_start..src_start + len]);
+        }
+        return (out, bpr);
+    }
+
+    if bpp == 3 || bpp == 2 || bpp == 1 {
+        let bpr = round_up_to_256_u32(width * 4);
+        let mut out = vec![0u8; (bpr as usize) * (height as usize)];
+        let expected = (width as usize) * (height as usize) * bpp;
+        if expected != data.len() {
+            return (data.to_vec(), round_up_to_256_u32(width * (bpp as u32)));
+        }
+        for row in 0..height as usize {
+            for col in 0..width as usize {
+                let src_idx = (row * width as usize + col) * bpp;
+                let dst_idx = row * (bpr as usize) + col * 4;
+                match bpp {
+                    3 => {
+                        out[dst_idx] = data[src_idx];
+                        out[dst_idx + 1] = data[src_idx + 1];
+                        out[dst_idx + 2] = data[src_idx + 2];
+                        out[dst_idx + 3] = 0xFF;
+                    }
+                    2 => {
+                        let l = data[src_idx];
+                        let a = data[src_idx + 1];
+                        out[dst_idx] = l;
+                        out[dst_idx + 1] = l;
+                        out[dst_idx + 2] = l;
+                        out[dst_idx + 3] = a;
+                    }
+                    1 => {
+                        let l = data[src_idx];
+                        out[dst_idx] = l;
+                        out[dst_idx + 1] = l;
+                        out[dst_idx + 2] = l;
+                        out[dst_idx + 3] = 0xFF;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        return (out, bpr);
+    }
+
+    let bpr = round_up_to_256_u32(width * if bpp == 0 { 1 } else { bpp as u32 });
+    (data.to_vec(), bpr)
+}
+
+// Global upload buffer pool to avoid per-upload allocations without
+// relying on thread-local storage. We take the Vec from the pool,
+// fill it, and return it to the pool after use.
+static UPLOAD_POOL: OnceLock<Mutex<Vec<u8>>> = OnceLock::new();
+
+fn take_upload_buf() -> Vec<u8> {
+    let pool = UPLOAD_POOL.get_or_init(|| Mutex::new(Vec::new()));
+    let mut guard = pool.lock().unwrap();
+    std::mem::take(&mut *guard)
+}
+
+fn give_back_upload_buf(buf: Vec<u8>) {
+    let pool = UPLOAD_POOL.get_or_init(|| Mutex::new(Vec::new()));
+    let mut guard = pool.lock().unwrap();
+    *guard = buf;
+}
+
+fn prepare_external_image_upload_reuse(data: &[u8], width: u32, height: u32) -> (Vec<u8>, u32) {
+    let mut buf = take_upload_buf();
+
+    let mut bpp = 0usize;
+    if width != 0 && height != 0 {
+        bpp = data.len() / (width as usize * height as usize);
+    }
+
+    fn round_up_to_256_u32(v: u32) -> u32 { (v + 255) & !255 }
+
+    if bpp == 4 {
+        let bpr = round_up_to_256_u32(width * 4);
+        let total = (bpr as usize) * (height as usize);
+        buf.clear();
+        buf.resize(total, 0u8);
+        if bpr as usize == (width as usize * 4) {
+            buf.copy_from_slice(data);
+        } else {
+            for row in 0..height as usize {
+                let src_start = row * (width as usize) * 4;
+                let dst_start = row * (bpr as usize);
+                let len = (width as usize) * 4;
+                buf[dst_start..dst_start + len].copy_from_slice(&data[src_start..src_start + len]);
+            }
+        }
+        return (buf, bpr);
+    }
+
+    if bpp == 3 || bpp == 2 || bpp == 1 {
+        let bpr = round_up_to_256_u32(width * 4);
+        let total = (bpr as usize) * (height as usize);
+        buf.clear();
+        buf.resize(total, 0u8);
+        let expected = (width as usize) * (height as usize) * bpp;
+        if expected != data.len() {
+            buf.clear();
+            buf.extend_from_slice(data);
+            return (buf, round_up_to_256_u32(width * (bpp as u32)));
+        }
+        for row in 0..height as usize {
+            for col in 0..width as usize {
+                let src_idx = (row * width as usize + col) * bpp;
+                let dst_idx = row * (bpr as usize) + col * 4;
+                match bpp {
+                    3 => {
+                        buf[dst_idx] = data[src_idx];
+                        buf[dst_idx + 1] = data[src_idx + 1];
+                        buf[dst_idx + 2] = data[src_idx + 2];
+                        buf[dst_idx + 3] = 0xFF;
+                    }
+                    2 => {
+                        let l = data[src_idx];
+                        let a = data[src_idx + 1];
+                        buf[dst_idx] = l;
+                        buf[dst_idx + 1] = l;
+                        buf[dst_idx + 2] = l;
+                        buf[dst_idx + 3] = a;
+                    }
+                    1 => {
+                        let l = data[src_idx];
+                        buf[dst_idx] = l;
+                        buf[dst_idx + 1] = l;
+                        buf[dst_idx + 2] = l;
+                        buf[dst_idx + 3] = 0xFF;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        return (buf, bpr);
+    }
+
+    let bpr = round_up_to_256_u32(width * if bpp == 0 { 1 } else { bpp as u32 });
+    buf.clear();
+    buf.extend_from_slice(data);
+    (buf, bpr)
 }
 
 #[no_mangle]
@@ -392,11 +555,58 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
-    let bytesPerRow = source.source_size / (source.width as usize * source.height as usize);
+    // Try a zero-copy fast path: if the source is tightly-packed RGBA (4 bpp)
+    // and the required bytes_per_row already satisfies the 256-byte WebGPU
+    // COPY_BYTES_PER_ROW_ALIGNMENT (i.e. width*4 is multiple of 256), and
+    // the requested region equals the full image with no origin offset,
+    // we can call `queue_write_texture` directly on the source slice.
+    fn round_up_to_256_u32(v: u32) -> u32 { (v + 255) & !255 }
+
+    let mut bpp = 0usize;
+    if source.width != 0 && source.height != 0 {
+        bpp = data.len() / (source.width as usize * source.height as usize);
+    }
+
+    let use_direct = bpp == 4
+        && source.origin.x == 0
+        && source.origin.y == 0
+        && (size.width == source.width && size.height == source.height)
+        && round_up_to_256_u32(source.width * 4) as usize == (source.width as usize * 4);
+
+    if use_direct {
+        let bytes_per_row = source.width * 4;
+        let data_layout = wgt::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(bytes_per_row),
+            rows_per_image: Some(source.height),
+        };
+
+        let destination = wgt::TexelCopyTextureInfo {
+            texture: destination_texture_id,
+            mip_level: destination.mip_level,
+            origin: destination.origin.into(),
+            aspect: destination.aspect.into(),
+        };
+
+        let ret = global.queue_write_texture(queue_id, &destination, data, &data_layout, &size);
+        if let Err(cause) = ret {
+            handle_error(
+                global,
+                queue.error_sink.as_ref(),
+                cause,
+                "",
+                None,
+                "canvas_native_webgpu_queue_copy_external_image_to_texture",
+            );
+        }
+        return;
+    }
+
+    let (mut upload_data, bytes_per_row) = prepare_external_image_upload_reuse(data, source.width, source.height);
 
     let data_layout = wgt::TexelCopyBufferLayout {
         offset: 0,
-        bytes_per_row: Some(source.width * bytesPerRow as u32),
+        bytes_per_row: Some(source.width * bytes_per_row),
         rows_per_image: Some(source.height),
     };
 
@@ -411,19 +621,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
         || source.origin.y > 0
         || (size.width > source.width || size.height > source.height)
     {
-        let data = get_offset_image(
-            data,
-            source.width as usize,
-            source.height as usize,
-            source.origin.x as usize,
-            source.origin.y as usize,
-            size.width as usize,
-            size.height as usize,
-        );
-        global.queue_write_texture(queue_id, &destination, data.as_slice(), &data_layout, &size)
+        // If we converted/padded rows we need to extract the requested sub-rectangle
+        // from the aligned RGBA buffer.
+        let bytes_per_pixel = 4usize;
+        let src_bpr = bytes_per_row as usize;
+        let mut sub = vec![0u8; (size.width as usize) * (size.height as usize) * bytes_per_pixel];
+        for row in 0..size.height as usize {
+            let src_row = (source.origin.y as usize + row) as usize;
+            let src_start = src_row * src_bpr + (source.origin.x as usize) * bytes_per_pixel;
+            let dst_start = row * (size.width as usize) * bytes_per_pixel;
+            let len = (size.width as usize) * bytes_per_pixel;
+            sub[dst_start..dst_start + len].copy_from_slice(&upload_data[src_start..src_start + len]);
+        }
+        global.queue_write_texture(queue_id, &destination, sub.as_slice(), &data_layout, &size)
     } else {
-        global.queue_write_texture(queue_id, &destination, data, &data_layout, &size)
+        global.queue_write_texture(queue_id, &destination, upload_data.as_slice(), &data_layout, &size)
     };
+
+    // Return upload buffer to pool
+    give_back_upload_buf(upload_data);
 
     if let Err(cause) = ret {
         handle_error(
@@ -611,7 +827,21 @@ unsafe fn write_buffer_size(
         None => &data[data_offset..],
     };
 
-    if let Err(cause) = global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data) {
+    // wgpu enforces COPY_BUFFER_ALIGNMENT (4 bytes): the number of bytes
+    // written must be a multiple of 4.  If the caller supplies a misaligned
+    // slice (e.g. a 1-byte boolean uniform from Three.js) we zero-pad it
+    // here rather than letting a validation error surface at runtime.
+    const ALIGNMENT: usize = wgt::COPY_BUFFER_ALIGNMENT as usize;
+    let aligned_len = (data.len() + ALIGNMENT - 1) & !(ALIGNMENT - 1);
+    let result = if aligned_len != data.len() {
+        let mut buf = vec![0u8; aligned_len];
+        buf[..data.len()].copy_from_slice(data);
+        global.queue_write_buffer(queue_id, buffer_id, buffer_offset, &buf)
+    } else {
+        global.queue_write_buffer(queue_id, buffer_id, buffer_offset, data)
+    };
+
+    if let Err(cause) = result {
         handle_error(
             global,
             queue.error_sink.as_ref(),
@@ -715,5 +945,71 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_write_texture(
             None,
             "canvas_native_webgpu_queue_write_texture",
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prepare_rgba_input_aligns_and_preserves_pixels() {
+        let width = 3u32;
+        let height = 2u32;
+        // RGBA input: 4 bytes per pixel, simple pattern
+        let mut data = Vec::new();
+        for i in 0..(width * height) {
+            data.push((i & 0xFF) as u8);
+            data.push(((i + 1) & 0xFF) as u8);
+            data.push(((i + 2) & 0xFF) as u8);
+            data.push(0xAAu8);
+        }
+
+        let (upload, bpr) = prepare_external_image_upload(&data, width, height);
+        assert_eq!(upload.len(), (bpr as usize) * (height as usize));
+        assert_eq!((bpr as usize) % 256, 0);
+
+        // Check first pixel preserved
+        assert_eq!(upload[0], data[0]);
+        assert_eq!(upload[1], data[1]);
+        assert_eq!(upload[2], data[2]);
+        assert_eq!(upload[3], data[3]);
+    }
+
+    #[test]
+    fn prepare_rgb_input_expands_to_rgba() {
+        let width = 4u32;
+        let height = 1u32;
+        // RGB: 3 bytes per pixel, colors: R,G,B increasing
+        let mut data = Vec::new();
+        for i in 0..(width * height) {
+            data.push((i * 3 + 0) as u8);
+            data.push((i * 3 + 1) as u8);
+            data.push((i * 3 + 2) as u8);
+        }
+
+        let (upload, bpr) = prepare_external_image_upload(&data, width, height);
+        assert_eq!(upload.len(), (bpr as usize) * (height as usize));
+        // Each pixel should be expanded to 4 bytes; check first pixel
+        assert_eq!(upload[0], data[0]);
+        assert_eq!(upload[1], data[1]);
+        assert_eq!(upload[2], data[2]);
+        assert_eq!(upload[3], 0xFFu8);
+    }
+
+    #[test]
+    fn prepare_gray_input_expands_to_rgba() {
+        let width = 2u32;
+        let height = 2u32;
+        // Grayscale: 1 byte per pixel
+        let data = vec![10u8, 20u8, 30u8, 40u8];
+        let (upload, _bpr) = prepare_external_image_upload(&data, width, height);
+        // First pixel
+        assert_eq!(upload[0], 10u8);
+        assert_eq!(upload[1], 10u8);
+        assert_eq!(upload[2], 10u8);
+        assert_eq!(upload[3], 0xFFu8);
+        // Second pixel
+        assert_eq!(upload[4], 20u8);
     }
 }

@@ -6,13 +6,13 @@ import { GPUCommandBuffer } from './GPUCommandBuffer';
 import { GPUImageCopyExternalImage, GPUImageCopyTexture, GPUImageCopyTextureTagged, GPUImageDataLayout } from './Interfaces';
 import { GPUExtent3D } from './Types';
 export class GPUQueue {
-	[native_];
+	[native_]: any;
 
 	get label() {
 		return this[native_]?.label ?? '';
 	}
 
-	static fromNative(value) {
+	static fromNative(value: any) {
 		if (value) {
 			const ret = new GPUQueue();
 			ret[native_] = value;
@@ -112,6 +112,7 @@ export class GPUQueue {
 			};
 		} else {
 			size = {
+				//@ts-ignore Allow spreading GPUExtent3D object, which may have optional properties.
 				width: 0,
 				height: 1,
 				depthOrArrayLayers: 1,
@@ -142,20 +143,61 @@ export class GPUQueue {
 		});
 	}
 
-	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset?: number, size?: number) {
-		// Avoid creating an unnecessary Uint8Array view — the native layer handles any TypedArray
-		// or ArrayBuffer directly. Only Array<number> needs to be converted.
-		// The C++ side now correctly uses dataValue->ByteLength() so any view over a larger
-		// backing store is handled safely.
-		let nativeData: BufferSource;
+	private alignTo4(n: number) {
+		return (n + 3) & ~3;
+	}
+
+	private padDataForWriteBuffer(data: ArrayBuffer | Uint8Array, size: number, dataOffset: number = 0): Uint8Array {
+		// Normalize input to Uint8Array
+		let src: Uint8Array;
+		if (data instanceof Uint8Array) {
+			src = data;
+		} else {
+			src = new Uint8Array(data as ArrayBuffer);
+		}
+		// Clamp size to available data
+		const available = src.byteLength - dataOffset;
+		const copySize = Math.min(size, available);
+		const padded = new Uint8Array(this.alignTo4(size));
+		padded.set(src.subarray(dataOffset, dataOffset + copySize));
+		// The extra bytes are already zero-initialized
+		return padded;
+	}
+
+	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset: number = 0, size?: number) {
+		// Only Array<number> needs conversion
+		let nativeData: Uint8Array | ArrayBuffer | BufferSource;
 		if (Array.isArray(data)) {
 			nativeData = new Uint8Array(data);
 		} else {
 			nativeData = data as BufferSource;
 		}
-		this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, nativeData, dataOffset ?? 0, size);
-		// Keep nativeData alive past the call to prevent the backing store being freed
-		// before the native synchronous copy completes in GC-aggressive environments.
+
+		// Default size to available bytes from dataOffset
+		let actualSize = size;
+		let totalLength = 0;
+		if (nativeData instanceof Uint8Array) {
+			totalLength = nativeData.byteLength;
+		} else if (nativeData instanceof ArrayBuffer) {
+			totalLength = nativeData.byteLength;
+		} else if (ArrayBuffer.isView(nativeData)) {
+			totalLength = (nativeData as ArrayBufferView).byteLength;
+		}
+		if (actualSize == null) {
+			actualSize = totalLength - dataOffset;
+		}
+		// Defensive: clamp size
+		if (actualSize < 0) actualSize = 0;
+		if (dataOffset < 0) dataOffset = 0;
+
+		if (actualSize % 4 !== 0 || bufferOffset % 4 !== 0 || dataOffset % 4 !== 0) {
+			// Pad/correct as needed
+			const paddedData = this.padDataForWriteBuffer(nativeData as any, actualSize, dataOffset);
+			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, paddedData, 0, this.alignTo4(actualSize));
+		} else {
+			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, nativeData, dataOffset ?? 0, actualSize);
+		}
+		// Keep nativeData alive past the call
 		void nativeData;
 	}
 

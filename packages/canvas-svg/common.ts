@@ -66,7 +66,7 @@ export const initialSVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
 @CSSType('Svg')
 export class SVGBase extends View {
 	public static readyEvent = 'ready';
-	__domElement: Element;
+	__domElement: any;
 	_serializer: XMLSerializer;
 	__children = [];
 	_attachedToDom = false;

@@ -3725,8 +3725,8 @@ pub extern "C" fn canvas_native_webgl_tex_sub_image2d_webgl(
     let state = unsafe { &mut *state };
     let webgl = unsafe { &mut *webgl };
     {
-        let state = &state.0;
-        state.remove_if_current();
+        let inner = &mut state.0;
+        inner.remove_if_current();
     }
     let source = webgl.get_inner();
     source.make_current();

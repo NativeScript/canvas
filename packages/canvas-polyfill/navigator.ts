@@ -20,7 +20,7 @@ export class Navigator {
 		return gpu;
 	}
 	get platform() {
-		if (global.isIOS) {
+		if (__IOS__) {
 			if (Device.os === 'iPadOS') {
 				return 'MacIntel';
 			}

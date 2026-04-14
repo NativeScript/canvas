@@ -7963,7 +7963,7 @@
 						"mangledName": "$s12CanvasNative9NSCRenderC17getVideoFrameDataySo12NSDictionaryCSgSo8AVPlayerC_So0i4ItemE6OutputCSo6CGSizeVtFZ",
 						"moduleName": "CanvasNative",
 						"static": true,
-						"declAttributes": ["Final", "AccessControl", "ObjC"],
+						"declAttributes": ["Final", "AccessControl", "ObjC", "RawDocComment"],
 						"funcSelfKind": "NonMutating"
 					}
 				],

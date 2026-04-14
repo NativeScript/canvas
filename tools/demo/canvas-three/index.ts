@@ -14,6 +14,7 @@ import { DRACOLoader } from './custom/DRACOLoader';
 // import { Sky } from 'three/examples/jsm/objects/Sky';
 //import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
+
 // import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 // import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader';
 // import { init } from './x-jet/main';
@@ -37,6 +38,34 @@ import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
 import * as THREE from 'three';
+
+// ConstNode patch — mirrors react-native-webgpu's constNodePatch.js.
+//
+// Problem: ThreeJS wraps plain JS numbers in ConstNodes with type 'float' (JS
+// has no integer primitive). When such a node is output in a 'uint' context
+// (e.g. the mipLevel arg of textureLoad), the default ConstNode.generate()
+// calls builder.generateConst('uint', value) which appends a 'u' suffix → '0u'.
+// If the surrounding WGSL expression expects i32 this creates a type-mismatch
+// that silently poisons the shader module; createRenderPipeline then returns
+// null and nothing renders. Abstract integer literals (no suffix) are compatible
+// with every numeric WGSL type, so plain '0' is always safe here.
+//
+// We pull ConstNode off the already-imported THREE namespace (= three.webgpu.js
+// via webpack alias) so the prototype patch applies to the exact class used
+// internally by WebGPURenderer — NOT a second isolated copy from three/src/...
+(function patchConstNode() {
+	const ConstNode = (THREE as any).ConstNode;
+	if (!ConstNode?.prototype) return; // guard against future API changes
+	const _orig = ConstNode.prototype.generate;
+	ConstNode.prototype.generate = function (builder: any, output: string) {
+		const type: string = this.getNodeType(builder);
+		if (type === 'float' && (output === 'int' || output === 'uint')) {
+			return `${Math.round(parseFloat(this.generateConst(builder)))}`;
+		}
+		return _orig.call(this, builder, output);
+	};
+})();
+
 // import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -46,6 +75,7 @@ import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise';
 // import { RGBELoader, GLTFLoader, OrbitControls, SimplexNoise, DRACOLoader } from 'three-stdlib';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { tiny_poly_world_webgpu } from './games/tiny_poly_world_webgpu';
+import { device } from '@nativescript/core/platform';
 
 //import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
@@ -76,9 +106,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//x jet game
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		//this.webgpu_cube(this.canvas);
+		this.webgpu_cube(args.object).catch((err) => console.error('webgpu_cube failed:', err));
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -136,48 +166,42 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_cube(canvas: Canvas) {
-		// const adapter = await navigator.gpu?.requestAdapter();
-		// const device: GPUDevice = (await adapter?.requestDevice()) as never;
-
-		var camera, scene, renderer;
-		var geometry, material, mesh;
-		var context: GPUCanvasContext;
+		var camera: THREE.PerspectiveCamera, scene: THREE.Scene, renderer: any;
+		var geometry: THREE.BoxGeometry, material: THREE.MeshNormalMaterial, mesh: THREE.Mesh;
 
 		function animate() {
 			mesh.rotation.x += 0.01;
 			mesh.rotation.y += 0.02;
-
 			renderer.render(scene, camera);
 		}
 
-		async function init() {
-			canvas.width = canvas.clientWidth * window.devicePixelRatio;
-			canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+		const innerWidth = canvas.clientWidth;
+		const innerHeight = canvas.clientHeight;
 
-			const innerWidth = canvas.clientWidth;
-			const innerHeight = canvas.clientHeight;
+		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
+		camera.position.z = 1;
 
-			camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
-			camera.position.z = 1;
+		scene = new THREE.Scene();
+		geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+		material = new THREE.MeshNormalMaterial();
+		mesh = new THREE.Mesh(geometry, material);
+		scene.add(mesh);
 
-			scene = new THREE.Scene();
+		//@ts-ignore
+		renderer = new THREE.WebGPURenderer({ canvas });
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(innerWidth, innerHeight, false);
 
-			geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-			material = new THREE.MeshNormalMaterial();
-
-			mesh = new THREE.Mesh(geometry, material);
-			scene.add(mesh);
-
-			renderer = new THREE.WebGPURenderer({ canvas });
-
+		try {
 			await renderer.init();
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-			context = canvas.getContext('webgpu');
-			renderer.setAnimationLoop(animate);
+		} catch (err: any) {
+			console.error('webgpu_cube: renderer.init() failed:', err?.message ?? err);
+			return;
 		}
 
-		init();
+		renderer.setAnimationLoop(animate);
 	}
 
 	async webgpu_tsl_galaxy(canvas: Canvas) {
@@ -267,11 +291,14 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					*/
 
 			// renderer
-
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
+			renderer = new WebGPURenderer({ canvas, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-			await renderer.init();
+			try {
+				await renderer.init();
+			} catch (error) {
+				console.error('Error initializing WebGPURenderer:', error);
+			}
 			context = canvas.getContext('webgpu');
 
 			renderer.setAnimationLoop(animate);
@@ -296,6 +323,8 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			renderer.render(scene, camera);
 		}
+
+		init();
 	}
 
 	async webgpu_backdrop(canvas: Canvas) {
@@ -429,81 +458,76 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webGPUGtlfLoader(canvas) {
-		var container, controls, context, width, height;
-		var camera, scene, renderer;
-		var mouseX = 0,
-			mouseY = 0,
-			windowHalfX = 0,
-			windowHalfY = 0;
-		// THREE.RGBELoader: unsupported type:  1009
+		var controls: OrbitControls;
+		var camera: THREE.PerspectiveCamera, scene: THREE.Scene, renderer: WebGPURenderer;
+
 		const init = async () => {
 			canvas.width = canvas.clientWidth * window.devicePixelRatio;
 			canvas.height = canvas.clientHeight * window.devicePixelRatio;
-			width = canvas.width;
-			height = canvas.height;
+
 			camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.25, 20);
 			camera.position.set(-1.8, 0.6, 2.7);
+
 			scene = new THREE.Scene();
-			const light = new THREE.SpotLight();
-			light.position.set(-1.8, 0.6, 2.7);
-			scene.add(light);
 
-			global.parent = window.parent = window;
-
-			new (<any>RGBELoader)().setPath(this.root + '/textures/equirectangular/').load('royal_esplanade_1k.hdr', (texture) => {
-				texture.mapping = THREE.EquirectangularReflectionMapping;
-
-				scene.background = texture;
-				scene.environment = texture;
-
-				var loader = new (<any>GLTFLoader)().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/');
-				loader.load('DamagedHelmet.gltf', function (gltf) {
-					scene.add(gltf.scene);
-					animate();
-				});
-			});
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+
 			await renderer.init();
 
-			// renderer.toneMapping = THREE.ACESFilmicToneMapping;
-			// renderer.toneMappingExposure = 1;
+			renderer.setAnimationLoop(render);
 
-			// var pmremGenerator = new THREE.PMREMGenerator(renderer);
-			// pmremGenerator.compileEquirectangularShader();
+			const pmremGenerator = new THREE.PMREMGenerator(renderer);
+			scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
+			pmremGenerator.dispose();
+
+			// Load GLTF independently — not nested inside the HDR callback.
+			new (<any>GLTFLoader)().setPath(this.root + '/models/gltf/DamagedHelmet/glTF/').load(
+				'DamagedHelmet.gltf',
+				(gltf: any) => {
+					scene.add(gltf.scene);
+				},
+				undefined,
+				(err: unknown) => {
+					console.error('GLTFLoader error:', err);
+				},
+			);
+
+			// Try HDR as an optional visual upgrade; failures are non-fatal.
+			// THREE.RGBELoader: unsupported type 1009 (HalfFloatType) on some NativeScript builds.
+			new (<any>RGBELoader)().setPath(this.root + '/textures/equirectangular/').load(
+				'royal_esplanade_1k.hdr',
+				(texture: THREE.DataTexture) => {
+					texture.mapping = THREE.EquirectangularReflectionMapping;
+					scene.background = texture;
+					scene.environment = texture;
+				},
+				undefined,
+				(err: unknown) => {
+					console.warn('RGBELoader failed (HalfFloatType unsupported?), keeping RoomEnvironment:', err);
+				},
+			);
 
 			controls = new OrbitControls(camera, canvas);
-
-			canvas.addEventListener('change', render);
 			controls.minDistance = 2;
 			controls.maxDistance = 10;
 			controls.target.set(0, 0, -0.2);
 			controls.update();
 
-			//	onWindowResize();
 			window.addEventListener('resize', onWindowResize, false);
 		};
 
 		function onWindowResize() {
-			const width = canvas.width;
-			const height = canvas.height;
-			camera.aspect = width / height;
+			// Bug fix: was reading canvas.width/height (device pixels) for aspect ratio.
+			// camera.aspect must use logical (CSS) pixels; renderer.setSize handles DPR internally.
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
-			renderer.setSize(width, height);
-			render();
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		}
-
-		//
 
 		function render() {
 			renderer.render(scene, camera);
-		}
-
-		function animate() {
-			render();
-			//stats.update();
-			requestAnimationFrame(animate);
 		}
 
 		try {
@@ -635,7 +659,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const raycaster = new THREE.Raycaster();
 			const pointer = new THREE.Vector2();
 
-			renderer = new THREE.WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
+			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -849,7 +873,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			envMap.mapping = THREE.EquirectangularReflectionMapping;
 			scene.environment = envMap;
 
-			renderer = new THREE.WebGPURenderer({ canvas });
+			renderer = new WebGPURenderer({ canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -1055,7 +1079,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const clip = gltf.animations[0];
 			mixer.clipAction(clip.optimize()).play();
 
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);
 			renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -3760,7 +3784,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				},
 			);
 
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			await renderer.init();
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);

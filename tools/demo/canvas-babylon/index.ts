@@ -19,14 +19,18 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		const gl = this.canvas.getContext('webgl2', { antialias: false });
+		// const gl = this.canvas.getContext('webgl2', { antialias: false });
 
-		const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
+		// const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
+
+		this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
+		this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
+
 		var engine: BABYLON.Engine = null;
 		var scene: BABYLON.Scene = null;
 		var sceneToRender: BABYLON.Scene = null;
-		var createDefaultEngine = function () {
-			return new BABYLON.Engine(gl, true, { preserveDrawingBuffer: false, stencil: true, antialias: false, adaptToDeviceRatio: true });
+		var createDefaultEngine = () => {
+			return new BABYLON.Engine(this.canvas, true, { preserveDrawingBuffer: false, stencil: true, antialias: false, adaptToDeviceRatio: true });
 		};
 		// You have to create a function called createScene. This function must return a BABYLON.Scene object
 		// You can reference the following variables: scene, canvas
@@ -36,9 +40,9 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 		// this.createMDN(engine)
 
 		//sceneToRender = this.createChart(engine);
-		//sceneToRender = this.createWaterScene(engine);
+		sceneToRender = this.createWaterScene(engine);
 		//sceneToRender = this.createScene(engine);
-		sceneToRender = this.createSkullScene(engine);
+		//sceneToRender = this.createSkullScene(engine);
 		//sceneToRender = this.createLightTexture(engine);
 		//sceneToRender = this.createParticleScene(engine);
 		engine.runRenderLoop(function () {
@@ -677,7 +681,7 @@ export class DemoSharedCanvasBabylon extends DemoSharedBase {
 			null,
 			(e) => {
 				console.log('e', e);
-			}
+			},
 		);
 
 		// Move the light with the camera

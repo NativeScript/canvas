@@ -27,10 +27,10 @@ class Accelerometer {
 
 	static accManager;
 	static isListeningForUpdates = false;
-	static main_queue = global.isIOS ? dispatch_get_current_queue() : null;
+	static main_queue = __IOS__ ? dispatch_get_current_queue() : null;
 
 	static getNativeDelay(options?: AccelerometerOptions): number {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			if (!options || !options.sensorDelay) {
 				return android.hardware.SensorManager.SENSOR_DELAY_NORMAL;
 			}
@@ -67,7 +67,7 @@ class Accelerometer {
 	}
 
 	static startAccelerometerUpdates(callback: (data: AccelerometerData) => void, options?: AccelerometerOptions) {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			if (Accelerometer.isListening()) {
 				console.log(startButNotStopped);
 				Accelerometer.stopAccelerometerUpdates();
@@ -144,7 +144,7 @@ class Accelerometer {
 	}
 
 	static stopAccelerometerUpdates() {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			if (Accelerometer.sensorListener) {
 				Accelerometer.sensorManager.unregisterListener(Accelerometer.sensorListener);
 				Accelerometer.sensorListener = undefined;
@@ -162,7 +162,7 @@ class Accelerometer {
 	}
 
 	static isListening(): boolean {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			return !!Accelerometer.sensorListener;
 		} else {
 			return Accelerometer.isListeningForUpdates;
@@ -234,7 +234,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (global.isIOS) {
+		if (__IOS__) {
 			if (!CMMotionManager.alloc().init().gyroAvailable) {
 				return;
 			}
@@ -250,7 +250,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 			},
 			{
 				sensorDelay: 'ui',
-			}
+			},
 		);
 	}
 
@@ -258,7 +258,7 @@ export class DemoSharedCanvasPhaserCe extends DemoSharedBase {
 		if (!this.useAccelerometer) {
 			return;
 		}
-		if (global.isIOS) {
+		if (__IOS__) {
 			return UIDevice.currentDevice.name.toLowerCase().indexOf('simulator') !== -1;
 		}
 		if (Accelerometer.isListening) {

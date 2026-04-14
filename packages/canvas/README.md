@@ -100,13 +100,6 @@ export async function canvasReady(args) {
 		format: presentationFormat,
 	});
 
-
-
-	/// rendering logic
-	// to render to your screen you will need to call presentSurfacefrom the WebGPU context.
-	// Add the followig to the end of your render loop to ensure it gets displayed.
-
-	context.presentSurface();
 }
 ```
 

@@ -67,6 +67,7 @@ import { rnSkiaPerf } from './canvas2d/rn-skia-perf';
 import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
 import { Svg } from '@nativescript/canvas-svg';
+import { videoFrame2DDemo, videoFrameWebGLDemo } from './webgl/video-frame';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -646,16 +647,15 @@ fn main() -> @location(0) vec4f {
 				passEncoder.end();
 
 				device.queue.submit([commandEncoder.finish()]);
-				console.log('1', thiz.canvas.toDataURL());
-				(<any>context).presentSurface();
-				console.log('2', thiz.canvas.toDataURL());
-				//	requestAnimationFrame(frame);
+				requestAnimationFrame(frame);
 			}
 			requestAnimationFrame(frame);
 		}
 	}
 
 	draw() {
+		//videoFrame2DDemo(this.canvas);
+		//videoFrameWebGLDemo(this.canvas);
 		//this.remoteFont(this.canvas);
 		//this.webgpuTest();
 		//this.webgpuTriangle();
@@ -814,7 +814,7 @@ fn main() -> @location(0) vec4f {
 		});
 
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			//    canvas.android.setHandleInvalidationManually(true);
 			(org.nativescript as any).canvas.NSCCanvas.getViews().put(`${this.canvas._domId}`, new java.lang.ref.WeakReference(this.canvas.android));
 		} else {
@@ -833,7 +833,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		//swarm(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -869,7 +869,7 @@ fn main() -> @location(0) vec4f {
 		//this.vulkan(this.canvas);
 		//texImage3DDemo(this.canvas);
 		//texSubImage3DDemo(this.canvas);
-		videoTex3DDemo(this.canvas);
+		//videoTex3DDemo(this.canvas);
 		//this.videoDrawFrames(this.canvas);
 
 		//shadowOffsetX(this.canvas);

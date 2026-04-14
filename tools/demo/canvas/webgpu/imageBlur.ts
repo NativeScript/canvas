@@ -274,8 +274,6 @@ export async function run(canvas: Canvas) {
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
 
-		context.presentSurface();
-
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);

@@ -18,6 +18,8 @@ pub struct CanvasGPUAdapter {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) adapter: wgpu_core::id::AdapterId,
     pub(crate) is_fallback_adapter: bool,
+    /// The feature level that was requested when this adapter was created.
+    pub(crate) feature_level: wgt::FeatureLevel,
     pub(crate) features: Vec<&'static str>,
     pub(crate) limits: wgt::Limits,
 }
@@ -119,7 +121,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let features = parse_required_features(required_features, required_features_length);
 
     let limits = if required_limits.is_null() {
-        wgt::Limits::default()
+        adapter.limits.clone()
     } else {
         unsafe { *required_limits }.into()
     };
@@ -147,6 +149,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
     let callback = callback as i64;
     let callback_data = callback_data as i64;
     let adapter_id = adapter.adapter;
+    let feature_level = adapter.feature_level;
     let instance = Arc::clone(&adapter.instance);
     std::thread::spawn(move || {
         let descriptor = wgt::DeviceDescriptor {
@@ -196,6 +199,7 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
                     user_data: std::ptr::null_mut(),
                     instance,
                     error_sink,
+                    feature_level,
                 }));
                 callback(std::ptr::null_mut(), ret, callback_data);
             }

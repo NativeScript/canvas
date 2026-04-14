@@ -578,7 +578,7 @@ pub struct GPURenderPassColorAttachment {
 
 #[napi(object)]
 pub struct GPURenderPassDepthStencilAttachment {
-  pub depth_clear_value: Option<f64>,
+  pub depth_clear_value: Option<f32>,
   pub depth_load_op: Option<GPULoadOp>,
   pub depth_read_only: Option<bool>,
   pub depth_store_op: Option<GPUStoreOp>,

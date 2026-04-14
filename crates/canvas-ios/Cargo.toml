@@ -16,6 +16,6 @@ gl-bindings.workspace = true
 raw-window-handle.workspace = true
 parking_lot.workspace = true
 log.workspace = true
-env_logger.workspace = true
+# env_logger removed: it pulls in regex + ansi-term; iOS uses os_log via the platform
 skia-safe = { workspace = true, features = ["gl", "metal","textlayout"] }
 

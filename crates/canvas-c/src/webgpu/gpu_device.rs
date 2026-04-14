@@ -1,5 +1,4 @@
 use std::cmp::PartialEq;
-use std::num::NonZeroU64;
 use std::sync::Arc;
 use std::{
     borrow::Cow,
@@ -7,7 +6,6 @@ use std::{
     os::raw::{c_char, c_void},
 };
 use wgpu_core::binding_model::BufferBinding;
-use wgpu_core::command::RenderBundleEncoder;
 use wgpu_core::id::PipelineLayoutId;
 use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
 //use wgpu_core::gfx_select;
@@ -17,9 +15,9 @@ use wgt::{Features, PrimitiveTopology};
 use crate::buffers::StringBuffer;
 use crate::webgpu::enums::{
     CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource,
-    CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalCompareFunction,
-    CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology, CanvasQueryType,
-    SurfaceGetCurrentTextureStatus,
+    CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalBool,
+    CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology
+    , CanvasQueryType, SurfaceGetCurrentTextureStatus,
 };
 use crate::webgpu::error::{handle_error, handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
@@ -31,7 +29,7 @@ use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 
 use super::{
     enums::{
-        CanvasCompareFunction, CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat,
+        CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat,
         CanvasOptionalIndexFormat, CanvasStencilFaceState, CanvasTextureDimension,
         CanvasVertexStepMode,
     },
@@ -91,7 +89,9 @@ unsafe extern "C" fn default_uncaptured_error_handler(
     let message = if message.is_null() {
         "<null>"
     } else {
-        unsafe { CStr::from_ptr(message) }.to_str().unwrap_or("<invalid utf-8>")
+        unsafe { CStr::from_ptr(message) }
+            .to_str()
+            .unwrap_or("<invalid utf-8>")
     };
 
     #[cfg(target_os = "android")]
@@ -118,7 +118,9 @@ pub(crate) unsafe extern "C" fn default_device_lost_handler(
     let message = if message.is_null() {
         "<null>"
     } else {
-        unsafe { CStr::from_ptr(message) }.to_str().unwrap_or("<invalid utf-8>")
+        unsafe { CStr::from_ptr(message) }
+            .to_str()
+            .unwrap_or("<invalid utf-8>")
     };
 
     #[cfg(target_os = "android")]
@@ -237,6 +239,9 @@ pub struct CanvasGPUDevice {
     pub(crate) queue: Arc<CanvasGPUQueue>,
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
+    /// The feature level under which this device was created.  Used to decide
+    /// whether to report the "core-features-and-limits" marker feature.
+    pub(crate) feature_level: wgt::FeatureLevel,
 }
 
 unsafe impl Sync for CanvasGPUDevice {}
@@ -293,7 +298,11 @@ impl CanvasGPUDevice {
                             offset: buffer.offset.try_into().ok().unwrap_or_default(),
                             // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
                             // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
-                            size: if buffer.size > 0 { Some(buffer.size as u64) } else { None },
+                            size: if buffer.size > 0 {
+                                Some(buffer.size as u64)
+                            } else {
+                                None
+                            },
                         })
                     }
                     CanvasBindGroupEntryResource::Sampler(sampler) => {
@@ -455,8 +464,12 @@ pub extern "C" fn canvas_native_webgpu_device_get_features(
         return std::ptr::null_mut();
     }
     let device = unsafe { &*device };
-    let features = device.features();
-    let features = build_features(features);
+    let mut features = build_features(device.features());
+    // Mirror what was done at adapter-creation time: only report the
+    // "core-features-and-limits" marker for Core-level devices.
+    if device.feature_level != wgt::FeatureLevel::Compatibility {
+        features.push("core-features-and-limits");
+    }
     let buffer = StringBuffer::from(features);
     Box::into_raw(Box::new(buffer))
 }
@@ -781,8 +794,7 @@ unsafe fn create_compute_pipeline(
 
     let global = device.instance.global();
 
-    let (pipeline, error) =
-        global.device_create_compute_pipeline(device_id, &descriptor, None);
+    let (pipeline, error) = global.device_create_compute_pipeline(device_id, &descriptor, None);
 
     let pipeline = CanvasGPUComputePipeline {
         label: descriptor.label.map(|label| Cow::Owned(label.into_owned())),
@@ -972,8 +984,12 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_pipeline_layout(
     let group_layouts = group_layouts
         .iter()
         .map(|group| {
-            let group = &**group;
-            Some(group.group_layout)
+            if group.is_null() {
+                None
+            } else {
+                let group = &**group;
+                Some(group.group_layout)
+            }
         })
         .collect::<Vec<_>>();
 
@@ -1111,15 +1127,17 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
         multiview: None,
     };
 
-    let bundle = RenderBundleEncoder::new(&desc, device_id);
+    let (bundle, error) = global.device_create_render_bundle_encoder(device_id, &desc);
 
-    match bundle {
-        Ok(bundle) => Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
+    let encoder = Box::into_raw(Box::new(Some(Box::into_raw(bundle))));
+
+    match error {
+        None => Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
             label: desc.label,
             instance: device.instance.clone(),
-            encoder: Box::into_raw(Box::new(Some(Box::into_raw(Box::new(bundle))))),
+            encoder,
         })),
-        Err(cause) => {
+        Some(cause) => {
             handle_error_fatal(
                 global,
                 cause,
@@ -1128,9 +1146,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_create_render_bundle_encode
             Arc::into_raw(Arc::new(CanvasGPURenderBundleEncoder {
                 label: desc.label,
                 instance: device.instance.clone(),
-                encoder: Box::into_raw(Box::new(Some(Box::into_raw(Box::new(
-                    RenderBundleEncoder::dummy(device_id),
-                ))))),
+                encoder,
             }))
         }
     }
@@ -1166,10 +1182,7 @@ pub extern "C" fn canvas_native_webgpu_device_create_shader_module(
     let mut msgs: Vec<crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage> =
         Vec::with_capacity(messages.len());
     for (_, message) in messages.enumerate() {
-        let info = crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::new(
-            message,
-            src,
-        );
+        let info = crate::webgpu::gpu_shader_module::CanvasGPUCompilationMessage::new(message, src);
         msgs.push(info);
     }
     if let Some(cause) = error {
@@ -1249,8 +1262,8 @@ pub unsafe extern "C" fn canvas_native_webgpu_constants_destroy(constants: *mut 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CanvasDepthStencilState {
     pub format: CanvasGPUTextureFormat,
-    pub depth_write_enabled: bool,
-    pub depth_compare: CanvasCompareFunction,
+    pub depth_write_enabled: CanvasOptionalBool,
+    pub depth_compare: CanvasOptionalCompareFunction,
     pub stencil_front: CanvasStencilFaceState,
     pub stencil_back: CanvasStencilFaceState,
     pub stencil_read_mask: u32,
@@ -1264,8 +1277,8 @@ impl From<wgt::DepthStencilState> for CanvasDepthStencilState {
     fn from(value: wgt::DepthStencilState) -> Self {
         Self {
             format: value.format.into(),
-            depth_write_enabled: value.depth_write_enabled.unwrap_or(false),
-            depth_compare: value.depth_compare.unwrap_or(wgt::CompareFunction::Always).into(),
+            depth_write_enabled: value.depth_write_enabled.into(),
+            depth_compare: value.depth_compare.into(),
             stencil_front: value.stencil.front.into(),
             stencil_back: value.stencil.back.into(),
             stencil_read_mask: value.stencil.read_mask,
@@ -1281,8 +1294,8 @@ impl Into<wgt::DepthStencilState> for CanvasDepthStencilState {
     fn into(self) -> wgt::DepthStencilState {
         wgt::DepthStencilState {
             format: self.format.into(),
-            depth_write_enabled: Some(self.depth_write_enabled),
-            depth_compare: Some(self.depth_compare.into()),
+            depth_write_enabled: self.depth_write_enabled.into(),
+            depth_compare: self.depth_compare.into(),
             stencil: wgt::StencilState {
                 front: self.stencil_front.into(),
                 back: self.stencil_back.into(),

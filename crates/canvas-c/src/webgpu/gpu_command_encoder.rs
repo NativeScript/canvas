@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::{ffi::CStr, os::raw::c_char};
+use std::io::{Error as IoError, ErrorKind};
 
 use crate::webgpu::error::handle_error;
 use crate::webgpu::prelude::{label_to_ptr, ptr_into_label};
@@ -425,6 +426,66 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
     let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
+    // Validate buffer copy alignment requirements before calling into wgpu.
+    // - buffer offset must respect COPY_BUFFER_ALIGNMENT
+    // - if bytes_per_row is provided it must respect COPY_BYTES_PER_ROW_ALIGNMENT
+    // - rows_per_image if provided must be > 0
+    let copy_buffer_alignment = wgt::COPY_BUFFER_ALIGNMENT as u64;
+    if layout.offset % copy_buffer_alignment != 0 {
+        handle_error(
+            global,
+            error_sink,
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "buffer offset {} must be a multiple of COPY_BUFFER_ALIGNMENT ({})",
+                    layout.offset, copy_buffer_alignment
+                ),
+            ),
+            "",
+            None,
+            "canvas_native_webgpu_command_encoder_copy_buffer_to_texture",
+        );
+        return;
+    }
+
+    if let Some(bpr) = layout.bytes_per_row {
+        let bpr_alignment = wgt::COPY_BYTES_PER_ROW_ALIGNMENT as u32;
+        if bpr % bpr_alignment != 0 {
+            handle_error(
+                global,
+                error_sink,
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "bytes_per_row {} must be a multiple of COPY_BYTES_PER_ROW_ALIGNMENT ({})",
+                        bpr, bpr_alignment
+                    ),
+                ),
+                "",
+                None,
+                "canvas_native_webgpu_command_encoder_copy_buffer_to_texture",
+            );
+            return;
+        }
+    }
+
+    if let Some(rpi) = layout.rows_per_image {
+        if rpi == 0 {
+            handle_error(
+                global,
+                error_sink,
+                IoError::new(
+                    ErrorKind::InvalidInput,
+                    "rows_per_image must be greater than 0",
+                ),
+                "",
+                None,
+                "canvas_native_webgpu_command_encoder_copy_buffer_to_texture",
+            );
+            return;
+        }
+    }
     if let Err(cause) = global.command_encoder_copy_buffer_to_texture(
         command_encoder_id,
         &image_copy_buffer,

@@ -163,7 +163,7 @@ export async function run(canvas: Canvas) {
 			{
 				texture: planetTexture,
 			},
-			{ width: imageBitmap.width, height: imageBitmap.height }
+			{ width: imageBitmap.width, height: imageBitmap.height },
 		);
 	}
 
@@ -183,7 +183,7 @@ export async function run(canvas: Canvas) {
 			{
 				texture: moonTexture,
 			},
-			{ width: imageBitmap.width, height: imageBitmap.height }
+			{ width: imageBitmap.width, height: imageBitmap.height },
 		);
 	}
 
@@ -394,8 +394,6 @@ export async function run(canvas: Canvas) {
 		passEncoder.executeBundles([renderBundle as never]);
 		passEncoder.end();
 		device.queue.submit([commandEncoder.finish()]);
-
-		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

@@ -3,7 +3,7 @@ import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty } from '@nativescript/core';
+import { Application, View, Screen, ImageSource, Utils, widthProperty, heightProperty, isUserInteractionEnabledProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { handleContextOptions, microtask } from './utils';
 
@@ -156,6 +156,12 @@ export class Canvas extends CanvasBase {
 
 	[ignoreTouchEventsProperty.setNative](value: boolean) {
 		this._canvas.setIgnoreTouchEvents(value);
+	}
+
+	[isUserInteractionEnabledProperty.setNative](value: boolean) {
+		this._canvas.setIgnoreTouchEvents(!value);
+		//@ts-ignore
+		this._canvas.setEnabled(value);
 	}
 
 	// @ts-ignore

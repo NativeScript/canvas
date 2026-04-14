@@ -33,7 +33,10 @@
 			"@nativescript/canvas-svg": ["packages/canvas-svg/index.d.ts"],
 			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
 			"@nativescript/canvas/*": ["packages/canvas/*"],
-			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"]
+			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"],
+			"three/webgpu": ["node_modules/three/build/three.webgpu.js"],
+			"three/examples": ["node_modules/three/examples"],
+			"three/tsl": ["node_modules/three/build/three.tsl.js"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

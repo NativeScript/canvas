@@ -24,23 +24,25 @@ log.workspace = true
 wgt = { workspace = true, package = "wgpu-types" }
 futures = "0.3"
 raw-window-handle.workspace = true
-wgpu-core = { workspace = true, features = ["wgsl", "vulkan", "metal"] }
-wgpu-hal = { workspace = true, features = ["vulkan", "metal"] }
+# wgpu-core/hal: base entry with only wgsl; backends added per-platform below
+wgpu-core = { workspace = true, features = ["wgsl"] }
+wgpu-hal = { workspace = true }
 infer = "0.16.0"
 image = { version = "0.25.5", optional = true }
 
 [target.'cfg(target_os="ios")'.dependencies]
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
+wgpu-hal = { workspace = true, features = ["metal"] }
 objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
-metal = { version = "0.30.0"}
+metal = { version = "0.30.0" }
 
 [target.'cfg(target_os="macos")'.dependencies]
-metal = { version = "0.30.0"}
-#display-link = { git = "https://github.com/servo/display-link", branch = "no-transmute" }
-#wgpu-core = { version = "22.0.0", features = ["wgsl", "metal", "raw-window-handle"] }
-#objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
+wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
+wgpu-hal = { workspace = true, features = ["metal"] }
+metal = { version = "0.30.0" }
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }
 wgpu-core = { workspace = true, features = ["wgsl", "vulkan"] }
+wgpu-hal = { workspace = true, features = ["vulkan"] }

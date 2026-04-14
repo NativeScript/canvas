@@ -23,11 +23,34 @@ impl Into<wgt::PowerPreference> for CanvasGPUPowerPreference {
     }
 }
 
+/// - `Core` (default) — full WebGPU feature set.
+/// - `Compatibility` — relaxed capability set; on Android this selects the GLES
+///   backend which provides the widest device coverage (mirrors what a browser
+///   would do on devices that lack Vulkan 1.1+).
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CanvasGPUFeatureLevel {
+    #[default]
+    Core,
+    Compatibility,
+}
+
+impl From<CanvasGPUFeatureLevel> for wgt::FeatureLevel {
+    fn from(value: CanvasGPUFeatureLevel) -> Self {
+        match value {
+            CanvasGPUFeatureLevel::Core => wgt::FeatureLevel::Core,
+            CanvasGPUFeatureLevel::Compatibility => wgt::FeatureLevel::Compatibility,
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasGPURequestAdapterOptions {
     pub power_preference: CanvasGPUPowerPreference,
     pub force_fallback_adapter: bool,
+    /// Requested feature level. Defaults to `Core`.
+    pub feature_level: CanvasGPUFeatureLevel,
 }
 
 impl Default for CanvasGPURequestAdapterOptions {
@@ -35,6 +58,7 @@ impl Default for CanvasGPURequestAdapterOptions {
         Self {
             power_preference: CanvasGPUPowerPreference::None,
             force_fallback_adapter: false,
+            feature_level: CanvasGPUFeatureLevel::Core,
         }
     }
 }
@@ -88,7 +112,10 @@ pub extern "C" fn canvas_native_webgpu_instance_create() -> *const CanvasWebGPUI
         "webgpu",
         wgt::InstanceDescriptor {
             backends,
-            ..Default::default()
+            flags: Default::default(),
+            memory_budget_thresholds: Default::default(),
+            backend_options: Default::default(),
+            display: None,
         },
         None,
     );
@@ -138,6 +165,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         power_preference: options.power_preference.into(),
         force_fallback_adapter: options.force_fallback_adapter,
         compatible_surface: None,
+        apply_limit_buckets: false,
     };
 
     let callback = callback as i64;
@@ -153,24 +181,41 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
 
             #[cfg(target_os = "android")]
             {
-                // Try Vulkan first, but reject software renderers (SwiftShader/llvmpipe).
-                // They crash inside wgpu on device creation with certain feature combinations.
-                // Fall back to the GLES backend which is more robust on emulators.
-                let vulkan_adapter = global.request_adapter(&opts, wgt::Backends::VULKAN, None);
-
-                let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |id| {
-                    // device_type == Cpu means SwiftShader or similar software renderer.
-                    global.adapter_get_info(*id).device_type != wgt::DeviceType::Cpu
-                });
-
-                if is_hardware_vulkan {
-                    vulkan_adapter
-                } else {
-                    // Drop the software Vulkan adapter (if any) and try GLES instead.
-                    if let Ok(id) = vulkan_adapter {
-                        global.adapter_drop(id);
-                    }
+                // `Compatibility` feature level maps naturally to the GLES backend:
+                // it provides the widest device coverage and matches the relaxed
+                // capability set implied by the spec's compatibility level.
+                if options.feature_level == CanvasGPUFeatureLevel::Compatibility {
                     global.request_adapter(&opts, wgt::Backends::GL, None)
+                } else {
+                    // Core: try Vulkan first, preferring hardware over software.
+                    let vulkan_adapter = global.request_adapter(&opts, wgt::Backends::VULKAN, None);
+
+                    let is_hardware_vulkan = vulkan_adapter.as_ref().map_or(false, |id| {
+                        // device_type == Cpu means SwiftShader or similar software renderer.
+                        global.adapter_get_info(*id).device_type != wgt::DeviceType::Cpu
+                    });
+
+                    if is_hardware_vulkan {
+                        // Hardware Vulkan — best case.
+                        vulkan_adapter
+                    } else {
+                        // No hardware Vulkan.  Try GLES next (widest device support).
+                        let gl_adapter = global.request_adapter(&opts, wgt::Backends::GL, None);
+                        if gl_adapter.is_ok() {
+                            // GLES is available — prefer it over software Vulkan and drop
+                            // the software adapter to avoid a resource leak.
+                            if let Ok(id) = vulkan_adapter {
+                                global.adapter_drop(id);
+                            }
+                            gl_adapter
+                        } else {
+                            // GLES unavailable (e.g. Android emulator without host GPU).
+                            // Fall back to the software Vulkan adapter so the caller gets
+                            // *something* rather than null — the JS layer can decide whether
+                            // to proceed or retry with featureLevel:'compatibility'.
+                            vulkan_adapter
+                        }
+                    }
                 }
             }
 
@@ -181,12 +226,20 @@ pub unsafe extern "C" fn canvas_native_webgpu_request_adapter(
         };
 
         let adapter = adapter_id.map(|adapter_id| {
-            let features = build_features(global.adapter_features(adapter_id));
+            let mut features = build_features(global.adapter_features(adapter_id));
+            // "core-features-and-limits" is a WebGPU spec marker that signals the device
+            // was created with Core feature level (all mandatory WebGPU features/limits).
+            // Compatibility mode explicitly opts out of this guarantee, so the feature
+            // must be absent when featureLevel == Compatibility.
+            if options.feature_level != CanvasGPUFeatureLevel::Compatibility {
+                features.push("core-features-and-limits");
+            }
             let limits = global.adapter_limits(adapter_id);
             let ret = CanvasGPUAdapter {
                 instance,
                 adapter: adapter_id,
                 is_fallback_adapter: options.force_fallback_adapter,
+                feature_level: options.feature_level.into(),
                 features,
                 limits,
             };

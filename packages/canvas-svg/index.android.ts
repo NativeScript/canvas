@@ -144,7 +144,7 @@ export class Svg extends SVGBase {
 				domCopy.setAttribute('viewBox', '0 0 100 100');
 			}
 
-			const serialized = this._serializer.serializeToString(domCopy);
+			const serialized = this._serializer.serializeToString(domCopy as never);
 
 			if (serialized !== initialSVG) {
 				this.src = serialized;

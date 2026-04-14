@@ -8,3 +8,4 @@ parking_lot.workspace = true
 canvas-core.workspace = true
 gl-bindings.workspace = true
 raw-window-handle.workspace = true
+log.workspace = true

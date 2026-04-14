@@ -63,6 +63,30 @@ pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];
 
+    // NOTE: "core-features-and-limits" is a WebGPU-spec marker feature, not a hardware
+    // feature.  It must be present only when the adapter was requested with Core feature
+    // level (the default), and absent for Compatibility level.
+
+    if features.contains(wgt::Features::CLIP_DISTANCES) {
+        return_features.push("clip-distances");
+    }
+
+    if features.contains(wgt::Features::FLOAT32_BLENDABLE) {
+        return_features.push("float32-blendable");
+    }
+
+    if features.contains(wgt::Features::SUBGROUP) {
+        return_features.push("subgroups");
+    }
+
+    if features.contains(wgt::Features::TEXTURE_COMPRESSION_ASTC_SLICED_3D) {
+        return_features.push("texture-compression-astc-sliced-3d");
+    }
+
+    if features.contains(wgt::Features::TEXTURE_COMPRESSION_BC_SLICED_3D) {
+        return_features.push("texture-compression-bc-sliced-3d");
+    }
+
     // api
     if features.contains(wgt::Features::DEPTH_CLIP_CONTROL) {
         return_features.push("depth-clip-control");
@@ -191,8 +215,8 @@ pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     if features.contains(wgt::Features::SHADER_I16) {
         return_features.push("shader-i16");
     }
-    if features.contains(wgt::Features::SHADER_PRIMITIVE_INDEX) {
-        return_features.push("shader-primitive-index");
+    if features.contains(wgt::Features::PRIMITIVE_INDEX) {
+        return_features.push("primitive-index");
     }
     if features.contains(wgt::Features::SHADER_EARLY_DEPTH_TEST) {
         return_features.push("shader-early-depth-test");
@@ -214,7 +238,23 @@ pub fn parse_required_features(
             let feat = unsafe { CStr::from_ptr(*feat) };
             let feat = feat.to_string_lossy();
             let feat = feat.as_ref();
+
             match feat {
+                "clip-distances" => {
+                    features.set(wgt::Features::CLIP_DISTANCES, true);
+                }
+                "float32-blendable" => {
+                    features.set(wgt::Features::FLOAT32_BLENDABLE, true);
+                }
+                "subgroups" => {
+                    features.set(wgt::Features::SUBGROUP, true);
+                }
+                "texture-compression-astc-sliced-3d" => {
+                    features.set(wgt::Features::TEXTURE_COMPRESSION_ASTC_SLICED_3D, true);
+                }
+                "texture-compression-bc-sliced-3d" => {
+                    features.set(wgt::Features::TEXTURE_COMPRESSION_BC_SLICED_3D, true);
+                }
                 "depth-clip-control" => {
                     features.set(wgt::Features::DEPTH_CLIP_CONTROL, true);
                 }
@@ -370,8 +410,8 @@ pub fn parse_required_features(
                     features.set(wgt::Features::SHADER_I16, true);
                 }
 
-                "shader-primitive-index" => {
-                    features.set(wgt::Features::SHADER_PRIMITIVE_INDEX, true);
+                "shader-primitive-index" | "primitive-index" => {
+                    features.set(wgt::Features::PRIMITIVE_INDEX, true);
                 }
 
                 "shader-early-depth-test" => {

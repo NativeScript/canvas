@@ -2,7 +2,6 @@ use std::cmp::PartialEq;
 use std::ffi::c_uint;
 
 use base64::Engine;
-use regex::bytes::Replacer;
 use skia_safe::image::CachingHint;
 use skia_safe::BlendMode;
 pub use skia_safe::ColorType;

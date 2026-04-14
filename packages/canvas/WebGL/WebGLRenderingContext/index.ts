@@ -64,11 +64,11 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 		super(context);
 		if (contextOptions) {
 			let nativeContext = '0';
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				nativeContext = context.getNativeContextString();
 			}
 
-			if (global.isIOS) {
+			if (__IOS__) {
 				nativeContext = context.nativeContext.toString();
 			}
 
@@ -78,7 +78,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 
 			let direction = 0;
 
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				direction = (<any>org).nativescript.canvas.NSCCanvas.getDirection();
 			} else {
 				// todo
@@ -96,14 +96,14 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 	}
 
 	get drawingBufferHeight() {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			return this._canvas?.drawingBufferHeight ?? 0;
 		}
 		return this.native.drawingBufferHeight;
 	}
 
 	get drawingBufferWidth() {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			return this._canvas?.drawingBufferWidth ?? 0;
 		}
 		return this.native.drawingBufferWidth;
@@ -840,13 +840,13 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
 			} else if (pixels instanceof Canvas) {
 				this.native.texImage2D(target, level, internalformat, width, height, border, format, type ?? internalformat, pixels.native);
-			} else if (global.isAndroid && pixels instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && pixels instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels, this.native.__flipY);
 				//this.native.texImage2D(target, level, internalformat, width, height, pixels);
-			} else if (global.isIOS && pixels instanceof UIImage) {
+			} else if (__IOS__ && pixels instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, pixels);
 			} else if (pixels instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels.android, this.native.__flipY);
 				}
 			} else if (pixels && typeof pixels.tagName === 'string' && (pixels.tagName === 'IMG' || pixels.tagName === 'IMAGE')) {
@@ -854,22 +854,22 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				if (!isSVG && pixels._asset instanceof ImageAsset) {
 					this.native.texImage2D(target, level, internalformat, width, height, border, format, type, pixels._asset.native);
 				} else if (pixels._imageSource instanceof ImageSource) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._imageSource.android, this.native.__flipY);
 					}
-				} else if (global.isAndroid && pixels._image instanceof android.graphics.Bitmap) {
+				} else if (__ANDROID__ && pixels._image instanceof android.graphics.Bitmap) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, pixels._image, this.native.__flipY);
-				} else if (global.isIOS && pixels._image instanceof UIImage) {
+				} else if (__IOS__ && pixels._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, pixels._image);
 				} else if (pixels._svg) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						const svg = pixels._svg?._svg.getBitmap?.();
 						if (svg) {
 							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, internalformat, width, height, svg, this.native.__flipY);
 						}
 					}
 
-					if (global.isIOS) {
+					if (__IOS__) {
 						const data = pixels._svg?._svg?.data;
 						const size = pixels._svg?._svg?.buf_size;
 						const dimensions = pixels._svg?._svg.data_size;
@@ -878,7 +878,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						}
 					}
 				} else if (typeof pixels.src === 'string') {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(pixels.src).android, this.native.__flipY);
 					}
 				}
@@ -902,13 +902,13 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
 			} else if (border instanceof Canvas) {
 				this.native.texImage2D(target, level, internalformat, width, height, border.native);
-			} else if (global.isAndroid && border instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && border instanceof android.graphics.Bitmap) {
 				(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border, this.native.__flipY);
 				this.native.texImage2D(target, level, internalformat, width, height, border);
-			} else if (global.isIOS && border instanceof UIImage) {
+			} else if (__IOS__ && border instanceof UIImage) {
 				this.native.texImage2D(target, level, internalformat, width, height, border);
 			} else if (border instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border.android, this.native.__flipY);
 				}
 			} else if (border && typeof border.tagName === 'string' && (border.tagName === 'IMG' || border.tagName === 'IMAGE')) {
@@ -916,22 +916,22 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				if (!isSVG && border._asset instanceof ImageAsset) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._asset.native);
 				} else if (border._imageSource instanceof ImageSource) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border._imageSource.android, this.native.__flipY);
 					}
-				} else if (global.isAndroid && border._image instanceof android.graphics.Bitmap) {
+				} else if (__ANDROID__ && border._image instanceof android.graphics.Bitmap) {
 					(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, border._image, this.native.__flipY);
-				} else if (global.isIOS && border._image instanceof UIImage) {
+				} else if (__IOS__ && border._image instanceof UIImage) {
 					this.native.texImage2D(target, level, internalformat, width, height, border._image);
 				} else if (border._svg) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						const svg = border._svg?._svg.getBitmap?.();
 						if (svg) {
 							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, internalformat, width, height, svg, this.native.__flipY);
 						}
 					}
 
-					if (global.isIOS) {
+					if (__IOS__) {
 						const data = border._svg?._svg?.data;
 						const size = border._svg?._svg?.buf_size;
 						const dimensions = border._svg?._svg.data_size;
@@ -940,7 +940,7 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 						}
 					}
 				} else if (typeof border.src === 'string') {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texImage2D(java.lang.Long.valueOf(this._contextPtr), target, level, internalformat, width, height, ImageSource.fromFileSync(border.src).android, this.native.__flipY);
 					}
 				}
@@ -984,14 +984,14 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				format._video.getCurrentFrame(this.native, this, target, level, width, height);
 			} else if (format && typeof format.getCurrentFrame === 'function') {
 				format.getCurrentFrame(this.native, this, target, level, width, height);
-			} else if (global.isAndroid && format instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && format instanceof android.graphics.Bitmap) {
 				// todo
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format);
 			} else if (format instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.android);
 				}
-				if (global.isIOS) {
+				if (__IOS__) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.ios);
 				}
 			} else if (format instanceof ImageAsset) {
@@ -1002,35 +1002,35 @@ export class WebGLRenderingContextBase extends WebGLRenderingCommon {
 				this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format.native);
 			} else if (format && typeof format.tagName === 'string' && (format.tagName === 'IMG' || format.tagName === 'IMAGE')) {
 				if (format._imageSource instanceof ImageSource) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.android);
 					}
-					if (global.isIOS) {
+					if (__IOS__) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._imageSource.ios);
 					}
-				} else if (global.isAndroid && format._image instanceof android.graphics.Bitmap) {
+				} else if (__ANDROID__ && format._image instanceof android.graphics.Bitmap) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
-				} else if (global.isIOS && format._image instanceof UIImage) {
+				} else if (__IOS__ && format._image instanceof UIImage) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._image);
 				} else if (format._asset instanceof ImageAsset) {
 					this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, format._asset.native);
 				} else if (typeof format.src === 'string') {
 					const result = ImageSource.fromFileSync(format.src);
-					if (global.isAndroid && result.android) {
+					if (__ANDROID__ && result.android) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.android);
 					}
-					if (global.isIOS && result.ios) {
+					if (__IOS__ && result.ios) {
 						this.native.texSubImage2D(target, level, xoffset, yoffset, width, height, result.ios);
 					}
 				} else if (format._svg) {
-					if (global.isAndroid) {
+					if (__ANDROID__) {
 						const svg = format._svg?._svg.getBitmap?.();
 						if (svg) {
 							(<any>org).nativescript.canvas.NSCWebGLRenderingContext.texSubImage2D(long(this.canvas._canvas.getNativeGL() as never), target, level, xoffset, yoffset, width, height, svg, this.native.__flipY);
 						}
 					}
 
-					if (global.isIOS) {
+					if (__IOS__) {
 						const data = format._svg?._svg?.data;
 						const size = format._svg?._svg?.buf_size;
 						const dimensions = format._svg?._svg.data_size;

@@ -43,4 +43,6 @@
 - (void)play;
 - (void)pause;
 
+- (void)load;
+
 @end

@@ -114,8 +114,6 @@ export class TinyWebGpuDemo {
 
 			this.device.queue.writeBuffer(this.frameUniformBuffer, 0, this.#frameArrayBuffer);
 
-			this.context.presentSurface();
-
 			this.onFrame(this.device, this.context, t);
 
 			this.#frameMs[this.#frameMsIndex++ % this.#frameMs.length] = performance.now() - frameStart;

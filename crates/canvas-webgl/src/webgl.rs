@@ -1953,6 +1953,12 @@ pub fn canvas_native_webgl_line_width(width: f32, state: &mut WebGLState) {
 pub fn canvas_native_webgl_link_program(program: u32, state: &mut WebGLState) {
     state.make_current();
     unsafe { gl_bindings::LinkProgram(program) }
+    // Cache active uniform-block count for this program (WebGL2 only)
+    if state.get_version() == WebGLVersion::V2 {
+        let mut active_blocks: i32 = 0;
+        unsafe { gl_bindings::GetProgramiv(program, gl_bindings::ACTIVE_UNIFORM_BLOCKS, &mut active_blocks) }
+        state.set_program_active_uniform_blocks(program, active_blocks);
+    }
 }
 
 pub fn canvas_native_webgl_pixel_storei(pname: u32, param: i32, state: &mut WebGLState) {

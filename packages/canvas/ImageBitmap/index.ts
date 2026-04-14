@@ -114,10 +114,10 @@ export class ImageBitmap {
 				// wrapping to create a ref
 				realSource = new Uint8Array(source);
 			} else if (source instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					realSource = source.android; // todo
 				}
-				if (global.isIOS) {
+				if (__IOS__) {
 					realSource = source.ios; // todo
 				}
 			}
@@ -183,11 +183,11 @@ export class ImageBitmap {
 				// wrapping to create a ref
 				realSource = new Uint8Array(source);
 			} else if (source instanceof ImageSource) {
-				if (global.isAndroid) {
+				if (__ANDROID__) {
 					realSource = source.android; // todo
 				}
 
-				if (global.isIOS) {
+				if (__IOS__) {
 					realSource = source.ios; // todo
 				}
 			}

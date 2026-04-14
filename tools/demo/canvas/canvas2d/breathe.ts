@@ -66,7 +66,7 @@ export function breathe(canvas: Canvas) {
 
 	const center = { x: width / 2, y: height / 2 - 64 };
 
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		let progress = 0;
 
 		const animator = android.animation.ValueAnimator.ofFloat([0, 1] as any);
@@ -93,7 +93,7 @@ export function breathe(canvas: Canvas) {
 					}
 					context.restore();
 				},
-			})
+			}),
 		);
 
 		animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());

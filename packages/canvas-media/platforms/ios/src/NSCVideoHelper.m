@@ -260,4 +260,53 @@
     }
 }
 
+- (void)load {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            [self pause];
+
+            if (self.playbackTimeObserver) {
+                [self.player removeTimeObserver:self.playbackTimeObserver];
+                self.playbackTimeObserver = nil;
+            }
+
+            if (self.playbackFramesObserver) {
+                [self.player removeTimeObserver:self.playbackFramesObserver];
+                self.playbackFramesObserver = nil;
+            }
+
+            if (_playEndNotificationId) {
+                [[NSNotificationCenter defaultCenter] removeObserver:_playEndNotificationId];
+                _playEndNotificationId = nil;
+            }
+
+            if (self.currentItem) {
+                @try {
+                    [self.currentItem removeObserver:self forKeyPath:@"status"];
+                } @catch (NSException *exception) {}
+                @try {
+                    [self.currentItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
+                } @catch (NSException *exception) {}
+            }
+
+            if (self.assetOutput) {
+                [self.assetOutput setDelegate:nil queue:NULL];
+                // assetOutput will be released when we replace the item
+            }
+
+            [self.player replaceCurrentItemWithPlayerItem:nil];
+
+            self.loadedDataFired = NO;
+
+            if (self.currentSrc && self.currentSrc.length > 0) {
+                NSString *src = [self.currentSrc copy];
+                self.currentSrc = nil;
+                [self setSrc:src];
+            }
+        } @catch (NSException *ex) {
+            NSLog(@"NSCVideoHelper load() error: %@", ex);
+        }
+    });
+}
+
 @end

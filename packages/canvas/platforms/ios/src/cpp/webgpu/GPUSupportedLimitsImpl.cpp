@@ -183,6 +183,13 @@ v8::Local<v8::FunctionTemplate> GPUSupportedLimitsImpl::GetCtor(v8::Isolate *iso
     );
 
     tmpl->SetAccessor(
+            ConvertToV8String(isolate, "maxInterStageShaderVariables"),
+            GetMaxInterStageShaderComponents,
+            SetMaxInterStageShaderComponents
+    );
+
+    // Legacy alias for older callers still using the old spec name
+    tmpl->SetAccessor(
             ConvertToV8String(isolate, "maxInterStageShaderComponents"),
             GetMaxInterStageShaderComponents,
             SetMaxInterStageShaderComponents
@@ -684,7 +691,7 @@ void GPUSupportedLimitsImpl::GetMaxUniformBufferBindingSize(v8::Local<v8::String
 
     auto limits = ptr->GetLimits();
 
-    info.GetReturnValue().Set(limits->max_uniform_buffer_binding_size);
+    info.GetReturnValue().Set(static_cast<double>(limits->max_uniform_buffer_binding_size));
 }
 
 
@@ -713,7 +720,7 @@ void GPUSupportedLimitsImpl::GetMaxStorageBufferBindingSize(v8::Local<v8::String
 
     auto limits = ptr->GetLimits();
 
-    info.GetReturnValue().Set(limits->max_storage_buffer_binding_size);
+    info.GetReturnValue().Set(static_cast<double>(limits->max_storage_buffer_binding_size));
 }
 
 

@@ -30,27 +30,27 @@ var getJSBuffer = function (buf, type) {
 };
 
 function storeBuffer(key, buffer) {
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		org.nativescript.canvas.NSCCanvas.storeBuffer(key, buffer);
 	}
 
-	if (global.isIOS) {
+	if (__IOS__) {
 		NSCCanvas.store.setObjectForKey(NSData.dataWithData(buffer), key);
 	}
 }
 
 function removeBuffer(key) {
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		org.nativescript.canvas.NSCCanvas.removeBuffer(key);
 	}
 
-	if (global.isIOS) {
+	if (__IOS__) {
 		NSCCanvas.store.removeObjectForKey(key);
 	}
 }
 
 function getBuffer(key) {
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		const buffer = org.nativescript.canvas.NSCCanvas.getBuffer(key);
 		if (buffer) {
 			return ArrayBuffer.from(buffer);
@@ -59,7 +59,7 @@ function getBuffer(key) {
 		return buffer;
 	}
 
-	if (global.isIOS) {
+	if (__IOS__) {
 		const buffer = NSCCanvas.store.objectForKey(key);
 
 		if (buffer) {
@@ -123,7 +123,7 @@ class DRACOLoader extends Loader {
 				this.decodeGeometry(buffer, taskConfig).then(onLoad).catch(onError);
 			},
 			onProgress,
-			onError
+			onError,
 		);
 	}
 	/** @deprecated Kept for backward-compatibility with previous DRACOLoader versions. */
@@ -291,7 +291,7 @@ class DRACOLoader extends Loader {
 	debug() {
 		console.log(
 			'Task load: ',
-			this.workerPool.map((worker) => worker._taskLoad)
+			this.workerPool.map((worker) => worker._taskLoad),
 		);
 	}
 	dispose() {
@@ -312,27 +312,27 @@ function DRACOWorker() {
 	let decoderPending;
 
 	function storeBuffer(key, buffer) {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			org.nativescript.canvas.NSCCanvas.storeBuffer(key, buffer);
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			NSCCanvas.store.setObjectForKey(NSData.dataWithData(buffer), key);
 		}
 	}
 
 	function removeBuffer(key) {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			org.nativescript.canvas.NSCCanvas.removeBuffer(key);
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			NSCCanvas.store.removeObjectForKey(key);
 		}
 	}
 
 	function getBuffer(key) {
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			const buffer = org.nativescript.canvas.NSCCanvas.getBuffer(key);
 			if (buffer) {
 				return ArrayBuffer.from(buffer);
@@ -341,7 +341,7 @@ function DRACOWorker() {
 			return buffer;
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			const buffer = NSCCanvas.store.objectForKey(key);
 
 			if (buffer) {

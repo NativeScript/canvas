@@ -336,7 +336,7 @@ export class Element extends Node {
 			return (<any>nativeElement).getBoundingClientRect();
 		}
 		if (nativeElement) {
-			if (global.isIOS) {
+			if (__IOS__) {
 				NSCanvas.getBoundingClientRect(nativeElement.nativeView, this._boundingClientRect);
 			}
 
@@ -433,4 +433,8 @@ export class Element extends Node {
 	setPointerCapture(id: string) {}
 
 	releasePointerCapture(id: string) {}
+
+	remove() {
+		// todo remove
+	}
 }

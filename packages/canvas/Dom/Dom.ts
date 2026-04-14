@@ -25,11 +25,11 @@ export class Dom extends LayoutBase {
 	}
 
 	createNativeView(): Object {
-		if (global.isIOS) {
+		if (__IOS__) {
 			return UIView.new();
 		}
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			return new android.widget.LinearLayout(this._context);
 		}
 		return null;
@@ -114,11 +114,11 @@ export class Dom extends LayoutBase {
 
 	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
 		if (view === this._canvas) {
-			if (global.isIOS) {
+			if (__IOS__) {
 				this.nativeView.addSubview(this._canvas.nativeView);
 			}
 
-			if (global.isAndroid) {
+			if (__ANDROID__) {
 				this.nativeView.addView(this._canvas.nativeView);
 			}
 			return true;

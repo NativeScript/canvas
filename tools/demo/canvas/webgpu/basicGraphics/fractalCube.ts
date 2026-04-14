@@ -282,12 +282,10 @@ export async function run(canvas: Canvas) {
 			{
 				texture: cubeTexture,
 			},
-			[width, height]
+			[width, height],
 		);
 
 		device.queue.submit([commandEncoder.finish()]);
-
-		context.presentSurface();
 
 		requestAnimationFrame(frame);
 	}

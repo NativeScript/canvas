@@ -577,6 +577,14 @@ SWIFT_CLASS_NAMED("NSCRender")
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)sx :(float)sy :(float)sw :(float)sh :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
+/// Captures the current video frame and returns it as tightly-packed <em>RGBA8888</em> bytes.
+/// The BGRA→RGBA channel swap is performed in Swift using
+/// <code>vImagePermuteChannels_ARGB8888</code> from the Accelerate framework, which exploits
+/// SIMD instructions and is substantially faster than a JS-side byte-swap loop.
+///
+/// returns:
+/// <code>NSDictionary</code> with keys <code>"data"</code> (NSData, RGBA), <code>"width"</code>, <code>"height"</code>,
+/// or <code>nil</code> when no frame is available.
 + (NSDictionary * _Nullable)getVideoFrameData:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize SWIFT_WARN_UNUSED_RESULT;
 @end
 
@@ -1196,6 +1204,14 @@ SWIFT_CLASS_NAMED("NSCRender")
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
 + (BOOL)drawVideoFrame:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize :(int64_t)context :(float)sx :(float)sy :(float)sw :(float)sh :(float)dx :(float)dy :(float)dw :(float)dh SWIFT_WARN_UNUSED_RESULT;
+/// Captures the current video frame and returns it as tightly-packed <em>RGBA8888</em> bytes.
+/// The BGRA→RGBA channel swap is performed in Swift using
+/// <code>vImagePermuteChannels_ARGB8888</code> from the Accelerate framework, which exploits
+/// SIMD instructions and is substantially faster than a JS-side byte-swap loop.
+///
+/// returns:
+/// <code>NSDictionary</code> with keys <code>"data"</code> (NSData, RGBA), <code>"width"</code>, <code>"height"</code>,
+/// or <code>nil</code> when no frame is available.
 + (NSDictionary * _Nullable)getVideoFrameData:(AVPlayer * _Nonnull)player :(AVPlayerItemVideoOutput * _Nonnull)output :(CGSize)videoSize SWIFT_WARN_UNUSED_RESULT;
 @end
 

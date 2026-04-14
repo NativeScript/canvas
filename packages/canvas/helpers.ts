@@ -10,12 +10,12 @@ export class Helpers {
 		if (this._initialized) {
 			return;
 		}
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			__non_webpack_require__('system_lib://libcanvasnativev8.so');
 			this._initialized = true;
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			const cm = new CanvasModule();
 			cm.install();
 			this._initialized = true;

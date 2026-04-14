@@ -110,3 +110,24 @@ if (!((global as any).TextEncoder instanceof TextEncoder)) {
 }
 
 import './urlBlobPatch';
+
+try {
+	// @ts-ignore
+	const canvasMedia = require('@nativescript/canvas-media');
+	if (canvasMedia?.VideoFrame && !(global as any).VideoFrame) {
+		Object.defineProperty(global, 'VideoFrame', {
+			value: canvasMedia.VideoFrame,
+			configurable: true,
+			writable: true,
+		});
+	}
+	if (canvasMedia?.VideoColorSpace && !(global as any).VideoColorSpace) {
+		Object.defineProperty(global, 'VideoColorSpace', {
+			value: canvasMedia.VideoColorSpace,
+			configurable: true,
+			writable: true,
+		});
+	}
+} catch (_e) {
+	// canvas-media not installed — VideoFrame will not be available as a global
+}

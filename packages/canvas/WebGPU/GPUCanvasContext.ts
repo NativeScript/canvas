@@ -5,31 +5,31 @@ import { GPUTexture } from './GPUTexture';
 import type { GPUAdapter } from './GPUAdapter';
 import type { GPUCanvasAlphaMode, GPUCanvasPresentMode, GPUExtent3D, GPUTextureFormat } from './Types';
 import type { CanvasRenderingContext } from '../common';
-import { GPU } from './GPU';
 import type { Canvas } from '../Canvas';
 const device_ = Symbol('[[device]]');
 export class GPUCanvasContext implements CanvasRenderingContext {
 	_type;
-	_canvas: Canvas;
-	[device_]: GPUDevice;
+	_canvas: Canvas | null = null;
+	[device_]: GPUDevice | null = null;
 	static {
 		Helpers.initialize();
 	}
 
-	[native_];
-	[contextPtr_];
+	[native_] = null;
+	[contextPtr_] = null;
 
-	constructor(context: any, contextOptions) {
+	constructor(context: any, contextOptions: any = {}) {
 		let nativeContext = '0';
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			nativeContext = context.getNativeContext().toString();
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			nativeContext = context.nativeContext.toString();
 		}
 
 		const ctxPtr = BigInt(nativeContext);
+		//@ts-ignore
 		this[native_] = global.CanvasModule.createWebGPUContextWithPointer(ctxPtr);
 		this[contextPtr_] = context;
 		this._type = 'webgpu';
@@ -44,7 +44,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	get native() {
-		return this[native_];
+		return this[native_] as any;
 	}
 
 	get canvas() {
@@ -60,7 +60,8 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			...options,
 		};
 		if (__ANDROID__ || __IOS__) {
-			const capabilities = this.getCapabilities(options?.device?.[adapter_]);
+			const adapter = (options as any)?.device?.[adapter_];
+			const capabilities = this.getCapabilities(adapter);
 
 			if (!options.presentMode) {
 				opts.presentMode = capabilities.presentModes[0];
@@ -134,22 +135,40 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 			}
 		}
 
-		opts.device = options?.device?.[native_];
 		this[device_] = options.device;
-		this[native_].configure(opts);
+
+		// Build a clean descriptor with only the fields the native layer understands.
+		// Third-party renderers (e.g. Three.js r0.170+) pass non-standard fields such as
+		// `toneMapping: { mode: 'standard' }` which can cause native serialization errors.
+		const nativeOpts: any = {
+			device: options?.device?.[native_],
+			format: opts.format,
+			usage: opts.usage,
+			colorSpace: opts.colorSpace,
+			alphaMode: opts.alphaMode,
+			presentMode: opts.presentMode,
+		};
+		if (opts.viewFormats) nativeOpts.viewFormats = opts.viewFormats;
+		if (opts.size) nativeOpts.size = opts.size;
+
+		this.native.configure(nativeOpts);
 	}
 
 	unconfigure() {
-		this[native_].unconfigure();
+		this.native.unconfigure();
 	}
 
 	getCurrentTexture() {
-		const texture = this[native_].getCurrentTexture();
-		return GPUTexture.fromNative(texture);
+		const texture = this.native.getCurrentTexture();
+		const result = GPUTexture.fromNative(texture);
+		if (!result) {
+			console.error('GPUCanvasContext.getCurrentTexture: native returned null/undefined — context may not be configured');
+		}
+		return result;
 	}
 
 	presentSurface() {
-		this[native_].presentSurface();
+		this.native.presentSurface();
 	}
 
 	getCapabilities(adapter: GPUAdapter): {
@@ -158,8 +177,9 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		alphaModes: GPUCanvasAlphaMode;
 		usages: number;
 	} {
-		return this[native_].getCapabilities(adapter[native_]);
+		return this.native.getCapabilities(adapter.native);
 	}
+
 	__toDataURL(type: string, quality: number) {
 		if (this[device_]) {
 			return this.native.__toDataURL(type, quality);

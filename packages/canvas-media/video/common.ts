@@ -60,6 +60,7 @@ export abstract class VideoBase extends MediaBase {
 
 	abstract play(): Promise<void>;
 	abstract pause(): void;
+	abstract load(): void;
 	_capturedListeners = {};
 	_listeners = {};
 

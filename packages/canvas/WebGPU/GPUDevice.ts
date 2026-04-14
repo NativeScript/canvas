@@ -21,6 +21,12 @@ import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
 import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
+// Small ring buffer to capture recently-created WGSL sources for debugging.
+const WGSL_CAPTURE: Array<{ time: number; code: string; fixed?: string; stack?: string }> = [];
+export function getCapturedWGSL() {
+	return WGSL_CAPTURE.slice();
+}
+
 function fixup_shader_code(code: string) {
 	let ret = `${code}`;
 	if (!ret.includes('#storage')) {
@@ -34,16 +40,25 @@ function fixup_shader_code(code: string) {
 	ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
 	ret = ret.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
 
-	// diagnostic is unsupport atm, remove after https://github.com/gfx-rs/wgpu/pull/6148
-	ret = ret.replace(/diagnostic\s*\([^)]*\)/g, '');
+	// diagnostic directive is unsupported in older wgpu versions, remove it.
+	// Also strip the trailing semicolon so no stray `;` is left at module scope.
+	ret = ret.replace(/diagnostic\s*\([^)]*\)\s*;?/g, '');
 
-	// todo: remove after wgpu adds support for textureLoad with u32
+	// Kept as a belt-and-suspenders safety net: normalise the textureLoad level
+	// argument from '0u' (u32) to '0' (abstract integer) in case any shader
+	// arrives here without having been through the ConstNode patch.  The proper
+	// fix is the ConstNode patch applied in the demo/app entry-point which stops
+	// ThreeJS from generating 'u'-suffixed integer literals in the first place.
 	ret = ret.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
 		return match.replace(/0u/, '0');
 	});
 
-	// patch switch issue
-	ret = ret.replace(/case\s+(\d+)\s*:\s*\{/g, 'case $1u: {');
+	// NOTE: The old "case N: {" → "case Nu: {" transformation was removed.
+	// It broke ThreeJS r0.183+ which generates switch statements over i32 uniforms
+	// (e.g. tone-mapping mode). Appending a `u` suffix made those case literals u32,
+	// causing a WGSL type-mismatch error and silently poisoning the render pipeline.
+	// Modern wgpu handles abstract-integer switch-case literals correctly, so no
+	// rewrite is needed.
 
 	return ret;
 }
@@ -67,11 +82,11 @@ export class EventTarget {
 		}
 		let emitter: Observable;
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			emitter = this._emitter?.deref?.();
 		}
 		if (emitter !== null && emitter !== undefined) {
@@ -82,11 +97,11 @@ export class EventTarget {
 	removeEventListener(event: string, handler?: any) {
 		let emitter: Observable;
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			emitter = this._emitter?.deref?.();
 		}
 
@@ -98,11 +113,11 @@ export class EventTarget {
 	dispatchEvent(event) {
 		let emitter: Observable;
 
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			emitter = this._emitter?.get?.();
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			emitter = this._emitter?.deref?.();
 		}
 
@@ -177,7 +192,7 @@ export class GPUDevice extends EventTarget {
 	static fromNative(device, adapter: GPUAdapter) {
 		if (device) {
 			const ret = new GPUDevice();
-			device.setuncapturederror(ret._uncapturederror.bind(this));
+			device.setuncapturederror(ret._uncapturederror.bind(ret));
 			ret[native_] = device;
 			ret[adapter_] = adapter;
 			ret._lost = new Promise((resolve, reject) => {
@@ -239,7 +254,11 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createBuffer(descriptor: { label?: string; mappedAtCreation?: boolean; size: number; usage: number }) {
-		const buffer = this.native.createBuffer(descriptor);
+		// Round size up to COPY_BUFFER_ALIGNMENT (4 bytes).  Three.js (and other
+		// frameworks) create 1-byte boolean-uniform buffers; wgpu rejects a
+		// writeBuffer whose padded write size exceeds the buffer allocation.
+		const alignedSize = (descriptor.size + 3) & ~3;
+		const buffer = this.native.createBuffer({ ...descriptor, size: alignedSize });
 		if (buffer) {
 			return GPUBuffer.fromNative(buffer, descriptor.mappedAtCreation);
 		}
@@ -316,13 +335,42 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createShaderModule(descriptor: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
-		const desc: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] } = {
-			...descriptor,
-			code: fixup_shader_code(descriptor.code),
-		};
-		const module = this.native.createShaderModule(desc);
-		if (module) {
-			return GPUShaderModule.fromNative(module);
+		// capture original shader with stack for debugging
+		try {
+			WGSL_CAPTURE.push({ time: Date.now(), code: descriptor.code, stack: new Error().stack });
+			if (WGSL_CAPTURE.length > 20) WGSL_CAPTURE.shift();
+		} catch (e) {
+			// ignore capture failures
+		}
+
+		// Always apply fixups proactively.  wgpu's createShaderModule() never throws —
+		// it returns a GPUShaderModule even for invalid WGSL and defers the compilation
+		// error to createRenderPipeline().  Because of this, the old "try original → catch
+		// → fixup" pattern never applied any transformations.  Applying fixups first ensures
+		// that known incompatibilities (e.g. `diagnostic(...)` directives, `@stage(compute)`,
+		// `type` aliases, etc.) are removed before the shader reaches wgpu.
+		const fixedCode = fixup_shader_code(descriptor.code);
+		const codeChanged = fixedCode !== descriptor.code;
+
+		// Record the fixed version in the capture ring for later inspection.
+		if (codeChanged) {
+			try {
+				const last = WGSL_CAPTURE[WGSL_CAPTURE.length - 1];
+				if (last && last.code === descriptor.code) {
+					last.fixed = fixedCode;
+				}
+			} catch (e) {
+				// ignore
+			}
+		}
+
+		const descToCompile = codeChanged ? { ...descriptor, code: fixedCode } : descriptor;
+
+		try {
+			const module = this.native.createShaderModule(descToCompile);
+			if (module) return GPUShaderModule.fromNative(module);
+		} catch (err) {
+			console.error('GPUDevice.createShaderModule: native createShaderModule threw:', err);
 		}
 
 		return undefined;
@@ -340,8 +388,8 @@ export class GPUDevice extends EventTarget {
 			usage: descriptor?.usage,
 			viewFormats: descriptor?.viewFormats ?? [],
 			width: sizeIsArray ? descriptor.size[0] : (<GPUExtent3DDict>descriptor.size)?.width,
-			height: sizeIsArray ? descriptor.size[1] ?? 1 : (<GPUExtent3DDict>descriptor.size)?.height ?? 1,
-			depthOrArrayLayers: sizeIsArray ? descriptor.size[2] ?? 1 : (<GPUExtent3DDict>descriptor.size)?.depthOrArrayLayers ?? 1,
+			height: sizeIsArray ? (descriptor.size[1] ?? 1) : ((<GPUExtent3DDict>descriptor.size)?.height ?? 1),
+			depthOrArrayLayers: sizeIsArray ? (descriptor.size[2] ?? 1) : ((<GPUExtent3DDict>descriptor.size)?.depthOrArrayLayers ?? 1),
 		};
 
 		let hasBrga = false;

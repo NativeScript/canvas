@@ -261,6 +261,10 @@ export class Video extends VideoBase {
 		this._instance.setSrc(value);
 	}
 
+	load() {
+		this._instance.load();
+	}
+
 	//@ts-ignore
 	get autoplay() {
 		return this._instance.getAutoplay();

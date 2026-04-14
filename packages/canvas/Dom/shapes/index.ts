@@ -38,7 +38,7 @@ export function drawAsImage(elements: Paint[], size: { width: number; height: nu
 
 	const snapshot = canvas.snapshot();
 
-	// if (global.isAndroid) {
+	// if (__ANDROID__) {
 	// 	const value = new java.lang.Long(asset.native.__addr);
 	// 	console.log(value);
 	// 	(org as any).nativescript.canvas.NSCImageAsset.loadImageFromBitmap(new java.lang.Long(asset.native.__addr), snapshot.android);

@@ -292,63 +292,53 @@ impl g_p_u_queue {
     data_offset: Option<i64>,
     size: Option<i64>,
   ) -> Result<()> {
-    match data {
-      Either4::A(buffer_data) => unsafe {
-        let buffer_data = buffer_data.into_value()?;
-        canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
-          Arc::as_ptr(&self.queue),
-          Arc::as_ptr(&buffer.buffer),
-          buffer_offset as u64,
-          buffer_data.as_ptr(),
-          buffer_data.len(),
-          data_offset.unwrap_or(0) as usize,
-          size.unwrap_or(-1) as isize,
-        );
-        Ok(())
-      },
-      Either4::B(view) => {
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
-            Arc::as_ptr(&self.queue),
-            Arc::as_ptr(&buffer.buffer),
-            buffer_offset as u64,
-            view.as_ptr(),
-            view.len(),
-            data_offset.unwrap_or(0) as usize,
-            size.unwrap_or(-1) as isize,
-          );
+    let do_ = data_offset.unwrap_or(0) as usize;
+    // Route to the correct C function: use the _size variant only when a
+    // non-negative explicit size is provided, otherwise let the C layer
+    // consume the full slice from data_offset onward.
+    macro_rules! write_buf {
+      ($ptr:expr, $len:expr) => {
+        match size.filter(|&s| s >= 0) {
+          Some(sz) => unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer_size(
+              Arc::as_ptr(&self.queue),
+              Arc::as_ptr(&buffer.buffer),
+              buffer_offset as u64,
+              $ptr,
+              $len,
+              do_,
+              sz as usize,
+            );
+          },
+          None => unsafe {
+            canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
+              Arc::as_ptr(&self.queue),
+              Arc::as_ptr(&buffer.buffer),
+              buffer_offset as u64,
+              $ptr,
+              $len,
+              do_,
+            );
+          },
         }
-        Ok(())
+      };
+    }
+    match data {
+      Either4::A(buffer_data) => {
+        let buffer_data = buffer_data.into_value()?;
+        write_buf!(buffer_data.as_ptr(), buffer_data.len());
+      }
+      Either4::B(view) => {
+        write_buf!(view.as_ptr(), view.len());
       }
       Either4::C(view) => {
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
-            Arc::as_ptr(&self.queue),
-            Arc::as_ptr(&buffer.buffer),
-            buffer_offset as u64,
-            view.as_ptr() as *const u8,
-            view.len() * size_of::<f32>(),
-            data_offset.unwrap_or(0) as usize,
-            size.unwrap_or(-1) as isize,
-          );
-        }
-        Ok(())
+        write_buf!(view.as_ptr() as *const u8, view.len() * size_of::<f32>());
       }
       Either4::D(view) => {
-        unsafe {
-          canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_write_buffer(
-            Arc::as_ptr(&self.queue),
-            Arc::as_ptr(&buffer.buffer),
-            buffer_offset as u64,
-            view.as_ptr() as *const u8,
-            view.len() * size_of::<u32>(),
-            data_offset.unwrap_or(0) as usize,
-            size.unwrap_or(-1) as isize,
-          );
-        }
-        Ok(())
+        write_buf!(view.as_ptr() as *const u8, view.len() * size_of::<u32>());
       }
     }
+    Ok(())
   }
 
   #[napi]

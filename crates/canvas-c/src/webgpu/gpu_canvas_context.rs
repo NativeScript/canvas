@@ -7,7 +7,6 @@ use base64::Engine;
 use parking_lot::lock_api::Mutex;
 use raw_window_handle::{AppKitDisplayHandle, RawDisplayHandle, RawWindowHandle};
 use std::borrow::Cow;
-use std::error::Error;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::sync::Arc;
@@ -88,10 +87,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_fallback(
     };
 
     let quality: u32 = (quality.clamp(0.0, 1.0) * 100.) as u32;
-    let has_texture = canvas_native_webgpu_context_has_current_texture(context);
+    let texture = canvas_native_webgpu_context_has_current_texture(context);
     let ret = unsafe {
-        if has_texture {
-            let texture = canvas_native_webgpu_context_get_current_texture(context);
+        if !texture.is_null() {
             let ret = canvas_native_webgpu_to_data_url_with_texture(
                 context,
                 texture,
@@ -120,20 +118,32 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url(
         return std::ptr::null_mut();
     }
     let context = &*context;
-    let data = context.data.lock();
-    match &*data {
-        Some(data) => {
-            if format.is_null() {
-                return std::ptr::null_mut();
-            }
-            let format = CStr::from_ptr(format as *const c_char).to_string_lossy();
-            let device = data.device.as_ref();
-            if let Some(data) = to_data_url(context, device, format.as_ref(), quality) {
-                return CString::new(data).unwrap().into_raw();
-            }
 
-            std::ptr::null_mut()
+    // Extract everything needed from the lock and release it before calling
+    // to_data_url_with_texture, which must NOT hold context.data when called
+    // (parking_lot::Mutex is non-reentrant — a second lock on the same thread deadlocks).
+    let (device, format_str, is_bgra) = {
+        let data = context.data.lock();
+        match data.as_ref() {
+            None => return std::ptr::null_mut(),
+            Some(data) => {
+                if format.is_null() {
+                    return std::ptr::null_mut();
+                }
+                let fmt = CStr::from_ptr(format as *const c_char)
+                    .to_string_lossy()
+                    .into_owned();
+                let is_bgra = matches!(
+                    data.texture_data.format,
+                    TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb
+                );
+                (Arc::clone(&data.device), fmt, is_bgra)
+            }
         }
+    }; // context.data lock released here
+
+    match to_data_url(context, &device, &format_str, quality, is_bgra) {
+        Some(s) => CString::new(s).unwrap().into_raw(),
         None => std::ptr::null_mut(),
     }
 }
@@ -149,29 +159,41 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_texture(
         return std::ptr::null_mut();
     }
     let context = &*context;
+    let texture = &*texture;
 
-    let data = context.data.lock();
-    match &*data {
-        Some(data) => {
-            let texture = &*texture;
-            if format.is_null() {
-                return std::ptr::null_mut();
+    // Extract everything needed from the lock and release it before calling
+    // to_data_url_with_texture (non-reentrant mutex guard — see above).
+    let (device, format_str, is_bgra) = {
+        let data = context.data.lock();
+        match data.as_ref() {
+            None => return std::ptr::null_mut(),
+            Some(data) => {
+                if format.is_null() {
+                    return std::ptr::null_mut();
+                }
+                let fmt = CStr::from_ptr(format as *const c_char)
+                    .to_string_lossy()
+                    .into_owned();
+                let is_bgra = matches!(
+                    data.texture_data.format,
+                    TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb
+                );
+                (Arc::clone(&data.device), fmt, is_bgra)
             }
-            let format = CStr::from_ptr(format as *const c_char).to_string_lossy();
-            let device = data.device.as_ref();
-            if let Some(data) = to_data_url_with_texture(
-                context,
-                device,
-                texture.texture,
-                texture.width,
-                texture.height,
-                format.as_ref(),
-                quality,
-            ) {
-                return CString::new(data).unwrap().into_raw();
-            }
-            std::ptr::null_mut()
         }
+    }; // context.data lock released here
+
+    match to_data_url_with_texture(
+        context,
+        &device,
+        texture.texture,
+        texture.width,
+        texture.height,
+        &format_str,
+        quality,
+        is_bgra,
+    ) {
+        Some(s) => CString::new(s).unwrap().into_raw(),
         None => std::ptr::null_mut(),
     }
 }
@@ -181,21 +203,14 @@ fn to_data_url(
     device: &CanvasGPUDevice,
     format: &str,
     quality: u32,
+    is_bgra: bool,
 ) -> Option<String> {
-    let context = &*context;
-    let read_back_texture_lock = context.read_back_texture.lock();
-    match read_back_texture_lock.as_ref() {
-        None => None,
-        Some(texture) => to_data_url_with_texture(
-            context,
-            device,
-            texture.texture,
-            texture.data.size.width,
-            texture.data.size.height,
-            format,
-            quality,
-        ),
-    }
+    let (texture_id, width, height) = {
+        let read_back_texture_lock = context.read_back_texture.lock();
+        let texture = read_back_texture_lock.as_ref()?;
+        (texture.texture, texture.data.size.width, texture.data.size.height)
+    };
+    to_data_url_with_texture(context, device, texture_id, width, height, format, quality, is_bgra)
 }
 
 fn round_up_to_256(value: u32) -> u32 {
@@ -206,6 +221,9 @@ fn round_up_to_256_u64(value: u64) -> u64 {
     (value + 255) & !255
 }
 
+// `is_bgra` must be extracted by the caller from `context.data` *before* calling this
+// function. The caller must NOT hold `context.data` when calling here — parking_lot::Mutex
+// is non-reentrant, and a second lock attempt on the same thread would deadlock.
 fn to_data_url_with_texture(
     context: &CanvasGPUCanvasContext,
     device: &CanvasGPUDevice,
@@ -214,29 +232,10 @@ fn to_data_url_with_texture(
     height: u32,
     format: &str,
     quality: u32,
+    is_bgra: bool,
 ) -> Option<String> {
-    let context = &*context;
     let global = context.instance.global();
     let queue = &device.queue;
-    let mut invalid = false;
-    let mut is_bgra = false;
-    {
-        let lock = context.data.lock();
-        if let Some(data) = lock.as_ref() {
-            match data.texture_data.format {
-                TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb => {
-                    is_bgra = false;
-                }
-                TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb => is_bgra = true,
-                _ => {
-                    invalid = true;
-                }
-            }
-        }
-    }
-    if invalid {
-        return None;
-    }
 
     unsafe {
         let output_buffer_size = round_up_to_256_u64((width as u64) * 4) * (height as u64);
@@ -252,8 +251,18 @@ fn to_data_url_with_texture(
             None,
         );
 
-        if let Some(_) = error {
+        if error.is_some() {
             return None;
+        }
+
+        // Helper: unmap, drop the staging buffer, and return None.
+        // Called on every error path after the buffer is created.
+        macro_rules! bail {
+            () => {{
+                let _ = global.buffer_destroy(output_buffer);
+                let _ = global.buffer_drop(output_buffer);
+                return None;
+            }};
         }
 
         let texture_extent = wgt::Extent3d {
@@ -288,120 +297,135 @@ fn to_data_url_with_texture(
             None,
         );
 
-        if let Some(_) = error {
-            return None;
+        if error.is_some() {
+            bail!();
         }
 
-        if let Err(_) = global.command_encoder_copy_texture_to_buffer(
-            encoder,
-            &texture_copy,
-            &buffer_copy,
-            &texture_extent,
-        ) {
-            return None;
+        if global
+            .command_encoder_copy_texture_to_buffer(
+                encoder,
+                &texture_copy,
+                &buffer_copy,
+                &texture_extent,
+            )
+            .is_err()
+        {
+            bail!();
         }
 
         let desc = wgt::CommandBufferDescriptor { label: None };
 
         let (id, error) = global.command_encoder_finish(encoder, &desc, None);
 
-        if let Some(_) = error {
-            return None;
+        if error.is_some() {
+            bail!();
         }
 
-        global.queue_submit(queue.queue.id, &[id]).ok()?;
+        if global.queue_submit(queue.queue.id, &[id]).is_err() {
+            bail!();
+        }
 
         let op = wgpu_core::resource::BufferMapOperation {
             host: wgpu_core::device::HostMap::Read,
             callback: None,
         };
 
-        if let Err(_) = global.buffer_map_async(output_buffer, 0, None, op) {
-            return None;
+        if global.buffer_map_async(output_buffer, 0, None, op).is_err() {
+            bail!();
         }
 
-        if let Err(_) = global.device_poll(device.device, wgt::PollType::wait_indefinitely()) {
-            return None;
+        if global
+            .device_poll(device.device, wgt::PollType::wait_indefinitely())
+            .is_err()
+        {
+            bail!();
         }
 
-        match global.buffer_get_mapped_range(output_buffer, 0, None) {
+        let result = match global.buffer_get_mapped_range(output_buffer, 0, None) {
             Ok((ptr, size)) => {
                 let bytes = std::slice::from_raw_parts(ptr.as_ptr(), size as usize);
+                let row_bytes = round_up_to_256_u64((4 * width) as u64) as usize;
 
-                if cfg!(feature = "2d") {
-                    return Some(canvas_2d::bytes_to_data_n32_url(
-                        width as i32,
-                        height as i32,
-                        bytes,
-                        round_up_to_256_u64((4 * width) as u64) as usize,
-                        format,
-                        quality,
-                    ));
-                }
+                #[cfg(feature = "2d")]
+                let encoded = Some(canvas_2d::bytes_to_data_n32_url(
+                    width as i32,
+                    height as i32,
+                    bytes,
+                    row_bytes,
+                    format,
+                    quality,
+                ));
 
-                if cfg!(not(feature = "2d")) {
-                    let mut buffer = None;
-
-                    if is_bgra {
-                        let mut bytes = bytes.to_vec();
-                        canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut bytes);
-                        buffer = image::ImageBuffer::from_raw(width, height, bytes)
+                #[cfg(not(feature = "2d"))]
+                let encoded = {
+                    // Convert BGRA → RGBA in place when needed, then wrap as RGBA image.
+                    // Previously this used DynamicImage::ImageRgb8 which expects 3 bytes/pixel
+                    // but GPU readback is always 4 bytes/pixel (RGBA), causing from_raw to
+                    // return None and silently produce no output.
+                    let image_data: Vec<u8> = if is_bgra {
+                        let mut data = bytes.to_vec();
+                        canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut data);
+                        data
                     } else {
-                        buffer = image::ImageBuffer::from_raw(width, height, bytes.to_vec());
-                    }
+                        bytes.to_vec()
+                    };
 
-                    return match buffer {
-                        Some(image) => {
-                            let buffer = image::DynamicImage::ImageRgb8(image);
-
+                    match image::ImageBuffer::<image::Rgba<u8>, Vec<u8>>::from_raw(
+                        width,
+                        height,
+                        image_data,
+                    ) {
+                        None => None,
+                        Some(img) => {
+                            let dyn_image = image::DynamicImage::ImageRgba8(img);
                             let mut output = std::io::Cursor::new(Vec::new());
-
-                            let fmt = match format {
+                            let mime = match format {
                                 "image/jpg" | "image/jpeg" => {
-                                    buffer.write_to(&mut output, image::ImageFormat::Jpeg);
-                                    "image/jpg"
+                                    let _ = dyn_image
+                                        .write_to(&mut output, image::ImageFormat::Jpeg);
+                                    "image/jpeg"
                                 }
                                 "image/webp" => {
-                                    buffer.write_to(&mut output, image::ImageFormat::WebP);
+                                    let _ = dyn_image
+                                        .write_to(&mut output, image::ImageFormat::WebP);
                                     "image/webp"
                                 }
                                 "image/gif" => {
-                                    buffer.write_to(&mut output, image::ImageFormat::Gif);
+                                    let _ = dyn_image
+                                        .write_to(&mut output, image::ImageFormat::Gif);
                                     "image/gif"
                                 }
                                 "image/heif"
                                 | "image/heif-sequence"
                                 | "image/heic"
                                 | "image/heic-sequence" => {
-                                    buffer.write_to(&mut output, image::ImageFormat::Avif);
+                                    let _ = dyn_image
+                                        .write_to(&mut output, image::ImageFormat::Avif);
                                     "image/heif"
                                 }
-                                "image/png" => {
-                                    buffer.write_to(&mut output, image::ImageFormat::Png);
+                                _ => {
+                                    let _ = dyn_image
+                                        .write_to(&mut output, image::ImageFormat::Png);
                                     "image/png"
                                 }
-                                _ => "",
                             };
-
-                            let mut data: Option<String> = None;
-                            let encoded =
-                                base64::engine::general_purpose::STANDARD.encode(output.get_ref());
-                            data = Some(format!("data:{};base64,{}", fmt, encoded));
-
-                            if let Err(_) = global.buffer_unmap(output_buffer) {
-                                return None;
-                            }
-
-                            data
+                            let encoded = base64::engine::general_purpose::STANDARD
+                                .encode(output.get_ref());
+                            Some(format!("data:{};base64,{}", mime, encoded))
                         }
-                        None => None,
-                    };
-                }
+                    }
+                };
 
-                None
+                encoded
             }
             Err(_) => None,
-        }
+        };
+
+        // Always unmap and release the staging buffer regardless of success or failure.
+        let _ = global.buffer_unmap(output_buffer);
+        let _ = global.buffer_drop(output_buffer);
+
+        result
     }
 }
 
@@ -427,7 +451,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
         raw_window_handle::AndroidNdkWindowHandle::new(std::ptr::NonNull::new_unchecked(window));
     let window_handle = RawWindowHandle::AndroidNdk(handle);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
@@ -476,7 +500,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
 
     global.surface_drop(*surface);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             *surface = surface_id;
             drop(surface);
@@ -622,7 +646,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_uiview(
     let handle = raw_window_handle::UiKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
     let window_handle = RawWindowHandle::UiKit(handle);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
@@ -670,7 +694,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_uiview(
 
     let window_handle = RawWindowHandle::UiKit(handle);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             *surface = surface_id;
             context
@@ -782,7 +806,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create_nsview(
     let handle = raw_window_handle::AppKitWindowHandle::new(std::ptr::NonNull::new_unchecked(view));
     let window_handle = RawWindowHandle::AppKit(handle);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             let ctx = CanvasGPUCanvasContext {
                 instance,
@@ -829,7 +853,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize_nsview(
 
     global.surface_drop(*surface);
 
-    match global.instance_create_surface(display_handle, window_handle, None) {
+    match global.instance_create_surface(Some(display_handle), window_handle, None) {
         Ok(surface_id) => {
             *surface = surface_id;
             context
@@ -1263,6 +1287,16 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
             },
             previous_configuration: config,
         });
+        // Discard any stale surface texture that was acquired before this
+        // configure() call.  wgpu resets its internal acquired_texture state
+        // during surface_configure, so if Flush tries to present the old
+        // texture afterwards it will fail with AlreadyAcquired (acquired is
+        // None from wgpu's perspective).  Clearing current_texture here keeps
+        // our cache in sync with wgpu's surface state.
+        {
+            let mut current_texture = context.current_texture.lock();
+            *current_texture = None;
+        }
         context
             .has_surface_presented
             .store(false, std::sync::atomic::Ordering::SeqCst);
@@ -1283,17 +1317,25 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
     *lock = None;
 }
 
+/// Returns the cached surface texture if one has been acquired but not yet presented,
+/// or null if no texture is currently held.  Unlike `get_current_texture`, this
+/// function never acquires a new texture from the wgpu surface — it only peeks at
+/// the already-stored one.  The caller owns the returned Arc reference and must
+/// eventually release it via `canvas_native_webgpu_texture_release`.
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
     context: *const CanvasGPUCanvasContext,
-) -> bool {
+) -> *const CanvasGPUTexture {
     if context.is_null() {
-        return false;
+        return std::ptr::null();
     }
 
     let context = unsafe { &*context };
     let current_texture = context.current_texture.lock();
-    current_texture.is_some()
+    match current_texture.as_ref() {
+        Some(texture) => Arc::into_raw(Arc::clone(texture)),
+        None => std::ptr::null(),
+    }
 }
 
 #[no_mangle]
@@ -1334,6 +1376,25 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
 
     match result {
         Ok(texture) => {
+            // For statuses where Metal did NOT actually hand us a drawable
+            // (Timeout = nextDrawable() returned nil; Lost/Unknown = surface
+            // unrecoverable), the wgpu `acquired_drawable` is None.  If we were
+            // to cache and later try to present such a texture, Metal's HAL
+            // would return SurfaceError::AlreadyAcquired because there is
+            // nothing to present.  That error in turn is never recovered from
+            // because the old code left `current_texture` populated, so every
+            // subsequent frame returns the same stale dummy texture → permanent
+            // "Surface image is already acquired" spam + black screen.
+            //
+            // Return null for these statuses so the caller (display-link or
+            // Three.js) skips this frame and retries on the next vsync.
+            match texture.status {
+                SurfaceStatus::Good | SurfaceStatus::Suboptimal | SurfaceStatus::Outdated => {}
+                _ => {
+                    return std::ptr::null_mut();
+                }
+            }
+
             let mut suboptimal = false;
             let status = match texture.status {
                 SurfaceStatus::Good => SurfaceGetCurrentTextureStatus::Success,
@@ -1341,10 +1402,12 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
                     suboptimal = true;
                     SurfaceGetCurrentTextureStatus::Success
                 }
-                SurfaceStatus::Timeout => SurfaceGetCurrentTextureStatus::Timeout,
                 SurfaceStatus::Outdated => SurfaceGetCurrentTextureStatus::Outdated,
+                // Unreachable after the guard above, but keep exhaustive.
+                SurfaceStatus::Timeout => SurfaceGetCurrentTextureStatus::Timeout,
                 SurfaceStatus::Lost => SurfaceGetCurrentTextureStatus::Lost,
-                SurfaceStatus::Unknown => SurfaceGetCurrentTextureStatus::Unknown,
+                SurfaceStatus::Validation => SurfaceGetCurrentTextureStatus::Validation,
+                SurfaceStatus::Occluded => SurfaceGetCurrentTextureStatus::Occluded,
             };
 
             context
@@ -1473,28 +1536,39 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     }
 
     if let Err(cause) = global.surface_present(*surface_id) {
-        match cause {
-            SurfaceError::TextureDestroyed => {
-                context
-                    .has_surface_presented
-                    .store(true, std::sync::atomic::Ordering::SeqCst);
-
-                {
-                    let mut current_texture = context.current_texture.lock();
-                    if let Some(current_texture_ref) = current_texture.as_ref() {
-                        if current_texture_ref.texture == texture.texture {
-                            *current_texture = None;
-                        }
-                    }
+        // Always clear current_texture on any presentation error.  Leaving a
+        // stale texture in current_texture causes every future call to
+        // get_current_texture to return the cached (non-acquirable) texture
+        // rather than fetching a fresh drawable, producing a permanent
+        // "Surface image is already acquired" loop with a black screen.
+        context
+            .has_surface_presented
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        {
+            let mut current_texture = context.current_texture.lock();
+            if let Some(current_texture_ref) = current_texture.as_ref() {
+                if current_texture_ref.texture == texture.texture {
+                    *current_texture = None;
                 }
             }
-            _ => {}
         }
-        handle_error_fatal(
-            global,
-            cause,
-            "canvas_native_webgpu_context_present_surface",
-        )
+        // Release the Arc clone that canvas_native_webgpu_context_has_current_texture
+        // handed out — on the error path it is never consumed by wgpu.
+        unsafe { Arc::decrement_strong_count(texture) };
+        // Downgrade AlreadyAcquired (no texture in wgpu's acquired state — our
+        // cache was stale) to a warning so it doesn't flood fatal-error handling.
+        match cause {
+            SurfaceError::AlreadyAcquired => {
+                log::warn!("present_surface: no acquired texture in wgpu (cache was stale), skipping");
+            }
+            _ => {
+                handle_error_fatal(
+                    global,
+                    cause,
+                    "canvas_native_webgpu_context_present_surface",
+                );
+            }
+        }
     } else {
         context
             .has_surface_presented

@@ -242,7 +242,7 @@ function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: str
 	if (__ANDROID__) {
 		let hasBrga = false;
 		fragment.targets = fragment.targets.map((target) => {
-			switch (target.format) {
+			switch (target?.format) {
 				case 'bgra8unorm':
 					target.format = 'rgba8unorm';
 					hasBrga = true;
@@ -261,7 +261,10 @@ function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: str
 }
 
 export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor, method: string) {
-	const desc: GPURenderPipelineDescriptor = { vertex: { module: value.vertex.module[native_] }, layout: 'auto' };
+	if (!value.vertex?.module) {
+		console.error(`GPUDevice:${method} vertex shader module is null/undefined — shader compilation may have failed`);
+	}
+	const desc: GPURenderPipelineDescriptor = { vertex: { module: value.vertex?.module?.[native_] }, layout: 'auto' };
 
 	if (Array.isArray(value.vertex?.buffers)) {
 		desc.vertex.buffers = [...value.vertex.buffers].map((source) => {
@@ -285,7 +288,10 @@ export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor
 	}
 
 	if (value.fragment) {
-		desc.fragment = { module: value.fragment.module[native_], targets: value.fragment.targets };
+		if (!value.fragment.module) {
+			console.error(`GPUDevice:${method} fragment shader module is null/undefined — shader compilation may have failed`);
+		}
+		desc.fragment = { module: value.fragment?.module?.[native_], targets: value.fragment.targets };
 
 		if (value.fragment.constants) {
 			desc.fragment.constants = value.fragment.constants;

@@ -386,12 +386,12 @@ const appleModelsPPIManifest = new Map(
 
 		// Apple Watch Ultra 2
 		'Watch7,5': 338,
-	})
+	}),
 );
 
 let ppi: number;
 export function getPixelsPerInchForCurrentDevice() {
-	if (global.isAndroid) {
+	if (__ANDROID__) {
 		if (ppi === undefined) {
 			const ctx = Utils.android.getApplicationContext() as android.content.Context;
 			const metrics = new android.util.DisplayMetrics();
@@ -399,7 +399,7 @@ export function getPixelsPerInchForCurrentDevice() {
 			ppi = metrics.densityDpi;
 		}
 	}
-	if (global.isIOS) {
+	if (__IOS__) {
 		if (ppi === undefined) {
 			const size = new interop.Reference<number>(0);
 			sysctlbyname('hw.machine', null, size, null, 0);

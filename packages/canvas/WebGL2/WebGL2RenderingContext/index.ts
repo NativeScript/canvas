@@ -31,18 +31,18 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 	constructor(context, contextOptions) {
 		super(null);
 		let nativeContext = '0';
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			nativeContext = context.getNativeContextString();
 		}
 
-		if (global.isIOS) {
+		if (__IOS__) {
 			nativeContext = context.nativeContext.toString();
 		}
 
 		const ctx = BigInt(nativeContext);
 
 		let direction = 0;
-		if (global.isAndroid) {
+		if (__ANDROID__) {
 			direction = (<any>org).nativescript.canvas.NSCCanvas.getDirection();
 		} else {
 			//direction = 1;
@@ -406,7 +406,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source?._type === '2d' || source?._type?.indexOf('webgl') > -1 || source?._type === 'webgpu') {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, (source as any).native);
-		} else if (global.isAndroid && source instanceof android.graphics.Bitmap) {
+		} else if (__ANDROID__ && source instanceof android.graphics.Bitmap) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source);
 		} else if (source instanceof ImageSource) {
 			this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source.android);
@@ -419,7 +419,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		} else if (source && typeof source.tagName === 'string' && (source.tagName === 'IMG' || source.tagName === 'IMAGE')) {
 			if (source._imageSource instanceof ImageSource) {
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._imageSource.android);
-			} else if (global.isAndroid && source._image instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && source._image instanceof android.graphics.Bitmap) {
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._image);
 			} else if (source._asset instanceof ImageAsset) {
 				this.native.texImage3D(target, level, internalformat, width, height, depth, border, format, type, source._asset.native);
@@ -459,7 +459,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData, srcOffset);
 		} else if (srcData?._type === '2d' || srcData?._type?.indexOf('webgl') > -1 || srcData?._type === 'webgpu') {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, (srcData as any).native);
-		} else if (global.isAndroid && srcData instanceof android.graphics.Bitmap) {
+		} else if (__ANDROID__ && srcData instanceof android.graphics.Bitmap) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData);
 		} else if (srcData instanceof ImageSource) {
 			this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData.android);
@@ -472,7 +472,7 @@ export class WebGL2RenderingContext extends WebGL2RenderingContextBase {
 		} else if (srcData && typeof srcData.tagName === 'string' && (srcData.tagName === 'IMG' || srcData.tagName === 'IMAGE')) {
 			if (srcData._imageSource instanceof ImageSource) {
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._imageSource.android);
-			} else if (global.isAndroid && srcData._image instanceof android.graphics.Bitmap) {
+			} else if (__ANDROID__ && srcData._image instanceof android.graphics.Bitmap) {
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._image);
 			} else if (srcData._asset instanceof ImageAsset) {
 				this.native.texSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, srcData._asset.native);

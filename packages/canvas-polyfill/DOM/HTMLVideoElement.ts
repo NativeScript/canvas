@@ -1,6 +1,7 @@
 import { HTMLElement } from './HTMLElement';
 
 let Video: any;
+let _VideoFrame: any;
 
 export class HTMLVideoElement extends HTMLElement {
 	_video;
@@ -10,8 +11,9 @@ export class HTMLVideoElement extends HTMLElement {
 		if (!Video) {
 			try {
 				// @ts-ignore
-				const video = require('@nativescript/canvas-media');
-				Video = video.Video;
+				const media = require('@nativescript/canvas-media');
+				Video = media.Video;
+				_VideoFrame = media.VideoFrame;
 			} catch (e) {}
 		}
 		if (Video) {
@@ -41,6 +43,15 @@ export class HTMLVideoElement extends HTMLElement {
 
 	cancelVideoFrameCallback(callback: Function) {
 		this._video?.cancelVideoFrameCallback?.(callback);
+	}
+
+	captureFrame(init?: { timestamp?: number; duration?: number }): any | null {
+		if (!_VideoFrame || !this._video) return null;
+		try {
+			return _VideoFrame.fromVideo(this, init);
+		} catch {
+			return null;
+		}
 	}
 
 	get readyState() {
@@ -125,6 +136,12 @@ export class HTMLVideoElement extends HTMLElement {
 
 	get height() {
 		return (this._video?.height as any) ?? 0;
+	}
+
+	load() {
+		if (this._video) {
+			this._video.load();
+		}
 	}
 
 	play() {

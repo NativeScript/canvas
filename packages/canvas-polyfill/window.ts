@@ -6,10 +6,12 @@ import { HTMLVideoElement } from './DOM/HTMLVideoElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
 import { Device, fromObject, View } from '@nativescript/core';
+import { AbortController, AbortSignal } from '@nativescript/core/abortcontroller';
 import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext, ImageData, ImageBitmap } from '@nativescript/canvas';
 import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 import { Navigator } from './navigator';
+
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -229,6 +231,25 @@ global.chrome.runtime.sendMessage = (
 	}
 };
 
-global.chrome.runtime.getURL = (path: string) => {
-	console.log('chrome.runtime.getURL', path);
-};
+if (typeof global.AbortController === 'undefined') {
+	//@ts-ignore
+	global.AbortController = global.window.AbortController = AbortController;
+}
+
+if (typeof global.AbortSignal === 'undefined') {
+	//@ts-ignore
+	global.AbortSignal = global.window.AbortSignal = AbortSignal;
+}
+
+// Stub for the WebCodecs VideoFrame API. Three.js r170+ checks
+// `instanceof VideoFrame` in Textures.getSize to handle video textures.
+// Without this stub the check throws ReferenceError on NativeScript.
+if (typeof (global as any).VideoFrame === 'undefined') {
+	(global as any).VideoFrame = (global as any).window.VideoFrame = class VideoFrame {
+		readonly displayWidth: number = 0;
+		readonly displayHeight: number = 0;
+		readonly codedWidth: number = 0;
+		readonly codedHeight: number = 0;
+		close() {}
+	};
+}

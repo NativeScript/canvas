@@ -61,6 +61,12 @@ pub fn canvas_native_webgl2_bind_buffer_range(
 
 pub fn canvas_native_webgl2_bind_sampler(unit: u32, sampler: u32, state: &mut WebGLState) {
     state.make_current();
+    // Use cached limit when available (probed at context init)
+    let max_units = state.get_max_combined_texture_image_units();
+    if max_units > 0 && (unit as i32) >= max_units {
+        log::warn!("BindSampler skipped: unit {} >= MAX_COMBINED_TEXTURE_IMAGE_UNITS ({})", unit, max_units);
+        return;
+    }
     unsafe {
         gl_bindings::BindSampler(unit, sampler);
     }
@@ -2002,6 +2008,21 @@ pub fn canvas_native_webgl2_uniform_block_binding(
     state: &mut WebGLState,
 ) {
     state.make_current();
+    // 1) Check active uniform blocks for the program (cached or queried once)
+    if let Some(active_blocks) = state.get_program_active_uniform_blocks(program) {
+        if (uniform_block_index as i32) >= active_blocks {
+            log::warn!("UniformBlockBinding skipped: block index {} >= ACTIVE_UNIFORM_BLOCKS ({}) for program {}", uniform_block_index, active_blocks, program);
+            return;
+        }
+    }
+
+    // 2) Check the cached MAX_UNIFORM_BUFFER_BINDINGS limit
+    let max_bindings = state.get_max_uniform_buffer_bindings();
+    if max_bindings > 0 && (uniform_block_binding as i32) >= max_bindings {
+        log::warn!("UniformBlockBinding skipped: binding {} >= MAX_UNIFORM_BUFFER_BINDINGS ({})", uniform_block_binding, max_bindings);
+        return;
+    }
+
     unsafe {
         gl_bindings::UniformBlockBinding(program, uniform_block_index, uniform_block_binding);
     }

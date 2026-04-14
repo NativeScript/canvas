@@ -9,8 +9,8 @@ use crate::gpu::query_set::g_p_u_query_set;
 use crate::gpu::render_pass_encoder::g_p_u_render_pass_encoder;
 use canvas_c::webgpu::gpu_query_set::CanvasGPUQuerySet;
 use canvas_c::webgpu::structs::{
-  CanvasColor, CanvasOptionalLoadOp, CanvasOptionalStoreOp, CanvasPassChannelColor,
-  CanvasRenderPassColorAttachment, CanvasRenderPassDepthStencilAttachment,
+  CanvasColor, CanvasOptionF32, CanvasOptionalColor, CanvasOptionalLoadOp, CanvasOptionalStoreOp,
+  CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasRenderPassDepthStencilAttachment,
 };
 use napi::*;
 use napi_derive::napi;
@@ -101,28 +101,23 @@ impl g_p_u_command_encoder {
         channel: CanvasPassChannelColor {
           load_op: attach.load_op.into(),
           store_op: attach.store_op.into(),
-          clear_value: attach
-            .clear_value
-            .map(|c| match c {
-              Either::A(array) => CanvasColor {
-                r: *array.get(0).unwrap_or(&0.0),
-                g: *array.get(1).unwrap_or(&0.0),
-                b: *array.get(2).unwrap_or(&0.0),
-                a: *array.get(3).unwrap_or(&0.0),
-              },
-              Either::B(dict) => CanvasColor {
-                r: dict.r,
-                g: dict.g,
-                b: dict.b,
-                a: dict.a,
-              },
-            })
-            .unwrap_or(CanvasColor {
-              r: 0.0,
-              g: 0.0,
-              b: 0.0,
-              a: 0.0,
-            }),
+          clear_value: match attach.clear_value.map(|c| match c {
+            Either::A(array) => CanvasColor {
+              r: *array.get(0).unwrap_or(&0.0),
+              g: *array.get(1).unwrap_or(&0.0),
+              b: *array.get(2).unwrap_or(&0.0),
+              a: *array.get(3).unwrap_or(&0.0),
+            },
+            Either::B(dict) => CanvasColor {
+              r: dict.r,
+              g: dict.g,
+              b: dict.b,
+              a: dict.a,
+            },
+          }) {
+            Some(color) => CanvasOptionalColor::Some(color),
+            None => CanvasOptionalColor::None,
+          },
           read_only: false,
         },
       })
@@ -136,7 +131,10 @@ impl g_p_u_command_encoder {
         .depth_stencil_attachment
         .map(|stencil| CanvasRenderPassDepthStencilAttachment {
           view: Arc::as_ptr(&stencil.view.texture_view),
-          depth_clear_value: stencil.depth_clear_value.unwrap_or(0.) as f32,
+          depth_clear_value: match stencil.depth_clear_value {
+            None => CanvasOptionF32::None,
+            Some(value) => CanvasOptionF32::Some(value),
+          },
           depth_load_op: match stencil.depth_load_op {
             None => CanvasOptionalLoadOp::None,
             Some(value) => CanvasOptionalLoadOp::Some(value.into()),
@@ -232,11 +230,18 @@ impl g_p_u_command_encoder {
     copy_size: Either<GPUExtent3DDict, Vec<u32>>,
   ) {
     let offset: Option<u64> = source.offset.map(|v| v.try_into().ok()).flatten();
+    // Treat non-positive bytes_per_row as unspecified (use -1 sentinel in FFI struct).
+    let bytes_per_row = if source.bytes_per_row <= 0 {
+      -1
+    } else {
+      source.bytes_per_row
+    };
+    let rows_per_image = source.rows_per_image.unwrap_or(-1);
     let src = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyBuffer {
       buffer: Arc::as_ptr(&source.buffer.buffer),
       offset: offset.unwrap_or(0),
-      bytes_per_row: source.bytes_per_row,
-      rows_per_image: source.rows_per_image.unwrap_or(-1),
+      bytes_per_row,
+      rows_per_image,
     };
 
     let dst = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyTexture {
@@ -306,12 +311,18 @@ impl g_p_u_command_encoder {
     };
 
     let offset: Option<u64> = destination.offset.map(|v| v.try_into().ok()).flatten();
+    let bytes_per_row = if destination.bytes_per_row <= 0 {
+      -1
+    } else {
+      destination.bytes_per_row
+    };
+    let rows_per_image = destination.rows_per_image.unwrap_or(-1);
 
     let dst = canvas_c::webgpu::gpu_command_encoder::CanvasImageCopyBuffer {
       buffer: Arc::as_ptr(&destination.buffer.buffer),
       offset: offset.unwrap_or(0),
-      bytes_per_row: destination.bytes_per_row,
-      rows_per_image: destination.rows_per_image.unwrap_or(-1),
+      bytes_per_row,
+      rows_per_image,
     };
 
     let size = match copy_size {
@@ -456,12 +467,12 @@ impl g_p_u_command_encoder {
 
   #[napi]
   pub fn resolve_query_set(
-      &self,
-      query_set: &g_p_u_query_set,
-      first_query: u32,
-      query_count: u32,
-      destination: &g_p_u_buffer,
-      destination_offset: i64,
+    &self,
+    query_set: &g_p_u_query_set,
+    first_query: u32,
+    query_count: u32,
+    destination: &g_p_u_buffer,
+    destination_offset: i64,
   ) {
     unsafe {
       canvas_c::webgpu::gpu_command_encoder::canvas_native_webgpu_command_encoder_resolve_query_set(

@@ -6,6 +6,239 @@
 #include "Caches.h"
 #include "OneByteStringResource.h"
 #include "WebGLRenderingContextBase.h"
+#include <vector>
+#include <cstring>
+#include <cctype>
+#include <cstdlib>
+#include <string>
+#include <unordered_map>
+#include <list>
+#include <algorithm>
+#include <cmath>
+#include <string_view>
+
+namespace {
+    struct CacheEntry {
+        bool is_rgba;
+        uint32_t packed; // R<<24 | G<<16 | B<<8 | A
+        CacheEntry(bool rgba=false, uint32_t p=0) : is_rgba(rgba), packed(p) {}
+    };
+
+    class ColorLRUCache {
+    public:
+        using Key = std::string;
+        using Item = std::pair<Key, CacheEntry>;
+        using List = std::list<Item>;
+        using Iterator = List::iterator;
+
+        explicit ColorLRUCache(size_t cap = 128) : capacity_(cap) {}
+
+        bool get(std::string_view key, CacheEntry &out) {
+            size_t h = std::hash<std::string_view>{}(key);
+            auto it = hash_map_.find(h);
+            if (it == hash_map_.end()) return false;
+            auto &vec = it->second;
+            for (auto listIt : vec) {
+                if (listIt->first.size() == key.size() && std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
+                    items_.splice(items_.begin(), items_, listIt);
+                    out = listIt->second;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void put_rgba(std::string_view key_sv, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+            std::string key(key_sv);
+            uint32_t packed = ((uint32_t)r<<24) | ((uint32_t)g<<16) | ((uint32_t)b<<8) | ((uint32_t)a);
+            put_internal(std::move(key), CacheEntry(true, packed));
+        }
+
+        void put_rgba(const Key &key, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+            uint32_t packed = ((uint32_t)r<<24) | ((uint32_t)g<<16) | ((uint32_t)b<<8) | ((uint32_t)a);
+            put_internal(key, CacheEntry(true, packed));
+        }
+
+        void put_fallback(std::string_view key_sv) {
+            std::string key(key_sv);
+            put_internal(std::move(key), CacheEntry(false, 0));
+        }
+
+        void put_fallback(const Key &key) {
+            put_internal(key, CacheEntry(false, 0));
+        }
+
+    private:
+        void put_internal(Key key, const CacheEntry &entry) {
+            size_t h = std::hash<std::string_view>{}(key);
+            auto hit = hash_map_.find(h);
+            if (hit != hash_map_.end()) {
+                for (auto listIt : hit->second) {
+                    if (listIt->first == key) {
+                        listIt->second = entry;
+                        items_.splice(items_.begin(), items_, listIt);
+                        return;
+                    }
+                }
+            }
+            items_.emplace_front(std::move(key), entry);
+            hash_map_[h].push_back(items_.begin());
+            if (items_.size() > capacity_) {
+                auto last = items_.end(); --last;
+                size_t hlast = std::hash<std::string_view>{}(std::string_view(last->first));
+                auto &vec = hash_map_[hlast];
+                for (auto vit = vec.begin(); vit != vec.end(); ++vit) {
+                    if (*vit == last) { vec.erase(vit); break; }
+                }
+                if (vec.empty()) hash_map_.erase(hlast);
+                items_.pop_back();
+            }
+        }
+
+        size_t capacity_;
+        List items_;
+        std::unordered_map<size_t, std::vector<Iterator>> hash_map_;
+    };
+
+    thread_local ColorLRUCache g_color_cache(128);
+    thread_local std::vector<char> g_tls_scratch;
+}
+
+namespace {
+    enum class PaintTarget { Fill, Stroke };
+
+    static inline int hexValChar(char c) {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    }
+
+    static bool parse_and_apply_color(CanvasRenderingContext2DImpl *ptr, PaintTarget target, std::string_view sv, char *cs) {
+        CacheEntry entry;
+        if (g_color_cache.get(sv, entry)) {
+            if (entry.is_rgba) {
+                uint32_t p = entry.packed;
+                uint8_t R = (uint8_t) ((p >> 24) & 0xFF);
+                uint8_t G = (uint8_t) ((p >> 16) & 0xFF);
+                uint8_t B = (uint8_t) ((p >> 8) & 0xFF);
+                uint8_t A = (uint8_t) (p & 0xFF);
+                if (target == PaintTarget::Fill) {
+                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                } else {
+                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                }
+            } else {
+                if (target == PaintTarget::Fill) {
+                    canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), cs);
+                } else {
+                    canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), cs);
+                }
+            }
+            return true;
+        }
+
+        char *p = cs;
+        while (*p && std::isspace((unsigned char) *p)) p++;
+        size_t l = std::strlen(p);
+        if (l == 0) return false;
+
+        if (p[0] == '#') {
+            if (l == 4) {
+                int r = hexValChar(p[1]);
+                int g = hexValChar(p[2]);
+                int b = hexValChar(p[3]);
+                if (r >= 0 && g >= 0 && b >= 0) {
+                    uint8_t R = (uint8_t) ((r << 4) | r);
+                    uint8_t G = (uint8_t) ((g << 4) | g);
+                    uint8_t B = (uint8_t) ((b << 4) | b);
+                    uint8_t A = 255;
+                    if (target == PaintTarget::Fill) {
+                        canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    } else {
+                        canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                    }
+                    g_color_cache.put_rgba(sv, R, G, B, A);
+                    return true;
+                }
+            } else if (l == 7 || l == 9) {
+                int rh = hexValChar(p[1]);
+                int rl = hexValChar(p[2]);
+                int gh = hexValChar(p[3]);
+                int gl = hexValChar(p[4]);
+                int bh = hexValChar(p[5]);
+                int bl = hexValChar(p[6]);
+                if (rh < 0 || rl < 0 || gh < 0 || gl < 0 || bh < 0 || bl < 0) return false;
+                uint8_t R = (uint8_t) ((rh << 4) | rl);
+                uint8_t G = (uint8_t) ((gh << 4) | gl);
+                uint8_t B = (uint8_t) ((bh << 4) | bl);
+                uint8_t A = 255;
+                if (l == 9) {
+                    int ah = hexValChar(p[7]);
+                    int al = hexValChar(p[8]);
+                    if (ah < 0 || al < 0) return false;
+                    A = (uint8_t) ((ah << 4) | al);
+                }
+                if (target == PaintTarget::Fill) {
+                    canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                } else {
+                    canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), R, G, B, A);
+                }
+                g_color_cache.put_rgba(sv, R, G, B, A);
+                return true;
+            }
+        }
+
+        if ((p[0] == 'r' || p[0] == 'R') && (p[1] == 'g' || p[1] == 'G') && (p[2] == 'b' || p[2] == 'B')) {
+            const char *open = std::strchr(p, '(');
+            const char *close = std::strrchr(p, ')');
+            if (!open || !close || close <= open) return false;
+            char *cursor = const_cast<char *>(open + 1);
+
+            char *endptr = nullptr;
+            long rv = std::strtol(cursor, &endptr, 10);
+            if (endptr == cursor) return false;
+            cursor = endptr;
+
+            while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+            long gv = std::strtol(cursor, &endptr, 10);
+            if (endptr == cursor) return false;
+            cursor = endptr;
+
+            while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+            long bv = std::strtol(cursor, &endptr, 10);
+            if (endptr == cursor) return false;
+            cursor = endptr;
+
+            uint8_t A = 255;
+            if ((p[3] == 'a' || p[3] == 'A')) {
+                while (*cursor && (*cursor == ',' || std::isspace((unsigned char)*cursor))) cursor++;
+                if (!*cursor) return false;
+                double af = std::strtod(cursor, &endptr);
+                if (endptr == cursor) return false;
+                if (af <= 1.0) {
+                    A = (uint8_t) std::round(std::max(0.0, std::min(1.0, af)) * 255.0);
+                } else {
+                    long ai = (long) af;
+                    if (ai < 0) ai = 0;
+                    if (ai > 255) ai = 255;
+                    A = (uint8_t) ai;
+                }
+            }
+
+            if (rv < 0 || rv > 255 || gv < 0 || gv > 255 || bv < 0 || bv > 255) return false;
+            if (target == PaintTarget::Fill) {
+                canvas_native_paint_style_set_fill_color_with_rgba(ptr->GetContext(), (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+            } else {
+                canvas_native_paint_style_set_stroke_color_with_rgba(ptr->GetContext(), (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+            }
+            g_color_cache.put_rgba(sv, (uint8_t) rv, (uint8_t) gv, (uint8_t) bv, A);
+            return true;
+        }
+
+        return false;
+    }
+}
 
 v8::CFunction CanvasRenderingContext2DImpl::fast_start_raf_(
         v8::CFunction::Make(CanvasRenderingContext2DImpl::__FastStartRaf));
@@ -1232,34 +1465,38 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
     }
     auto isolate = info.GetIsolate();
 
-    if (value->IsString()) {
-//        auto style = ConvertFromV8String(isolate, value);
-			
-			auto val = value.As<v8::String>();
-			int len = val->Utf8Length(isolate) + 1;
-			char buffer [len];
-			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
-			
-		//	v8::String::Utf8Value result(isolate, value);
-
 //			const char *val = *result;
-
 //			if (buffer == nullptr) {
 //					return;
 //			}
-		
-			canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), buffer);
-		}else if(value->IsStringObject()){
-			
-			auto val = value.As<v8::StringObject>()->ValueOf();
-			
-			int len = val->Utf8Length(isolate) + 1;
-			char buffer [len];
-			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
-			
-			canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), buffer);
-			
-		} else if (value->IsObject()) {
+    if (value->IsString() || value->IsStringObject()) {
+        v8::Local<v8::String> val;
+        if (value->IsString()) {
+            val = value.As<v8::String>();
+        } else {
+            val = value.As<v8::StringObject>()->ValueOf();
+        }
+
+        int len = val->Utf8Length(isolate) + 1;
+        if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
+        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+
+        char *str = g_tls_scratch.data();
+
+        // trim leading/trailing whitespace in place
+        char *s = str;
+        while (*s && std::isspace((unsigned char) *s)) s++;
+        size_t slen = std::strlen(s);
+        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) { s[slen - 1] = 0; --slen; }
+
+        std::string_view sv(s, slen);
+        if (parse_and_apply_color(ptr, PaintTarget::Fill, sv, s)) {
+            return;
+        }
+
+        canvas_native_paint_style_set_fill_color_with_c_string(ptr->GetContext(), s);
+        g_color_cache.put_fallback(sv);
+    } else if (value->IsObject()) {
 
         auto type = GetNativeType(value);
 
@@ -1344,28 +1581,35 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
     }
     auto isolate = info.GetIsolate();
 
-    if (value->IsString()) {
-//        auto style = ConvertFromV8String(isolate, value);
+    if (value->IsString() || value->IsStringObject()) {
+        v8::Local<v8::String> val;
+        if (value->IsString()) {
+            val = value.As<v8::String>();
+        } else {
+            val = value.As<v8::StringObject>()->ValueOf();
+        }
 
-			auto val = value.As<v8::String>();
-			
-			int len = val->Utf8Length(isolate) + 1;
-			char buffer [len];
-			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
-			
-			
-			canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), buffer);
-			
-		}else if(value->IsStringObject()){
-			auto val = value.As<v8::StringObject>()->ValueOf();
-			
-			int len = val->Utf8Length(isolate) + 1;
-			char buffer [len];
-			val->WriteUtf8(isolate, buffer, len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
-			
-			
-			canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), buffer);
-		} else if (value->IsObject()) {
+        int len = val->Utf8Length(isolate) + 1;
+        if (g_tls_scratch.size() < (size_t) len) g_tls_scratch.resize((size_t) len);
+        val->WriteUtf8(isolate, g_tls_scratch.data(), len, nullptr, v8::String::WriteOptions::PRESERVE_ONE_BYTE_NULL);
+
+        char *str = g_tls_scratch.data();
+
+        // trim leading/trailing whitespace in place
+        char *s = str;
+        while (*s && std::isspace((unsigned char) *s)) s++;
+        size_t slen = std::strlen(s);
+        while (slen > 0 && std::isspace((unsigned char) s[slen - 1])) { s[slen - 1] = 0; --slen; }
+
+        std::string_view sv(s, slen);
+        if (parse_and_apply_color(ptr, PaintTarget::Stroke, sv, s)) {
+            return;
+        }
+
+        // Fallback: pass full C string to native (existing behavior)
+        canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), s);
+        g_color_cache.put_fallback(sv);
+    } else if (value->IsObject()) {
 
         auto type = GetNativeType(value);
 
@@ -3186,7 +3430,8 @@ CanvasRenderingContext2DImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Val
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
     auto raf = this->raf_.get();
     if (raf != nullptr) {
-        canvas_native_raf_stop(raf->GetRaf());
+        // stop the raf, wait briefly for any in-flight callbacks to finish and clear the callback
+        canvas_native_raf_stop_and_clear(raf->GetRaf(), 100);
     }
 
     canvas_native_context_release(this->GetContext());

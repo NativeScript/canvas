@@ -11,7 +11,7 @@ export function navigatingTo(args: EventData) {
 export class DemoModel extends DemoSharedCanvasChartjs {
 	ready(event) {
 		const canvas = event.object;
-		new Chart(canvas, {
+		const chart = new Chart(canvas, {
 			platform: NativeScriptPlatform,
 			type: 'bar',
 			data: {
@@ -25,7 +25,7 @@ export class DemoModel extends DemoSharedCanvasChartjs {
 				],
 			},
 			options: {
-				responsive: false,
+				responsive: true,
 				scales: {
 					y: {
 						beginAtZero: true,

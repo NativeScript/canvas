@@ -621,6 +621,9 @@ public class NSCCanvas: UIView {
 	}
 	
 	private var isLoaded: Bool = false
+	private var lastLayoutBoundsSize: CGSize = .zero
+	private var lastScaledSurfaceFrame: CGRect = .null
+	private var lastScaledSurfaceTransform: CATransform3D = CATransform3DIdentity
 	
 	
 	private var batchingSizeChange = false
@@ -714,6 +717,8 @@ public class NSCCanvas: UIView {
 		mtlView.layer.transform = CATransform3DIdentity
 		cpuView.layer.transform = CATransform3DIdentity
 		CATransaction.commit()
+		lastScaledSurfaceFrame = .null
+		lastScaledSurfaceTransform = CATransform3DIdentity
 
 		glkView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
 		mtlView.frame = CGRect(x: 0, y: 0, width: unscaledWidth, height: unscaledHeight)
@@ -743,83 +748,124 @@ public class NSCCanvas: UIView {
 		canvas_native_context_2d_conic_test(context)
 	}
 	
-	private func scaleSurface(){
-		if(!weblikeScale == false){
-			return
-		}
-		if(surfaceWidth == 0 || surfaceHeight == 0){
-			return
+	private func makeSurfaceTransform() -> CATransform3D? {
+		if(weblikeScale || surfaceWidth <= 0 || surfaceHeight <= 0){
+			return nil
 		}
 		
-		var density = UIScreen.main.nativeScale
-		
-		if(!autoScale){
-			density = 1
+		let viewSize = bounds.size
+		guard viewSize.width > 0,
+			  viewSize.height > 0,
+			  viewSize.width.isFinite,
+			  viewSize.height.isFinite else {
+			return nil
 		}
 		
-		let scaledInternalWidth = CGFloat(surfaceWidth) / density
-		let scaledInternalHeight = CGFloat(surfaceHeight) / density
+		let density = autoScale ? UIScreen.main.nativeScale : 1
+		let contentWidth = CGFloat(surfaceWidth) / density
+		let contentHeight = CGFloat(surfaceHeight) / density
 		
-		if(scaledInternalWidth.isZero || scaledInternalHeight.isZero){
-			return
+		guard contentWidth > 0, contentHeight > 0 else {
+			return nil
 		}
 		
-		if(frame.size.width.isZero || frame.size.width.isNaN || frame.size.height.isZero || frame.size.height.isNaN){return}
+		let scaleX = viewSize.width / contentWidth
+		let scaleY = viewSize.height / contentHeight
 		
-		let scaleX = frame.size.width / scaledInternalWidth
-		let scaleY = frame.size.height / scaledInternalHeight
-		
-		
-		if(scaleX.isZero || scaleX.isNaN ||  scaleY.isZero || scaleY.isNaN ){
-			return
+		guard scaleX.isFinite, scaleY.isFinite, scaleX > 0, scaleY > 0 else {
+			return nil
 		}
 		
-		var transform: CATransform3D? = nil
+		let finalScaleX: CGFloat
+		let finalScaleY: CGFloat
 		
 		switch(fit){
 		case .None:
-			// noop
-			transform = CATransform3DIdentity
-			break
+			return CATransform3DIdentity
 		case .Fill:
-			transform = CATransform3DMakeScale(scaleX, scaleY, 1)
+			finalScaleX = scaleX
+			finalScaleY = scaleY
 		case .FitX:
-			let dx = (frame.size.width - scaledInternalWidth) / 2
-			let dy = ((scaledInternalHeight * scaleX ) - scaledInternalHeight) / 2
-			
-			transform = CATransform3DMakeScale(scaleX, scaleX, 1)
-			
-			transform = CATransform3DConcat(transform!, CATransform3DMakeTranslation(dx, dy, 0))
-			break
+			finalScaleX = scaleX
+			finalScaleY = scaleX
 		case .FitY:
-			
-			
-			let dx = ((scaledInternalWidth * scaleY) - scaledInternalWidth) / 2
-			let dy = (frame.size.height - scaledInternalHeight) / 2
-			
-			transform = CATransform3DMakeScale(scaleY, scaleY, 1)
-			
-			transform = CATransform3DConcat(transform!, CATransform3DMakeTranslation(dx, dy, 0))
-			break
+			finalScaleX = scaleY
+			finalScaleY = scaleY
 		case .ScaleDown:
-			let scale =  min(min(scaleX, scaleY), 1)
-			
-			transform = CATransform3DMakeScale(scale, scale, 1)
-			break
+			let scale = min(min(scaleX, scaleY), 1)
+			finalScaleX = scale
+			finalScaleY = scale
 		}
 		
+		return CATransform3DMakeScale(finalScaleX, finalScaleY, 1)
+	}
+	
+	private func scaleSurface(){
+		guard let transform = makeSurfaceTransform() else {
+			return
+		}
 		
-		guard let transform = transform else {return}
+		let density = autoScale ? UIScreen.main.nativeScale : 1
+		let contentWidth = CGFloat(surfaceWidth) / density
+		let contentHeight = CGFloat(surfaceHeight) / density
+		let viewSize = bounds.size
+		
+		guard contentWidth > 0,
+			  contentHeight > 0,
+			  viewSize.width > 0,
+			  viewSize.height > 0 else {
+			return
+		}
+		
+		let originX: CGFloat
+		let originY: CGFloat
+		switch(fit){
+		case .None:
+			originX = 0
+			originY = 0
+		default:
+			originX = (viewSize.width - contentWidth) / 2
+			originY = (viewSize.height - contentHeight) / 2
+		}
+		
+		let surfaceFrame = CGRect(x: originX, y: originY, width: contentWidth, height: contentHeight)
+		let frameChanged = !surfaceFrame.equalTo(lastScaledSurfaceFrame)
+		let transformChanged = !CATransform3DEqualToTransform(transform, lastScaledSurfaceTransform)
+		
+		if(!frameChanged && !transformChanged){
+			return
+		}
+		
 		CATransaction.begin()
 		CATransaction.setDisableActions(true)
-		glkView.layer.transform = transform
-		mtlView.layer.transform = transform
-		cpuView.layer.transform = transform
+		if(frameChanged){
+			glkView.layer.transform = CATransform3DIdentity
+			mtlView.layer.transform = CATransform3DIdentity
+			cpuView.layer.transform = CATransform3DIdentity
+			
+			glkView.frame = surfaceFrame
+			mtlView.frame = surfaceFrame
+			cpuView.frame = surfaceFrame
+		}
+		
+		if(transformChanged){
+			glkView.layer.transform = transform
+			mtlView.layer.transform = transform
+			cpuView.layer.transform = transform
+		}
 		CATransaction.commit()
+		
+		lastScaledSurfaceFrame = surfaceFrame
+		lastScaledSurfaceTransform = transform
 	}
 	
 	
 	public override func layoutSubviews() {
+		super.layoutSubviews()
+		let currentBoundsSize = bounds.size
+		let boundsChanged = currentBoundsSize != lastLayoutBoundsSize
+		lastLayoutBoundsSize = currentBoundsSize
+
 		if(!isLoaded && surfaceWidth > 0 && surfaceHeight > 0){
 			self.isLoaded = true
 			scaleSurface()
@@ -827,8 +873,11 @@ public class NSCCanvas: UIView {
 				self.readyListener?.contextReady()
 			}
 			RunLoop.current.add(event, forMode: .common)
-		}else {
-			resize()
+		}else if(boundsChanged) {
+			// A UIKit/NativeScript layout pass changed the on-screen view size without changing
+			// the backing surface dimensions. Recompute the transform only; avoid an expensive
+			// context resize/rebind when the drawing buffer size is unchanged.
+			scaleSurface()
 		}
 	}
 	

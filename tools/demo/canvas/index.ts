@@ -833,7 +833,7 @@ fn main() -> @location(0) vec4f {
 		//     console.log('error', msg);
 		// }
 		//swarm(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		// var map = L.map('map', {
 		//     center: [51.505, -0.09],
 		//     zoom: 13
@@ -925,7 +925,7 @@ fn main() -> @location(0) vec4f {
 
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		//touchParticles(this.canvas);
+		touchParticles(this.canvas);
 		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)

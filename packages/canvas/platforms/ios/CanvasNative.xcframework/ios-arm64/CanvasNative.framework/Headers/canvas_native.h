@@ -312,8 +312,6 @@ typedef enum CanvasGPUErrorType {
 } CanvasGPUErrorType;
 
 /**
- * Mirrors the WebGPU spec `featureLevel` option on `GPURequestAdapterOptions`.
- *
  * - `Core` (default) — full WebGPU feature set.
  * - `Compatibility` — relaxed capability set; on Android this selects the GLES
  *   backend which provides the widest device coverage (mirrors what a browser
@@ -2108,6 +2106,14 @@ void canvas_native_raf_stop(struct Raf *raf);
 
 #if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
 bool canvas_native_raf_get_started(const struct Raf *raf);
+#endif
+
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+void canvas_native_raf_stop_and_clear(struct Raf *raf, uint64_t timeout_ms);
+#endif
+
+#if (defined(TARGET_OS_ANDROID) || defined(TARGET_OS_IOS))
+void canvas_native_raf_clear_callback(struct Raf *raf);
 #endif
 
 void canvas_native_context_resize(struct CanvasRenderingContext2D *context,

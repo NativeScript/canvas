@@ -1,8 +1,8 @@
-import {DemoSharedBase} from '../utils';
-import {setupGame as flappySetup} from './games/flappybird/game';
-import {setupGame as breakoutSetup} from './games/breakout/breakout-game';
-import {setupGame as muybridgeSetup} from './animation/muybridge/muybridge';
-import {GestureStateTypes} from "@nativescript/core";
+import { DemoSharedBase } from '../utils';
+import { setupGame as flappySetup } from './games/flappybird/game';
+import { setupGame as breakoutSetup } from './games/breakout/breakout-game';
+import { setupGame as muybridgeSetup } from './animation/muybridge/muybridge';
+import { GestureStateTypes } from '@nativescript/core';
 
 class TouchList extends Array {
 	item(index: number) {
@@ -16,9 +16,9 @@ export class DemoSharedCanvasPhaser extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
-		 //this.initFlappyBird();
-		//this.initBreakOut();
-		this.initMuyBridge();
+		//this.initFlappyBird();
+		this.initBreakOut();
+		//	this.initMuyBridge();
 	}
 
 	initFlappyBird() {
@@ -52,23 +52,23 @@ CONSOLE LOG file:///node_modules/@nativescript/core/ui/core/view/view-common.js:
 CONSOLE LOG file:///node_modules/nativescript-http-async/xhr/TNSXMLHttpRequest.js:464:0: type image/png
 		*/
 
-		if (event.eventName === "touch") {
+		if (event.eventName === 'touch') {
 			switch (event.action) {
-				case "down":
+				case 'down':
 					// if(state === 'idle'){
-					this.canvas.notify(this.getTouchEvent("touchstart", event, this.canvas));
+					this.canvas.notify(this.getTouchEvent('touchstart', event, this.canvas));
 					this.state = 'touching';
 					//   }
 					break;
-				case "up":
+				case 'up':
 					//   if(state === 'touching'){
-					this.canvas.notify(this.getTouchEvent("touchend", event, this.canvas));
+					this.canvas.notify(this.getTouchEvent('touchend', event, this.canvas));
 					this.state = 'idle';
 					//  }
 					break;
-				case "cancel":
+				case 'cancel':
 					//  if(state === 'touching'){
-					this.canvas.notify(this.getTouchEvent("touchcancel", event, this.canvas));
+					this.canvas.notify(this.getTouchEvent('touchcancel', event, this.canvas));
 					this.state = 'idle';
 					//  }
 					break;
@@ -81,9 +81,9 @@ CONSOLE LOG file:///node_modules/nativescript-http-async/xhr/TNSXMLHttpRequest.j
 				default:
 					break;
 			}
-		} else if (event.eventName === "pan") {
+		} else if (event.eventName === 'pan') {
 			if (event.state === GestureStateTypes.began || event.state === GestureStateTypes.changed) {
-				this.canvas.notify(this.getTouchEvent("touchmove", event, this.canvas));
+				this.canvas.notify(this.getTouchEvent('touchmove', event, this.canvas));
 			}
 
 			//canvas.notify(getTouchEvent("touchmove", event));
@@ -93,7 +93,7 @@ CONSOLE LOG file:///node_modules/nativescript-http-async/xhr/TNSXMLHttpRequest.j
 
 	getTouchEvent(name, event, target) {
 		const pointers = new TouchList();
-		if (name === "touchmove") {
+		if (name === 'touchmove') {
 			pointers.push({
 				clientX: event.deltaX * 3,
 				clientY: event.deltaY * 3,
@@ -129,7 +129,6 @@ CONSOLE LOG file:///node_modules/nativescript-http-async/xhr/TNSXMLHttpRequest.j
 			}
 		}
 
-
 		return {
 			eventName: name,
 			object: null,
@@ -142,9 +141,8 @@ CONSOLE LOG file:///node_modules/nativescript-http-async/xhr/TNSXMLHttpRequest.j
 			shiftKey: false,
 			targetTouches: pointers,
 			touches: pointers,
-			preventDefault: () => {
-			},
-			target
+			preventDefault: () => {},
+			target,
 		};
 	}
 }

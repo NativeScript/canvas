@@ -3,7 +3,7 @@
         <ActionBar title="canvas-chartjs" icon="" class="action-bar">
         </ActionBar>
     </Page.actionBar>
-    <GridLayout class="p-20">
+    <GridLayout height="100%" width="100%">
        <canvas:Canvas style="width:100%;height:100%;" ready="{{ ready }}"/>
     </GridLayout>
 </Page>

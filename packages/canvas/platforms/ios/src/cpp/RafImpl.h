@@ -14,8 +14,12 @@ public:
     RafImpl(OnRafCallback *rafCallback, intptr_t callback, Raf* raf);
 
     ~RafImpl(){
-        canvas_native_raf_release(this->GetRaf());
-        this->raf_ = nullptr;
+        if (this->raf_ != nullptr) {
+            // stop the raf, wait for any in-flight callback to finish, and clear the callback
+            canvas_native_raf_stop_and_clear(this->GetRaf(), 100);
+            canvas_native_raf_release(this->GetRaf());
+            this->raf_ = nullptr;
+        }
         delete rafCallback_;
     }
 

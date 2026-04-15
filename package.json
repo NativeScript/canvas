@@ -63,7 +63,7 @@
 		"nativescript-vue": "~2.9.0",
 		"nativescript-vue-template-compiler": "~2.9.0",
 		"ng-packagr": "^19.0.0",
-		"phaser": "3.80.1",
+		"phaser": "4.0.0",
 		"phaser-ce": "^2.20.0",
 		"pixi-filters": "~6.0.4",
 		"pixi-viewport": "^6.0.3",

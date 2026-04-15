@@ -713,7 +713,6 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	drawImage(image: any, sx: number, sy: number, sWidth: number, sHeight: number, dx: number, dy: number, dWidth: number, dHeight: number): void;
 
 	drawImage(...args): void {
-		//const drawImage = this.context.drawImage; //this._getMethod('drawImage');
 		let image = args[0];
 		if (image?._type === '2d' || image?._type?.indexOf('webgl') > -1 || image?._type === 'webgpu') {
 			image = (image as any).native;

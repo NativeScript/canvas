@@ -1,4 +1,4 @@
-import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
@@ -78,16 +78,6 @@ function updateFit(canvas) {
 
 const viewRect_ = Symbol('[[viewRect]]');
 
-function valueToNumber(value) {
-	switch (typeof value) {
-		case 'string':
-			return parseFloat(value);
-		case 'number':
-			return value;
-		default:
-			return NaN;
-	}
-}
 export class Canvas extends CanvasBase {
 	_ready = false;
 	private _2dContext: CanvasRenderingContext2D;
@@ -210,19 +200,26 @@ export class Canvas extends CanvasBase {
 		return this._canvas.getSurfaceWidth();
 	}
 
-	set width(value: number) {
+	set width(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		value = valueToNumber(value);
-		if (!Number.isNaN(value)) {
+		let px = NaN;
+
+		if (typeof value === 'number') {
+			px = Math.floor(value);
+		} else {
+			px = lengthToDevicePixels(value, this.parent, true);
+		}
+
+		if (!Number.isNaN(px)) {
 			if (this._pendingHeight !== undefined) {
 				// Height was just set — coalesce into single resize
 				const h = this._pendingHeight;
 				this._pendingHeight = undefined;
-				this._canvas.setSurfaceSize(value, h);
+				this._canvas.setSurfaceSize(px, h);
 			} else {
-				this._pendingWidth = value;
+				this._pendingWidth = px;
 				microtask(() => {
 					if (this._pendingWidth !== undefined) {
 						this._canvas.setSurfaceWidth(this._pendingWidth);
@@ -244,19 +241,26 @@ export class Canvas extends CanvasBase {
 		return this._canvas.getSurfaceHeight();
 	}
 
-	set height(value: number) {
+	set height(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
-		value = valueToNumber(value);
-		if (!Number.isNaN(value)) {
+		let px = NaN;
+
+		if (typeof value === 'number') {
+			px = Math.floor(value);
+		} else {
+			px = lengthToDevicePixels(value, this.parent, false);
+		}
+
+		if (!Number.isNaN(px)) {
 			if (this._pendingWidth !== undefined) {
 				// Width was just set — coalesce into single resize
 				const w = this._pendingWidth;
 				this._pendingWidth = undefined;
-				this._canvas.setSurfaceSize(w, value);
+				this._canvas.setSurfaceSize(w, px);
 			} else {
-				this._pendingHeight = value;
+				this._pendingHeight = px;
 				microtask(() => {
 					if (this._pendingHeight !== undefined) {
 						this._canvas.setSurfaceHeight(this._pendingHeight);
@@ -268,11 +272,11 @@ export class Canvas extends CanvasBase {
 	}
 
 	[widthProperty.setNative](value) {
-		updateFit(this);
+		this.width = value;
 	}
 
 	[heightProperty.setNative](value) {
-		updateFit(this);
+		this.height = value;
 	}
 
 	static createCustomView() {
@@ -482,7 +486,7 @@ export class Canvas extends CanvasBase {
 		return null;
 	}
 
-	private _jsBuffer: Float32Array;
+	private _jsBuffer?: Float32Array;
 
 	private get _boundingClientRect() {
 		if (this._jsBuffer === undefined) {

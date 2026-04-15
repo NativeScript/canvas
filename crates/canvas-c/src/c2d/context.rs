@@ -343,6 +343,28 @@ pub extern "C" fn canvas_native_raf_get_started(raf: *const crate::Raf) -> bool 
     let raf = unsafe { &*raf };
     raf.0.started()
 }
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_raf_stop_and_clear(raf: *mut crate::Raf, timeout_ms: u64) {
+    if raf.is_null() {
+        return;
+    }
+    let raf = unsafe { &*raf };
+    raf.0.stop();
+    let _ = raf.0.wait_until_idle(timeout_ms);
+    raf.0.clear_callback();
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[no_mangle]
+pub extern "C" fn canvas_native_raf_clear_callback(raf: *mut crate::Raf) {
+    if raf.is_null() {
+        return;
+    }
+    let raf = unsafe { &*raf };
+    raf.0.clear_callback();
+}
 /* Raf */
 
 #[no_mangle]

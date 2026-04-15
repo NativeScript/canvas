@@ -6,6 +6,16 @@ use canvas_core::image_asset::ImageAsset;
 use crate::context::Context;
 
 impl Context {
+    #[cfg(feature = "2d")]
+    fn promote_to_gpu(&mut self, img: Image) -> Image {
+        if let Some(ctx) = self.direct_context.as_mut() {
+            img.new_texture_image(ctx, skia_safe::gpu::Mipmapped::No)
+                .unwrap_or(img)
+        } else {
+            img
+        }
+    }
+
     pub fn draw_image_asset_src_xywh_dst_xywh(
         &mut self,
         image: &ImageAsset,
@@ -18,24 +28,33 @@ impl Context {
         dst_width: f32,
         dst_height: f32,
     ) {
+        #[cfg(feature = "2d")]
+        if let Some(img) = image.raster_image() {
+            let img = self.promote_to_gpu(img);
+            self.draw_image_src_xywh_dst_xywh(
+                &img, src_x, src_y, src_width, src_height,
+                dst_x, dst_y, dst_width, dst_height,
+            );
+            return;
+        }
+
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
                 self.draw_image_src_xywh_dst_xywh(
-                    &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width, dst_height,
+                    image, src_x, src_y, src_width, src_height,
+                    dst_x, dst_y, dst_width, dst_height,
                 )
-            } else {
-                if let Some((dimensions, bytes)) = bytes {
-                    let (width, height) = dimensions;
-                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                        bytes,
-                        width as i32,
-                        height as i32,
-                    ) {
-                        self.draw_image_src_xywh_dst_xywh(
-                            &image, src_x, src_y, src_width, src_height, dst_x, dst_y, dst_width,
-                            dst_height,
-                        )
-                    }
+            } else if let Some((dimensions, bytes)) = bytes {
+                let (width, height) = dimensions;
+                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                    bytes,
+                    width as i32,
+                    height as i32,
+                ) {
+                    self.draw_image_src_xywh_dst_xywh(
+                        &image, src_x, src_y, src_width, src_height,
+                        dst_x, dst_y, dst_width, dst_height,
+                    )
                 }
             }
         });
@@ -47,38 +66,51 @@ impl Context {
         src_rect: impl Into<Rect>,
         dst_rect: impl Into<Rect>,
     ) {
+        let src_rect = src_rect.into();
+        let dst_rect = dst_rect.into();
+
+        #[cfg(feature = "2d")]
+        if let Some(img) = image.raster_image() {
+            let img = self.promote_to_gpu(img);
+            self.draw_image(&img, src_rect, dst_rect);
+            return;
+        }
+
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
-                self.draw_image(&image, src_rect, dst_rect)
-            } else {
-                if let Some((dimensions, bytes)) = bytes {
-                    let (width, height) = dimensions;
-                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                        bytes,
-                        width as i32,
-                        height as i32,
-                    ) {
-                        self.draw_image(&image, src_rect, dst_rect)
-                    }
+                self.draw_image(image, src_rect, dst_rect)
+            } else if let Some((dimensions, bytes)) = bytes {
+                let (width, height) = dimensions;
+                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                    bytes,
+                    width as i32,
+                    height as i32,
+                ) {
+                    self.draw_image(&image, src_rect, dst_rect)
                 }
             }
         });
     }
 
     pub fn draw_image_asset_dx_dy(&mut self, image: &ImageAsset, x: f32, y: f32) {
+        #[cfg(feature = "2d")]
+        if let Some(img) = image.raster_image() {
+            let img = self.promote_to_gpu(img);
+            self.draw_image_dx_dy(&img, x, y);
+            return;
+        }
+
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
-                self.draw_image_dx_dy(&image, x, y)
-            } else {
-                if let Some((dimensions, bytes)) = bytes {
-                    let (width, height) = dimensions;
-                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                        bytes,
-                        width as i32,
-                        height as i32,
-                    ) {
-                        self.draw_image_dx_dy(&image, x, y)
-                    }
+                self.draw_image_dx_dy(image, x, y)
+            } else if let Some((dimensions, bytes)) = bytes {
+                let (width, height) = dimensions;
+                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                    bytes,
+                    width as i32,
+                    height as i32,
+                ) {
+                    self.draw_image_dx_dy(&image, x, y)
                 }
             }
         });
@@ -92,36 +124,48 @@ impl Context {
         width: f32,
         height: f32,
     ) {
+        #[cfg(feature = "2d")]
+        if let Some(img) = image.raster_image() {
+            let img = self.promote_to_gpu(img);
+            self.draw_image_dx_dy_dw_dh(&img, x, y, width, height);
+            return;
+        }
+
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
-                self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
-            } else {
-                if let Some((dimensions, bytes)) = bytes {
-                    let (w, h) = dimensions;
-                    if let Some(image) =
-                        crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
-                    {
-                        self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
-                    }
+                self.draw_image_dx_dy_dw_dh(image, x, y, width, height)
+            } else if let Some((dimensions, bytes)) = bytes {
+                let (w, h) = dimensions;
+                if let Some(image) =
+                    crate::utils::image::from_image_slice_no_copy(bytes, w as i32, h as i32)
+                {
+                    self.draw_image_dx_dy_dw_dh(&image, x, y, width, height)
                 }
             }
         });
     }
 
     pub fn draw_image_asset_with_rect(&mut self, image: &ImageAsset, dst_rect: impl Into<Rect>) {
+        let dst_rect = dst_rect.into();
+
+        #[cfg(feature = "2d")]
+        if let Some(img) = image.raster_image() {
+            let img = self.promote_to_gpu(img);
+            self.draw_image_with_rect(&img, dst_rect);
+            return;
+        }
+
         image.with_skia_image_bytes(|image, bytes| {
             if let Some(image) = image {
-                self.draw_image_with_rect(&image, dst_rect)
-            } else {
-                if let Some((dimensions, bytes)) = bytes {
-                    let (width, height) = dimensions;
-                    if let Some(image) = crate::utils::image::from_image_slice_no_copy(
-                        bytes,
-                        width as i32,
-                        height as i32,
-                    ) {
-                        self.draw_image_with_rect(&image, dst_rect)
-                    }
+                self.draw_image_with_rect(image, dst_rect)
+            } else if let Some((dimensions, bytes)) = bytes {
+                let (width, height) = dimensions;
+                if let Some(image) = crate::utils::image::from_image_slice_no_copy(
+                    bytes,
+                    width as i32,
+                    height as i32,
+                ) {
+                    self.draw_image_with_rect(&image, dst_rect)
                 }
             }
         });
@@ -149,7 +193,8 @@ impl Context {
     pub fn draw_image_dx_dy(&mut self, image: &Image, x: f32, y: f32) {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
@@ -178,7 +223,8 @@ impl Context {
     fn draw_image(&mut self, image: &Image, src_rect: impl Into<Rect>, dst_rect: impl Into<Rect>) {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
@@ -215,14 +261,14 @@ impl Context {
     fn draw_image_with_rect(&mut self, image: &Image, dst_rect: impl Into<Rect>) {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         let _ = unsafe { objc2_foundation::NSAutoreleasePool::new() };
-        #[cfg(feature = "gl")]{
+        #[cfg(feature = "gl")]
+        {
             if let Some(ref context) = self.gl_context {
                 context.make_current();
             }
         }
 
         let dimensions = image.dimensions();
-
         let src_rect = Rect::from_xywh(0., 0., dimensions.width as f32, dimensions.height as f32);
         let dst_rect = dst_rect.into();
 

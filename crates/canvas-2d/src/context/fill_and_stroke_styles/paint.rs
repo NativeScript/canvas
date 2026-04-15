@@ -57,7 +57,6 @@ impl PaintStyle {
 
     #[inline]
     pub fn new_color_str(color: &str) -> Option<Self> {
-        // Fast path for common named colors and hex patterns to avoid csscolorparser overhead
         match color {
             "black" | "#000" | "#000000" => return Some(Self::Color(Color::BLACK)),
             "white" | "#fff" | "#FFF" | "#ffffff" | "#FFFFFF" => return Some(Self::Color(Color::WHITE)),
@@ -67,7 +66,6 @@ impl PaintStyle {
             "transparent" => return Some(Self::Color(Color::TRANSPARENT)),
             _ => {}
         }
-        // Fast path for #RRGGBB hex (most common programmatic format)
         if color.len() == 7 && color.as_bytes()[0] == b'#' {
             if let (Ok(r), Ok(g), Ok(b_val)) = (
                 u8::from_str_radix(&color[1..3], 16),
@@ -77,7 +75,6 @@ impl PaintStyle {
                 return Some(Self::Color(Color::from_argb(255, r, g, b_val)));
             }
         }
-        // Fast path for rgb(r,g,b) and rgba(r,g,b,a) — the most common programmatic formats
         if let Some(parsed) = Self::parse_rgb_rgba_fast(color) {
             return Some(parsed);
         }
@@ -93,13 +90,11 @@ impl PaintStyle {
             .ok()
     }
 
-    /// Fast inline parser for `rgb(r,g,b)` and `rgba(r,g,b,a)` strings.
-    /// Avoids the full csscolorparser overhead for the most common programmatic color format.
+
     #[inline]
     fn parse_rgb_rgba_fast(color: &str) -> Option<Self> {
         let bytes = color.as_bytes();
         let len = bytes.len();
-        // Minimum: "rgb(0,0,0)" = 10 chars
         if len < 10 {
             return None;
         }
@@ -108,7 +103,6 @@ impl PaintStyle {
         if !is_rgba && !is_rgb {
             return None;
         }
-        // Must end with ')'
         if bytes[len - 1] != b')' {
             return None;
         }
@@ -351,6 +345,15 @@ impl Default for Paint {
 }
 
 pub fn paint_style_set_color_with_string(context: &mut Context, is_fill: bool, color: &str) {
+    if let Some(style) = PaintStyle::new_color_str(color) {
+        if is_fill {
+            context.set_fill_style(style);
+        } else {
+            context.set_stroke_style(style);
+        }
+        return;
+    }
+
     if let Ok(color) = color.parse::<csscolorparser::Color>() {
         let color = color.to_rgba8();
         let style = PaintStyle::Color(Color::from_argb(color[3], color[0], color[1], color[2]));
@@ -391,5 +394,25 @@ pub fn paint_style_set_color_with_rgba_4f(
         context.set_fill_style(style);
     } else {
         context.set_stroke_style(style);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_color_str_basic() {
+        // hex
+        let style = PaintStyle::new_color_str("#ff0000").expect("parse hex");
+        assert_eq!(style.get_parsed_color().unwrap(), "#ff0000");
+
+        // rgb
+        let style = PaintStyle::new_color_str("rgb(255,0,0)").expect("parse rgb");
+        assert_eq!(style.get_parsed_color().unwrap(), "#ff0000");
+
+        // rgba with 0.5 alpha
+        let style = PaintStyle::new_color_str("rgba(255,0,0,0.5)").expect("parse rgba");
+        assert_eq!(style.get_parsed_color().unwrap(), "rgba(255, 0, 0, 0.5)");
     }
 }

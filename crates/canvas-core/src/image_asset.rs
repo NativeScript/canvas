@@ -197,11 +197,53 @@ impl Debug for CanvasImage {
     }
 }
 
-#[derive(Debug, Clone, Default)]
 struct ImageAssetInner {
     image: Option<CanvasImage>,
+    /// Lazily-created raster `Image` wrapping `self.image`.
+    ///
+    /// By caching the `Image` here and returning the same object each time, the
+    /// unique-id stays stable and Skia's internal cache becomes effective:
+    /// the first `drawImage` uploads pixels to the GPU; every subsequent call
+    /// is a pure GPU→GPU blit at zero CPU cost.
+    #[cfg(feature = "2d")]
+    raster_image_cache: Option<skia_safe::Image>,
     error: Cow<'static, str>,
     has_alpha: bool,
+}
+
+impl Debug for ImageAssetInner {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut s = f.debug_struct("ImageAssetInner");
+        s.field("image", &self.image);
+        s.field("error", &self.error);
+        s.field("has_alpha", &self.has_alpha);
+        s.finish()
+    }
+}
+
+impl Clone for ImageAssetInner {
+    fn clone(&self) -> Self {
+        Self {
+            image: self.image.clone(),
+            // Don't clone the cache – it will be rebuilt lazily on next access.
+            #[cfg(feature = "2d")]
+            raster_image_cache: None,
+            error: self.error.clone(),
+            has_alpha: self.has_alpha,
+        }
+    }
+}
+
+impl Default for ImageAssetInner {
+    fn default() -> Self {
+        Self {
+            image: None,
+            #[cfg(feature = "2d")]
+            raster_image_cache: None,
+            error: Cow::default(),
+            has_alpha: false,
+        }
+    }
 }
 
 unsafe impl Send for ImageAssetInner {}
@@ -235,6 +277,12 @@ impl ImageAsset {
         F: FnOnce(&mut [u8], (u32, u32)),
     {
         let mut lock = self.0.lock();
+        // Pixel data is about to be mutated; invalidate the cached Image so it is
+        // rebuilt from the updated bytes on the next with_skia_image call.
+        #[cfg(feature = "2d")]
+        {
+            lock.raster_image_cache = None;
+        }
         match lock.image.as_mut() {
             None => f(&mut [], (0, 0)),
             Some(image) => image.with_bytes_mut_dimension(f),
@@ -288,29 +336,38 @@ impl ImageAsset {
     where
         F: FnOnce(Option<&skia_safe::Image>),
     {
-        let lock = self.0.lock();
+        let mut lock = self.0.lock();
+
+        #[cfg(feature = "2d")]
+        {
+            if lock.raster_image_cache.is_none() {
+                let new_img = lock
+                    .image
+                    .as_ref()
+                    .and_then(|ci| {
+                        let CanvasImage::Skia(bitmap, _) = ci;
+                        skia_safe::images::raster_from_bitmap(bitmap)
+                    });
+                lock.raster_image_cache = new_img;
+            }
+            f(lock.raster_image_cache.as_ref());
+            return;
+        }
+
+        #[cfg(not(feature = "2d"))]
         match lock.image.as_ref() {
             None => f(None),
-            Some(image) => match image {
-                #[cfg(not(feature = "2d"))]
-                CanvasImage::Stb(image) => {
-                    let info = skia_safe::ImageInfo::new(
-                        (image.width as i32, image.height as i32),
-                        skia_safe::ColorType::RGBA8888,
-                        skia_safe::AlphaType::Unpremul,
-                        None,
-                    );
-                    let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
-                    let img =
-                        skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                    f(img.as_ref())
-                }
-                #[cfg(feature = "2d")]
-                CanvasImage::Skia(bitmap, _) => {
-                    let img = skia_safe::images::raster_from_bitmap(bitmap);
-                    f(img.as_ref())
-                }
-            },
+            Some(CanvasImage::Stb(image)) => {
+                let info = skia_safe::ImageInfo::new(
+                    (image.width as i32, image.height as i32),
+                    skia_safe::ColorType::RGBA8888,
+                    skia_safe::AlphaType::Unpremul,
+                    None,
+                );
+                let data = unsafe { skia_safe::Data::new_bytes(image.data.as_slice()) };
+                let img = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                f(img.as_ref())
+            }
         }
     }
 
@@ -318,38 +375,49 @@ impl ImageAsset {
     where
         F: FnOnce(Option<&skia_safe::Image>, Option<((u32, u32), &[u8])>),
     {
-        let lock = self.0.lock();
+        let mut lock = self.0.lock();
+
+        #[cfg(feature = "2d")]
+        {
+            if lock.raster_image_cache.is_none() {
+                let new_img = lock
+                    .image
+                    .as_ref()
+                    .and_then(|ci| {
+                        let CanvasImage::Skia(bitmap, _) = ci;
+                        skia_safe::images::raster_from_bitmap(bitmap)
+                    });
+                lock.raster_image_cache = new_img;
+            }
+
+            match lock.image.as_ref() {
+                None => f(None, None),
+                Some(CanvasImage::Skia(bitmap, bytes)) => {
+                    let dims = bitmap.dimensions();
+                    f(
+                        lock.raster_image_cache.as_ref(),
+                        Some(((dims.width as u32, dims.height as u32), bytes)),
+                    )
+                }
+            }
+            return;
+        }
+
+        #[cfg(not(feature = "2d"))]
         match lock.image.as_ref() {
             None => f(None, None),
-            Some(image) => {
-                match image {
-                    #[cfg(not(feature = "2d"))]
-                    CanvasImage::Stb(image) => {
-                        // should always be rgba
-                        let info = skia_safe::ImageInfo::new(
-                            (image.width as i32, image.height as i32),
-                            skia_safe::ColorType::RGBA8888,
-                            skia_safe::AlphaType::Unpremul,
-                            None,
-                        );
-                        let dimensions = (image.width as u32, image.height as u32);
-                        let slice = image.data.as_slice();
-                        let data = unsafe { skia_safe::Data::new_bytes(slice) };
-                        let image =
-                            skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
-                        f(image.as_ref(), Some((dimensions, slice)))
-                    }
-                    #[cfg(feature = "2d")]
-                    CanvasImage::Skia(bitmap, bytes) => {
-                        let image = skia_safe::images::raster_from_bitmap(bitmap);
-                        let dimensions = bitmap.dimensions();
-                        // should not fail to cast
-                        f(
-                            image.as_ref(),
-                            Some(((dimensions.width as u32, dimensions.height as u32), bytes)),
-                        )
-                    }
-                }
+            Some(CanvasImage::Stb(image)) => {
+                let info = skia_safe::ImageInfo::new(
+                    (image.width as i32, image.height as i32),
+                    skia_safe::ColorType::RGBA8888,
+                    skia_safe::AlphaType::Unpremul,
+                    None,
+                );
+                let dimensions = (image.width as u32, image.height as u32);
+                let slice = image.data.as_slice();
+                let data = unsafe { skia_safe::Data::new_bytes(slice) };
+                let img = skia_safe::images::raster_from_data(&info, data, info.min_row_bytes());
+                f(img.as_ref(), Some((dimensions, slice)))
             }
         }
     }
@@ -357,7 +425,26 @@ impl ImageAsset {
     pub fn close(&self) {
         let mut lock = self.0.lock();
         lock.image = None;
+        #[cfg(feature = "2d")]
+        {
+            lock.raster_image_cache = None;
+        }
     }
+
+    #[cfg(feature = "2d")]
+    pub fn raster_image(&self) -> Option<skia_safe::Image> {
+        let mut lock = self.0.lock();
+        if lock.raster_image_cache.is_none() {
+            let new_img = lock.image.as_ref().and_then(|ci| {
+                let CanvasImage::Skia(bitmap, _) = ci;
+                skia_safe::images::raster_from_bitmap(bitmap)
+            });
+            lock.raster_image_cache = new_img;
+        }
+        // Clone is cheap: skia_safe::Image is Arc-counted internally.
+        lock.raster_image_cache.clone()
+    }
+
     pub fn strong_count(&self) -> usize {
         Arc::strong_count(&self.0)
     }
@@ -380,6 +467,8 @@ impl ImageAsset {
         let has_alpha = info.is_opaque();
         let inner = ImageAssetInner {
             image: Some(CanvasImage::new(&info, data)),
+            #[cfg(feature = "2d")]
+            raster_image_cache: None,
             error: Cow::default(),
             has_alpha,
         };
@@ -405,6 +494,8 @@ impl ImageAsset {
 
         let inner = ImageAssetInner {
             image,
+            #[cfg(feature = "2d")]
+            raster_image_cache: None,
             error: Cow::default(),
             has_alpha: asset.has_alpha,
         };
@@ -550,6 +641,7 @@ impl ImageAsset {
         let mut lock = self.0.lock();
         lock.error = Cow::default();
         lock.image = None;
+        lock.raster_image_cache = None;
         let data = unsafe { skia_safe::Data::new_bytes(buf) };
 
         match skia_safe::images::deferred_from_encoded_data(data, None) {
@@ -604,11 +696,11 @@ impl ImageAsset {
                     skia_safe::AlphaType::Unpremul,
                     None,
                 );
-                let row_bytes = (info.width() * 4) as usize;
+                let row_bytes = info.min_row_bytes() as usize;
                 let size = info.height() as usize * row_bytes;
                 let mut buffer = vec![0u8; size];
                 let success = image.read_pixels(
-                    image.image_info(),
+                    &info,
                     buffer.as_mut_slice(),
                     row_bytes,
                     (0i32, 0i32),
@@ -673,6 +765,7 @@ impl ImageAsset {
         let mut lock = self.0.lock();
         lock.error = Cow::default();
         lock.image = Some(CanvasImage::new(info, data));
+        lock.raster_image_cache = None;
         lock.has_alpha = has_alpha;
         true
     }
@@ -693,7 +786,6 @@ impl ImageAsset {
                 // RGB -> RGBA (append 0xFF alpha)
                 let num_pixels = width * height;
                 let mut out = Vec::with_capacity(num_pixels * 4);
-                // Unrolled loop to improve throughput and aid auto-vectorization.
                 let mut i = 0usize;
                 let src = data.as_slice();
                 out.resize(num_pixels * 4, 0u8);

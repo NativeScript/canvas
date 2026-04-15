@@ -1,4 +1,4 @@
-import { CSSType, View, Property, booleanConverter } from '@nativescript/core';
+import { CSSType, View, Property, booleanConverter, Screen } from '@nativescript/core';
 import type { CanvasRenderingContext } from '../common';
 import { removeItemFromArray } from './utils';
 
@@ -351,6 +351,123 @@ export const doc = {
 		},
 	},
 };
+
+export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean): number {
+	if (value === undefined || value === null) {
+		return NaN;
+	}
+	const scale = Screen.mainScreen.scale;
+	function findAncestorDip(node: any): number | undefined {
+		let cur = node;
+		while (cur) {
+			if (isWidth) {
+				if (typeof cur.clientWidth === 'number' && cur.clientWidth > 0) {
+					return cur.clientWidth * scale;
+				}
+			} else {
+				if (typeof cur.clientHeight === 'number' && cur.clientHeight > 0) {
+					return cur.clientHeight * scale;
+				}
+			}
+
+			if (typeof cur.getMeasuredWidth === 'function' && typeof cur.getMeasuredHeight === 'function') {
+				const measured = isWidth ? cur.getMeasuredWidth() : cur.getMeasuredHeight();
+				if (measured > 0) {
+					return measured;
+				}
+			}
+
+			cur = cur.parent;
+		}
+
+		return undefined;
+	}
+
+	if (typeof value === 'object') {
+		const unit = value.unit;
+		const v = Number(value.value ?? 0);
+		if (unit === '%') {
+			const percent = v > 1 ? v / 100 : v;
+			let parentPx;
+			if (parent) {
+				if (isWidth && typeof parent.clientWidth === 'number') {
+					parentPx = parent.clientWidth * scale;
+				} else if (!isWidth && typeof parent.clientHeight === 'number') {
+					parentPx = parent.clientHeight * scale;
+				} else if (typeof parent.getMeasuredWidth === 'function' && typeof parent.getMeasuredHeight === 'function') {
+					parentPx = isWidth ? parent.getMeasuredWidth() : parent.getMeasuredHeight();
+				}
+			}
+
+			if (!parentPx) {
+				parentPx = findAncestorDip(parent);
+			}
+
+			if (!parentPx || parentPx === 0) {
+				if (isWidth) {
+					parentPx = Screen.mainScreen.widthPixels;
+				} else {
+					return NaN;
+				}
+			}
+
+			const dip = parentPx * percent;
+			return Math.floor(dip);
+		} else if (unit === 'px') {
+			return Math.floor(v);
+		} else {
+			return Math.floor(v * scale);
+		}
+	}
+
+	if (typeof value === 'string') {
+		const s = value.trim();
+		if (s.endsWith('%')) {
+			const parsed = parseFloat(s);
+			const percent = parsed > 1 ? parsed / 100 : parsed;
+			let parentPx;
+			if (parent) {
+				if (isWidth && typeof parent.clientWidth === 'number') {
+					parentPx = parent.clientWidth * scale;
+				} else if (!isWidth && typeof parent.clientHeight === 'number') {
+					parentPx = parent.clientHeight * scale;
+				} else if (typeof parent.getMeasuredWidth === 'function' && typeof parent.getMeasuredHeight === 'function') {
+					parentPx = isWidth ? parent.getMeasuredWidth() : parent.getMeasuredHeight();
+				}
+			}
+
+			if (!parentPx) {
+				parentPx = findAncestorDip(parent);
+			}
+
+			if (!parentPx || parentPx === 0) {
+				if (isWidth) {
+					parentPx = Screen.mainScreen.widthPixels;
+				} else {
+					return NaN;
+				}
+			}
+
+			const dip = parentPx * percent;
+			return Math.floor(dip);
+		} else {
+			const parsed = parseFloat(s);
+			if (Number.isNaN(parsed)) {
+				return NaN;
+			}
+			if (s.endsWith('px')) {
+				return Math.floor(parsed);
+			}
+			return Math.floor(parsed * scale);
+		}
+	}
+
+	if (typeof value === 'number') {
+		return Math.floor(value * scale);
+	}
+
+	return NaN;
+}
 
 @CSSType('Canvas')
 export abstract class CanvasBase extends View implements ICanvasBase {

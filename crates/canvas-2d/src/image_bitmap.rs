@@ -9,6 +9,13 @@ use crate::context::filter_quality::FilterQuality;
 use crate::context::pixel_manipulation::image_data::ImageData;
 use crate::utils::image::{from_image_slice, from_image_slice_encoded};
 
+/// Wrap an owned value in an `Arc`, leak it as a raw pointer, and cast to `i64`.
+macro_rules! into_raw_i64 {
+    ($expr:expr) => {
+        Arc::into_raw(Arc::new($expr)) as i64
+    };
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub enum ImageBitmapPremultiplyAlpha {
@@ -124,21 +131,17 @@ pub fn create_from_image_data_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    unsafe {
-        let data: *const ImageData = image_data as _;
-        let data = &*data;
-
-        Arc::into_raw(Arc::new(create_from_image_data(
-            data,
-            rect,
-            flip_y,
-            premultiply_alpha,
-            color_space_conversion,
-            resize_quality,
-            resize_width,
-            resize_height,
-        ))) as i64
-    }
+    let data = unsafe { &*(image_data as *const ImageData) };
+    into_raw_i64!(create_from_image_data(
+        data,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_width,
+        resize_height,
+    ))
 }
 
 pub fn create_from_image_data(
@@ -178,7 +181,7 @@ pub(crate) fn create_image_bitmap_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Arc::into_raw(Arc::new(create_image_bitmap(
+    into_raw_i64!(create_image_bitmap(
         image,
         rect,
         flip_y,
@@ -187,7 +190,7 @@ pub(crate) fn create_image_bitmap_raw(
         resize_quality,
         resize_width,
         resize_height,
-    ))) as i64
+    ))
 }
 
 pub(crate) fn create_image_bitmap_internal(
@@ -203,6 +206,30 @@ pub(crate) fn create_image_bitmap_internal(
 ) {
     let img_w = image.width() as f32;
     let img_h = image.height() as f32;
+
+    let is_identity = !flip_y && rect.is_none() && resize_width <= 0. && resize_height <= 0.;
+
+    if is_identity {
+        let alpha_type = ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into();
+        let row_bytes = (img_w as usize) * 4;
+        let mut pixels = vec![0_u8; img_h as usize * row_bytes];
+        let read_info = skia_safe::ImageInfo::new(
+            image.dimensions(),
+            skia_safe::ColorType::RGBA8888,
+            alpha_type,
+            ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space(),
+        );
+        if image.read_pixels(
+            &read_info,
+            pixels.as_mut_slice(),
+            row_bytes,
+            (0, 0),
+            skia_safe::image::CachingHint::Allow,
+        ) {
+            output.load_from_raw_bytes_rgba(img_w as u32, img_h as u32, pixels);
+        }
+        return;
+    }
 
     // Only one of resize_width / resize_height being set means proportional scale.
     let (mut out_width, mut out_height) = (img_w, img_h);
@@ -233,7 +260,8 @@ pub(crate) fn create_image_bitmap_internal(
     };
 
     let alpha_type = ImageBitmapPremultiplyAlpha::from(premultiply_alpha).into();
-    let color_space = ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space();
+    let color_space =
+        ImageBitmapColorSpaceConversion::from(color_space_conversion).to_color_space();
 
     let image_info = skia_safe::ImageInfo::new(
         (source_rect.width() as i32, source_rect.height() as i32),
@@ -242,10 +270,11 @@ pub(crate) fn create_image_bitmap_internal(
         color_space,
     );
 
-    let mut surface = match surfaces::raster(&image_info, Some((source_rect.width() * 4.) as usize), None) {
-        None => return,
-        Some(s) => s,
-    };
+    let mut surface =
+        match surfaces::raster(&image_info, Some((source_rect.width() * 4.) as usize), None) {
+            None => return,
+            Some(s) => s,
+        };
 
     {
         let canvas = surface.canvas();
@@ -259,14 +288,17 @@ pub(crate) fn create_image_bitmap_internal(
     }
 
     let snapshot = surface.image_snapshot();
-    let needs_resize = snapshot.width() != out_width as i32 || snapshot.height() != out_height as i32;
+    let needs_resize =
+        snapshot.width() != out_width as i32 || snapshot.height() != out_height as i32;
 
     if needs_resize {
         let resize_info = image_info.with_dimensions((out_width as i32, out_height as i32));
         let row_bytes = (out_width * 4.) as usize;
         let mut pixels = vec![0_u8; out_height as usize * row_bytes];
 
-        if let Some(pixel_map) = skia_safe::Pixmap::new(&resize_info, pixels.as_mut_slice(), row_bytes) {
+        if let Some(pixel_map) =
+            skia_safe::Pixmap::new(&resize_info, pixels.as_mut_slice(), row_bytes)
+        {
             let _ = snapshot.scale_pixels(
                 &pixel_map,
                 ImageBitmapResizeQuality::from(resize_quality).to_quality(),
@@ -283,8 +315,18 @@ pub(crate) fn create_image_bitmap_internal(
             alpha_type,
             None,
         );
-        if snapshot.read_pixels(&read_info, pixels.as_mut_slice(), row_bytes, (0, 0), skia_safe::image::CachingHint::Allow) {
-            output.load_from_raw_bytes_rgba(snapshot.width() as u32, snapshot.height() as u32, pixels);
+        if snapshot.read_pixels(
+            &read_info,
+            pixels.as_mut_slice(),
+            row_bytes,
+            (0, 0),
+            skia_safe::image::CachingHint::Allow,
+        ) {
+            output.load_from_raw_bytes_rgba(
+                snapshot.width() as u32,
+                snapshot.height() as u32,
+                pixels,
+            );
         }
     }
 }
@@ -326,7 +368,7 @@ pub fn create_image_asset_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Arc::into_raw(Arc::new(create_image_asset(
+    into_raw_i64!(create_image_asset(
         buf,
         image_width,
         image_height,
@@ -337,7 +379,7 @@ pub fn create_image_asset_raw(
         resize_quality,
         resize_width,
         resize_height,
-    ))) as i64
+    ))
 }
 
 pub fn create_image_asset(
@@ -403,20 +445,17 @@ pub fn create_from_image_asset_src_rect_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    unsafe {
-        let asset: *const ImageAsset = image_asset as _;
-        let asset = &*asset;
-        Arc::into_raw(Arc::new(create_from_image_asset_src_rect(
-            asset,
-            rect,
-            flip_y,
-            premultiply_alpha,
-            color_space_conversion,
-            resize_quality,
-            resize_width,
-            resize_height,
-        ))) as i64
-    }
+    let asset = unsafe { &*(image_asset as *const ImageAsset) };
+    into_raw_i64!(create_from_image_asset_src_rect(
+        asset,
+        rect,
+        flip_y,
+        premultiply_alpha,
+        color_space_conversion,
+        resize_quality,
+        resize_width,
+        resize_height,
+    ))
 }
 
 pub fn create_from_image_asset_src_rect(
@@ -484,7 +523,7 @@ pub fn create_image_asset_encoded_raw(
     resize_width: f32,
     resize_height: f32,
 ) -> i64 {
-    Arc::into_raw(Arc::new(create_image_asset_encoded(
+    into_raw_i64!(create_image_asset_encoded(
         buf,
         rect,
         flip_y,
@@ -493,5 +532,5 @@ pub fn create_image_asset_encoded_raw(
         resize_quality,
         resize_width,
         resize_height,
-    ))) as i64
+    ))
 }

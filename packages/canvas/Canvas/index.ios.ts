@@ -1,9 +1,9 @@
-import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect } from './common';
+import { CanvasBase, doc, ignoreTouchEventsProperty, DOMRect, lengthToDevicePixels } from './common';
 import { DOMMatrix } from '../Canvas2D';
 import { CanvasRenderingContext2D } from '../Canvas2D/CanvasRenderingContext2D';
 import { WebGLRenderingContext } from '../WebGL/WebGLRenderingContext';
 import { WebGL2RenderingContext } from '../WebGL2/WebGL2RenderingContext';
-import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty } from '@nativescript/core';
+import { ImageSource, Utils, Screen, isUserInteractionEnabledProperty, widthProperty, heightProperty } from '@nativescript/core';
 import { GPUCanvasContext } from '../WebGPU';
 import { handleContextOptions, microtask } from './utils';
 declare var NSCCanvas, NSCCanvasListener;
@@ -35,17 +35,6 @@ enum ContextType {
 }
 
 const viewRect_ = Symbol('[[viewRect]]');
-
-function valueToNumber(value) {
-	switch (typeof value) {
-		case 'string':
-			return parseFloat(value);
-		case 'number':
-			return value;
-		default:
-			return NaN;
-	}
-}
 
 export class Canvas extends CanvasBase {
 	private _2dContext: CanvasRenderingContext2D;
@@ -149,11 +138,19 @@ export class Canvas extends CanvasBase {
 	}
 
 	get clientWidth() {
-		return Math.floor(this.getMeasuredWidth() / Screen.mainScreen.scale);
+		const width = this.getMeasuredWidth();
+		if (width === 0) {
+			return 0;
+		}
+		return width / Screen.mainScreen.scale;
 	}
 
 	get clientHeight() {
-		return Math.floor(this.getMeasuredHeight() / Screen.mainScreen.scale);
+		const height = this.getMeasuredHeight();
+		if (height === 0) {
+			return 0;
+		}
+		return height / Screen.mainScreen.scale;
 	}
 
 	get drawingBufferHeight() {
@@ -170,6 +167,10 @@ export class Canvas extends CanvasBase {
 		return this._canvas.drawingBufferWidth;
 	}
 
+	[widthProperty.setNative](value: any) {
+		this.width = value;
+	}
+
 	// @ts-ignore
 	get width(): number {
 		if (this._pendingWidth !== undefined) {
@@ -181,33 +182,42 @@ export class Canvas extends CanvasBase {
 		return this._canvas.surfaceWidth;
 	}
 
-	set width(value: number) {
+	set width(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
 
-		value = valueToNumber(value);
-		if (!Number.isNaN(value)) {
-			const newValue = Math.floor(value);
+		let px = NaN;
+
+		if (typeof value === 'number') {
+			px = Math.floor(value);
+		} else {
+			px = lengthToDevicePixels(value, this.parent, true);
+		}
+
+		if (!Number.isNaN(px)) {
+			const newValue = Math.floor(px);
 			if (this._pendingHeight !== undefined) {
 				// Height was just set — coalesce into single resize
 				const h = this._pendingHeight;
 				this._pendingHeight = undefined;
 				this._canvas.setSurfaceSize(newValue, h);
-				const { fit, transform } = this._getFit(this._canvas.frame);
-				this._updateScale(fit, transform ?? CATransform3DIdentity);
+				this._syncNativeFit();
 			} else {
 				this._pendingWidth = newValue;
 				microtask(() => {
 					if (this._pendingWidth !== undefined) {
 						this._canvas.surfaceWidth = this._pendingWidth;
 						this._pendingWidth = undefined;
-						const { fit, transform } = this._getFit(this._canvas.frame);
-						this._updateScale(fit, transform ?? CATransform3DIdentity);
+						this._syncNativeFit();
 					}
 				});
 			}
 		}
+	}
+
+	[heightProperty.setNative](value: any) {
+		this.height = value;
 	}
 
 	// @ts-ignore
@@ -221,29 +231,34 @@ export class Canvas extends CanvasBase {
 		return this._canvas.surfaceHeight;
 	}
 
-	set height(value: number) {
+	set height(value: any) {
 		if (this._canvas === undefined || this._canvas === null) {
 			return;
 		}
 
-		value = valueToNumber(value);
-		if (!Number.isNaN(value)) {
-			const newValue = Math.floor(value);
+		let px = NaN;
+
+		if (typeof value === 'number') {
+			px = Math.floor(value);
+		} else {
+			px = lengthToDevicePixels(value, this.parent, false);
+		}
+
+		if (!Number.isNaN(px)) {
+			const newValue = Math.floor(px);
 			if (this._pendingWidth !== undefined) {
 				// Width was just set — coalesce into single resize
 				const w = this._pendingWidth;
 				this._pendingWidth = undefined;
 				this._canvas.setSurfaceSize(w, newValue);
-				const { fit, transform } = this._getFit(this._canvas.frame);
-				this._updateScale(fit, transform ?? CATransform3DIdentity);
+				this._syncNativeFit();
 			} else {
 				this._pendingHeight = newValue;
 				microtask(() => {
 					if (this._pendingHeight !== undefined) {
 						this._canvas.surfaceHeight = this._pendingHeight;
 						this._pendingHeight = undefined;
-						const { fit, transform } = this._getFit(this._canvas.frame);
-						this._updateScale(fit, transform ?? CATransform3DIdentity);
+						this._syncNativeFit();
 					}
 				});
 			}
@@ -436,19 +451,17 @@ export class Canvas extends CanvasBase {
 		return { fit, frame: newFrame, transform };
 	}
 
-	_updateScale(fit: number, transform: CATransform3D) {
-		CATransaction.begin();
-		CATransaction.setDisableActions(true);
-		this._canvas.subviews.objectAtIndex(0).layer.transform = transform; // glkView
-		this._canvas.subviews.objectAtIndex(1).layer.transform = transform; // mtlView
-		this._canvas.subviews.objectAtIndex(2).layer.transform = transform; // cpuView (willReadFrequently)
-		CATransaction.commit();
+	private _syncNativeFit(frame: CGRect = this._canvas?.frame) {
+		// if (!this._canvas || !frame) {
+		// 	return;
+		// }
+		// const { fit } = this._getFit(frame);
+		// this._canvas.fit = fit;
 	}
 
 	_setNativeViewFrame(nativeView: any, currentFrame: CGRect): void {
-		const { fit, frame, transform } = this._getFit(currentFrame);
-		super._setNativeViewFrame(nativeView, frame);
-		this._updateScale(fit, transform ?? CATransform3DIdentity);
+		super._setNativeViewFrame(nativeView, currentFrame);
+		this._syncNativeFit(currentFrame);
 	}
 
 	getContext(type: string, options?: any): CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext | GPUCanvasContext | null {

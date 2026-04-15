@@ -34,6 +34,6 @@
 	"bootstrapper": "@nativescript/plugin-seed",
 	"dependencies": {
 		"@nativescript/canvas-polyfill": "*",
-		"phaser": "~3.60.0"
+		"phaser": "~4.0.0"
 	}
 }

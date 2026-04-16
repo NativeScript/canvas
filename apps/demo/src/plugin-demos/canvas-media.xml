@@ -13,9 +13,9 @@
 								 type="video/mp4"/>
 		</video:Video>
 
-		<!-- <ui:Audio margin="0 10" controls="true" row="1" playsinline="true" height="300">
-			<ui:source src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
+		<audio:Audio margin="0 10" controls="true" row="1" playsinline="true">
+			<ui:Source src="https://samplelib.com/mp3/sample-15s.mp3"
 								 type="audio/mp3"/>
-		</ui:Audio> -->
+		</audio:Audio>
 	</GridLayout>
 </Page>

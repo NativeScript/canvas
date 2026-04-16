@@ -26,15 +26,9 @@ export class HTMLVideoElement extends HTMLElement {
 		}
 	}
 
-	canPlayType(type): '' | 'probably' | 'maybe' {
-		// "video/webm"
-		switch (type) {
-			case 'video/mp4':
-			case 'video/ogg':
-				return 'probably';
-			default:
-				return '';
-		}
+	canPlayType(type: string): '' | 'probably' | 'maybe' {
+		if (!this._video) return '';
+		return this._video.canPlayType(type);
 	}
 
 	requestVideoFrameCallback(callback: Function) {

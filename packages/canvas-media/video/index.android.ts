@@ -1,5 +1,5 @@
 import { VideoBase } from './common';
-import { Screen, Application, Utils, knownFolders, path } from '@nativescript/core';
+import { Screen, Application, Utils, knownFolders, path, booleanConverter } from '@nativescript/core';
 import { Source } from '..';
 import { durationProperty, currentTimeProperty } from '../common';
 
@@ -38,7 +38,8 @@ export class Video extends VideoBase {
 				onDurationChange(duration) {
 					const owner = ref.get();
 					if (owner) {
-						durationProperty.nativeValueChange(owner, duration);
+						let secs = Number(duration) > 0 ? Number(duration) / 1000.0 : NaN;
+						durationProperty.nativeValueChange(owner, secs);
 						owner._notifyListener(Video.durationchangeEvent);
 					}
 				},
@@ -68,7 +69,8 @@ export class Video extends VideoBase {
 				onCurrentTimeChanged(time) {
 					const owner = ref.get();
 					if (owner) {
-						currentTimeProperty.nativeValueChange(owner, time);
+						let secs = Number(time) / 1000.0;
+						currentTimeProperty.nativeValueChange(owner, secs);
 						owner._notifyListener(Video.timeupdateEvent);
 					}
 				},
@@ -84,7 +86,23 @@ export class Video extends VideoBase {
 					const owner = ref.get();
 					if (owner) {
 						owner._readyState = Video.HAVE_CURRENT_DATA;
+						owner._notifyListener(Video.durationchangeEvent);
+						owner._notifyListener(Video.loadedmetadataEvent);
 						owner._notifyListener(Video.loadeddataEvent);
+					}
+				},
+
+				onCanPlay() {
+					const owner = ref.get();
+					if (owner) {
+						owner._notifyListener(Video.canplayEvent);
+					}
+				},
+
+				onCanPlayThrough() {
+					const owner = ref.get();
+					if (owner) {
+						owner._notifyListener(Video.canplaythroughEvent);
 					}
 				},
 
@@ -235,11 +253,17 @@ export class Video extends VideoBase {
 	}
 
 	set muted(value: boolean) {
-		this._instance.setMuted(value);
+		this._instance.setMuted(booleanConverter(value));
 	}
 
 	get duration() {
-		return this._instance.getDuration();
+		try {
+			const d = this._instance.getDuration();
+			if (d == null || Number(d) <= 0) return NaN;
+			return Number(d) / 1000.0;
+		} catch (e) {
+			return NaN;
+		}
 	}
 
 	get currentTime() {
@@ -262,7 +286,18 @@ export class Video extends VideoBase {
 	}
 
 	load() {
+		if (!this._instance) {
+			return;
+		}
 		this._instance.load();
+	}
+
+	canPlayType(type: string) {
+		if (!this._instance) {
+			return '';
+		}
+
+		return this._instance.canPlayType(type);
 	}
 
 	//@ts-ignore
@@ -271,7 +306,7 @@ export class Video extends VideoBase {
 	}
 
 	set autoplay(value: boolean) {
-		this._instance.setAutoplay(value);
+		this._instance.setAutoplay(booleanConverter(value));
 	}
 
 	get controls() {
@@ -279,7 +314,7 @@ export class Video extends VideoBase {
 	}
 
 	set controls(enabled: boolean) {
-		this._instance.setControls(enabled);
+		this._instance.setControls(booleanConverter(enabled));
 	}
 
 	// @ts-ignore
@@ -288,7 +323,7 @@ export class Video extends VideoBase {
 	}
 
 	set loop(value: boolean) {
-		this._instance.setLoop(value);
+		this._instance.setLoop(booleanConverter(value));
 	}
 
 	createNativeView(): Object {

@@ -128,6 +128,4 @@ try {
 			writable: true,
 		});
 	}
-} catch (_e) {
-	// canvas-media not installed — VideoFrame will not be available as a global
-}
+} catch (_e) {}

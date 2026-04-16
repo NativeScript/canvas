@@ -1,162 +1,237 @@
 import { AudioBase } from './common';
-import { controlsProperty } from '../common';
-import { Button, Color, GridLayout, GridUnitType, ItemSpec, Slider } from '@nativescript/core';
 import { Source } from '../source';
+import { controlsProperty, autoplayProperty, loopProperty, currentTimeProperty, durationProperty } from '../common';
+import { booleanConverter, knownFolders, path, Utils } from '@nativescript/core';
+
+declare const NSCAudioHelper;
+declare var NSCAudioHelperListener: any;
+
+interface NSCAudioHelperListener {}
+
+@ObjCClass(NSCAudioHelperListener)
+@NativeClass()
+class NSCAudioHelperListenerImpl extends NSObject implements NSCAudioHelperListener {
+	_owner: WeakRef<Audio>;
+	public static initWithOwner(owner: WeakRef<Audio>): NSCAudioHelperListenerImpl {
+		const obj = NSCAudioHelperListenerImpl.alloc().init() as NSCAudioHelperListenerImpl;
+		obj._owner = owner;
+		return obj;
+	}
+
+	public onStateChange(state) {
+		const owner = this._owner.deref();
+		if (owner) {
+			// NSCPlayerState: 1 === playing
+			if (state === 1) {
+				if (owner._playResolve) {
+					owner._playResolve();
+					owner._playResolve = null;
+					owner._playReject = null;
+					owner._playPromise = null;
+				}
+				owner._notifyListener(Audio.playingEvent);
+			}
+		}
+	}
+
+	public onTimeUpdate(time) {
+		const owner = this._owner.deref();
+		if (owner) {
+			currentTimeProperty.nativeValueChange(owner, time);
+			owner._notifyListener(Audio.timeupdateEvent);
+		}
+	}
+
+	public onLoadedData() {
+		const owner = this._owner.deref();
+		if (owner) {
+			durationProperty.nativeValueChange(owner, owner.duration);
+			owner._notifyListener(Audio.durationchangeEvent);
+			owner._notifyListener(Audio.loadedmetadataEvent);
+			owner._notifyListener(Audio.loadeddataEvent);
+		}
+	}
+
+	public onCanPlay() {
+		const owner = this._owner.deref();
+		if (owner) {
+			owner._notifyListener(Audio.canplayEvent);
+		}
+	}
+
+	public onCanPlayThrough() {
+		const owner = this._owner.deref();
+		if (owner) {
+			owner._notifyListener(Audio.canplaythroughEvent);
+		}
+	}
+}
 
 export class Audio extends AudioBase {
-	#player: AVQueuePlayer;
-	#sourceView: Source[];
-	#view: GridLayout;
-	#isReady: boolean = false;
-	#playPauseBtn: Button;
-	#isPaused: boolean = true;
-	#slider: Slider;
+	helper: any;
+	_sourceView: Source[] = [];
+	private listener: NSCAudioHelperListenerImpl;
+
+	_playPromise: Promise<void> | null = null;
+	_playResolve: (() => void) | null = null;
+	_playReject: ((err?: any) => void) | null = null;
+
+	_isCustom: boolean = false;
+
+	static createCustomView() {
+		const audio = new Audio();
+		audio._isCustom = true;
+		audio.width = 300;
+		audio.height = 40;
+		return audio;
+	}
+
+	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number): void {
+		const nativeView = this.helper.view;
+		if (nativeView) {
+			const width = Utils.layout.makeMeasureSpec(Utils.layout.toDevicePixels(300), Utils.layout.EXACTLY);
+			const height = Utils.layout.makeMeasureSpec(Utils.layout.toDevicePixels(40), Utils.layout.EXACTLY);
+
+			this.setMeasuredDimension(width, height);
+		}
+	}
 
 	constructor() {
 		super();
-		this.#sourceView = [];
-		this.#view = new GridLayout();
-		this.#view.addColumn(new ItemSpec(1, GridUnitType.AUTO));
-		this.#view.addColumn(new ItemSpec(30, GridUnitType.PIXEL));
-		this.#view.addColumn(new ItemSpec(1, GridUnitType.STAR));
-		this.#view.addColumn(new ItemSpec(30, GridUnitType.PIXEL));
-		this.#view.addColumn(new ItemSpec(1, GridUnitType.AUTO));
-		this.#view.height = 60;
-		this.#view.backgroundColor = new Color('#f1f3f4').ios;
-		this.#player = AVQueuePlayer.new();
-		this.#playPauseBtn = new Button();
-		//this.#playBtn.color = 'black';
-		this.#playPauseBtn.width = 50;
-		this.#playPauseBtn.height = 50;
-		this.#slider = new Slider();
+		this.helper = NSCAudioHelper.new();
+		try {
+			AVAudioSession.sharedInstance().setCategoryError(AVAudioSessionCategoryPlayback);
+		} catch (e) {}
+		this.listener = NSCAudioHelperListenerImpl.initWithOwner(new WeakRef(this));
+		this.helper.listener = this.listener;
+	}
+
+	createNativeView() {
+		return this.helper.view;
 	}
 
 	initNativeView() {
 		super.initNativeView();
-		this._addControls();
 	}
 
-	private _addControls() {
-		if (this.controls) {
-			this._addView(this.#view);
-			this.#view.addChild(this.#playPauseBtn);
-			this.#playPauseBtn.nativeView.frame = CGRectMake(0, 0, 50, 50);
-			//this.#playPauseBtn.nativeView.setNeedsLayout()
-			this.#playPauseBtn.nativeView.layoutIfNeeded();
-			//this.#view.addChild(this.#slider);
-			GridLayout.setColumn(this.#playPauseBtn, 0);
-			//GridLayout.setColumn(this.#slider, 2);
-			const layer = this._createPlayPause();
-			const play = layer.play;
-			const playBtnIcon = CAShapeLayer.new();
-			playBtnIcon.lineWidth = 1;
-			playBtnIcon.path = layer.play.CGPath;
-			this.#playPauseBtn.nativeView.layer.addSublayer(playBtnIcon);
-			this.#playPauseBtn.on('tap', (args) => {
-				this._draw();
-			});
+	[controlsProperty.setNative](enable: boolean) {
+		this.helper.controls = enable;
+	}
+
+	[autoplayProperty.setNative](autoplay: boolean) {
+		this.helper.autoplay = autoplay;
+	}
+
+	get autoplay() {
+		try {
+			return this.helper.autoplay;
+		} catch (e) {
+			return false;
 		}
 	}
-
-	private _draw() {
-		const path = this._createPlayPause();
-		const view = this.#playPauseBtn.nativeView as UIButton;
-		const animation = CABasicAnimation.animationWithKeyPath('path');
-		if (this.#isPaused) {
-			if (this.#isReady) {
-				animation.fromValue = path.play.CGPath;
-				animation.toValue = path.pause.CGPath;
-			} else {
-				animation.toValue = path.pause.CGPath;
-			}
-			animation.duration = 0.3;
-			animation.fillMode = kCAFillModeForwards;
-			animation.removedOnCompletion = false;
-			view.layer.sublayers[0].addAnimationForKey(animation, animation.keyPath);
-		} else {
-			animation.fromValue = path.pause.CGPath;
-			animation.toValue = path.play.CGPath;
-			animation.duration = 0.3;
-			animation.fillMode = kCAFillModeForwards;
-			animation.removedOnCompletion = false;
-			view.layer.sublayers[0].addAnimationForKey(animation, animation.keyPath);
-		}
-		this.#isPaused = !this.#isPaused;
-	}
-
-	private _createPlayPause() {
-		const playBtnPath = UIBezierPath.bezierPath();
-		playBtnPath.moveToPoint(CGPointZero);
-		playBtnPath.addLineToPoint(CGPointMake(0, 25));
-		playBtnPath.addLineToPoint(CGPointMake(6.25, 18.75));
-		playBtnPath.addLineToPoint(CGPointMake(6.25, 6.25));
-		playBtnPath.addLineToPoint(CGPointMake(0, 0));
-
-		playBtnPath.moveToPoint(CGPointMake(6.25, 6.25));
-		playBtnPath.addLineToPoint(CGPointMake(6.25, 18.75));
-		playBtnPath.addLineToPoint(CGPointMake(12.5, 12.5));
-		playBtnPath.moveToPoint(CGPointMake(6.25, 6.25));
-		playBtnPath.closePath();
-
-		//playBtnIcon.bounds = CGPathGetBoundingBox(playBtnIcon.path);
-
-		const pauseBtnPath = UIBezierPath.bezierPath();
-		pauseBtnPath.moveToPoint(CGPointZero);
-		pauseBtnPath.addLineToPoint(CGPointMake(0, 25));
-		pauseBtnPath.addLineToPoint(CGPointMake(5, 25));
-		pauseBtnPath.addLineToPoint(CGPointMake(5, 0));
-		pauseBtnPath.addLineToPoint(CGPointMake(0, 0));
-
-		const offset = 2.5 + 5;
-
-		pauseBtnPath.moveToPoint(CGPointMake(offset, 0));
-		pauseBtnPath.addLineToPoint(CGPointMake(offset, 25));
-		pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 25));
-		pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 0));
-		pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 0));
-		pauseBtnPath.closePath();
-
-		return { play: playBtnPath, pause: pauseBtnPath };
-	}
-
-	// private _createPauseBtn() {
-	// 	const pauseBtnPath = UIBezierPath.bezierPath();
-	// 	pauseBtnPath.moveToPoint(CGPointZero);
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(0, 25));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(5, 25));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(5, 0));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(0, 0));
-	//
-	// 	const offset = 2.5 + 5;
-	//
-	// 	pauseBtnPath.moveToPoint(CGPointMake(offset, 0));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(offset, 25));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 25));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 0));
-	// 	pauseBtnPath.addLineToPoint(CGPointMake(offset + 5, 0));
-	// 	pauseBtnPath.closePath();
-	// 	const pauseBtnIcon = CAShapeLayer.new();
-	// 	pauseBtnIcon.strokeColor = UIColor.redColor;
-	// 	pauseBtnIcon.lineWidth = 1;
-	// 	pauseBtnIcon.path = pauseBtnPath.CGPath;
-	// 	this.#view.addChild(this.#pauseBtn);
-	// 	GridLayout.setColumn(this.#pauseBtn, 0);
-	// 	return pauseBtnIcon;
-	// }
-
-	[controlsProperty.setNative](enable: boolean) {}
 
 	_addChildFromBuilder(name: string, value: any) {
 		if (value instanceof Source) {
-			this.#sourceView.push(value);
+			this._sourceView.push(value);
 		}
 	}
 
 	onLoaded() {
 		super.onLoaded();
-		const item = this.#sourceView[0];
+		const item = this._sourceView[0];
 		if (item) {
-			this.#player.insertItemAfterItem(AVPlayerItem.alloc().initWithURL(NSURL.URLWithString(item.src)), null);
+			this.helper.src = item.src;
 		}
+	}
+
+	get duration() {
+		return this.helper.duration;
+	}
+
+	get currentTime() {
+		return this.helper.currentTime;
+	}
+
+	set currentTime(value: number) {
+		if (isNaN(value) || value < 0) {
+			return;
+		}
+		this.helper.currentTime = value;
+	}
+
+	get muted() {
+		return this.helper.muted;
+	}
+
+	set muted(value: boolean) {
+		this.helper.muted = booleanConverter(value);
+	}
+
+	get src() {
+		return this.helper.src;
+	}
+
+	set src(value: string) {
+		let src = value;
+		if (typeof src === 'string' && src.startsWith('~/')) {
+			src = path.join(knownFolders.currentApp().path, src.replace('~', ''));
+		}
+		this.helper.src = src;
+	}
+
+	load() {
+		if (!this.helper) {
+			return;
+		}
+		this.helper.load();
+	}
+
+	canPlayType(type: string) {
+		if (!this.helper) {
+			return '';
+		}
+
+		return this.helper.canPlayType(type);
+	}
+
+	get controls() {
+		return this.helper.controls;
+	}
+
+	set controls(enabled: boolean) {
+		this.helper.controls = booleanConverter(enabled);
+	}
+
+	play() {
+		if (this.helper.state === 1) {
+			return Promise.resolve();
+		}
+		if (this._playPromise) {
+			return this._playPromise;
+		}
+		this._playPromise = new Promise<void>((resolve, reject) => {
+			this._playResolve = resolve;
+			this._playReject = reject;
+			this.helper.play();
+		});
+
+		return this._playPromise;
+	}
+
+	pause() {
+		this.helper.pause();
+	}
+
+	// @ts-ignore
+	get loop() {
+		return this.helper.loop;
+	}
+
+	// @ts-ignore
+	set loop(value: boolean | string) {
+		if (value === undefined || value === null) {
+			return;
+		}
+		this.helper.loop = booleanConverter(value);
 	}
 }

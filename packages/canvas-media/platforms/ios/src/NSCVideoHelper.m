@@ -5,12 +5,16 @@
 //  Created by Osei Fortune on 20/05/2025.
 //
 #import "NSCVideoHelper.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 #import "NSCVideoHelper+Internal.h"
 
-@implementation NSCVideoHelper
+@implementation NSCVideoHelper {
+    BOOL _canPlayFired;
+    BOOL _canPlayThroughFired;
+}
 
 - (instancetype)init {
-	_isLoop = NO;
+    _isLoop = NO;
     if (self = [super init]) {
         _controller = [[AVPlayerViewController alloc] init];
         _player = [[AVPlayer alloc] init];
@@ -59,6 +63,8 @@
     
     if (!src) return;
 
+    _canPlayFired = NO;
+    _canPlayThroughFired = NO;
     NSURL *url = [src hasPrefix:@"/"] ? [NSURL fileURLWithPath:src] : [NSURL URLWithString:src];
     if (!url) return;
 
@@ -88,7 +94,8 @@
             }];
 
             AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:weakSelf.asset];
-					strongSelf->_currentItem = item;
+
+            strongSelf->_currentItem = item;
 
             NSDictionary *outputSettings = @{
                 (NSString *)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
@@ -100,7 +107,32 @@
                 (NSString *)kCVPixelBufferMetalCompatibilityKey: @YES,
             };
 
-					strongSelf->_assetOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:outputSettings];
+            strongSelf->_assetOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:outputSettings];
+
+            [item addObserver:strongSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+            [item addObserver:strongSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
+
+            strongSelf->_playEndNotificationId = [[NSNotificationCenter defaultCenter]
+                                                 addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
+                                                 object:item queue:nil usingBlock:^(NSNotification *note) {
+                __strong typeof(strongSelf) innerSelf = strongSelf;
+                if (!innerSelf) return;
+                if (innerSelf->_isLoop) {
+                    [innerSelf->_player seekToTime:kCMTimeZero];
+                    [innerSelf->_player play];
+                    innerSelf->_state = NSCPlayerStatePlaying;
+                    if ([innerSelf.listener respondsToSelector:@selector(onStateChange:)]) {
+                        [innerSelf.listener onStateChange:innerSelf->_state];
+                    }
+                }
+            }];
+
+            [strongSelf.player replaceCurrentItemWithPlayerItem:item];
+            strongSelf.readyState = NSCPlayerReadyStateHaveMetadata;
+            [strongSelf performSelectorOnMainThread:@selector(_scheduleFirstFrameCheck) withObject:nil waitUntilDone:NO];
+            if (strongSelf.autoplay) {
+                [strongSelf play];
+            }
 
             [item addObserver:strongSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
             [item addObserver:strongSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
@@ -176,6 +208,33 @@
 - (double)duration {
     if (!_currentItem) return NAN;
     return CMTimeGetSeconds(_currentItem.asset.duration);
+}
+
+- (NSString *)canPlayType:(NSString *)type {
+    if (!type) return @"";
+    NSString *mime = [type lowercaseString];
+    NSRange sc = [mime rangeOfString:@";"];
+    if (sc.location != NSNotFound) {
+        mime = [mime substringToIndex:sc.location];
+    }
+    mime = [mime stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+    @try {
+        CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (__bridge CFStringRef)mime, NULL);
+        if (uti) {
+            if (UTTypeConformsTo(uti, kUTTypeVideo) || UTTypeConformsTo(uti, kUTTypeAudiovisualContent)) {
+                CFRelease(uti);
+                if ([mime containsString:@"webm"] || [mime containsString:@"vp8"] || [mime containsString:@"vp9"] || [mime containsString:@"ogg"]) return @"maybe";
+                return @"probably";
+            }
+            CFRelease(uti);
+        }
+    } @catch (NSException *ex) {}
+
+    if ([mime containsString:@"mp4"] || [mime containsString:@"mpeg"] || [mime containsString:@"h264"] || [mime containsString:@"video/mp4"]) return @"probably";
+    if ([mime containsString:@"webm"] || [mime containsString:@"vp8"] || [mime containsString:@"vp9"] || [mime containsString:@"video/webm"]) return @"maybe";
+    if ([mime containsString:@"ogg"] || [mime containsString:@"theora"] || [mime containsString:@"video/ogg"]) return @"maybe";
+    return @"";
 }
 
 - (double)currentTime {
@@ -291,7 +350,6 @@
 
             if (self.assetOutput) {
                 [self.assetOutput setDelegate:nil queue:NULL];
-                // assetOutput will be released when we replace the item
             }
 
             [self.player replaceCurrentItemWithPlayerItem:nil];

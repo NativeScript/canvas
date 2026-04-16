@@ -1,3 +1,5 @@
 #import "NSCPlayerState.h"
 #import "NSCVideoHelper.h"
 #import "NSCVideoHelperListener.h"
+#import "NSCAudioHelper.h"
+#import "NSCAudioView.h"

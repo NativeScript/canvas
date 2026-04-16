@@ -14,8 +14,11 @@ export abstract class VideoBase extends MediaBase {
 	public static playingEvent = 'playing';
 	public static playEvent = 'play';
 	public static pauseEvent = 'pause';
+	public static canplayEvent = 'canplay';
+	public static canplaythroughEvent = 'canplaythrough';
 	public static timeupdateEvent = 'timeupdate';
 	public static durationchangeEvent = 'durationchange';
+	public static loadedmetadataEvent = 'loadedmetadata';
 	public static loadeddataEvent = 'loadeddata';
 	public static readonly HAVE_NOTHING = 0;
 	public static readonly HAVE_METADATA = 1;

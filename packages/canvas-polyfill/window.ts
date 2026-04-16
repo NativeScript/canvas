@@ -3,6 +3,7 @@ import './performance';
 import { HTMLImageElement } from './DOM/HTMLImageElement';
 import { HTMLCanvasElement } from './DOM/HTMLCanvasElement';
 import { HTMLVideoElement } from './DOM/HTMLVideoElement';
+import { HTMLAudioElement } from './DOM/HTMLAudioElement';
 import { XMLDocument } from './DOM/XMLDocument';
 import { DOMPointReadOnly, DOMPoint } from './DOM/DOMPointReadOnly';
 import { Device, fromObject, View } from '@nativescript/core';
@@ -11,7 +12,6 @@ import { CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext
 import { HTMLCollection } from './DOM/HTMLCollection';
 import { HTMLUnknownElement } from './DOM/HTMLUnknownElement';
 import { Navigator } from './navigator';
-
 (global as any).CANVAS_RENDERER = 'true';
 (global as any).WEBGL_RENDERER = 'true';
 (global as any).window = (global as any).window || {
@@ -25,6 +25,8 @@ import { Navigator } from './navigator';
 (global as any).window.ImageBitmap = (global as any).ImageBitmap = (global as any).ImageBitmap || ImageBitmap;
 (global as any).window.HTMLVideoElement = (global as any).HTMLVideoElement = (global as any).HTMLVideoElement || HTMLVideoElement;
 (global as any).window.Video = (global as any).Video = (global as any).Video || HTMLVideoElement;
+(global as any).window.HTMLAudioElement = (global as any).HTMLAudioElement = (global as any).HTMLAudioElement || HTMLAudioElement;
+(global as any).window.Audio = (global as any).Audio = (global as any).Audio || HTMLAudioElement;
 (global as any).window.HTMLCanvasElement = (global as any).HTMLCanvasElement = (global as any).HTMLCanvasElement || HTMLCanvasElement;
 (global as any).window.Canvas = (global as any).Canvas = (global as any).Canvas || HTMLCanvasElement;
 (global as any).window.CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D = (global as any).CanvasRenderingContext2D || CanvasRenderingContext2D;

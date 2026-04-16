@@ -49,7 +49,23 @@ class NSCVideoHelperListenerImpl extends NSObject implements NSCVideoHelperListe
 	public onLoadedData() {
 		const owner = this._owner.deref();
 		if (owner) {
+			owner._notifyListener(Video.durationchangeEvent);
+			owner._notifyListener(Video.loadedmetadataEvent);
 			owner._notifyListener(Video.loadeddataEvent);
+		}
+	}
+
+	public onCanPlay() {
+		const owner = this._owner.deref();
+		if (owner) {
+			owner._notifyListener(Video.canplayEvent);
+		}
+	}
+
+	public onCanPlayThrough() {
+		const owner = this._owner.deref();
+		if (owner) {
+			owner._notifyListener(Video.canplaythroughEvent);
 		}
 	}
 }
@@ -244,6 +260,14 @@ export class Video extends VideoBase {
 		super.initNativeView();
 	}
 
+	canPlayType(type: string) {
+		try {
+			return this.helper.canPlayType(type) || '';
+		} catch (e) {
+			return '';
+		}
+	}
+
 	[controlsProperty.setNative](enable: boolean) {
 		this.helper.controls = enable;
 	}
@@ -307,7 +331,10 @@ export class Video extends VideoBase {
 	}
 
 	load() {
-		//	this.helper.load();
+		if (!this.helper) {
+			return;
+		}
+		this.helper.load();
 	}
 
 	get controls() {

@@ -60,6 +60,9 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.ui.PlayerView;
 
+import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
+
 import org.nativescript.canvas_media.R;
 
 @UnstableApi
@@ -80,7 +83,7 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	TextureView _textureView;
 	private DefaultDataSource.Factory _dsf;
 
-	private static SimpleCache _cache;
+	// SimpleCache is provided centrally to avoid duplicate instances locking the same folder.
 	private LeastRecentlyUsedCacheEvictor _leastRecentlyUsedCacheEvictor;
 	private StandaloneDatabaseProvider _exoDatabaseProvider;
 	private static final long _exoPlayerCacheSize = 100 * 1024 * 1024;
@@ -89,6 +92,8 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	boolean _isCustom = false;
 	boolean _playing = false;
 	private final AtomicBoolean _loadedDataFired = new AtomicBoolean(false);
+	private boolean _canPlayFired = false;
+	private boolean _canPlayThroughFired = false;
 	Timer _timer;
 	SurfaceTexture _st;
 	Surface _surface;
@@ -157,6 +162,10 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		void onVideoFrame();
 
 		void onLoadedData();
+
+		void onCanPlay();
+
+		void onCanPlayThrough();
 
 		void onError(String message);
 	}
@@ -282,14 +291,14 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		_leastRecentlyUsedCacheEvictor = new LeastRecentlyUsedCacheEvictor(VideoHelper._exoPlayerCacheSize);
 		String packageName = context.getPackageName();
 		_exoDatabaseProvider = new StandaloneDatabaseProvider(context);
-		if (_cache == null) {
-			_cache = new SimpleCache(cacheDir, _leastRecentlyUsedCacheEvictor, _exoDatabaseProvider);
-		}
+		SimpleCache cache = SimpleCacheProvider.getInstance(cacheDir, _leastRecentlyUsedCacheEvictor, _exoDatabaseProvider);
 		DefaultHttpDataSource.Factory factory = new DefaultHttpDataSource.Factory();
 		factory.setUserAgent(Util.getUserAgent(context, packageName));
 		_dsf = new DefaultDataSource.Factory(context, factory);
 		_cdsf = new CacheDataSource.Factory();
-		_cdsf.setCache(_cache);
+		if (cache != null) {
+			_cdsf.setCache(cache);
+		}
 		_cdsf.setUpstreamDataSourceFactory(_dsf);
 		_msf = new DefaultMediaSourceFactory(_cdsf);
 
@@ -1003,6 +1012,8 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	public void setSrc(String value) {
 		this._src = value;
 		this._loadedDataFired.set(false);
+		this._canPlayFired = false;
+		this._canPlayThroughFired = false;
 		// Video dimensions will change — release the ImageReader so setupBitmapSurface()
 		// recreates it at the new size once onVideoSizeChanged fires.
 		if (_surfaceOwner == SurfaceOwner.BITMAP) {
@@ -1064,6 +1075,34 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 		} else {
 			this._player.setRepeatMode(Player.REPEAT_MODE_OFF);
 		}
+	}
+
+	public String canPlayType(String type) {
+		if (type == null || type.trim().isEmpty()) return "";
+		String mime = type;
+		int sc = mime.indexOf(';');
+		if (sc >= 0) mime = mime.substring(0, sc).trim();
+		String t = mime.toLowerCase();
+		try {
+			if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+				MediaCodecList mcl = new MediaCodecList(MediaCodecList.ALL_CODECS);
+				MediaCodecInfo[] infos = mcl.getCodecInfos();
+				for (MediaCodecInfo info : infos) {
+					if (info.isEncoder()) continue;
+					String[] types = info.getSupportedTypes();
+					for (String s : types) {
+						if (s.equalsIgnoreCase(t)) {
+							return "probably";
+						}
+					}
+				}
+			}
+		} catch (Throwable e) {}
+		
+		if (t.contains("mp4") || t.contains("mpeg") || t.contains("h264") || t.contains("video/mp4")) return "probably";
+		if (t.contains("webm") || t.contains("vp8") || t.contains("vp9") || t.contains("video/webm")) return "maybe";
+		if (t.contains("ogg") || t.contains("theora") || t.contains("video/ogg")) return "maybe";
+		return "";
 	}
 
 
@@ -1164,9 +1203,25 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	public void  onPlaybackStateChanged(@Player.State int playbackState) {
 		if (playbackState == Player.STATE_READY) {
 			this._readyState = 2; // HAVE_CURRENT_DATA
+			if (!this._canPlayFired) {
+				this._canPlayFired = true;
+				if (this._callback != null) {
+					this._callback.onCanPlay();
+				}
+			}
+
 			if (_loadedDataFired.compareAndSet(false, true)) {
 				if (this._callback != null) {
 					this._callback.onLoadedData();
+				}
+			}
+
+			long duration = this._player.getDuration();
+			long buffered = this._player.getBufferedPosition();
+			if (duration > 0 && buffered >= duration - 1000 && !this._canPlayThroughFired) {
+				this._canPlayThroughFired = true;
+				if (this._callback != null) {
+					this._callback.onCanPlayThrough();
 				}
 			}
 		}

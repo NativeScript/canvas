@@ -1,6 +1,10 @@
 import { View, Property, AddChildFromBuilder, booleanConverter, ContentView } from '@nativescript/core';
 
-export class MediaBase extends ContentView implements AddChildFromBuilder {}
+export class MediaBase extends ContentView implements AddChildFromBuilder {
+	canPlayType(type: string): '' | 'probably' | 'maybe' {
+		return '';
+	}
+}
 
 export const mutedProperty = new Property<MediaBase, boolean>({
 	name: 'muted',

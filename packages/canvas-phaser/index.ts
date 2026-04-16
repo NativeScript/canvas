@@ -1,1 +1,1 @@
-export * from './tns-phaser';
+import '@nativescript/canvas-polyfill';

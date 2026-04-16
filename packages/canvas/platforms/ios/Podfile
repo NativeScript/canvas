@@ -8,3 +8,19 @@ platform :ios, '12.0'
 
 # Exposes NativeScript v8 headers to our module sources
 pod 'NativeScript', path: "../../node_modules/@nativescript/canvas/src-native/ios/NativeScript.podspec"
+
+post_install do |installer|
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+
+        config.build_settings['HEADER_SEARCH_PATHS'] << \
+          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers'
+
+        config.build_settings['HEADER_SEARCH_PATHS'] << \
+          '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/NativeScript.framework/Headers/include'
+      end
+    end
+  end
+end

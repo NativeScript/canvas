@@ -52,6 +52,7 @@ export class Rect extends Paint {
 
 	draw() {
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
+		context.beginPath();
 		context.rect(this.x, this.y, this.width, this.height);
 		if (this._children.length > 0) {
 			for (const child of this._children) {

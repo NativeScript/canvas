@@ -82,7 +82,6 @@ global.window.URL = global.URL;
 global.parent = window.parent = window;
 global.window.CustomEvent = global.CustomEvent;
 
-// Initialize emitter once at startup instead of checking on every addEventListener call
 if (!(global as any).emitter || !((global as any).emitter.on || (global as any).emitter.addEventListener || (global as any).emitter.addListener)) {
 	(global as any).window.emitter = (global as any).emitter = fromObject({});
 }
@@ -113,26 +112,30 @@ function _emitOff(eventName: string, listener: Function) {
 
 (global as any).window.scrollTo = (global as any).scrollTo = (global as any).scrollTo || (() => ({}));
 
-(global as any).window.addEventListener = (global as any).addEventListener = (eventName: string, listener) => {
-	if (typeof listener !== 'function') {
-		return;
-	}
-	_emitOn(eventName, listener);
-	// Fire 'load' once for any late registrants
-	if (eventName.toLowerCase() === 'load' && !_loadFired) {
-		_loadFired = true;
-		const emitter = (global as any).emitter;
-		if (emitter?.emit) {
-			setTimeout(() => {
-				emitter.emit('load');
-			}, 1);
+if (typeof (global as any).addEventListener === 'undefined' && typeof (global as any).window?.addEventListener === 'undefined') {
+	(global as any).window.addEventListener = (global as any).addEventListener = (eventName: string, listener) => {
+		if (typeof listener !== 'function') {
+			return;
 		}
-	}
-};
+		_emitOn(eventName, listener);
+		// Fire 'load' once for any late registrants
+		if (eventName.toLowerCase() === 'load' && !_loadFired) {
+			_loadFired = true;
+			const emitter = (global as any).emitter;
+			if (emitter?.emit) {
+				setTimeout(() => {
+					emitter.emit('load');
+				}, 1);
+			}
+		}
+	};
+}
 
-(global as any).window.removeEventListener = (global as any).removeEventListener = (eventName: string, listener) => {
-	_emitOff(eventName, listener);
-};
+if (typeof (global as any).removeEventListener === 'undefined' && typeof (global as any).window?.removeEventListener === 'undefined') {
+	(global as any).window.removeEventListener = (global as any).removeEventListener = (eventName: string, listener) => {
+		_emitOff(eventName, listener);
+	};
+}
 
 import { DOMParser as Parser } from '@xmldom/xmldom';
 
@@ -200,38 +203,42 @@ if ((global as any).document) {
 	};
 	return obj;
 };
-(global as any).postMessage = global.window.postMessage = (message, targetOrigin) => {
-	(global as any).window.emitter.notify({
-		eventName: 'message',
-		data: message,
-	});
-};
+if (typeof (global as any).postMessage === 'undefined' && typeof (global as any).window?.postMessage === 'undefined') {
+	(global as any).postMessage = global.window.postMessage = (message, targetOrigin) => {
+		(global as any).window.emitter.notify({
+			eventName: 'message',
+			data: message,
+		});
+	};
+}
 
 global.chrome = (<any>global.window).chrome = (<any>global.window).chrome || {};
 
 global.chrome.runtime = (<any>global.window).chrome.runtime = (<any>global.window).chrome.runtime || {};
 
 declare const __inspectorSendEvent;
-global.chrome.runtime.sendMessage = (
-	extensionId?: string,
-	message?: Record<any, any>, // any
-	options?,
-) => {
-	try {
-		if (typeof extensionId === 'string') {
-			__inspectorSendEvent(
-				JSON.stringify({
-					extensionId,
-					message,
-				}),
-			);
-		} else if (typeof extensionId === 'object') {
-			__inspectorSendEvent(JSON.stringify(message));
+if (typeof (global as any).chrome?.runtime?.sendMessage === 'undefined') {
+	global.chrome.runtime.sendMessage = (
+		extensionId?: string,
+		message?: Record<any, any>, // any
+		options?,
+	) => {
+		try {
+			if (typeof extensionId === 'string') {
+				__inspectorSendEvent(
+					JSON.stringify({
+						extensionId,
+						message,
+					}),
+				);
+			} else if (typeof extensionId === 'object') {
+				__inspectorSendEvent(JSON.stringify(message));
+			}
+		} catch (err) {
+			console.error(err);
 		}
-	} catch (err) {
-		console.error(err);
-	}
-};
+	};
+}
 
 if (typeof global.AbortController === 'undefined') {
 	//@ts-ignore

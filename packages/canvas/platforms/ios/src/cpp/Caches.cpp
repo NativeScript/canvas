@@ -12,13 +12,21 @@ Caches::Caches(v8::Isolate *isolate) : isolate_(isolate) {}
 
 Caches::~Caches() {}
 
-std::shared_ptr <Caches> Caches::Get(v8::Isolate *isolate) {
-    std::shared_ptr <Caches> cache = Caches::perIsolateCaches_->Get(isolate);
-    if (cache == nullptr) {
-        cache = std::make_shared<Caches>(isolate);
-        Caches::perIsolateCaches_->Insert(isolate, cache);
+std::shared_ptr<Caches> Caches::Get(v8::Isolate *isolate) {
+    thread_local v8::Isolate* cached_isolate = nullptr;
+    thread_local std::weak_ptr<Caches> cached_entry;
+
+    if (cached_isolate == isolate) {
+        if (auto cache = cached_entry.lock()) {
+            return cache;
+        }
     }
 
+    auto cache = Caches::perIsolateCaches_->GetOrCreate(
+        isolate, [isolate]{ return std::make_shared<Caches>(isolate); });
+
+    cached_isolate = isolate;
+    cached_entry   = cache;
     return cache;
 }
 

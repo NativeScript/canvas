@@ -81,6 +81,13 @@
 				"moduleName": "CanvasNative"
 			},
 			{
+				"kind": "Import",
+				"name": "Photos",
+				"printedName": "Photos",
+				"declKind": "Import",
+				"moduleName": "CanvasNative"
+			},
+			{
 				"kind": "TypeDecl",
 				"name": "CanvasHelpers",
 				"printedName": "CanvasHelpers",

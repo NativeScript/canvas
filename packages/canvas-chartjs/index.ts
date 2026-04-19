@@ -18,11 +18,11 @@ export class NativeScriptPlatform extends BasePlatform {
 	acquireContext(canvas: HTMLCanvasElement, options?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D | null {
 		this._layoutChangeListener = () => {
 			if (__APPLE__) {
-				//	this.chart?.resize?.(canvas.clientWidth * Screen.mainScreen.scale, canvas.clientHeight * Screen.mainScreen.scale);
+				this.chart?.resize?.(canvas.clientWidth * Screen.mainScreen.scale, canvas.clientHeight * Screen.mainScreen.scale);
 			}
 
 			//	if (__ANDROID__) {
-			this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
+			//	this.chart?.resize?.(canvas.clientWidth, canvas.clientHeight);
 			//	}
 		};
 
@@ -30,16 +30,12 @@ export class NativeScriptPlatform extends BasePlatform {
 		//canvas.style.width = `${canvas.clientWidth * Screen.mainScreen.scale}px`;
 		//canvas.style.height = `${canvas.clientHeight * Screen.mainScreen.scale}px`;
 
-		//@ts-ignore
-		canvas.width = 600;
-		//@ts-ignore
-		canvas.height = 600;
-
 		const ctx = canvas.getContext('2d', options);
 
 		if (__ANDROID__) {
-			//ctx?.setTransform(Screen.mainScreen.scale, 0, 0, Screen.mainScreen.scale, 0, 0);
 		}
+
+		//ctx?.setTransform(Screen.mainScreen.scale, 0, 0, Screen.mainScreen.scale, 0, 0);
 
 		return ctx;
 	}
@@ -50,7 +46,7 @@ export class NativeScriptPlatform extends BasePlatform {
 	}
 
 	getDevicePixelRatio(): number {
-		return 1;
+		return Screen.mainScreen.scale;
 	}
 
 	addEventListener(chart: Chart, type: string, listener: (e: ChartEvent) => void): void {
@@ -78,8 +74,8 @@ export class NativeScriptPlatform extends BasePlatform {
 		// }
 
 		return {
-			width: canvas.clientWidth,
-			height: canvas.clientHeight,
+			width: canvas.clientWidth * Screen.mainScreen.scale,
+			height: canvas.clientHeight * Screen.mainScreen.scale,
 		};
 	}
 }

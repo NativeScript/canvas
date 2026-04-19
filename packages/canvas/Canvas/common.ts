@@ -463,7 +463,7 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 	}
 
 	if (typeof value === 'number') {
-		return Math.floor(value * scale);
+		return Math.floor(value);
 	}
 
 	return NaN;

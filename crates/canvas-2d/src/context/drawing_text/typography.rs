@@ -3,6 +3,7 @@ use std::str::FromStr;
 use regex_lite::Regex;
 use skia_safe::font_style::Width;
 use std::sync::OnceLock;
+use ustr::Ustr;
 
 pub(crate) static FONT_REGEXP: OnceLock<Regex> = OnceLock::new();
 
@@ -25,7 +26,7 @@ pub const FONT_MEDIUM_PX: f32 = 16.0;
 pub struct Font {
     pub size: f32,
     pub style: FontStyle,
-    pub family: String,
+    pub family: Vec<Ustr>,
     pub variant: FontVariant,
     pub stretch: FontStretch,
     pub weight: u32,
@@ -36,7 +37,7 @@ impl Default for Font {
         Font {
             size: 10.0,
             style: FontStyle::Normal,
-            family: DEFAULT_FONT.to_owned(),
+            family: vec![Ustr::from(DEFAULT_FONT)],
             variant: FontVariant::Normal,
             stretch: FontStretch::Normal,
             weight: 400,
@@ -55,17 +56,9 @@ impl Font {
         let default_font = Font::default();
 
         if let Some(cap) = font_regexp.captures(font_rules) {
-            let size_str = cap.get(7).or_else(|| cap.get(5)).unwrap().as_str();
-            let size = if size_str.ends_with('%') {
-                size_str
-                    .parse::<f32>()
-                    .map(|v| v / 100.0 * FONT_MEDIUM_PX)
-                    .ok()
-            } else {
-                size_str.parse::<f32>().ok()
-            };
-            let family = cap.get(9).map(|c| c.as_str()).unwrap_or(DEFAULT_FONT);
-            // return if no valid size
+            let size_str = cap.get(7).expect("size digit group always captured when regex matches").as_str();
+            let size = size_str.parse::<f32>().ok();
+            let family_str = cap.get(9).map(|c| c.as_str()).unwrap_or(DEFAULT_FONT);
             if let Some(size) = size {
                 let style = cap
                     .get(2)
@@ -79,9 +72,8 @@ impl Font {
                     .get(4)
                     .and_then(|m| parse_font_weight(m.as_str()))
                     .unwrap_or(default_font.weight);
-                // treat stretch as size
-                // the `20%` of '20% Arial' is treated as `stretch` but it's size actually
-                let stretch = if cap.get(6).is_none() {
+
+                let stretch = if cap.get(5).is_none() {
                     default_font.stretch
                 } else {
                     cap.get(5)
@@ -89,24 +81,27 @@ impl Font {
                         .unwrap_or(default_font.stretch)
                 };
                 let size_px = parse_size_px(size, cap.get(8).map(|m| m.as_str()).unwrap_or("px"));
+
+                let family = family_str
+                    .split(',')
+                    .map(|s| s.trim())
+                    .map(|s| {
+                        if s.starts_with('"') || s.starts_with('\'') {
+                            unsafe { s.get_unchecked(1..s.len() - 1) }
+                        } else {
+                            s
+                        }
+                    })
+                    .map(Ustr::from)
+                    .collect::<Vec<Ustr>>();
+
                 Ok(Font {
                     style,
                     variant,
                     weight,
                     size: size_px,
                     stretch,
-                    family: family
-                        .split(',')
-                        .map(|string| string.trim())
-                        .map(|s| {
-                            if s.starts_with('"') || s.starts_with('\'') {
-                                unsafe { s.get_unchecked(1..s.len() - 1) }
-                            } else {
-                                s
-                            }
-                        })
-                        .collect::<Vec<&str>>()
-                        .join(","),
+                    family,
                 })
             } else {
                 Err(format!(
@@ -132,7 +127,7 @@ pub(crate) fn init_font_regexp() -> Regex {
       (small-caps|normal){0,1}\s+                  |  # variant
       (bold|bolder|lighter|[1-9]00|normal){0,1}\s+ |  # weight
       (ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded|[\d\.]+%){0,1}\s+ # stretch
-    ){0,4}               
+    ){0,4}
     (
       ([\d\.]+)                                       # size
       (%|px|pt|pc|in|cm|mm|em|ex|ch|rem|q)?\s*      # unit
@@ -335,6 +330,25 @@ fn parse_font_stretch(stretch: &str) -> Option<FontStretch> {
     }
 }
 
+pub(crate) fn parse_length_px(s: &str) -> Option<f32> {
+    let s = s.trim();
+    if s.is_empty() {
+        return None;
+    }
+
+    let unit_start = s
+        .find(|c: char| c.is_alphabetic() || c == '%')
+        .unwrap_or(s.len());
+    let value: f32 = s[..unit_start].trim().parse().ok()?;
+    let unit = s[unit_start..].trim();
+    // Reject bare numbers with no unit only when they would be non-zero and
+    // ambiguous, i.e. parse "0" as 0 px but reject "4" with no unit.
+    if unit.is_empty() && value != 0.0 {
+        return None;
+    }
+    Some(parse_size_px(value, unit))
+}
+
 pub fn parse_size_px(size: f32, unit: &str) -> f32 {
     let mut size_px = size;
     match unit {
@@ -444,6 +458,20 @@ fn test_parse_size_px() {
     assert_eq!(parse_size_px(2.0, "em"), 32.0f32);
 }
 
+#[allow(clippy::float_cmp)]
+#[test]
+fn test_parse_length_px() {
+    assert_eq!(parse_length_px("4px"), Some(4.0f32));
+    assert_eq!(parse_length_px("-4px"), Some(-4.0f32));
+    assert_eq!(parse_length_px("1.5em"), Some(24.0f32));
+    assert_eq!(parse_length_px("0"), Some(0.0f32));
+    assert_eq!(parse_length_px("0px"), Some(0.0f32));
+    assert_eq!(parse_length_px("  2pt  "), Some(2.0 * 4.0 / 3.0));
+    assert_eq!(parse_length_px("4"), None);  // bare non-zero number rejected
+    assert_eq!(parse_length_px(""), None);
+    assert_eq!(parse_length_px("abc"), None);
+}
+
 #[test]
 fn test_font_regexp() {
     let reg = init_font_regexp();
@@ -483,7 +511,7 @@ fn test_font_new() {
             "20px Arial",
             Font {
                 size: 20.0,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -491,7 +519,7 @@ fn test_font_new() {
             "20pt Arial",
             Font {
                 size: 26.666_666,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -499,7 +527,7 @@ fn test_font_new() {
             "20.5pt Arial",
             Font {
                 size: 27.333_334,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -507,7 +535,7 @@ fn test_font_new() {
             "50% Arial",
             Font {
                 size: 8.0,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -515,7 +543,7 @@ fn test_font_new() {
             "62.5% 50% Arial",
             Font {
                 size: 8.0,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 stretch: FontStretch::ExtraCondensed,
                 ..Default::default()
             },
@@ -524,7 +552,7 @@ fn test_font_new() {
             "20mm Arial",
             Font {
                 size: 75.590_55,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -532,7 +560,7 @@ fn test_font_new() {
             "20px sans-serif",
             Font {
                 size: 20.0,
-                family: "sans-serif".to_owned(),
+                family: vec![Ustr::from("sans-serif")],
                 ..Default::default()
             },
         ),
@@ -540,7 +568,7 @@ fn test_font_new() {
             "20px monospace",
             Font {
                 size: 20.0,
-                family: "monospace".to_owned(),
+                family: vec![Ustr::from("monospace")],
                 ..Default::default()
             },
         ),
@@ -548,7 +576,7 @@ fn test_font_new() {
             "50px Arial, sans-serif",
             Font {
                 size: 50.0,
-                family: "Arial,sans-serif".to_owned(),
+                family: vec![Ustr::from("Arial"), Ustr::from("sans-serif")],
                 ..Default::default()
             },
         ),
@@ -558,7 +586,7 @@ fn test_font_new() {
                 size: 50.0,
                 weight: 700,
                 style: FontStyle::Italic,
-                family: "Arial,sans-serif".to_owned(),
+                family: vec![Ustr::from("Arial"), Ustr::from("sans-serif")],
                 ..Default::default()
             },
         ),
@@ -566,7 +594,7 @@ fn test_font_new() {
             "50px Helvetica ,  Arial, sans-serif",
             Font {
                 size: 50.0,
-                family: "Helvetica,Arial,sans-serif".to_owned(),
+                family: vec![Ustr::from("Helvetica"), Ustr::from("Arial"), Ustr::from("sans-serif")],
                 ..Default::default()
             },
         ),
@@ -574,7 +602,7 @@ fn test_font_new() {
             "50px \"Helvetica Neue\", sans-serif",
             Font {
                 size: 50.0,
-                family: "Helvetica Neue,sans-serif".to_owned(),
+                family: vec![Ustr::from("Helvetica Neue"), Ustr::from("sans-serif")],
                 ..Default::default()
             },
         ),
@@ -582,7 +610,7 @@ fn test_font_new() {
             "100px 'Microsoft YaHei'",
             Font {
                 size: 100.0,
-                family: "Microsoft YaHei".to_owned(),
+                family: vec![Ustr::from("Microsoft YaHei")],
                 ..Default::default()
             },
         ),
@@ -591,7 +619,7 @@ fn test_font_new() {
             Font {
                 size: 20.0,
                 weight: 300,
-                family: "Arial".to_owned(),
+                family: vec![Ustr::from("Arial")],
                 ..Default::default()
             },
         ),
@@ -599,7 +627,34 @@ fn test_font_new() {
             "50px",
             Font {
                 size: 50.0,
-                family: "sans-serif".to_owned(),
+                family: vec![Ustr::from("sans-serif")],
+                ..Default::default()
+            },
+        ),
+        // Regression: "normal 12px 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+        // was incorrectly returning 10px sans-serif (the default) instead of being parsed.
+        (
+            "normal 12px 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+            Font {
+                size: 12.0,
+                style: FontStyle::Normal,
+                family: vec![
+                    Ustr::from("Helvetica Neue"),
+                    Ustr::from("Helvetica"),
+                    Ustr::from("Arial"),
+                    Ustr::from("sans-serif"),
+                ],
+                ..Default::default()
+            },
+        ),
+        // Multiple single-quoted families with italic and bold
+        (
+            "italic bold 16px 'Helvetica Neue', Arial",
+            Font {
+                size: 16.0,
+                style: FontStyle::Italic,
+                weight: 700,
+                family: vec![Ustr::from("Helvetica Neue"), Ustr::from("Arial")],
                 ..Default::default()
             },
         ),

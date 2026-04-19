@@ -49,8 +49,9 @@ export class TwoPointConicalGradient extends Gradients {
 		const ctx = this._canvas.getContext('2d');
 		const gradient = ctx.createRadialGradient(this.start.x, this.start.y, this.startR, this.end.x, this.end.y, this.endR);
 
-		for (let i = 0; i < this.colors.length; i++) {
-			gradient.addColorStop(i, this.colors[i]);
+		const count = this.colors.length;
+		for (let i = 0; i < count; i++) {
+			gradient.addColorStop(count === 1 ? 0 : i / (count - 1), this.colors[i]);
 		}
 
 		return gradient;

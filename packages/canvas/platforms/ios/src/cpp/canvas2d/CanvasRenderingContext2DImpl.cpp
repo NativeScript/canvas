@@ -102,6 +102,65 @@ namespace {
 
     thread_local ColorLRUCache g_color_cache(128);
     thread_local std::vector<char> g_tls_scratch;
+
+    class TextMetricsLRUCache {
+    public:
+        using Key  = std::string;
+        using Item = std::pair<Key, TextMetricsData>;
+        using List = std::list<Item>;
+        using Iter = List::iterator;
+
+        explicit TextMetricsLRUCache(size_t cap = 256) : capacity_(cap) {}
+
+        bool get(std::string_view key, TextMetricsData &out) {
+            size_t h = std::hash<std::string_view>{}(key);
+            auto it = map_.find(h);
+            if (it == map_.end()) return false;
+            for (auto listIt : it->second) {
+                if (listIt->first.size() == key.size() &&
+                    std::memcmp(listIt->first.data(), key.data(), key.size()) == 0) {
+                    items_.splice(items_.begin(), items_, listIt);
+                    out = listIt->second;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void put(std::string_view key_sv, const TextMetricsData &data) {
+            std::string key(key_sv);
+            size_t h = std::hash<std::string_view>{}(key);
+            auto hit = map_.find(h);
+            if (hit != map_.end()) {
+                for (auto listIt : hit->second) {
+                    if (listIt->first == key) {
+                        listIt->second = data;
+                        items_.splice(items_.begin(), items_, listIt);
+                        return;
+                    }
+                }
+            }
+            items_.emplace_front(std::move(key), data);
+            map_[h].push_back(items_.begin());
+            if (items_.size() > capacity_) {
+                auto last = std::prev(items_.end());
+                size_t hl = std::hash<std::string_view>{}(last->first);
+                auto &vec = map_[hl];
+                for (auto vit = vec.begin(); vit != vec.end(); ++vit) {
+                    if (*vit == last) { vec.erase(vit); break; }
+                }
+                if (vec.empty()) map_.erase(hl);
+                items_.pop_back();
+            }
+        }
+
+    private:
+        size_t capacity_;
+        List   items_;
+        std::unordered_map<size_t, std::vector<Iter>> map_;
+    };
+
+    thread_local TextMetricsLRUCache g_text_metrics_cache(256);
 }
 
 namespace {
@@ -963,6 +1022,17 @@ void CanvasRenderingContext2DImpl::GetFont(v8::Local<v8::String> property,
         return;
     }
     auto isolate = info.GetIsolate();
+    if (ptr->font_dirty_) {
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        ptr->font_dirty_ = false;
+        if (!accepted) {
+            ptr->cached_font_.clear();
+        }
+    }
+    if (!ptr->cached_font_.empty()) {
+        info.GetReturnValue().Set(ConvertToV8String(isolate, ptr->cached_font_));
+        return;
+    }
     auto font = canvas_native_context_get_font(ptr->GetContext());
     info.GetReturnValue().Set(ConvertToV8String(isolate, font));
 
@@ -978,7 +1048,16 @@ void CanvasRenderingContext2DImpl::SetFont(v8::Local<v8::String> property,
     }
     auto isolate = info.GetIsolate();
     auto val = ConvertFromV8String(isolate, value);
-    canvas_native_context_set_font(ptr->GetContext(), val.c_str());
+    if (val == ptr->cached_font_) return;
+    if (ptr->font_dirty_) {
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        ptr->font_dirty_ = false;
+        if (!accepted) {
+            ptr->cached_font_.clear();
+        }
+    }
+    ptr->cached_font_ = std::move(val);
+    ptr->font_dirty_  = true;
 }
 
 
@@ -1005,7 +1084,9 @@ void CanvasRenderingContext2DImpl::SetLetterSpacing(v8::Local<v8::String> proper
     }
     auto isolate = info.GetIsolate();
     auto val = ConvertFromV8String(isolate, value);
-    canvas_native_context_set_letter_spacing(ptr->GetContext(), val.c_str());
+    if (val == ptr->cached_letter_spacing_) return;
+    ptr->cached_letter_spacing_  = std::move(val);
+    ptr->letter_spacing_dirty_   = true;
 }
 
 
@@ -1032,7 +1113,9 @@ void CanvasRenderingContext2DImpl::SetWordSpacing(v8::Local<v8::String> property
     }
     auto isolate = info.GetIsolate();
     auto val = ConvertFromV8String(isolate, value);
-    canvas_native_context_set_word_spacing(ptr->GetContext(), val.c_str());
+    if (val == ptr->cached_word_spacing_) return;
+    ptr->cached_word_spacing_ = std::move(val);
+    ptr->word_spacing_dirty_  = true;
 }
 
 
@@ -1483,7 +1566,6 @@ void CanvasRenderingContext2DImpl::SetFillStyle(v8::Local<v8::String> property,
 
         char *str = g_tls_scratch.data();
 
-        // trim leading/trailing whitespace in place
         char *s = str;
         while (*s && std::isspace((unsigned char) *s)) s++;
         size_t slen = std::strlen(s);
@@ -1595,7 +1677,6 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
 
         char *str = g_tls_scratch.data();
 
-        // trim leading/trailing whitespace in place
         char *s = str;
         while (*s && std::isspace((unsigned char) *s)) s++;
         size_t slen = std::strlen(s);
@@ -1606,7 +1687,6 @@ void CanvasRenderingContext2DImpl::SetStrokeStyle(v8::Local<v8::String> property
             return;
         }
 
-        // Fallback: pass full C string to native (existing behavior)
         canvas_native_paint_style_set_stroke_color_with_c_string(ptr->GetContext(), s);
         g_color_cache.put_fallback(sv);
     } else if (value->IsObject()) {
@@ -2709,10 +2789,18 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
     if (ptr == nullptr) {
         return;
     }
+    FlushTextState(ptr);
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto text = ConvertFromV8String(isolate, args[0]);
+    if (!args[0]->IsString()) return;
+    auto js_str = args[0].As<v8::String>();
+    const int text_utf8_len = js_str->Utf8Length(isolate);
+
+    auto &scratch = g_tls_scratch;
+    scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
+    js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr, v8::String::NO_NULL_TERMINATION);
+    scratch[text_utf8_len] = '\0';
 
     auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
     auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
@@ -2720,11 +2808,11 @@ CanvasRenderingContext2DImpl::FillText(const v8::FunctionCallbackInfo<v8::Value>
     if (args[3]->IsNumber()) {
         float width = static_cast<float>(args[3]->NumberValue(context).ToChecked());
         canvas_native_context_fill_text_width(
-                ptr->GetContext(), text.c_str(), x,
+                ptr->GetContext(), scratch.data(), x,
                 y, width);
     } else {
         canvas_native_context_fill_text(
-                ptr->GetContext(), text.c_str(), x,
+                ptr->GetContext(), scratch.data(), x,
                 y);
     }
 
@@ -2934,28 +3022,70 @@ CanvasRenderingContext2DImpl::LineTo(const v8::FunctionCallbackInfo<v8::Value> &
 void
 CanvasRenderingContext2DImpl::MeasureText(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
+    if (ptr == nullptr) return;
 
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
-    auto text = ConvertFromV8String(isolate, args[0]);
+    if (!args[0]->IsString()) return;
+    auto js_str = args[0].As<v8::String>();
 
-    auto metrics = canvas_native_context_measure_text(
-            ptr->GetContext(), text.c_str());
 
-    auto data = new TextMetricsImpl(metrics);
+    if (ptr->cached_font_.empty()) {
+        auto *f = canvas_native_context_get_font(ptr->GetContext());
+        if (f) {
+            ptr->cached_font_ = f;
+            canvas_native_string_destroy((char *) f);
+        }
+    }
 
-    auto ret = TextMetricsImpl::GetCtor(isolate)->GetFunction(
-            context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+    const int text_utf8_len = js_str->Utf8Length(isolate);
+    if (text_utf8_len == 0) return;
 
+    auto &scratch = g_tls_scratch;
+    const size_t prefix_len = ptr->cached_font_.size() + 1
+                            + ptr->cached_letter_spacing_.size() + 1
+                            + ptr->cached_word_spacing_.size() + 1;
+    scratch.resize(prefix_len + static_cast<size_t>(text_utf8_len));
+    char *p = scratch.data();
+    std::memcpy(p, ptr->cached_font_.data(), ptr->cached_font_.size());
+    p += ptr->cached_font_.size(); *p++ = '|';
+    std::memcpy(p, ptr->cached_letter_spacing_.data(), ptr->cached_letter_spacing_.size());
+    p += ptr->cached_letter_spacing_.size(); *p++ = '|';
+    std::memcpy(p, ptr->cached_word_spacing_.data(), ptr->cached_word_spacing_.size());
+    p += ptr->cached_word_spacing_.size(); *p++ = '|';
+    js_str->WriteUtf8(isolate, p, text_utf8_len, nullptr,
+                      v8::String::NO_NULL_TERMINATION);
+
+    std::string_view text(p, static_cast<size_t>(text_utf8_len));
+    std::string_view cache_key(scratch.data(), prefix_len + static_cast<size_t>(text_utf8_len));
+
+    TextMetricsData cached;
+    TextMetricsImpl *data;
+
+    if (g_text_metrics_cache.get(cache_key, cached)) {
+        data = new TextMetricsImpl(cached);
+    } else {
+        FlushTextState(ptr);
+        std::string text_str(text);
+        TextMetricsData tm_data;
+        canvas_native_context_measure_text_to(ptr->GetContext(), text_str.c_str(), &tm_data.width, 12);
+        g_text_metrics_cache.put(cache_key, tm_data);
+        data = new TextMetricsImpl(tm_data);
+    }
+
+    if (!ptr->tm_ctor_init_) {
+        ptr->tm_ctor_.Set(isolate, TextMetricsImpl::GetCtor(isolate));
+        ptr->tm_ctor_init_ = true;
+    }
+
+    auto ret = ptr->tm_ctor_.Get(isolate)->InstanceTemplate()
+                   ->NewInstance(context).ToLocalChecked();
     ret->SetAlignedPointerInInternalField(0, data);
-
     data->BindFinalizer(isolate, ret);
-
     SetNativeType(data, NativeType::TextMetrics);
 
     args.GetReturnValue().Set(ret);
-
 }
 
 void
@@ -3132,9 +3262,13 @@ CanvasRenderingContext2DImpl::Restore(const v8::FunctionCallbackInfo<v8::Value> 
     if (ptr == nullptr) {
         return;
     }
-
-    canvas_native_context_restore(
-            ptr->GetContext());
+    canvas_native_context_restore(ptr->GetContext());
+    ptr->cached_font_.clear();
+    ptr->cached_letter_spacing_.clear();
+    ptr->cached_word_spacing_.clear();
+    ptr->font_dirty_           = false;
+    ptr->letter_spacing_dirty_ = false;
+    ptr->word_spacing_dirty_   = false;
 }
 
 void
@@ -3154,14 +3288,34 @@ CanvasRenderingContext2DImpl::Rotate(const v8::FunctionCallbackInfo<v8::Value> &
 }
 
 void
+CanvasRenderingContext2DImpl::FlushTextState(CanvasRenderingContext2DImpl *ptr) {
+    if (ptr->font_dirty_) {
+        bool accepted = canvas_native_context_set_font(ptr->GetContext(), ptr->cached_font_.c_str());
+        ptr->font_dirty_ = false;
+        if (!accepted) {
+            // Invalid font rejected by Rust; clear cache so the getter falls back to
+            // canvas_native_context_get_font and returns the previous valid font.
+            ptr->cached_font_.clear();
+        }
+    }
+    if (ptr->letter_spacing_dirty_) {
+        canvas_native_context_set_letter_spacing(ptr->GetContext(), ptr->cached_letter_spacing_.c_str());
+        ptr->letter_spacing_dirty_ = false;
+    }
+    if (ptr->word_spacing_dirty_) {
+        canvas_native_context_set_word_spacing(ptr->GetContext(), ptr->cached_word_spacing_.c_str());
+        ptr->word_spacing_dirty_ = false;
+    }
+}
+
+void
 CanvasRenderingContext2DImpl::Save(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
     if (ptr == nullptr) {
         return;
     }
-
-    canvas_native_context_save(
-            ptr->GetContext());
+    FlushTextState(ptr);
+    canvas_native_context_save(ptr->GetContext());
 }
 
 void
@@ -3312,26 +3466,35 @@ CanvasRenderingContext2DImpl::StrokeRect(const v8::FunctionCallbackInfo<v8::Valu
 void
 CanvasRenderingContext2DImpl::StrokeText(const v8::FunctionCallbackInfo<v8::Value> &args) {
     CanvasRenderingContext2DImpl *ptr = GetPointer(args.This());
-
+    if (ptr == nullptr) {
+        return;
+    }
+    FlushTextState(ptr);
     auto isolate = args.GetIsolate();
     auto context = isolate->GetCurrentContext();
 
     auto count = args.Length();
-    if (count >= 3) {
-        auto text = ConvertFromV8String(isolate, args[0]);
+    if (count >= 3 && args[0]->IsString()) {
+        auto js_str = args[0].As<v8::String>();
+        const int text_utf8_len = js_str->Utf8Length(isolate);
+
+        auto &scratch = g_tls_scratch;
+        scratch.resize(static_cast<size_t>(text_utf8_len) + 1);
+        js_str->WriteUtf8(isolate, scratch.data(), text_utf8_len, nullptr, v8::String::NO_NULL_TERMINATION);
+        scratch[text_utf8_len] = '\0';
+
         auto x = static_cast<float>(args[1]->NumberValue(context).ToChecked());
         auto y = static_cast<float>(args[2]->NumberValue(context).ToChecked());
         if (count > 3) {
             float maxWidth = static_cast<float>(args[3]->NumberValue(context).ToChecked());
             canvas_native_context_stroke_text_width(
-                    ptr->GetContext(), text.c_str(),
+                    ptr->GetContext(), scratch.data(),
                     x, y, maxWidth);
         } else {
             canvas_native_context_stroke_text(
-                    ptr->GetContext(), text.c_str(),
+                    ptr->GetContext(), scratch.data(),
                     x, y);
         }
-
 
         ptr->UpdateInvalidateState();
     }
@@ -3430,7 +3593,6 @@ CanvasRenderingContext2DImpl::__ToDataURL(const v8::FunctionCallbackInfo<v8::Val
 CanvasRenderingContext2DImpl::~CanvasRenderingContext2DImpl() {
     auto raf = this->raf_.get();
     if (raf != nullptr) {
-        // stop the raf, wait briefly for any in-flight callbacks to finish and clear the callback
         canvas_native_raf_stop_and_clear(raf->GetRaf(), 100);
     }
 

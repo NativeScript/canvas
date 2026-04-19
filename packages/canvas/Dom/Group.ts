@@ -79,109 +79,133 @@ M11 = 0,
 */
 
 function parseTransformation(value, _transform: DOMMatrix) {
-	/*
-		{matrix: number[]},
-		 {perspective: number},
-		  {rotate: string},
-		  {rotateX: string},
-		   {rotateY: string},
-		    {rotateZ: string}, 
-			{scale: number}, 
-			{scaleX: number},
-			 {scaleY: number},
-			  {translateX: number}, 
-			  {translateY: number},
-			   {skewX: string},
-			    {skewY: string}
-		*/
-
-	const matrix = value.matrix;
-
-	if (Array.isArray(matrix)) {
-		// todo
-		//const add = new DOMMatrix(matrix);
-		return;
+	function parseNumber(v: any): number | null {
+		if (v === null || v === undefined) return null;
+		if (typeof v === 'number') return v;
+		if (typeof v === 'string') {
+			const n = parseFloat(v);
+			return isNaN(n) ? null : n;
+		}
+		return null;
 	}
 
-	const perspective = value.perspective;
-
-	if (typeof perspective === 'number') {
-		return;
+	function parseAngle(v: any): number | null {
+		if (v === null || v === undefined) return null;
+		if (typeof v === 'number') return v; // assume radians
+		if (typeof v === 'string') {
+			const m = v.match(/^\s*([-+]?\d*\.?\d+)(deg|rad)?\s*$/i);
+			if (!m) return null;
+			const val = parseFloat(m[1]);
+			const unit = (m[2] || 'deg').toLowerCase();
+			if (unit === 'rad') return val;
+			return (val * Math.PI) / 180; // degrees -> radians
+		}
+		return null;
 	}
 
-	const rotate = value.rotate;
+	// read current matrix
+	let a1 = _transform.a ?? 1;
+	let b1 = _transform.b ?? 0;
+	let c1 = _transform.c ?? 0;
+	let d1 = _transform.d ?? 1;
+	let e1 = _transform.e ?? 0;
+	let f1 = _transform.f ?? 0;
 
-	if (typeof rotate === 'string') {
-		return;
+	function setMatrix(m: { a: number; b: number; c: number; d: number; e: number; f: number }) {
+		_transform.a = m.a;
+		_transform.b = m.b;
+		_transform.c = m.c;
+		_transform.d = m.d;
+		_transform.e = m.e;
+		_transform.f = m.f;
+		a1 = m.a;
+		b1 = m.b;
+		c1 = m.c;
+		d1 = m.d;
+		e1 = m.e;
+		f1 = m.f;
 	}
 
-	const rotateX = value.rotateX;
-
-	if (typeof rotateX === 'string') {
-		return;
+	function multiply(M: any, N: any) {
+		// M and N are {a,b,c,d,e,f}
+		return {
+			a: M.a * N.a + M.c * N.b,
+			b: M.b * N.a + M.d * N.b,
+			c: M.a * N.c + M.c * N.d,
+			d: M.b * N.c + M.d * N.d,
+			e: M.a * N.e + M.c * N.f + M.e,
+			f: M.b * N.e + M.d * N.f + M.f,
+		};
 	}
 
-	const rotateY = value.rotateY;
-
-	if (typeof rotateY === 'string') {
-		return;
+	// matrix array (6 elements [a,b,c,d,e,f] or 16 elements, treat 6 primarily)
+	if (Array.isArray(value.matrix)) {
+		const m = value.matrix;
+		if (m.length === 6) {
+			const T = { a: m[0], b: m[1], c: m[2], d: m[3], e: m[4], f: m[5] };
+			const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+			setMatrix(res);
+			return;
+		} else if (m.length === 16) {
+			// assume DOMMatrix 4x4 column-major: map to 2D
+			const T = { a: m[0], b: m[1], c: m[4], d: m[5], e: m[12], f: m[13] };
+			const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T as any);
+			setMatrix(res);
+			return;
+		}
 	}
 
-	const rotateZ = value.rotateZ;
-
-	if (typeof rotateZ === 'string') {
-		return;
+	// translate
+	const tx = parseNumber(value.translateX ?? value.tx ?? (value.translate && value.translate.x));
+	const ty = parseNumber(value.translateY ?? value.ty ?? (value.translate && value.translate.y));
+	if (tx !== null || ty !== null) {
+		const T = { a: 1, b: 0, c: 0, d: 1, e: tx ?? 0, f: ty ?? 0 };
+		const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+		setMatrix(res);
 	}
 
-	const scale = value.scale;
-
-	if (typeof scale === 'number') {
-		return;
+	// scale
+	const scale = parseNumber(value.scale ?? null);
+	const sx = parseNumber(value.scaleX ?? value.sx) ?? scale ?? null;
+	const sy = parseNumber(value.scaleY ?? value.sy) ?? scale ?? null;
+	if (sx !== null || sy !== null) {
+		const T = { a: sx ?? 1, b: 0, c: 0, d: sy ?? 1, e: 0, f: 0 };
+		const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+		setMatrix(res);
 	}
 
-	const scaleX = value.scaleX;
-
-	if (typeof scaleX === 'number') {
-		return;
+	// rotate (support rotate / rotateZ)
+	const rot = value.rotate ?? value.rotateZ ?? null;
+	const angle = parseAngle(rot);
+	if (angle !== null) {
+		const cos = Math.cos(angle);
+		const sin = Math.sin(angle);
+		const T = { a: cos, b: sin, c: -sin, d: cos, e: 0, f: 0 };
+		const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+		setMatrix(res);
 	}
 
-	const scaleY = value.scaleY;
-
-	if (typeof scaleY === 'number') {
-		return;
+	// skew
+	if (value.skewX !== undefined) {
+		const ang = parseAngle(value.skewX);
+		if (ang !== null) {
+			const t = Math.tan(ang);
+			const T = { a: 1, b: 0, c: t, d: 1, e: 0, f: 0 };
+			const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+			setMatrix(res);
+		}
+	}
+	if (value.skewY !== undefined) {
+		const ang = parseAngle(value.skewY);
+		if (ang !== null) {
+			const t = Math.tan(ang);
+			const T = { a: 1, b: t, c: 0, d: 1, e: 0, f: 0 };
+			const res = multiply({ a: a1, b: b1, c: c1, d: d1, e: e1, f: f1 }, T);
+			setMatrix(res);
+		}
 	}
 
-	const translateX = value.translateX;
-
-	if (typeof translateX === 'number') {
-		return;
-	}
-
-	const translateY = value.translateY;
-
-	if (typeof translateY === 'number') {
-		return;
-	}
-
-	const skewX = value.skewX;
-
-	if (typeof skewX === 'number') {
-		_transform.c = skewX;
-	}
-
-	if (typeof skewX === 'string') {
-		return;
-	}
-
-	const skewY = value.skewY;
-
-	if (typeof skewY === 'number') {
-		_transform.b = skewY;
-	}
-
-	if (typeof skewY === 'string') {
-		return;
-	}
+	// ignore perspective and 3D transforms (rotateX/rotateY) for now
 }
 
 export class Group extends Paint {
@@ -238,7 +262,8 @@ export class Group extends Paint {
 			const origin = this.origin;
 			context.translate(origin.x ?? 0, origin.y ?? 0);
 			if (this._matrix) {
-				context.setTransform(this._matrix);
+				// Multiply current transform by the group's matrix to preserve translation
+				context.transform(this._matrix.a, this._matrix.b, this._matrix.c, this._matrix.d, this._matrix.e, this._matrix.f);
 			}
 			context.lineWidth = this.strokeWidth;
 			this._children.forEach((child) => {

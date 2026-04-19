@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Photos
 
 @objc(NSSCanvasHelpers)
 @objcMembers
@@ -33,7 +34,7 @@ public class CanvasHelpers: NSObject {
         let ctx = CGContext(data: buffer?.mutableBytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
         
         ctx?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        
+
         return buffer!
     }
     
@@ -45,7 +46,7 @@ public class CanvasHelpers: NSObject {
         let repetition = (repetition as NSString).utf8String
         return canvas_native_ios_context_create_pattern_raw(context, width, height, bytes.mutableBytes, UInt(bytes.count), repetition)
     }
-    
+
     public static func loadImageAssetWithContext(_ asset: Int64, _ image: UIImage) -> Bool {
         let bytes = getBytesFromUIImage(image)
         return canvas_native_ios_image_asset_load_from_bytes(asset, bytes.mutableBytes, UInt(bytes.count))

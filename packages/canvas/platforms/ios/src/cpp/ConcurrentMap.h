@@ -6,40 +6,53 @@
 
 #include <shared_mutex>
 #include "include/robin_hood.h"
+
 template<class TKey, class TValue>
 class ConcurrentMap {
 public:
     void Insert(TKey &key, TValue value) {
-        std::lock_guard <std::mutex> writerLock(this->containerMutex_);
-        this->container_[key] = value;
+        std::unique_lock<std::shared_mutex> lock(mutex_);
+        container_[key] = std::move(value);
     }
 
     TValue Get(TKey &key) {
         bool found;
-        return this->Get(key, found);
+        return Get(key, found);
     }
 
+
     TValue Get(TKey &key, bool &found) {
-//      std::shared_lock<std::shared_timed_mutex> readerLock(this->containerMutex_);
-        std::lock_guard <std::mutex> writerLock(this->containerMutex_);
-        auto it = this->container_.find(key);
-        found = it != this->container_.end();
-        if (found) {
-            return it->second;
-        }
+        std::shared_lock<std::shared_mutex> lock(mutex_);
+        auto it = container_.find(key);
+        found = it != container_.end();
+        if (found) return it->second;
         return nullptr;
     }
 
+    template<class Factory>
+    TValue GetOrCreate(TKey &key, Factory factory) {
+        {
+            std::shared_lock<std::shared_mutex> readLock(mutex_);
+            auto it = container_.find(key);
+            if (it != container_.end()) return it->second;
+        }
+
+        std::unique_lock<std::shared_mutex> writeLock(mutex_);
+        auto it = container_.find(key);
+        if (it != container_.end()) return it->second;
+        TValue value = factory();
+        container_[key] = value;
+        return value;
+    }
+
     bool ContainsKey(TKey &key) {
-//        std::shared_lock<std::shared_timed_mutex> readerLock(this->containerMutex_);
-        std::lock_guard <std::mutex> writerLock(this->containerMutex_);
-        auto it = this->container_.find(key);
-        return it != this->container_.end();
+        std::shared_lock<std::shared_mutex> lock(mutex_);
+        return container_.find(key) != container_.end();
     }
 
     void Remove(TKey &key) {
-        std::lock_guard <std::mutex> writerLock(this->containerMutex_);
-        this->container_.erase(key);
+        std::unique_lock<std::shared_mutex> lock(mutex_);
+        container_.erase(key);
     }
 
     ConcurrentMap() = default;
@@ -49,6 +62,6 @@ public:
     ConcurrentMap &operator=(const ConcurrentMap &) = delete;
 
 private:
-    std::mutex containerMutex_;
+    std::shared_mutex mutex_;
     robin_hood::unordered_map<TKey, TValue> container_;
 };

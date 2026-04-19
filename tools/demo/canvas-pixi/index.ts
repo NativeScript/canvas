@@ -1405,7 +1405,11 @@ void main()
 			preference: 'webgpu',
 			width: canvas.width,
 			height: canvas.height,
+			autoDensity: true,
+			resolution: window.devicePixelRatio,
 		});
+
+		await PIXI.Assets.load(this.root + '/images/star.png');
 
 		// Get the texture for rope.
 		const starTexture = await PIXI.Assets.load(this.root + '/images/star.png');

@@ -30,9 +30,9 @@ export declare class Canvas extends CanvasBase {
 	native: any;
 	parentElement: any;
 
-	set width(value: LengthPercentage | number | string);
+	set width(value: LengthPercentage | number | string | undefined);
 	get width(): number;
-	set height(value: LengthPercentage | number | string);
+	set height(value: LengthPercentage | number | string | undefined);
 	get height(): number;
 	lang: string;
 

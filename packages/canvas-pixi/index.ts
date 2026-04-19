@@ -1,9 +1,9 @@
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
 import { knownFolders } from '@nativescript/core';
-import * as Pixii from 'pixi.js';
+import { Adapter, Assets, DOMAdapter } from 'pixi.js';
 
-const NSCAdapter: Pixii.Adapter = {
+const NSCAdapter: Adapter = {
 	createCanvas(width?: number, height?: number) {
 		const canvas = new Canvas();
 		canvas.width = width;
@@ -41,8 +41,6 @@ const NSCAdapter: Pixii.Adapter = {
 	},
 };
 
-Pixii.DOMAdapter.set(NSCAdapter);
+DOMAdapter.set(NSCAdapter);
 
-Pixii.Assets.setPreferences({ preferWorkers: false });
-
-(global as any).PIXI = (global as any).window.PIXI = (global as any).PIXI || Pixii;
+Assets.setPreferences({ preferWorkers: false });

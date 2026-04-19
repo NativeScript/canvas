@@ -23,7 +23,6 @@ const saveData = function (storage: Storage) {
 
 class Storage {
 	_localStorageData: Record<string, string> = {};
-	// Track length explicitly to avoid Object.keys() on every read
 	private _length: number = 0;
 
 	getItem(name: string): string | null {
@@ -57,7 +56,6 @@ class Storage {
 	}
 
 	removeItem(name: string) {
-		// Use `in` operator — not truthy check — so falsy values (0, '') are handled correctly
 		if (name in this._localStorageData) {
 			delete this._localStorageData[name];
 			this._length--;
@@ -133,7 +131,6 @@ if (!global.localStorage || (<any>module).hot) {
 			const textData = file.readTextSync();
 			const data = JSON.parse(textData);
 			storage._localStorageData = data;
-			// Sync the length counter after loading from disk
 			(<any>storage)._length = Object.keys(data).length;
 		} catch (err) {
 			console.log('localStorage: error reading storage, Error: ', err);

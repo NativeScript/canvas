@@ -32,33 +32,38 @@ if (!global.document.fonts) {
 	(global as any).document.fonts = global.fonts || new FontFaceSet();
 }
 
-(global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
-	const image = args[0];
-	const sx_or_options = args[1];
-	const sy = args[2];
-	const sw = args[3];
-	const sh = args[4];
-	if ((typeof sw === 'number' && sw === 0) || (typeof sh === 'number' && sh === 0)) {
-		return Promise.reject(new RangeError(`Failed to execute 'createImageBitmap' : The crop rect width is 0`));
-	}
+if (!(global as any).createImageBitmap) {
+	(global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
+		console.log('createImageBitmap called with arguments', args);
+		const image = args[0];
+		const sx_or_options = args[1];
+		const sy = args[2];
+		const sw = args[3];
+		const sh = args[4];
+		if ((typeof sw === 'number' && sw === 0) || (typeof sh === 'number' && sh === 0)) {
+			return Promise.reject(new RangeError(`Failed to execute 'createImageBitmap' : The crop rect width is 0`));
+		}
 
-	if (args.length === 1) {
-		//@ts-ignore
-		return ImageBitmap.createFrom(image);
-	} else if (args.length === 2) {
-		//@ts-ignore
-		return ImageBitmap.createFrom(image, sx_or_options);
-	} else if (args.length === 5) {
-		//@ts-ignore
-		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh);
-	} else if (args.length === 6) {
-		//@ts-ignore
-		return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh, args[5]);
-	}
-};
+		if (args.length === 1) {
+			//@ts-ignore
+			return ImageBitmap.createFrom(image);
+		} else if (args.length === 2) {
+			//@ts-ignore
+			return ImageBitmap.createFrom(image, sx_or_options);
+		} else if (args.length === 5) {
+			//@ts-ignore
+			return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh);
+		} else if (args.length === 6) {
+			//@ts-ignore
+			return ImageBitmap.createFromRect(image, sx_or_options, sy, sw, sh, args[5]);
+		}
+	};
+}
 
-if (!(global as any).Intl || (global as any).window.Intl) {
-	(global as any).Intl = (global as any).window.Intl = (global as any).Intl || {}; // pixijs
+if (typeof (global as any).Intl === 'undefined') {
+	(global as any).Intl = (global as any).window?.Intl ?? {};
+} else if (typeof (global as any).window?.Intl === 'undefined') {
+	(global as any).window.Intl = (global as any).Intl;
 }
 
 import { MutationObserver } from './MutationObserver';
@@ -71,43 +76,40 @@ if (!global.MutationObserver) {
 	});
 }
 
-Object.defineProperty(global, 'Element', {
-	value: Element,
-	configurable: true,
-	writable: true,
-});
-Object.defineProperty(global, 'XMLHttpRequest', {
-	value: TNSXMLHttpRequest,
-	configurable: true,
-	writable: true,
-});
-Object.defineProperty(global, 'Blob', {
-	value: Blob,
-	configurable: true,
-	writable: true,
-});
+function defineGlobalIfAbsent(name: string, value: any, overwrite = false) {
+	const g: any = global as any;
+	if (typeof g[name] === 'undefined' || overwrite) {
+		try {
+			Object.defineProperty(g, name, {
+				value,
+				configurable: true,
+				writable: true,
+			});
+		} catch (e) {
+			g[name] = value;
+		}
+	}
 
-Object.defineProperty(global, 'FileReader', {
-	value: FileReader,
-	configurable: true,
-	writable: true,
-});
-
-if (!((global as any).TextDecoder instanceof TextDecoder)) {
-	Object.defineProperty(global, 'TextDecoder', {
-		value: TextDecoder,
-		configurable: true,
-		writable: true,
-	});
+	try {
+		if (g.window && (typeof g.window[name] === 'undefined' || overwrite)) {
+			Object.defineProperty(g.window, name, {
+				value,
+				configurable: true,
+				writable: true,
+			});
+		}
+	} catch (e) {
+		if (g.window) g.window[name] = g.window[name] || value;
+	}
 }
 
-if (!((global as any).TextEncoder instanceof TextEncoder)) {
-	Object.defineProperty(global, 'TextEncoder', {
-		value: TextEncoder,
-		configurable: true,
-		writable: true,
-	});
-}
+defineGlobalIfAbsent('Element', Element);
+defineGlobalIfAbsent('XMLHttpRequest', TNSXMLHttpRequest, true);
+defineGlobalIfAbsent('Blob', Blob, true);
+defineGlobalIfAbsent('FileReader', FileReader, true);
+defineGlobalIfAbsent('TextDecoder', TextDecoder, true);
+defineGlobalIfAbsent('TextEncoder', TextEncoder, true);
+defineGlobalIfAbsent('TextEncoder', TextEncoder, true);
 
 import './urlBlobPatch';
 

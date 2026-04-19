@@ -50,7 +50,7 @@ export class ImageAsset extends Observable {
 	}
 
 	private _decrementStrongRefAndRemove() {
-		const count = loaders.get(this) - 1;
+		const count = loaders.get(this) ?? 0 - 1;
 
 		if (count <= 0) {
 			loaders.delete(this);
@@ -85,7 +85,7 @@ export class ImageAsset extends Observable {
 								resolve(success);
 							}
 						},
-					})
+					}),
 				);
 				return;
 			}
@@ -147,7 +147,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				} else {
 					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromPathAsync(
@@ -169,7 +169,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				}
 				return;
@@ -219,7 +219,7 @@ export class ImageAsset extends Observable {
 	}
 
 	loadFromEncodedBytes(bytes: Uint8Array | Uint8ClampedArray) {
-		return new Promise((resolve, reject) => {
+		return new Promise<boolean>((resolve, reject) => {
 			if (__ANDROID__) {
 				const ref = new WeakRef(this);
 				const asset = this._android.getAsset();
@@ -244,7 +244,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				} else {
 					(<any>org).nativescript.canvas.NSCImageAsset.loadImageFromEncodedBufferAsync(
@@ -266,7 +266,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				}
 				return;
@@ -318,7 +318,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				} else {
 					let buffer: ArrayBuffer = bytes as never;
@@ -349,7 +349,7 @@ export class ImageAsset extends Observable {
 									resolve(success);
 								}
 							},
-						})
+						}),
 					);
 				}
 				return;

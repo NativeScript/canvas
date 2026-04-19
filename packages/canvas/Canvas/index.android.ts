@@ -431,6 +431,7 @@ export class Canvas extends CanvasBase {
 					this._2dContext._type = '2d';
 					this._contextType = ContextType.Canvas;
 					this._is2D = true;
+
 					//@ts-ignore
 					this._2dContext.__engine = this._canvas.getEngine?.()?.getValue?.() ?? 0;
 				}

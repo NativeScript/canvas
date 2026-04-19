@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define TEXT_METRICS_FIELD_COUNT 12
+
 #define CanvasGPUTextureUsageCopySrc (1 << 0)
 
 #define CanvasGPUTextureUsageCopyDst (1 << 1)
@@ -2155,7 +2157,7 @@ void canvas_native_context_set_filter(struct CanvasRenderingContext2D *context, 
 
 const char *canvas_native_context_get_font(const struct CanvasRenderingContext2D *context);
 
-void canvas_native_context_set_font(struct CanvasRenderingContext2D *context, const char *font);
+bool canvas_native_context_set_font(struct CanvasRenderingContext2D *context, const char *font);
 
 const char *canvas_native_context_get_letter_spacing(const struct CanvasRenderingContext2D *context);
 
@@ -2680,6 +2682,11 @@ void canvas_native_context_line_to(struct CanvasRenderingContext2D *context, flo
 struct TextMetrics *canvas_native_context_measure_text(struct CanvasRenderingContext2D *context,
                                                        const char *text);
 
+void canvas_native_context_measure_text_to(struct CanvasRenderingContext2D *context,
+                                           const char *text,
+                                           float *out,
+                                           uintptr_t len);
+
 void canvas_native_context_move_to(struct CanvasRenderingContext2D *context, float x, float y);
 
 void canvas_native_context_put_image_data(struct CanvasRenderingContext2D *context,
@@ -3111,6 +3118,24 @@ void canvas_native_ccow_release(struct CCow *cow);
 const uint8_t *canvas_native_ccow_get_bytes(const struct CCow *cow);
 
 uintptr_t canvas_native_ccow_get_length(const struct CCow *cow);
+
+/**
+ *   out[ 0] = width
+ *   out[ 1] = actual_bounding_box_left
+ *   out[ 2] = actual_bounding_box_right
+ *   out[ 3] = actual_bounding_box_ascent   ← C++ order: actual before font
+ *   out[ 4] = actual_bounding_box_descent
+ *   out[ 5] = font_bounding_box_ascent
+ *   out[ 6] = font_bounding_box_descent
+ *   out[ 7] = em_height_ascent
+ *   out[ 8] = em_height_descent
+ *   out[ 9] = hanging_baseline
+ *   out[10] = alphabetic_baseline
+ *   out[11] = ideographic_baseline
+ */
+void canvas_native_text_metrics_get_all(const struct TextMetrics *metrics,
+                                        float *out,
+                                        uintptr_t len);
 
 void canvas_native_text_metrics_release(struct TextMetrics *value);
 

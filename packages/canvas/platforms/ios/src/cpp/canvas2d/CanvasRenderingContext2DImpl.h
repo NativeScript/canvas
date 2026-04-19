@@ -6,6 +6,7 @@
 #pragma process_pending_includes
 
 #include <vector>
+#include <string>
 #include <cstdint>
 #include <memory>
 
@@ -1135,6 +1136,8 @@ public:
 
 
     static void MeasureText(const v8::FunctionCallbackInfo<v8::Value> &args);
+    
+    static void FlushTextState(CanvasRenderingContext2DImpl *ptr);
 
     static void MoveTo(const v8::FunctionCallbackInfo<v8::Value> &args);
 
@@ -1303,9 +1306,13 @@ public:
         if (ptr == nullptr) {
             return;
         }
-
-        canvas_native_context_restore(
-                ptr->GetContext());
+        canvas_native_context_restore(ptr->GetContext());
+        ptr->cached_font_.clear();
+        ptr->cached_letter_spacing_.clear();
+        ptr->cached_word_spacing_.clear();
+        ptr->font_dirty_            = false;
+        ptr->letter_spacing_dirty_  = false;
+        ptr->word_spacing_dirty_    = false;
     }
 
     static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -1327,9 +1334,8 @@ public:
         if (ptr == nullptr) {
             return;
         }
-
-        canvas_native_context_save(
-                ptr->GetContext());
+        FlushTextState(ptr);
+        canvas_native_context_save(ptr->GetContext());
     }
 
     static void Scale(const v8::FunctionCallbackInfo<v8::Value> &args);
@@ -1533,5 +1539,16 @@ private:
     std::shared_ptr<RafImpl> raf_;
 
     bool continuousRender_ = true;
+
+    std::string cached_font_;
+    std::string cached_letter_spacing_;
+    std::string cached_word_spacing_;
+
+    bool font_dirty_           = false;
+    bool letter_spacing_dirty_ = false;
+    bool word_spacing_dirty_   = false;
+
+    v8::Eternal<v8::FunctionTemplate> tm_ctor_;
+    bool tm_ctor_init_ = false;
 
 };

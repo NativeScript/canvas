@@ -2,7 +2,7 @@ import { CanvasGradient } from '../CanvasGradient';
 import { Path2D } from '../Path2D';
 import { ImageData } from '../ImageData';
 import { TextMetrics } from '../TextMetrics';
-import { ImageSource, Screen, Color } from '@nativescript/core';
+import { ImageSource, Screen, Color, ImageAsset as NSImageAsset } from '@nativescript/core';
 import { ImageAsset } from '../../ImageAsset';
 import { CanvasPattern } from '../CanvasPattern';
 import { Canvas } from '../../Canvas';
@@ -118,6 +118,18 @@ function toBlendMode(value: string): number {
 		default:
 			null;
 	}
+}
+
+function _canvasToImageAssetIOS(canvas: Canvas): any {
+	const dataUrl = canvas.toDataURL('image/png');
+	const comma = dataUrl.indexOf(',');
+	if (comma < 0) return null;
+	const b64 = dataUrl.substring(comma + 1);
+	const nsData = NSData.alloc().initWithBase64EncodedStringOptions(b64, 1 /* NSDataBase64DecodingIgnoreUnknownCharacters */);
+	if (!nsData || nsData.length === 0) return null;
+	const tempAsset = new ImageAsset();
+	tempAsset.loadFromEncodedBytesSync(new Uint8Array(interop.bufferFromData(nsData)));
+	return tempAsset.native;
 }
 
 function drawNativeImage(args: any[], image, context: any) {
@@ -726,6 +738,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				drawNativeImage(args, image.ios, this);
 			}
 			return;
+		} else if (image instanceof NSImageAsset) {
+			drawNativeImage(args, image.nativeImage, this);
+			return;
 		} else if (__ANDROID__ && image instanceof android.graphics.Bitmap) {
 			drawNativeImage(args, image, this);
 			return;
@@ -810,7 +825,11 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 		} else if (__IOS__ && image instanceof UIImage) {
 			isNativeSource = true;
 		} else if (image instanceof Canvas) {
-			image = (image as any).native;
+			if (__IOS__) {
+				image = _canvasToImageAssetIOS(image as Canvas);
+			} else {
+				image = (image as any).native;
+			}
 		} else if (image && typeof image.tagName === 'string' && (image.tagName === 'IMG' || image.tagName === 'IMAGE')) {
 			if (image._imageSource instanceof ImageSource) {
 				if (__ANDROID__) {
@@ -835,13 +854,32 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 				image.fromFileSync(image.src);
 			}
 		} else if (image && typeof image.tagName === 'string' && image.tagName === 'CANVAS' && image._canvas instanceof Canvas) {
-			image = image._canvas.native;
+			if (__IOS__) {
+				image = _canvasToImageAssetIOS(image._canvas as Canvas);
+			} else {
+				image = image._canvas.native;
+			}
 		} else if (image instanceof ImageBitmap) {
 			image = (image as any).native;
 		}
 
 		if (isNativeSource) {
 			if (__IOS__) {
+				const uiImage: UIImage = image;
+				const rawData = NSSCanvasHelpers.getBytesFromUIImage(uiImage);
+				const width = Math.round(uiImage.size.width * uiImage.scale);
+				const height = Math.round(uiImage.size.height * uiImage.scale);
+				const tempAsset = new ImageAsset();
+				tempAsset.loadFromBytesSync(width, height, new Uint8Array(interop.bufferFromData(rawData)));
+				const x = xform.reduce((accumulator: number[], currentValue) => {
+					accumulator.push(currentValue.scos, currentValue.ssin, currentValue.tx, currentValue.ty);
+					return accumulator;
+				}, []);
+				const t = tex.reduce((accumulator: number[], currentValue) => {
+					accumulator.push(currentValue.x, currentValue.y, currentValue.width, currentValue.height);
+					return accumulator;
+				}, []);
+				this.context.drawAtlas(tempAsset.native, x, t, colors ?? null, toBlendMode(blendMode ?? 'destination-over') ?? 4);
 				return;
 			}
 
@@ -852,9 +890,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 					const item = xform[i];
 					x[next] = item.scos;
 					x[next + 1] = item.ssin;
-					x[next + 1] = item.tx;
-					x[next + 1] = item.ty;
-					next += 3;
+					x[next + 2] = item.tx;
+					x[next + 3] = item.ty;
+					next += 4;
 				}
 
 				const t = Array.create('float', tex.length * 4);
@@ -863,9 +901,9 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 					const item = tex[i];
 					t[tnext] = item.x;
 					t[tnext + 1] = item.y;
-					t[tnext + 1] = item.width;
-					t[tnext + 1] = item.height;
-					tnext += 3;
+					t[tnext + 2] = item.width;
+					t[tnext + 3] = item.height;
+					tnext += 4;
 				}
 
 				const c = Array.create('int', colors?.length ?? 0);
@@ -984,7 +1022,7 @@ export class CanvasRenderingContext2D implements CanvasRenderingContext {
 	}
 
 	measureText(text: string): TextMetrics {
-		return new TextMetrics(this.context.measureText(text));
+		return this.context.measureText(text) as unknown as TextMetrics;
 	}
 
 	moveTo(x: number, y: number): void {

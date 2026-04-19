@@ -23,7 +23,7 @@ use crate::c2d::matrix::Matrix;
 use crate::c2d::paint::{PaintStyle, PaintStyleType};
 use crate::c2d::path::Path;
 use crate::c2d::text_base_line::TextBaseLine;
-use crate::c2d::text_metrics::TextMetrics;
+use crate::c2d::text_metrics::{TextMetrics, TEXT_METRICS_FIELD_COUNT};
 use crate::CanvasColorSpace;
 use crate::image_asset::ImageAsset;
 use crate::webgl::WebGLState;
@@ -555,13 +555,13 @@ pub extern "C" fn canvas_native_context_get_font(
 pub extern "C" fn canvas_native_context_set_font(
     context: *mut CanvasRenderingContext2D,
     font: *const c_char,
-) {
+) -> bool {
     if font.is_null() {
-        return;
+        return false;
     }
     let context = unsafe { &mut *context };
     let font = unsafe { CStr::from_ptr(font) };
-    context.context.set_font(font.to_string_lossy().as_ref());
+    context.context.set_font(font.to_string_lossy().as_ref())
 }
 
 #[no_mangle]
@@ -2548,6 +2548,36 @@ pub extern "C" fn canvas_native_context_measure_text(
     Box::into_raw(Box::new(TextMetrics(
         context.context.measure_text(text.as_ref()),
     )))
+}
+
+#[no_mangle]
+pub extern "C" fn canvas_native_context_measure_text_to(
+    context: *mut CanvasRenderingContext2D,
+    text: *const c_char,
+    out: *mut f32,
+    len: usize,
+) {
+    if context.is_null() || text.is_null() || out.is_null() || len < TEXT_METRICS_FIELD_COUNT {
+        return;
+    }
+    let text = unsafe { CStr::from_ptr(text) };
+    let text = text.to_string_lossy();
+    let context = unsafe { &*context };
+    let m = context.context.measure_text(text.as_ref());
+    unsafe {
+        *out.add(0)  = m.width();
+        *out.add(1)  = m.actual_bounding_box_left();
+        *out.add(2)  = m.actual_bounding_box_right();
+        *out.add(3)  = m.actual_bounding_box_ascent();   // C++ order: actual before font
+        *out.add(4)  = m.actual_bounding_box_descent();
+        *out.add(5)  = m.font_bounding_box_ascent();
+        *out.add(6)  = m.font_bounding_box_descent();
+        *out.add(7)  = m.em_height_ascent();
+        *out.add(8)  = m.em_height_descent();
+        *out.add(9)  = m.hanging_baseline();
+        *out.add(10) = m.alphabetic_baseline();
+        *out.add(11) = m.ideographic_baseline();
+    }
 }
 
 #[no_mangle]

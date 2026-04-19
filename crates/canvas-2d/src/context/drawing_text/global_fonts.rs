@@ -7,10 +7,11 @@ use skia_safe::font_style::Slant;
 use skia_safe::textlayout::{FontCollection, TextStyle, TypefaceFontProvider};
 use skia_safe::{FontArguments, FontMgr, Typeface};
 use std::sync::LazyLock;
+use ustr::Ustr;
 
 #[derive(PartialEq, Eq, Hash)]
 struct CollectionKey {
-    families: String,
+    families: Vec<Ustr>,
     weight: i32,
     slant: Slant,
 }
@@ -18,7 +19,7 @@ struct CollectionKey {
 impl CollectionKey {
     pub fn new(style: &TextStyle) -> Self {
         let families = style.font_families();
-        let families = families.iter().collect::<Vec<&str>>().join(", ");
+        let families: Vec<Ustr> = families.iter().map(Ustr::from).collect();
         let weight = *style.font_style().weight();
         let slant = style.font_style().slant();
         CollectionKey {
@@ -33,17 +34,16 @@ impl CollectionKey {
 // Font collection management
 //
 
-pub static FONT_LIBRARY: LazyLock<Mutex<FontLibrary>> = LazyLock::new(|| FontLibrary::shared());
+pub static FONT_LIBRARY: LazyLock<Mutex<FontLibrary>> = LazyLock::new(FontLibrary::shared);
 
 pub struct FontLibrary {
     pub fonts: Vec<(Typeface, Option<String>)>,
     pub collection: FontCollection,
     collection_cache: HashMap<CollectionKey, FontCollection>,
+    font_mgr: FontMgr,
 }
 
-unsafe impl Send for FontLibrary {
-    // famous last words: this ‘should’ be safe in practice because the singleton is behind a mutex
-}
+unsafe impl Send for FontLibrary {}
 
 pub enum CanvasFontWeight {
     Thin,
@@ -82,14 +82,14 @@ pub struct FontDescriptors {
 
 impl FontLibrary {
     pub fn shared() -> Mutex<Self> {
-        let fonts = vec![];
-        let collection_cache = HashMap::new();
+        let font_mgr = FontMgr::new();
         let mut collection = FontCollection::new();
-        collection.set_default_font_manager(FontMgr::new(), None);
+        collection.set_default_font_manager(font_mgr.clone(), None);
         Mutex::new(FontLibrary {
             collection,
-            collection_cache,
-            fonts,
+            collection_cache: HashMap::new(),
+            fonts: vec![],
+            font_mgr,
         })
     }
 
@@ -100,36 +100,39 @@ impl FontLibrary {
         }
 
         let mut collection = FontCollection::new();
-        collection.set_default_font_manager(FontMgr::new(), None);
+        collection.set_default_font_manager(self.font_mgr.clone(), None);
         collection.set_asset_font_manager(Some(assets.into()));
         self.collection = collection;
-        self.collection_cache.drain();
+        self.collection_cache.clear();
     }
 
-    fn add_typeface(&mut self, font: Typeface, alias: Option<String>) {
+    /// Inserts or replaces a typeface **without** rebuilding the collection.
+    /// Callers must call `register_fonts()` when all additions are done.
+    fn add_typeface_no_rebuild(&mut self, font: Typeface, alias: Option<String>) {
         if let Some(idx) = self.fonts.iter().position(|(old_font, old_alias)|
             match alias.is_some() {
                 true => old_alias.as_deref() == alias.as_deref(),
                 false => old_font.family_name() == font.family_name()
             } && old_font.font_style() == font.font_style()
         ) {
-            self.fonts.remove(idx);
+            self.fonts[idx] = (font, alias);
+        } else {
+            self.fonts.push((font, alias));
         }
+    }
 
-        self.fonts.push((font, alias));
+    fn add_typeface(&mut self, font: Typeface, alias: Option<String>) {
+        self.add_typeface_no_rebuild(font, alias);
         self.register_fonts();
     }
 
     fn remove_typeface(&mut self, font: &Typeface, alias: Option<&str>) {
-        if let Some(idx) = self.fonts.iter().position(|(old_font, old_alias)|
-            match alias.is_some() {
+        self.fonts.retain(|(old_font, old_alias)| {
+            !(match alias.is_some() {
                 true => old_alias.as_deref() == alias,
                 false => old_font.family_name() == font.family_name()
-            } && old_font.font_style() == font.font_style()
-        ) {
-            self.fonts.remove(idx);
-        }
-
+            } && old_font.font_style() == font.font_style())
+        });
         self.register_fonts();
     }
 
@@ -140,18 +143,14 @@ impl FontLibrary {
             .collection
             .find_typefaces(&families, style.font_style());
 
-        // if the matched typeface is a variable font, create an instance that matches
-        // the current weight settings and return early with a new FontCollection that
-        // contains just that single font instance
+       
         if let Some(font) = matches.first() {
             if let Some(params) = font.variation_design_parameters() {
-                // memoize the generation of single-weight FontCollections for variable fonts
                 let key = CollectionKey::new(style);
                 if let Some(collection) = self.collection_cache.get(&key) {
                     return collection.clone();
                 }
 
-                // reconnect to the user-specified family name (if provided)
                 let alias = self.fonts.iter().find_map(|(face, alias)| {
                     if Typeface::equal(font, face) {
                         alias.clone()
@@ -164,11 +163,6 @@ impl FontLibrary {
                     let chars = vec![param.tag.a(), param.tag.b(), param.tag.c(), param.tag.d()];
                     let tag = String::from_utf8(chars).unwrap();
                     if tag == "wght" {
-                        // NB: currently setting the value to *one less* than what was requested
-                        //     to work around weird Skia behavior that returns something nonlinearly
-                        //     weighted in many cases (but not for ±1 of that value). This makes it so
-                        //     that n × 100 values will render correctly (and the bug will manifest at
-                        //     n × 100 + 1 instead)
                         let weight = *style.font_style().weight() - 1;
                         let value = (weight as f32).max(param.min).min(param.max);
                         let coords = [Coordinate {
@@ -185,7 +179,7 @@ impl FontLibrary {
                         dynamic.register_typeface(face, alias.as_deref());
 
                         let mut collection = FontCollection::new();
-                        collection.set_default_font_manager(FontMgr::new(), None);
+                        collection.set_default_font_manager(self.font_mgr.clone(), None);
                         collection.set_asset_font_manager(Some(dynamic.into()));
                         self.collection_cache.insert(key, collection.clone());
                         return collection;
@@ -194,45 +188,49 @@ impl FontLibrary {
             }
         }
 
-        // if the matched font wasn't variable, then just return the standard collection
         self.collection.clone()
     }
 
     pub fn add_family(alias: Option<&str>, filenames: &[&str]) -> Result<(), String> {
+        let decode_mgr = FontMgr::new();
+        let mut typefaces = Vec::with_capacity(filenames.len());
         for filename in filenames.iter() {
-            let path = std::path::Path::new(&filename);
-            let typeface = match std::fs::read(path) {
+            let path = std::path::Path::new(filename);
+            let bytes = match std::fs::read(path) {
                 Err(why) => return Err(format!("{}: \"{}\"", why, path.display())),
-                Ok(bytes) => FontMgr::new().new_from_data(bytes.as_slice(), None),
+                Ok(b) => b,
             };
-
-            match typeface {
-                Some(font) => {
-                    // register the typeface
-                    let mut library = FONT_LIBRARY.lock();
-                    let alias = alias.map(|v| v.to_owned());
-                    library.add_typeface(font, alias);
-                }
+            match decode_mgr.new_from_data(bytes.as_slice(), None) {
+                Some(font) => typefaces.push(font),
                 None => return Err(format!("Could not decode font data in {}", path.display())),
             }
         }
+        let mut library = FONT_LIBRARY.lock();
+        let alias_owned = alias.map(|v| v.to_owned());
+        for font in typefaces {
+            library.add_typeface_no_rebuild(font, alias_owned.clone());
+        }
+        library.register_fonts();
 
         Ok(())
     }
 
     pub fn add_family_bytes(alias: Option<&str>, data: &[&[u8]]) -> Result<(), String> {
-        let mgr = FontMgr::new();
+        let decode_mgr = FontMgr::new();
+        let mut typefaces = Vec::with_capacity(data.len());
         for bytes in data.iter() {
-            match mgr.new_from_data(bytes, None) {
-                Some(font) => {
-                    // register the typeface
-                    let mut library = FONT_LIBRARY.lock();
-                    let alias = alias.map(|v| v.to_owned());
-                    library.add_typeface(font, alias);
-                }
+            match decode_mgr.new_from_data(bytes, None) {
+                Some(font) => typefaces.push(font),
                 None => return Err("Could not decode font data".to_string()),
             }
         }
+
+        let mut library = FONT_LIBRARY.lock();
+        let alias_owned = alias.map(|v| v.to_owned());
+        for font in typefaces {
+            library.add_typeface_no_rebuild(font, alias_owned.clone());
+        }
+        library.register_fonts();
 
         Ok(())
     }
@@ -242,8 +240,8 @@ impl FontLibrary {
         library.fonts.clear();
 
         let mut collection = FontCollection::new();
-        collection.set_default_font_manager(FontMgr::new(), None);
+        collection.set_default_font_manager(library.font_mgr.clone(), None);
         library.collection = collection;
-        library.collection_cache.drain();
+        library.collection_cache.clear();
     }
 }

@@ -1,5 +1,4 @@
-import { colorProperty, Property, booleanConverter, ViewBase, ShorthandProperty, Style } from '@nativescript/core';
-import { Group } from '../Group';
+import { Property, ViewBase, ShorthandProperty, Style } from '@nativescript/core';
 import { Paint } from '../Paint';
 
 export const cxProperty = new Property<Circle, number>({
@@ -7,7 +6,7 @@ export const cxProperty = new Property<Circle, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
-	valueChanged(target, oldValue, newValue) {
+	valueChanged(target, _oldValue, _newValue) {
 		target.invalidate();
 	},
 });
@@ -17,7 +16,7 @@ export const cyProperty = new Property<Circle, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
-	valueChanged(target, oldValue, newValue) {
+	valueChanged(target, _oldValue, _newValue) {
 		target.invalidate();
 	},
 });
@@ -27,7 +26,7 @@ export const rProperty = new Property<Circle, number>({
 	valueConverter(value) {
 		return parseFloat(value);
 	},
-	valueChanged(target, oldValue, newValue) {
+	valueChanged(target, _oldValue, _newValue) {
 		target.invalidate();
 	},
 });
@@ -63,9 +62,9 @@ export const cProperty = new ShorthandProperty<Style, Vector>({
 });
 
 export class Circle extends Paint {
-	cx: number;
-	cy: number;
-	r: number;
+	cx!: number;
+	cy!: number;
+	r!: number;
 
 	_children: Paint[] = [];
 
@@ -79,9 +78,8 @@ export class Circle extends Paint {
 
 	draw() {
 		const context = this._canvas.getContext('2d') as any as CanvasRenderingContext2D;
-
 		const c = this.c;
-
+		context.beginPath();
 		context.arc(c.x ?? this.cx, c.y ?? this.cy, this.r, 0, 2 * Math.PI);
 		if (this._children.length > 0) {
 			this._children.forEach((child) => {
@@ -105,11 +103,8 @@ export class Circle extends Paint {
 		}
 	}
 
-	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
-		if (view === this._canvas) {
-			this.nativeView.addView(this._canvas.nativeView);
-			return true;
-		} else if (view instanceof Paint) {
+	_addViewToNativeVisualTree(view: ViewBase, _atIndex?: number): boolean {
+		if (view instanceof Paint) {
 			view._canvas = this._canvas;
 			this._children.push(view);
 		}

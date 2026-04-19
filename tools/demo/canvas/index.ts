@@ -1,5 +1,5 @@
 import { DemoSharedBase } from '../utils';
-import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath } from '@nativescript/core';
+import { ImageSource, ObservableArray, Screen, Color, Application, knownFolders, path as filePath, ImageAsset as NSImageAsset } from '@nativescript/core';
 
 let Matter;
 declare const NSCCanvas;
@@ -81,6 +81,48 @@ export class DemoSharedCanvas extends DemoSharedBase {
 		this.canvas = args.object;
 		console.log('canvas ready');
 		this.draw();
+	}
+
+	skiaAtlasHelloWorld(canvas: any) {
+		const size = { width: 25, height: 11.25 };
+		const strokeWidth = 2;
+		const spriteW = size.width + strokeWidth; // 27
+		const spriteH = size.height + strokeWidth; // 13.25
+
+		const spriteCanvas = Canvas.createCustomView();
+		(spriteCanvas as any)._isBatch = true;
+		spriteCanvas.width = Math.ceil(spriteW);
+		spriteCanvas.height = Math.ceil(spriteH);
+		(spriteCanvas as any)._isBatch = false;
+		(spriteCanvas as any)._layoutNative?.();
+
+		const sc = spriteCanvas.getContext('2d') as any;
+		sc.fillStyle = 'cyan';
+		sc.fillRect(strokeWidth / 2, strokeWidth / 2, size.width, size.height);
+		sc.strokeStyle = 'blue';
+		sc.lineWidth = strokeWidth;
+		sc.strokeRect(strokeWidth / 2, strokeWidth / 2, size.width, size.height);
+
+		const numberOfBoxes = 150;
+		const pos = { x: 128, y: 128 };
+		const canvasWidth = 256;
+
+		const sprites = Array.from({ length: numberOfBoxes }, () => ({
+			x: 0,
+			y: 0,
+			width: spriteW,
+			height: spriteH,
+		}));
+
+		const transforms = Array.from({ length: numberOfBoxes }, (_, i) => {
+			const tx = 5 + ((i * size.width) % canvasWidth);
+			const ty = 25 + Math.floor(i / (canvasWidth / size.width)) * size.width;
+			const r = Math.atan2(pos.y - ty, pos.x - tx);
+			return { scos: Math.cos(r), ssin: Math.sin(r), tx, ty };
+		});
+
+		const ctx = canvas.getContext('2d') as any;
+		ctx.drawAtlas(spriteCanvas, transforms, sprites, null, null);
 	}
 
 	textBaseLine(canvas) {
@@ -706,64 +748,8 @@ fn main() -> @location(0) vec4f {
 
 		//this.drawChart(this.canvas);
 		//this.drawSVG(this.canvas);
-		//	const ctx = this.canvas.getContext('2d');
-		/*
+		//this.skiaAtlasHelloWorld(this.canvas);
 
-		const asset = new global.ImageAsset();
-		asset.fromUrl('https://raw.githubusercontent.com/mdn/content/main/files/en-us/web/api/canvasrenderingcontext2d/drawimage/rhino.jpg').then((done) => {
-			const x: {
-				scos: number;
-				ssin: number;
-				tx: number;
-				ty: number;
-			}[] = [
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-				{ scos: 1, ssin: 0, tx: 0, ty: 0 },
-			];
-
-			const width = 50 //* Screen.mainScreen.scale;
-			const height = 38// * Screen.mainScreen.scale;
-			const t: { x: number; y: number; width: number; height: number }[] = [
-				{ x: 0, y: 0, width: width, height: height },
-				{ x: width, y: 0, width: width, height: height },
-				{ x: width * 2, y: 0, width: width, height: height },
-
-				{ x: 0, y: height, width: width, height: height },
-				{ x: width, y: height, width: width, height: height },
-				{ x: width * 2, y: height, width: width, height: height },
-
-				{ x: 0, y: height * 2, width: width, height: height },
-				{ x: width, y: height * 2, width: width, height: height },
-				{ x: width * 2, y: height * 2, width: width, height: height },
-
-				{ x: 0, y: height * 3, width: width, height: height },
-				{ x: width, y: height * 3, width: width, height: height },
-				{ x: width * 2, y: height * 3, width: width, height: height },
-			];
-
-			ctx.drawAtlas(asset, x, t, null, null);
-
-			// for (var i = 0; i < 4; i++) {
-			// 	for (var j = 0; j < 3; j++) {
-			// 		ctx.drawImage(asset, j * 50 * Screen.mainScreen.scale, i * 38 * Screen.mainScreen.scale, 50 * Screen.mainScreen.scale, 38 * Screen.mainScreen.scale);
-			// 	}
-			// }
-		});
-
-		*/
 		//this.pathIssue(this.canvas);
 		//(this.canvas);
 		//this.clearIssue(this.canvas);
@@ -866,7 +852,7 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
-		//this.vulkan(this.canvas);
+		this.vulkan(this.canvas);
 		//texImage3DDemo(this.canvas);
 		//texSubImage3DDemo(this.canvas);
 		//videoTex3DDemo(this.canvas);
@@ -925,7 +911,7 @@ fn main() -> @location(0) vec4f {
 
 		//particlesColor(this.canvas);
 		//cloth(this.canvas);
-		touchParticles(this.canvas);
+		//touchParticles(this.canvas);
 		//createConicGradient(this.canvas);
 		//swarm(this.canvas);
 		//textures(this.canvas)
@@ -997,8 +983,8 @@ fn main() -> @location(0) vec4f {
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 		const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		ctx.font = 'normal 16px serif';
 		ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-		ctx.font = '16px serif';
 		const size = ctx.measureText('NativeScript Canvas 2D Powered by Skia & Vulkan');
 		ctx.fillText('NativeScript Canvas 2D Powered by Skia & Vulkan', canvas.clientWidth / 2 - size.width / 2, 50);
 		const vk = new ImageAsset();
@@ -2135,7 +2121,12 @@ fn main() -> @location(0) vec4f {
 		var moon = new global.ImageAsset();
 		var earth = new global.ImageAsset();
 
-		await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+		try {
+			await Promise.all([sun.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png'), moon.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png'), earth.fromUrl('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png')]);
+		} catch (error) {
+			console.error('Error loading images', error);
+		}
+
 		//	 sun.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_sun.png');
 		//	 moon.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_moon.png');
 		//	 earth.fromUrlSync('https://github.com/mdn/content/raw/main/files/en-us/web/api/canvas_api/tutorial/basic_animations/canvas_earth.png');
@@ -2151,13 +2142,11 @@ fn main() -> @location(0) vec4f {
 		// 	console.log('earth', done);
 		// })
 
-		//console.log(sun.width, moon.width, earth.width);
-
 		canvas.width = canvas.clientWidth * window?.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window?.devicePixelRatio;
 
 		var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+		//ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
 
 		//ctx.scale(3, 3);
 		function init() {

@@ -51,11 +51,8 @@ export class Atlas extends Paint {
 		context.drawAtlas(this.image, this.transforms, this.sprites, this.colors ?? null, this.blendMode);
 	}
 
-	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
-		if (view === this._canvas) {
-			this.nativeView.addView(this._canvas.nativeView);
-			return true;
-		} else if (view instanceof Paint) {
+	_addViewToNativeVisualTree(view: ViewBase, _atIndex?: number): boolean {
+		if (view instanceof Paint) {
 			view._canvas = this._canvas;
 			this._children.push(view);
 		}

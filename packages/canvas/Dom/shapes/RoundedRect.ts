@@ -1,107 +1,64 @@
-import { colorProperty, Property, booleanConverter, ViewBase, Screen } from '@nativescript/core';
-import { Group } from '../Group';
+import { Property, ViewBase } from '@nativescript/core';
 import { Paint } from '../Paint';
 import { Shadow } from '../Shadow';
 import { Rect } from './Rect';
-
-const xProperty = new Property<RoundedRect, number>({
-	name: 'x',
-	valueConverter(value) {
-		return parseFloat(value);
-	},
-	valueChanged(target, oldValue, newValue) {
-		target.invalidate();
-	},
-});
-
-const yProperty = new Property<RoundedRect, number>({
-	name: 'y',
-	valueConverter(value) {
-		return parseFloat(value);
-	},
-	valueChanged(target, oldValue, newValue) {
-		target.invalidate();
-	},
-});
 
 const rProperty = new Property<RoundedRect, number>({
 	name: 'r',
 	valueConverter(value) {
 		return parseFloat(value);
 	},
-	valueChanged(target, oldValue, newValue) {
+	valueChanged(target, _oldValue, _newValue) {
 		target.invalidate();
 	},
 });
 
 export class RoundedRect extends Rect {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	r: number;
-
-	_children: Paint[] = [];
+	r!: number;
 
 	draw() {
 		const context = this._canvas.getContext('2d') as any;
-		const color = this._getColor();
+		context.beginPath();
 		context.roundRect(this.x, this.y, this.width, this.height, this.r);
+
 		if (this._children.length > 0) {
 			this._children.forEach((child) => {
 				const child_color = child._getColor();
-				switch (child.paintStyle) {
-					case 'fill':
-						context.fillStyle = color;
-						if (child instanceof Shadow) {
-							const dx = context.shadowOffsetX;
-							const dy = context.shadowOffsetY;
-							const blur = context.shadowBlur;
-							const shadowColor = context.shadowColor;
+				const style = child._getPaintStyle();
 
-							context.shadowOffsetX = child.dx;
-							context.shadowOffsetY = child.dy;
-							context.shadowBlur = child.blur;
-							context.shadowColor = child_color;
+				if (child instanceof Shadow) {
+					const prevOffsetX = context.shadowOffsetX;
+					const prevOffsetY = context.shadowOffsetY;
+					const prevBlur = context.shadowBlur;
+					const prevColor = context.shadowColor;
 
-							context.fill();
+					context.shadowOffsetX = child.dx;
+					context.shadowOffsetY = child.dy;
+					context.shadowBlur = child.blur;
+					context.shadowColor = child_color;
 
-							context.shadowOffsetX = dx;
-							context.shadowOffsetY = dy;
-							context.shadowBlur = blur;
-							context.shadowColor = shadowColor;
-						} else {
-							context.fill();
-						}
-
-						break;
-					case 'stroke':
-						context.strokeStyle = color;
+					if (style === 'stroke') {
+						context.strokeStyle = this._getColor();
 						context.lineWidth = child._getStrokeWidth();
 						context.lineJoin = child._getStrokeJoin();
+						context.stroke();
+					} else {
+						context.fillStyle = this._getColor();
+						context.fill();
+					}
 
-						if (child instanceof Shadow) {
-							const dx = context.shadowOffsetX;
-							const dy = context.shadowOffsetY;
-							const blur = context.shadowBlur;
-							const shadowColor = context.shadowColor;
-
-							context.shadowOffsetX = child.dx;
-							context.shadowOffsetY = child.dy;
-							context.shadowBlur = child.blur;
-							context.shadowColor = child_color;
-
-							context.stroke();
-
-							context.shadowOffsetX = dx;
-							context.shadowOffsetY = dy;
-							context.shadowBlur = blur;
-							context.shadowColor = shadowColor;
-						} else {
-							context.stroke();
-						}
-
-						break;
+					context.shadowOffsetX = prevOffsetX;
+					context.shadowOffsetY = prevOffsetY;
+					context.shadowBlur = prevBlur;
+					context.shadowColor = prevColor;
+				} else if (style === 'stroke') {
+					context.strokeStyle = child_color;
+					context.lineWidth = child._getStrokeWidth();
+					context.lineJoin = child._getStrokeJoin();
+					context.stroke();
+				} else {
+					context.fillStyle = child_color;
+					context.fill();
 				}
 			});
 		} else {
@@ -109,7 +66,7 @@ export class RoundedRect extends Rect {
 		}
 	}
 
-	_addViewToNativeVisualTree(view: ViewBase, atIndex?: number): boolean {
+	_addViewToNativeVisualTree(view: ViewBase, _atIndex?: number): boolean {
 		if (view instanceof Paint) {
 			this._children.push(view);
 		}
@@ -117,6 +74,4 @@ export class RoundedRect extends Rect {
 	}
 }
 
-xProperty.register(RoundedRect);
-yProperty.register(RoundedRect);
 rProperty.register(RoundedRect);

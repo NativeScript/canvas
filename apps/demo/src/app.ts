@@ -123,6 +123,63 @@ Application.on('launch', (args) => {
 		monitor.appVersionHidden = true;
 		monitor.deviceVersionHidden = true;
 	}
+
+	/*
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d')!;
+
+	const texts = ['Hello', 'Hello world', 'The quick brown fox jumps over the lazy dog', 'Lorem ipsum dolor sit amet consectetur adipiscing elit'];
+
+	const fonts = ['12px Arial', '16px Arial', '20px Arial', '16px Times New Roman'];
+
+	const ITERATIONS = 50_000;
+
+	const defaultFont = ctx.font;
+	fonts.forEach((font) => {
+		ctx.font = font;
+	});
+	ctx.font = defaultFont;
+
+	let i = 0;
+	let start = performance.now();
+
+	for (let n = 0; n < ITERATIONS; n++) {
+		ctx.font = fonts[n % fonts.length];
+		ctx.measureText(texts[n % texts.length]);
+	}
+
+	let end = performance.now();
+
+	if (__APPLE__) {
+		//@ts-ignore
+		__nslog('Total time: ' + (end - start) + ' ms');
+		//@ts-ignore
+		__nslog('Per call: ' + (end - start) / ITERATIONS + ' ms');
+	} else {
+		console.log('Total time:', end - start, 'ms');
+		console.log('Per call:', (end - start) / ITERATIONS, 'ms');
+	}
+
+	// i = 0;
+	// start = performance.now();
+
+	// for (let n = 0; n < ITERATIONS; n++) {
+	// 	ctx.font = fonts[n % fonts.length];
+	// 	ctx.measureText(texts[n % texts.length]);
+	// }
+
+	// end = performance.now();
+
+	// if (__APPLE__) {
+	// 	//@ts-ignore
+	// 	__nslog('Total time: ' + (end - start) + ' ms');
+	// 	//@ts-ignore
+	// 	__nslog('Per call: ' + (end - start) / ITERATIONS + ' ms');
+	// } else {
+	// 	console.log('Total time:', end - start, 'ms');
+	// 	console.log('Per call:', (end - start) / ITERATIONS, 'ms');
+	// }
+	*/
 });
 
 // fetch('https://github.com/mrdoob/three.js/blob/dev/examples/models/gltf/DamagedHelmet/glTF/Default_metalRoughness.jpg?raw=true')

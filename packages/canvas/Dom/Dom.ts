@@ -1,20 +1,22 @@
-import { EventData, LayoutBase, ViewBase, Utils, View, Screen } from '@nativescript/core';
+import { LayoutBase, ViewBase, Utils, View, Screen } from '@nativescript/core';
 import { Canvas } from '../Canvas';
 import { Image } from './Image';
 import { Paint } from './Paint';
+
 enum State {
 	None,
 	Pending,
 	Invalidating,
 }
+
 export class Dom extends LayoutBase {
 	_canvas: Canvas;
-	_children = [];
+	_children: Array<Paint | Image> = [];
 
 	_raf: any;
 	_state: State = State.None;
 	_isReady: boolean = false;
-	_onFrameCallback?: (frame: number) => void = null;
+	_onFrameCallback: ((frame: number) => void) | undefined = undefined;
 
 	constructor() {
 		super();
@@ -32,7 +34,7 @@ export class Dom extends LayoutBase {
 		if (__ANDROID__) {
 			return new android.widget.LinearLayout(this._context);
 		}
-		return null;
+		return super.createNativeView();
 	}
 
 	initNativeView(): void {
@@ -42,7 +44,7 @@ export class Dom extends LayoutBase {
 
 	onLoaded(): void {
 		super.onLoaded();
-		if (this._ready) {
+		if (this._isReady) {
 			this._bindRaf();
 		}
 	}
@@ -61,9 +63,9 @@ export class Dom extends LayoutBase {
 		View.layoutChild(this, this._canvas, left, top, right, bottom);
 		this._canvas.width = this.getMeasuredWidth();
 		this._canvas.height = this.getMeasuredHeight();
-		// auto scale to screen size
-		const ctx = this._canvas.getContext('2d');
-		ctx.scale(Screen.mainScreen.scale, Screen.mainScreen.scale);
+		// Trigger a redraw now that dimensions are known. The scale transform is
+		// applied at the top of every _draw() call so it is always up to date.
+		this._dirty();
 	}
 
 	public onMeasure(widthMeasureSpec: number, heightMeasureSpec: number) {
@@ -76,36 +78,52 @@ export class Dom extends LayoutBase {
 		}
 	}
 
-	set onFrameCallback(value: (frame: number) => void | null) {
+	set onFrameCallback(value: ((frame: number) => void) | undefined) {
 		this._onFrameCallback = value;
 	}
 
-	_ready(args: EventData) {
+	_ready() {
 		this._isReady = true;
 		this._dirty();
 		this._draw(null);
 	}
 
-	_draw(ts) {
-		const state = this._state & State.Pending;
-		if (state === State.Pending) {
+	_draw(ts: number | null) {
+		const pending = (this._state & State.Pending) === State.Pending;
+		if (pending) {
 			const ctx = this._canvas.getContext('2d');
-			this._state = State.Invalidating;
-			ctx.clearRect(0, 0, this._canvas.width as number, this._canvas.height as number);
-			for (const child of this._children) {
-				child.draw();
+			if (ctx) {
+				const scale = Screen.mainScreen.scale;
+				const w = this._canvas.width as number;
+				const h = this._canvas.height as number;
+				this._state = State.Invalidating;
+				ctx.setTransform(scale, 0, 0, scale, 0, 0);
+				ctx.clearRect(0, 0, w / scale, h / scale);
+				for (const child of this._children) {
+					child.draw();
+				}
+				this._state = State.None;
 			}
-			this._state = State.None;
 		}
-		this._onFrameCallback?.(ts);
-		this._bindRaf();
+		if (ts !== null) {
+			this._onFrameCallback?.(ts);
+		}
+		this._raf = undefined;
+		if ((this._state & State.Pending) === State.Pending || typeof this._onFrameCallback === 'function') {
+			this._bindRaf();
+		}
 	}
 
 	_bindRaf() {
 		if (!this._isReady) {
 			return;
 		}
-		this._raf = requestAnimationFrame(this._draw.bind(this));
+		if (this._raf) {
+			return;
+		}
+		if ((this._state & State.Pending) === State.Pending || typeof this._onFrameCallback === 'function') {
+			this._raf = requestAnimationFrame(this._draw.bind(this));
+		}
 	}
 
 	_dirty() {
@@ -123,9 +141,29 @@ export class Dom extends LayoutBase {
 			}
 			return true;
 		} else if (view instanceof Paint || view instanceof Image) {
-			view._addCanvas(this._canvas);
-			this._children.push(view);
+			if (typeof (view as any)._addCanvas === 'function') {
+				(view as any)._addCanvas(this._canvas);
+			}
+			if (typeof atIndex === 'number' && atIndex >= 0 && atIndex <= this._children.length) {
+				this._children.splice(atIndex, 0, view);
+			} else {
+				this._children.push(view);
+			}
 		}
 		return false;
+	}
+
+	_removeViewFromNativeVisualTree(view: ViewBase): void {
+		if (view instanceof Paint || view instanceof Image) {
+			const idx = this._children.indexOf(view);
+			if (idx >= 0) {
+				this._children.splice(idx, 1);
+			}
+			try {
+				(view as any)._canvas = undefined;
+			} catch (e) {}
+			return;
+		}
+		super._removeViewFromNativeVisualTree(view);
 	}
 }

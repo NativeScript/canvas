@@ -1,0 +1,4 @@
+[submodule "packages/audio-context/src-native/android/audiocontext/src/main/cpp/third_party/oboe"]
+	path = packages/audio-context/src-native/android/audiocontext/src/main/cpp/third_party/oboe
+	url = https://github.com/google/oboe.git
+

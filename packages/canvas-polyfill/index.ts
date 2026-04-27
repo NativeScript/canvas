@@ -153,4 +153,5 @@ try {
 	defineGlobalIfAbsent('PeriodicWave', canvasMedia.PeriodicWave, true);
 	defineGlobalIfAbsent('AudioBufferSourceNode', canvasMedia.AudioBufferSourceNode, true);
 	defineGlobalIfAbsent('OfflineAudioContext', canvasMedia.OfflineAudioContext, true);
+	defineGlobalIfAbsent('AudioListener', canvasMedia.AudioListener, true);
 } catch (_e) {}

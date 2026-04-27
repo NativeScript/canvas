@@ -28,4 +28,8 @@ export class Navigator {
 		}
 		return Device.os;
 	}
+	getGamepads() {
+		// todo
+		return [];
+	}
 }

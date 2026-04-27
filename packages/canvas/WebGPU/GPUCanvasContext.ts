@@ -32,6 +32,7 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 		//@ts-ignore
 		this[native_] = global.CanvasModule.createWebGPUContextWithPointer(ctxPtr);
 		this[contextPtr_] = context;
+		this._canvas = context;
 		this._type = 'webgpu';
 	}
 
@@ -125,21 +126,27 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 					break;
 			}
 
+			if (__IOS__) {
+				opts.usage = opts.usage | GPUTextureUsage.RENDER_ATTACHMENT;
+			}
+
 			if (__IOS__ && opts.usage > capabilities.usages) {
 				opts.usage = capabilities.usages;
 				console.warn(`GPUCanvasContext: configure usage unsupported falling back to ${capabilities.usages}`);
 			}
 
 			if (__IOS__) {
-				opts.usage = opts.usage & ~GPUTextureUsage.TEXTURE_BINDING;
+				const supported = (capabilities && (capabilities as any).usages) || 0;
+				const unsupported = opts.usage & ~supported;
+				if (unsupported !== 0) {
+					console.warn(`GPUCanvasContext: configure requested unsupported usage bits (0x${unsupported.toString(16)}), masking to supported usages=0x${supported.toString(16)}`);
+					opts.usage = opts.usage & supported;
+				}
 			}
 		}
 
 		this[device_] = options.device;
 
-		// Build a clean descriptor with only the fields the native layer understands.
-		// Third-party renderers (e.g. Three.js r0.170+) pass non-standard fields such as
-		// `toneMapping: { mode: 'standard' }` which can cause native serialization errors.
 		const nativeOpts: any = {
 			device: options?.device?.[native_],
 			format: opts.format,
@@ -159,22 +166,28 @@ export class GPUCanvasContext implements CanvasRenderingContext {
 	}
 
 	getCurrentTexture() {
-		const texture = this.native.getCurrentTexture();
+		const current = this.native.getCurrentTexture();
+		if (!current) {
+			console.error('GPUCanvasContext.getCurrentTexture: native returned empty — context may not be configured');
+			return null;
+		}
+
+		const texture = (current as any).texture ?? current;
 		const result = GPUTexture.fromNative(texture);
 		if (!result) {
-			console.error('GPUCanvasContext.getCurrentTexture: native returned null/undefined — context may not be configured');
+			console.error('GPUCanvasContext.getCurrentTexture: native texture wrapper contained no texture');
 		}
 		return result;
 	}
 
-	presentSurface() {
+	presentSurface(_texture?: GPUTexture) {
 		this.native.presentSurface();
 	}
 
 	getCapabilities(adapter: GPUAdapter): {
 		format: GPUTextureFormat[];
 		presentModes: GPUCanvasPresentMode[];
-		alphaModes: GPUCanvasAlphaMode;
+		alphaModes: GPUCanvasAlphaMode[];
 		usages: number;
 	} {
 		return this.native.getCapabilities(adapter.native);

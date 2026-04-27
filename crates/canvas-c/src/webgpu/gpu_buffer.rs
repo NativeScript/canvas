@@ -5,7 +5,6 @@ use std::{
     os::raw::{c_char, c_void},
 };
 
-//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::prelude::label_to_ptr;
 

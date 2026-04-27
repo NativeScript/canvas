@@ -58,7 +58,7 @@ opt-level = "z"
 [workspace.dependencies.wgt]
 package = "wgpu-types"
 git = "https://github.com/triniwiz/wgpu"
-rev = "4fb84f5a325d73d21416a2244d1cc062925350ef"
+rev = "7e0f39f"
 
 
 
@@ -77,8 +77,18 @@ canvas-c = { path = "./crates/canvas-c" }
 skia-safe = { version = "0.93.1", features = ["textlayout"] }
 itertools = "0.14.0"
 ustr = "1.1.0"
-wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "4fb84f5a325d73d21416a2244d1cc062925350ef", features = ["wgsl"] }
-wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "4fb84f5a325d73d21416a2244d1cc062925350ef" }
+wgpu-core = { git = "https://github.com/triniwiz/wgpu", rev = "7e0f39f", features = ["wgsl"] }
+wgpu-hal = { git = "https://github.com/triniwiz/wgpu", rev = "7e0f39f" }
 ureq = "2.10.1"
 jni = "0.21.1"
 regex-lite = "0.1.9"
+objc2 = { version = "0.6.3", default-features = false }
+objc2-core-foundation = { version = "0.3.2", default-features = false }
+objc2-metal = { version = "0.3.2", default-features = false, features = ["MTLCommandBuffer", "MTLCommandQueue", "MTLDrawable", "MTLPixelFormat", "MTLTexture", "MTLDevice", "objc2-core-foundation"] }
+objc2-foundation = { version = "0.3.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool", "NSDictionary", "NSObject", "NSValue", "NSString"] }
+objc2-quartz-core = { version = "0.3.2", default-features = false, features = ["std",
+    "objc2-core-foundation",
+    "CALayer",
+    "CAMetalLayer",
+    "objc2-metal"] }
+core-foundation = "0.10.1"

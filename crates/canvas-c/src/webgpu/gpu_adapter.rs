@@ -12,13 +12,10 @@ use super::{
     gpu_queue::CanvasGPUQueue, gpu_supported_limits::CanvasGPUSupportedLimits, prelude::*,
 };
 
-//use wgpu_core::gfx_select;
-
 pub struct CanvasGPUAdapter {
     pub(crate) instance: Arc<CanvasWebGPUInstance>,
     pub(crate) adapter: wgpu_core::id::AdapterId,
     pub(crate) is_fallback_adapter: bool,
-    /// The feature level that was requested when this adapter was created.
     pub(crate) feature_level: wgt::FeatureLevel,
     pub(crate) features: Vec<&'static str>,
     pub(crate) limits: wgt::Limits,
@@ -128,9 +125,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
 
     let label = ptr_into_label(label);
 
-    // Pre-validate: check all requested features against what the adapter supports.
-    // wgpu-core (and some Vulkan drivers, e.g. SwiftShader) can panic internally when
-    // asked to create a device with features the adapter does not expose.
     {
         let global = adapter.instance.global();
         let adapter_features = global.adapter_features(adapter.adapter);
@@ -205,7 +199,6 @@ pub extern "C" fn canvas_native_webgpu_adapter_request_device(
             }
             Err(error) => {
                 let error = error.to_string();
-                // Replace any embedded NUL bytes so CString::new never fails.
                 let safe_error = error.replace('\0', "<NUL>");
                 let ret = CString::new(safe_error)
                     .unwrap_or_else(|_| CString::new("requestDevice failed").unwrap())

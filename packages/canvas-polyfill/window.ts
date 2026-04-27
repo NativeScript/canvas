@@ -249,16 +249,3 @@ if (typeof global.AbortSignal === 'undefined') {
 	//@ts-ignore
 	global.AbortSignal = global.window.AbortSignal = AbortSignal;
 }
-
-// Stub for the WebCodecs VideoFrame API. Three.js r170+ checks
-// `instanceof VideoFrame` in Textures.getSize to handle video textures.
-// Without this stub the check throws ReferenceError on NativeScript.
-if (typeof (global as any).VideoFrame === 'undefined') {
-	(global as any).VideoFrame = (global as any).window.VideoFrame = class VideoFrame {
-		readonly displayWidth: number = 0;
-		readonly displayHeight: number = 0;
-		readonly codedWidth: number = 0;
-		readonly codedHeight: number = 0;
-		close() {}
-	};
-}

@@ -1,7 +1,7 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.2.3 effective-5.10 (swiftlang-6.2.3.3.21 clang-1700.6.3.2)
-// swift-module-flags: -target arm64-apple-ios12.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasNative
-// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.3
+// swift-compiler-version: Apple Swift version 6.3.1 effective-5.10 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)
+// swift-module-flags: -target arm64-apple-ios12.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name CanvasNative
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.3.1
 import AVFoundation
 import Accelerate
 @_exported import CanvasNative
@@ -43,18 +43,10 @@ import _SwiftConcurrencyShims
   @objc public static func create2DContext(_ view: CanvasNative.NSCCanvas, _ width: Swift.Int32, _ height: Swift.Int32, _ alpha: Swift.Bool, _ density: Swift.Float, _ fontColor: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32, _ colorSpace: Swift.Int32) -> Swift.Int64
   @objc public static func create2DContextMetal(_ view: CanvasNative.NSCCanvas, _ alpha: Swift.Bool, _ density: Swift.Float, _ fontColor: Swift.Int32, _ ppi: Swift.Float, _ direction: Swift.Int32, _ colorSpace: Swift.Int32) -> Swift.Int64
   @objc public static func updateWebGLSurfaceWithView(_ view: Swift.Int64, _ width: Swift.Int32, _ height: Swift.Int32, _ context: Swift.Int64)
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func writeFile(_ data: Foundation.NSData, _ path: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func readFile(_ path: Swift.String, _ callback: @escaping (Swift.String?, Foundation.NSData?) -> Swift.Void)
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func deleteFile(_ path: Swift.String, _ callback: @escaping (Foundation.NSError?, Swift.Bool) -> Swift.Void)
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func handleBase64Image(_ mime: Swift.String, _ dir: Swift.String, _ base64: Swift.String, _ callback: @escaping (Swift.String?, Swift.String?) -> Swift.Void)
-  #endif
   @objc public static func getPixelsPerInchForCurrentDevice() -> Swift.String
   @objc override dynamic public init()
   @objc deinit
@@ -74,9 +66,7 @@ import _SwiftConcurrencyShims
     public var rawValue: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.RawValue {
       get
     }
-    #if compiler(>=5.3) && $NonescapableTypes
     public init?(rawValue: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat.RawValue)
-    #endif
   }
   public var pixelBuffer: CoreVideo.CVPixelBuffer {
     get
@@ -87,9 +77,7 @@ import _SwiftConcurrencyShims
   public var format: CanvasNative.NSCVideoFrame.NSCVideoFrameFormat {
     get
   }
-  #if compiler(>=5.3) && $NonescapableTypes
   public static func getCurrentFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput) throws -> CanvasNative.NSCVideoFrame?
-  #endif
   public init(currentTime: CoreMedia.CMTime, frame: CoreVideo.CVPixelBuffer) throws
   public init(buffer: CoreVideo.CVPixelBuffer, ts: CoreMedia.CMTimeValue) throws
   public func clone() throws -> CanvasNative.NSCVideoFrame
@@ -119,9 +107,7 @@ import _SwiftConcurrencyShims
     public var rawValue: CanvasNative.NSCCanvas.CanvasFit.RawValue {
       get
     }
-    #if compiler(>=5.3) && $NonescapableTypes
     public init?(rawValue: CanvasNative.NSCCanvas.CanvasFit.RawValue)
-    #endif
   }
   @objc @_Concurrency.MainActor @preconcurrency public var fit: CanvasNative.NSCCanvas.CanvasFit {
     @objc get
@@ -165,9 +151,7 @@ import _SwiftConcurrencyShims
   @objc @_Concurrency.MainActor @preconcurrency public func initContext(_ type: Swift.String, _ alpha: Swift.Bool = true, _ antialias: Swift.Bool = true, _ depth: Swift.Bool = true, _ failIfMajorPerformanceCaveat: Swift.Bool = false, _ powerPreference: Swift.Int32 = 0, _ premultipliedAlpha: Swift.Bool = true, _ preserveDrawingBuffer: Swift.Bool = false, _ stencil: Swift.Bool = false, _ desynchronized: Swift.Bool = false, _ xrCompatible: Swift.Bool = false, _ willReadFrequently: Swift.Bool = false, _ colorSpace: Swift.Int32 = 0)
   @objc @_Concurrency.MainActor @preconcurrency public func initWebGPUContext(_ instance: Swift.Int64)
   @objc @_Concurrency.MainActor @preconcurrency public func create2DContext(_ alpha: Swift.Bool, _ antialias: Swift.Bool, _ depth: Swift.Bool, _ failIfMajorPerformanceCaveat: Swift.Bool, _ powerPreference: Swift.Int32, _ premultipliedAlpha: Swift.Bool, _ preserveDrawingBuffer: Swift.Bool, _ stencil: Swift.Bool, _ desynchronized: Swift.Bool, _ xrCompatible: Swift.Bool, _ fontColor: Swift.Int32, _ willReadFrequently: Swift.Bool, _ colorSpace: Swift.Int32) -> Swift.Int64
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public func snapshot(_ flip: Swift.Bool) -> UIKit.UIImage?
-  #endif
   @objc @discardableResult
   @_Concurrency.MainActor @preconcurrency public func render() -> Swift.Bool
   @objc @_Concurrency.MainActor @preconcurrency public var touchEventListener: ((Swift.String, UIKit.UIGestureRecognizer) -> Swift.Void)?
@@ -176,9 +160,7 @@ import _SwiftConcurrencyShims
     @objc get
     @objc set
   }
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc @_Concurrency.MainActor @preconcurrency public func setListener(_ listener: (any CanvasNative.NSCCanvasListener)?)
-  #endif
   @objc @_Concurrency.MainActor @preconcurrency public var surfaceWidth: Swift.Int {
     @objc get
     @objc set
@@ -206,9 +188,7 @@ extension UIKit.UIView {
   case optional
   case swap
   public typealias RawValue = Swift.Int
-  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.Int)
-  #endif
   public var rawValue: Swift.Int {
     get
   }
@@ -224,9 +204,7 @@ extension UIKit.UIView {
   case extraBold
   case black
   public typealias RawValue = Swift.Int
-  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.Int)
-  #endif
   public var rawValue: Swift.Int {
     get
   }
@@ -249,9 +227,7 @@ extension UIKit.UIView {
   case loaded
   case error
   public typealias RawValue = Swift.Int
-  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.Int)
-  #endif
   public var rawValue: Swift.Int {
     get
   }
@@ -264,21 +240,13 @@ extension UIKit.UIView {
     get
   }
   @objc public func updateDescriptor(value: Swift.String)
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func loadFromStyle(style: Swift.String) -> CanvasNative.NSCFontFace?
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func importFromRemote(url: Swift.String, load: Swift.Bool, callback: @escaping ([CanvasNative.NSCFontFace]?, Swift.String?) -> Swift.Void)
-  #endif
   @objc public init(family: Swift.String)
   @objc public init(family: Swift.String, source: Swift.String)
   @objc public init(family: Swift.String, data source: Foundation.NSData)
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public init(_ family: Swift.String, _ source: Swift.String? = nil, _ descriptors: CanvasNative.NSCFontDescriptors? = nil)
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public init(_ family: Swift.String, data: Foundation.NSData? = nil, _ descriptors: CanvasNative.NSCFontDescriptors? = nil)
-  #endif
   @objc public var status: CanvasNative.NSCFontFaceStatus
   @objc public var display: CanvasNative.NSCFontDisplay
   @objc public func setFontDisplay(value: Swift.String)
@@ -286,9 +254,7 @@ extension UIKit.UIView {
     @objc get
     @objc set
   }
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public func setFontStyle(value: Swift.String, angle: Swift.String?)
-  #endif
   @objc public var weight: CanvasNative.NSCFontWeight {
     @objc get
     @objc set
@@ -303,9 +269,7 @@ extension UIKit.UIView {
   @objc public var descentOverride: Swift.String {
     @objc get
   }
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public func load(_ callback: @escaping (Swift.String?) -> Swift.Void)
-  #endif
   @objc deinit
 }
 @_inheritsConvenienceInitializers @objcMembers @objc(NSCRender) public class NSCRender : ObjectiveC.NSObject {
@@ -318,18 +282,14 @@ extension UIKit.UIView {
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool
   @objc public static func drawVideoFrame(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize, _ context: Swift.Int64, _ sx: Swift.Float, _ sy: Swift.Float, _ sw: Swift.Float, _ sh: Swift.Float, _ dx: Swift.Float, _ dy: Swift.Float, _ dw: Swift.Float, _ dh: Swift.Float) -> Swift.Bool
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public static func getVideoFrameData(_ player: AVFoundation.AVPlayer, _ output: AVFoundation.AVPlayerItemVideoOutput, _ videoSize: CoreFoundation.CGSize) -> Foundation.NSDictionary?
-  #endif
   @objc deinit
 }
 @objc(NSCFontFaceSetStatus) public enum NSCFontFaceSetStatus : Swift.Int, Swift.RawRepresentable {
   case loading
   case loaded
   public typealias RawValue = Swift.Int
-  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.Int)
-  #endif
   public var rawValue: Swift.Int {
     get
   }
@@ -343,12 +303,8 @@ extension UIKit.UIView {
   @objc public func add(_ font: CanvasNative.NSCFontFace)
   @objc public func clear()
   @objc public func delete(_ font: CanvasNative.NSCFontFace)
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public func check(_ font: Swift.String, _ text: Swift.String?) -> Swift.Bool
-  #endif
-  #if compiler(>=5.3) && $NonescapableTypes
   @objc public func load(_ font: Swift.String, _ text: Swift.String?, _ callback: @escaping ([CanvasNative.NSCFontFace], Swift.String?) -> Swift.Void)
-  #endif
   @objc public var size: Swift.Int {
     @objc get
   }

@@ -207,13 +207,11 @@ void GPUCanvasContextImpl::Configure(const v8::FunctionCallbackInfo<v8::Value> &
 	
 	v8::Local<v8::Value> deviceValue;
 	
-	options->Get(context, ConvertToV8String(isolate, "device")).ToLocal(
-																																			&deviceValue);
 	
-	
-	if (deviceValue->IsNullOrUndefined() || !deviceValue->IsObject()) {
-		return;
-	}
+	if (	options->Get(context, ConvertToV8String(isolate, "device")).ToLocal(
+																																						&deviceValue) && (deviceValue->IsNullOrUndefined() || !deviceValue->IsObject())) {
+																																							return;
+																																						}
 	
 	auto device = GPUDeviceImpl::GetPointer(deviceValue.As<v8::Object>());
 	

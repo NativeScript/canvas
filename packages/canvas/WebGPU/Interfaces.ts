@@ -108,9 +108,9 @@ export interface GPURenderPassColorAttachment {
 	clearValue?: GPUColor;
 	depthSlice?: number;
 	loadOp: GPULoadOp;
-	resolveTarget?: GPUTextureView;
+	resolveTarget?: GPUTexture | GPUTextureView;
 	storeOp: GPUStoreOp;
-	view: GPUTextureView;
+	view: GPUTexture | GPUTextureView;
 }
 
 export interface GPURenderPassDepthStencilAttachment {

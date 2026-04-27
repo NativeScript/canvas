@@ -708,8 +708,8 @@ export interface GPUCurrentTextureImpl {
 export interface GPUCanvasContextImpl {
 	configure(configuration: GPUCanvasConfigurationImpl): void;
 	unconfigure(): void;
-	getCurrentTexture(): GPUCurrentTextureImpl;
-	presentSurface(texture: GPUTextureImpl): void;
+	getCurrentTexture(): GPUTextureImpl | null;
+	presentSurface(): void;
 }
 
 export interface GPUInstanceImpl {

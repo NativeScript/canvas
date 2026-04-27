@@ -6,7 +6,6 @@ use super::{
     structs::{CanvasExtent3d, CanvasImageCopyExternalImage, CanvasImageDataLayout},
 };
 use crate::webgpu::enums::CanvasGPUTextureFormat;
-//use wgpu_core::gfx_select;
 use crate::webgpu::error::{handle_error, handle_error_fatal};
 use crate::webgpu::prelude::label_to_ptr;
 use crate::webgpu::structs::{
@@ -111,7 +110,6 @@ fn get_offset_image(
     result
 }
 
-// Prepare and align upload buffer for WebGPU (expand to RGBA and pad rows to 256)
 fn prepare_external_image_upload(data: &[u8], width: u32, height: u32) -> (Vec<u8>, u32) {
     let mut bpp = 0usize;
     if width != 0 && height != 0 {
@@ -555,11 +553,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
 
     let data = std::slice::from_raw_parts(source.source, source.source_size);
 
-    // Try a zero-copy fast path: if the source is tightly-packed RGBA (4 bpp)
-    // and the required bytes_per_row already satisfies the 256-byte WebGPU
-    // COPY_BYTES_PER_ROW_ALIGNMENT (i.e. width*4 is multiple of 256), and
-    // the requested region equals the full image with no origin offset,
-    // we can call `queue_write_texture` directly on the source slice.
     fn round_up_to_256_u32(v: u32) -> u32 { (v + 255) & !255 }
 
     let mut bpp = 0usize;
@@ -621,8 +614,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_queue_copy_external_image_to_textu
         || source.origin.y > 0
         || (size.width > source.width || size.height > source.height)
     {
-        // If we converted/padded rows we need to extract the requested sub-rectangle
-        // from the aligned RGBA buffer.
         let bytes_per_pixel = 4usize;
         let src_bpr = bytes_per_row as usize;
         let mut sub = vec![0u8; (size.width as usize) * (size.height as usize) * bytes_per_pixel];
@@ -827,10 +818,6 @@ unsafe fn write_buffer_size(
         None => &data[data_offset..],
     };
 
-    // wgpu enforces COPY_BUFFER_ALIGNMENT (4 bytes): the number of bytes
-    // written must be a multiple of 4.  If the caller supplies a misaligned
-    // slice (e.g. a 1-byte boolean uniform from Three.js) we zero-pad it
-    // here rather than letting a validation error surface at runtime.
     const ALIGNMENT: usize = wgt::COPY_BUFFER_ALIGNMENT as usize;
     let aligned_len = (data.len() + ALIGNMENT - 1) & !(ALIGNMENT - 1);
     let result = if aligned_len != data.len() {

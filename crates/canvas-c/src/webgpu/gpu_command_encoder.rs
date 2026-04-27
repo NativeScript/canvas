@@ -426,10 +426,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_command_encoder_copy_buffer_to_tex
     let copy_size: wgt::Extent3d = copy_size.into();
 
     let error_sink = command_encoder.error_sink.as_ref();
-    // Validate buffer copy alignment requirements before calling into wgpu.
-    // - buffer offset must respect COPY_BUFFER_ALIGNMENT
-    // - if bytes_per_row is provided it must respect COPY_BYTES_PER_ROW_ALIGNMENT
-    // - rows_per_image if provided must be > 0
+
     let copy_buffer_alignment = wgt::COPY_BUFFER_ALIGNMENT as u64;
     if layout.offset % copy_buffer_alignment != 0 {
         handle_error(

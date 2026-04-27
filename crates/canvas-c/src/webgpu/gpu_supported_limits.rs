@@ -49,6 +49,7 @@ pub struct CanvasGPUSupportedLimits {
     pub max_tlas_instance_count: u32,
     pub max_acceleration_structures_per_shader_stage: u32,
     pub max_multiview_view_count: u32,
+    pub max_bind_groups_plus_vertex_buffers: u32
 }
 
 impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
@@ -59,6 +60,7 @@ impl Into<wgt::Limits> for CanvasGPUSupportedLimits {
             max_texture_dimension_3d: self.max_texture_dimension_3d,
             max_texture_array_layers: self.max_texture_array_layers,
             max_bind_groups: self.max_bind_groups,
+            max_bind_groups_plus_vertex_buffers: self.max_bind_groups_plus_vertex_buffers,
             max_bindings_per_bind_group: self.max_bindings_per_bind_group,
             max_dynamic_uniform_buffers_per_pipeline_layout: self
                 .max_dynamic_uniform_buffers_per_pipeline_layout,
@@ -170,6 +172,7 @@ impl From<wgt::Limits> for CanvasGPUSupportedLimits {
             max_tlas_instance_count: value.max_tlas_instance_count,
             max_acceleration_structures_per_shader_stage: value.max_acceleration_structures_per_shader_stage,
             max_multiview_view_count: value.max_multiview_view_count,
+            max_bind_groups_plus_vertex_buffers: value.max_bind_groups_plus_vertex_buffers,
         }
     }
 }

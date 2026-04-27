@@ -1,7 +1,7 @@
 import { fromObject, Observable } from '@nativescript/core';
 import { GPUBuffer } from './GPUBuffer';
 import { GPUTexture } from './GPUTexture';
-import { adapter_, native_ } from './Constants';
+import { adapter_, native_, GPUBufferUsage } from './Constants';
 import { GPUShaderModule } from './GPUShaderModule';
 import { GPUQueue } from './GPUQueue';
 import { GPUPipelineLayout } from './GPUPipelineLayout';
@@ -21,7 +21,6 @@ import { GPUQuerySet } from './GPUQuerySet';
 import { GPURenderBundleEncoder } from './GPURenderBundleEncoder';
 import { GPUAdapter, GPUSupportedFeatures } from './GPUAdapter';
 
-// Small ring buffer to capture recently-created WGSL sources for debugging.
 const WGSL_CAPTURE: Array<{ time: number; code: string; fixed?: string; stack?: string }> = [];
 export function getCapturedWGSL() {
 	return WGSL_CAPTURE.slice();
@@ -34,7 +33,10 @@ function fixup_shader_code(code: string) {
 		if (ret.includes('float_storage')) ret = '#storage float_storage array<vec4<f32>>\n\n' + ret;
 	}
 
-	ret = ret.replace(/@stage\(compute\)/g, '@compute');
+	ret = ret.replace(/@stage\(\s*(vertex|fragment|compute)\s*\)/g, '@$1');
+	ret = ret.replace(/\bmat([2-4])x([2-4])<\s*f32\s*>\b/g, 'mat$1x$2f');
+	ret = ret.replace(/\bvec([2-4])<\s*f32\s*>\b/g, 'vec$1f');
+	ret = ret.replace(/(\d+)u\b/g, '$1');
 	ret = ret.replace(/^type /gm, 'alias ');
 	ret = ret.replace(/^let /gm, 'const ');
 	ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
@@ -42,23 +44,11 @@ function fixup_shader_code(code: string) {
 
 	// diagnostic directive is unsupported in older wgpu versions, remove it.
 	// Also strip the trailing semicolon so no stray `;` is left at module scope.
-	ret = ret.replace(/diagnostic\s*\([^)]*\)\s*;?/g, '');
+	// ret = ret.replace(/diagnostic\s*\([^)]*\)\s*;?/g, '');
 
-	// Kept as a belt-and-suspenders safety net: normalise the textureLoad level
-	// argument from '0u' (u32) to '0' (abstract integer) in case any shader
-	// arrives here without having been through the ConstNode patch.  The proper
-	// fix is the ConstNode patch applied in the demo/app entry-point which stops
-	// ThreeJS from generating 'u'-suffixed integer literals in the first place.
 	ret = ret.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
 		return match.replace(/0u/, '0');
 	});
-
-	// NOTE: The old "case N: {" → "case Nu: {" transformation was removed.
-	// It broke ThreeJS r0.183+ which generates switch statements over i32 uniforms
-	// (e.g. tone-mapping mode). Appending a `u` suffix made those case literals u32,
-	// causing a WGSL type-mismatch error and silently poisoning the render pipeline.
-	// Modern wgpu handles abstract-integer switch-case literals correctly, so no
-	// rewrite is needed.
 
 	return ret;
 }
@@ -254,10 +244,8 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createBuffer(descriptor: { label?: string; mappedAtCreation?: boolean; size: number; usage: number }) {
-		// Round size up to COPY_BUFFER_ALIGNMENT (4 bytes).  Three.js (and other
-		// frameworks) create 1-byte boolean-uniform buffers; wgpu rejects a
-		// writeBuffer whose padded write size exceeds the buffer allocation.
 		const alignedSize = (descriptor.size + 3) & ~3;
+
 		const buffer = this.native.createBuffer({ ...descriptor, size: alignedSize });
 		if (buffer) {
 			return GPUBuffer.fromNative(buffer, descriptor.mappedAtCreation);
@@ -313,8 +301,8 @@ export class GPUDevice extends EventTarget {
 
 	createRenderPipeline(descriptor: GPURenderPipelineDescriptor) {
 		const desc = parseRenderPipelineDescriptor(descriptor, 'createRenderPipeline');
-
-		return GPURenderPipeline.fromNative(this[native_].createRenderPipeline(desc));
+		const pipeline = this[native_].createRenderPipeline(desc);
+		return GPURenderPipeline.fromNative(pipeline);
 	}
 
 	createRenderPipelineAsync(descriptor: GPURenderPipelineDescriptor) {
@@ -335,45 +323,8 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createShaderModule(descriptor: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
-		// capture original shader with stack for debugging
-		try {
-			WGSL_CAPTURE.push({ time: Date.now(), code: descriptor.code, stack: new Error().stack });
-			if (WGSL_CAPTURE.length > 20) WGSL_CAPTURE.shift();
-		} catch (e) {
-			// ignore capture failures
-		}
-
-		// Always apply fixups proactively.  wgpu's createShaderModule() never throws —
-		// it returns a GPUShaderModule even for invalid WGSL and defers the compilation
-		// error to createRenderPipeline().  Because of this, the old "try original → catch
-		// → fixup" pattern never applied any transformations.  Applying fixups first ensures
-		// that known incompatibilities (e.g. `diagnostic(...)` directives, `@stage(compute)`,
-		// `type` aliases, etc.) are removed before the shader reaches wgpu.
-		const fixedCode = fixup_shader_code(descriptor.code);
-		const codeChanged = fixedCode !== descriptor.code;
-
-		// Record the fixed version in the capture ring for later inspection.
-		if (codeChanged) {
-			try {
-				const last = WGSL_CAPTURE[WGSL_CAPTURE.length - 1];
-				if (last && last.code === descriptor.code) {
-					last.fixed = fixedCode;
-				}
-			} catch (e) {
-				// ignore
-			}
-		}
-
-		const descToCompile = codeChanged ? { ...descriptor, code: fixedCode } : descriptor;
-
-		try {
-			const module = this.native.createShaderModule(descToCompile);
-			if (module) return GPUShaderModule.fromNative(module);
-		} catch (err) {
-			console.error('GPUDevice.createShaderModule: native createShaderModule threw:', err);
-		}
-
-		return undefined;
+		const module = this.native.createShaderModule(fixup_shader_code(descriptor.code));
+		return GPUShaderModule.fromNative(module);
 	}
 
 	createTexture(descriptor: { label?: string; size: GPUExtent3D; mipLevelCount?: number /* default=1 */; sampleCount?: number /* default=1 */; dimension?: '1d' | '2d' | '3d' /* default="2d" */; format: GPUTextureFormat; usage: number; viewFormats?: any[] /* default=[] */ }) {

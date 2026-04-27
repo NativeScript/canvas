@@ -313,12 +313,6 @@ typedef enum CanvasGPUErrorType {
   CanvasGPUErrorTypeInternal,
 } CanvasGPUErrorType;
 
-/**
- * - `Core` (default) — full WebGPU feature set.
- * - `Compatibility` — relaxed capability set; on Android this selects the GLES
- *   backend which provides the widest device coverage (mirrors what a browser
- *   would do on devices that lack Vulkan 1.1+).
- */
 typedef enum CanvasGPUFeatureLevel {
   CanvasGPUFeatureLevelCore,
   CanvasGPUFeatureLevelCompatibility,
@@ -1361,9 +1355,6 @@ typedef struct CanvasOptionalGPUTextureFormat {
 typedef struct CanvasGPURequestAdapterOptions {
   enum CanvasGPUPowerPreference power_preference;
   bool force_fallback_adapter;
-  /**
-   * Requested feature level. Defaults to `Core`.
-   */
   enum CanvasGPUFeatureLevel feature_level;
 } CanvasGPURequestAdapterOptions;
 
@@ -1416,6 +1407,7 @@ typedef struct CanvasGPUSupportedLimits {
   uint32_t max_tlas_instance_count;
   uint32_t max_acceleration_structures_per_shader_stage;
   uint32_t max_multiview_view_count;
+  uint32_t max_bind_groups_plus_vertex_buffers;
 } CanvasGPUSupportedLimits;
 
 typedef struct CanvasExtent3d {
@@ -2309,10 +2301,6 @@ struct PaintStyle *canvas_native_context_get_fill_style(const struct CanvasRende
 void canvas_native_context_set_fill_style(struct CanvasRenderingContext2D *context,
                                           const struct PaintStyle *style);
 
-/**
- * Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
- * The caller must NOT use or release the style pointer after this call.
- */
 void canvas_native_context_set_fill_style_owned(struct CanvasRenderingContext2D *context,
                                                 struct PaintStyle *style);
 
@@ -2321,10 +2309,6 @@ struct PaintStyle *canvas_native_context_get_stroke_style(const struct CanvasRen
 void canvas_native_context_set_stroke_style(struct CanvasRenderingContext2D *context,
                                             const struct PaintStyle *style);
 
-/**
- * Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
- * The caller must NOT use or release the style pointer after this call.
- */
 void canvas_native_context_set_stroke_style_owned(struct CanvasRenderingContext2D *context,
                                                   struct PaintStyle *style);
 
@@ -3019,10 +3003,6 @@ struct PaintStyle *canvas_native_pattern_from_ptr(int64_t ptr);
 
 void canvas_native_gradient_add_color_stop(struct PaintStyle *style, float stop, const char *color);
 
-/**
- * Add a color stop using pre-parsed RGBA values (0-255 each).
- * Skips CSS color string parsing entirely.
- */
 void canvas_native_gradient_add_color_stop_rgba(struct PaintStyle *style,
                                                 float stop,
                                                 uint8_t r,
@@ -3328,13 +3308,6 @@ void canvas_native_webgpu_context_configure(const struct CanvasGPUCanvasContext 
 
 void canvas_native_webgpu_context_unconfigure(const struct CanvasGPUCanvasContext *context);
 
-/**
- * Returns the cached surface texture if one has been acquired but not yet presented,
- * or null if no texture is currently held.  Unlike `get_current_texture`, this
- * function never acquires a new texture from the wgpu surface — it only peeks at
- * the already-stored one.  The caller owns the returned Arc reference and must
- * eventually release it via `canvas_native_webgpu_texture_release`.
- */
 const struct CanvasGPUTexture *canvas_native_webgpu_context_has_current_texture(const struct CanvasGPUCanvasContext *context);
 
 bool canvas_native_webgpu_context_has_surface_presented(const struct CanvasGPUCanvasContext *context);

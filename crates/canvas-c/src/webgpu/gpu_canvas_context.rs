@@ -18,7 +18,6 @@ use super::{
     gpu_texture::CanvasGPUTexture,
 };
 
-//use wgpu_core::gfx_select;
 
 #[derive(Copy, Clone, Debug)]
 pub struct TextureData {
@@ -119,9 +118,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url(
     }
     let context = &*context;
 
-    // Extract everything needed from the lock and release it before calling
-    // to_data_url_with_texture, which must NOT hold context.data when called
-    // (parking_lot::Mutex is non-reentrant — a second lock on the same thread deadlocks).
+
     let (device, format_str, is_bgra) = {
         let data = context.data.lock();
         match data.as_ref() {
@@ -140,7 +137,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url(
                 (Arc::clone(&data.device), fmt, is_bgra)
             }
         }
-    }; // context.data lock released here
+    };
 
     match to_data_url(context, &device, &format_str, quality, is_bgra) {
         Some(s) => CString::new(s).unwrap().into_raw(),
@@ -161,8 +158,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_texture(
     let context = &*context;
     let texture = &*texture;
 
-    // Extract everything needed from the lock and release it before calling
-    // to_data_url_with_texture (non-reentrant mutex guard — see above).
     let (device, format_str, is_bgra) = {
         let data = context.data.lock();
         match data.as_ref() {
@@ -181,7 +176,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_to_data_url_with_texture(
                 (Arc::clone(&data.device), fmt, is_bgra)
             }
         }
-    }; // context.data lock released here
+    }; 
 
     match to_data_url_with_texture(
         context,
@@ -221,9 +216,7 @@ fn round_up_to_256_u64(value: u64) -> u64 {
     (value + 255) & !255
 }
 
-// `is_bgra` must be extracted by the caller from `context.data` *before* calling this
-// function. The caller must NOT hold `context.data` when calling here — parking_lot::Mutex
-// is non-reentrant, and a second lock attempt on the same thread would deadlock.
+
 fn to_data_url_with_texture(
     context: &CanvasGPUCanvasContext,
     device: &CanvasGPUDevice,
@@ -255,8 +248,7 @@ fn to_data_url_with_texture(
             return None;
         }
 
-        // Helper: unmap, drop the staging buffer, and return None.
-        // Called on every error path after the buffer is created.
+
         macro_rules! bail {
             () => {{
                 let _ = global.buffer_destroy(output_buffer);
@@ -358,10 +350,6 @@ fn to_data_url_with_texture(
 
                 #[cfg(not(feature = "2d"))]
                 let encoded = {
-                    // Convert BGRA → RGBA in place when needed, then wrap as RGBA image.
-                    // Previously this used DynamicImage::ImageRgb8 which expects 3 bytes/pixel
-                    // but GPU readback is always 4 bytes/pixel (RGBA), causing from_raw to
-                    // return None and silently produce no output.
                     let image_data: Vec<u8> = if is_bgra {
                         let mut data = bytes.to_vec();
                         canvas_core::image_asset::ImageAsset::bgra_to_rgba_in_place(&mut data);
@@ -421,7 +409,6 @@ fn to_data_url_with_texture(
             Err(_) => None,
         };
 
-        // Always unmap and release the staging buffer regardless of success or failure.
         let _ = global.buffer_unmap(output_buffer);
         let _ = global.buffer_drop(output_buffer);
 
@@ -1287,12 +1274,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_configure(
             },
             previous_configuration: config,
         });
-        // Discard any stale surface texture that was acquired before this
-        // configure() call.  wgpu resets its internal acquired_texture state
-        // during surface_configure, so if Flush tries to present the old
-        // texture afterwards it will fail with AlreadyAcquired (acquired is
-        // None from wgpu's perspective).  Clearing current_texture here keeps
-        // our cache in sync with wgpu's surface state.
         {
             let mut current_texture = context.current_texture.lock();
             *current_texture = None;
@@ -1317,11 +1298,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_unconfigure(
     *lock = None;
 }
 
-/// Returns the cached surface texture if one has been acquired but not yet presented,
-/// or null if no texture is currently held.  Unlike `get_current_texture`, this
-/// function never acquires a new texture from the wgpu surface — it only peeks at
-/// the already-stored one.  The caller owns the returned Arc reference and must
-/// eventually release it via `canvas_native_webgpu_texture_release`.
 #[no_mangle]
 pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
     context: *const CanvasGPUCanvasContext,
@@ -1342,7 +1318,6 @@ pub extern "C" fn canvas_native_webgpu_context_has_current_texture(
 pub extern "C" fn canvas_native_webgpu_context_has_surface_presented(
     context: *const CanvasGPUCanvasContext,
 ) -> bool {
-    // when null return true to prevent any other usage
     if context.is_null() {
         return true;
     }
@@ -1376,18 +1351,6 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
 
     match result {
         Ok(texture) => {
-            // For statuses where Metal did NOT actually hand us a drawable
-            // (Timeout = nextDrawable() returned nil; Lost/Unknown = surface
-            // unrecoverable), the wgpu `acquired_drawable` is None.  If we were
-            // to cache and later try to present such a texture, Metal's HAL
-            // would return SurfaceError::AlreadyAcquired because there is
-            // nothing to present.  That error in turn is never recovered from
-            // because the old code left `current_texture` populated, so every
-            // subsequent frame returns the same stale dummy texture → permanent
-            // "Surface image is already acquired" spam + black screen.
-            //
-            // Return null for these statuses so the caller (display-link or
-            // Three.js) skips this frame and retries on the next vsync.
             match texture.status {
                 SurfaceStatus::Good | SurfaceStatus::Suboptimal | SurfaceStatus::Outdated => {}
                 _ => {
@@ -1403,7 +1366,6 @@ pub extern "C" fn canvas_native_webgpu_context_get_current_texture(
                     SurfaceGetCurrentTextureStatus::Success
                 }
                 SurfaceStatus::Outdated => SurfaceGetCurrentTextureStatus::Outdated,
-                // Unreachable after the guard above, but keep exhaustive.
                 SurfaceStatus::Timeout => SurfaceGetCurrentTextureStatus::Timeout,
                 SurfaceStatus::Lost => SurfaceGetCurrentTextureStatus::Lost,
                 SurfaceStatus::Validation => SurfaceGetCurrentTextureStatus::Validation,
@@ -1536,11 +1498,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
     }
 
     if let Err(cause) = global.surface_present(*surface_id) {
-        // Always clear current_texture on any presentation error.  Leaving a
-        // stale texture in current_texture causes every future call to
-        // get_current_texture to return the cached (non-acquirable) texture
-        // rather than fetching a fresh drawable, producing a permanent
-        // "Surface image is already acquired" loop with a black screen.
         context
             .has_surface_presented
             .store(true, std::sync::atomic::Ordering::SeqCst);
@@ -1552,11 +1509,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_present_surface(
                 }
             }
         }
-        // Release the Arc clone that canvas_native_webgpu_context_has_current_texture
-        // handed out — on the error path it is never consumed by wgpu.
         unsafe { Arc::decrement_strong_count(texture) };
-        // Downgrade AlreadyAcquired (no texture in wgpu's acquired state — our
-        // cache was stale) to a warning so it doesn't flood fatal-error handling.
         match cause {
             SurfaceError::AlreadyAcquired => {
                 log::warn!("present_surface: no acquired texture in wgpu (cache was stale), skipping");

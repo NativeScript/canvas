@@ -126,7 +126,6 @@ pub enum CanvasTextureViewDimension {
 }
 
 impl CanvasTextureViewDimension {
-    /// Get the texture dimension required of this texture view dimension.
     pub fn compatible_texture_dimension(self) -> CanvasTextureViewDimension {
         match self {
             Self::D1 => CanvasTextureViewDimension::D1,

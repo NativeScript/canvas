@@ -23,8 +23,6 @@ pub extern "C" fn canvas_native_gradient_add_color_stop(
     }
 }
 
-/// Add a color stop using pre-parsed RGBA values (0-255 each).
-/// Skips CSS color string parsing entirely.
 #[no_mangle]
 pub extern "C" fn canvas_native_gradient_add_color_stop_rgba(
     style: *mut PaintStyle,

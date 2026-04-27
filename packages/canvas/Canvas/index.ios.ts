@@ -37,10 +37,10 @@ enum ContextType {
 const viewRect_ = Symbol('[[viewRect]]');
 
 export class Canvas extends CanvasBase {
-	private _2dContext: CanvasRenderingContext2D;
-	private _webglContext: WebGLRenderingContext;
-	private _webgl2Context: WebGL2RenderingContext;
-	private _gpuContext: GPUCanvasContext;
+	private _2dContext: CanvasRenderingContext2D | null = null;
+	private _webglContext: WebGLRenderingContext | null = null;
+	private _webgl2Context: WebGL2RenderingContext | null = null;
+	private _gpuContext: GPUCanvasContext | null = null;
 	private _canvas: any;
 	private _didPause: boolean = false;
 	private _isReady: boolean = false;
@@ -548,13 +548,13 @@ export class Canvas extends CanvasBase {
 	get __native__context() {
 		switch (this._contextType) {
 			case ContextType.Canvas:
-				return this._2dContext.native;
+				return this._2dContext?.native;
 			case ContextType.WebGL:
-				return this._webglContext.native;
+				return this._webglContext?.native;
 			case ContextType.WebGL2:
-				return this._webgl2Context.native;
+				return this._webgl2Context?.native;
 			case ContextType.WebGPU:
-				return this._gpuContext.native;
+				return this._gpuContext?.native;
 			default:
 				return null;
 		}

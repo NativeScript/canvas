@@ -34,13 +34,13 @@ image = { version = "0.25.5", optional = true }
 display-link = { version = "0.2.0" }
 wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
 wgpu-hal = { workspace = true, features = ["metal"] }
-objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool"] }
-metal = { version = "0.30.0" }
+objc2-foundation = { workspace = true }
+objc2-metal = { workspace = true }
 
 [target.'cfg(target_os="macos")'.dependencies]
 wgpu-core = { workspace = true, features = ["wgsl", "metal"] }
 wgpu-hal = { workspace = true, features = ["metal"] }
-metal = { version = "0.30.0" }
+objc2-metal = { workspace = true }
 
 [target.'cfg(target_os="android")'.dependencies]
 ndk = { version = "0.7.0", features = ["bitmap"] }

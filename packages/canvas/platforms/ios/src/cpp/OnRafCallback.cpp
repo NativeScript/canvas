@@ -25,6 +25,8 @@ void OnRafCallback::OnFrame(int64_t ts) const {
 }
 
 void OnRafCallbackOnFrame(intptr_t callback, int64_t ts) {
-	auto ptr = reinterpret_cast<OnRafCallback *>(reinterpret_cast<intptr_t *>(callback));
-	ptr->OnFrame(ts);
+	auto ptr = reinterpret_cast<OnRafCallback *>(callback);
+	if (ptr != nullptr) {
+		ptr->OnFrame(ts);
+	}
 }

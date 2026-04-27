@@ -4,13 +4,13 @@ version = "2.0.0"
 edition = "2021"
 
 [features]
-metal = ["skia-safe/metal", "canvas-core/metal"]
-gl = ["skia-safe/gl"]
+metal = ["skia-safe/metal", "canvas-core/mtl"]
+gl = ["skia-safe/gl", "canvas-core/gl"]
 vulkan = ["skia-safe/vulkan", "canvas-core/vulkan"]
 default = ["gl"]
 
 [dependencies]
-canvas-core = { workspace = true, features = ["2d"] }
+canvas-core = { workspace = true, features = ["2d", "gl"] }
 parking_lot.workspace = true
 ustr.workspace = true
 base64 = "0.22.1"
@@ -25,6 +25,10 @@ ash = { version = "0.38.0", optional = true, features = ["libloading"] }
 raw-window-handle.workspace = true
 bitflags = "2.6.0"
 regex-lite = { workspace = true }
+
 [target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]
 foreign-types-shared = "0.3.1"
-objc2-foundation = { version = "0.2.2", features = ["NSAutoreleasePool"] }
+objc2 = {workspace = true}
+objc2-foundation = { workspace = true }
+objc2-metal = { workspace = true }
+objc2-quartz-core = { workspace = true }

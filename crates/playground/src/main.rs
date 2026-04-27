@@ -31,9 +31,13 @@ use canvas_c::webgpu::gpu_queue::canvas_native_webgpu_queue_release;
 use canvas_c::webgpu::gpu_texture::canvas_native_webgpu_texture_create_texture_view;
 use canvas_c::webgpu::structs::{CanvasColor, CanvasColorTargetState, CanvasExtent3d, CanvasImageCopyCanvasRenderingContext2D, CanvasLoadOp, CanvasOptionalBlendState, CanvasOptionalColor, CanvasOrigin2d, CanvasOrigin3d, CanvasPassChannelColor, CanvasRenderPassColorAttachment, CanvasStoreOp};
 use canvas_c::{CanvasColorSpace, CanvasRenderingContext2D};
+use canvas_c::webgpu::gpu::CanvasGPUFeatureLevel;
+use canvas_c::webgpu::wgt::FeatureLevel;
 use canvas_core::context_attributes::ContextAttributes;
 use canvas_core::image_asset::ImageAsset;
 use canvas_webgl::prelude::{WebGLResult, WebGLState};
+
+mod webgpu_three_cube;
 use canvas_webgl::webgl::{
     canvas_native_webgl_attach_shader
     , canvas_native_webgl_buffer_data_f32
@@ -1431,6 +1435,8 @@ unsafe fn webgpu_blur(data: *mut Data, window: AppKitWindowHandle) {
     );
 }
 
+/*
+
 unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
     let di_3d = include_bytes!("./svh.jpeg");
 
@@ -1776,7 +1782,7 @@ unsafe fn webgpu_render_2d(data: *mut Data, window: AppKitWindowHandle) {
         context, texture,
     );
 }
-
+*/
 fn main() {
     let event_loop = EventLoop::new().unwrap();
     let window_builder = WindowBuilder::new();
@@ -1933,6 +1939,7 @@ fn main() {
     let options = canvas_c::webgpu::gpu::CanvasGPURequestAdapterOptions {
         power_preference: canvas_c::webgpu::gpu::CanvasGPUPowerPreference::None,
         force_fallback_adapter: false,
+        feature_level: CanvasGPUFeatureLevel::Core
     };
 
     let (tx, rx) = std::sync::mpsc::channel();
@@ -1981,15 +1988,14 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 match event {
                     WindowEvent::Resized(resized) => {
-                       let data_ = unsafe { &*data };
+                        let data_mut = unsafe { &mut *data };
+                        data_mut.width = resized.width;
+                        data_mut.height = resized.height;
 
                         match window.raw_window_handle().unwrap() {
                             RawWindowHandle::AppKit(window) => {
-                               //  webgpu_triangle(data, window);
                                 unsafe {
-                                  //    webgpu_blur(data, window);
-
-                                    webgpu_render_2d(data, window)
+                                    webgpu_three_cube::render_webgpu_three_cube(data, window)
                                 }
 
                                 // let ctx_2d = Context::new_metal(

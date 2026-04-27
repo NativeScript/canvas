@@ -1,12 +1,15 @@
 use crate::context::paths::path::Path;
 use crate::context::text_styles::text_direction::TextDirection;
 use crate::context::{Context, State, SurfaceData, SurfaceEngine, SurfaceState};
+use canvas_core::context_attributes::ColorSpace;
 use canvas_core::gpu::metal::MetalContext;
 use foreign_types_shared::ForeignTypeRef;
+use objc2::rc::Retained;
+use objc2_metal::MTLTexture;
+use objc2_quartz_core::CAMetalDrawable;
 use skia_safe::gpu::mtl::TextureInfo;
 use skia_safe::{gpu, Color, ColorType};
 use std::os::raw::c_void;
-use canvas_core::context_attributes::ColorSpace;
 
 #[cfg(feature = "metal")]
 impl Context {
@@ -35,19 +38,19 @@ impl Context {
                 None,
             ) {
                 surface.canvas().draw_color(Color::RED, None);
-                
+
                 // surface
                 //     .canvas()
                 //     .draw_image(snapshot, skia_safe::Point::new(0.0, 0.0), None);
-                 context.flush_surface(&mut surface);
-                 context.flush_submit_and_sync_cpu();
+                context.flush_surface(&mut surface);
+                context.flush_submit_and_sync_cpu();
 
                 return true;
             }
         }
         false
     }
-  
+
     pub fn new_metal(
         view: *mut c_void,
         density: f32,
@@ -56,7 +59,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
-        color_space: ColorSpace
+        color_space: ColorSpace,
     ) -> Self {
         let mtl_context = MetalContext::new(view);
         let backend = unsafe {
@@ -71,7 +74,8 @@ impl Context {
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
 
         let drawable = mtl_context.drawable().unwrap();
-        let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
+        let info =
+            unsafe { TextureInfo::new(Retained::as_ptr(&drawable.texture()) as gpu::mtl::Handle) };
         let bt = unsafe {
             gpu::backend_textures::make_mtl(
                 (width as i32, height as i32),
@@ -103,7 +107,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
-                color_space
+                color_space,
             },
             surface,
             surface_state: Default::default(),
@@ -134,7 +138,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
-        color_space: ColorSpace
+        color_space: ColorSpace,
     ) -> Self {
         let mut mtl_context = unsafe { MetalContext::new_device_queue(view, device, queue) };
         let backend = unsafe {
@@ -144,7 +148,7 @@ impl Context {
 
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
         let drawable = mtl_context.current_drawable().unwrap();
-        let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
+        let info = unsafe { TextureInfo::new(Retained::as_ptr(&drawable.texture()) as gpu::mtl::Handle) };
         let bt = unsafe {
             gpu::backend_textures::make_mtl(
                 (width as i32, height as i32),
@@ -176,7 +180,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
-                color_space
+                color_space,
             },
             surface,
             surface_state: Default::default(),
@@ -206,7 +210,7 @@ impl Context {
         font_color: i32,
         ppi: f32,
         direction: TextDirection,
-        color_space: ColorSpace
+        color_space: ColorSpace,
     ) -> Self {
         let mtl_context = MetalContext::new_offscreen(width, height);
         let backend = unsafe {
@@ -221,7 +225,7 @@ impl Context {
         let mut context = gpu::direct_contexts::make_metal(&backend, None).unwrap();
 
         let drawable = mtl_context.drawable().unwrap();
-        let info = unsafe { TextureInfo::new(drawable.texture().as_ptr() as gpu::mtl::Handle) };
+        let info = unsafe { TextureInfo::new(Retained::as_ptr(&drawable.texture()) as gpu::mtl::Handle) };
         let bt = unsafe {
             gpu::backend_textures::make_mtl(
                 (width as i32, height as i32),
@@ -253,7 +257,7 @@ impl Context {
                 engine: SurfaceEngine::Metal,
                 state: Default::default(),
                 is_opaque: !alpha,
-                color_space
+                color_space,
             },
             surface,
             surface_state: Default::default(),
@@ -293,7 +297,7 @@ impl Context {
             if let Some(drawable) = context.next_drawable() {
                 info = unsafe {
                     Some(TextureInfo::new(
-                        drawable.texture().as_ptr() as gpu::mtl::Handle
+                        Retained::as_ptr(&drawable.texture()) as gpu::mtl::Handle
                     ))
                 };
             }
@@ -357,7 +361,7 @@ impl Context {
                 let texture = drawable.texture();
                 width = texture.width();
                 height = texture.height();
-                info = unsafe { Some(TextureInfo::new(texture.as_ptr() as gpu::mtl::Handle)) };
+                info = unsafe { Some(TextureInfo::new(Retained::as_ptr(&drawable.texture()) as gpu::mtl::Handle)) };
             }
         }
 

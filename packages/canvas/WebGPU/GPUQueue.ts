@@ -27,8 +27,6 @@ export class GPUQueue {
 		};
 
 		// Hold explicit GC roots for all JS wrapper objects until after the native call.
-		// Extracting .native (a raw pointer) drops the only reference V8 sees, making the
-		// wrapper eligible for collection mid-call in aggressive GC environments.
 		let _keepAlive: unknown;
 
 		if (source.source) {
@@ -112,7 +110,7 @@ export class GPUQueue {
 			};
 		} else {
 			size = {
-				//@ts-ignore Allow spreading GPUExtent3D object, which may have optional properties.
+				//@ts-ignore
 				width: 0,
 				height: 1,
 				depthOrArrayLayers: 1,
@@ -121,7 +119,6 @@ export class GPUQueue {
 		}
 
 		this[native_].copyExternalImageToTexture(src, dst, size);
-		// Prevent dead-variable elimination from hoisting the GC root drop before the call.
 		void _keepAlive;
 	}
 
@@ -148,24 +145,20 @@ export class GPUQueue {
 	}
 
 	private padDataForWriteBuffer(data: ArrayBuffer | Uint8Array, size: number, dataOffset: number = 0): Uint8Array {
-		// Normalize input to Uint8Array
 		let src: Uint8Array;
 		if (data instanceof Uint8Array) {
 			src = data;
 		} else {
 			src = new Uint8Array(data as ArrayBuffer);
 		}
-		// Clamp size to available data
 		const available = src.byteLength - dataOffset;
 		const copySize = Math.min(size, available);
 		const padded = new Uint8Array(this.alignTo4(size));
 		padded.set(src.subarray(dataOffset, dataOffset + copySize));
-		// The extra bytes are already zero-initialized
 		return padded;
 	}
 
 	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset: number = 0, size?: number) {
-		// Only Array<number> needs conversion
 		let nativeData: Uint8Array | ArrayBuffer | BufferSource;
 		if (Array.isArray(data)) {
 			nativeData = new Uint8Array(data);
@@ -173,7 +166,6 @@ export class GPUQueue {
 			nativeData = data as BufferSource;
 		}
 
-		// Default size to available bytes from dataOffset
 		let actualSize = size;
 		let totalLength = 0;
 		if (nativeData instanceof Uint8Array) {
@@ -186,18 +178,17 @@ export class GPUQueue {
 		if (actualSize == null) {
 			actualSize = totalLength - dataOffset;
 		}
-		// Defensive: clamp size
+
 		if (actualSize < 0) actualSize = 0;
 		if (dataOffset < 0) dataOffset = 0;
 
 		if (actualSize % 4 !== 0 || bufferOffset % 4 !== 0 || dataOffset % 4 !== 0) {
-			// Pad/correct as needed
 			const paddedData = this.padDataForWriteBuffer(nativeData as any, actualSize, dataOffset);
 			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, paddedData, 0, this.alignTo4(actualSize));
 		} else {
 			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, nativeData, dataOffset ?? 0, actualSize);
 		}
-		// Keep nativeData alive past the call
+
 		void nativeData;
 	}
 
@@ -206,8 +197,6 @@ export class GPUQueue {
 			...destination,
 			texture: destination.texture[native_],
 		};
-		// Must check Array.isArray on `size` before spreading — spreading an array produces
-		// a plain object with numeric keys, so the check would always be false afterwards.
 		let ext: GPUExtent3D;
 		if (Array.isArray(size)) {
 			ext = {

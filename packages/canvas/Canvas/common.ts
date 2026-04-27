@@ -357,6 +357,7 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 		return NaN;
 	}
 	const scale = Screen.mainScreen.scale;
+
 	function findAncestorDip(node: any): number | undefined {
 		let cur = node;
 		while (cur) {
@@ -383,36 +384,40 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 		return undefined;
 	}
 
+	function resolvePercentLength(percentValue: number): number {
+		const percent = percentValue > 1 ? percentValue / 100 : percentValue;
+		let parentPx;
+		if (parent) {
+			if (isWidth && typeof parent.clientWidth === 'number') {
+				parentPx = parent.clientWidth * scale;
+			} else if (!isWidth && typeof parent.clientHeight === 'number') {
+				parentPx = parent.clientHeight * scale;
+			} else if (typeof parent.getMeasuredWidth === 'function' && typeof parent.getMeasuredHeight === 'function') {
+				parentPx = isWidth ? parent.getMeasuredWidth() : parent.getMeasuredHeight();
+			} else if (parent.nativeView) {
+				const nativeSize = isWidth ? parent.nativeView.getWidth?.() : parent.nativeView.getHeight?.();
+				if (typeof nativeSize === 'number' && nativeSize > 0) {
+					parentPx = nativeSize;
+				}
+			}
+		}
+
+		if (!parentPx) {
+			parentPx = findAncestorDip(parent);
+		}
+
+		if (!parentPx || parentPx === 0) {
+			parentPx = isWidth ? Screen.mainScreen.widthPixels : Screen.mainScreen.heightPixels;
+		}
+
+		return Math.floor(parentPx * percent);
+	}
+
 	if (typeof value === 'object') {
 		const unit = value.unit;
 		const v = Number(value.value ?? 0);
 		if (unit === '%') {
-			const percent = v > 1 ? v / 100 : v;
-			let parentPx;
-			if (parent) {
-				if (isWidth && typeof parent.clientWidth === 'number') {
-					parentPx = parent.clientWidth * scale;
-				} else if (!isWidth && typeof parent.clientHeight === 'number') {
-					parentPx = parent.clientHeight * scale;
-				} else if (typeof parent.getMeasuredWidth === 'function' && typeof parent.getMeasuredHeight === 'function') {
-					parentPx = isWidth ? parent.getMeasuredWidth() : parent.getMeasuredHeight();
-				}
-			}
-
-			if (!parentPx) {
-				parentPx = findAncestorDip(parent);
-			}
-
-			if (!parentPx || parentPx === 0) {
-				if (isWidth) {
-					parentPx = Screen.mainScreen.widthPixels;
-				} else {
-					return NaN;
-				}
-			}
-
-			const dip = parentPx * percent;
-			return Math.floor(dip);
+			return resolvePercentLength(v);
 		} else if (unit === 'px') {
 			return Math.floor(v);
 		} else {
@@ -424,32 +429,7 @@ export function lengthToDevicePixels(value: any, parent: any, isWidth: boolean):
 		const s = value.trim();
 		if (s.endsWith('%')) {
 			const parsed = parseFloat(s);
-			const percent = parsed > 1 ? parsed / 100 : parsed;
-			let parentPx;
-			if (parent) {
-				if (isWidth && typeof parent.clientWidth === 'number') {
-					parentPx = parent.clientWidth * scale;
-				} else if (!isWidth && typeof parent.clientHeight === 'number') {
-					parentPx = parent.clientHeight * scale;
-				} else if (typeof parent.getMeasuredWidth === 'function' && typeof parent.getMeasuredHeight === 'function') {
-					parentPx = isWidth ? parent.getMeasuredWidth() : parent.getMeasuredHeight();
-				}
-			}
-
-			if (!parentPx) {
-				parentPx = findAncestorDip(parent);
-			}
-
-			if (!parentPx || parentPx === 0) {
-				if (isWidth) {
-					parentPx = Screen.mainScreen.widthPixels;
-				} else {
-					return NaN;
-				}
-			}
-
-			const dip = parentPx * percent;
-			return Math.floor(dip);
+			return resolvePercentLength(parsed > 1 ? parsed / 100 : parsed);
 		} else {
 			const parsed = parseFloat(s);
 			if (Number.isNaN(parsed)) {

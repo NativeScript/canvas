@@ -28,7 +28,7 @@ impl Drop for CanvasGPURenderBundleEncoder {
         }
     }
 }
-// RenderBundleEncoder is thread-unsafe
+
 unsafe impl Send for CanvasGPURenderBundleEncoder {}
 unsafe impl Sync for CanvasGPURenderBundleEncoder {}
 
@@ -426,7 +426,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
     offset: i64,
     size: i64,
 ) {
-    if render_bundle.is_null() || buffer.is_null() {
+    if render_bundle.is_null() {
         return;
     }
 
@@ -436,49 +436,36 @@ pub unsafe extern "C" fn canvas_native_webgpu_render_bundle_encoder_set_vertex_b
         return;
     }
 
-    let buffer = &*buffer;
-    let buffer_id = buffer.buffer;
+    let buffer_id = {
+        if buffer.is_null() {
+            None
+        } else {
+            let buffer = &*buffer;
+            Some(buffer.buffer)
+        }
+    };
 
     let size: Option<u64> = size.try_into().ok();
 
-    let sizeValue: Option<std::num::NonZero<u64>>;
-
-    if let Some(value) = size {
-        sizeValue = std::num::NonZero::new(value);
+    let sizeValue = if let Some(value) = size {
+        std::num::NonZero::new(value)
+    } else if !buffer.is_null() {
+        let buffer = &*buffer;
+        std::num::NonZero::new(buffer.size)
     } else {
-        sizeValue = std::num::NonZero::new(buffer.size);
-    }
+        None
+    };
 
-    if size.is_some() {
-        if let Some(size) = sizeValue {
-            if let Some(encoder) = render_bundle.encoder.as_mut() {
-                if let Some(encoder) = encoder {
-                    if let Some(encoder) = encoder.as_mut() {
-                        wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-                            encoder,
-                            slot,
-                            buffer_id,
-                            offset.try_into().unwrap_or_default(),
-                            Some(size),
-                        );
-                    }
-                }
-            }
-        } else {
-            // todo error ??
-        }
-    } else {
-        if let Some(encoder) = render_bundle.encoder.as_mut() {
-            if let Some(encoder) = encoder {
-                if let Some(encoder) = encoder.as_mut() {
-                    wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-                        encoder,
-                        slot,
-                        buffer_id,
-                        offset.try_into().unwrap_or_default(),
-                        None,
-                    );
-                }
+    if let Some(encoder) = render_bundle.encoder.as_mut() {
+        if let Some(encoder) = encoder {
+            if let Some(encoder) = encoder.as_mut() {
+                wgpu_core::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
+                    encoder,
+                    slot,
+                    buffer_id,
+                    offset.try_into().unwrap_or_default(),
+                    sizeValue,
+                );
             }
         }
     }

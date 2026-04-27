@@ -24,11 +24,10 @@ export class GPU {
 
 	requestAdapter(options: { powerPreference?: 'low-power' | 'high-performance'; isFallbackAdapter?: boolean; featureLevel?: 'core' | 'compatibility' } = { powerPreference: undefined, isFallbackAdapter: false }) {
 		return new Promise<GPUAdapter | null>((resolve, reject) => {
-			this.native.requestAdapter(options, (error, adapter) => {
+			this.native.requestAdapter(options, (error: any, adapter: any) => {
 				if (error) {
 					reject(error);
 				} else if (!adapter) {
-					// No adapter available (no hardware Vulkan, GL fallback also unavailable).
 					resolve(null);
 				} else {
 					resolve(GPUAdapter.fromNative(adapter));

@@ -3,9 +3,10 @@ use std::fmt::Debug;
 use std::ptr::NonNull;
 use std::sync::OnceLock;
 
-use icrate::objc2::ffi::BOOL;
-use icrate::objc2::{class, msg_send, msg_send_id, rc::Id, ClassType, Encode, Encoding};
+use objc2::ffi::BOOL;
+use objc2::{class, msg_send, msg_send_id, rc::Id, Encode, Encoding};
 use objc2_foundation::{NSData, NSInteger, NSObject, NSUInteger};
+use objc2_foundation::{NSPoint, NSRect, NSSize};
 
 use crate::context_attributes::ContextAttributes;
 
@@ -121,12 +122,12 @@ impl EAGLContext {
         return match context {
             Some(ctx) => unsafe {
                 let instance: BOOL = msg_send![cls, setCurrentContext: &*ctx.0];
-                instance
+                instance.into()
             },
             None => unsafe {
                 let nil: *mut NSObject = std::ptr::null_mut();
                 let instance: BOOL = msg_send![cls, setCurrentContext: nil];
-                instance
+                instance.into()
             },
         };
     }
@@ -162,7 +163,7 @@ impl EAGLContext {
     pub fn present_renderbuffer(&self) -> bool {
         // GL_RENDERBUFFER
         let result: BOOL = unsafe { msg_send![&self.0, presentRenderbuffer: 0x8d41 as NSUInteger] };
-        result
+        result.into()
     }
 }
 
@@ -272,7 +273,7 @@ impl GLKView {
         GLKView(unsafe {
             msg_send_id![
                 instance,
-                initWithFrame: objc2_foundation::CGRect::default()
+                initWithFrame: NSRect::default()
             ]
         })
     }
@@ -281,9 +282,9 @@ impl GLKView {
         unsafe {
             let cls = class!(CanvasGLKView);
             let instance = msg_send_id![cls, alloc];
-            let point = objc2_foundation::CGPoint::new(x as f64, y as f64);
-            let size = objc2_foundation::CGSize::new(width as f64, height as f64);
-            let frame = objc2_foundation::CGRect::new(point, size);
+            let point = NSPoint::new(x as f64, y as f64);
+            let size = NSSize::new(width as f64, height as f64);
+            let frame = NSRect::new(point, size);
             GLKView(msg_send_id![instance, initWithFrame: frame])
         }
     }

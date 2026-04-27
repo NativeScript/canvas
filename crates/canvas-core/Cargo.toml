@@ -8,7 +8,8 @@ edition = "2021"
 2d = ["skia-safe"]
 gl = ["gl-bindings", "egl", "glutin", "skia-safe/gl"]
 vulkan = ["ash", "ash-window"]
-mtl = ["metal", "skia-safe/metal"]
+mtl = ["objc2-metal", "skia-safe/metal"]
+metal = ["mtl"]
 
 [dependencies]
 gl-bindings = { path = "../gl-bindings", optional = true }
@@ -21,11 +22,12 @@ ash = { version = "0.38.0", optional = true, features = ["libloading"] }
 ash-window = { version = "0.13.0", optional = true }
 
 [target.'cfg(any(target_os = "ios", target_os="macos"))'.dependencies]
-icrate = { version = "0.1.2", features = ["objc2", "Foundation", "Foundation_NSData", "Foundation_NSArray"] }
-core-foundation = "0.10.0"
-objc2-foundation = { version = "0.2.2", features = ["NSGeometry", "NSData", "NSAutoreleasePool", "NSDictionary", "NSObject", "NSValue", "NSString"] }
-metal = { version = "0.32.0", optional = true }
+objc2 = { workspace = true }
+objc2-foundation = { workspace = true }
 foreign-types-shared = "0.3.1"
+objc2-metal = { workspace = true, optional = true }
+objc2-quartz-core = { workspace = true }
+core-foundation = {workspace = true}
 
 [target.'cfg(target_os = "android")'.dependencies]
 egl = { version = "0.2.7", optional = true }

@@ -1,7 +1,8 @@
 use crate::context_attributes::ContextAttributes;
-use icrate::objc2::rc::Id;
-use icrate::objc2::{class, msg_send, msg_send_id};
-use objc2_foundation::NSObject;
+use objc2::rc::Retained;
+use objc2::runtime::NSObject;
+use objc2::{class, msg_send};
+use objc2_foundation::{NSPoint, NSRect, NSSize};
 use raw_window_handle::RawWindowHandle;
 use std::ffi::c_void;
 use std::ptr::NonNull;
@@ -93,7 +94,7 @@ pub enum NSOpenGLPFAOpenGLProfiles {
 }
 
 #[derive(Clone, Debug)]
-pub struct NSOpenGLContext(Id<NSObject>);
+pub struct NSOpenGLContext(Retained<NSObject>);
 
 impl NSOpenGLContext {
     pub fn new(
@@ -101,12 +102,12 @@ impl NSOpenGLContext {
         share_context: Option<NSOpenGLContext>,
     ) -> Option<Self> {
         let cls = class!(NSOpenGLContext);
-        let instance = unsafe { msg_send_id![cls, alloc] };
-        let context: Option<Id<NSObject>> = match share_context {
+        let instance = unsafe { msg_send![cls, alloc] };
+        let context: Option<Retained<NSObject>> = match share_context {
             None => {
                 let nil: *mut NSObject = std::ptr::null_mut();
                 unsafe {
-                    msg_send_id![
+                    msg_send![
                         instance,
                         initWithFormat: &*format.0,
                         shareContext: nil
@@ -114,7 +115,7 @@ impl NSOpenGLContext {
                 }
             }
             Some(share_context) => unsafe {
-                msg_send_id![
+                msg_send![
                     instance,
                     initWithFormat: &*format.0,
                     shareContext: &*share_context.0
@@ -136,7 +137,7 @@ impl NSOpenGLContext {
 
     pub fn current_context() -> Option<NSOpenGLContext> {
         let cls = class!(NSOpenGLContext);
-        let context: Option<Id<NSObject>> = unsafe { msg_send_id![cls, currentContext] };
+        let context: Option<Retained<NSObject>> = unsafe { msg_send![cls, currentContext] };
         context.map(NSOpenGLContext)
     }
 
@@ -151,7 +152,7 @@ impl NSOpenGLContext {
     pub fn remove_if_current(&self) -> bool {
         unsafe {
             let cls = class!(NSOpenGLContext);
-            let current: Option<Id<NSObject>> = msg_send_id![cls, currentContext];
+            let current: Option<Retained<NSObject>> = msg_send![cls, currentContext];
 
             match current {
                 Some(current) => {
@@ -169,14 +170,14 @@ impl NSOpenGLContext {
 }
 
 #[derive(Clone, Debug)]
-pub struct NSOpenGLPixelFormat(Id<NSObject>);
+pub struct NSOpenGLPixelFormat(Retained<NSObject>);
 
 impl NSOpenGLPixelFormat {
     pub fn init_with_attributes(attribs: &[u32]) -> Option<Self> {
         let cls = class!(NSOpenGLPixelFormat);
-        let alloc = unsafe { msg_send_id![cls, alloc] };
-        let instance: Option<Id<NSObject>> = unsafe {
-            msg_send_id![
+        let alloc = unsafe { msg_send![cls, alloc] };
+        let instance: Option<Retained<NSObject>> = unsafe {
+            msg_send![
                 alloc,
                 initWithAttributes: attribs.as_ptr()
             ]
@@ -186,7 +187,7 @@ impl NSOpenGLPixelFormat {
 }
 
 #[derive(Clone, Debug)]
-pub struct NSOpenGLView(Id<NSObject>);
+pub struct NSOpenGLView(Retained<NSObject>);
 impl NSOpenGLView {
     pub fn new_with_frame_pixel_format(
         x: f32,
@@ -197,33 +198,32 @@ impl NSOpenGLView {
     ) -> Self {
         unsafe {
             let cls = class!(NSOpenGLView);
-            let instance = msg_send_id![cls, alloc];
-            let point = objc2_foundation::CGPoint::new(x as f64, y as f64);
-            let size = objc2_foundation::CGSize::new(width as f64, height as f64);
-            let frame = objc2_foundation::CGRect::new(point, size);
-            NSOpenGLView(msg_send_id![instance, initWithFrame: frame, pixelFormat: &*format.0])
+            let instance = msg_send![cls, alloc];
+            let point = NSPoint::new(x as f64, y as f64);
+            let size = NSSize::new(width as f64, height as f64);
+            let frame = NSRect::new(point, size);
+            NSOpenGLView(msg_send![instance, initWithFrame: frame, pixelFormat: &*format.0])
         }
     }
 
-    pub fn frame(&self) -> objc2_foundation::CGRect {
-        let frame: objc2_foundation::CGRect = unsafe { msg_send![&self.0, frame] };
+    pub fn frame(&self) -> NSRect {
+        let frame: NSRect = unsafe { msg_send![&self.0, frame] };
         frame
     }
 
-    pub fn backing_size(&self) -> objc2_foundation::CGSize {
-        let frame: objc2_foundation::CGRect = unsafe { msg_send![&self.0, frame] };
-        let size: objc2_foundation::CGSize =
-            unsafe { msg_send![&self.0, convertSizeToBacking: frame.size] };
+    pub fn backing_size(&self) -> NSSize {
+        let frame: NSRect = unsafe { msg_send![&self.0, frame] };
+        let size: NSSize = unsafe { msg_send![&self.0, convertSizeToBacking: frame.size] };
         size
     }
 
     pub fn flush_buffer(&self) {
-        let context: Id<NSObject> = unsafe { msg_send_id![&self.0, openGLContext] };
+        let context: Retained<NSObject> = unsafe { msg_send![&self.0, openGLContext] };
         let _: () = unsafe { msg_send![&context, flushBuffer] };
     }
 
     pub fn open_gl_context(&self) -> NSOpenGLContext {
-        let context: Id<NSObject> = unsafe { msg_send_id![&self.0, openGLContext] };
+        let context: Retained<NSObject> = unsafe { msg_send![&self.0, openGLContext] };
         NSOpenGLContext(context)
     }
 
@@ -304,7 +304,7 @@ impl GLContext {
     }
 
     pub fn set_surface(&mut self, view: NonNull<c_void>) -> bool {
-        let view: Option<Id<NSObject>> = unsafe { Id::retain(view.as_ptr() as _) };
+        let view: Option<Retained<NSObject>> = unsafe { Retained::retain(view.as_ptr() as _) };
         match view {
             None => false,
             Some(id) => {
@@ -326,7 +326,7 @@ impl GLContext {
         view: NonNull<c_void>,
         context: &GLContext,
     ) -> Option<Self> {
-        let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
+        let view = unsafe { Retained::<NSObject>::retain(view.as_ptr() as _) };
         match view {
             None => None,
             Some(view) => {
@@ -340,7 +340,7 @@ impl GLContext {
         context_attrs: &mut ContextAttributes,
         view: NonNull<c_void>,
     ) -> Option<Self> {
-        let view = unsafe { Id::<NSObject>::retain(view.as_ptr() as _) };
+        let view = unsafe { Retained::<NSObject>::retain(view.as_ptr() as _) };
         match view {
             None => None,
             Some(view) => {

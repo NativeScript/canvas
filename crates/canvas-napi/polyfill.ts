@@ -13,7 +13,9 @@ function fixup_shader_code(code: string) {
 		if (ret.includes('float_storage')) ret = '#storage float_storage array<vec4<f32>>\n\n' + ret;
 	}
 
-	ret = ret.replace(/@stage\(compute\)/g, '@compute');
+	ret = ret.replace(/@stage\(\s*(vertex|fragment|compute)\s*\)/g, '@$1');
+	ret = ret.replace(/\bmat([2-4])x([2-4])<\s*f32\s*>\b/g, 'mat$1x$2f');
+	ret = ret.replace(/\bvec([2-4])<\s*f32\s*>\b/g, 'vec$1f');
 	ret = ret.replace(/^type /gm, 'alias ');
 	ret = ret.replace(/^let /gm, 'const ');
 	ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
@@ -29,8 +31,8 @@ function fixup_shader_code(code: string) {
 		return match.replace(/0u/, '0');
 	});
 
-	// patch switch issue
-	ret = ret.replace(/case\s+(\d+)\s*:\s*\{/g, 'case $1u: {');
+	// Modern wgpu can handle abstract integer switch-case literals, so do not
+	// rewrite `case N:` to `case Nu:` for current Three.js shader code.
 
 	return ret;
 }

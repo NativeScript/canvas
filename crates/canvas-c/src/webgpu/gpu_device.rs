@@ -8,7 +8,6 @@ use std::{
 use wgpu_core::binding_model::BufferBinding;
 use wgpu_core::id::PipelineLayoutId;
 use wgpu_core::pipeline::{CreateRenderPipelineError, RenderPipelineDescriptor};
-//use wgpu_core::gfx_select;
 use wgpu_core::resource::CreateBufferError;
 use wgt::{Features, PrimitiveTopology};
 
@@ -16,8 +15,8 @@ use crate::buffers::StringBuffer;
 use crate::webgpu::enums::{
     CanvasAddressMode, CanvasBindGroupEntry, CanvasBindGroupEntryResource,
     CanvasBindGroupLayoutEntry, CanvasFilterMode, CanvasOptionalBool,
-    CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology
-    , CanvasQueryType, SurfaceGetCurrentTextureStatus,
+    CanvasOptionalCompareFunction, CanvasOptionalGPUTextureFormat, CanvasOptionalPrimitiveTopology,
+    CanvasQueryType, SurfaceGetCurrentTextureStatus,
 };
 use crate::webgpu::error::{handle_error, handle_error_fatal, CanvasGPUError, CanvasGPUErrorType};
 use crate::webgpu::gpu_bind_group::CanvasGPUBindGroup;
@@ -29,9 +28,8 @@ use crate::webgpu::gpu_sampler::CanvasGPUSampler;
 
 use super::{
     enums::{
-        CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat,
-        CanvasOptionalIndexFormat, CanvasStencilFaceState, CanvasTextureDimension,
-        CanvasVertexStepMode,
+        CanvasCullMode, CanvasFrontFace, CanvasGPUTextureFormat, CanvasOptionalIndexFormat,
+        CanvasStencilFaceState, CanvasTextureDimension, CanvasVertexStepMode,
     },
     gpu::CanvasWebGPUInstance,
     gpu_buffer::CanvasGPUBuffer,
@@ -85,7 +83,6 @@ unsafe extern "C" fn default_uncaptured_error_handler(
     message: *mut ::std::os::raw::c_char,
     _userdata: *mut ::std::os::raw::c_void,
 ) {
-    // Guard against null pointer and non-UTF-8 content from the C side.
     let message = if message.is_null() {
         "<null>"
     } else {
@@ -169,7 +166,6 @@ impl ErrorSinkRaw {
     pub(crate) fn handle_error(&mut self, err: CanvasGPUError) {
         let (typ, filter) = match err {
             super::error::CanvasGPUError::Lost { .. } => {
-                // handle device lost error early
                 if let Some(callback) = self.device_lost_handler.callback {
                     let userdata = self.device_lost_handler.userdata;
                     let err_str = err.to_string().replace('\0', "<NUL>");
@@ -239,8 +235,6 @@ pub struct CanvasGPUDevice {
     pub(crate) queue: Arc<CanvasGPUQueue>,
     pub(crate) user_data: *mut c_void,
     pub(crate) error_sink: ErrorSink,
-    /// The feature level under which this device was created.  Used to decide
-    /// whether to report the "core-features-and-limits" marker feature.
     pub(crate) feature_level: wgt::FeatureLevel,
 }
 
@@ -296,8 +290,6 @@ impl CanvasGPUDevice {
                         wgpu_core::binding_model::BindingResource::Buffer(BufferBinding {
                             buffer: buf.buffer,
                             offset: buffer.offset.try_into().ok().unwrap_or_default(),
-                            // size <= 0 means "bind to end of buffer" (WebGPU spec: undefined size).
-                            // Some(0) is explicitly invalid in wgpu and triggers BindingZeroSize.
                             size: if buffer.size > 0 {
                                 Some(buffer.size as u64)
                             } else {
@@ -349,14 +341,14 @@ impl CanvasGPUDevice {
         entries: &[CanvasBindGroupLayoutEntry],
     ) -> *const CanvasGPUBindGroupLayout {
         let global = self.instance.global();
-        let entries = entries
+        let wgpu_entries = entries
             .iter()
             .map(|entry| (*entry).into())
             .collect::<Vec<_>>();
 
         let desc = wgpu_core::binding_model::BindGroupLayoutDescriptor {
             label: label.clone(),
-            entries: Cow::from(entries),
+            entries: Cow::from(wgpu_entries),
         };
 
         let device_id = self.device;
@@ -374,6 +366,7 @@ impl CanvasGPUDevice {
                 "canvas_native_webgpu_device_create_bind_group_layout",
             );
         }
+
         Arc::into_raw(Arc::new(CanvasGPUBindGroupLayout {
             label,
             instance: self.instance.clone(),
@@ -465,8 +458,6 @@ pub extern "C" fn canvas_native_webgpu_device_get_features(
     }
     let device = unsafe { &*device };
     let mut features = build_features(device.features());
-    // Mirror what was done at adapter-creation time: only report the
-    // "core-features-and-limits" marker for Core-level devices.
     if device.feature_level != wgt::FeatureLevel::Compatibility {
         features.push("core-features-and-limits");
     }
@@ -549,11 +540,9 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
     let device = &*device;
     let callback = callback;
     let mut error_sink = device.error_sink.lock();
-    // pop() returns None if the caller calls pop without a matching push.
     let scope = match error_sink.scopes.pop() {
         Some(s) => s,
         None => {
-            // Unbalanced pop — report as no error rather than panicking.
             if let Some(cb) = callback {
                 cb(CanvasGPUErrorType::None, std::ptr::null_mut(), userdata);
             }
@@ -566,8 +555,6 @@ pub unsafe extern "C" fn canvas_native_webgpu_device_pop_error_scope(
             let typ = match error {
                 CanvasGPUError::OutOfMemory { .. } => CanvasGPUErrorType::OutOfMemory,
                 CanvasGPUError::Validation { .. } => CanvasGPUErrorType::Validation,
-                // We handle device lost error early in ErrorSinkRaw::handle_error
-                // so we should never get device lost error here.
                 CanvasGPUError::Lost { .. } => unreachable!(),
                 CanvasGPUError::None => CanvasGPUErrorType::None,
                 CanvasGPUError::Internal => CanvasGPUErrorType::Internal,
@@ -1450,7 +1437,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                     module: module_id,
                     entry_point,
                     constants: wgpu_core::naga::back::PipelineConstants::default(),
-                    // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
                 },
                 targets: Cow::Owned(targets),
@@ -1462,7 +1448,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                     module: module_id,
                     entry_point,
                     constants: constants.0.clone(),
-                    // Required to be true for WebGPU
                     zero_initialize_workgroup_memory: true,
                 },
                 targets: Cow::Owned(targets),
@@ -1506,13 +1491,13 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
                 } else {
                     vec![]
                 };
-                wgpu_core::pipeline::VertexBufferLayout {
+                Some(wgpu_core::pipeline::VertexBufferLayout {
                     array_stride: layout.array_stride,
                     attributes: Cow::Owned(attributes),
                     step_mode: layout.step_mode.into(),
-                }
+                })
             })
-            .collect::<Vec<wgpu_core::pipeline::VertexBufferLayout>>()
+            .collect::<Vec<Option<wgpu_core::pipeline::VertexBufferLayout>>>()
     } else {
         vec![]
     };
@@ -1531,7 +1516,6 @@ unsafe fn parse_render_pipeline_descriptor<'a>(
             module: vertex_shader_module_id,
             entry_point,
             constants,
-            // Required to be true for WebGPU
             zero_initialize_workgroup_memory: true,
         },
         buffers: Cow::Owned(vertex_buffers),

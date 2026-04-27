@@ -209,7 +209,7 @@ impl CanvasRenderingContext2D {
 
         let mut flush = true;
 
-        // metal will execute the flush_and_render_to_surface in the draw call
+        
         #[cfg(feature = "metal")]
         {
             if self.engine == Engine::Metal {
@@ -311,7 +311,10 @@ pub extern "C" fn canvas_native_raf_release(value: *mut crate::Raf) {
     if value.is_null() {
         return;
     }
-    let _ = unsafe { std::sync::Arc::decrement_strong_count(value) };
+    canvas_native_raf_stop_and_clear(value, 100);
+    unsafe {
+        drop(Box::from_raw(value));
+    }
 }
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -1343,8 +1346,7 @@ pub extern "C" fn canvas_native_context_set_fill_style(
     context.context.set_fill_style(style.0.clone())
 }
 
-/// Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
-/// The caller must NOT use or release the style pointer after this call.
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_fill_style_owned(
     context: *mut CanvasRenderingContext2D,
@@ -1378,8 +1380,7 @@ pub extern "C" fn canvas_native_context_set_stroke_style(
     context.context.set_stroke_style(style.0.clone())
 }
 
-/// Move-semantics variant: takes ownership of the PaintStyle, avoiding clone.
-/// The caller must NOT use or release the style pointer after this call.
+
 #[no_mangle]
 pub extern "C" fn canvas_native_context_set_stroke_style_owned(
     context: *mut CanvasRenderingContext2D,

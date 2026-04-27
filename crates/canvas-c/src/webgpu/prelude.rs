@@ -63,10 +63,6 @@ pub(crate) fn label_to_ptr(label: Option<Cow<'static, str>>) -> *mut c_char {
 pub fn build_features(features: wgt::Features) -> Vec<&'static str> {
     let mut return_features: Vec<&'static str> = vec![];
 
-    // NOTE: "core-features-and-limits" is a WebGPU-spec marker feature, not a hardware
-    // feature.  It must be present only when the adapter was requested with Core feature
-    // level (the default), and absent for Compatibility level.
-
     if features.contains(wgt::Features::CLIP_DISTANCES) {
         return_features.push("clip-distances");
     }

@@ -7,5 +7,4 @@ framework module CanvasNative {
 
 module CanvasNative.Swift {
   header "CanvasNative-Swift.h"
-  requires objc
 }

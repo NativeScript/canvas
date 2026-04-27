@@ -73,26 +73,15 @@ pub(crate) fn handle_error_fatal(
     cause: impl Error + Send + Sync + 'static,
     operation: &'static str,
 ) {
-    // panic!(
-    //     "Error in {operation}: {f}",
-    //     f = format_error(context, &cause)
-    // );
-
-    // log::error!("Error in {operation}: {f}",
-    //     f = error);
-
+    // Print a detailed validation error tree to help debugging.
+    let formatted = format_error(_global, &cause);
     let error = cause;
 
     #[cfg(target_os = "android")]
-    log::error!("Error in {operation}: {error}");
+    log::error!("Error in {operation}: {error}\n{formatted}");
 
     #[cfg(not(target_os = "android"))]
-    println!("Error in {operation}: {error}");
-
-
-
-    // log::error!("Error in {operation}: {f}",
-    //     f = format_error(global, &cause))
+    println!("Error in {operation}: {error}\n{formatted}");
 }
 
 #[repr(C)]

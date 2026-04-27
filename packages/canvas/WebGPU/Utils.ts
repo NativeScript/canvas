@@ -5,6 +5,7 @@ import { GPUExternalTexture } from './GPUExternalTexture';
 import { GPUPipelineLayout } from './GPUPipelineLayout';
 import { GPUQuerySet } from './GPUQuerySet';
 import { GPUSampler } from './GPUSampler';
+import { GPUTexture } from './GPUTexture';
 import { GPUTextureView } from './GPUTextureView';
 import { GPUBindGroupDescriptor, GPUComputePassDescriptor, GPUComputePipelineDescriptor, GPUDepthStencilState, GPUFragmentState, GPUMultisampleState, GPUPrimitiveState, GPURenderPassColorAttachment, GPURenderPassDepthStencilAttachment, GPURenderPassDescriptor, GPURenderPassTimestampWrites, GPURenderPipelineDescriptor, GPUVertexState } from './Interfaces';
 
@@ -129,43 +130,87 @@ export function parseRenderPassDescriptor(value: GPURenderPassDescriptor) {
 	}
 
 	value.colorAttachments.forEach((attachment, i) => {
-		const newAttachment: GPURenderPassColorAttachment = { loadOp: 'load', storeOp: 'store', view: null };
+		if (attachment) {
+			const newAttachment: Omit<GPURenderPassColorAttachment, 'view'> & { view: GPUTexture | GPUTextureView | null } = { loadOp: 'load', storeOp: 'store', view: null };
 
-		if (Array.isArray(attachment.clearValue)) {
-			newAttachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
+			if (Array.isArray(attachment.clearValue)) {
+				newAttachment.clearValue = { r: attachment.clearValue[0], g: attachment.clearValue[1], b: attachment.clearValue[2], a: attachment.clearValue[3] };
+			} else {
+				newAttachment.clearValue = attachment.clearValue;
+			}
+			if (attachment.view) {
+				if (attachment.view?.[native_]) {
+					newAttachment.view = attachment.view[native_];
+				} else if ('createView' in attachment.view && typeof attachment.view.createView === 'function') {
+					try {
+						const v = attachment.view.createView();
+						newAttachment.view = v ? (v[native_] ?? v) : null;
+					} catch (e) {}
+				} else if (attachment.view instanceof GPUTextureView) {
+					newAttachment.view = attachment.view[native_];
+				} else if (attachment.view instanceof GPUTexture && typeof attachment.view.createView === 'function') {
+					const v = attachment.view.createView();
+					newAttachment.view = v ? v[native_] : null;
+				} else if (attachment.view?.[native_]) {
+					newAttachment.view = attachment.view[native_];
+				} else {
+					newAttachment.view = attachment.view as any;
+				}
+			}
+
+			if (attachment.resolveTarget) {
+				if (attachment.resolveTarget instanceof GPUTextureView) {
+					newAttachment.resolveTarget = attachment.resolveTarget[native_];
+				} else if (attachment.resolveTarget instanceof GPUTexture && typeof attachment.resolveTarget.createView === 'function') {
+					const v = attachment.resolveTarget.createView();
+					newAttachment.resolveTarget = v ? v[native_] : null;
+				} else if (attachment.resolveTarget?.[native_]) {
+					newAttachment.resolveTarget = attachment.resolveTarget[native_];
+				} else {
+					newAttachment.resolveTarget = attachment.resolveTarget as any;
+				}
+			}
+
+			if (typeof attachment?.depthSlice === 'number') {
+				newAttachment.depthSlice = attachment.depthSlice;
+			}
+
+			if (attachment.loadOp) {
+				newAttachment.loadOp = attachment.loadOp;
+			}
+
+			if (attachment.storeOp) {
+				newAttachment.storeOp = attachment.storeOp;
+			}
+
+			if (newAttachment.view) {
+				desc.colorAttachments[i] = newAttachment as never;
+			}
 		} else {
-			newAttachment.clearValue = attachment.clearValue;
+			desc.colorAttachments[i] = null;
 		}
-		if (attachment.view) {
-			newAttachment.view = attachment.view[native_];
-		} else {
-			/// ???
-		}
-
-		if (attachment.resolveTarget) {
-			newAttachment.resolveTarget = attachment.resolveTarget[native_];
-		}
-
-		if (typeof attachment?.depthSlice === 'number') {
-			newAttachment.depthSlice = attachment.depthSlice;
-		}
-
-		if (attachment.loadOp) {
-			newAttachment.loadOp = attachment.loadOp;
-		}
-
-		if (attachment.storeOp) {
-			newAttachment.storeOp = attachment.storeOp;
-		}
-
-		desc.colorAttachments[i] = newAttachment;
 	});
 
 	if (value?.depthStencilAttachment) {
+		let dsView: any = null;
+		const ds = value.depthStencilAttachment as any;
+		if (ds.view) {
+			if (ds.view instanceof GPUTextureView) {
+				dsView = ds.view[native_];
+			} else if (ds.view instanceof GPUTexture && typeof ds.view.createView === 'function') {
+				const v = ds.view.createView();
+				dsView = v ? v[native_] : null;
+			} else if (ds.view?.[native_]) {
+				dsView = ds.view[native_];
+			} else {
+				dsView = ds.view as any;
+			}
+		}
+
 		desc.depthStencilAttachment = {
 			depthLoadOp: value.depthStencilAttachment.depthLoadOp ?? 'load',
 			depthStoreOp: value.depthStencilAttachment.depthStoreOp ?? 'store',
-			view: value.depthStencilAttachment.view?.[native_],
+			view: dsView,
 			depthClearValue: value.depthStencilAttachment.depthClearValue ?? 0,
 			depthReadOnly: value.depthStencilAttachment.depthReadOnly ?? false,
 			stencilLoadOp: value.depthStencilAttachment.stencilLoadOp ?? 'load',
@@ -202,12 +247,9 @@ export function parseBindGroupDescriptor(value: GPUBindGroupDescriptor) {
 			} else if (entry.resource instanceof GPUExternalTexture) {
 				desc.entries.push({ binding: entry.binding, resource: entry.resource[native_] });
 			} else if (entry?.resource instanceof GPUBuffer) {
-				// Plain GPUBuffer passed directly — bind entire buffer (offset=0, size=buffer.size)
 				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource[native_], offset: 0, size: entry.resource.size } });
 			} else if (entry?.resource?.buffer && entry?.resource?.buffer instanceof GPUBuffer) {
 				const offset = entry.resource.offset ?? 0;
-				// When size is omitted, bind from offset to end of buffer. Parentheses are required:
-				// without them, `buffer.size - undefined` evaluates to NaN which becomes 0 in Rust (invalid).
 				desc.entries.push({ binding: entry.binding, resource: { buffer: entry.resource.buffer[native_], offset, size: entry.resource.size ?? entry.resource.buffer.size - offset } });
 			}
 		}

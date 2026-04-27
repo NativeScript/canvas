@@ -1,0 +1,65 @@
+{
+	"name": "audio-context",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"projectType": "library",
+	"sourceRoot": "packages/audio-context",
+	"targets": {
+		"build": {
+			"executor": "@nx/js:tsc",
+			"options": {
+				"outputPath": "dist/packages/audio-context",
+				"tsConfig": "packages/audio-context/tsconfig.json",
+				"packageJson": "packages/audio-context/package.json",
+				"main": "packages/audio-context/index.d.ts",
+				"assets": [
+					"packages/audio-context/*.md",
+					"packages/audio-context/index.d.ts",
+					"LICENSE",
+					{
+						"glob": "**/*",
+						"input": "packages/audio-context/platforms/",
+						"output": "./platforms/"
+					}
+				],
+				"dependsOn": [
+					{
+						"target": "build.all",
+						"projects": "dependencies"
+					}
+				]
+			}
+		},
+		"build.all": {
+			"executor": "nx:run-commands",
+			"options": {
+				"commands": ["node tools/scripts/build-finish.ts audio-context"],
+				"parallel": false
+			},
+			"outputs": ["{workspaceRoot}/dist/packages/audio-context"],
+			"dependsOn": [
+				{
+					"target": "build.all",
+					"projects": "dependencies"
+				},
+				{
+					"target": "build",
+					"projects": "self"
+				}
+			]
+		},
+		"focus": {
+			"executor": "nx:run-commands",
+			"options": {
+				"commands": ["nx g @nativescript/plugin-tools:focus-packages audio-context"],
+				"parallel": false
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:eslint",
+			"options": {
+				"lintFilePatterns": ["packages/audio-context/**/*.ts"]
+			}
+		}
+	},
+	"tags": []
+}

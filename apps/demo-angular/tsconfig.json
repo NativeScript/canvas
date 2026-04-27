@@ -13,7 +13,8 @@
 			"@nativescript/canvas-pixi": ["packages/canvas-pixi/index.ts"],
 			"@nativescript/canvas-three": ["packages/canvas-three/index.ts"],
 			"@nativescript/canvas-media": ["packages/canvas-media/index.ts"],
-			"@nativescript/*": ["../../dist/packages/*"]
+			"@nativescript/*": ["../../dist/packages/*"],
+			"@nativescript/audio-context": ["../../packages/audio-context/index.d.ts"]
 		}
 	},
 	"files": ["./references.d.ts", "./src/main.ts", "./src/polyfills.ts"],

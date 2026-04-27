@@ -1,0 +1,21 @@
+#import <Foundation/Foundation.h>
+#import "NSCAudioContext.h"
+
+#import "NSCAnalyserNode.h"
+#import "NSCAudioBufferSourceNode.h"
+#import "NSCAudioPannerNode.h"
+#import "NSCGainNode.h"
+#import "NSCBiquadNode.h"
+#import "NSCStereoPannerNode.h"
+#import "NSCDelayNode.h"
+#import "NSCConstantSourceNode.h"
+#import "NSCAudioNode.h"
+#import "NSCAudioBuffer.h"
+#import "NSCAudioParam.h"
+#import "NSCAudioScheduledSourceNode.h"
+#import "NSCAudioOscillatorNode.h"
+#import "NSCWaveShaperNode.h"
+#import "NSCIIRFilterNode.h"
+#import "NSCConvolverNode.h"
+#import "NSCPeriodicWave.h"
+

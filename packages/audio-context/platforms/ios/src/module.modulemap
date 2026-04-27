@@ -1,0 +1,5 @@
+ module NSCCanvasAudioContext {
+  umbrella header "NSCCanvasAudioContextUmbrella.h"
+  export *
+  module * { export * }
+}

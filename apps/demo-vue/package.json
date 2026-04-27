@@ -12,7 +12,8 @@
 		"@nativescript/canvas-polyfill": "file:../../packages/canvas-polyfill",
 		"@nativescript/canvas-three": "file:../../packages/canvas-three",
 		"@nativescript/canvas-chartjs": "file:../../packages/canvas-chartjs",
-		"@nativescript/canvas-svg": "file:../../packages/canvas-svg"
+		"@nativescript/canvas-svg": "file:../../packages/canvas-svg",
+		"@nativescript/audio-context": "file:../../packages/audio-context"
 	},
 	"devDependencies": {
 		"@nativescript/android": "~8.8.0",

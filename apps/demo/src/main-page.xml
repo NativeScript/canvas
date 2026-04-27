@@ -15,6 +15,7 @@
         <Button text="canvas-three" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
 <Button text="canvas-chartjs" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
 <Button text="canvas-svg" tap="{{ viewDemo }}" class="btn btn-primary view-demo"/>
+<Button text="audio-context" tap="{{ viewDemo }}" class="btn btn-primary rounded view-demo"/>
       </StackLayout>
     </ScrollView>
   </StackLayout>

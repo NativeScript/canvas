@@ -24,6 +24,8 @@ module.exports = (env) => {
 	webpack.Utils.addCopyRule('**/*.mp4');
 	webpack.Utils.addCopyRule('**/*.so');
 	webpack.Utils.addCopyRule('**/*.wgsl');
+	webpack.Utils.addCopyRule('**/*.wav');
+	webpack.Utils.addCopyRule('**/*.ogg');
 
 	webpack.Utils.addCopyRule({
 		from: '../../../tools/demo/canvas/webgpu/shaders',

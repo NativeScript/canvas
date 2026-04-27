@@ -12,7 +12,8 @@
 		"@nativescript/core": "file:../../node_modules/@nativescript/core",
 		"three": "file:../../node_modules/three",
 		"@nativescript/canvas-chartjs": "file:../../dist/packages/canvas-chartjs",
-		"@nativescript/canvas-svg": "file:../../dist/packages/canvas-svg"
+		"@nativescript/canvas-svg": "file:../../dist/packages/canvas-svg",
+		"@nativescript/audio-context": "file:../../dist/packages/audio-context"
 	},
 	"devDependencies": {
 		"@nativescript/android": "~8.8.0",

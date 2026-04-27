@@ -5,39 +5,41 @@ import { RouterExtensions } from '@nativescript/angular';
 	templateUrl: 'home.component.html',
 })
 export class HomeComponent {
-
-	constructor(private router: RouterExtensions){}
+	constructor(private router: RouterExtensions) {}
 
 	demos = [
-	{
-		name: 'canvas'
-	},
-	{
-		name: 'canvas-babylon'
-	},
-	{
-		name: 'canvas-chartjs'
-	},
-	{
-		name: 'canvas-media'
-	},
-	{
-		name: 'canvas-phaser'
-	},
-	{
-		name: 'canvas-phaser-ce'
-	},
-	{
-		name: 'canvas-pixi'
-	},
-	{
-		name: 'canvas-polyfill'
-	},
-	{
-		name: 'canvas-svg'
-	},
-	{
-		name: 'canvas-three'
-	}
-];
+		{
+			name: 'audio-context',
+		},
+		{
+			name: 'canvas',
+		},
+		{
+			name: 'canvas-babylon',
+		},
+		{
+			name: 'canvas-chartjs',
+		},
+		{
+			name: 'canvas-media',
+		},
+		{
+			name: 'canvas-phaser',
+		},
+		{
+			name: 'canvas-phaser-ce',
+		},
+		{
+			name: 'canvas-pixi',
+		},
+		{
+			name: 'canvas-polyfill',
+		},
+		{
+			name: 'canvas-svg',
+		},
+		{
+			name: 'canvas-three',
+		},
+	];
 }

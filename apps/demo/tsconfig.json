@@ -15,7 +15,8 @@
 			"@nativescript/canvas-pixi": ["../../packages/canvas-pixi/index.ts"],
 			"@nativescript/canvas-three": ["../../packages/canvas-three/index.ts"],
 			"@nativescript/canvas-media": ["../../packages/canvas-media/index.ts"],
-			"@nativescript/*": ["../../packages/*"]
+			"@nativescript/*": ["../../packages/*"],
+			"@nativescript/audio-context": ["../../packages/audio-context/index.d.ts"]
 		}
 	},
 	"include": ["../../packages/**/*.ios.ts", "../../packages/**/*.android.ts"]

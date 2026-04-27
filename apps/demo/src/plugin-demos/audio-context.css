@@ -1,0 +1,35 @@
+Page.audio-page {
+  background-color: #071026;
+  color: #e6f0ff;
+}
+
+.action-bar {
+  background-color: transparent;
+  color: #e6f0ff;
+}
+
+.top-controls {
+  padding: 12;
+  horizontal-align: center;
+}
+
+.top-controls Button {
+  border-radius: 8;
+  padding: 10 14;
+}
+#visualizer {
+  border-radius: 12;
+  background-color: #071026;
+  margin-top: 12;
+  margin-bottom: 12;
+}
+.controls Label.muted {
+  color: #9fb0d4;
+  font-size: 13;
+}
+.btn-outline {
+  border-width: 1;
+  border-color: #2f6bff;
+  color: #dbe9ff;
+  background-color: transparent;
+}

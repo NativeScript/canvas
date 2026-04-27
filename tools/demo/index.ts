@@ -1,4 +1,5 @@
 export * from './utils';
+export * from './audio-context';
 export * from './canvas';
 export * from './canvas-babylon';
 export * from './canvas-chartjs';

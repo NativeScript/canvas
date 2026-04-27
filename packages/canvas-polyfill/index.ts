@@ -34,7 +34,6 @@ if (!global.document.fonts) {
 
 if (!(global as any).createImageBitmap) {
 	(global as any).window.createImageBitmap = (global as any).createImageBitmap = (...args) => {
-		console.log('createImageBitmap called with arguments', args);
 		const image = args[0];
 		const sx_or_options = args[1];
 		const sy = args[2];
@@ -116,18 +115,42 @@ import './urlBlobPatch';
 try {
 	// @ts-ignore
 	const canvasMedia = require('@nativescript/canvas-media');
-	if (canvasMedia?.VideoFrame && !(global as any).VideoFrame) {
-		Object.defineProperty(global, 'VideoFrame', {
-			value: canvasMedia.VideoFrame,
-			configurable: true,
-			writable: true,
-		});
-	}
-	if (canvasMedia?.VideoColorSpace && !(global as any).VideoColorSpace) {
-		Object.defineProperty(global, 'VideoColorSpace', {
-			value: canvasMedia.VideoColorSpace,
-			configurable: true,
-			writable: true,
-		});
-	}
+	defineGlobalIfAbsent('VideoFrame', canvasMedia.VideoFrame);
+	defineGlobalIfAbsent('VideoColorSpace', canvasMedia.VideoColorSpace);
+} catch (_e) {
+	defineGlobalIfAbsent(
+		'VideoFrame',
+		class VideoFrame {
+			readonly displayWidth: number = 0;
+			readonly displayHeight: number = 0;
+			readonly codedWidth: number = 0;
+			readonly codedHeight: number = 0;
+			close() {}
+		},
+	);
+}
+
+try {
+	// @ts-ignore
+	const canvasMedia = require('@nativescript/audio-context');
+	defineGlobalIfAbsent('AudioParam', canvasMedia.AudioParam, true);
+	defineGlobalIfAbsent('AudioNode', canvasMedia.AudioNode, true);
+	defineGlobalIfAbsent('AudioBuffer', canvasMedia.AudioBuffer, true);
+	defineGlobalIfAbsent('GainNode', canvasMedia.GainNode, true);
+	defineGlobalIfAbsent('BiquadFilterNode', canvasMedia.BiquadFilterNode, true);
+	defineGlobalIfAbsent('PannerNode', canvasMedia.PannerNode, true);
+	defineGlobalIfAbsent('AudioDestinationNode', canvasMedia.AudioDestinationNode, true);
+	defineGlobalIfAbsent('AudioScheduledSourceNode', canvasMedia.AudioScheduledSourceNode, true);
+	defineGlobalIfAbsent('OscillatorNode', canvasMedia.OscillatorNode, true);
+	defineGlobalIfAbsent('StereoPannerNode', canvasMedia.StereoPannerNode, true);
+	defineGlobalIfAbsent('AudioContext', canvasMedia.AudioContext, true);
+	defineGlobalIfAbsent('DelayNode', canvasMedia.DelayNode, true);
+	defineGlobalIfAbsent('ConstantSourceNode', canvasMedia.ConstantSourceNode, true);
+	defineGlobalIfAbsent('AnalyserNode', canvasMedia.AnalyserNode, true);
+	defineGlobalIfAbsent('WaveShaperNode', canvasMedia.WaveShaperNode, true);
+	defineGlobalIfAbsent('IIRFilterNode', canvasMedia.IIRFilterNode, true);
+	defineGlobalIfAbsent('ConvolverNode', canvasMedia.ConvolverNode, true);
+	defineGlobalIfAbsent('PeriodicWave', canvasMedia.PeriodicWave, true);
+	defineGlobalIfAbsent('AudioBufferSourceNode', canvasMedia.AudioBufferSourceNode, true);
+	defineGlobalIfAbsent('OfflineAudioContext', canvasMedia.OfflineAudioContext, true);
 } catch (_e) {}

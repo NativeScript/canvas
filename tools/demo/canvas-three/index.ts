@@ -103,6 +103,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 	canvasLoaded(args) {
 		this.canvas = args.object;
+
 		//x jet game
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
@@ -177,10 +178,13 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
+		console.log('Initializing cube demo with canvas', canvas, 'size', canvas.width, canvas.height);
+
 		const innerWidth = canvas.clientWidth;
 		const innerHeight = canvas.clientHeight;
 
-		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 10);
+		camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
 		camera.position.z = 1;
 
 		scene = new THREE.Scene();
@@ -190,18 +194,17 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		scene.add(mesh);
 
 		//@ts-ignore
-		renderer = new THREE.WebGPURenderer({ canvas });
-		renderer.setPixelRatio(window.devicePixelRatio);
-		renderer.setSize(innerWidth, innerHeight, false);
+		renderer = new THREE.WebGPURenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
 
 		try {
 			await renderer.init();
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setAnimationLoop(animate);
 		} catch (err: any) {
 			console.error('webgpu_cube: renderer.init() failed:', err?.message ?? err);
 			return;
 		}
-
-		renderer.setAnimationLoop(animate);
 	}
 
 	async webgpu_tsl_galaxy(canvas: Canvas) {
@@ -291,7 +294,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					*/
 
 			// renderer
-			renderer = new WebGPURenderer({ canvas, antialias: false });
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			try {
@@ -422,7 +425,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
 
-		renderer = new WebGPURenderer({ antialias: true, context, device });
+		renderer = new THREE.WebGPURenderer({ antialias: true, context, device });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(canvas.width, canvas.height);
 		renderer.setAnimationLoop(animate);
@@ -470,7 +473,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			scene = new THREE.Scene();
 
-			renderer = new WebGPURenderer({ canvas, antialias: true });
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
@@ -659,7 +662,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const raycaster = new THREE.Raycaster();
 			const pointer = new THREE.Vector2();
 
-			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
+			renderer = new THREE.WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -873,7 +876,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			envMap.mapping = THREE.EquirectangularReflectionMapping;
 			scene.environment = envMap;
 
-			renderer = new WebGPURenderer({ canvas });
+			renderer = new THREE.WebGPURenderer({ canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -1079,7 +1082,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const clip = gltf.animations[0];
 			mixer.clipAction(clip.optimize()).play();
 
-			renderer = new WebGPURenderer({ canvas, antialias: true });
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);
 			renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -3784,7 +3787,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				},
 			);
 
-			renderer = new WebGPURenderer({ canvas, antialias: true });
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
 			await renderer.init();
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);

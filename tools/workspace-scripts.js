@@ -131,6 +131,13 @@ module.exports = {
 					description: '@nativescript/canvas-svg: Build',
 				},
 			},
+			// @nativescript/audio-context
+			'audio-context': {
+				build: {
+					script: 'nx run audio-context:build.all',
+					description: '@nativescript/audio-context: Build',
+				},
+			},
 			'build-all': {
 				script: 'nx run-many --target=build.all --all',
 				description: 'Build all packages',
@@ -190,6 +197,10 @@ module.exports = {
 			'canvas-svg': {
 				script: 'nx run canvas-svg:focus',
 				description: 'Focus on @nativescript/canvas-svg',
+			},
+			'audio-context': {
+				script: 'nx run audio-context:focus',
+				description: 'Focus on @nativescript/audio-context',
 			},
 			reset: {
 				script: 'nx g @nativescript/plugin-tools:focus-packages',

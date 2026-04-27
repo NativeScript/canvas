@@ -36,7 +36,8 @@
 			"@nativescript/canvas/angular": ["packages/canvas/angular/index.ts"],
 			"three/webgpu": ["node_modules/three/build/three.webgpu.js"],
 			"three/examples": ["node_modules/three/examples"],
-			"three/tsl": ["node_modules/three/build/three.tsl.js"]
+			"three/tsl": ["node_modules/three/build/three.tsl.js"],
+			"@nativescript/audio-context": ["packages/audio-context/index.d.ts"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]

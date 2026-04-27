@@ -867,7 +867,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createGain(options?: { gain?: number }) {
 		return new GainNode(this, options ?? {});
 	}
-	createBiquad(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
+	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
 		return new BiquadFilterNode(this, options ?? {});
 	}
 	createPanner(options?: PannerOptions) {

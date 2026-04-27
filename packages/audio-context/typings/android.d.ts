@@ -162,6 +162,7 @@ declare module org {
 				public setAnalyserFftSize(id: string, fftSize: number): void;
 				public getAudioTimeNanos(): number;
 				public getLength(bytesPerSample: string): number;
+				public setListenerParams(positionX: number, positionY: number, positionZ: number, forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
 				public setAnalyserSmoothingTimeConstant(id: string, value: number): void;
 				public copyToChannel(id: string, source: java.nio.FloatBuffer, channel: number, startInChannel: number): void;
 				public getAnalyserFloatTimeDomainData(id: string, count: number): androidNative.Array<number>;
@@ -194,6 +195,7 @@ declare module org {
 				public getSampleRate(id: string): number;
 				public stopTrack(id: string): void;
 				public startOscillator(id: string, type: string, frequency: number): void;
+				public setListenerParams(contextId: string, positionX: number, positionY: number, positionZ: number, forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
 				public copyFromChannel(id: string, dest: java.nio.FloatBuffer, channel: number, startInChannel: number): void;
 				public getAnalyserFloatFrequencyDataDirect(slice: string, this_: java.nio.FloatBuffer): boolean;
 				public getDuration(id: string): number;
@@ -242,12 +244,22 @@ declare module org {
 				public getDestination(): org.nativescript.audiocontext.GainNode;
 				public setSinkId(deviceId: string): boolean;
 				public getId(): string;
+				public setListenerParams(positionX: number, positionY: number, positionZ: number, forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
+				public getListenerForwardYParam(): org.nativescript.audiocontext.AudioParam;
 				public release(): void;
-				public getSampleRate(): number;
-				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
-				public getCurrentTime(): number;
+				public getListenerUpXParam(): org.nativescript.audiocontext.AudioParam;
+				public getListenerUpYParam(): org.nativescript.audiocontext.AudioParam;
+				public getListenerPositionXParam(): org.nativescript.audiocontext.AudioParam;
 				public constructor();
 				public createOscillatorNodeFrequency(type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
+				public getListenerPositionZParam(): org.nativescript.audiocontext.AudioParam;
+				public getListenerUpZParam(): org.nativescript.audiocontext.AudioParam;
+				public getSampleRate(): number;
+				public getListenerForwardZParam(): org.nativescript.audiocontext.AudioParam;
+				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
+				public getListenerPositionYParam(): org.nativescript.audiocontext.AudioParam;
+				public getCurrentTime(): number;
+				public getListenerForwardXParam(): org.nativescript.audiocontext.AudioParam;
 			}
 		}
 	}
@@ -396,12 +408,12 @@ declare module org {
 				public getAutomationRateCode(): number;
 				public release(): void;
 				public getAutomationRate(): string;
+				public setValue(px: number): void;
 				public setAutomationRate(rate: string): void;
 				public cancelAndHoldAtTime(heldValue: number, t: number): void;
 				public cancelScheduledValues(t: number): void;
 				public linearRampToValueAtTime(v: number, t: number): void;
 				public setValueAtTime(v: number, t: number): void;
-				public setValue(v: number): void;
 				public getValue(): number;
 				public getValuesForRange(out: number, this_: number, startTime: number): androidNative.Array<number>;
 			}
@@ -420,6 +432,15 @@ declare module org {
 					public static PANNER_ORIENTATION_Y: org.nativescript.audiocontext.AudioParam.Type;
 					public static PANNER_ORIENTATION_Z: org.nativescript.audiocontext.AudioParam.Type;
 					public static PANNER_PAN: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_POSITION_X: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_POSITION_Y: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_POSITION_Z: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_FORWARD_X: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_FORWARD_Y: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_FORWARD_Z: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_UP_X: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_UP_Y: org.nativescript.audiocontext.AudioParam.Type;
+					public static LISTENER_UP_Z: org.nativescript.audiocontext.AudioParam.Type;
 					public static values(): androidNative.Array<org.nativescript.audiocontext.AudioParam.Type>;
 					public static valueOf(name: string): org.nativescript.audiocontext.AudioParam.Type;
 				}

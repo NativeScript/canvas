@@ -279,3 +279,75 @@ export class AudioParamBase {
 		return this;
 	}
 }
+
+export class AudioListenerBase {
+	protected [context_]: BaseAudioContext;
+	protected _positionX: AudioParamBase | null = null;
+	protected _positionY: AudioParamBase | null = null;
+	protected _positionZ: AudioParamBase | null = null;
+	protected _forwardX: AudioParamBase | null = null;
+	protected _forwardY: AudioParamBase | null = null;
+	protected _forwardZ: AudioParamBase | null = null;
+	protected _upX: AudioParamBase | null = null;
+	protected _upY: AudioParamBase | null = null;
+	protected _upZ: AudioParamBase | null = null;
+
+	constructor(context: BaseAudioContext) {
+		if (!(context instanceof BaseAudioContext)) throw new TypeError('AudioListener constructor: invalid BaseAudioContext');
+		this[context_] = context;
+	}
+
+	get positionX() {
+		return this._positionX!;
+	}
+	get positionY() {
+		return this._positionY!;
+	}
+	get positionZ() {
+		return this._positionZ!;
+	}
+
+	get forwardX() {
+		return this._forwardX!;
+	}
+	get forwardY() {
+		return this._forwardY!;
+	}
+	get forwardZ() {
+		return this._forwardZ!;
+	}
+
+	get upX() {
+		return this._upX!;
+	}
+	get upY() {
+		return this._upY!;
+	}
+	get upZ() {
+		return this._upZ!;
+	}
+
+	setPosition(x: number, y: number, z: number) {
+		const nx = +x;
+		const ny = +y;
+		const nz = +z;
+		this.positionX.value = nx;
+		this.positionY.value = ny;
+		this.positionZ.value = nz;
+	}
+
+	setOrientation(forwardX: number, forwardY: number, forwardZ: number, upX?: number, upY?: number, upZ?: number) {
+		const fx = +forwardX;
+		const fy = +forwardY;
+		const fz = +forwardZ;
+		const ux = typeof upX === 'number' ? +upX : 0;
+		const uy = typeof upY === 'number' ? +upY : 1;
+		const uz = typeof upZ === 'number' ? +upZ : 0;
+		this.forwardX.value = fx;
+		this.forwardY.value = fy;
+		this.forwardZ.value = fz;
+		this.upX.value = ux;
+		this.upY.value = uy;
+		this.upZ.value = uz;
+	}
+}

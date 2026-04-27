@@ -15,6 +15,48 @@ public class AudioContextInstance {
 		return id;
 	}
 
+	public void setListenerParams(double positionX, double positionY, double positionZ,
+								  double forwardX, double forwardY, double forwardZ,
+								  double upX, double upY, double upZ) {
+		AudioContext.getInstance().setListenerParams(this.id, positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
+	}
+
+	public AudioParam getListenerPositionXParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_POSITION_X);
+	}
+
+	public AudioParam getListenerPositionYParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_POSITION_Y);
+	}
+
+	public AudioParam getListenerPositionZParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_POSITION_Z);
+	}
+
+	public AudioParam getListenerForwardXParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_FORWARD_X);
+	}
+
+	public AudioParam getListenerForwardYParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_FORWARD_Y);
+	}
+
+	public AudioParam getListenerForwardZParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_FORWARD_Z);
+	}
+
+	public AudioParam getListenerUpXParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_UP_X);
+	}
+
+	public AudioParam getListenerUpYParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_UP_Y);
+	}
+
+	public AudioParam getListenerUpZParam() {
+		return new AudioParam(this, AudioParam.Type.LISTENER_UP_Z);
+	}
+
 	public double getCurrentTime() {
 		return AudioContext.getInstance().getContextCurrentTime(id);
 	}

@@ -1,4 +1,4 @@
-import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array } from './common';
+import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array, AudioListenerBase } from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
@@ -701,6 +701,8 @@ export class AudioContext extends BaseAudioContext {
 
 	private _destination: AudioDestinationNode | null = null;
 
+	private _listener: AudioListener | null = null;
+
 	constructor(options?: AudioContextOptions) {
 		super();
 		const sampleRate = options?.sampleRate ?? 48000;
@@ -714,6 +716,11 @@ export class AudioContext extends BaseAudioContext {
 		}
 	}
 
+	get listener() {
+		if (!this._listener) this._listener = new AudioListener(nativeCtor_, this as unknown as NativeBaseAudioContext);
+		return this._listener;
+	}
+
 	get destination() {
 		return this._destination;
 	}
@@ -721,7 +728,7 @@ export class AudioContext extends BaseAudioContext {
 	createGain(options?: { gain?: number }) {
 		return new GainNode(this, options ?? {});
 	}
-	createBiquad(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
+	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
 		return new BiquadFilterNode(this, options ?? {});
 	}
 	createPanner(options?: PannerOptions) {
@@ -933,5 +940,81 @@ export class OfflineAudioContext extends BaseAudioContext {
 				resolve(new AudioBuffer(nativeCtor_, wrapper));
 			});
 		});
+	}
+}
+
+export class AudioListener extends AudioListenerBase {
+	constructor(guard: Symbol, context: NativeBaseAudioContext) {
+		if (guard !== nativeCtor_) throw new TypeError('Illegal constructor.');
+		super(context);
+	}
+
+	get context() {
+		return this[context_] as AudioContext;
+	}
+
+	get positionX() {
+		if (!this._positionX) {
+			this._positionX = new AudioParam(nativeCtor_, this.context.native.getListenerPositionXParam());
+		}
+		return this._positionX;
+	}
+	get positionY() {
+		if (!this._positionY) {
+			this._positionY = new AudioParam(nativeCtor_, this.context.native.getListenerPositionYParam());
+		}
+		return this._positionY;
+	}
+	get positionZ() {
+		if (!this._positionZ) {
+			this._positionZ = new AudioParam(nativeCtor_, this.context.native.getListenerPositionZParam());
+		}
+		return this._positionZ;
+	}
+
+	get forwardX() {
+		if (!this._forwardX) {
+			this._forwardX = new AudioParam(nativeCtor_, this.context.native.getListenerForwardXParam());
+		}
+		return this._forwardX;
+	}
+	get forwardY() {
+		if (!this._forwardY) {
+			this._forwardY = new AudioParam(nativeCtor_, this.context.native.getListenerForwardYParam());
+		}
+		return this._forwardY;
+	}
+	get forwardZ() {
+		if (!this._forwardZ) {
+			this._forwardZ = new AudioParam(nativeCtor_, this.context.native.getListenerForwardZParam());
+		}
+		return this._forwardZ;
+	}
+
+	get upX() {
+		if (!this._upX) {
+			this._upX = new AudioParam(nativeCtor_, this.context.native.getListenerUpXParam());
+		}
+		return this._upX;
+	}
+	get upY() {
+		if (!this._upY) {
+			this._upY = new AudioParam(nativeCtor_, this.context.native.getListenerUpYParam());
+		}
+		return this._upY;
+	}
+	get upZ() {
+		if (!this._upZ) {
+			this._upZ = new AudioParam(nativeCtor_, this.context.native.getListenerUpZParam());
+		}
+		return this._upZ;
+	}
+
+	setPosition(x: number, y: number, z: number) {
+		this.context.native.setListenerPosition(x, y, z);
+	}
+
+	setOrientation(forwardX: number, forwardY: number, forwardZ: number, upX?: number, upY?: number, upZ?: number) {
+		this.context.native.setListenerOrientation(forwardX, forwardY, forwardZ, upX ?? 0, upY ?? 1, upZ ?? 0);
 	}
 }

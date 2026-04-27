@@ -39,6 +39,16 @@ NativeEngine::schedulePannerEvent(const std::string &pannerId, int paramType, in
     insertSortedByTime(vec, ev);
 }
 
+void
+NativeEngine::scheduleListenerEvent(const std::string &contextId, int paramType, int type, int rate,
+                                    double value, int64_t timeNs) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto &map = scheduledListenerEvents_[contextId];
+    auto &vec = map[paramType];
+    ParamEvent ev{type, rate, timeNs, value};
+    insertSortedByTime(vec, ev);
+}
+
 
 void NativeEngine::cancelGainEvents(const std::string &gainId, int64_t timeNs) {
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
@@ -61,6 +71,18 @@ void NativeEngine::cancelPannerEvents(const std::string &pannerId, int paramType
     if (pit->second.empty()) scheduledPannerEvents_.erase(pit);
 }
 
+void NativeEngine::cancelListenerEvents(const std::string &contextId, int paramType, int64_t timeNs) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto cit = scheduledListenerEvents_.find(contextId);
+    if (cit == scheduledListenerEvents_.end()) return;
+    auto it = cit->second.find(paramType);
+    if (it == cit->second.end()) return;
+    auto &vec = it->second;
+    trimEventsAtOrAfter(vec, timeNs);
+    if (vec.empty()) cit->second.erase(it);
+    if (cit->second.empty()) scheduledListenerEvents_.erase(cit);
+}
+
 void NativeEngine::cancelAndHoldGainEvents(const std::string &gainId, int rate, double value,
                                            int64_t timeNs) {
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
@@ -73,6 +95,16 @@ void NativeEngine::cancelAndHoldPannerEvents(const std::string &pannerId, int pa
                                              double value, int64_t timeNs) {
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto &map = scheduledPannerEvents_[pannerId];
+    auto &vec = map[paramType];
+    trimEventsAtOrAfter(vec, timeNs);
+    vec.push_back(ParamEvent{0 /* set */, rate, timeNs, value});
+}
+
+void
+NativeEngine::cancelAndHoldListenerEvents(const std::string &contextId, int paramType, int rate,
+                                          double value, int64_t timeNs) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto &map = scheduledListenerEvents_[contextId];
     auto &vec = map[paramType];
     trimEventsAtOrAfter(vec, timeNs);
     vec.push_back(ParamEvent{0 /* set */, rate, timeNs, value});
@@ -140,6 +172,74 @@ NativeEngine::getPannerParamValues(const std::string &pannerId, int paramType, i
         out[i] = getScheduledGainValueAt(evts, tNs, fallback);
     }
     return out;
+}
+
+std::vector<double>
+NativeEngine::getListenerParamValues(const std::string &contextId, int paramType, int64_t startNs,
+                                     double sampleRate, int frameCount) {
+    std::vector<double> out(frameCount, 0.0);
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    std::vector<ParamEvent> evts;
+    auto cit = scheduledListenerEvents_.find(contextId);
+    if (cit != scheduledListenerEvents_.end()) {
+        auto it = cit->second.find(paramType);
+        if (it != cit->second.end()) evts = it->second;
+    }
+    double fallback = 0.0;
+    auto lit = listeners_.find(contextId);
+    if (lit != listeners_.end()) {
+        const Listener &L = lit->second;
+        switch (paramType) {
+            case kListenerParamPositionX: fallback = L.positionX; break;
+            case kListenerParamPositionY: fallback = L.positionY; break;
+            case kListenerParamPositionZ: fallback = L.positionZ; break;
+            case kListenerParamForwardX: fallback = L.forwardX; break;
+            case kListenerParamForwardY: fallback = L.forwardY; break;
+            case kListenerParamForwardZ: fallback = L.forwardZ; break;
+            case kListenerParamUpX: fallback = L.upX; break;
+            case kListenerParamUpY: fallback = L.upY; break;
+            case kListenerParamUpZ: fallback = L.upZ; break;
+            default: fallback = 0.0; break;
+        }
+    }
+
+    if (evts.empty()) {
+        for (int i = 0; i < frameCount; ++i) out[i] = fallback;
+        return out;
+    }
+
+    int rate = evts.front().rate;
+    if (rate == RATE_K) {
+        float v = getScheduledGainValueAt(evts, startNs, fallback);
+        for (int i = 0; i < frameCount; ++i) out[i] = v;
+        return out;
+    }
+
+    double nsPerSample = 1e9 / (sampleRate > 0.0 ? sampleRate : 48000.0);
+    for (int i = 0; i < frameCount; ++i) {
+        int64_t tNs = startNs + static_cast<int64_t>(std::llround(i * nsPerSample));
+        out[i] = getScheduledGainValueAt(evts, tNs, fallback);
+    }
+    return out;
+}
+
+double NativeEngine::getListenerParamValue(const std::string &contextId, int paramType) {
+    std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
+    auto lit = listeners_.find(contextId);
+    if (lit == listeners_.end()) return 0.0;
+    const Listener &L = lit->second;
+    switch (paramType) {
+        case kListenerParamPositionX: return L.positionX;
+        case kListenerParamPositionY: return L.positionY;
+        case kListenerParamPositionZ: return L.positionZ;
+        case kListenerParamForwardX: return L.forwardX;
+        case kListenerParamForwardY: return L.forwardY;
+        case kListenerParamForwardZ: return L.forwardZ;
+        case kListenerParamUpX: return L.upX;
+        case kListenerParamUpY: return L.upY;
+        case kListenerParamUpZ: return L.upZ;
+        default: return 0.0;
+    }
 }
 
 std::vector<double>

@@ -100,6 +100,16 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     dispatch_queue_t _pendingQueue;
     atomic_int _activeCount;
     NSMapTable<NSValue *, NSCAudioNode *> *_nodeWrappers;
+    NSCAudioParam *_listenerPositionXParam;
+    NSCAudioParam *_listenerPositionYParam;
+    NSCAudioParam *_listenerPositionZParam;
+    NSCAudioParam *_listenerForwardXParam;
+    NSCAudioParam *_listenerForwardYParam;
+    NSCAudioParam *_listenerForwardZParam;
+    NSCAudioParam *_listenerUpXParam;
+    NSCAudioParam *_listenerUpYParam;
+    NSCAudioParam *_listenerUpZParam;
+    dispatch_source_t _listenerAutomationTimer;
 }
 
 - (instancetype)initWithSampleRate:(double)sampleRate {
@@ -398,6 +408,232 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (NSCWaveShaperNode *)createWaveShaperNode { return [[NSCWaveShaperNode alloc] initWithContext:self]; }
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback { return [[NSCIIRFilterNode alloc] initWithContext:self feedforward:feedforward feedback:feedback]; }
 - (NSCConvolverNode *)createConvolverNode { return [[NSCConvolverNode alloc] initWithContext:self]; }
+
+- (void)ensureEnvironmentNodeAttached {
+    if (_environmentNode) return;
+    if (!_engine) return;
+    @try {
+        _environmentNode = [[AVAudioEnvironmentNode alloc] init];
+        [_engine attachNode:_environmentNode];
+    } @catch (NSException *e) {
+        _environmentNode = nil;
+    }
+}
+
+- (void)setListenerPosition:(double)x :(double)y :(double)z {
+    [self ensureEnvironmentNodeAttached];
+    if (!_environmentNode) return;
+    if (_listenerPositionXParam) [_listenerPositionXParam setValue:@(x)];
+    if (_listenerPositionYParam) [_listenerPositionYParam setValue:@(y)];
+    if (_listenerPositionZParam) [_listenerPositionZParam setValue:@(z)];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            _environmentNode.listenerPosition = AVAudioMake3DPoint(x, y, z);
+        } @catch (NSException *e) {}
+    });
+}
+
+- (void)setListenerOrientation:(double)forwardX :(double)forwardY :(double)forwardZ :(double)upX :(double)upY :(double)upZ {
+    [self ensureEnvironmentNodeAttached];
+    if (!_environmentNode) return;
+    if (_listenerForwardXParam) [_listenerForwardXParam setValue:@(forwardX)];
+    if (_listenerForwardYParam) [_listenerForwardYParam setValue:@(forwardY)];
+    if (_listenerForwardZParam) [_listenerForwardZParam setValue:@(forwardZ)];
+    if (_listenerUpXParam) [_listenerUpXParam setValue:@(upX)];
+    if (_listenerUpYParam) [_listenerUpYParam setValue:@(upY)];
+    if (_listenerUpZParam) [_listenerUpZParam setValue:@(upZ)];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            AVAudio3DVector f = AVAudioMake3DVector(forwardX, forwardY, forwardZ);
+            AVAudio3DVector u = AVAudioMake3DVector(upX, upY, upZ);
+            _environmentNode.listenerVectorOrientation = AVAudioMake3DVectorOrientation(f, u);
+        } @catch (NSException *e) {}
+    });
+}
+
+#pragma mark - Listener automation params
+
+- (NSCAudioParam *)getListenerPositionXParam {
+    if (!_listenerPositionXParam) {
+        _listenerPositionXParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerPositionXParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerPositionXParam;
+}
+
+- (NSCAudioParam *)getListenerPositionYParam {
+    if (!_listenerPositionYParam) {
+        _listenerPositionYParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerPositionYParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerPositionYParam;
+}
+
+- (NSCAudioParam *)getListenerPositionZParam {
+    if (!_listenerPositionZParam) {
+        _listenerPositionZParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerPositionZParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerPositionZParam;
+}
+
+- (NSCAudioParam *)getListenerForwardXParam {
+    if (!_listenerForwardXParam) {
+        _listenerForwardXParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerForwardXParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerForwardXParam;
+}
+
+- (NSCAudioParam *)getListenerForwardYParam {
+    if (!_listenerForwardYParam) {
+        _listenerForwardYParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerForwardYParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerForwardYParam;
+}
+
+- (NSCAudioParam *)getListenerForwardZParam {
+    if (!_listenerForwardZParam) {
+        _listenerForwardZParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:-1.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerForwardZParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerForwardZParam;
+}
+
+- (NSCAudioParam *)getListenerUpXParam {
+    if (!_listenerUpXParam) {
+        _listenerUpXParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerUpXParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerUpXParam;
+}
+
+- (NSCAudioParam *)getListenerUpYParam {
+    if (!_listenerUpYParam) {
+        _listenerUpYParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:1.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerUpYParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerUpYParam;
+}
+
+- (NSCAudioParam *)getListenerUpZParam {
+    if (!_listenerUpZParam) {
+        _listenerUpZParam = [[NSCAudioParam alloc] initWithContext:self defaultValue:0.0];
+        __weak typeof(self) weakSelf = self;
+        _listenerUpZParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensureListenerAutomationLink];
+        };
+    }
+    return _listenerUpZParam;
+}
+
+- (BOOL)_listenerHasFutureEvents {
+    double t = self.currentTime;
+    if (_listenerPositionXParam && [_listenerPositionXParam hasEventsAfter:t]) return YES;
+    if (_listenerPositionYParam && [_listenerPositionYParam hasEventsAfter:t]) return YES;
+    if (_listenerPositionZParam && [_listenerPositionZParam hasEventsAfter:t]) return YES;
+    if (_listenerForwardXParam && [_listenerForwardXParam hasEventsAfter:t]) return YES;
+    if (_listenerForwardYParam && [_listenerForwardYParam hasEventsAfter:t]) return YES;
+    if (_listenerForwardZParam && [_listenerForwardZParam hasEventsAfter:t]) return YES;
+    if (_listenerUpXParam && [_listenerUpXParam hasEventsAfter:t]) return YES;
+    if (_listenerUpYParam && [_listenerUpYParam hasEventsAfter:t]) return YES;
+    if (_listenerUpZParam && [_listenerUpZParam hasEventsAfter:t]) return YES;
+    return NO;
+}
+
+- (void)ensureListenerAutomationLink {
+    if ([NSThread isMainThread] == NO) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(dispatch_get_main_queue(), ^{ __strong typeof(weakSelf) s = weakSelf; if (s) [s ensureListenerAutomationLink]; });
+        return;
+    }
+    if (_listenerAutomationTimer) return;
+    if (![self _listenerHasFutureEvents]) return;
+    uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
+    uint64_t leeway = (uint64_t)(NSEC_PER_SEC / 240.0);
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNs, leeway);
+    __weak typeof(self) weakSelf = self;
+    dispatch_source_set_event_handler(timer, ^{
+        __strong typeof(weakSelf) s = weakSelf;
+        if (!s) return;
+        [s _applyListenerAutomationOnce];
+        if (![s _listenerHasFutureEvents]) [s stopListenerAutomationLink];
+    });
+    _listenerAutomationTimer = timer;
+    dispatch_resume(_listenerAutomationTimer);
+}
+
+- (void)stopListenerAutomationLink {
+    if (!_listenerAutomationTimer) return;
+    dispatch_source_cancel(_listenerAutomationTimer);
+    _listenerAutomationTimer = nil;
+}
+
+- (void)_applyListenerAutomationOnce {
+    double t = self.currentTime;
+    double px = _listenerPositionXParam ? [_listenerPositionXParam valueAtTime:t] : 0.0;
+    double py = _listenerPositionYParam ? [_listenerPositionYParam valueAtTime:t] : 0.0;
+    double pz = _listenerPositionZParam ? [_listenerPositionZParam valueAtTime:t] : 0.0;
+    double fx = _listenerForwardXParam ? [_listenerForwardXParam valueAtTime:t] : 0.0;
+    double fy = _listenerForwardYParam ? [_listenerForwardYParam valueAtTime:t] : 0.0;
+    double fz = _listenerForwardZParam ? [_listenerForwardZParam valueAtTime:t] : -1.0;
+    double ux = _listenerUpXParam ? [_listenerUpXParam valueAtTime:t] : 0.0;
+    double uy = _listenerUpYParam ? [_listenerUpYParam valueAtTime:t] : 1.0;
+    double uz = _listenerUpZParam ? [_listenerUpZParam valueAtTime:t] : 0.0;
+
+    [self ensureEnvironmentNodeAttached];
+    if (!_environmentNode) return;
+    @try {
+        _environmentNode.listenerPosition = AVAudioMake3DPoint(px, py, pz);
+        AVAudio3DVector f = AVAudioMake3DVector(fx, fy, fz);
+        AVAudio3DVector u = AVAudioMake3DVector(ux, uy, uz);
+        _environmentNode.listenerVectorOrientation = AVAudioMake3DVectorOrientation(f, u);
+    } @catch (NSException *e) {}
+}
 
 
 + (BOOL)startEngineWithRetry:(AVAudioEngine *)engine

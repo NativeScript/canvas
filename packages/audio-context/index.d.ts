@@ -227,7 +227,7 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	constructor(numberOfChannels: number, lengthInFrames: number, sampleRate: number);
 
 	createGain(options?: { gain?: number }): GainNode;
-	createBiquad(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;
+	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;
 	createPanner(options?: PannerOptions): PannerNode;
 	createOscillator(options?: { type?: string; frequency?: number }): OscillatorNode;
 	createBufferSource(options?: { buffer?: AudioBuffer }): AudioBufferSourceNode;
@@ -243,4 +243,22 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer>;
 
 	startRendering(): Promise<AudioBuffer>;
+}
+
+export class AudioListener {
+	readonly positionX: AudioParam;
+	readonly positionY: AudioParam;
+	readonly positionZ: AudioParam;
+
+	readonly forwardX: AudioParam;
+	readonly forwardY: AudioParam;
+	readonly forwardZ: AudioParam;
+
+	readonly upX: AudioParam;
+	readonly upY: AudioParam;
+	readonly upZ: AudioParam;
+
+	setPosition(x: number, y: number, z: number): void;
+
+	setOrientation(forwardX: number, forwardY: number, forwardZ: number, upX?: number, upY?: number, upZ?: number): void;
 }

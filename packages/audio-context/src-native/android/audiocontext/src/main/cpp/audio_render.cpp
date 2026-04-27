@@ -457,6 +457,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 p.coneInnerAngle = c.pannerConeInnerAngle;
                 p.coneOuterAngle = c.pannerConeOuterAngle;
                 p.coneOuterGain = c.pannerConeOuterGain;
+                p.contextId = c.contextId;
                 panners_[c.id] = p;
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: create panner %s", c.id.c_str());
                 break;
@@ -482,6 +483,33 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     p.coneOuterGain = c.pannerConeOuterGain;
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: set panner %s", c.id.c_str());
+                break;
+            }
+            case NativeEngine::CMD_SET_LISTENER_PARAMS: {
+                if (!c.contextId.empty()) {
+                    auto &L = listeners_[c.contextId];
+                    L.positionX = c.listenerPositionX;
+                    L.positionY = c.listenerPositionY;
+                    L.positionZ = c.listenerPositionZ;
+                    L.forwardX = c.listenerForwardX;
+                    L.forwardY = c.listenerForwardY;
+                    L.forwardZ = c.listenerForwardZ;
+                    L.upX = c.listenerUpX;
+                    L.upY = c.listenerUpY;
+                    L.upZ = c.listenerUpZ;
+                    audioThreadLog(ANDROID_LOG_INFO, "CMD: set listener[%s] pos=(%f,%f,%f) fwd=(%f,%f,%f)", c.contextId.c_str(), c.listenerPositionX, c.listenerPositionY, c.listenerPositionZ, c.listenerForwardX, c.listenerForwardY, c.listenerForwardZ);
+                } else {
+                    listener_.positionX = c.listenerPositionX;
+                    listener_.positionY = c.listenerPositionY;
+                    listener_.positionZ = c.listenerPositionZ;
+                    listener_.forwardX = c.listenerForwardX;
+                    listener_.forwardY = c.listenerForwardY;
+                    listener_.forwardZ = c.listenerForwardZ;
+                    listener_.upX = c.listenerUpX;
+                    listener_.upY = c.listenerUpY;
+                    listener_.upZ = c.listenerUpZ;
+                    audioThreadLog(ANDROID_LOG_INFO, "CMD: set listener pos=(%f,%f,%f) fwd=(%f,%f,%f)", c.listenerPositionX, c.listenerPositionY, c.listenerPositionZ, c.listenerForwardX, c.listenerForwardY, c.listenerForwardZ);
+                }
                 break;
             }
             case NativeEngine::CMD_ATTACH_PANNER: {
@@ -654,11 +682,14 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
     std::unordered_map<std::string, std::vector<NativeEngine::ParamEvent>> scheduledSnapshot;
     std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledPannerSnapshot;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<NativeEngine::ParamEvent>>> scheduledListenerSnapshot;
     {
         std::lock_guard<std::mutex> lk(scheduledEventsMutex_);
         for (const auto &kv: scheduledGainEvents_) scheduledSnapshot.emplace(kv.first, kv.second);
         for (const auto &kv: scheduledPannerEvents_)
             scheduledPannerSnapshot.emplace(kv.first, kv.second);
+        for (const auto &kv: scheduledListenerEvents_)
+            scheduledListenerSnapshot.emplace(kv.first, kv.second);
     }
 
     int64_t audioStartNs = g_audioTimeNanos.load(std::memory_order_relaxed);
@@ -669,6 +700,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
     std::unordered_map<std::string, std::vector<double>> scheduledEnvelopes;
     std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledPannerEnvelopes;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<double>>> scheduledListenerEnvelopes;
     if ((!scheduledSnapshot.empty() || !scheduledPannerSnapshot.empty()) && !localVoices.empty()) {
         std::unordered_set<std::string> usedGains;
         for (const auto &v: localVoices) {
@@ -833,6 +865,82 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
             scheduledPannerEnvelopes.emplace(pannerId, std::move(paramMap));
         }
+
+        std::unordered_set<std::string> usedContexts;
+        for (const auto &pid : usedPanners) {
+            auto pit = panners_.find(pid);
+            if (pit != panners_.end()) usedContexts.insert(pit->second.contextId);
+        }
+
+        for (const auto &ctxId : usedContexts) {
+            auto it = scheduledListenerSnapshot.find(ctxId);
+            if (it == scheduledListenerSnapshot.end()) continue;
+            const auto &inner = it->second;
+            std::unordered_map<int, std::vector<double>> paramMap;
+            for (const auto &pkv : inner) {
+                int paramType = pkv.first;
+                const auto &evts = pkv.second;
+                std::vector<double> env((size_t) numFrames);
+
+                double fallback = 0.0;
+                auto lit = listeners_.find(ctxId);
+                const NativeEngine::Listener *LptrFallback = &listener_;
+                if (lit != listeners_.end()) LptrFallback = &lit->second;
+                const auto &Lfb = *LptrFallback;
+                switch (paramType) {
+                    case kListenerParamPositionX: fallback = Lfb.positionX; break;
+                    case kListenerParamPositionY: fallback = Lfb.positionY; break;
+                    case kListenerParamPositionZ: fallback = Lfb.positionZ; break;
+                    case kListenerParamForwardX: fallback = Lfb.forwardX; break;
+                    case kListenerParamForwardY: fallback = Lfb.forwardY; break;
+                    case kListenerParamForwardZ: fallback = Lfb.forwardZ; break;
+                    case kListenerParamUpX: fallback = Lfb.upX; break;
+                    case kListenerParamUpY: fallback = Lfb.upY; break;
+                    case kListenerParamUpZ: fallback = Lfb.upZ; break;
+                    default: fallback = 0.0; break;
+                }
+
+                int rate = evts.empty() ? NativeEngine::RATE_A : evts[0].rate;
+                if (rate == NativeEngine::RATE_K) {
+                    float v = getScheduledGainValueAt(evts, static_cast<int64_t>(audioStartNs), fallback);
+                    for (int f = 0; f < numFrames; ++f) env[(size_t) f] = v;
+                } else {
+                    size_t nextIdx = 0;
+                    int prevIdx = -1;
+                    for (int f = 0; f < numFrames; ++f) {
+                        auto tNs = static_cast<int64_t>(audioStartNs + static_cast<double>(f) * sampleDurationNs);
+                        while (nextIdx < evts.size() && evts[nextIdx].timeNs <= tNs) {
+                            prevIdx = static_cast<int>(nextIdx);
+                            ++nextIdx;
+                        }
+                        double val;
+                        if (prevIdx == -1) {
+                            val = fallback;
+                        } else if (nextIdx >= evts.size()) {
+                            val = evts[prevIdx].value;
+                        } else {
+                            const auto &prev = evts[prevIdx];
+                            const auto &next = evts[nextIdx];
+                            if (next.type == 1) {
+                                if (next.timeNs <= prev.timeNs) val = next.value;
+                                else {
+                                    double ratio = double(tNs - prev.timeNs) / double(next.timeNs - prev.timeNs);
+                                    if (ratio < 0.0) ratio = 0.0;
+                                    if (ratio > 1.0) ratio = 1.0;
+                                    val = prev.value + (next.value - prev.value) * ratio;
+                                }
+                            } else {
+                                val = prev.value;
+                            }
+                        }
+                        env[(size_t) f] = val;
+                    }
+                }
+
+                paramMap.emplace(paramType, std::move(env));
+            }
+            scheduledListenerEnvelopes.emplace(ctxId, std::move(paramMap));
+        }
     }
 
     for (int frame = 0; frame < numFrames; ++frame) {
@@ -954,7 +1062,70 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 if (itPan != paramMap.end())
                                     pcopy.pan = itPan->second[(size_t) frame];
                             }
-                            computePannerGains(pcopy, leftGain, rightGain, distanceAtt);
+                            {
+                                NativeEngine::Panner ptrans = pcopy;
+                                const NativeEngine::Listener *Lptr = &listener_;
+                                if (!pit->second.contextId.empty()) {
+                                    auto lit = listeners_.find(pit->second.contextId);
+                                    if (lit != listeners_.end()) Lptr = &lit->second;
+                                }
+                                double listenerPosX = Lptr->positionX;
+                                double listenerPosY = Lptr->positionY;
+                                double listenerPosZ = Lptr->positionZ;
+                                double fx = Lptr->forwardX;
+                                double fy = Lptr->forwardY;
+                                double fz = Lptr->forwardZ;
+                                double ux = Lptr->upX;
+                                double uy = Lptr->upY;
+                                double uz = Lptr->upZ;
+
+                                auto lEnvIt = scheduledListenerEnvelopes.find(pit->second.contextId);
+                                if (lEnvIt != scheduledListenerEnvelopes.end()) {
+                                    auto &lparamMap = lEnvIt->second;
+                                    auto itLPx = lparamMap.find(kListenerParamPositionX);
+                                    if (itLPx != lparamMap.end()) listenerPosX = itLPx->second[(size_t) frame];
+                                    auto itLPy = lparamMap.find(kListenerParamPositionY);
+                                    if (itLPy != lparamMap.end()) listenerPosY = itLPy->second[(size_t) frame];
+                                    auto itLPz = lparamMap.find(kListenerParamPositionZ);
+                                    if (itLPz != lparamMap.end()) listenerPosZ = itLPz->second[(size_t) frame];
+                                    auto itLFX = lparamMap.find(kListenerParamForwardX);
+                                    if (itLFX != lparamMap.end()) fx = itLFX->second[(size_t) frame];
+                                    auto itLFY = lparamMap.find(kListenerParamForwardY);
+                                    if (itLFY != lparamMap.end()) fy = itLFY->second[(size_t) frame];
+                                    auto itLFZ = lparamMap.find(kListenerParamForwardZ);
+                                    if (itLFZ != lparamMap.end()) fz = itLFZ->second[(size_t) frame];
+                                    auto itLUX = lparamMap.find(kListenerParamUpX);
+                                    if (itLUX != lparamMap.end()) ux = itLUX->second[(size_t) frame];
+                                    auto itLUY = lparamMap.find(kListenerParamUpY);
+                                    if (itLUY != lparamMap.end()) uy = itLUY->second[(size_t) frame];
+                                    auto itLUZ = lparamMap.find(kListenerParamUpZ);
+                                    if (itLUZ != lparamMap.end()) uz = itLUZ->second[(size_t) frame];
+                                }
+                                double rx = pcopy.positionX - listenerPosX;
+                                double ry = pcopy.positionY - listenerPosY;
+                                double rz = pcopy.positionZ - listenerPosZ;
+                                double fl = std::sqrt(fx*fx + fy*fy + fz*fz);
+                                if (fl <= 1e-12) { fx = 0; fy = 0; fz = -1; fl = 1; } else { fx /= fl; fy /= fl; fz /= fl; }
+                                double ul = std::sqrt(ux*ux + uy*uy + uz*uz);
+                                if (ul <= 1e-12) { ux = 0; uy = 1; uz = 0; ul = 1; } else { ux /= ul; uy /= ul; uz /= ul; }
+
+                                double rxv = fy*uz - fz*uy;
+                                double ryv = fz*ux - fx*uz;
+                                double rzv = fx*uy - fy*ux;
+                                double rl = std::sqrt(rxv*rxv + ryv*ryv + rzv*rzv);
+                                if (rl <= 1e-12) { rxv = 1; ryv = 0; rzv = 0; rl = 1; } else { rxv /= rl; ryv /= rl; rzv /= rl; }
+
+                                double ux2 = ryv * fz - rzv * fy;
+                                double uy2 = rzv * fx - rxv * fz;
+                                double uz2 = rxv * fy - ryv * fx;
+                                double localX = rx * rxv + ry * ryv + rz * rzv;
+                                double localY = rx * ux2 + ry * uy2 + rz * uz2;
+                                double localZ = rx * fx + ry * fy + rz * fz;
+                                ptrans.positionX = localX;
+                                ptrans.positionY = localY;
+                                ptrans.positionZ = localZ;
+                                computePannerGains(ptrans, leftGain, rightGain, distanceAtt);
+                            }
                         }
                     }
 
@@ -1142,7 +1313,67 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 if (itPan != paramMap.end())
                                     pcopy.pan = itPan->second[(size_t) frame];
                             }
-                            computePannerGains(pcopy, leftGain, rightGain, distanceAtt);
+                            {
+                                NativeEngine::Panner ptrans = pcopy;
+                                const NativeEngine::Listener *Lptr = &listener_;
+                                if (!pit->second.contextId.empty()) {
+                                    auto lit = listeners_.find(pit->second.contextId);
+                                    if (lit != listeners_.end()) Lptr = &lit->second;
+                                }
+                                double listenerPosX = Lptr->positionX;
+                                double listenerPosY = Lptr->positionY;
+                                double listenerPosZ = Lptr->positionZ;
+                                double fx = Lptr->forwardX;
+                                double fy = Lptr->forwardY;
+                                double fz = Lptr->forwardZ;
+                                double ux = Lptr->upX;
+                                double uy = Lptr->upY;
+                                double uz = Lptr->upZ;
+                                auto lEnvIt = scheduledListenerEnvelopes.find(pit->second.contextId);
+                                if (lEnvIt != scheduledListenerEnvelopes.end()) {
+                                    auto &lparamMap = lEnvIt->second;
+                                    auto itLPx = lparamMap.find(kListenerParamPositionX);
+                                    if (itLPx != lparamMap.end()) listenerPosX = itLPx->second[(size_t) frame];
+                                    auto itLPy = lparamMap.find(kListenerParamPositionY);
+                                    if (itLPy != lparamMap.end()) listenerPosY = itLPy->second[(size_t) frame];
+                                    auto itLPz = lparamMap.find(kListenerParamPositionZ);
+                                    if (itLPz != lparamMap.end()) listenerPosZ = itLPz->second[(size_t) frame];
+                                    auto itLFX = lparamMap.find(kListenerParamForwardX);
+                                    if (itLFX != lparamMap.end()) fx = itLFX->second[(size_t) frame];
+                                    auto itLFY = lparamMap.find(kListenerParamForwardY);
+                                    if (itLFY != lparamMap.end()) fy = itLFY->second[(size_t) frame];
+                                    auto itLFZ = lparamMap.find(kListenerParamForwardZ);
+                                    if (itLFZ != lparamMap.end()) fz = itLFZ->second[(size_t) frame];
+                                    auto itLUX = lparamMap.find(kListenerParamUpX);
+                                    if (itLUX != lparamMap.end()) ux = itLUX->second[(size_t) frame];
+                                    auto itLUY = lparamMap.find(kListenerParamUpY);
+                                    if (itLUY != lparamMap.end()) uy = itLUY->second[(size_t) frame];
+                                    auto itLUZ = lparamMap.find(kListenerParamUpZ);
+                                    if (itLUZ != lparamMap.end()) uz = itLUZ->second[(size_t) frame];
+                                }
+                                double rx = pcopy.positionX - listenerPosX;
+                                double ry = pcopy.positionY - listenerPosY;
+                                double rz = pcopy.positionZ - listenerPosZ;
+                                double fl = std::sqrt(fx*fx + fy*fy + fz*fz);
+                                if (fl <= 1e-12) { fx = 0; fy = 0; fz = -1; fl = 1; } else { fx /= fl; fy /= fl; fz /= fl; }
+                                double ul = std::sqrt(ux*ux + uy*uy + uz*uz);
+                                if (ul <= 1e-12) { ux = 0; uy = 1; uz = 0; ul = 1; } else { ux /= ul; uy /= ul; uz /= ul; }
+                                double rxv = fy*uz - fz*uy;
+                                double ryv = fz*ux - fx*uz;
+                                double rzv = fx*uy - fy*ux;
+                                double rl = std::sqrt(rxv*rxv + ryv*ryv + rzv*rzv);
+                                if (rl <= 1e-12) { rxv = 1; ryv = 0; rzv = 0; rl = 1; } else { rxv /= rl; ryv /= rl; rzv /= rl; }
+                                double ux2 = ryv * fz - rzv * fy;
+                                double uy2 = rzv * fx - rxv * fz;
+                                double uz2 = rxv * fy - ryv * fx;
+                                double localX = rx * rxv + ry * ryv + rz * rzv;
+                                double localY = rx * ux2 + ry * uy2 + rz * uz2;
+                                double localZ = rx * fx + ry * fy + rz * fz;
+                                ptrans.positionX = localX;
+                                ptrans.positionY = localY;
+                                ptrans.positionZ = localZ;
+                                computePannerGains(ptrans, leftGain, rightGain, distanceAtt);
+                            }
                         }
                     }
 

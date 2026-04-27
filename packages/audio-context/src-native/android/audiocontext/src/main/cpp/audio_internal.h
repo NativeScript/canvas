@@ -33,6 +33,15 @@ inline constexpr int kPannerParamOrientationY = 9;
 inline constexpr int kPannerParamOrientationZ = 10;
 inline constexpr int kPannerParamPan = 11;
 
+inline constexpr int kListenerParamPositionX = 12;
+inline constexpr int kListenerParamPositionY = 13;
+inline constexpr int kListenerParamPositionZ = 14;
+inline constexpr int kListenerParamForwardX = 15;
+inline constexpr int kListenerParamForwardY = 16;
+inline constexpr int kListenerParamForwardZ = 17;
+inline constexpr int kListenerParamUpX = 18;
+inline constexpr int kListenerParamUpY = 19;
+inline constexpr int kListenerParamUpZ = 20;
 inline void audioThreadLog(int prio, const char *fmt, ...) {
     if (!g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) return;
     va_list args;

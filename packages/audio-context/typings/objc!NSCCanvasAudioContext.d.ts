@@ -157,6 +157,24 @@ declare class NSCAudioContext extends NSObject {
 
 	extraLatencySeconds(): number;
 
+	getListenerForwardXParam(): NSCAudioParam;
+
+	getListenerForwardYParam(): NSCAudioParam;
+
+	getListenerForwardZParam(): NSCAudioParam;
+
+	getListenerPositionXParam(): NSCAudioParam;
+
+	getListenerPositionYParam(): NSCAudioParam;
+
+	getListenerPositionZParam(): NSCAudioParam;
+
+	getListenerUpXParam(): NSCAudioParam;
+
+	getListenerUpYParam(): NSCAudioParam;
+
+	getListenerUpZParam(): NSCAudioParam;
+
 	hasActiveAudio(): boolean;
 
 	incrementActiveCount(): void;
@@ -174,6 +192,10 @@ declare class NSCAudioContext extends NSObject {
 	resume(): void;
 
 	resumeAllPendingNodes(): void;
+
+	setListenerOrientation(forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
+
+	setListenerPosition(x: number, y: number, z: number): void;
 
 	setSinkId(deviceId: string): boolean;
 

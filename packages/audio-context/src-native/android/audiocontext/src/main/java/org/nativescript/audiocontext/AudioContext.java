@@ -55,6 +55,7 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, Double> gains = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.util.List<ParamEvent>> gainEvents = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>>> pannerEvents = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>>> listenerEvents = new ConcurrentHashMap<>();
 
 	private static class ParamEvent {
 		public final int type; // 0 = set, 1 = linearRamp
@@ -594,20 +595,31 @@ public class AudioContext {
 
 	private native String nativeCreateBiquad(String type, double frequency, double Q, double gain);
 
-	private native String nativeCreatePanner(double positionX, double positionY, double positionZ,
-																					 double orientationX, double orientationY, double orientationZ,
-																					 double pan,
-																					 int distanceModel, int panningModel,
-																					 double refDistance, double maxDistance, double rolloffFactor,
-																					 double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
+	private native String nativeCreatePanner(String contextId, double positionX, double positionY, double positionZ,
+											double orientationX, double orientationY, double orientationZ,
+											double pan,
+											int distanceModel, int panningModel,
+											double refDistance, double maxDistance, double rolloffFactor,
+											double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
 
 	private native void nativeSetPannerParams(String pannerId,
-																						double positionX, double positionY, double positionZ,
-																						double orientationX, double orientationY, double orientationZ,
-																						double pan,
-																						int distanceModel, int panningModel,
-																						double refDistance, double maxDistance, double rolloffFactor,
-																						double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
+											  double positionX, double positionY, double positionZ,
+											  double orientationX, double orientationY, double orientationZ,
+											  double pan,
+											  int distanceModel, int panningModel,
+											  double refDistance, double maxDistance, double rolloffFactor,
+											  double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
+
+	private native void nativeSetListenerParams(String contextId, double positionX, double positionY, double positionZ,
+												double forwardX, double forwardY, double forwardZ,
+												double upX, double upY, double upZ);
+
+	private native void nativeScheduleListenerSet(String contextId, int paramType, int rate, long timeNs, double value);
+	private native void nativeScheduleListenerRamp(String contextId, int paramType, int rate, long timeNs, double value);
+	private native double[] nativeGetListenerParamValues(String contextId, int paramType, long startNs, double sampleRate, int frameCount);
+	private native void nativeCancelListenerEvents(String contextId, int paramType, long timeNs);
+	private native void nativeCancelAndHoldListenerEvents(String contextId, int paramType, int rate, long timeNs, double value);
+	private native double nativeGetListenerParamValue(String contextId, int paramType);
 
 	private native void nativeAttachPanner(String voiceId, String pannerId);
 
@@ -1636,7 +1648,7 @@ public class AudioContext {
 	AudioPannerNode createPanner(String contextId) {
 		String id = null;
 		if (nativeAvailable) {
-			id = nativeCreatePanner(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0, 0, 1.0, 10000.0, 1.0, 360.0, 360.0, 0.0);
+			id = nativeCreatePanner(contextId, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0, 0, 1.0, 10000.0, 1.0, 360.0, 360.0, 0.0);
 		}
 
 		if (id == null) id = UUID.randomUUID().toString();
@@ -1685,6 +1697,141 @@ public class AudioContext {
 			gainEvents.put(id, lst);
 		}
 		lst.add(new ParamEvent(1, rate, time, value));
+	}
+
+	public void setListenerParams(String contextId, double positionX, double positionY, double positionZ,
+								  double forwardX, double forwardY, double forwardZ,
+								  double upX, double upY, double upZ) {
+		if (nativeAvailable) {
+			try {
+				nativeSetListenerParams(contextId, positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
+			} catch (Throwable ignored) {}
+		}
+	}
+
+	public void setListenerParams(double positionX, double positionY, double positionZ,
+								  double forwardX, double forwardY, double forwardZ,
+								  double upX, double upY, double upZ) {
+		setListenerParams("", positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
+	}
+
+	void scheduleListenerSet(String contextId, int paramType, int rate, double value, double time) {
+		if (contextId == null) return;
+		long absNs = -1L;
+		String ctx = contextId;
+		if (ctx != null) {
+			Long startNs = contextStartNanos.get(ctx);
+			if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
+		}
+		if (nativeAvailable && absNs >= 0) {
+			nativeScheduleListenerSet(contextId, paramType, rate, absNs, value);
+		}
+		java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>> map = listenerEvents.get(contextId);
+		if (map == null) {
+			map = new java.util.concurrent.ConcurrentHashMap<>();
+			listenerEvents.put(contextId, map);
+		}
+		java.util.List<ParamEvent> lst = map.get(paramType);
+		if (lst == null) {
+			lst = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+			map.put(paramType, lst);
+		}
+		lst.add(new ParamEvent(0, rate, time, value));
+	}
+
+	void scheduleListenerRamp(String contextId, int paramType, int rate, double value, double time) {
+		if (contextId == null) return;
+		long absNs = -1L;
+		String ctx = contextId;
+		if (ctx != null) {
+			Long startNs = contextStartNanos.get(ctx);
+			if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
+		}
+		if (nativeAvailable && absNs >= 0) {
+			nativeScheduleListenerRamp(contextId, paramType, rate, absNs, value);
+		}
+		java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>> map = listenerEvents.get(contextId);
+		if (map == null) {
+			map = new java.util.concurrent.ConcurrentHashMap<>();
+			listenerEvents.put(contextId, map);
+		}
+		java.util.List<ParamEvent> lst = map.get(paramType);
+		if (lst == null) {
+			lst = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+			map.put(paramType, lst);
+		}
+		lst.add(new ParamEvent(1, rate, time, value));
+	}
+
+	void cancelListenerScheduledValues(String contextId, int paramType, double time) {
+		if (contextId == null) return;
+		long absNs = -1L;
+		String ctx = contextId;
+		if (ctx != null) {
+			Long startNs = contextStartNanos.get(ctx);
+			if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
+		}
+		if (nativeAvailable && absNs >= 0) {
+			nativeCancelListenerEvents(contextId, paramType, absNs);
+		}
+		java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>> map = listenerEvents.get(contextId);
+		if (map == null) return;
+		java.util.List<ParamEvent> lst = map.get(paramType);
+		if (lst == null) return;
+		synchronized (lst) {
+			lst.removeIf(ev -> ev.time >= time);
+		}
+	}
+
+	void cancelAndHoldListenerScheduledValues(String contextId, int paramType, int rate, double heldValue, double time) {
+		if (contextId == null) return;
+		long absNs = -1L;
+		String ctx = contextId;
+		if (ctx != null) {
+			Long startNs = contextStartNanos.get(ctx);
+			if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
+		}
+		if (nativeAvailable && absNs >= 0) {
+			nativeCancelAndHoldListenerEvents(contextId, paramType, rate, absNs, heldValue);
+		}
+		java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>> map = listenerEvents.get(contextId);
+		if (map == null) {
+			map = new java.util.concurrent.ConcurrentHashMap<>();
+			listenerEvents.put(contextId, map);
+		}
+		java.util.List<ParamEvent> lst = map.get(paramType);
+		if (lst == null) {
+			lst = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+			map.put(paramType, lst);
+		}
+		lst.removeIf(ev -> ev.time >= time);
+		lst.add(new ParamEvent(0, rate, time, heldValue));
+	}
+
+	double[] getListenerParamValues(String contextId, int paramType, double startTime, double sampleRate, int frameCount) {
+		if (contextId == null) return null;
+		long absNs = -1L;
+		String ctx = contextId;
+		if (ctx != null) {
+			Long startNs = contextStartNanos.get(ctx);
+			if (startNs != null) absNs = startNs + (long) (startTime * 1000000000.0);
+		}
+		if (nativeAvailable && absNs >= 0) {
+			try {
+				return nativeGetListenerParamValues(contextId, paramType, absNs, sampleRate, frameCount);
+			} catch (Throwable ignored) {}
+		}
+		return null;
+	}
+
+	double getListenerParamValue(String contextId, int paramType) {
+		if (contextId == null) return 0.0;
+		if (nativeAvailable) {
+			try {
+				return nativeGetListenerParamValue(contextId, paramType);
+			} catch (Throwable ignored) {}
+		}
+		return 0.0;
 	}
 
 	void schedulePannerSet(String id, int paramType, int rate, double value, double time) {

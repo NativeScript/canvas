@@ -1,5 +1,5 @@
 import { Utils } from '@nativescript/core';
-import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, makeStubParamHooks, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array } from './common';
+import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, makeStubParamHooks, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array, AudioListenerBase } from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: org.nativescript.audiocontext.AudioContextInstance };
 
@@ -401,7 +401,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 	createGain(options?: { gain?: number }) {
 		return new GainNode(this, options ?? {});
 	}
-	createBiquad(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
+	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }) {
 		return new BiquadFilterNode(this, options ?? {});
 	}
 	createPanner(options?: PannerOptions) {
@@ -676,6 +676,13 @@ export class AudioContext extends BaseAudioContext {
 			}
 		});
 	}
+
+	private _listener: AudioListener | null = null;
+
+	get listener() {
+		if (!this._listener) this._listener = new AudioListener(nativeCtor_, this as unknown as NativeBaseAudioContext);
+		return this._listener;
+	}
 }
 
 export class OscillatorNode extends AudioScheduledSourceNode {
@@ -920,5 +927,53 @@ export class PeriodicWave {
 	}
 	get native() {
 		return this[native_];
+	}
+}
+
+export class AudioListener extends AudioListenerBase {
+	constructor(guard: Symbol, context: NativeBaseAudioContext) {
+		if (guard !== nativeCtor_) throw new TypeError('Illegal constructor.');
+		super(context);
+	}
+
+	get context() {
+		return this[context_] as AudioContext;
+	}
+	get positionX() {
+		return this._positionX || (this._positionX = new AudioParam(nativeCtor_, this.context.native.getListenerPositionXParam()));
+	}
+	get positionY() {
+		return this._positionY || (this._positionY = new AudioParam(nativeCtor_, this.context.native.getListenerPositionYParam()));
+	}
+	get positionZ() {
+		return this._positionZ || (this._positionZ = new AudioParam(nativeCtor_, this.context.native.getListenerPositionZParam()));
+	}
+
+	get forwardX() {
+		return this._forwardX || (this._forwardX = new AudioParam(nativeCtor_, this.context.native.getListenerForwardXParam()));
+	}
+	get forwardY() {
+		return this._forwardY || (this._forwardY = new AudioParam(nativeCtor_, this.context.native.getListenerForwardYParam()));
+	}
+	get forwardZ() {
+		return this._forwardZ || (this._forwardZ = new AudioParam(nativeCtor_, this.context.native.getListenerForwardZParam()));
+	}
+
+	get upX() {
+		return this._upX || (this._upX = new AudioParam(nativeCtor_, this.context.native.getListenerUpXParam()));
+	}
+	get upY() {
+		return this._upY || (this._upY = new AudioParam(nativeCtor_, this.context.native.getListenerUpYParam()));
+	}
+	get upZ() {
+		return this._upZ || (this._upZ = new AudioParam(nativeCtor_, this.context.native.getListenerUpZParam()));
+	}
+
+	setPosition(x: number, y: number, z: number) {
+		this.context.native.setListenerParams(x, y, z, this.forwardX.value, this.forwardY.value, this.forwardZ.value, this.upX.value, this.upY.value, this.upZ.value);
+	}
+
+	setOrientation(forwardX: number, forwardY: number, forwardZ: number, upX?: number, upY?: number, upZ?: number) {
+		this.context.native.setListenerParams(this.positionX.value, this.positionY.value, this.positionZ.value, forwardX, forwardY, forwardZ, upX ?? 0, upY ?? 1, upZ ?? 0);
 	}
 }

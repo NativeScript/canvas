@@ -46,6 +46,19 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)suspend;
 - (void)ensureEnvironmentNodeAttached;
 
+- (void)setListenerPosition:(double)x :(double)y :(double)z;
+- (void)setListenerOrientation:(double)forwardX :(double)forwardY :(double)forwardZ :(double)upX :(double)upY :(double)upZ;
+
+- (NSCAudioParam *)getListenerPositionXParam;
+- (NSCAudioParam *)getListenerPositionYParam;
+- (NSCAudioParam *)getListenerPositionZParam;
+- (NSCAudioParam *)getListenerForwardXParam;
+- (NSCAudioParam *)getListenerForwardYParam;
+- (NSCAudioParam *)getListenerForwardZParam;
+- (NSCAudioParam *)getListenerUpXParam;
+- (NSCAudioParam *)getListenerUpYParam;
+- (NSCAudioParam *)getListenerUpZParam;
+
 - (void)registerPendingNode:(NSCAudioBufferSourceNode *)node;
 - (void)unregisterPendingNode:(NSCAudioBufferSourceNode *)node;
 - (void)resumeAllPendingNodes;

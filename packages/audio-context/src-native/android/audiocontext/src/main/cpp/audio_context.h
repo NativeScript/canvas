@@ -169,6 +169,7 @@ public:
         CMD_FREE_BIQUAD,
         CMD_CREATE_PANNER,
         CMD_SET_PANNER_PARAMS,
+        CMD_SET_LISTENER_PARAMS,
         CMD_ATTACH_PANNER,
         CMD_DETACH_PANNER,
         CMD_FREE_PANNER,
@@ -185,6 +186,7 @@ public:
     struct Command {
         CommandType type;
         std::string id;
+        std::string contextId;
         std::string waveform;
         double frequency = 0.0;
         std::string gainId;
@@ -195,6 +197,15 @@ public:
         double biquadQ = 1.0;
         double biquadGain = 0.0;
         std::string pannerId;
+        double listenerPositionX = 0.0;
+        double listenerPositionY = 0.0;
+        double listenerPositionZ = 0.0;
+        double listenerForwardX = 0.0;
+        double listenerForwardY = 0.0;
+        double listenerForwardZ = -1.0;
+        double listenerUpX = 0.0;
+        double listenerUpY = 1.0;
+        double listenerUpZ = 0.0;
         double pannerPositionX = 0.0;
         double pannerPositionY = 0.0;
         double pannerPositionZ = 0.0;
@@ -252,6 +263,7 @@ public:
 private:
     std::unordered_map<std::string, std::vector<ParamEvent>> scheduledGainEvents_;
     std::unordered_map<std::string, std::unordered_map<int, std::vector<ParamEvent>>> scheduledPannerEvents_;
+    std::unordered_map<std::string, std::unordered_map<int, std::vector<ParamEvent>>> scheduledListenerEvents_;
     std::mutex scheduledEventsMutex_;
 
 public:
@@ -331,8 +343,34 @@ public:
         double coneInnerAngle = 360.0;
         double coneOuterAngle = 360.0;
         double coneOuterGain = 0.0;
+        std::string contextId;
     };
     std::unordered_map<std::string, Panner> panners_;
+
+    struct Listener {
+        double positionX = 0.0;
+        double positionY = 0.0;
+        double positionZ = 0.0;
+        double forwardX = 0.0;
+        double forwardY = 0.0;
+        double forwardZ = -1.0;
+        double upX = 0.0;
+        double upY = 1.0;
+        double upZ = 0.0;
+    };
+    Listener listener_;
+    std::unordered_map<std::string, Listener> listeners_;
+
+public:
+    void scheduleListenerEvent(const std::string &contextId, int paramType, int type, int rate, double value, int64_t timeNs);
+
+    void cancelListenerEvents(const std::string &contextId, int paramType, int64_t timeNs);
+
+    void cancelAndHoldListenerEvents(const std::string &contextId, int paramType, int rate, double value, int64_t timeNs);
+
+    std::vector<double> getListenerParamValues(const std::string &contextId, int paramType, int64_t startNs, double sampleRate, int frameCount);
+
+    double getListenerParamValue(const std::string &contextId, int paramType);
 
     struct AnalyserData {
         int fftSize = 2048;

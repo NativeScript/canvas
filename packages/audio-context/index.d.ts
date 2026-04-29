@@ -218,7 +218,7 @@ export declare class AudioContext extends BaseAudioContext {
 	readonly sinkId: string;
 	setSinkId(deviceId: string): Promise<void>;
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer>;
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;
 }
 
 export declare class OfflineAudioContext extends BaseAudioContext {
@@ -240,7 +240,7 @@ export declare class OfflineAudioContext extends BaseAudioContext {
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer>;
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer>;
 
 	startRendering(): Promise<AudioBuffer>;
 }

@@ -870,8 +870,8 @@ export class AudioContext extends BaseAudioContext {
 		});
 	}
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
+		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
 					if (looksLikePath(source)) {
@@ -897,6 +897,11 @@ export class AudioContext extends BaseAudioContext {
 				reject(e);
 			}
 		});
+
+		if (successCallback) ret.then(successCallback);
+		if (errorCallback) ret.catch(errorCallback);
+
+		return ret;
 	}
 }
 
@@ -960,8 +965,8 @@ export class OfflineAudioContext extends BaseAudioContext {
 		return new PeriodicWave(this, { real, imag, disableNormalization: options?.disableNormalization });
 	}
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
+		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			try {
 				if (typeof source === 'string') {
 					if (looksLikePath(source)) {
@@ -987,6 +992,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 				reject(e);
 			}
 		});
+
+		if (successCallback) ret.then(successCallback);
+		if (errorCallback) ret.catch(errorCallback);
+
+		return ret;
 	}
 
 	startRendering(): Promise<AudioBuffer> {

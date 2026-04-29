@@ -515,8 +515,8 @@ export class OfflineAudioContext extends BaseAudioContext {
 		return new AudioBufferSourceNode(this);
 	}
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
+		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			if (typeof source === 'string') {
 				if (looksLikePath(source)) {
 					const filePath = normalizeSourcePath(source);
@@ -557,6 +557,11 @@ export class OfflineAudioContext extends BaseAudioContext {
 				}),
 			);
 		});
+
+		if (successCallback) ret.then(successCallback);
+		if (errorCallback) ret.catch(errorCallback);
+
+		return ret;
 	}
 
 	startRendering(): Promise<AudioBuffer> {
@@ -674,8 +679,8 @@ export class AudioContext extends BaseAudioContext {
 		});
 	}
 
-	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
-		return new Promise((resolve, reject) => {
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView, successCallback?: (buffer: AudioBuffer) => void, errorCallback?: (error: Error) => void): Promise<AudioBuffer> {
+		const ret = new Promise<AudioBuffer>((resolve, reject) => {
 			if (typeof source === 'string') {
 				if (looksLikePath(source)) {
 					const filePath = normalizeSourcePath(source);
@@ -716,6 +721,11 @@ export class AudioContext extends BaseAudioContext {
 				}),
 			);
 		});
+
+		if (successCallback) ret.then(successCallback);
+		if (errorCallback) ret.catch(errorCallback);
+
+		return ret;
 	}
 
 	resume(): Promise<void> {

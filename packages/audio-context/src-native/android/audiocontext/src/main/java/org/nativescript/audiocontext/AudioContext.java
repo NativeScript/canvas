@@ -599,7 +599,7 @@ public class AudioContext {
 	private native void nativeSetOutputDeviceId(int deviceId);
 
 	public boolean setSinkId(String deviceId) {
-		int id = -1; // oboe::kUnspecified
+		int id = 0; // oboe::kUnspecified
 		if (deviceId != null && !deviceId.isEmpty() && !"default".equals(deviceId)) {
 			try {
 				id = Integer.parseInt(deviceId);

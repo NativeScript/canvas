@@ -61,13 +61,13 @@ void NativeEngine::ensureStream() {
     callback_ = new EngineCallback(this);
     builder.setCallback(callback_);
 
-    oboe::Result r = builder.openStream(&stream_);
-    if (r != oboe::Result::OK || stream_ == nullptr) {
+    oboe::Result r = builder.openStream(stream_);
+    if (r != oboe::Result::OK || !stream_) {
         __android_log_print(ANDROID_LOG_WARN, TAG, "Oboe openStream failed: %d",
                             static_cast<int>(r));
         if (stream_) {
             stream_->close();
-            stream_ = nullptr;
+            stream_.reset();
         }
         delete callback_;
         callback_ = nullptr;
@@ -86,7 +86,7 @@ void NativeEngine::stopStream() {
     if (!stream_) return;
     stream_->requestStop();
     stream_->close();
-    stream_ = nullptr;
+    stream_.reset();
     if (callback_) {
         delete callback_;
         callback_ = nullptr;

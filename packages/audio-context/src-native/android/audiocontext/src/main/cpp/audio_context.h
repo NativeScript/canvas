@@ -321,14 +321,14 @@ public:
     getIIRCoefficients(const std::string &iirId);
 
 #ifdef HAS_OBOE
-    oboe::AudioStream *stream_ = nullptr;
+    std::shared_ptr<oboe::AudioStream> stream_;
     oboe::AudioStreamCallback *callback_ = nullptr;
     int streamSampleRate_ = 48000;
     int streamChannels_ = 2;
 #endif
     int desiredSampleRate_ = 0;
     double desiredLatencyHintSec_ = 0.0;
-    int desiredDeviceId_ = -1; // oboe::kUnspecified
+    int desiredDeviceId_ = 0; // oboe::kUnspecified
 
     std::unordered_map<std::string, BiquadCoeffs> biquads_;
     std::unordered_map<std::string, std::unordered_map<int, std::string>> voiceGainByOutput_;

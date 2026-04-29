@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)resume;
 - (void)suspend;
+- (void)resumeAsync:(nullable void (^)(BOOL success))completion;
+- (void)suspendAsync:(nullable void (^)(BOOL success))completion;
+- (void)closeAsync:(nullable void (^)(void))completion;
 - (void)ensureEnvironmentNodeAttached;
 
 - (void)setListenerPosition:(double)x :(double)y :(double)z;
@@ -63,6 +66,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)unregisterPendingNode:(NSCAudioBufferSourceNode *)node;
 - (void)resumeAllPendingNodes;
 - (void)ensureMainMixerConnectedToOutput;
+- (void)detachNode:(AVAudioNode *)node fromEngine:(AVAudioEngine *)engine;
+- (BOOL)isNode:(AVAudioNode *)node attachedToEngine:(AVAudioEngine *)engine;
+
 
 - (void)registerNodeWrapper:(NSCAudioNode *)node;
 - (nullable NSCAudioNode *)nodeWrapperForAVNode:(AVAudioNode *)avNode;
@@ -99,6 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSCWaveShaperNode *)createWaveShaperNode;
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback;
 - (NSCConvolverNode *)createConvolverNode;
+- (nullable NSCAudioNode *)createSourceNodeFromMediaPlayer:(AVPlayer *)player;
 
 
 FOUNDATION_EXPORT void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double delay);

@@ -10,6 +10,7 @@
 
 #include "Helpers.h"
 #include "Common.h"
+#include "WorkerPool.h"
 
 ImageAssetImpl::ImageAssetImpl(const ImageAsset *asset) : asset_(asset) {
 }
@@ -280,29 +281,20 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
     }, jsi_callback);
     
     
-    std::thread thread(
-                       [jsi_callback, asset](
-                                             const std::string &url) {
-                                                 auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
-                                                 
-                                                 canvas_native_image_asset_release(asset);
-                                                 
-                                                 write(jsi_callback->fd_[1],
-                                                       &done,
-                                                       sizeof(bool));
-                                                 
-                                             }, std::move(url));
-    
-    thread.detach();
+    WorkerPool::Instance().Enqueue([jsi_callback, asset, url = std::move(url)]() mutable {
+        auto done = canvas_native_image_asset_load_from_url(asset, url.c_str());
+        canvas_native_image_asset_release(asset);
+        write(jsi_callback->fd_[1], &done, sizeof(bool));
+    });
     
 #endif
     
     
 #ifdef __APPLE__
     
-    auto current_queue = new NSOperationQueueWrapper(true);
-    
-    auto queue = new NSOperationQueueWrapper(false);
+    auto cache = Caches::Get(isolate);
+    auto current_queue = cache->GetMainQueue();
+    auto queue = cache->GetWorkerQueue();
     
     
     
@@ -376,8 +368,6 @@ void ImageAssetImpl::FromUrlCb(const v8::FunctionCallbackInfo<v8::Value> &args) 
             
             
             delete jsi_callback;
-            delete queue;
-            delete current_queue;
             
             
         };
@@ -459,30 +449,20 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
     }, jsi_callback);
     
     
-    std::thread thread(
-                       [jsi_callback, asset](
-                                             const std::string path) {
-                                                 
-                                                 auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
-                                                 
-                                                 write(jsi_callback->fd_[1],
-                                                       &done,
-                                                       sizeof(bool));
-                                                 
-                                                 canvas_native_image_asset_release(asset);
-                                                 
-                                             }, std::move(path));
-    
-    thread.detach();
+    WorkerPool::Instance().Enqueue([jsi_callback, asset, path = std::move(path)]() mutable {
+        auto done = canvas_native_image_asset_load_from_path(asset, path.c_str());
+        write(jsi_callback->fd_[1], &done, sizeof(bool));
+        canvas_native_image_asset_release(asset);
+    });
     
 #endif
     
     
 #ifdef __APPLE__
     
-    auto current_queue = new NSOperationQueueWrapper(true);
-    
-    auto queue = new NSOperationQueueWrapper(false);
+    auto cache = Caches::Get(isolate);
+    auto current_queue = cache->GetMainQueue();
+    auto queue = cache->GetWorkerQueue();
     
     auto task = [jsi_callback, current_queue, queue, asset, path]() {
         
@@ -507,8 +487,6 @@ void ImageAssetImpl::FromFileCb(const v8::FunctionCallbackInfo<v8::Value> &args)
             callback->Call(context, context->Global(), 1,
                            args);  // ignore JS return value
             
-            delete queue;
-            delete current_queue;
             delete jsi_callback;
             
         };
@@ -622,29 +600,20 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
         return 0;
     }, jsi_callback);
     
-    std::thread thread(
-                       [jsi_callback, asset, store, width, height, data, size]() {
-
-                           auto done = canvas_native_image_asset_load_from_raw(asset, width, height, data, size);
-
-                           canvas_native_image_asset_release(asset);
-
-                           write(jsi_callback->fd_[1],
-                                 &done,
-                                 sizeof(bool));
-
-                       });
-
-    thread.detach();
+    WorkerPool::Instance().Enqueue([jsi_callback, asset, store, width, height, data, size]() mutable {
+        auto done = canvas_native_image_asset_load_from_raw(asset, width, height, data, size);
+        canvas_native_image_asset_release(asset);
+        write(jsi_callback->fd_[1], &done, sizeof(bool));
+    });
 
 #endif
 
 
 #ifdef __APPLE__
 
-    auto current_queue = new NSOperationQueueWrapper(true);
-
-    auto queue = new NSOperationQueueWrapper(false);
+    auto cache = Caches::Get(isolate);
+    auto current_queue = cache->GetMainQueue();
+    auto queue = cache->GetWorkerQueue();
 
    
     auto task = [jsi_callback, current_queue, queue, asset, store, width, height, data, size]() {
@@ -669,8 +638,6 @@ void ImageAssetImpl::FromBytesCb(const v8::FunctionCallbackInfo<v8::Value> &args
 
 
             delete jsi_callback;
-            delete queue;
-            delete current_queue;
 
         };
 
@@ -768,29 +735,20 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
         return 0;
     }, jsi_callback);
 
-    std::thread thread(
-                       [jsi_callback, asset, store, data, size]() {
-
-                           auto done = canvas_native_image_asset_load_from_raw_encoded(asset, data, size);
-
-                           canvas_native_image_asset_release(asset);
-
-                           write(jsi_callback->fd_[1],
-                                 &done,
-                                 sizeof(bool));
-
-                       });
-
-    thread.detach();
+    WorkerPool::Instance().Enqueue([jsi_callback, asset, store, data, size]() mutable {
+        auto done = canvas_native_image_asset_load_from_raw_encoded(asset, data, size);
+        canvas_native_image_asset_release(asset);
+        write(jsi_callback->fd_[1], &done, sizeof(bool));
+    });
 
 #endif
 
 
 #ifdef __APPLE__
 
-    auto current_queue = new NSOperationQueueWrapper(true);
-
-    auto queue = new NSOperationQueueWrapper(false);
+    auto cache = Caches::Get(isolate);
+    auto current_queue = cache->GetMainQueue();
+    auto queue = cache->GetWorkerQueue();
 
     auto task = [jsi_callback, current_queue, queue, asset, store, data, size]() {
 
@@ -815,8 +773,6 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
 
 
             delete jsi_callback;
-            delete queue;
-            delete current_queue;
 
         };
 
@@ -902,33 +858,20 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
  return 0;
  }, jsi_callback);
  
- std::thread thread(
- [jsi_callback, asset, format](
- const std::string &path) {
- 
- auto done = canvas_native_image_asset_save_path(asset,
- path.c_str(),
- format);
- 
- canvas_native_image_asset_destroy(asset);
- 
- write(jsi_callback->fd_[1],
- &done,
- sizeof(bool));
- 
- }, std::move(path));
- 
- 
- thread.detach();
+    WorkerPool::Instance().Enqueue([jsi_callback, asset, format, path = std::move(path)]() mutable {
+        auto done = canvas_native_image_asset_save_path(asset, path.c_str(), format);
+        canvas_native_image_asset_destroy(asset);
+        write(jsi_callback->fd_[1], &done, sizeof(bool));
+    });
  
  #endif
  
  
  #ifdef __APPLE__
  
- auto current_queue = new NSOperationQueueWrapper(true);
- 
- auto queue = new NSOperationQueueWrapper(false);
+    auto cache = Caches::Get(isolate);
+    auto current_queue = cache->GetMainQueue();
+    auto queue = cache->GetWorkerQueue();
  
  auto task = [jsi_callback, current_queue, queue, asset, path, format]() {
  
@@ -955,9 +898,7 @@ void ImageAssetImpl::FromEncodedBytesCb(const v8::FunctionCallbackInfo<v8::Value
  args);  // ignore JS return value
  
  
- delete jsi_callback;
- delete queue;
- delete current_queue;
+            delete jsi_callback;
  
  
  };

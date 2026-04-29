@@ -5,6 +5,10 @@ require('@nativescript/canvas-polyfill');
 import '@nativescript/canvas-polyfill';
 import { Canvas } from '@nativescript/canvas';
 
+// for (let i = 0; i < 100_000; i++) {
+// 	const canvas = new Canvas();
+// }
+
 /*
 
 

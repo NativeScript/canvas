@@ -1,5 +1,5 @@
 import { Utils } from '@nativescript/core';
-import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, makeStubParamHooks, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array, AudioListenerBase } from './common';
+import { AnalyserOptions, AudioContextOptions, AudioNodeBase, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, distanceModelFromNumber, distanceModelToNumber, DistanceModelType, IIRFilterOptions, MediaElementAudioSourceBase, MediaElementLike, panningModelFromNumber, panningModelToNumber, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, AudioListenerBase } from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: org.nativescript.audiocontext.AudioContextInstance };
 
@@ -51,18 +51,9 @@ export class AudioParam extends AudioParamBase {
 	}
 }
 
-export class AudioNode {
-	private [context_]: BaseAudioContext;
-
+export class AudioNode extends AudioNodeBase {
 	constructor(context: NativeBaseAudioContext) {
-		if (!(context instanceof BaseAudioContext)) {
-			throw new TypeError(`${this.constructor.name} constructor: Argument 1 does not implement interface BaseAudioContext.`);
-		}
-		this[context_] = context;
-	}
-
-	get context() {
-		return this[context_];
+		super(context);
 	}
 
 	connect(node: any, output?: number, input?: number) {
@@ -72,7 +63,9 @@ export class AudioNode {
 			if (typeof output === 'number' && typeof input === 'number') that.native.connect(target, output, input);
 			else if (typeof output === 'number') that.native.connect(target, output);
 			else that.native.connect(target);
-		} catch (e) {}
+		} catch (e) {
+			console.warn('AudioNode.connect failed:', e);
+		}
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
@@ -86,6 +79,7 @@ export class AudioNode {
 				try {
 					(that.native as any).disconnectOutput(destinationOrOutput);
 				} catch (e) {
+					console.warn('AudioNode.disconnect(output): falling back to full disconnect:', e);
 					that.native.disconnect();
 				}
 				return;
@@ -96,11 +90,16 @@ export class AudioNode {
 				else if (typeof output === 'number') (that.native as any).disconnectTo(dest, output);
 				else (that.native as any).disconnectTo(dest);
 			} catch (e) {
+				console.warn('AudioNode.disconnect(target): falling back to full disconnect:', e);
 				try {
 					that.native.disconnect();
-				} catch (ee) {}
+				} catch (ee) {
+					console.warn('AudioNode.disconnect fallback also failed:', ee);
+				}
 			}
-		} catch (e) {}
+		} catch (e) {
+			console.warn('AudioNode.disconnect failed:', e);
+		}
 	}
 }
 
@@ -265,17 +264,17 @@ export class PannerNode extends AudioNode {
 		return this._orientationZ || (this._orientationZ = new AudioParam(nativeCtor_, this.native.getOrientationZParam()));
 	}
 
-	get distanceModel() {
-		return this.native.getDistanceModel();
+	get distanceModel(): DistanceModelType {
+		return distanceModelFromNumber(this.native.getDistanceModel());
 	}
-	set distanceModel(v: number) {
-		this.native.setDistanceModel(v);
+	set distanceModel(v: DistanceModelType | number) {
+		this.native.setDistanceModel(distanceModelToNumber(v));
 	}
-	get panningModel() {
-		return this.native.getPanningModel();
+	get panningModel(): PanningModelType {
+		return panningModelFromNumber(this.native.getPanningModel());
 	}
-	set panningModel(v: number) {
-		this.native.setPanningModel(v);
+	set panningModel(v: PanningModelType | number) {
+		this.native.setPanningModel(panningModelToNumber(v));
 	}
 	get refDistance() {
 		return this.native.getRefDistance();
@@ -324,6 +323,11 @@ export class PannerNode extends AudioNode {
 
 export class AudioScheduledSourceNode extends AudioNode {
 	[native_]: org.nativescript.audiocontext.AudioScheduledSourceNode;
+	private _onended: ((ev: { type: 'ended' }) => void) | null = null;
+	private _nativeEndedWired = false;
+	private _javaEndedListener: any = null;
+	private _endedFired = false;
+
 	constructor(context: NativeBaseAudioContext, node: org.nativescript.audiocontext.AudioScheduledSourceNode) {
 		super(context);
 		if (!(node instanceof org.nativescript.audiocontext.AudioScheduledSourceNode)) throw new TypeError('Illegal constructor.');
@@ -334,7 +338,43 @@ export class AudioScheduledSourceNode extends AudioNode {
 		return this[native_];
 	}
 
+	get onended() {
+		return this._onended;
+	}
+	set onended(cb: ((ev: { type: 'ended' }) => void) | null) {
+		if (this._onended) super.removeEventListener('ended', this._onended);
+		this._onended = typeof cb === 'function' ? cb : null;
+		if (this._onended) {
+			super.addEventListener('ended', this._onended);
+			this._ensureNativeEndedWired();
+		}
+	}
+
+	protected _onFirstListenerAdded(type: string) {
+		if (type === 'ended') this._ensureNativeEndedWired();
+	}
+
+	private _ensureNativeEndedWired() {
+		if (this._nativeEndedWired) return;
+		this._nativeEndedWired = true;
+		try {
+			this._javaEndedListener = new (org.nativescript.audiocontext.AudioContext as any).EndedListener({
+				onEnded: () => this._fireEnded(),
+			});
+			this.native.addEndedListener(this._javaEndedListener);
+		} catch (e) {
+			console.warn('AudioScheduledSourceNode: native ended listener wire failed:', e);
+		}
+	}
+
+	protected _fireEnded() {
+		if (this._endedFired) return;
+		this._endedFired = true;
+		this.dispatchEvent({ type: 'ended', target: this });
+	}
+
 	start() {
+		this._endedFired = false;
 		this.native.start();
 	}
 
@@ -362,6 +402,43 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	}
 	set buffer(v: AudioBuffer | null) {
 		this.native.setBuffer(v?.native ?? (null as never));
+	}
+	protected _scheduledDuration(): number {
+		const b = this.native.getBuffer();
+		if (!b || this.native.getLoop()) return 0;
+		try {
+			return b.getDuration() || 0;
+		} catch (e) {
+			return 0;
+		}
+	}
+}
+
+export class MediaElementAudioSourceNode extends MediaElementAudioSourceBase {
+	constructor(context: AudioContext, mediaElement: MediaElementLike) {
+		super(context, mediaElement);
+	}
+
+	get context() {
+		return this[context_] as AudioContext;
+	}
+
+	protected _wrapTapNative(tapNative: any) {
+		if (!tapNative) return null;
+		const ctx = this.context;
+		const node = Object.create(AudioNode.prototype) as AudioNode & { native: org.nativescript.audiocontext.AudioNode };
+		(node as any)[context_] = ctx;
+		(node as any).native = tapNative;
+		return node;
+	}
+	protected _createGainNode() {
+		return this.context.createGain();
+	}
+	protected _createBufferSource(buffer: AudioBuffer) {
+		return this.context.createBufferSource({ buffer });
+	}
+	protected _decodeFromUrl(src: string): Promise<AudioBuffer> {
+		return this.context.decodeAudioData(src);
 	}
 }
 
@@ -469,9 +546,8 @@ export class OfflineAudioContext extends BaseAudioContext {
 				return;
 			}
 
-			const u8 = toUint8Array(source);
 			OfflineAudioContext.getInstance().decodeAudioDataFromBufferAsync(
-				u8 as never,
+				source as never,
 				this.native,
 				new org.nativescript.audiocontext.DecodeCallback({
 					onResult(buffer) {
@@ -519,6 +595,11 @@ export class AudioContext extends BaseAudioContext {
 		this[native_] = audioContextInstance.createContextInstance(sampleRate, latencyHintSec);
 
 		this.destination = new AudioDestinationNode(this, this[native_].getDestination());
+		this._setState('running');
+	}
+
+	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode {
+		return new MediaElementAudioSourceNode(this, mediaElement);
 	}
 
 	get native() {
@@ -593,7 +674,7 @@ export class AudioContext extends BaseAudioContext {
 		});
 	}
 
-	async decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
+	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer> {
 		return new Promise((resolve, reject) => {
 			if (typeof source === 'string') {
 				if (looksLikePath(source)) {
@@ -624,9 +705,8 @@ export class AudioContext extends BaseAudioContext {
 				return;
 			}
 
-			const u8 = toUint8Array(source);
 			AudioContext.getInstance().decodeAudioDataFromBufferAsync(
-				u8 as never,
+				source as never,
 				this.native,
 				new org.nativescript.audiocontext.DecodeCallback({
 					onResult(buffer) {
@@ -639,27 +719,76 @@ export class AudioContext extends BaseAudioContext {
 	}
 
 	resume(): Promise<void> {
-		AudioContext.getInstance().resume();
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		return new Promise((resolve, reject) => {
+			const ref = new WeakRef(this);
+			AudioContext.getInstance().resumeAsync(
+				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
+					onComplete(ok) {
+						if (ok) {
+							const that = ref.get();
+							if (that) {
+								that._setState('running');
+							}
+							resolve();
+						} else {
+							reject(new Error('AudioContext resume failed'));
+						}
+					},
+				}),
+			);
+		});
 	}
 
 	suspend(): Promise<void> {
-		AudioContext.getInstance().suspend();
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		return new Promise((resolve, reject) => {
+			const ref = new WeakRef(this);
+			AudioContext.getInstance().suspendAsync(
+				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
+					onComplete(ok) {
+						if (ok) {
+							const that = ref.get();
+							if (that) {
+								that._setState('suspended');
+							}
+							resolve();
+						} else {
+							reject(new Error('AudioContext suspend failed'));
+						}
+					},
+				}),
+			);
+		});
 	}
 
 	close(): Promise<void> {
-		if (this.native) {
-			this.native.release();
-		}
-		this.destination = null;
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.resolve();
+		return new Promise((resolve, reject) => {
+			const ref = new WeakRef(this);
+			AudioContext.getInstance().closeAsync(
+				new org.nativescript.audiocontext.AudioContext.AsyncCallback({
+					onComplete(ok) {
+						if (ok) {
+							const that = ref.get();
+							if (that) {
+								that._setState('closed');
+							}
+							resolve();
+						} else {
+							reject(new Error('AudioContext close failed'));
+						}
+					},
+				}),
+			);
+		});
 	}
 
 	private _sinkId = 'default';
 	get sinkId(): string {
 		return this._sinkId;
 	}
+
 	setSinkId(deviceId: string): Promise<void> {
 		return new Promise((resolve, reject) => {
 			try {
@@ -707,14 +836,6 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 		if (!wave) return;
 		this._periodicWave = wave;
 		this.native.setPeriodicWave(wave.native);
-	}
-}
-
-class StubAudioParam extends AudioParamBase {
-	constructor(initial = 0) {
-		const hooks = makeStubParamHooks();
-		super(hooks, initial);
-		if (initial !== 0) hooks.nativeSet(initial);
 	}
 }
 

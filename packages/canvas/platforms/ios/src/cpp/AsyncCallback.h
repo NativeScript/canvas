@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Caches.h"
 
 #ifdef __ANDROID__
 
@@ -44,31 +45,27 @@ struct AsyncCallback {
             this->completeCallback_ = completeCallback;
 
             this->completeCallbackWrapper_ = [](bool success, void *data){
-                if(data != nullptr){
-                    auto* callback = static_cast<AsyncCallback*>(data);
-                    if(callback->inner_->current_queue == nullptr){
-                        return;
-                    }
-                    
-                    auto inner = std::shared_ptr<Inner>(callback->inner_);
-                                        
-                    std::thread thread([success, data, callback](std::shared_ptr<Inner> inner){
-                        inner->current_queue = nullptr;
-                        inner->completeCallback_(success, data);
-                    }, std::move(inner));
-                    
-                    thread.detach();
-                    
-//                    callback->inner_->current_queue->addOperation([success, data, callback, inner_ptr](){
-//                        inner_ptr->completeCallback_(success, data);
-//                       // delete callback;
-//                    });
-                }
+                if (data == nullptr) return;
+                auto* callback = static_cast<AsyncCallback*>(data);
+                auto inner_shared = callback->inner_;
+                if (!inner_shared) return;
+                if (inner_shared->current_queue == nullptr) return;
+
+                std::shared_ptr<Inner> inner_copy = inner_shared;
+                auto queue_ptr = inner_copy->current_queue;
+
+                queue_ptr->addOperation([success, data, inner_copy]() mutable {
+                    inner_copy->current_queue = nullptr;
+                    inner_copy->completeCallback_(success, data);
+                });
             };
         }
 
         void prepare(){
-            current_queue = new NSOperationQueueWrapper(true);
+            if (isolate_ != nullptr) {
+                auto cache = Caches::Get(isolate_);
+                current_queue = cache->GetMainQueue();
+            }
             isPrepared_ = true;
         }
 

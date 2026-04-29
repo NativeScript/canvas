@@ -34,7 +34,7 @@
 	"devDependencies": {
 		"@nativescript/android": "~8.9.0",
 		"@nativescript/devtools": "~0.0.1",
-		"@nativescript/ios": "9.0.3",
+		"@nativescript/ios": "~8.9.0",
 		"@nativescript/visionos": "~8.9.0"
 	}
 }

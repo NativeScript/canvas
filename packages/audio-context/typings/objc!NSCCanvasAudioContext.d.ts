@@ -109,6 +109,8 @@ declare class NSCAudioContext extends NSObject {
 
 	allAnalyserWrappers(): NSArray<NSCAnalyserNode>;
 
+	closeAsync(completion: () => void): void;
+
 	createAnalyserNode(): NSCAnalyserNode;
 
 	createBiquadNode(): NSCBiquadNode;
@@ -130,6 +132,8 @@ declare class NSCAudioContext extends NSObject {
 	createOscillatorNodeFrequency(type: string, frequency: number): NSCAudioOscillatorNode;
 
 	createPannerNode(): NSCAudioPannerNode;
+
+	createSourceNodeFromMediaPlayer(player: AVPlayer): NSCAudioNode;
 
 	createStereoPannerNode(pan: number): NSCStereoPannerNode;
 
@@ -193,6 +197,8 @@ declare class NSCAudioContext extends NSObject {
 
 	resumeAllPendingNodes(): void;
 
+	resumeAsync(completion: (p1: boolean) => void): void;
+
 	setListenerOrientation(forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
 
 	setListenerPosition(x: number, y: number, z: number): void;
@@ -200,6 +206,8 @@ declare class NSCAudioContext extends NSObject {
 	setSinkId(deviceId: string): boolean;
 
 	suspend(): void;
+
+	suspendAsync(completion: (p1: boolean) => void): void;
 
 	unregisterPendingNode(node: NSCAudioBufferSourceNode): void;
 }
@@ -482,6 +490,22 @@ declare class NSCIIRFilterNode extends NSCAudioNode {
 	getFrequencyResponseMagResponsePhaseResponse(frequencyHzData: NSData, magResponse: NSMutableData, phaseResponse: NSMutableData): void;
 
 	initWithContextFeedforwardFeedback(context: NSCAudioContext, feedforward: NSArray<number> | number[], feedback: NSArray<number> | number[]): this;
+}
+
+declare class NSCMediaElementSourceTap extends NSObject {
+	static alloc(): NSCMediaElementSourceTap; // inherited from NSObject
+
+	static attachToPlayerContext(player: AVPlayer, context: NSCAudioContext): NSCMediaElementSourceTap;
+
+	static new(): NSCMediaElementSourceTap; // inherited from NSObject
+
+	readonly context: NSCAudioContext;
+
+	readonly player: AVPlayer;
+
+	readonly sourceNode: AVAudioSourceNode;
+
+	detach(): void;
 }
 
 declare class NSCOfflineAudioContext extends NSCAudioContext {

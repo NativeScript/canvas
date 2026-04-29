@@ -14,6 +14,7 @@ import android.os.Process;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +42,60 @@ public class AudioContext {
 	private static AudioContext sInstance;
 	private final ConcurrentHashMap<String, AudioTrack> tracks = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Thread> trackThreads = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, java.util.concurrent.CopyOnWriteArrayList<EndedListener>> trackEndedListeners = new ConcurrentHashMap<>();
+
+	public interface EndedListener {
+		void onEnded(String trackId);
+	}
+
+
+	public void addEndedListener(String trackId, @NonNull EndedListener listener) {
+		if (trackId == null) return;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			trackEndedListeners
+				.computeIfAbsent(trackId, k -> new CopyOnWriteArrayList<>())
+				.addIfAbsent(listener);
+		} else {
+			synchronized (trackEndedListeners) {
+				CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.get(trackId);
+				if (list == null) {
+					CopyOnWriteArrayList<EndedListener> newList = new CopyOnWriteArrayList<>();
+					CopyOnWriteArrayList<EndedListener> existing =
+						trackEndedListeners.putIfAbsent(trackId, newList);
+					list = (existing != null) ? existing : newList;
+				}
+
+				if (!list.contains(listener)) {
+					list.add(listener);
+				}
+			}
+		}
+	}
+
+	public void removeEndedListener(String trackId, @NonNull EndedListener listener) {
+		if (trackId == null) return;
+		java.util.concurrent.CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.get(trackId);
+		if (list != null) list.remove(listener);
+	}
+
+
+	void fireEnded(String trackId) {
+		java.util.concurrent.CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.remove(trackId);
+		if (list == null) return;
+		for (EndedListener l : list) {
+			try {
+				l.onEnded(trackId);
+			} catch (Throwable t) {
+				Log.w("AudioContext", "ended listener threw", t);
+			}
+		}
+	}
+
+	@SuppressWarnings("unused")
+	void nativeOnTrackEnded(String trackId) {
+		fireEnded(trackId);
+	}
+
 	private static boolean nativeAvailable;
 	private final ConcurrentHashMap<String, Integer> sampleRates = new ConcurrentHashMap<>();
 
@@ -86,6 +142,35 @@ public class AudioContext {
 	private final Set<String> destinationIds = createConcurrentSet();
 	private final ConcurrentHashMap<String, Set<String>> nodeSources = new ConcurrentHashMap<>();
 	private final ExecutorService decodeExecutor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()));
+
+
+	private final ConcurrentHashMap<Looper, Handler> _handlerCache = new ConcurrentHashMap<>();
+
+	private Handler handlerForLooper(Looper looper) {
+		Handler h = _handlerCache.get(looper);
+		if (h != null) return h;
+		Handler created = new Handler(looper);
+		Handler prev = _handlerCache.putIfAbsent(looper, created);
+		return prev != null ? prev : created;
+	}
+
+
+	private Looper captureCallerLooper() {
+		return Looper.myLooper();
+	}
+
+	private void dispatch(Looper target, Runnable r) {
+		if (target == null) {
+			r.run();
+			return;
+		}
+
+		if (Looper.myLooper() == target) {
+			r.run();
+			return;
+		}
+		handlerForLooper(target).post(r);
+	}
 
 	public static synchronized AudioContext getInstance() {
 		if (sInstance == null) sInstance = new AudioContext();
@@ -148,7 +233,7 @@ public class AudioContext {
 	}
 
 	public void renderOfflineAsync(final String[] trackIds, final int frames, final int sampleRate, final int channels, final DecodeCallback cb) {
-		final Looper callerLooper = Looper.myLooper();
+		final Looper callerLooper = captureCallerLooper();
 		decodeExecutor.submit(() -> {
 			AudioBuffer id;
 			if (nativeAvailable) {
@@ -230,11 +315,7 @@ public class AudioContext {
 				}
 			}
 			final AudioBuffer result = id;
-			if (callerLooper != null) {
-				new Handler(callerLooper).post(() -> cb.onResult(result));
-			} else {
-				cb.onResult(result);
-			}
+			dispatch(callerLooper, () -> cb.onResult(result));
 		});
 	}
 
@@ -596,29 +677,34 @@ public class AudioContext {
 	private native String nativeCreateBiquad(String type, double frequency, double Q, double gain);
 
 	private native String nativeCreatePanner(String contextId, double positionX, double positionY, double positionZ,
-											double orientationX, double orientationY, double orientationZ,
-											double pan,
-											int distanceModel, int panningModel,
-											double refDistance, double maxDistance, double rolloffFactor,
-											double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
+																					 double orientationX, double orientationY, double orientationZ,
+																					 double pan,
+																					 int distanceModel, int panningModel,
+																					 double refDistance, double maxDistance, double rolloffFactor,
+																					 double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
 
 	private native void nativeSetPannerParams(String pannerId,
-											  double positionX, double positionY, double positionZ,
-											  double orientationX, double orientationY, double orientationZ,
-											  double pan,
-											  int distanceModel, int panningModel,
-											  double refDistance, double maxDistance, double rolloffFactor,
-											  double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
+																						double positionX, double positionY, double positionZ,
+																						double orientationX, double orientationY, double orientationZ,
+																						double pan,
+																						int distanceModel, int panningModel,
+																						double refDistance, double maxDistance, double rolloffFactor,
+																						double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
 
 	private native void nativeSetListenerParams(String contextId, double positionX, double positionY, double positionZ,
-												double forwardX, double forwardY, double forwardZ,
-												double upX, double upY, double upZ);
+																							double forwardX, double forwardY, double forwardZ,
+																							double upX, double upY, double upZ);
 
 	private native void nativeScheduleListenerSet(String contextId, int paramType, int rate, long timeNs, double value);
+
 	private native void nativeScheduleListenerRamp(String contextId, int paramType, int rate, long timeNs, double value);
+
 	private native double[] nativeGetListenerParamValues(String contextId, int paramType, long startNs, double sampleRate, int frameCount);
+
 	private native void nativeCancelListenerEvents(String contextId, int paramType, long timeNs);
+
 	private native void nativeCancelAndHoldListenerEvents(String contextId, int paramType, int rate, long timeNs, double value);
+
 	private native double nativeGetListenerParamValue(String contextId, int paramType);
 
 	private native void nativeAttachPanner(String voiceId, String pannerId);
@@ -1109,17 +1195,13 @@ public class AudioContext {
 	}
 
 	void decodeAudioDataAsync(final String base64, final String contextId, final DecodeCallback cb) {
-		final Looper callerLooper = Looper.myLooper();
+		final Looper callerLooper = captureCallerLooper();
 		decodeExecutor.submit(() -> {
 			final AudioBuffer buffer = decodeAudioData(base64);
 			if (buffer != null && contextId != null) {
 				assignBufferToContext(buffer, contextId);
 			}
-			if (callerLooper != null) {
-				new Handler(callerLooper).post(() -> cb.onResult(buffer));
-			} else {
-				cb.onResult(buffer);
-			}
+			dispatch(callerLooper, () -> cb.onResult(buffer));
 		});
 	}
 
@@ -1128,17 +1210,13 @@ public class AudioContext {
 	}
 
 	void decodeAudioDataFromByteArrayAsync(final byte[] data, final String contextId, final DecodeCallback cb) {
-		final Looper callerLooper = Looper.myLooper();
+		final Looper callerLooper = captureCallerLooper();
 		decodeExecutor.submit(() -> {
 			final AudioBuffer buffer = decodeAudioDataFromByteArray(data);
 			if (buffer != null && contextId != null) {
 				assignBufferToContext(buffer, contextId);
 			}
-			if (callerLooper != null) {
-				new Handler(callerLooper).post(() -> cb.onResult(buffer));
-			} else {
-				cb.onResult(buffer);
-			}
+			dispatch(callerLooper, () -> cb.onResult(buffer));
 		});
 	}
 
@@ -1148,17 +1226,13 @@ public class AudioContext {
 	}
 
 	void decodeAudioDataFromFileAsync(final String path, final String contextId, final DecodeCallback cb) {
-		final Looper callerLooper = Looper.myLooper();
+		final Looper callerLooper = captureCallerLooper();
 		decodeExecutor.submit(() -> {
 			final AudioBuffer buffer = decodeAudioDataFromFile(path);
 			if (buffer != null && contextId != null) {
 				assignBufferToContext(buffer, contextId);
 			}
-			if (callerLooper != null) {
-				new Handler(callerLooper).post(() -> cb.onResult(buffer));
-			} else {
-				cb.onResult(buffer);
-			}
+			dispatch(callerLooper, () -> cb.onResult(buffer));
 		});
 	}
 
@@ -1167,17 +1241,13 @@ public class AudioContext {
 	}
 
 	void decodeAudioDataFromBufferAsync(final java.nio.ByteBuffer buffer, final String contextId, final DecodeCallback cb) {
-		final Looper callerLooper = Looper.myLooper();
+		final Looper callerLooper = captureCallerLooper();
 		decodeExecutor.submit(() -> {
 			final AudioBuffer audioBuffer = decodeAudioDataFromBuffer(buffer);
 			if (audioBuffer != null && contextId != null) {
 				assignBufferToContext(audioBuffer, contextId);
 			}
-			if (callerLooper != null) {
-				new Handler(callerLooper).post(() -> cb.onResult(audioBuffer));
-			} else {
-				cb.onResult(audioBuffer);
-			}
+			dispatch(callerLooper, () -> cb.onResult(audioBuffer));
 		});
 	}
 
@@ -1441,6 +1511,52 @@ public class AudioContext {
 		}
 	}
 
+	public interface AsyncCallback {
+		void onComplete(boolean ok);
+	}
+
+	public void resumeAsync(@Nullable AsyncCallback cb) {
+		final Looper callerLooper = captureCallerLooper();
+		decodeExecutor.submit(() -> {
+			boolean ok = true;
+			try {
+				if (nativeAvailable) nativeResume();
+			} catch (Throwable t) {
+				ok = false;
+			}
+			final boolean result = ok;
+			if (cb != null) dispatch(callerLooper, () -> cb.onComplete(result));
+		});
+	}
+
+	public void suspendAsync(@Nullable AsyncCallback cb) {
+		final Looper callerLooper = captureCallerLooper();
+		decodeExecutor.submit(() -> {
+			boolean ok = true;
+			try {
+				if (nativeAvailable) nativeSuspend();
+			} catch (Throwable t) {
+				ok = false;
+			}
+			final boolean result = ok;
+			if (cb != null) dispatch(callerLooper, () -> cb.onComplete(result));
+		});
+	}
+
+	public void closeAsync(@Nullable AsyncCallback cb) {
+		final Looper callerLooper = captureCallerLooper();
+		decodeExecutor.submit(() -> {
+			boolean ok = true;
+			try {
+				if (nativeAvailable) nativeSuspend();
+			} catch (Throwable t) {
+				ok = false;
+			}
+			final boolean result = ok;
+			if (cb != null) dispatch(callerLooper, () -> cb.onComplete(result));
+		});
+	}
+
 	public AudioOscillatorNode createOscillator(AudioContextInstance context) {
 		return new AudioOscillatorNode(context);
 	}
@@ -1520,6 +1636,7 @@ public class AudioContext {
 	public void stopTrack(String id) {
 		if (nativeAvailable) {
 			nativeStopTrack(id);
+			fireEnded(id);
 			return;
 		}
 
@@ -1545,6 +1662,8 @@ public class AudioContext {
 			} catch (Exception ignored) {
 			}
 		}
+
+		fireEnded(id);
 	}
 
 	void assignBufferToContext(AudioBuffer buffer, AudioContextInstance context) {
@@ -1700,18 +1819,19 @@ public class AudioContext {
 	}
 
 	public void setListenerParams(String contextId, double positionX, double positionY, double positionZ,
-								  double forwardX, double forwardY, double forwardZ,
-								  double upX, double upY, double upZ) {
+																double forwardX, double forwardY, double forwardZ,
+																double upX, double upY, double upZ) {
 		if (nativeAvailable) {
 			try {
 				nativeSetListenerParams(contextId, positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
-			} catch (Throwable ignored) {}
+			} catch (Throwable ignored) {
+			}
 		}
 	}
 
 	public void setListenerParams(double positionX, double positionY, double positionZ,
-								  double forwardX, double forwardY, double forwardZ,
-								  double upX, double upY, double upZ) {
+																double forwardX, double forwardY, double forwardZ,
+																double upX, double upY, double upZ) {
 		setListenerParams("", positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
 	}
 
@@ -1819,7 +1939,8 @@ public class AudioContext {
 		if (nativeAvailable && absNs >= 0) {
 			try {
 				return nativeGetListenerParamValues(contextId, paramType, absNs, sampleRate, frameCount);
-			} catch (Throwable ignored) {}
+			} catch (Throwable ignored) {
+			}
 		}
 		return null;
 	}
@@ -1829,7 +1950,8 @@ public class AudioContext {
 		if (nativeAvailable) {
 			try {
 				return nativeGetListenerParamValue(contextId, paramType);
-			} catch (Throwable ignored) {}
+			} catch (Throwable ignored) {
+			}
 		}
 		return 0.0;
 	}
@@ -2292,6 +2414,56 @@ public class AudioContext {
 	public AudioBufferSourceNode createBufferSource(AudioContextInstance context, @Nullable AudioBuffer buffer) {
 		return new AudioBufferSourceNode(createBufferSource(context.getId(), buffer), buffer);
 	}
+
+	public String createExternalPcmSource(int sampleRate, int channels) {
+		if (nativeAvailable) {
+			return nativeCreateExternalPcmSource(sampleRate, channels);
+		}
+		return null;
+	}
+
+	public void pushPcmFrames(String trackId, float[] data) {
+		if (trackId == null || data == null || data.length == 0) return;
+		if (nativeAvailable) {
+			nativePushPcmFramesFloatArray(trackId, data, data.length);
+		}
+	}
+
+
+	public void pushPcmFrames(String trackId, java.nio.FloatBuffer data) {
+		if (trackId == null || data == null) return;
+		int remaining = data.remaining();
+		if (remaining <= 0) return;
+		if (!data.isDirect()) {
+			float[] copy = new float[remaining];
+			int p = data.position();
+			data.get(copy, 0, remaining);
+			data.position(p);
+			pushPcmFrames(trackId, copy);
+			return;
+		}
+		if (nativeAvailable) {
+			nativePushPcmFramesDirect(trackId, data, remaining);
+		}
+	}
+
+
+	public void endExternalPcmSource(String trackId) {
+		if (trackId == null) return;
+		if (nativeAvailable) {
+			nativeEndExternalPcmSource(trackId);
+		}
+
+		fireEnded(trackId);
+	}
+
+	private native String nativeCreateExternalPcmSource(int sampleRate, int channels);
+
+	private native void nativePushPcmFramesFloatArray(String trackId, float[] data, int frames);
+
+	private native void nativePushPcmFramesDirect(String trackId, java.nio.Buffer data, int sampleCount);
+
+	private native void nativeEndExternalPcmSource(String trackId);
 
 	void switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
 		if (trackId == null) return;

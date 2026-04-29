@@ -1418,3 +1418,62 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetContextCurrentTimeNanos
     env->ReleaseStringUTFChars(jcontextId, c);
     return static_cast<jlong>(res);
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeCreateExternalPcmSource(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jint sampleRate,
+                                                                              jint channels) {
+    std::string id = NativeEngine::getInstance().createExternalPcmSource(
+            static_cast<int>(sampleRate), static_cast<int>(channels));
+    return env->NewStringUTF(id.c_str());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativePushPcmFramesFloatArray(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jstring jid,
+                                                                              jfloatArray jdata,
+                                                                              jint frames) {
+    if (!jid || !jdata || frames <= 0) return;
+    const char *idChars = env->GetStringUTFChars(jid, nullptr);
+    if (!idChars) return;
+    std::string id(idChars);
+    env->ReleaseStringUTFChars(jid, idChars);
+
+    jsize len = env->GetArrayLength(jdata);
+    if (len <= 0) return;
+    jfloat *raw = env->GetFloatArrayElements(jdata, nullptr);
+    if (!raw) return;
+    NativeEngine::getInstance().pushPcmFrames(id, raw, static_cast<size_t>(len));
+    env->ReleaseFloatArrayElements(jdata, raw, JNI_ABORT);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativePushPcmFramesDirect(JNIEnv *env,
+                                                                          jobject thiz,
+                                                                          jstring jid,
+                                                                          jobject jbuffer,
+                                                                          jint sampleCount) {
+    if (!jid || !jbuffer || sampleCount <= 0) return;
+    const char *idChars = env->GetStringUTFChars(jid, nullptr);
+    if (!idChars) return;
+    std::string id(idChars);
+    env->ReleaseStringUTFChars(jid, idChars);
+
+    void *addr = env->GetDirectBufferAddress(jbuffer);
+    if (!addr) return;
+    NativeEngine::getInstance().pushPcmFrames(id, reinterpret_cast<const float *>(addr),
+                                              static_cast<size_t>(sampleCount));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeEndExternalPcmSource(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jstring jid) {
+    if (!jid) return;
+    const char *idChars = env->GetStringUTFChars(jid, nullptr);
+    if (!idChars) return;
+    NativeEngine::getInstance().endExternalPcmSource(std::string(idChars));
+    env->ReleaseStringUTFChars(jid, idChars);
+}

@@ -209,6 +209,8 @@ export class Audio extends AudioBase {
 		if (this._playPromise) {
 			return this._playPromise;
 		}
+
+		this._notifyListener(Audio.playEvent);
 		this._playPromise = new Promise<void>((resolve, reject) => {
 			this._playResolve = resolve;
 			this._playReject = reject;
@@ -220,6 +222,7 @@ export class Audio extends AudioBase {
 
 	pause() {
 		this.helper.pause();
+		this._notifyListener(Audio.pauseEvent);
 	}
 
 	// @ts-ignore
@@ -233,5 +236,27 @@ export class Audio extends AudioBase {
 			return;
 		}
 		this.helper.loop = booleanConverter(value);
+	}
+
+	private _activeTapNode: any = null;
+
+	attachAudioContextTap(contextNative: any): any {
+		if (!contextNative || typeof contextNative.createSourceNodeFromMediaPlayer !== 'function') {
+			return null;
+		}
+		const player: any = this.helper?.player;
+		if (!player) return null;
+		try {
+			const node = contextNative.createSourceNodeFromMediaPlayer(player);
+			if (node) this._activeTapNode = node;
+			return node;
+		} catch (e) {
+			console.warn('Audio.attachAudioContextTap: native call failed:', e);
+			return null;
+		}
+	}
+
+	detachAudioContextTap(): void {
+		this._activeTapNode = null;
 	}
 }

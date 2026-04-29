@@ -15,9 +15,7 @@ public class AudioContextInstance {
 		return id;
 	}
 
-	public void setListenerParams(double positionX, double positionY, double positionZ,
-								  double forwardX, double forwardY, double forwardZ,
-								  double upX, double upY, double upZ) {
+	public void setListenerParams(double positionX, double positionY, double positionZ, double forwardX, double forwardY, double forwardZ, double upX, double upY, double upZ) {
 		AudioContext.getInstance().setListenerParams(this.id, positionX, positionY, positionZ, forwardX, forwardY, forwardZ, upX, upY, upZ);
 	}
 
@@ -78,10 +76,28 @@ public class AudioContextInstance {
 		return AudioContext.getInstance().setSinkId(deviceId);
 	}
 
+	public void resumeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
+		AudioContext.getInstance().resumeAsync(cb);
+	}
+
+	public void suspendAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
+		AudioContext.getInstance().suspendAsync(cb);
+	}
+
+	public void closeAsync(@androidx.annotation.Nullable AudioContext.AsyncCallback cb) {
+		AudioContext.getInstance().closeAsync(cb);
+	}
+
 	public AudioOscillatorNode createOscillatorNodeFrequency(String type, double frequency) {
 		String id = AudioContext.getInstance().createOscillator(getId(), type, frequency);
 		if (id == null) return null;
 		return new AudioOscillatorNode(id, type, frequency);
+	}
+
+	public ExternalPcmSourceNode createExternalPcmSource(int sampleRate, int channels) {
+		String id = AudioContext.getInstance().createExternalPcmSource(sampleRate, channels);
+		if (id == null) return null;
+		return new ExternalPcmSourceNode(id, sampleRate, channels);
 	}
 
 	public GainNode getDestination() {

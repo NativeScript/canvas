@@ -1,6 +1,6 @@
-import { AnalyserOptions, AudioContextOptions, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, LatencyHint, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions } from './common';
+import { AnalyserOptions, AudioContextOptions, AudioContextState, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions } from './common';
 
-export { AnalyserOptions, AudioContextOptions, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, LatencyHint, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions };
+export { AnalyserOptions, AudioContextOptions, AudioContextState, ConstantSourceOptions, ConvolverOptions, DelayOptions, DistanceModelType, IIRFilterOptions, LatencyHint, MediaElementLike, MediaElementTapProvider, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions };
 
 export declare class AudioParam {
 	value: number;
@@ -91,8 +91,8 @@ export declare class PannerNode extends AudioNode {
 	readonly orientationY: AudioParam;
 	readonly orientationZ: AudioParam;
 
-	distanceModel: number;
-	panningModel: number;
+	distanceModel: DistanceModelType;
+	panningModel: PanningModelType;
 	refDistance: number;
 	maxDistance: number;
 	rolloffFactor: number;
@@ -107,8 +107,16 @@ export declare class PannerNode extends AudioNode {
 export declare class AudioDestinationNode extends GainNode {}
 
 export class AudioScheduledSourceNode extends AudioNode {
-	start();
-	stop();
+	start(when?: number, offset?: number, duration?: number);
+	stop(when?: number);
+	onended: ((ev: { type: 'ended' }) => void) | null;
+	addEventListener(type: 'ended', listener: (ev: { type: 'ended' }) => void): void;
+	removeEventListener(type: 'ended', listener: (ev: { type: 'ended' }) => void): void;
+}
+
+export declare class MediaElementAudioSourceNode extends AudioNode {
+	readonly mediaElement: MediaElementLike;
+	disposeMediaElementSource(): void;
 }
 
 export declare class OscillatorNode extends AudioScheduledSourceNode {
@@ -194,6 +202,12 @@ export declare class AudioContext extends BaseAudioContext {
 	createIIRFilter(feedforward: number[], feedback: number[]): IIRFilterNode;
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
+	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode;
+
+	readonly state: AudioContextState;
+	onstatechange: ((ev: { type: 'statechange' }) => void) | null;
+	addEventListener(type: 'statechange', listener: (ev: { type: 'statechange' }) => void): void;
+	removeEventListener(type: 'statechange', listener: (ev: { type: 'statechange' }) => void): void;
 
 	readonly sampleRate: number;
 	readonly currentTime: number;
@@ -201,21 +215,7 @@ export declare class AudioContext extends BaseAudioContext {
 	resume(): Promise<void>;
 	suspend(): Promise<void>;
 	close(): Promise<void>;
-
-	/**
-	 * Currently selected output device id. `'default'` when no override is in
-	 * effect; `'speaker'` on iOS when forced to the built-in speaker; an
-	 * `AudioDeviceInfo.id` (Android) or `AVAudioSessionPortDescription.UID`
-	 * (iOS) otherwise.
-	 */
 	readonly sinkId: string;
-
-	/**
-	 * Mirror of W3C `AudioContext.setSinkId`. Pass `'default'` (or empty) to
-	 * clear an override, `'speaker'` to force the built-in speaker on iOS, or
-	 * the platform device id string. Resolves on success, rejects with the
-	 * underlying error otherwise.
-	 */
 	setSinkId(deviceId: string): Promise<void>;
 
 	decodeAudioData(source: string | ArrayBuffer | ArrayBufferView): Promise<AudioBuffer>;

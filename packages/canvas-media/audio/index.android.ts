@@ -119,6 +119,8 @@ export class Audio extends AudioBase {
 			return this._playPromise;
 		}
 
+		this._notifyListener(Audio.playEvent);
+
 		this._playPromise = new Promise<void>((resolve, reject) => {
 			this._playResolve = resolve;
 			this._playReject = reject;
@@ -139,6 +141,7 @@ export class Audio extends AudioBase {
 			return;
 		}
 		this._instance.pause();
+		this._notifyListener(Audio.pauseEvent);
 	}
 
 	get muted() {
@@ -150,44 +153,28 @@ export class Audio extends AudioBase {
 	}
 
 	get duration() {
-		try {
-			const d = this._instance.getDuration();
-			if (d == null || Number(d) <= 0) return NaN;
-			return Number(d) / 1000.0;
-		} catch (e) {
-			return NaN;
-		}
+		const d = this._instance.getDuration();
+		if (d == null || Number(d) <= 0) return NaN;
+		return Number(d) / 1000.0;
 	}
 
 	get currentTime() {
-		try {
-			return this._instance.getCurrentTime();
-		} catch (e) {
-			return 0;
-		}
+		return this._instance.getCurrentTime();
 	}
 
 	set currentTime(value: number) {
-		try {
-			this._instance.setCurrentTime(value);
-		} catch (e) {}
+		this._instance.setCurrentTime(value);
 	}
 
 	get src() {
-		try {
-			return this._instance.getSrc();
-		} catch (e) {
-			return undefined;
-		}
+		return this._instance.getSrc();
 	}
 
 	set src(value: string) {
-		try {
-			if (typeof value === 'string' && value.startsWith('~/')) {
-				value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
-			}
-			this._instance.setSrc(value);
-		} catch (e) {}
+		if (typeof value === 'string' && value.startsWith('~/')) {
+			value = path.join(knownFolders.currentApp().path, value.replace('~', ''));
+		}
+		this._instance.setSrc(value);
 	}
 
 	load() {
@@ -246,6 +233,29 @@ export class Audio extends AudioBase {
 		super.onLoaded();
 		if (this._sourceView.length > 0) {
 			this.src = this._sourceView[0].src;
+		}
+	}
+
+	attachAudioContextTap(contextNative: any): any {
+		const inst: any = (this as any)._instance;
+		if (!inst || typeof inst.attachAudioContextTap !== 'function') {
+			return null;
+		}
+		try {
+			return inst.attachAudioContextTap(contextNative);
+		} catch (e) {
+			console.warn('Audio.attachAudioContextTap: native call failed:', e);
+			return null;
+		}
+	}
+
+	detachAudioContextTap(): void {
+		const inst: any = (this as any)._instance;
+		if (!inst || typeof inst.detachAudioContextTap !== 'function') return;
+		try {
+			inst.detachAudioContextTap();
+		} catch (e) {
+			console.warn('Audio.detachAudioContextTap: native call failed:', e);
 		}
 	}
 }

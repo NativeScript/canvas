@@ -13,10 +13,10 @@ export async function run(canvas: Canvas) {
 	canvas.width = canvas.clientWidth * devicePixelRatio;
 	canvas.height = canvas.clientHeight * devicePixelRatio;
 
-	const context = canvas.getContext('webgpu');
+	const context = canvas.getContext('webgpu')!;
 
 	//const capabilities = context.getCapabilities(adapter);
-	const presentationFormat = navigator.gpu.getPreferredCanvasFormat(); //capabilities.format[0];
+	const presentationFormat = navigator.gpu.getPreferredCanvasFormat() as never; //capabilities.format[0];
 	//console.log(capabilities);
 	// const alphaMode = capabilities.alphaModes[0];
 	// const presentModes = capabilities.presentModes[0];
@@ -36,9 +36,10 @@ export async function run(canvas: Canvas) {
 	// Create a vertex buffer from the cube data.
 	const verticesBuffer = device.createBuffer({
 		size: cubeVertexArray.byteLength,
-		usage: global.GPUBufferUsage.VERTEX,
+		usage: GPUBufferUsage.VERTEX,
 		mappedAtCreation: true,
 	});
+
 	new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexArray);
 
 	verticesBuffer.unmap();

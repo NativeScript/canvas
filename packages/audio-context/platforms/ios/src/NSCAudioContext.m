@@ -1,4 +1,5 @@
 #import <Accelerate/Accelerate.h>
+#import "NSCAudioLog.h"
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <stdatomic.h>
@@ -6,6 +7,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 
 #import "NSCAudioContext.h"
+#import "NSCMediaElementSourceTap.h"
 
 #import "NSCAudioSessionManager.h"
 #import "NSCAnalyserNode.h"
@@ -41,6 +43,7 @@ static void NSCAudioContext_registerEngine(AVAudioEngine *engine, NSCAudioContex
 }
 
 #import <dispatch/dispatch.h>
+#import <CoreFoundation/CoreFoundation.h>
 
 static NSMapTable<AVAudioEngine *, dispatch_block_t> *gScheduledResumeMap = nil;
 
@@ -199,14 +202,14 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 
 - (void)registerNodeWrapper:(NSCAudioNode *)node {
     if (!node || !node.avNode) return;
-    NSLog(@"NSCAudioContext: registerNodeWrapper node=%p nodeClass=%@ avNode=%p avNodeClass=%@",
+    NSCLogDebug(@"NSCAudioContext: registerNodeWrapper node=%p nodeClass=%@ avNode=%p avNodeClass=%@",
           node, NSStringFromClass([node class]), node.avNode, NSStringFromClass([node.avNode class]));
     NSValue *key = [NSValue valueWithPointer:(__bridge const void *)(node.avNode)];
     @synchronized(_nodeWrappers) {
         if (!_nodeWrappers) _nodeWrappers = [NSMapTable strongToWeakObjectsMapTable];
         [_nodeWrappers setObject:node forKey:key];
         NSUInteger cnt = _nodeWrappers ? [_nodeWrappers count] : 0;
-        NSLog(@"NSCAudioContext: node wrappers count=%lu", (unsigned long)cnt);
+        NSCLogDebug(@"NSCAudioContext: node wrappers count=%lu", (unsigned long)cnt);
     }
 }
 
@@ -215,7 +218,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     NSValue *key = [NSValue valueWithPointer:(__bridge const void *)(avNode)];
     @synchronized(_nodeWrappers) {
         NSCAudioNode *wrap = _nodeWrappers ? [_nodeWrappers objectForKey:key] : nil;
-        NSLog(@"NSCAudioContext: nodeWrapperForAVNode avNode=%p class=%@ -> wrap=%p wrapClass=%@",
+        NSCLogDebug(@"NSCAudioContext: nodeWrapperForAVNode avNode=%p class=%@ -> wrap=%p wrapClass=%@",
               avNode, NSStringFromClass([avNode class]), wrap, (wrap ? NSStringFromClass([wrap class]) : @"(nil)"));
         return wrap;
     }
@@ -246,6 +249,78 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     @try { [_engine pause]; } @catch (NSException *e) {}
 }
 
+- (void)resumeAsync:(void (^)(BOOL))completion {
+    if (!_engine) {
+        if (completion) completion(NO);
+        return;
+    }
+
+    CFRunLoopRef rl = completion ? CFRunLoopGetCurrent() : NULL;
+    if (rl) CFRetain(rl);
+
+    [NSCAudioContext startEngineWithRetry:_engine
+                                 attempts:3
+                                    label:@"context"
+                          asyncCompletion:^(BOOL ok) {
+        if (completion) {
+            CFRunLoopPerformBlock(rl, kCFRunLoopCommonModes, ^{
+                completion(ok);
+                CFRelease(rl);
+            });
+            CFRunLoopWakeUp(rl);
+        } else if (rl) {
+            CFRelease(rl);
+        }
+    }];
+}
+
+- (void)suspendAsync:(void (^)(BOOL))completion {
+    if (!_engine) {
+        if (completion) completion(NO);
+        return;
+    }
+    CFRunLoopRef rl = completion ? CFRunLoopGetCurrent() : NULL;
+    if (rl) CFRetain(rl);
+    AVAudioEngine *engine = _engine;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        BOOL ok = YES;
+        @try { [engine pause]; }
+        @catch (NSException *e) { ok = NO; }
+        if (completion) {
+            CFRunLoopPerformBlock(rl, kCFRunLoopCommonModes, ^{
+                completion(ok);
+                CFRelease(rl);
+            });
+            CFRunLoopWakeUp(rl);
+        } else if (rl) {
+            CFRelease(rl);
+        }
+    });
+}
+
+- (void)closeAsync:(void (^)(void))completion {
+    if (!_engine) {
+        if (completion) completion();
+        return;
+    }
+    CFRunLoopRef rl = completion ? CFRunLoopGetCurrent() : NULL;
+    if (rl) CFRetain(rl);
+    AVAudioEngine *engine = _engine;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        @try { [engine pause]; } @catch (NSException *e) {}
+        @try { [engine stop]; } @catch (NSException *e) {}
+        if (completion) {
+            CFRunLoopPerformBlock(rl, kCFRunLoopCommonModes, ^{
+                completion();
+                CFRelease(rl);
+            });
+            CFRunLoopWakeUp(rl);
+        } else if (rl) {
+            CFRelease(rl);
+        }
+    });
+}
+
 - (void)incrementActiveCount {
     int prev = atomic_fetch_add(&_activeCount, 1);
     if (prev == 0) {
@@ -272,13 +347,13 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     NSError *err = nil;
     AVAudioFile *afile = [[AVAudioFile alloc] initForReading:url error:&err];
     if (!afile) {
-        NSLog(@"NSCAudioContext: AVAudioFile init failed for %@: %@", url, err);
+        NSCLogError(@"NSCAudioContext: AVAudioFile init failed for %@: %@", url, err);
         return nil;
     }
 
     AVAudioFramePosition fLen = afile.length;
     if (fLen <= 0) {
-        NSLog(@"NSCAudioContext: AVAudioFile has zero length: %@", url);
+        NSCLogDebug(@"NSCAudioContext: AVAudioFile has zero length: %@", url);
         return nil;
     }
 
@@ -296,7 +371,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         readErr = [NSError errorWithDomain:@"NSCAudioContext" code:-1 userInfo:@{NSLocalizedDescriptionKey: ex.reason ?: @"exception reading file"}];
     }
     if (readErr) {
-        NSLog(@"NSCAudioContext: readIntoBuffer failed for %@: %@", url, readErr);
+        NSCLogError(@"NSCAudioContext: readIntoBuffer failed for %@: %@", url, readErr);
         return nil;
     }
 
@@ -307,7 +382,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         AVAudioFormat *destFmt = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32 sampleRate:fileFmt.sampleRate channels:fileFmt.channelCount interleaved:NO];
         AVAudioConverter *converter = [[AVAudioConverter alloc] initFromFormat:fileFmt toFormat:destFmt];
         if (!converter) {
-            NSLog(@"NSCAudioContext: failed to create AVAudioConverter from %@ to %@", fileFmt, destFmt);
+            NSCLogError(@"NSCAudioContext: failed to create AVAudioConverter from %@ to %@", fileFmt, destFmt);
             return nil;
         }
         AVAudioPCMBuffer *destBuf = [[AVAudioPCMBuffer alloc] initWithPCMFormat:destFmt frameCapacity:srcBuf.frameLength];
@@ -321,7 +396,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         NSError *convErr = nil;
         BOOL ok = [converter convertToBuffer:destBuf error:&convErr withInputFromBlock:inputBlock];
         if (!ok || convErr) {
-            NSLog(@"NSCAudioContext: conversion failed: %@", convErr);
+            NSCLogError(@"NSCAudioContext: conversion failed: %@", convErr);
             return nil;
         }
         outBuf = destBuf;
@@ -329,6 +404,55 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 
     NSCAudioBuffer *wrapper = [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:outBuf];
     return wrapper;
+}
+
+- (BOOL)isNode:(AVAudioNode *)node attachedToEngine:(AVAudioEngine *)engine {
+    if (!node || !engine) return NO;
+    @try {
+        if ([engine respondsToSelector:@selector(attachedNodes)]) {
+            NSSet<AVAudioNode *> *attached = [engine attachedNodes];
+            if (attached && [attached containsObject:node]) return YES;
+        }
+    } @catch (NSException *e) {}
+    return node.engine == engine;
+}
+
+- (void)detachNode:(AVAudioNode *)node fromEngine:(AVAudioEngine *)engine {
+    if (!node || !engine) return;
+    if (![NSThread isMainThread]) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [self detachNode:node fromEngine:engine];
+        });
+        return;
+    }
+    @try {
+        BOOL shouldDetach = NO;
+        NSArray *attached = nil;
+        if ([engine respondsToSelector:@selector(attachedNodes)]) {
+            @try {
+                attached = [engine attachedNodes];
+                if (attached && [attached containsObject:node]) shouldDetach = YES;
+            } @catch (NSException *e) {
+                attached = nil;
+            }
+        }
+        if (!shouldDetach) {
+            if (node.engine == engine) shouldDetach = YES;
+        }
+        if (shouldDetach) {
+            @try {
+                NSCLogDebug(@"NSCAudioContext: detachNode: attempting detach node=%p engine=%p attachedCount=%lu node.engine=%p stack:%@",
+                            node, engine, (unsigned long)(attached ? attached.count : 0), node.engine, [NSThread callStackSymbols]);
+                [engine detachNode:node];
+            } @catch (NSException *e) {
+                NSCLogDebug(@"NSCAudioContext: detachNode: detach threw: %@\nstack:%@", e, [NSThread callStackSymbols]);
+            }
+        } else {
+            NSCLogDebug(@"NSCAudioContext: detachNode: skip detach — node not attached to engine node=%p engine=%p node.engine=%p attachedCount=%lu stack:%@",
+                        node, engine, node.engine, (unsigned long)(attached ? attached.count : 0), [NSThread callStackSymbols]);
+        }
+    } @catch (NSException *e) {
+    }
 }
 
 - (nullable NSCAudioBuffer *)decodeAudioData:(NSString *)base64 {
@@ -408,6 +532,17 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (NSCWaveShaperNode *)createWaveShaperNode { return [[NSCWaveShaperNode alloc] initWithContext:self]; }
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback { return [[NSCIIRFilterNode alloc] initWithContext:self feedforward:feedforward feedback:feedback]; }
 - (NSCConvolverNode *)createConvolverNode { return [[NSCConvolverNode alloc] initWithContext:self]; }
+
+- (nullable NSCAudioNode *)createSourceNodeFromMediaPlayer:(AVPlayer *)player {
+    if (!player) return nil;
+    NSCMediaElementSourceTap *tap = [NSCMediaElementSourceTap attachToPlayer:player context:self];
+    if (!tap) return nil;
+    NSCAudioNode *wrapper = [[NSCAudioNode alloc] initWithContext:self node:tap.sourceNode];
+    objc_setAssociatedObject(wrapper, "NSCMediaElementSourceTap",
+                             tap, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self registerNodeWrapper:wrapper];
+    return wrapper;
+}
 
 - (void)ensureEnvironmentNodeAttached {
     if (_environmentNode) return;
@@ -663,14 +798,14 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         AVAudioTime *lrt = nil;
         @try { lrt = engine.outputNode.lastRenderTime; } @catch (NSException *e) { lrt = nil; }
         if (lrt) {
-            NSLog(@"NSCAudioContext: engine start failed initial attempt: %@ (label=%@) engRunning=%d lastRenderTime=%p sampleTime=%lld sampleRate=%f",
+            NSCLogDebug(@"NSCAudioContext: engine start failed initial attempt: %@ (label=%@) engRunning=%d lastRenderTime=%p sampleTime=%lld sampleRate=%f",
                   err, label ?: @"<nil>", (int)engine.isRunning, lrt, (long long)lrt.sampleTime, lrt.sampleRate);
         } else {
-            NSLog(@"NSCAudioContext: engine start failed initial attempt: %@ (label=%@) engRunning=%d lastRenderTime=NULL",
+            NSCLogDebug(@"NSCAudioContext: engine start failed initial attempt: %@ (label=%@) engRunning=%d lastRenderTime=NULL",
                   err, label ?: @"<nil>", (int)engine.isRunning);
         }
     } @catch (NSException *e) {
-        NSLog(@"NSCAudioContext: engine start initial attempt threw exception: %@ (label=%@)", e, label ?: @"<nil>");
+        NSCLogDebug(@"NSCAudioContext: engine start initial attempt threw exception: %@ (label=%@)", e, label ?: @"<nil>");
     }
 
     if (attempts <= 0) {
@@ -701,14 +836,14 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
             AVAudioTime *lrt = nil;
             @try { lrt = eng.outputNode.lastRenderTime; } @catch (NSException *ex) { lrt = nil; }
             if (lrt) {
-                NSLog(@"NSCAudioContext: engine start retry failed: %@ (label=%@, remaining=%d) engRunning=%d lastRenderTime=%p sampleTime=%lld sampleRate=%f",
+                NSCLogDebug(@"NSCAudioContext: engine start retry failed: %@ (label=%@, remaining=%d) engRunning=%d lastRenderTime=%p sampleTime=%lld sampleRate=%f",
                       e, label ?: @"<nil>", remaining, (int)eng.isRunning, lrt, (long long)lrt.sampleTime, lrt.sampleRate);
             } else {
-                NSLog(@"NSCAudioContext: engine start retry failed: %@ (label=%@, remaining=%d) engRunning=%d lastRenderTime=NULL",
+                NSCLogDebug(@"NSCAudioContext: engine start retry failed: %@ (label=%@, remaining=%d) engRunning=%d lastRenderTime=NULL",
                       e, label ?: @"<nil>", remaining, (int)eng.isRunning);
             }
         } @catch (NSException *ex) {
-            NSLog(@"NSCAudioContext: engine start retry threw exception: %@ (label=%@, remaining=%d)", ex, label ?: @"<nil>", remaining);
+            NSCLogDebug(@"NSCAudioContext: engine start retry threw exception: %@ (label=%@, remaining=%d)", ex, label ?: @"<nil>", remaining);
         }
         remaining -= 1;
         if (remaining <= 0) { if (completion) completion(NO); return; }
@@ -735,24 +870,24 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 
     if ([normalized isEqualToString:@"default"] || [normalized isEqualToString:@""]) {
         BOOL ok = [session overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&err];
-        if (!ok) NSLog(@"NSCAudioContext: setSinkId(default) failed: %@", err);
+        if (!ok) NSCLogError(@"NSCAudioContext: setSinkId(default) failed: %@", err);
         return ok;
     }
 
     if ([normalized isEqualToString:@"speaker"]) {
         BOOL ok = [session overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:&err];
-        if (!ok) NSLog(@"NSCAudioContext: setSinkId(speaker) failed: %@", err);
+        if (!ok) NSCLogError(@"NSCAudioContext: setSinkId(speaker) failed: %@", err);
         return ok;
     }
 
     for (AVAudioSessionPortDescription *p in session.currentRoute.outputs) {
         if ([p.UID isEqualToString:normalized]) {
             BOOL ok = [session overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&err];
-            if (!ok) NSLog(@"NSCAudioContext: setSinkId(uid=%@) failed: %@", normalized, err);
+            if (!ok) NSCLogError(@"NSCAudioContext: setSinkId(uid=%@) failed: %@", normalized, err);
             return ok;
         }
     }
-    NSLog(@"NSCAudioContext: setSinkId(%@) — UID not present in current route", normalized);
+    NSCLogError(@"NSCAudioContext: setSinkId(%@) — UID not present in current route", normalized);
     return NO;
 }
 

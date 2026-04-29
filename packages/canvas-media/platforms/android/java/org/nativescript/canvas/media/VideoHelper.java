@@ -637,7 +637,6 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 	}
 
 	public android.graphics.Bitmap getCurrentBitmap() {
-		// Lazily set up the ImageReader surface when dimensions are first known.
 		if (_imageReader == null && _surfaceOwner == SurfaceOwner.NONE) {
 			setupBitmapSurface();
 		}
@@ -691,8 +690,6 @@ public class VideoHelper implements Player.Listener, SurfaceTexture.OnFrameAvail
 			}
 		}
 
-		// Last-resort fallback: PlayerView's TextureView, only reachable when the
-		// player IS in the window (createNativeView() was called and view is visible).
 		View surfaceView = this._playerView.getVideoSurfaceView();
 		if (surfaceView instanceof TextureView && ((TextureView) surfaceView).isAvailable()) {
 			TextureView tv = (TextureView) surfaceView;

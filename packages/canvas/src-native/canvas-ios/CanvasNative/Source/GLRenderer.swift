@@ -79,16 +79,23 @@ extension GLKView {
 
 
 internal func CPURender(_ ptr: UnsafeRawPointer?) {
-	guard let ptr = ptr else { return }
-		let view: CanvasCPUView = Unmanaged.fromOpaque(ptr).takeUnretainedValue()
-	
-	if let renderer = view.canvas, let data = view.data {
-		let width = renderer.surfaceWidth
-		let height = renderer.surfaceHeight
-		canvas_native_ios_context_custom_with_buffer_flush(renderer.nativeContext, data.mutableBytes, UInt(data.length), Float(width), Float(height), !renderer.isOpaque)
-	}
-	
-		view.layer.contents = view.makeCGImage()
+    guard let ptr = ptr else { return }
+    let view: CanvasCPUView = Unmanaged.fromOpaque(ptr).takeUnretainedValue()
+
+    if let renderer = view.canvas, let data = view.data {
+        let width = renderer.surfaceWidth
+        let height = renderer.surfaceHeight
+        canvas_native_ios_context_custom_with_buffer_flush(renderer.nativeContext, data.mutableBytes, UInt(data.length), Float(width), Float(height), !renderer.isOpaque)
+    }
+
+    let cgImage = view.makeCGImage()
+    if Thread.isMainThread {
+        view.layer.contents = cgImage
+    } else {
+        DispatchQueue.main.async {
+            view.layer.contents = cgImage
+        }
+    }
 }
 
 @objcMembers

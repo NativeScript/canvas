@@ -69,7 +69,9 @@ class GLViewSV : SurfaceView, SurfaceHolder.Callback {
 			canvas?.let {
 				if (!isReady) {
 					isReady = true
-					it.listener?.contextReady()
+					postOnAnimation {
+						it.listener?.contextReady()
+					}
 				} else {
 					resize()
 				}

@@ -303,9 +303,6 @@ function handleUnsupportedPlatformFormat(fragment: GPUFragmentState, method: str
 }
 
 export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor, method: string) {
-	if (!value.vertex?.module) {
-		console.error(`GPUDevice:${method} vertex shader module is null/undefined — shader compilation may have failed`);
-	}
 	const desc: GPURenderPipelineDescriptor = { vertex: { module: value.vertex?.module?.[native_] }, layout: 'auto' };
 
 	if (Array.isArray(value.vertex?.buffers)) {
@@ -330,9 +327,6 @@ export function parseRenderPipelineDescriptor(value: GPURenderPipelineDescriptor
 	}
 
 	if (value.fragment) {
-		if (!value.fragment.module) {
-			console.error(`GPUDevice:${method} fragment shader module is null/undefined — shader compilation may have failed`);
-		}
 		desc.fragment = { module: value.fragment?.module?.[native_], targets: value.fragment.targets };
 
 		if (value.fragment.constants) {

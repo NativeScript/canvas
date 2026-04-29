@@ -262,7 +262,7 @@ const NSURLSessionTaskDelegateImpl = (NSObject as any).extend(
 	},
 	{
 		protocols: [NSURLSessionTaskDelegate, NSURLSessionDataDelegate],
-	}
+	},
 );
 NSURLSessionTaskDelegateImpl.initWithDebuggerRequestResolveRejectCallbackHeadersLoadingListener = function (debuggerRequest, request, resolve, reject, onProgress, onHeaders, onLoading) {
 	const delegate = NSURLSessionTaskDelegateImpl.new();
@@ -761,8 +761,6 @@ export class Http {
 
 function deserialize(nativeData) {
 	if (Utils.isNullOrUndefined(nativeData)) {
-		// some native values will already be js null values
-		// calling Utils.getClass below on null/undefined will cause crash
 		return null;
 	} else {
 		switch (Utils.getClass(nativeData)) {

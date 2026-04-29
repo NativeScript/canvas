@@ -38,6 +38,7 @@ import { knownFolders } from '@nativescript/core';
 //import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 
 import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
 
 // ConstNode patch — mirrors react-native-webgpu's constNodePatch.js.
 //
@@ -76,6 +77,7 @@ import { SimplexNoise } from 'three/examples/jsm/math/SimplexNoise';
 import { tiny_poly_world } from './games/tiny_poly_world';
 import { tiny_poly_world_webgpu } from './games/tiny_poly_world_webgpu';
 import { device } from '@nativescript/core/platform';
+import { ghost_card } from './examples/ghost_card';
 
 //import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js';
 
@@ -107,9 +109,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//x jet game
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		this.webgpu_cube(args.object).catch((err) => console.error('webgpu_cube failed:', err));
+		//this.webgpu_cube(args.object).catch((err) => console.error('webgpu_cube failed:', err));
 		//this.webGPUGtlfLoader(this.canvas);
-		//this.webgpu_tsl_galaxy(this.canvas);
+		this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -194,7 +196,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		scene.add(mesh);
 
 		//@ts-ignore
-		renderer = new THREE.WebGPURenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
+		renderer = new WebGPURenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
 
 		try {
 			await renderer.init();
@@ -294,7 +296,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 					*/
 
 			// renderer
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: false });
+			renderer = new WebGPURenderer({ canvas, antialias: false });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			try {
@@ -302,7 +304,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			} catch (error) {
 				console.error('Error initializing WebGPURenderer:', error);
 			}
-			context = canvas.getContext('webgpu');
 
 			renderer.setAnimationLoop(animate);
 			// document.body.appendChild( renderer.domElement );
@@ -321,7 +322,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 		}
 
-		async function animate() {
+		function animate() {
 			controls.update();
 
 			renderer.render(scene, camera);
@@ -425,7 +426,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 		const WebGPURenderer = require('three/examples/jsm/renderers/webgpu/WebGPURenderer.js').default;
 
-		renderer = new THREE.WebGPURenderer({ antialias: true, context, device });
+		renderer = new WebGPURenderer({ antialias: true, context, device });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(canvas.width, canvas.height);
 		renderer.setAnimationLoop(animate);
@@ -473,7 +474,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			scene = new THREE.Scene();
 
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
@@ -662,7 +663,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const raycaster = new THREE.Raycaster();
 			const pointer = new THREE.Vector2();
 
-			renderer = new THREE.WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
+			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -876,7 +877,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			envMap.mapping = THREE.EquirectangularReflectionMapping;
 			scene.environment = envMap;
 
-			renderer = new THREE.WebGPURenderer({ canvas });
+			renderer = new WebGPURenderer({ canvas });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 			await renderer.init();
@@ -1082,7 +1083,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const clip = gltf.animations[0];
 			mixer.clipAction(clip.optimize()).play();
 
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);
 			renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -3787,7 +3788,7 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				},
 			);
 
-			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+			renderer = new WebGPURenderer({ canvas, antialias: true });
 			await renderer.init();
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(width, height, false);

@@ -14,6 +14,14 @@ public class AudioScheduledSourceNode implements NativeObject, AudioNode {
 		AudioContext.getInstance().stopTrack(id);
 	}
 
+	public void addEndedListener(@androidx.annotation.NonNull AudioContext.EndedListener listener) {
+		AudioContext.getInstance().addEndedListener(id, listener);
+	}
+
+	public void removeEndedListener(@androidx.annotation.NonNull AudioContext.EndedListener listener) {
+		AudioContext.getInstance().removeEndedListener(id, listener);
+	}
+
 	@Override
 	public String getId() {
 		return id;

@@ -18,11 +18,18 @@ class NSCTouchHandler: NSObject {
     var pointers: [Pointer] = []
     
     private var nextId: Int = 0
-    struct Pointer {
+    class Pointer {
         var pointerId: Int
         var location: CGPoint
         var touch: UITouch
         var released: Bool
+
+        init(pointerId: Int, location: CGPoint, touch: UITouch, released: Bool) {
+            self.pointerId = pointerId
+            self.location = location
+            self.touch = touch
+            self.released = released
+        }
     }
     
     
@@ -39,7 +46,7 @@ class NSCTouchHandler: NSObject {
     
     
     class TouchGestureRecognizer: UIGestureRecognizer {
-        var handler: NSCTouchHandler?
+        weak var handler: NSCTouchHandler?
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
             
             guard let handler = handler else {
@@ -48,17 +55,17 @@ class NSCTouchHandler: NSObject {
             }
             
             for touch in touches {
-                
+
                 let location = touch.location(in: view)
-                
+
                 let pointer = Pointer(pointerId: handler.nextId, location: location, touch: touch, released: false)
-                
+
                 handler.pointers.append(pointer)
                 handler.onPress(pointer.pointerId, location.x, location.y, self)
-                
+
                 handler.nextId += 1
             }
-            
+
             view?.touchesBegan(touches, with: event)
         }
         
@@ -74,27 +81,27 @@ class NSCTouchHandler: NSObject {
             }
             
             for touch in touches {
-                
+
                 let location = touch.location(in: view)
-                
+
                 let index = handler.pointers.firstIndex { pointer in
-                    return pointer.touch == touch
+                    return pointer.touch === touch
                 }
-                
-                guard let index = index else {return}
+
+                guard let index = index else { continue }
                 if(handler.pointers.indices.contains(index)){
-                    var pointer = handler.pointers[index]
+                    let pointer = handler.pointers[index]
 
                     if(pointer.released){
                         handler.pointers.remove(at: index)
-                        return
+                        continue
                     }
                     handler.onRelease(pointer.pointerId, location.x, location.y, self)
                     pointer.released = true
                     handler.pointers.remove(at: index)
                 }
             }
-            
+
            view?.touchesEnded(touches, with: event)
         }
         
@@ -104,30 +111,30 @@ class NSCTouchHandler: NSObject {
                 return
             }
             for touch in touches {
-                
+
                 let location = touch.location(in: view)
-                
+
                 let index = handler.pointers.firstIndex { pointer in
-                    return pointer.touch == touch
+                    return pointer.touch === touch
                 }
-                
-                guard let index = index else {return}
-                
+
+                guard let index = index else { continue }
+
                 if(handler.pointers.indices.contains(index)){
-                    var pointer = handler.pointers[index]
-                    
+                    let pointer = handler.pointers[index]
+
                     if(pointer.released){
                         handler.pointers.remove(at: index)
-                        return
+                        continue
                     }
-                    
+
                     handler.onCancel(pointer.pointerId, location.x, location.y, self)
                     pointer.released = true
                     handler.pointers.remove(at: index)
                 }
-                
+
             }
-            
+
            view?.touchesCancelled(touches, with: event)
             
         }

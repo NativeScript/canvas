@@ -18,4 +18,6 @@
 #import "NSCIIRFilterNode.h"
 #import "NSCConvolverNode.h"
 #import "NSCPeriodicWave.h"
+#import "NSCMediaElementSourceTap.h"
+#import "NSCAudioLog.h"
 

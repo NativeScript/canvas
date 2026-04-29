@@ -7,6 +7,8 @@
 #include "JSIRuntime.h"
 #include "JSIReadFileCallback.h"
 #include "Helpers.h"
+#include "WorkerPool.h"
+#include "V8BufferHelper.h"
 
 struct GLOptions {
 	int32_t version;
@@ -219,22 +221,25 @@ void CanvasJSIModule::AddFontFamily(const v8::FunctionCallbackInfo<v8::Value> &a
 		auto family = familyValue.As<v8::Array>();
 		auto len = family->Length();
 		std::vector<std::string> buf;
-		std::vector<const char *> buffer;
 		buf.reserve(len);
-		
+
 		for (uint32_t i = 0; i < len; i++) {
-			buf.emplace_back(
-											 ConvertFromV8String(isolate, family->Get(context, i).ToLocalChecked()));
-			buffer.emplace_back(buf[0].c_str());
+			v8::Local<v8::Value> v;
+			if (family->Get(context, i).ToLocal(&v) && v->IsString()) {
+				buf.emplace_back(ConvertFromV8String(isolate, v));
+			}
 		}
-		
+
+		std::vector<const char *> cstrs;
+		cstrs.reserve(buf.size());
+		for (auto &s: buf) cstrs.push_back(s.c_str());
+
 		if (aliasValue->IsString()) {
 			auto alias = ConvertFromV8String(isolate, aliasValue);
-			canvas_native_font_add_family(alias.c_str(), buffer.data(), buffer.size());
+			canvas_native_font_add_family(alias.c_str(), cstrs.data(), cstrs.size());
 		} else {
-			canvas_native_font_add_family(nullptr, buffer.data(), buffer.size());
+			canvas_native_font_add_family(nullptr, cstrs.data(), cstrs.size());
 		}
-		
 	}
 	
 }
@@ -326,24 +331,10 @@ void CanvasJSIModule::Base64Decode(const v8::FunctionCallbackInfo<v8::Value> &ar
 		auto returnValue = new OneByteStringResource(decoded);
 		auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
 		v8::Local<v8::Value> value;
-		auto decoded_clone = canvas_native_u8_buffer_clone(decoded);
-		auto buffer_ptr = canvas_native_u8_buffer_get_bytes(decoded_clone);
-		auto buffer_len = canvas_native_u8_buffer_get_length(decoded_clone);
-		auto buffer = v8::ArrayBuffer::NewBackingStore((void *) buffer_ptr, buffer_len,
-																									 [](void *data,
-																											size_t length,
-																											void *deleter_data) {
-			if (deleter_data !=
-					nullptr) {
-				canvas_native_u8_buffer_release(
-																				(U8Buffer *) deleter_data);
-			}
-		},
-																									 (void *) decoded_clone);
-		
+		auto arr = v8_helpers::ArrayBufferFromU8Buffer(isolate, decoded, true);
+
 		if (ret.ToLocal(&value)) {
-			v8::Local<v8::Value> retArgs[2] = {value,
-				v8::ArrayBuffer::New(isolate, std::move(buffer))};
+			v8::Local<v8::Value> retArgs[2] = {value, arr};
 			args.GetReturnValue().Set(v8::Array::New(isolate, retArgs, 2));
 		} else {
 			args.GetReturnValue().Set(v8::Array::New(isolate));
@@ -391,32 +382,11 @@ void CanvasJSIModule::Base64DecodeAsync(const v8::FunctionCallbackInfo<v8::Value
 					auto returnValue = new OneByteStringResource(decoded);
 					auto ret = v8::String::NewExternalOneByte(isolate, returnValue);
 					v8::Local<v8::Value> value;
-					auto decoded_clone = canvas_native_u8_buffer_clone(decoded);
-					
 					func->setData(nullptr);
-					
-					auto buffer_ptr = canvas_native_u8_buffer_get_bytes(decoded_clone);
-					auto buffer_len = canvas_native_u8_buffer_get_length(decoded_clone);
-					auto buffer = v8::ArrayBuffer::NewBackingStore((void *) buffer_ptr,
-																												 buffer_len,
-																												 [](void *data,
-																														size_t length,
-																														void *deleter_data) {
-						if (deleter_data !=
-								nullptr) {
-							canvas_native_u8_buffer_release(
-																							(U8Buffer *) deleter_data);
-						}
-					},
-																												 (void *) decoded_clone);
-					
+					auto arr = v8_helpers::ArrayBufferFromU8Buffer(isolate, decoded, true);
 					if (ret.ToLocal(&value)) {
-						v8::Local<v8::Value> retArgs[2] = {value,
-							v8::ArrayBuffer::New(isolate,
-																	 std::move(
-																						 buffer))};
-						callback->Resolve(context,
-															v8::Array::New(isolate, retArgs, 2)).IsJust();
+						v8::Local<v8::Value> retArgs[2] = {value, arr};
+						callback->Resolve(context, v8::Array::New(isolate, retArgs, 2)).IsJust();
 					} else {
 						callback->Resolve(context, v8::Array::New(isolate)).IsJust();
 					}
@@ -428,16 +398,13 @@ void CanvasJSIModule::Base64DecodeAsync(const v8::FunctionCallbackInfo<v8::Value
 	};
 	callback->prepare();
 	
-	std::thread thread(
-										 [callback](std::string data) {
-											 if (callback->inner_ != nullptr) {
-												 auto decoded = canvas_native_helper_base64_decode((const uint8_t *) data.data(),
-																																					 data.size());
-												 callback->inner_->setData(decoded);
-												 callback->inner_->execute(true, callback);
-											 }
-										 }, std::move(data));
-	thread.detach();
+	WorkerPool::Instance().Enqueue([callback, data = std::move(data)]() mutable {
+		if (callback->inner_ != nullptr) {
+			auto decoded = canvas_native_helper_base64_decode((const uint8_t *) data.data(), data.size());
+			callback->inner_->setData(decoded);
+			callback->inner_->execute(true, callback);
+		}
+	});
 	
 }
 
@@ -619,46 +586,47 @@ void CanvasJSIModule::CreateImageBitmap(const v8::FunctionCallbackInfo<v8::Value
 				auto store = ta->Buffer()->GetBackingStore();
 				auto offset = ta->ByteOffset();
 				
-				std::thread thread(
-													 [callback, image_bitmap_async_data, offset, options, rect](
-																																											std::shared_ptr<v8::BackingStore> store) {
-																																												
-																																												auto data = static_cast<uint8_t *>(store->Data()) + offset;
-																																												auto size = store->ByteLength();
-																																												
-																																												auto asset = canvas_native_image_asset_create();
-																																												bool done;
-																																												if (rect.has_value()) {
-																																													
-																																													done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
-																																																																																					 data, size,
-																																																																																					 rect.value().x,
-																																																																																					 rect.value().y,
-																																																																																					 rect.value().width,
-																																																																																					 rect.value().height,
-																																																																																					 options.flipY,
-																																																																																					 options.premultiplyAlpha,
-																																																																																					 options.colorSpaceConversion,
-																																																																																					 options.resizeQuality,
-																																																																																					 options.resizeWidth,
-																																																																																					 options.resizeHeight, asset);
-																																												} else {
-																																													done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
-																																																																																	data, size,
-																																																																																	options.flipY,
-																																																																																	options.premultiplyAlpha,
-																																																																																	options.colorSpaceConversion,
-																																																																																	options.resizeQuality,
-																																																																																	options.resizeWidth,
-																																																																																	options.resizeHeight, asset);
-																																												}
-																																												if (callback != nullptr) {
-																																													image_bitmap_async_data->asset_ = asset;
-																																													callback->execute(done);
-																																												}
-																																												
-																																											}, std::move(store));
-				thread.detach();
+				WorkerPool::Instance().Enqueue([
+					callback,
+					image_bitmap_async_data,
+					offset,
+					options,
+					rect,
+					store = std::move(store)
+				]() mutable {
+					auto data = static_cast<uint8_t *>(store->Data()) + offset;
+					auto size = store->ByteLength();
+
+					auto asset = canvas_native_image_asset_create();
+					bool done;
+					if (rect.has_value()) {
+						done = canvas_native_image_bitmap_create_from_encoded_bytes_src_rect_with_output(
+								data, size,
+								rect.value().x,
+								rect.value().y,
+								rect.value().width,
+								rect.value().height,
+								options.flipY,
+								options.premultiplyAlpha,
+								options.colorSpaceConversion,
+								options.resizeQuality,
+								options.resizeWidth,
+								options.resizeHeight, asset);
+					} else {
+						done = canvas_native_image_bitmap_create_from_encoded_bytes_with_output(
+								data, size,
+								options.flipY,
+								options.premultiplyAlpha,
+								options.colorSpaceConversion,
+								options.resizeQuality,
+								options.resizeWidth,
+								options.resizeHeight, asset);
+					}
+					if (callback != nullptr) {
+						image_bitmap_async_data->asset_ = asset;
+						callback->execute(done);
+					}
+				});
 				
 				return;
 			}
@@ -921,24 +889,21 @@ void CanvasJSIModule::ReadFile(const v8::FunctionCallbackInfo<v8::Value> &args) 
 	
 	callback->prepare();
 	
-	std::thread thread(
-										 [callback, file]() {
-											 bool done = false;
-											 auto ret = canvas_native_helper_read_file(file.c_str());
-											 
-											 if (!canvas_native_helper_read_file_has_error(ret)) {
-												 auto buf = canvas_native_helper_read_file_take_data(ret);
-												 callback->inner_->data = new FileData{nullptr, buf};
-												 done = true;
-											 } else {
-												 auto error = canvas_native_helper_read_file_get_error(ret);
-												 callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
-											 }
-											 canvas_native_helper_release(ret);
-											 callback->execute(done);
-										 });
-	
-	thread.detach();
+	WorkerPool::Instance().Enqueue([callback, file]() {
+		bool done = false;
+		auto ret = canvas_native_helper_read_file(file.c_str());
+
+		if (!canvas_native_helper_read_file_has_error(ret)) {
+			auto buf = canvas_native_helper_read_file_take_data(ret);
+			callback->inner_->data = new FileData{nullptr, buf};
+			done = true;
+		} else {
+			auto error = canvas_native_helper_read_file_get_error(ret);
+			callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
+		}
+		canvas_native_helper_release(ret);
+		callback->execute(done);
+	});
 	
 	
 }
@@ -1030,24 +995,21 @@ void CanvasJSIModule::GetMime(const v8::FunctionCallbackInfo<v8::Value> &args) {
 	
 	callback->prepare();
 	
-	std::thread thread(
-										 [callback, file]() {
-											 bool done = false;
-											 auto ret = canvas_native_helper_read_file(file.c_str());
-											 
-											 if (!canvas_native_helper_read_file_has_error(ret)) {
-												 auto buf = canvas_native_helper_read_file_take_data(ret);
-												 callback->inner_->data = new FileData{nullptr, buf};
-												 done = true;
-											 } else {
-												 auto error = canvas_native_helper_read_file_get_error(ret);
-												 callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
-											 }
-											 canvas_native_helper_release(ret);
-											 callback->execute(done);
-										 });
-	
-	thread.detach();
+	WorkerPool::Instance().Enqueue([callback, file]() {
+		bool done = false;
+		auto ret = canvas_native_helper_read_file(file.c_str());
+
+		if (!canvas_native_helper_read_file_has_error(ret)) {
+			auto buf = canvas_native_helper_read_file_take_data(ret);
+			callback->inner_->data = new FileData{nullptr, buf};
+			done = true;
+		} else {
+			auto error = canvas_native_helper_read_file_get_error(ret);
+			callback->inner_->data = new FileData{const_cast<char *>(error), nullptr};
+		}
+		canvas_native_helper_release(ret);
+		callback->execute(done);
+	});
 	
 	
 }

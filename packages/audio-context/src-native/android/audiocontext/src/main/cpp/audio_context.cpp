@@ -857,6 +857,49 @@ void NativeEngine::freeBuffer(const std::string &id) {
     __android_log_print(ANDROID_LOG_INFO, TAG, "freeBuffer enqueued %s", id.c_str());
 }
 
+std::string NativeEngine::createExternalPcmSource(int sampleRate, int channels) {
+    if (channels <= 0) channels = 2;
+    if (sampleRate <= 0) sampleRate = 48000;
+
+    std::string id = genId();
+    auto ring = std::make_shared<ExternalRing>();
+    ring->capacity = 1u << 15;
+    ring->mask = ring->capacity - 1;
+    ring->channels = channels;
+    ring->data.assign((size_t)ring->capacity * (size_t)channels, 0.0f);
+
+    NativeEngine::Command cmd;
+    cmd.type = CMD_CREATE_EXTERNAL_PCM;
+    cmd.id = id;
+    cmd.sampleRate = sampleRate;
+    cmd.channels = channels;
+    cmd.externalRing = ring;
+    enqueueCommand(std::move(cmd));
+    __android_log_print(ANDROID_LOG_INFO, TAG,
+                        "createExternalPcmSource enqueued %s sr=%d ch=%d",
+                        id.c_str(), sampleRate, channels);
+    return id;
+}
+
+void NativeEngine::pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount) {
+    if (!interleaved || sampleCount == 0 || id.empty()) return;
+    auto pcm = std::make_shared<std::vector<float>>(interleaved, interleaved + sampleCount);
+    NativeEngine::Command cmd;
+    cmd.type = CMD_PUSH_EXTERNAL_PCM;
+    cmd.id = id;
+    cmd.pcmFloat = pcm;
+    enqueueCommand(std::move(cmd));
+}
+
+void NativeEngine::endExternalPcmSource(const std::string &id) {
+    if (id.empty()) return;
+    NativeEngine::Command cmd;
+    cmd.type = CMD_END_EXTERNAL_PCM;
+    cmd.id = id;
+    enqueueCommand(std::move(cmd));
+    __android_log_print(ANDROID_LOG_INFO, TAG, "endExternalPcmSource enqueued %s", id.c_str());
+}
+
 void NativeEngine::startBufferSource(const std::string &id, bool loop) {
     NativeEngine::Command cmd;
     cmd.type = NativeEngine::CMD_START_BUFFER;

@@ -6,6 +6,7 @@
 #include "Caches.h"
 #include "Helpers.h"
 #include "OneByteStringResource.h"
+#include "WorkerPool.h"
 
 TextDecoderImpl::TextDecoderImpl(TextDecoder* decoder) : decoder_(decoder) {}
 
@@ -309,21 +310,15 @@ void TextDecoderImpl::DecodeAsync(const v8::FunctionCallbackInfo<v8::Value> &arg
     };
     
 
-    std::thread thread(
-            [callback, asyncData, ptr]() {
-                if (callback->inner_ != nullptr) {
-                    
-                    auto decoded = canvas_native_text_decoder_decode_as_cow(
-                            ptr->GetTextDecoder(),
-                                                                            asyncData.data, asyncData.size);
-                    
-                    callback->inner_->setData(decoded);
-                    callback->inner_->execute(true, callback);
-                }
-                asyncData.buffer->Reset();
-                delete asyncData.buffer;
-                
-            });
-    thread.detach();
+    WorkerPool::Instance().Enqueue([callback, asyncData, ptr]() mutable {
+        if (callback->inner_ != nullptr) {
+            auto decoded = canvas_native_text_decoder_decode_as_cow(
+                    ptr->GetTextDecoder(), asyncData.data, asyncData.size);
+            callback->inner_->setData(decoded);
+            callback->inner_->execute(true, callback);
+        }
+        asyncData.buffer->Reset();
+        delete asyncData.buffer;
+    });
 
 }

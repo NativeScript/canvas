@@ -131,6 +131,8 @@ add_library(
         ${CPP_DIR}/ImageBitmapImpl.cpp
         ${CPP_DIR}/TextDecoderImpl.cpp
         ${CPP_DIR}/TextEncoderImpl.cpp
+        ${CPP_DIR}/WorkerPool.cpp
+        ${CPP_DIR}/V8BufferHelper.cpp
 
 
         ${CPP_DIR}/webgl/WebGLActiveInfoImpl.cpp

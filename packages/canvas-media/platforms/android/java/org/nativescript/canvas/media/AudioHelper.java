@@ -27,8 +27,14 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
 import androidx.media3.datasource.cache.SimpleCache;
 import androidx.media3.database.StandaloneDatabaseProvider;
 import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.audio.AudioSink;
+import androidx.media3.exoplayer.audio.DefaultAudioSink;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.common.audio.AudioProcessor;
+
+import java.lang.reflect.Method;
 
 @UnstableApi
 public class AudioHelper implements Player.Listener {
@@ -50,6 +56,61 @@ public class AudioHelper implements Player.Listener {
     private boolean _playing = false;
     private AudioView _audioView;
     private LinearLayout _container;
+    private final AudioContextTapProcessor _tapProcessor = new AudioContextTapProcessor();
+    private volatile Object _tapSourceNode;
+    private volatile Object _attachedContext;
+    private volatile int _tapNodeSampleRate;
+    private volatile int _tapNodeChannels;
+    private volatile Method _tapNodePushFrames;
+    private volatile Method _tapNodeEndStream;
+    private volatile Method _ctxCreateExternalPcm;
+
+    private final AudioContextTapProcessor.Sink _tapSink = new AudioContextTapProcessor.Sink() {
+        @Override
+        public void onPcmFrames(float[] interleaved, int sampleCount, int sampleRate, int channels) {
+            Object node = _tapSourceNode;
+            if (node == null || sampleCount == 0) return;
+
+            if (_tapNodeSampleRate != sampleRate || _tapNodeChannels != channels) {
+                Object ctx = _attachedContext;
+                Method create = _ctxCreateExternalPcm;
+                Method end = _tapNodeEndStream;
+                if (ctx == null || create == null) return;
+                Object replacement;
+                try {
+                    replacement = create.invoke(ctx, sampleRate, channels);
+                } catch (Throwable t) {
+                    android.util.Log.w("AudioHelper", "createExternalPcmSource reflection failed", t);
+                    return;
+                }
+                if (replacement == null) return;
+                Object old = _tapSourceNode;
+                if (old != null && end != null) {
+                    try { end.invoke(old); } catch (Throwable ignored) {}
+                }
+                _tapSourceNode = replacement;
+                _tapNodeSampleRate = sampleRate;
+                _tapNodeChannels = channels;
+                node = replacement;
+            }
+
+            float[] payload = interleaved;
+            if (interleaved.length != sampleCount) {
+                payload = new float[sampleCount];
+                System.arraycopy(interleaved, 0, payload, 0, sampleCount);
+            }
+            try {
+                _tapNodePushFrames.invoke(node, (Object) payload);
+            } catch (Throwable t) {
+                android.util.Log.w("AudioHelper", "pushFrames reflection failed", t);
+            }
+        }
+
+        @Override
+        public boolean isActive() {
+            return _tapSourceNode != null;
+        }
+    };
 
     public interface Callback {
         void onDurationChange(long duration);
@@ -95,8 +156,23 @@ public class AudioHelper implements Player.Listener {
         _cdsf.setUpstreamDataSourceFactory(_dsf);
         _msf = new DefaultMediaSourceFactory(_cdsf);
 
+        _tapProcessor.setSink(_tapSink);
+        DefaultRenderersFactory rf = new DefaultRenderersFactory(context) {
+            @Override
+            protected AudioSink buildAudioSink(android.content.Context ctx,
+                                               boolean enableFloatOutput,
+                                               boolean enableAudioTrackPlaybackParams) {
+                return new DefaultAudioSink.Builder(ctx)
+                        .setEnableFloatOutput(enableFloatOutput)
+                        .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                        .setAudioProcessors(new AudioProcessor[]{ _tapProcessor })
+                        .build();
+            }
+        };
+
         ExoPlayer.Builder builder = new ExoPlayer.Builder(context);
         builder.setMediaSourceFactory(_msf);
+        builder.setRenderersFactory(rf);
 
         DefaultLoadControl.Builder loadControl = new DefaultLoadControl.Builder();
         loadControl.setBufferDurationsMs(500, DefaultLoadControl.DEFAULT_MAX_BUFFER_MS, 500, 500);
@@ -221,11 +297,58 @@ public class AudioHelper implements Player.Listener {
         } catch (Exception e) { }
     }
 
+    public Object attachAudioContextTap(Object contextNative) {
+        if (contextNative == null) return null;
+        try {
+            Method create = contextNative.getClass()
+                    .getMethod("createExternalPcmSource", int.class, int.class);
+            Object node = create.invoke(contextNative, 48000, 2);
+            if (node == null) return null;
+
+            Method push = node.getClass().getMethod("pushFrames", float[].class);
+            Method end = node.getClass().getMethod("endStream");
+
+            _attachedContext = contextNative;
+            _ctxCreateExternalPcm = create;
+            _tapSourceNode = node;
+            _tapNodePushFrames = push;
+            _tapNodeEndStream = end;
+            _tapNodeSampleRate = 48000;
+            _tapNodeChannels = 2;
+            return node;
+        } catch (NoSuchMethodException e) {
+            android.util.Log.w("AudioHelper", "attachAudioContextTap: contextNative missing expected surface", e);
+            return null;
+        } catch (Throwable t) {
+            android.util.Log.w("AudioHelper", "attachAudioContextTap failed", t);
+            return null;
+        }
+    }
+
+    public void detachAudioContextTap() {
+        Object node = _tapSourceNode;
+        Method end = _tapNodeEndStream;
+        _tapSourceNode = null;
+        _attachedContext = null;
+        _ctxCreateExternalPcm = null;
+        _tapNodePushFrames = null;
+        _tapNodeEndStream = null;
+        if (node != null && end != null) {
+            try { end.invoke(node); } catch (Throwable ignored) {}
+        }
+    }
+
     public void pause() {
         try {
             this._player.setPlayWhenReady(false);
             this._player.pause();
         } catch (Exception e) { }
+    }
+
+    public void release() {
+        try { detachAudioContextTap(); } catch (Throwable ignored) {}
+        try { if (_timer != null) { _timer.cancel(); _timer = null; } } catch (Throwable ignored) {}
+        try { if (_player != null) { _player.release(); } } catch (Throwable ignored) {}
     }
 
     public boolean getMuted() {

@@ -66,29 +66,65 @@
 }
 
 -(void) present {
-    if(self.canvasView != nil && self.canvasView.is2D){
-        [NSSCanvasHelpers flush2DContext: self.canvasView.nativeContext];
-        [NSSCanvasHelpers presentDrawable: self.canvasView.nativeContext];
+    NSCCanvas *canvas = (NSCCanvas *)self.canvas;
+    if (canvas == nil || !canvas.is2D) {
+        return;
     }
+
+    if (![NSThread isMainThread]) {
+        __strong NSCCanvas *strongCanvas = canvas;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [NSSCanvasHelpers flush2DContext: strongCanvas.nativeContext];
+            [NSSCanvasHelpers presentDrawable: strongCanvas.nativeContext];
+        });
+        return;
+    }
+
+    [NSSCanvasHelpers flush2DContext: canvas.nativeContext];
+    [NSSCanvasHelpers presentDrawable: canvas.nativeContext];
 }
 
 
 -(void*) getDevicePtr{
+    if (![NSThread isMainThread]) {
+        __block void *dev = NULL;
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            CAMetalLayer *layer = self.layer;
+            if ([layer device] == nil) {
+                [layer setDevice: MTLCreateSystemDefaultDevice()];
+            }
+            dev = (__bridge void *)[layer device];
+        });
+        return dev;
+    }
+
     CAMetalLayer* layer = self.layer;
     if([layer device] == nil){
         [layer setDevice: MTLCreateSystemDefaultDevice()];
     }
-    
+
     return (__bridge void *) [layer device];
 }
 
 
 -(void*) getQueuePtr{
+    if (![NSThread isMainThread]) {
+        __block void *q = NULL;
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            CAMetalLayer *layer = self.layer;
+            if (_queue == nil && [layer device] != nil) {
+                _queue = [[layer device] newCommandQueue];
+            }
+            q = (__bridge void *)_queue;
+        });
+        return q;
+    }
+
     CAMetalLayer* layer = self.layer;
     if(_queue == nil && [layer device] != nil){
         _queue = [[layer device] newCommandQueue];
     }
-    
+
     return (__bridge void *) _queue;
 }
 

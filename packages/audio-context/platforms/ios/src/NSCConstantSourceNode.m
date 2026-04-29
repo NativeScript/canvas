@@ -13,11 +13,12 @@
 - (void)dealloc {
     NSCAudioContext *ctx = self.context;
     if (ctx && _sourceNode) {
-        @try {
-            [ctx.engine disconnectNodeOutput:_sourceNode];
-            [ctx.engine disconnectNodeInput:_sourceNode];
-            [ctx.engine detachNode:_sourceNode];
-        } @catch (NSException *e) {}
+        AVAudioEngine *eng = ctx.engine;
+        if (eng && [ctx isNode:_sourceNode attachedToEngine:eng]) {
+            @try { [eng disconnectNodeOutput:_sourceNode]; } @catch (NSException *e) {}
+            @try { [eng disconnectNodeInput:_sourceNode]; } @catch (NSException *e) {}
+            @try { [ctx detachNode:_sourceNode fromEngine:eng]; } @catch (NSException *e) {}
+        }
     }
     _playingFlag = NULL;
     _offsetCell = NULL;

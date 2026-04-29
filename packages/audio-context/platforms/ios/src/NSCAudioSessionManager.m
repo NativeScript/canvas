@@ -1,4 +1,5 @@
 #import "NSCAudioSessionManager.h"
+#import "NSCAudioLog.h"
 #import <float.h>
 #import <objc/message.h>
 
@@ -101,20 +102,20 @@ NSString * const NSCAudioSessionManagerLatencyKey = @"latency";
         dispatch_sync(dispatch_get_main_queue(), ^{
             BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback error:&err];
             if (!sessionOK) {
-                NSLog(@"NSCAudioSessionManager: setCategory failed: %@", err);
+                NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             }
         });
         if (err) return;
     } else {
         BOOL sessionOK = [session setCategory:AVAudioSessionCategoryPlayback error:&err];
         if (!sessionOK) {
-            NSLog(@"NSCAudioSessionManager: setCategory failed: %@", err);
+            NSCLogError(@"NSCAudioSessionManager: setCategory failed: %@", err);
             return;
         }
     }
 
     if (anyActive && needUpdate) {
-        NSLog(@"NSCAudioSessionManager: deferring AVAudioSession update while a context is active");
+        NSCLogDebug(@"NSCAudioSessionManager: deferring AVAudioSession update while a context is active");
         return;
     }
 
@@ -124,18 +125,18 @@ NSString * const NSCAudioSessionManagerLatencyKey = @"latency";
                 if (bestLatency > 0.0) {
                     NSError *bufErr = nil;
                     if (![session setPreferredIOBufferDuration:bestLatency error:&bufErr]) {
-                        NSLog(@"NSCAudioSessionManager: setPreferredIOBufferDuration(%.4f) failed: %@", bestLatency, bufErr);
+                        NSCLogDebug(@"NSCAudioSessionManager: setPreferredIOBufferDuration(%.4f) failed: %@", bestLatency, bufErr);
                     }
                 }
                 if (bestSampleRate > 0.0) {
                     NSError *srErr = nil;
                     if (![session setPreferredSampleRate:bestSampleRate error:&srErr]) {
-                        NSLog(@"NSCAudioSessionManager: setPreferredSampleRate(%.0f) failed: %@", bestSampleRate, srErr);
+                        NSCLogDebug(@"NSCAudioSessionManager: setPreferredSampleRate(%.0f) failed: %@", bestSampleRate, srErr);
                     }
                 }
                 NSError *actErr = nil;
                 if (![session setActive:YES error:&actErr]) {
-                    NSLog(@"NSCAudioSessionManager: setActive:YES failed: %@", actErr);
+                    NSCLogDebug(@"NSCAudioSessionManager: setActive:YES failed: %@", actErr);
                 } else {
                     self.sessionActive = YES;
                 }
@@ -144,18 +145,18 @@ NSString * const NSCAudioSessionManagerLatencyKey = @"latency";
             if (bestLatency > 0.0) {
                 NSError *bufErr = nil;
                 if (![session setPreferredIOBufferDuration:bestLatency error:&bufErr]) {
-                    NSLog(@"NSCAudioSessionManager: setPreferredIOBufferDuration(%.4f) failed: %@", bestLatency, bufErr);
+                    NSCLogDebug(@"NSCAudioSessionManager: setPreferredIOBufferDuration(%.4f) failed: %@", bestLatency, bufErr);
                 }
             }
             if (bestSampleRate > 0.0) {
                 NSError *srErr = nil;
                 if (![session setPreferredSampleRate:bestSampleRate error:&srErr]) {
-                    NSLog(@"NSCAudioSessionManager: setPreferredSampleRate(%.0f) failed: %@", bestSampleRate, srErr);
+                    NSCLogDebug(@"NSCAudioSessionManager: setPreferredSampleRate(%.0f) failed: %@", bestSampleRate, srErr);
                 }
             }
             NSError *actErr = nil;
             if (![session setActive:YES error:&actErr]) {
-                NSLog(@"NSCAudioSessionManager: setActive:YES failed: %@", actErr);
+                NSCLogDebug(@"NSCAudioSessionManager: setActive:YES failed: %@", actErr);
             } else {
                 self.sessionActive = YES;
             }

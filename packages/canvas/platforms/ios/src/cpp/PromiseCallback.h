@@ -7,6 +7,8 @@
 #include "Common.h"
 #include <thread>
 
+#include "Caches.h"
+
 #ifdef __ANDROID__
 
 #include <android/looper.h>
@@ -71,7 +73,10 @@ struct PromiseCallback {
 
         void prepare(){
             std::lock_guard<std::mutex> lock(mtx);
-            current_queue = new NSOperationQueueWrapper(true);
+            if (isolate_ != nullptr) {
+                auto cache = Caches::Get(isolate_);
+                current_queue = cache->GetMainQueue();
+            }
             isPrepared_ = true;
         }
 

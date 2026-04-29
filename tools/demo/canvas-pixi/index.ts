@@ -109,11 +109,11 @@ export class DemoSharedCanvasPixi extends DemoSharedBase {
 		//this.explosion(canvas);
 		//this.bitmapFont(canvas);
 
-		//this.dynamicGraphics(canvas);
+		this.dynamicGraphics(canvas);
 		//this.meshBasic(canvas);
 		//this.meshAdvance(canvas);
 		//this.renderTextureAdvance(canvas);
-		this.starWarp(canvas);
+		//this.starWarp(canvas);
 		//this.meshShader(canvas);
 		//this.meshSharingGeo(canvas);
 		//this.multiPassShaderGenMesh(canvas);
@@ -1190,21 +1190,15 @@ void main()
 	}
 
 	async dynamicGraphics(canvas) {
+		const app = new PIXI.Application();
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
-		// canvas.width = canvas.clientWidth;
-		// canvas.height = canvas.clientHeight;
-		const app = new PIXI.Application();
 
 		await app.init({
-			backgroundColor: 0x1099bb,
-			//preferWebGLVersion: 2,
-			preference: 'webgpu',
 			canvas,
-			autoDensity: false,
-			resolution: window.devicePixelRatio,
-			width: canvas.clientWidth,
-			height: canvas.clientHeight,
+			preference: 'webgpu',
+			width: canvas.width,
+			height: canvas.height,
 		});
 
 		app.stage.eventMode = 'static';
@@ -1905,6 +1899,7 @@ void main()
 			background: '#1099bb',
 			width: canvas.width,
 			height: canvas.height,
+			preference: 'webgpu',
 		});
 
 		// canvas.parent.addChild(app.renderer.canvas);

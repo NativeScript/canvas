@@ -24,7 +24,6 @@ function createScene(canvas) {
 	HEIGHT = canvas.clientWidth;
 	WIDTH = canvas.clientHeight;
 
-	const context = canvas.getContext('webgl2');
 	// Create the scene.
 	scene = new THREE.Scene();
 

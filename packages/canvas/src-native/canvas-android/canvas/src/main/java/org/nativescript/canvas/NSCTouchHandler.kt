@@ -26,11 +26,11 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 				val scale = canvas.context.resources.displayMetrics.density
 
-				val isInProgress = mScaleDetector.isInProgress
+				val isInProgress = detector.isInProgress
 
-				val deltaX = (mScaleDetector.currentSpanX - previousSpanX) / scale
-				val deltaY = (mScaleDetector.currentSpanY - previousSpanY) / scale
-				val span = (mScaleDetector.currentSpan - mScaleDetector.previousSpan) / scale
+				val deltaX = (detector.currentSpanX - previousSpanX) / scale
+				val deltaY = (detector.currentSpanY - previousSpanY) / scale
+				val span = (detector.currentSpan - detector.previousSpan) / scale
 
 
 				val sb = StringBuilder()
@@ -77,7 +77,8 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 				sb.append("}")
 
-				canvas.touchEventListener?.onEvent(sb.toString(), currentEvent!!)
+				val ev = currentEvent
+				ev?.let { canvas.touchEventListener?.onEvent(sb.toString(), it) }
 
 				return true
 			}
@@ -93,49 +94,50 @@ class NSCTouchHandler(val canvas: NSCCanvas) {
 
 		val scale = canvas.context.resources.displayMetrics.density
 		currentEvent = MotionEvent.obtain(me)
-		mScaleDetector.onTouchEvent(me)
-		val action = me.actionMasked
+		try {
+			mScaleDetector.onTouchEvent(me)
+			val action = me.actionMasked
 
-		val move = action == MotionEvent.ACTION_MOVE
+			val move = action == MotionEvent.ACTION_MOVE
 
-		if (isScaling) {
-			return
+			if (isScaling) {
+				return
+			}
+
+			val ptridx = me.actionIndex
+			val x = me.getX(ptridx)
+			val y = me.getY(ptridx)
+			val down = (action == MotionEvent.ACTION_DOWN
+				|| action == MotionEvent.ACTION_POINTER_DOWN)
+			val up = (action == MotionEvent.ACTION_UP
+				|| action == MotionEvent.ACTION_POINTER_UP)
+
+			val cancel = action == MotionEvent.ACTION_CANCEL
+			val ptrId: Int = try {
+				me.getPointerId(ptridx)
+			} catch (e: IllegalArgumentException) {
+				return
+			}
+
+			if (down) {
+				onPress(ptrId, x, y, me, scale)
+			}
+
+			if (move) {
+				onMove(me, scale)
+			}
+
+			if (up) {
+				onRelease(ptrId, x, y, me, scale)
+			}
+
+			if (cancel) {
+				onCancel(ptrId, x, y, me, scale)
+			}
+		} finally {
+			currentEvent?.recycle()
+			currentEvent = null
 		}
-
-
-		val ptridx = me.actionIndex
-		val x = me.getX(ptridx)
-		val y = me.getY(ptridx)
-		val down = (action == MotionEvent.ACTION_DOWN
-			|| action == MotionEvent.ACTION_POINTER_DOWN)
-		val up = (action == MotionEvent.ACTION_UP
-			|| action == MotionEvent.ACTION_POINTER_UP)
-
-		val cancel = action == MotionEvent.ACTION_CANCEL
-		val ptrId: Int = try {
-			me.getPointerId(ptridx)
-		} catch (e: IllegalArgumentException) {
-			return
-		}
-
-		if (down) {
-			onPress(ptrId, x, y, me, scale)
-		}
-
-		if (move) {
-			onMove(me, scale)
-		}
-
-		if (up) {
-			onRelease(ptrId, x, y, me, scale)
-		}
-
-		if (cancel) {
-			onCancel(ptrId, x, y, me, scale)
-		}
-
-		currentEvent?.recycle()
-		currentEvent = null
 
 	}
 

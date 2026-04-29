@@ -661,6 +661,68 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 stopStream();
                 break;
             }
+            case NativeEngine::CMD_CREATE_EXTERNAL_PCM: {
+                if (!c.externalRing) break;
+                Voice v;
+                v.type = Voice::ExternalPCM;
+                v.id = c.id;
+                v.position = 0.0;
+                v.loop = false;
+                v.gain = 1.0;
+                v.playing = true;
+                v.bufferChannels = c.channels > 0 ? c.channels : 2;
+                v.bufferSampleRate = c.sampleRate > 0 ? c.sampleRate : 48000;
+                double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+                v.increment = static_cast<double>(v.bufferSampleRate) / sr;
+                v.externalRing = c.externalRing;
+                v.externalPrev.assign((size_t)v.bufferChannels, 0.0f);
+                v.externalCurr.assign((size_t)v.bufferChannels, 0.0f);
+                v.externalSubPos = 0.0;
+                v.externalPrimed = false;
+
+                auto vgInit = voiceGainByOutput_.find(v.id);
+                if (vgInit != voiceGainByOutput_.end() && !vgInit->second.empty()) {
+                    auto mapIt = vgInit->second.find(0);
+                    if (mapIt == vgInit->second.end()) mapIt = vgInit->second.begin();
+                    v.gainId = mapIt->second;
+                    auto git = gains_.find(v.gainId);
+                    if (git != gains_.end()) v.gain = git->second;
+                }
+                audioVoices_[c.id] = v;
+                break;
+            }
+            case NativeEngine::CMD_PUSH_EXTERNAL_PCM: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit == audioVoices_.end() || vit->second.type != Voice::ExternalPCM) break;
+                auto &ring = vit->second.externalRing;
+                if (!ring || !c.pcmFloat || c.pcmFloat->empty()) break;
+
+                const std::vector<float> &src = *c.pcmFloat;
+                int chs = ring->channels;
+                if (chs <= 0) break;
+                size_t framesIn = src.size() / (size_t)chs;
+                if (framesIn == 0) break;
+
+                uint32_t w = ring->writeIdx.load(std::memory_order_relaxed);
+                uint32_t r = ring->readIdx.load(std::memory_order_acquire);
+                uint32_t avail = ring->capacity - (w - r);
+                uint32_t writeFrames = framesIn > avail ? avail : (uint32_t)framesIn;
+                for (uint32_t i = 0; i < writeFrames; i++) {
+                    uint32_t pos = (w + i) & ring->mask;
+                    for (int ch = 0; ch < chs; ch++) {
+                        ring->data[(size_t)pos * chs + ch] = src[(size_t)i * chs + ch];
+                    }
+                }
+                ring->writeIdx.store(w + writeFrames, std::memory_order_release);
+                break;
+            }
+            case NativeEngine::CMD_END_EXTERNAL_PCM: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit != audioVoices_.end() && vit->second.externalRing) {
+                    vit->second.externalRing->ended.store(true, std::memory_order_release);
+                }
+                break;
+            }
             default:
                 break;
         }
@@ -1191,61 +1253,105 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         v.phase += v.phaseIncrement;
                         if (v.phase >= 1.0) v.phase -= 1.0;
                     }
-                } else if (v.type == Voice::BufferSource) {
-                    auto bit = localBuffers.find(v.bufferId);
-                    if (bit == localBuffers.end()) continue;
-                    const BufferData &bd = bit->second;
-                    int bufChannels = bd.channels > 0 ? bd.channels : 1;
+                } else if (v.type == Voice::BufferSource || v.type == Voice::ExternalPCM) {
+                    int bufChannels = 1;
                     int bufFrames = 0;
-                    if (bd.isDirect) {
-                        bufFrames = static_cast<int>((bd.byteLength / bd.bytesPerSample) /
-                                                     (bufChannels ? bufChannels : 1));
-                    } else {
-                        bufFrames = static_cast<int>(bd.pcm.size() /
-                                                     (bufChannels ? bufChannels : 1));
-                    }
-                    if (bufFrames <= 0) continue;
-
-                    double pos = v.position;
-                    int i0 = static_cast<int>(std::floor(pos));
-                    double frac = pos - i0;
                     int chIdx = ch;
+                    float sample = 0.0f;
+                    int i0_dbg = 0;
+                    int idx0_dbg = 0;
+                    int idx1_dbg = 0;
+                    const BufferData *bd_dbg = nullptr;
 
-                    if (bufChannels == 1) chIdx = 0;
-                    else if (bufChannels >= channels) chIdx = ch;
-                    else chIdx = ch % bufChannels;
-
-                    int idx0 = (i0 % bufFrames) * bufChannels + chIdx;
-                    int idx1 = ((i0 + 1) % bufFrames) * bufChannels + chIdx;
-                    int16_t s0 = 0;
-                    int16_t s1 = 0;
-                    float fs0 = 0.0f;
-                    float fs1 = 0.0f;
-                    if (bd.isDirect && bd.directPtr) {
-                        if (bd.bytesPerSample == 4) {
-                            const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
-                            int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
-                            int safe0 = std::max(0, std::min(maxIndex, idx0));
-                            int safe1 = std::max(0, std::min(maxIndex, idx1));
-                            fs0 = fptr[safe0];
-                            fs1 = fptr[safe1];
+                    if (v.type == Voice::BufferSource) {
+                        auto bit = localBuffers.find(v.bufferId);
+                        if (bit == localBuffers.end()) continue;
+                        const BufferData &bd = bit->second;
+                        bd_dbg = &bd;
+                        bufChannels = bd.channels > 0 ? bd.channels : 1;
+                        if (bd.isDirect) {
+                            bufFrames = static_cast<int>((bd.byteLength / bd.bytesPerSample) /
+                                                         (bufChannels ? bufChannels : 1));
                         } else {
-                            const auto *iptr = reinterpret_cast<const int16_t *>(bd.directPtr);
-                            int maxIndex = static_cast<int>((bd.byteLength / 2) - 1);
+                            bufFrames = static_cast<int>(bd.pcm.size() /
+                                                         (bufChannels ? bufChannels : 1));
+                        }
+                        if (bufFrames <= 0) continue;
+
+                        double pos = v.position;
+                        int i0 = static_cast<int>(std::floor(pos));
+                        i0_dbg = i0;
+                        double frac = pos - i0;
+
+                        if (bufChannels == 1) chIdx = 0;
+                        else if (bufChannels >= channels) chIdx = ch;
+                        else chIdx = ch % bufChannels;
+
+                        int idx0 = (i0 % bufFrames) * bufChannels + chIdx;
+                        int idx1 = ((i0 + 1) % bufFrames) * bufChannels + chIdx;
+                        idx0_dbg = idx0;
+                        idx1_dbg = idx1;
+                        float fs0 = 0.0f;
+                        float fs1 = 0.0f;
+                        if (bd.isDirect && bd.directPtr) {
+                            if (bd.bytesPerSample == 4) {
+                                const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
+                                int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
+                                int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                fs0 = fptr[safe0];
+                                fs1 = fptr[safe1];
+                            } else {
+                                const auto *iptr = reinterpret_cast<const int16_t *>(bd.directPtr);
+                                int maxIndex = static_cast<int>((bd.byteLength / 2) - 1);
+                                int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                fs0 = static_cast<float>(iptr[safe0]) / 32768.0f;
+                                fs1 = static_cast<float>(iptr[safe1]) / 32768.0f;
+                            }
+                        } else {
+                            int maxIndex = static_cast<int>(bd.pcm.size()) - 1;
                             int safe0 = std::max(0, std::min(maxIndex, idx0));
                             int safe1 = std::max(0, std::min(maxIndex, idx1));
-                            fs0 = static_cast<float>(iptr[safe0]) / 32768.0f;
-                            fs1 = static_cast<float>(iptr[safe1]) / 32768.0f;
+                            fs0 = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
+                            fs1 = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
                         }
-                    } else {
-                        int maxIndex = static_cast<int>(bd.pcm.size()) - 1;
-                        int safe0 = std::max(0, std::min(maxIndex, idx0));
-                        int safe1 = std::max(0, std::min(maxIndex, idx1));
-                        fs0 = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
-                        fs1 = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
+                        sample = fs0 * (1.0f - static_cast<float>(frac)) +
+                                 fs1 * static_cast<float>(frac);
+                    } else /* ExternalPCM */ {
+                        auto &ring = v.externalRing;
+                        if (!ring) continue;
+                        bufChannels = ring->channels > 0 ? ring->channels : 1;
+                        bufFrames = INT32_MAX;
+                        if (bufChannels == 1) chIdx = 0;
+                        else if (bufChannels >= channels) chIdx = ch;
+                        else chIdx = ch % bufChannels;
+
+                        uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
+                        uint32_t r = ring->readIdx.load(std::memory_order_relaxed);
+                        if (!v.externalPrimed && (w - r) >= 1) {
+                            uint32_t p = r & ring->mask;
+                            for (int c = 0; c < bufChannels; c++) {
+                                v.externalCurr[(size_t)c] = ring->data[(size_t)p * bufChannels + c];
+                            }
+                            ring->readIdx.store(r + 1, std::memory_order_release);
+                            v.externalPrimed = true;
+                        }
+
+                        if (v.externalPrimed) {
+                            float prev = v.externalPrev[(size_t)chIdx];
+                            float curr = v.externalCurr[(size_t)chIdx];
+                            auto t = static_cast<float>(v.externalSubPos);
+                            sample = prev * (1.0f - t) + curr * t;
+                        } else {
+                            sample = 0.0f;
+                            if (ring->ended.load(std::memory_order_acquire) &&
+                                ring->writeIdx.load(std::memory_order_acquire) ==
+                                ring->readIdx.load(std::memory_order_relaxed)) {
+                                v.playing = false;
+                            }
+                        }
                     }
-                    float sample = fs0 * (1.0f - static_cast<float>(frac)) +
-                                   fs1 * static_cast<float>(frac);
 
                     std::string effFilterId2 = v.filterId;
                     auto vfIt2 = voiceFilterByOutput_.find(v.id);
@@ -1377,9 +1483,15 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         }
                     }
 
-                    if (g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) {
+                    if (v.type == Voice::BufferSource && bd_dbg &&
+                        g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) {
                         if (debugLoggedVoices_.find(v.id) == debugLoggedVoices_.end()) {
                             debugLoggedVoices_.insert(v.id);
+                            const BufferData &bd = *bd_dbg;
+                            int i0 = i0_dbg;
+                            double frac = v.position - i0;
+                            int idx0 = idx0_dbg;
+                            int idx1 = idx1_dbg;
                             int chOther = (channels > 1) ? 1 : 0;
                             int chIdxOther = chOther;
                             if (bufChannels == 1) chIdxOther = 0;
@@ -1412,6 +1524,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 fs1Other = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
                             }
                             sampleOther = fs0Other * (1.0f - static_cast<float>(frac)) + fs1Other * static_cast<float>(frac);
+                            (void)sampleOther;
+                            (void)idx0; (void)idx1;
                             audioThreadLog(ANDROID_LOG_INFO,
                                                 "VOICE_DEBUG id=%s buffer=%s bufCh=%d streamCh=%d ch0_chIdx=%d ch0_idx0=%d ch0_idx1=%d ch0_sample=%f ch1_chIdx=%d ch1_idx0=%d ch1_idx1=%d ch1_sample=%f leftGain=%f rightGain=%f panId=%s",
                                                 v.id.c_str(), v.bufferId.c_str(), bufChannels, channels, chIdx, idx0, idx1, sample, chIdxOther, idx0Other, idx1Other, sampleOther, leftGain, rightGain, v.panId.c_str());
@@ -1469,10 +1583,39 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
 
                     if (ch == channels - 1) {
-                        v.position += v.increment;
-                        if (v.position >= bufFrames) {
-                            if (v.loop) v.position = std::fmod(v.position, bufFrames);
-                            else v.playing = false;
+                        if (v.type == Voice::BufferSource) {
+                            v.position += v.increment;
+                            if (v.position >= bufFrames) {
+                                if (v.loop) v.position = std::fmod(v.position, bufFrames);
+                                else v.playing = false;
+                            }
+                        } else /* ExternalPCM */ {
+                            auto &ring = v.externalRing;
+                            if (ring && v.externalPrimed) {
+                                v.externalSubPos += v.increment;
+                                while (v.externalSubPos >= 1.0) {
+                                    for (int c = 0; c < bufChannels; c++) {
+                                        v.externalPrev[(size_t)c] = v.externalCurr[(size_t)c];
+                                    }
+                                    uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
+                                    uint32_t r = ring->readIdx.load(std::memory_order_relaxed);
+                                    if ((w - r) >= 1) {
+                                        uint32_t p = r & ring->mask;
+                                        for (int c = 0; c < bufChannels; c++) {
+                                            v.externalCurr[(size_t)c] =
+                                                ring->data[(size_t)p * bufChannels + c];
+                                        }
+                                        ring->readIdx.store(r + 1, std::memory_order_release);
+                                        v.externalSubPos -= 1.0;
+                                    } else {
+                                        v.externalSubPos = 0.999;
+                                        if (ring->ended.load(std::memory_order_acquire)) {
+                                            v.playing = false;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1509,6 +1652,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             it->second.filterId = lv.filterId;
             it->second.panId = lv.panId;
             it->second.pan = lv.pan;
+            it->second.externalPrev = lv.externalPrev;
+            it->second.externalCurr = lv.externalCurr;
+            it->second.externalSubPos = lv.externalSubPos;
+            it->second.externalPrimed = lv.externalPrimed;
         }
     }
 

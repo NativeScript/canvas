@@ -1,4 +1,5 @@
 #import <Accelerate/Accelerate.h>
+#import "NSCAudioLog.h"
 #import <stdatomic.h>
 #import <math.h>
 
@@ -215,7 +216,7 @@ static inline void NSCAnalyser_appendToRing(float *ring,
         _tapFormat = fmt;
         atomic_store_explicit(&_acceptingFrames, true, memory_order_release);
     } @catch (NSException *e) {
-        NSLog(@"NSCAnalyserNode: installTapOnBus failed: %@ (mixer=%p sr=%.0f ch=%u)",
+        NSCLogDebug(@"NSCAnalyserNode: installTapOnBus failed: %@ (mixer=%p sr=%.0f ch=%u)",
               e, mixer, fmt.sampleRate, (unsigned)fmt.channelCount);
     }
 }

@@ -164,7 +164,7 @@ export class Canvas extends CanvasBase {
 		if (width === 0) {
 			return 0;
 		}
-		return width / Screen.mainScreen.scale;
+		return Math.floor(width / Screen.mainScreen.scale);
 	}
 
 	get clientHeight() {
@@ -172,7 +172,7 @@ export class Canvas extends CanvasBase {
 		if (height === 0) {
 			return 0;
 		}
-		return height / Screen.mainScreen.scale;
+		return Math.floor(height / Screen.mainScreen.scale);
 	}
 
 	get drawingBufferHeight() {

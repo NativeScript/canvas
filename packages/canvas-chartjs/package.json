@@ -1,6 +1,6 @@
 {
 	"name": "@nativescript/canvas-chartjs",
-	"version": "2.0.11",
+	"version": "2.0.12",
 	"description": "ChartJS",
 	"main": "index",
 	"typings": "index.d.ts",

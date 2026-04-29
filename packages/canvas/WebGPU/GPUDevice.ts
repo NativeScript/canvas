@@ -28,27 +28,27 @@ export function getCapturedWGSL() {
 
 function fixup_shader_code(code: string) {
 	let ret = `${code}`;
-	if (!ret.includes('#storage')) {
-		if (ret.includes('atomic_storage')) ret = '#storage atomic_storage array<atomic<i32>>\n\n' + ret;
-		if (ret.includes('float_storage')) ret = '#storage float_storage array<vec4<f32>>\n\n' + ret;
-	}
+	// if (!ret.includes('#storage')) {
+	// 	if (ret.includes('atomic_storage')) ret = '#storage atomic_storage array<atomic<i32>>\n\n' + ret;
+	// 	if (ret.includes('float_storage')) ret = '#storage float_storage array<vec4<f32>>\n\n' + ret;
+	// }
 
-	ret = ret.replace(/@stage\(\s*(vertex|fragment|compute)\s*\)/g, '@$1');
-	ret = ret.replace(/\bmat([2-4])x([2-4])<\s*f32\s*>\b/g, 'mat$1x$2f');
-	ret = ret.replace(/\bvec([2-4])<\s*f32\s*>\b/g, 'vec$1f');
-	ret = ret.replace(/(\d+)u\b/g, '$1');
-	ret = ret.replace(/^type /gm, 'alias ');
-	ret = ret.replace(/^let /gm, 'const ');
-	ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
-	ret = ret.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
+	// // ret = ret.replace(/@stage\(\s*(vertex|fragment|compute)\s*\)/g, '@$1');
+	// // ret = ret.replace(/\bmat([2-4])x([2-4])<\s*f32\s*>\b/g, 'mat$1x$2f');
+	// // ret = ret.replace(/\bvec([2-4])<\s*f32\s*>\b/g, 'vec$1f');
+	// // ret = ret.replace(/(\d+)u\b/g, '$1');
+	// // ret = ret.replace(/^type /gm, 'alias ');
+	// // ret = ret.replace(/^let /gm, 'const ');
+	// // ret = ret.replace(/alias\s+bool([2-4])\s*=\s*vec\1<\s*bool\s*>\s*;/gm, '');
+	// // ret = ret.replace(/alias\s+float([2-4])x([2-4])\s*=\s*mat\1x\2<\s*f32\s*>\s*;/gm, '');
 
-	// diagnostic directive is unsupported in older wgpu versions, remove it.
-	// Also strip the trailing semicolon so no stray `;` is left at module scope.
-	// ret = ret.replace(/diagnostic\s*\([^)]*\)\s*;?/g, '');
+	// // // diagnostic directive is unsupported in older wgpu versions, remove it.
+	// // // Also strip the trailing semicolon so no stray `;` is left at module scope.
+	// // // ret = ret.replace(/diagnostic\s*\([^)]*\)\s*;?/g, '');
 
-	ret = ret.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
-		return match.replace(/0u/, '0');
-	});
+	// // ret = ret.replace(/textureLoad\(\s*[^,]+,\s*[^,]+,\s*[^,]+,\s*0u\s*\)/g, (match) => {
+	// // 	return match.replace(/0u/, '0');
+	// // });
 
 	return ret;
 }
@@ -323,7 +323,12 @@ export class GPUDevice extends EventTarget {
 	}
 
 	createShaderModule(descriptor: { label?: string; code: string; sourceMap?: object; compilationHints?: any[] }) {
-		const module = this.native.createShaderModule(fixup_shader_code(descriptor.code));
+		const module = this.native.createShaderModule({
+			label: descriptor?.label,
+			code: fixup_shader_code(descriptor.code),
+			sourceMap: descriptor?.sourceMap,
+			compilationHints: descriptor?.compilationHints,
+		});
 		return GPUShaderModule.fromNative(module);
 	}
 

@@ -10,6 +10,7 @@
 #include <utility>
 #include <future>
 #include <memory>
+#include <atomic>
 #include <cstdint>
 
 #include "kiss_fft.h"
@@ -65,6 +66,10 @@ public:
 
     void freeBuffer(const std::string &id);
 
+    std::string createExternalPcmSource(int sampleRate, int channels);
+    void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
+    void endExternalPcmSource(const std::string &id);
+
 #ifdef HAS_OBOE
 
     oboe::DataCallbackResult
@@ -119,9 +124,19 @@ public:
     };
 private:
 
+    struct ExternalRing {
+        std::vector<float> data;
+        uint32_t capacity = 0;
+        uint32_t mask = 0;
+        int channels = 1;
+        std::atomic<uint32_t> writeIdx{0};
+        std::atomic<uint32_t> readIdx{0};
+        std::atomic<bool> ended{false};
+    };
+
     struct Voice {
         enum Type {
-            Oscillator, BufferSource
+            Oscillator, BufferSource, ExternalPCM
         } type;
         std::string id;
         std::string waveform = "sine";
@@ -143,6 +158,12 @@ private:
         bool playing = false;
         int bufferChannels = 0;
         int bufferSampleRate = 0;
+
+        std::shared_ptr<ExternalRing> externalRing;
+        std::vector<float> externalPrev;
+        std::vector<float> externalCurr;
+        double externalSubPos = 0.0;
+        bool externalPrimed = false;
     };
 
     std::unordered_map<std::string, BufferData> audioBuffers_;
@@ -180,7 +201,10 @@ public:
         CMD_ATTACH_PERIODICWAVE,
         CMD_FREE_PERIODICWAVE,
         CMD_RESUME,
-        CMD_SUSPEND
+        CMD_SUSPEND,
+        CMD_CREATE_EXTERNAL_PCM,
+        CMD_PUSH_EXTERNAL_PCM,
+        CMD_END_EXTERNAL_PCM
     };
 
     struct Command {
@@ -227,6 +251,8 @@ public:
         int sampleRate = 0;
         int channels = 0;
         std::shared_ptr<std::vector<int16_t>> pcm;
+        std::shared_ptr<std::vector<float>> pcmFloat;
+        std::shared_ptr<ExternalRing> externalRing;
         bool loop = false;
         std::shared_ptr<std::promise<void>> completion;
         int outputIndex = 0;

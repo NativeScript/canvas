@@ -1,4 +1,5 @@
 #import <objc/message.h>
+#import "NSCAudioLog.h"
 #import "NSCAudioContext.h"
 
 @implementation NSCAudioPannerNode {
@@ -94,7 +95,7 @@
             @try {
                 [engine disconnectNodeInput:_panMixer];
                 [engine disconnectNodeOutput:_panMixer];
-                [engine detachNode:_panMixer];
+                [self.context detachNode:_panMixer fromEngine:engine];
             } @catch (NSException *e) {}
         }
         _panMixer = nil;
@@ -106,7 +107,7 @@
                 @try {
                     [engine disconnectNodeInput:_envNode];
                     [engine disconnectNodeOutput:_envNode];
-                    [engine detachNode:_envNode];
+                    [self.context detachNode:_envNode fromEngine:engine];
                 } @catch (NSException *e) {}
             }
         }
@@ -489,7 +490,7 @@
 - (void)setPanningModel:(NSNumber *)v {
     int newPM = v.intValue;
     if (newPM == _panningModel) return;
-    NSLog(@"NSCAudioPannerNode: panningModel can only be set at construction; "
+    NSCLogDebug(@"NSCAudioPannerNode: panningModel can only be set at construction; "
           @"runtime change ignored. Recreate the panner with createPanner({ panningModel: ... }) to switch.");
 }
 - (NSNumber *)getPanningModel { return @(_panningModel); }

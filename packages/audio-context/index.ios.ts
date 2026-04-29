@@ -1,54 +1,42 @@
-import { AnalyserOptions, AudioContextOptions, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, IIRFilterOptions, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, toUint8Array, AudioListenerBase } from './common';
+import { AnalyserOptions, AudioContextOptions, AudioNodeBase, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, distanceModelFromNumber, distanceModelToNumber, DistanceModelType, IIRFilterOptions, MediaElementAudioSourceBase, MediaElementLike, panningModelFromNumber, panningModelToNumber, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, AudioListenerBase } from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
-const scratch_ = Symbol('[[scratch]]');
-
-interface ScratchEntry {
-	byteOffset: number;
-	byteLength: number;
-	buffer: ArrayBuffer;
-}
+const dataMap: WeakMap<ArrayBufferLike, Map<string, Uint8Array>> = new WeakMap();
 
 function spansEntireBuffer(data: ArrayBufferView): boolean {
 	return data.byteOffset === 0 && data.byteLength === data.buffer.byteLength;
 }
 
-function getScratchBuffer(view: ArrayBufferView): ArrayBuffer {
-	const entry = (view as any)[scratch_] as ScratchEntry | undefined;
-	if (entry && entry.byteOffset === view.byteOffset && entry.byteLength === view.byteLength && entry.buffer.byteLength === view.byteLength) {
-		return entry.buffer;
+function getScratchBuffer(view: ArrayBufferView): Uint8Array {
+	const underlying = view.buffer;
+	let map = dataMap.get(underlying);
+	if (!map) {
+		map = new Map<string, Uint8Array>();
+		dataMap.set(underlying, map);
 	}
-	const buf = new ArrayBuffer(view.byteLength);
-	try {
-		Object.defineProperty(view, scratch_, {
-			value: { byteOffset: view.byteOffset, byteLength: view.byteLength, buffer: buf } as ScratchEntry,
-			writable: true,
-			configurable: true,
-		});
-	} catch (e) {}
-	return buf;
+	const key = `${view.byteOffset}:${view.byteLength}`;
+	const existing = map.get(key);
+	if (existing && existing.byteLength === view.byteLength) return existing;
+
+	const arr = new Uint8Array(underlying, view.byteOffset, view.byteLength);
+	map.set(key, arr);
+
+	return arr;
 }
 
 function withWriteableNativeBuffer(data: ArrayBufferView, call: (buffer: any) => void): void {
 	if (spansEntireBuffer(data)) {
-		call(data.buffer);
+		call(data);
 		return;
 	}
 	const scratch = getScratchBuffer(data);
 	call(scratch);
-	const u8Src = new Uint8Array(scratch);
-	const u8Dst = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-	u8Dst.set(u8Src);
 }
 
 function getReadableNativeBuffer(data: ArrayBufferView): any {
 	if (spansEntireBuffer(data)) return data.buffer;
-	const scratch = getScratchBuffer(data);
-	const u8Dst = new Uint8Array(scratch);
-	const u8Src = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-	u8Dst.set(u8Src);
-	return scratch;
+	return getScratchBuffer(data);
 }
 
 function makeIOSHooks(native: NSCAudioParam): AudioParamHooks {
@@ -93,18 +81,9 @@ export class AudioParam extends AudioParamBase {
 	}
 }
 
-export class AudioNode {
-	private [context_]: BaseAudioContext;
-
+export class AudioNode extends AudioNodeBase {
 	constructor(context: NativeBaseAudioContext) {
-		if (!(context instanceof BaseAudioContext)) {
-			throw new TypeError(`${this.constructor.name} constructor: Argument 1 does not implement interface BaseAudioContext.`);
-		}
-		this[context_] = context;
-	}
-
-	get context() {
-		return this[context_];
+		super(context);
 	}
 
 	connect(node: any, output?: number, input?: number) {
@@ -114,7 +93,9 @@ export class AudioNode {
 			if (typeof output === 'number' && typeof input === 'number') that.native.connectToOutputInput(target, output, input);
 			else if (typeof output === 'number') that.native.connectToOutput(target, output);
 			else that.native.connectTo(target);
-		} catch (e) {}
+		} catch (e) {
+			console.warn(`AudioNode.connect failed:`, e);
+		}
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
@@ -304,17 +285,17 @@ export class PannerNode extends AudioNode {
 		return this._orientationZ || (this._orientationZ = new AudioParam(nativeCtor_, this.native.orientationZParam));
 	}
 
-	get distanceModel() {
-		return this.native.getDistanceModel();
+	get distanceModel(): DistanceModelType {
+		return distanceModelFromNumber(this.native.getDistanceModel());
 	}
-	set distanceModel(v: number) {
-		this.native.setDistanceModel(v);
+	set distanceModel(v: DistanceModelType | number) {
+		this.native.setDistanceModel(distanceModelToNumber(v));
 	}
-	get panningModel() {
-		return this.native.getPanningModel();
+	get panningModel(): PanningModelType {
+		return panningModelFromNumber(this.native.getPanningModel());
 	}
-	set panningModel(v: number) {
-		this.native.setPanningModel(v);
+	set panningModel(v: PanningModelType | number) {
+		this.native.setPanningModel(panningModelToNumber(v));
 	}
 	get refDistance() {
 		return this.native.getRefDistance();
@@ -375,19 +356,56 @@ export class AudioDestinationNode extends AudioNode {
 
 export class AudioScheduledSourceNode extends AudioNode {
 	[native_]: NSCAudioScheduledSourceNode;
+	private _onended: ((ev: { type: 'ended' }) => void) | null = null;
+	private _nativeEndedWired = false;
+	private _endedFired = false;
+
 	constructor(context: NativeBaseAudioContext, node: NSCAudioScheduledSourceNode) {
 		super(context);
 		if (!(node instanceof NSCAudioScheduledSourceNode)) throw new TypeError('Illegal constructor.');
 		this[native_] = node;
 	}
+
 	get native() {
 		return this[native_];
 	}
+
+	get onended() {
+		return this._onended;
+	}
+	set onended(cb: ((ev: { type: 'ended' }) => void) | null) {
+		if (this._onended) super.removeEventListener('ended', this._onended);
+		this._onended = typeof cb === 'function' ? cb : null;
+		if (this._onended) {
+			super.addEventListener('ended', this._onended);
+			this._ensureNativeEndedWired();
+		}
+	}
+
+	protected _onFirstListenerAdded(type: string) {
+		if (type === 'ended') this._ensureNativeEndedWired();
+	}
+
+	private _ensureNativeEndedWired() {
+		if (this._nativeEndedWired) return;
+		this._nativeEndedWired = true;
+		this[native_].onended = () => this._fireEnded();
+	}
+
+	protected _fireEnded() {
+		if (this._endedFired) return;
+		this._endedFired = true;
+		this.dispatchEvent({ type: 'ended', target: this });
+	}
+
 	start() {
+		this._endedFired = false;
 		this.native.start();
 	}
+
 	stop() {
 		this.native.stop();
+		setTimeout(() => this._fireEnded(), 0);
 	}
 }
 
@@ -411,41 +429,6 @@ export class OscillatorNode extends AudioScheduledSourceNode {
 	setPeriodicWave(wave: PeriodicWave) {
 		if (!wave) return;
 		(this.native as any).setPeriodicWave(wave.native);
-	}
-}
-
-class SideEffectAudioParam extends AudioParamBase {
-	constructor(nsc: NSCAudioParam, apply: (v: number) => void) {
-		super(
-			{
-				nativeSet(v) {
-					nsc.setValue(v);
-					apply(v);
-				},
-				nativeScheduleSet(v, t) {
-					nsc.setValueAtTime(v, t);
-					apply(v);
-				},
-				nativeScheduleLinearRamp(v, t) {
-					nsc.linearRampToValueAtTime(v, t);
-					apply(v);
-				},
-				nativeCancel(t) {
-					nsc.cancelScheduledValues(t);
-				},
-				nativeCancelAndHold(v, t) {
-					(nsc as any).cancelAndHoldAtTime(v, t);
-					apply(v);
-				},
-				nativeGetValue() {
-					return nsc.value;
-				},
-				nativeSetAutomationRate(rate) {
-					nsc.automationRate = rate;
-				},
-			},
-			nsc.value,
-		);
 	}
 }
 
@@ -694,6 +677,42 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	set buffer(v: AudioBuffer | null) {
 		this.native.buffer = v?.native ?? (null as never);
 	}
+
+	protected _scheduledDuration(): number {
+		const b = this.native.buffer;
+		if (!b || this.native.loop) return 0;
+		return b.duration || 0;
+	}
+}
+
+export class MediaElementAudioSourceNode extends MediaElementAudioSourceBase {
+	constructor(context: AudioContext, mediaElement: MediaElementLike) {
+		super(context, mediaElement);
+	}
+
+	get context() {
+		return this[context_] as AudioContext;
+	}
+
+	protected _wrapTapNative(tapNative: any) {
+		if (!tapNative || !(tapNative instanceof NSCAudioNode)) {
+			return null;
+		}
+		const ctx = this.context;
+		const node = Object.create(AudioNode.prototype) as AudioNode & { native: NSCAudioNode };
+		(node as any)[context_] = ctx;
+		(node as any).native = tapNative;
+		return node;
+	}
+	protected _createGainNode() {
+		return this.context.createGain();
+	}
+	protected _createBufferSource(buffer: AudioBuffer) {
+		return this.context.createBufferSource({ buffer });
+	}
+	protected _decodeFromUrl(src: string): Promise<AudioBuffer> {
+		return this.context.decodeAudioData(src);
+	}
 }
 
 export class AudioContext extends BaseAudioContext {
@@ -714,6 +733,11 @@ export class AudioContext extends BaseAudioContext {
 		} catch (e) {
 			this._destination = null;
 		}
+		this._setState('running');
+	}
+
+	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode {
+		return new MediaElementAudioSourceNode(this, mediaElement);
 	}
 
 	get listener() {
@@ -779,19 +803,51 @@ export class AudioContext extends BaseAudioContext {
 	}
 
 	resume(): Promise<void> {
-		this.native.resume();
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		const native = this.native;
+		if (!native) return Promise.reject(new Error('AudioContext: native engine unavailable'));
+		return new Promise((resolve, reject) => {
+			native.resumeAsync((ok) => {
+				if (ok) {
+					this._setState('running');
+					resolve();
+				} else {
+					reject(new Error('AudioContext.resume: engine failed to start'));
+				}
+			});
+		});
 	}
 
 	suspend(): Promise<void> {
-		this.native.suspend();
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.reject(new Error('AudioContext is closed'));
+		const native = this.native;
+		if (!native) return Promise.reject(new Error('AudioContext: native engine unavailable'));
+		return new Promise((resolve, reject) => {
+			native.suspendAsync((ok) => {
+				if (ok) {
+					this._setState('suspended');
+					resolve();
+				} else {
+					reject(new Error('AudioContext.suspend: engine failed to pause'));
+				}
+			});
+		});
 	}
 
 	close(): Promise<void> {
-		this[native_] = null as any;
-		this._destination = null;
-		return Promise.resolve();
+		if (this._state === 'closed') return Promise.resolve();
+		const native = this.native;
+		return new Promise((resolve) => {
+			const finish = () => {
+				this[native_] = null as any;
+				this._destination = null;
+				this._listener = null;
+				this._setState('closed');
+				resolve();
+			};
+			if (native) native.closeAsync(finish);
+			else finish();
+		});
 	}
 
 	get sinkId(): string {
@@ -923,7 +979,7 @@ export class OfflineAudioContext extends BaseAudioContext {
 					return;
 				}
 
-				this.native.decodeAudioDataFromDataAsyncOffline(source as never, (wrapper) => {
+				this.native.decodeAudioDataFromDataAsync(source as never, (wrapper) => {
 					if (!wrapper) return reject(new Error('decodeAudioData failed'));
 					resolve(new AudioBuffer(nativeCtor_, wrapper));
 				});

@@ -136,13 +136,17 @@ declare module org {
 				public createBiquad(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number, Q: number, gain: number): org.nativescript.audiocontext.AudioBiquadNode;
 				public copyFromChannel(this_: string, id: androidNative.Array<number>, dest: number, channel: number): void;
 				public suspend(): void;
+				public createExternalPcmSource(sampleRate: number, channels: number): string;
 				public setPannerParams(panner: org.nativescript.audiocontext.AudioPannerNode, positionX: number, positionY: number, positionZ: number, orientationX: number, orientationY: number, orientationZ: number, pan: number, distanceModel: number, panningModel: number, refDistance: number, maxDistance: number, rolloffFactor: number, coneInnerAngle: number, coneOuterAngle: number, coneOuterGain: number): void;
 				public copyFromChannel(id: string, dest: java.nio.ByteBuffer, channel: number, startInChannel: number): void;
 				public constructor();
+				public addEndedListener(existing: string, list: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public releaseAnalyser(id: string): void;
+				public closeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getAnalyserFloatFrequencyData(id: string): androidNative.Array<number>;
 				public createConstantSource(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.ConstantSourceNode;
 				public getContextCurrentTime(this_: string): number;
+				public pushPcmFrames(p: string, this_: java.nio.FloatBuffer): void;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.AudioOscillatorNode;
 				public decodeAudioDataFromByteArrayAsync(data: androidNative.Array<number>, context: org.nativescript.audiocontext.AudioContextInstance, cb: org.nativescript.audiocontext.DecodeCallback): void;
@@ -155,6 +159,7 @@ declare module org {
 				public getDestination(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.GainNode;
 				public static onNativeBufferHeld(id: string): void;
 				public createBufferSource(context: org.nativescript.audiocontext.AudioContextInstance, buffer: org.nativescript.audiocontext.AudioBuffer): org.nativescript.audiocontext.AudioBufferSourceNode;
+				public removeEndedListener(trackId: string, listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public renderOfflineAsync(trackIds: androidNative.Array<string>, frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
 				public createPeriodicWave(context: org.nativescript.audiocontext.AudioContextInstance, real: java.nio.FloatBuffer, imag: java.nio.FloatBuffer, disableNormalization: boolean): org.nativescript.audiocontext.PeriodicWave;
 				public getAnalyserByteTimeDomainDataDirect(slice: string, this_: java.nio.ByteBuffer): boolean;
@@ -164,6 +169,9 @@ declare module org {
 				public getLength(bytesPerSample: string): number;
 				public setListenerParams(positionX: number, positionY: number, positionZ: number, forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
 				public setAnalyserSmoothingTimeConstant(id: string, value: number): void;
+				public pushPcmFrames(trackId: string, data: androidNative.Array<number>): void;
+				public resumeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
+				public suspendAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public copyToChannel(id: string, source: java.nio.FloatBuffer, channel: number, startInChannel: number): void;
 				public getAnalyserFloatTimeDomainData(id: string, count: number): androidNative.Array<number>;
 				public copyToChannel(i: string, byteIndex: androidNative.Array<number>, v: number, i: number): void;
@@ -180,6 +188,7 @@ declare module org {
 				public getAudioBuffer(id: string): org.nativescript.audiocontext.AudioBuffer;
 				public decodeAudioDataFromByteArray(data: androidNative.Array<number>): org.nativescript.audiocontext.AudioBuffer;
 				public copyToChannel(id: string, source: java.nio.ByteBuffer, channel: number, startInChannel: number): void;
+				public endExternalPcmSource(trackId: string): void;
 				public createPeriodicWave(context: org.nativescript.audiocontext.AudioContextInstance, real: androidNative.Array<number>, imag: androidNative.Array<number>, disableNormalization: boolean): org.nativescript.audiocontext.PeriodicWave;
 				public resume(): void;
 				public setSinkId(t: string): boolean;
@@ -202,6 +211,15 @@ declare module org {
 				public registerBuffer(id: string, bb: java.nio.ByteBuffer, sampleRate: number, channels: number): void;
 			}
 			export module AudioContext {
+				export class AsyncCallback {
+					public static class: java.lang.Class<org.nativescript.audiocontext.AudioContext.AsyncCallback>;
+					/**
+					 * Constructs a new instance of the org.nativescript.audiocontext.AudioContext$AsyncCallback interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+					 */
+					public constructor(implementation: { onComplete(param0: boolean): void });
+					public constructor();
+					public onComplete(param0: boolean): void;
+				}
 				export class ByteArrayMediaDataSource {
 					public static class: java.lang.Class<org.nativescript.audiocontext.AudioContext.ByteArrayMediaDataSource>;
 					public close(): void;
@@ -213,6 +231,15 @@ declare module org {
 					public close(): void;
 					public readAt(position: number, buffer: androidNative.Array<number>, offset: number, size: number): number;
 					public getSize(): number;
+				}
+				export class EndedListener {
+					public static class: java.lang.Class<org.nativescript.audiocontext.AudioContext.EndedListener>;
+					/**
+					 * Constructs a new instance of the org.nativescript.audiocontext.AudioContext$EndedListener interface with the provided implementation. An empty constructor exists calling super() when extending the interface class.
+					 */
+					public constructor(implementation: { onEnded(param0: string): void });
+					public constructor();
+					public onEnded(param0: string): void;
 				}
 				export class ExtractorSetter {
 					public static class: java.lang.Class<org.nativescript.audiocontext.AudioContext.ExtractorSetter>;
@@ -249,15 +276,19 @@ declare module org {
 				public release(): void;
 				public getListenerUpXParam(): org.nativescript.audiocontext.AudioParam;
 				public getListenerUpYParam(): org.nativescript.audiocontext.AudioParam;
+				public resumeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
+				public suspendAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getListenerPositionXParam(): org.nativescript.audiocontext.AudioParam;
 				public constructor();
 				public createOscillatorNodeFrequency(type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
 				public getListenerPositionZParam(): org.nativescript.audiocontext.AudioParam;
 				public getListenerUpZParam(): org.nativescript.audiocontext.AudioParam;
 				public getSampleRate(): number;
+				public closeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getListenerForwardZParam(): org.nativescript.audiocontext.AudioParam;
 				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
 				public getListenerPositionYParam(): org.nativescript.audiocontext.AudioParam;
+				public createExternalPcmSource(sampleRate: number, channels: number): org.nativescript.audiocontext.ExternalPcmSourceNode;
 				public getCurrentTime(): number;
 				public getListenerForwardXParam(): org.nativescript.audiocontext.AudioParam;
 			}
@@ -461,6 +492,7 @@ declare module org {
 				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
 				public getId(): string;
 				public release(): void;
+				public addEndedListener(listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public connect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
 				public connect(node: org.nativescript.audiocontext.AudioNode): void;
@@ -468,6 +500,7 @@ declare module org {
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number): void;
 				public stop(): void;
+				public removeEndedListener(listener: org.nativescript.audiocontext.AudioContext.EndedListener): void;
 				public start(): void;
 				public disconnect(): void;
 				public disconnect(output: number): void;
@@ -573,6 +606,37 @@ declare module org {
 				public disconnect(output: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public setMaxDelayTime(v: number): void;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module audiocontext {
+			export class ExternalPcmSourceNode extends org.nativescript.audiocontext.AudioScheduledSourceNode {
+				public static class: java.lang.Class<org.nativescript.audiocontext.ExternalPcmSourceNode>;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public connect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
+				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
+				public getId(): string;
+				public release(): void;
+				public pushFrames(data: java.nio.FloatBuffer): void;
+				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public connect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
+				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number): void;
+				public constructor(id: string, sampleRate: number, channels: number);
+				public stop(): void;
+				public getSampleRate(): number;
+				public disconnect(): void;
+				public disconnect(output: number): void;
+				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
+				public getChannels(): number;
+				public constructor(id: string);
+				public endStream(): void;
+				public pushFrames(data: androidNative.Array<number>): void;
 			}
 		}
 	}

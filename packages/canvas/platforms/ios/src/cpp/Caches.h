@@ -7,6 +7,10 @@
 #include "Common.h"
 #include "ConcurrentMap.h"
 
+#ifdef __APPLE__
+#include "NSOperationQueueWrapper.h"
+#endif
+
 class Caches {
 public:
     Caches(v8::Isolate *isolate);
@@ -20,6 +24,11 @@ public:
     void SetContext(v8::Local<v8::Context> context);
 
     v8::Local<v8::Context> GetContext();
+
+#ifdef __APPLE__
+        NSOperationQueueWrapper* GetMainQueue();
+        NSOperationQueueWrapper* GetWorkerQueue();
+#endif
 
     std::unique_ptr<v8::Persistent<v8::FunctionTemplate>> TextDecoderTmpl = std::unique_ptr<v8::Persistent<v8::FunctionTemplate>>(
             nullptr);
@@ -261,4 +270,8 @@ private:
             perIsolateCaches_;
     v8::Isolate *isolate_;
     std::shared_ptr<v8::Persistent<v8::Context>> context_;
+#ifdef __APPLE__
+        NSOperationQueueWrapper* main_queue_ = nullptr;
+        NSOperationQueueWrapper* worker_queue_ = nullptr;
+#endif
 };

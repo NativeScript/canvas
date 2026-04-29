@@ -3,7 +3,86 @@ import { knownFolders, Observable } from '@nativescript/core';
 export const native_ = Symbol('[[native]]');
 export const context_ = Symbol('[[context]]');
 export const nativeCtor_ = Symbol('[[nativeConstructor]]');
-export class BaseAudioContext extends Observable {}
+
+export type AudioContextState = 'suspended' | 'running' | 'closed';
+
+export class AudioEventTarget extends Observable {
+	addEventListener(type: string, callback: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') thisArg = { capture: thisArg };
+		let listener: any = callback;
+		if (callback && typeof callback === 'object') {
+			listener = callback[`on${type}`];
+		}
+		if (typeof listener !== 'function') return;
+		const wasListening = this.hasListeners(type);
+		super.addEventListener(type, listener, thisArg);
+		if (!wasListening) this._onFirstListenerAdded?.(type);
+	}
+
+	removeEventListener(type: string, callback?: any, thisArg?: any) {
+		if (typeof thisArg === 'boolean') thisArg = { capture: thisArg };
+		let listener: any = callback;
+		if (callback && typeof callback === 'object') {
+			listener = callback[`on${type}`];
+		}
+		if (typeof listener === 'function') {
+			super.removeEventListener(type, listener, thisArg);
+		} else {
+			super.removeEventListener(type);
+		}
+		if (!this.hasListeners(type)) this._onLastListenerRemoved?.(type);
+	}
+
+	dispatchEvent(event: { type: string; [k: string]: any }): boolean {
+		this.notify({ ...event, eventName: event.type, object: this });
+		return true;
+	}
+
+	protected _onFirstListenerAdded?(type: string): void;
+
+	protected _onLastListenerRemoved?(type: string): void;
+}
+
+export class BaseAudioContext extends AudioEventTarget {
+	protected _state: AudioContextState = 'running';
+	private _onstatechange: ((ev: { type: 'statechange' }) => void) | null = null;
+
+	get state(): AudioContextState {
+		return this._state;
+	}
+
+	get onstatechange(): ((ev: { type: 'statechange' }) => void) | null {
+		return this._onstatechange;
+	}
+
+	set onstatechange(cb: ((ev: { type: 'statechange' }) => void) | null) {
+		if (this._onstatechange) super.removeEventListener('statechange', this._onstatechange);
+		this._onstatechange = typeof cb === 'function' ? cb : null;
+		if (this._onstatechange) super.addEventListener('statechange', this._onstatechange);
+	}
+
+	protected _setState(next: AudioContextState) {
+		if (this._state === next) return;
+		this._state = next;
+		this.dispatchEvent({ type: 'statechange', target: this });
+	}
+}
+
+export class AudioNodeBase extends AudioEventTarget {
+	protected [context_]: BaseAudioContext;
+
+	constructor(context: BaseAudioContext) {
+		super();
+		if (!(context instanceof BaseAudioContext)) {
+			throw new TypeError(`${this.constructor.name} constructor: Argument 1 does not implement interface BaseAudioContext.`);
+		}
+		this[context_] = context;
+	}
+
+	get context(): BaseAudioContext {
+		return this[context_];
+	}
+}
 
 export function normalizeSourcePath(source: string) {
 	let filePath = source;
@@ -18,13 +97,6 @@ export function normalizeSourcePath(source: string) {
 
 export function looksLikePath(source: string): boolean {
 	return source.indexOf('/') >= 0 || source.indexOf('file:') === 0 || source.indexOf('~') === 0;
-}
-
-export function toUint8Array(source: ArrayBuffer | ArrayBufferView) {
-	if (ArrayBuffer.isView(source)) {
-		return new Uint8Array(source.buffer, source.byteOffset, source.byteLength);
-	}
-	return new Uint8Array(source);
 }
 
 export type LatencyHint = 'interactive' | 'balanced' | 'playback' | number;
@@ -349,5 +421,206 @@ export class AudioListenerBase {
 		this.upX.value = ux;
 		this.upY.value = uy;
 		this.upZ.value = uz;
+	}
+}
+
+export type DistanceModelType = 'linear' | 'inverse' | 'exponential';
+export type PanningModelType = 'equalpower' | 'HRTF';
+
+const DISTANCE_MODEL_NAMES: DistanceModelType[] = ['linear', 'inverse', 'exponential'];
+const PANNING_MODEL_NAMES: PanningModelType[] = ['equalpower', 'HRTF'];
+
+export function distanceModelToNumber(value: DistanceModelType | number | null | undefined): number {
+	if (typeof value === 'number') return value;
+	if (typeof value !== 'string') return 0;
+	const i = DISTANCE_MODEL_NAMES.indexOf(value as DistanceModelType);
+	return i === -1 ? 0 : i;
+}
+
+export function distanceModelFromNumber(value: number): DistanceModelType {
+	return DISTANCE_MODEL_NAMES[value | 0] ?? 'linear';
+}
+
+export function panningModelToNumber(value: PanningModelType | number | null | undefined): number {
+	if (typeof value === 'number') return value;
+	if (typeof value !== 'string') return 0;
+	const i = PANNING_MODEL_NAMES.indexOf(value as PanningModelType);
+	return i === -1 ? 0 : i;
+}
+
+export function panningModelFromNumber(value: number): PanningModelType {
+	return PANNING_MODEL_NAMES[value | 0] ?? 'equalpower';
+}
+
+export interface MediaElementTapProvider {
+	attachAudioContextTap?(contextNative: any): any;
+	detachAudioContextTap?(): void;
+}
+
+export interface MediaElementLike extends MediaElementTapProvider {
+	src?: string;
+	currentTime?: number;
+	loop?: boolean;
+	volume?: number;
+	play?(): Promise<void> | void;
+	pause?(): void;
+	addEventListener?(type: string, cb: Function, opts?: any): void;
+	removeEventListener?(type: string, cb: Function, opts?: any): void;
+	[k: string]: any;
+}
+
+const PLAYER_REF_ = Symbol('[[playerRef]]');
+
+export abstract class MediaElementAudioSourceBase {
+	protected [context_]: BaseAudioContext;
+	protected [PLAYER_REF_]: MediaElementLike;
+	protected _internalGain: any = null;
+	protected _activeSource: any = null;
+	protected _decoded: any = null;
+	protected _decodingFor: string | null = null;
+	protected _wasMuted = false;
+	protected _originalVolume = 1;
+	protected _onPlayBound: () => void;
+	protected _onPauseBound: () => void;
+	protected _onEndedBound: () => void;
+	protected _tapNode: any = null;
+	protected _usingTap = false;
+
+	constructor(context: BaseAudioContext, mediaElement: MediaElementLike) {
+		if (!(context instanceof BaseAudioContext)) throw new TypeError('MediaElementAudioSourceNode: invalid context');
+		if (!mediaElement || (typeof mediaElement.play !== 'function' && typeof mediaElement.src !== 'string')) {
+			throw new TypeError('MediaElementAudioSourceNode: requires a media element with `src` and `play()`');
+		}
+		this[context_] = context;
+		this[PLAYER_REF_] = mediaElement;
+		this._internalGain = this._createGainNode();
+
+		if (typeof mediaElement.attachAudioContextTap === 'function') {
+			try {
+				const tapNative = mediaElement.attachAudioContextTap((this.context as any).native);
+				if (tapNative) {
+					this._tapNode = this._wrapTapNative(tapNative);
+					if (this._tapNode) {
+						this._tapNode.connect(this._internalGain);
+						this._usingTap = true;
+					}
+				}
+			} catch (e) {}
+		}
+
+		this._onPlayBound = () => this._handlePlay();
+		this._onPauseBound = () => this._handlePause();
+		this._onEndedBound = () => this._handleEnded();
+		mediaElement.addEventListener?.('play', this._onPlayBound);
+		mediaElement.addEventListener?.('pause', this._onPauseBound);
+		mediaElement.addEventListener?.('ended', this._onEndedBound);
+	}
+	protected abstract _wrapTapNative(tapNative: any): { connect(t: any): void; disconnect(t?: any): void; stop?(): void } | null;
+
+	get mediaElement(): MediaElementLike {
+		return this[PLAYER_REF_];
+	}
+
+	get context(): BaseAudioContext {
+		return this[context_];
+	}
+
+	get _outputNode() {
+		return this._internalGain;
+	}
+
+	connect(target: any, output?: number, input?: number) {
+		return this._internalGain.connect(target, output, input);
+	}
+	disconnect(target?: any, output?: number, input?: number) {
+		return this._internalGain.disconnect(target, output, input);
+	}
+
+	disposeMediaElementSource() {
+		const el = this[PLAYER_REF_];
+		try {
+			el.removeEventListener?.('play', this._onPlayBound);
+			el.removeEventListener?.('pause', this._onPauseBound);
+			el.removeEventListener?.('ended', this._onEndedBound);
+		} catch (e) {}
+		if (this._usingTap) {
+			try {
+				el.detachAudioContextTap?.();
+			} catch (e) {}
+			try {
+				this._tapNode?.disconnect?.();
+			} catch (e) {}
+			this._tapNode = null;
+			this._usingTap = false;
+		}
+		this._stopActive();
+		this._restoreVolume();
+	}
+
+	protected abstract _createGainNode(): any;
+	protected abstract _createBufferSource(buffer: any): any;
+	protected abstract _decodeFromUrl(src: string): Promise<any>;
+
+	protected async _handlePlay() {
+		if (this._usingTap) return;
+		const el = this[PLAYER_REF_];
+		const src = el.src ?? '';
+		if (!src) return;
+		try {
+			if (this._decoded == null || this._decodingFor !== src) {
+				this._decodingFor = src;
+				this._decoded = await this._decodeFromUrl(src);
+			}
+			this._muteOriginal();
+			this._stopActive();
+			const source = this._createBufferSource(this._decoded);
+			source.loop = !!el.loop;
+			source.connect(this._internalGain);
+			source.start();
+			this._activeSource = source;
+		} catch (e) {}
+	}
+
+	protected _handlePause() {
+		if (this._usingTap) return;
+		this._stopActive();
+		this._restoreVolume();
+	}
+
+	protected _handleEnded() {
+		if (this._usingTap) return;
+		this._stopActive();
+		this._restoreVolume();
+	}
+
+	protected _stopActive() {
+		const s = this._activeSource;
+		this._activeSource = null;
+		if (!s) return;
+		try {
+			s.stop?.();
+			s.disconnect?.();
+		} catch (e) {}
+	}
+
+	protected _muteOriginal() {
+		if (this._wasMuted) return;
+		const el = this[PLAYER_REF_];
+		if (typeof el.volume === 'number') {
+			this._originalVolume = el.volume;
+			try {
+				el.volume = 0;
+				this._wasMuted = true;
+			} catch (e) {}
+		}
+	}
+
+	protected _restoreVolume() {
+		if (!this._wasMuted) return;
+		const el = this[PLAYER_REF_];
+		try {
+			el.volume = this._originalVolume;
+		} catch (e) {}
+		this._wasMuted = false;
 	}
 }

@@ -1,4 +1,5 @@
 #import "NSCAudioContext.h"
+#import "NSCAudioLog.h"
 
 @interface NSCAudioNode ()
 @property (nonatomic, readwrite) AVAudioNode *avNode;
@@ -38,7 +39,7 @@
     NSCAudioContext *ctx = self.context ?: source.context;
         BOOL sourceIsPlayer = [source.avNode isKindOfClass:[AVAudioPlayerNode class]];
         __block BOOL connectOk = NO;
-        NSLog(@"NSCAudioNode: connecting source=%@(avNode=%@) -> dest=%@(avNode=%@) fromBus=%d toBus=%d",
+        NSCLogDebug(@"NSCAudioNode: connecting source=%@(avNode=%@) -> dest=%@(avNode=%@) fromBus=%d toBus=%d",
             NSStringFromClass([source class]), NSStringFromClass([source.avNode class]),
             NSStringFromClass([self class]), NSStringFromClass([self.avNode class]),
             (int)fromBus, (int)toBus);
@@ -47,26 +48,32 @@
         void (^connectBlock)(void) = ^{
             @try {
                 if (playerNode.engine == engine) {
-                    [engine detachNode:playerNode];
+                    if (ctx) {
+                        @try { [ctx detachNode:playerNode fromEngine:engine]; } @catch (NSException *e) {}
+                    } else {
+                        @try { [engine detachNode:playerNode]; } @catch (NSException *e) {
+                            NSCLogDebug(@"NSCAudioNode: detachNode for player threw: %@", e);
+                        }
+                    }
                 }
             } @catch (NSException *e) {
-                NSLog(@"NSCAudioNode: detachNode for player threw: %@", e);
+                NSCLogDebug(@"NSCAudioNode: detachNode for player threw: %@", e);
             }
             @try {
                 [engine attachNode:playerNode];
             } @catch (NSException *e) {
-                NSLog(@"NSCAudioNode: attachNode for player threw: %@", e);
+                NSCLogDebug(@"NSCAudioNode: attachNode for player threw: %@", e);
             }
             @try {
                 [engine connect:playerNode to:self.avNode fromBus:fromBus toBus:toBus format:nil];
                 connectOk = YES;
             } @catch (NSException *e) {
-                NSLog(@"NSCAudioNode: player connect:to:format:nil threw: %@; trying ctx.format", e);
+                NSCLogDebug(@"NSCAudioNode: player connect:to:format:nil threw: %@; trying ctx.format", e);
                 @try {
                     [engine connect:playerNode to:self.avNode fromBus:fromBus toBus:toBus format:ctx ? ctx.format : nil];
                     connectOk = YES;
                 } @catch (NSException *e2) {
-                    NSLog(@"NSCAudioNode: player connect:to:format:ctx also threw: %@", e2);
+                    NSCLogDebug(@"NSCAudioNode: player connect:to:format:ctx also threw: %@", e2);
                 }
             }
         };
@@ -77,12 +84,12 @@
                 [engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:nil];
                 connectOk = YES;
             } @catch (NSException *e) {
-                NSLog(@"NSCAudioNode: connect with nil format threw: %@; trying ctx.format", e);
+                NSCLogDebug(@"NSCAudioNode: connect with nil format threw: %@; trying ctx.format", e);
                 @try {
                     [engine connect:source.avNode toConnectionPoints:@[destPoint] fromBus:fromBus format:ctx ? ctx.format : nil];
                     connectOk = YES;
                 } @catch (NSException *e2) {
-                    NSLog(@"NSCAudioNode: connect with ctx.format also threw: %@", e2);
+                    NSCLogDebug(@"NSCAudioNode: connect with ctx.format also threw: %@", e2);
                 }
             }
         };
@@ -91,7 +98,7 @@
     if (connectOk && sourceIsPlayer) {
         void (^prepareBlock)(void) = ^{
             @try { [engine prepare]; } @catch (NSException *e) {
-                NSLog(@"NSCAudioNode: engine prepare after player connect threw: %@", e);
+                NSCLogDebug(@"NSCAudioNode: engine prepare after player connect threw: %@", e);
             }
         };
         if ([NSThread isMainThread]) prepareBlock(); else dispatch_sync(dispatch_get_main_queue(), prepareBlock);
@@ -119,7 +126,11 @@
 - (void)handleDisconnectFrom:(NSCAudioNode *)source output:(NSNumber *)output input:(NSNumber *)input {
     AVAudioEngine *engine = self.context.engine ?: source.context.engine;
     if (!engine) return;
-    [engine disconnectNodeOutput:source.avNode];
+    NSCAudioContext *ownerCtx = self.context ?: source.context;
+    if (source.avNode && [ownerCtx isNode:source.avNode attachedToEngine:engine]) {
+        @try { [engine disconnectNodeOutput:source.avNode]; }
+        @catch (NSException *e) { NSCLogDebug(@"NSCAudioNode: disconnectNodeOutput threw: %@", e); }
+    }
     
     NSCAudioContext *ctx = self.context ?: source.context;
     if (ctx) {
@@ -167,7 +178,10 @@
 - (void)disconnect {
     AVAudioEngine *engine = self.context.engine;
     if (!engine) return;
-    [engine disconnectNodeOutput:self.avNode];
+    if (self.avNode && [self.context isNode:self.avNode attachedToEngine:engine]) {
+        @try { [engine disconnectNodeOutput:self.avNode]; }
+        @catch (NSException *e) { NSCLogDebug(@"NSCAudioNode: disconnect threw: %@", e); }
+    }
 }
 
 - (void)disconnectOutput:(NSNumber *)output {

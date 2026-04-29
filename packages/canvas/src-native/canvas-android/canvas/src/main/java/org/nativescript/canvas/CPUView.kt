@@ -23,11 +23,13 @@ class CPUView @JvmOverloads constructor(
 	}
 
 	fun render() {
-		bitmap?.let { bitmap ->
-			canvas?.let {
-				NSCCanvas.nativeCustomWithBitmapFlush(it.nativeContext, bitmap)
+		post {
+			bitmap?.let { bitmap ->
+				canvas?.let {
+					NSCCanvas.nativeCustomWithBitmapFlush(it.nativeContext, bitmap)
+				}
 			}
+			invalidate()
 		}
-		invalidate()
 	}
 }

@@ -116,6 +116,7 @@ export class AudioScheduledSourceNode extends AudioNode {
 
 export declare class MediaElementAudioSourceNode extends AudioNode {
 	readonly mediaElement: MediaElementLike;
+	readonly playbackRate: AudioParam | null;
 	disposeMediaElementSource(): void;
 }
 
@@ -181,6 +182,7 @@ export declare class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	constructor(context: BaseAudioContext, options: { buffer?: AudioBuffer });
 	loop: boolean;
 	buffer: AudioBuffer | null;
+	readonly playbackRate: AudioParam;
 }
 
 export declare class AudioContext extends BaseAudioContext {
@@ -203,6 +205,8 @@ export declare class AudioContext extends BaseAudioContext {
 	createConvolver(options?: ConvolverOptions): ConvolverNode;
 	createPeriodicWave(real: Float32Array | number[], imag: Float32Array | number[], options?: { disableNormalization?: boolean }): PeriodicWave;
 	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode;
+
+	createSourceNodeFromPlayer(playerNative: any): AudioNode | null;
 
 	readonly state: AudioContextState;
 	onstatechange: ((ev: { type: 'statechange' }) => void) | null;

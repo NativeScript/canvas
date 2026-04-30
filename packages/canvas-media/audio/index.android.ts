@@ -238,24 +238,23 @@ export class Audio extends AudioBase {
 
 	attachAudioContextTap(contextNative: any): any {
 		const inst: any = (this as any)._instance;
-		if (!inst || typeof inst.attachAudioContextTap !== 'function') {
-			return null;
+		if (!inst) return null;
+		if (contextNative && typeof contextNative.createSourceNodeFromMediaPlayer === 'function') {
+			const player = inst.player ?? inst._player ?? null;
+			if (player) {
+				const node = contextNative.createSourceNodeFromMediaPlayer(player);
+				if (node) return node;
+			}
 		}
-		try {
+
+		if (typeof inst.attachAudioContextTap === 'function') {
 			return inst.attachAudioContextTap(contextNative);
-		} catch (e) {
-			console.warn('Audio.attachAudioContextTap: native call failed:', e);
-			return null;
 		}
 	}
 
 	detachAudioContextTap(): void {
 		const inst: any = (this as any)._instance;
 		if (!inst || typeof inst.detachAudioContextTap !== 'function') return;
-		try {
-			inst.detachAudioContextTap();
-		} catch (e) {
-			console.warn('Audio.detachAudioContextTap: native call failed:', e);
-		}
+		inst.detachAudioContextTap();
 	}
 }

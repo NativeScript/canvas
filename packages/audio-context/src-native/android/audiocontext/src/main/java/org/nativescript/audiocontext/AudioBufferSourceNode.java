@@ -8,9 +8,19 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	@Nullable
 	private AudioBuffer mBuffer;
 
+	@Nullable
+	private String playbackRateId;
+
 	public AudioBufferSourceNode(String id, @Nullable AudioBuffer buffer) {
 		super(id);
 		mBuffer = buffer;
+		this.playbackRateId = null;
+	}
+
+	public AudioBufferSourceNode(String id, @Nullable AudioBuffer buffer, @Nullable String playbackRateId) {
+		super(id);
+		mBuffer = buffer;
+		this.playbackRateId = playbackRateId;
 	}
 
 	public AudioBufferSourceNode(String id) {
@@ -40,5 +50,11 @@ public class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	@Override
 	public void start() {
 		AudioContext.getInstance().startBufferSource(id, mLoop);
+	}
+
+	@Nullable
+	public AudioParam getPlaybackRateParam() {
+		if (playbackRateId == null) return null;
+		return new AudioParam(playbackRateId);
 	}
 }

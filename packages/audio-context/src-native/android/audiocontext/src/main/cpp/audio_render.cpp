@@ -262,6 +262,45 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                     c.gainId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
                 break;
             }
+            case NativeEngine::CMD_ATTACH_PLAYBACK_RATE: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit != audioVoices_.end()) {
+                    vit->second.playbackRateId = c.playbackRateId;
+                }
+
+                if (!c.playbackRateId.empty()) {
+                    voicePlaybackRateByOutput_[c.id][c.outputIndex] = c.playbackRateId;
+                } else {
+                    auto vprIt = voicePlaybackRateByOutput_.find(c.id);
+                    if (vprIt != voicePlaybackRateByOutput_.end()) {
+                        vprIt->second.erase(c.outputIndex);
+                        if (vprIt->second.empty()) voicePlaybackRateByOutput_.erase(vprIt);
+                    }
+                }
+
+                audioThreadLog(ANDROID_LOG_INFO,
+                                    "CMD: attach playbackRate %s -> voice %s (out=%d in=%d)",
+                                    c.playbackRateId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                break;
+            }
+            case NativeEngine::CMD_DETACH_PLAYBACK_RATE: {
+                for (auto &kv: audioVoices_) {
+                    if (kv.second.playbackRateId == c.id) {
+                        kv.second.playbackRateId.clear();
+                    }
+                }
+                audioThreadLog(ANDROID_LOG_INFO, "CMD: detach playbackRate %s", c.id.c_str());
+                break;
+            }
+            case NativeEngine::CMD_FREE_PLAYBACK_RATE: {
+                for (auto &kv: audioVoices_) {
+                    if (kv.second.playbackRateId == c.id) {
+                        kv.second.playbackRateId.clear();
+                    }
+                }
+                audioThreadLog(ANDROID_LOG_INFO, "CMD: free playbackRate %s", c.id.c_str());
+                break;
+            }
             case NativeEngine::CMD_DETACH_GAIN: {
                 for (auto &kv: audioVoices_) {
                     if (kv.second.gainId == c.id) {
@@ -614,6 +653,16 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     auto git3 = gains_.find(v.gainId);
                     if (git3 != gains_.end()) v.gain = git3->second;
                 }
+                auto vprInitIt = voicePlaybackRateByOutput_.find(v.id);
+                if (vprInitIt != voicePlaybackRateByOutput_.end() && !vprInitIt->second.empty()) {
+                    auto mapIt4 = vprInitIt->second.find(0);
+                    if (mapIt4 == vprInitIt->second.end()) mapIt4 = vprInitIt->second.begin();
+                    v.playbackRateId = mapIt4->second;
+                    auto git4 = gains_.find(v.playbackRateId);
+                    if (git4 != gains_.end()) {
+                        // nothing else to set on voice; gains_ holds fallback value
+                    }
+                }
                 audioVoices_[c.id] = v;
                 break;
             }
@@ -770,6 +819,13 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             auto vgIt = voiceGainByOutput_.find(v.id);
             if (vgIt != voiceGainByOutput_.end()) {
                 for (const auto &kv2: vgIt->second) {
+                    if (!kv2.second.empty()) usedGains.insert(kv2.second);
+                }
+            }
+            if (!v.playbackRateId.empty()) usedGains.insert(v.playbackRateId);
+            auto vprIt = voicePlaybackRateByOutput_.find(v.id);
+            if (vprIt != voicePlaybackRateByOutput_.end()) {
+                for (const auto &kv2: vprIt->second) {
                     if (!kv2.second.empty()) usedGains.insert(kv2.second);
                 }
             }
@@ -1584,7 +1640,26 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
                     if (ch == channels - 1) {
                         if (v.type == Voice::BufferSource) {
-                            v.position += v.increment;
+                            double prScale = 1.0;
+                            std::string effPRId;
+                            auto vprIt2 = voicePlaybackRateByOutput_.find(v.id);
+                            if (vprIt2 != voicePlaybackRateByOutput_.end()) {
+                                auto mapIt4 = vprIt2->second.find(0);
+                                if (mapIt4 == vprIt2->second.end()) mapIt4 = vprIt2->second.begin();
+                                if (mapIt4 != vprIt2->second.end()) effPRId = mapIt4->second;
+                            }
+                            if (effPRId.empty()) effPRId = v.playbackRateId;
+                            if (!effPRId.empty()) {
+                                auto eit = scheduledEnvelopes.find(effPRId);
+                                if (eit != scheduledEnvelopes.end()) prScale = eit->second[(size_t) frame];
+                                else {
+                                    auto git = gains_.find(effPRId);
+                                    if (git != gains_.end()) prScale = git->second;
+                                }
+                            }
+                            if (prScale < 0.0) prScale = 0.0; // avoid reverse playback for now
+                            double incr = v.increment * prScale;
+                            v.position += incr;
                             if (v.position >= bufFrames) {
                                 if (v.loop) v.position = std::fmod(v.position, bufFrames);
                                 else v.playing = false;

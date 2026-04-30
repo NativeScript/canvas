@@ -149,6 +149,7 @@ private:
         bool loop = false;
         double gain = 1.0;
         std::string gainId;
+        std::string playbackRateId;
         std::string filterId;
         std::vector<BiquadState> filterState;
         std::vector<std::vector<double>> iirState;
@@ -205,6 +206,10 @@ public:
         CMD_CREATE_EXTERNAL_PCM,
         CMD_PUSH_EXTERNAL_PCM,
         CMD_END_EXTERNAL_PCM
+        ,
+        CMD_ATTACH_PLAYBACK_RATE,
+        CMD_DETACH_PLAYBACK_RATE,
+        CMD_FREE_PLAYBACK_RATE
     };
 
     struct Command {
@@ -214,6 +219,7 @@ public:
         std::string waveform;
         double frequency = 0.0;
         std::string gainId;
+        std::string playbackRateId;
         double gainValue = 1.0;
         std::string biquadId;
         std::string biquadType;
@@ -332,6 +338,7 @@ public:
 
     std::unordered_map<std::string, BiquadCoeffs> biquads_;
     std::unordered_map<std::string, std::unordered_map<int, std::string>> voiceGainByOutput_;
+    std::unordered_map<std::string, std::unordered_map<int, std::string>> voicePlaybackRateByOutput_;
     std::unordered_map<std::string, std::unordered_map<int, std::string>> voiceFilterByOutput_;
     struct IIRData {
         std::vector<double> feedforward;

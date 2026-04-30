@@ -73,6 +73,8 @@ declare class NSCAudioBufferSourceNode extends NSCAudioScheduledSourceNode {
 
 	constructor(o: { context: NSCAudioContext; buffer: NSCAudioBuffer });
 
+	getPlaybackRateParam(): NSCAudioParam;
+
 	initWithContextBuffer(context: NSCAudioContext, buffer: NSCAudioBuffer): this;
 }
 
@@ -155,6 +157,10 @@ declare class NSCAudioContext extends NSObject {
 
 	decrementActiveCount(): void;
 
+	detachNodeFromEngine(node: AVAudioNode, engine: AVAudioEngine): void;
+
+	detachSource(source: NSCAudioNode): void;
+
 	ensureEnvironmentNodeAttached(): void;
 
 	ensureMainMixerConnectedToOutput(): void;
@@ -186,6 +192,8 @@ declare class NSCAudioContext extends NSObject {
 	initWithSampleRate(sampleRate: number): this;
 
 	initWithSampleRateLatencyHint(sampleRate: number, latencyHint: number): this;
+
+	isNodeAttachedToEngine(node: AVAudioNode, engine: AVAudioEngine): boolean;
 
 	nodeWrapperForAVNode(avNode: AVAudioNode): NSCAudioNode;
 
@@ -506,6 +514,8 @@ declare class NSCMediaElementSourceTap extends NSObject {
 	readonly sourceNode: AVAudioSourceNode;
 
 	detach(): void;
+
+	getPlaybackRateParam(): NSCAudioParam;
 }
 
 declare class NSCOfflineAudioContext extends NSCAudioContext {

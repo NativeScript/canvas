@@ -15,6 +15,10 @@
   NSInteger _lastDestinationBus;
   NSInteger _lastSourceBus;
   int _transientRetryAttempts;
+
+  NSCAudioParam *_playbackRateParam;
+  AVAudioUnitVarispeed *_varispeed;
+  dispatch_source_t _playbackRateAutomationTimer;
 }
 
 @synthesize buffer = _buffer;
@@ -31,6 +35,19 @@
         [context.engine attachNode:_player];
       });
     }
+
+    AVAudioUnitVarispeed *vs = [[AVAudioUnitVarispeed alloc] init];
+    _varispeed = vs;
+    if ([NSThread isMainThread]) {
+      [context.engine attachNode:_varispeed];
+    } else {
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        [context.engine attachNode:_varispeed];
+      });
+    }
+    _varispeed.rate = 1.0f;
+
+    _playbackRateParam = nil;
     _buffer = [self processBuffer:buffer context:context];
   }
   return self;
@@ -48,6 +65,70 @@
 - (void)setBuffer:(NSCAudioBuffer *)newBuffer {
   _buffer = [self processBuffer:newBuffer context:self.context];
 }
+
+- (NSCAudioParam *)getPlaybackRateParam {
+  if (!_playbackRateParam) {
+    _playbackRateParam = [[NSCAudioParam alloc] initWithContext:self.context defaultValue:1.0];
+    __weak typeof(self) weakSelf = self;
+    _playbackRateParam.onScheduleChanged = ^(NSCAudioParam *p) {
+      __strong typeof(weakSelf) s = weakSelf;
+      if (!s) return;
+      [s ensurePlaybackRateAutomationLink];
+    };
+  }
+  return _playbackRateParam;
+}
+
+- (BOOL)_playbackRateHasFutureEvents {
+  NSCAudioContext *ctx = self.context;
+  double t = ctx ? ctx.currentTime : 0.0;
+  return _playbackRateParam && [_playbackRateParam hasEventsAfter:t];
+}
+
+- (void)ensurePlaybackRateAutomationLink {
+  if (![NSThread isMainThread]) {
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{ __strong typeof(weakSelf) s = weakSelf; if (s) [s ensurePlaybackRateAutomationLink]; });
+    return;
+  }
+  if (_playbackRateAutomationTimer) return;
+  if (![self _playbackRateHasFutureEvents]) return;
+  uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
+  uint64_t leeway = (uint64_t)(NSEC_PER_SEC / 240.0);
+  dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+  dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNs, leeway);
+  __weak typeof(self) weakSelf = self;
+  dispatch_source_set_event_handler(timer, ^{
+    __strong typeof(weakSelf) s = weakSelf;
+    if (!s) return;
+    [s _applyPlaybackRateAutomationOnce];
+    if (![s _playbackRateHasFutureEvents]) [s stopPlaybackRateAutomationLink];
+  });
+  _playbackRateAutomationTimer = timer;
+  dispatch_resume(_playbackRateAutomationTimer);
+}
+
+- (void)stopPlaybackRateAutomationLink {
+  if (!_playbackRateAutomationTimer) return;
+  dispatch_source_cancel(_playbackRateAutomationTimer);
+  _playbackRateAutomationTimer = nil;
+}
+
+- (void)_applyPlaybackRateAutomationOnce {
+  NSCAudioContext *ctx = self.context;
+  double t = ctx ? ctx.currentTime : 0.0;
+  double pr = _playbackRateParam ? [_playbackRateParam valueAtTime:t] : 1.0;
+  if (!_varispeed) return;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    @try {
+      float v = (float)pr;
+      if (isnan(v)) v = 1.0f;
+      if (v < 0.0f) v = 0.0f;
+      _varispeed.rate = v;
+    } @catch (NSException *e) {}
+  });
+}
+
 
 - (BOOL)tryStartPlayer:(AVAudioPlayerNode *)player
                context:(NSCAudioContext *)ctx {
@@ -149,14 +230,14 @@
                       initWithNode:targetNode
                                bus:(AVAudioNodeBus)MAX(
                                        0, (int)_lastDestinationBus)];
-              [eng connect:player
+              [eng connect:player to:_varispeed format:ctx.format];
+              [eng connect:_varispeed
                   toConnectionPoints:@[ destPoint ]
-                             fromBus:(AVAudioNodeBus)MAX(0, (int)_lastSourceBus)
+                             fromBus:(AVAudioNodeBus)0
                               format:ctx.format];
             } else {
-              [eng connect:(AVAudioNode *)player
-                        to:targetNode
-                    format:ctx.format];
+              [eng connect:player to:_varispeed format:ctx.format];
+              [eng connect:_varispeed to:targetNode format:ctx.format];
             }
             @try {
               [eng prepare];
@@ -851,23 +932,22 @@
                 initWithNode:targetNode
                          bus:(AVAudioNodeBus)MAX(0, (int)_lastDestinationBus)];
             @try {
-              [eng connect:player
+              [eng connect:player to:_varispeed format:ctx.format];
+              [eng connect:_varispeed
                   toConnectionPoints:@[ destPoint ]
-                             fromBus:(AVAudioNodeBus)MAX(0, (int)_lastSourceBus)
+                             fromBus:(AVAudioNodeBus)0
                               format:ctx.format];
             } @catch (NSException *e) {
               @try {
-                [eng connect:(AVAudioNode *)player
-                          to:targetNode
-                      format:ctx.format];
+                [eng connect:player to:_varispeed format:ctx.format];
+                [eng connect:_varispeed to:targetNode format:ctx.format];
               } @catch (NSException *e2) {
               }
             }
           } else {
             @try {
-              [eng connect:(AVAudioNode *)player
-                        to:targetNode
-                    format:ctx.format];
+              [eng connect:player to:_varispeed format:ctx.format];
+              [eng connect:_varispeed to:targetNode format:ctx.format];
             } @catch (NSException *e) {
             }
           }
@@ -1152,12 +1232,26 @@
         } @catch (NSException *e) {
         }
         @try {
-          // Only detach from `eng` if the player is currently attached to it.
           if (p.engine == eng) {
             [self.context detachNode:p fromEngine:eng];
           }
         } @catch (NSException *e) {
         }
+        if (_varispeed) {
+          @try {
+            if (_varispeed.engine && _varispeed.engine != eng) {
+              @try {
+                [self.context detachNode:_varispeed fromEngine:_varispeed.engine];
+              } @catch (NSException *e) {}
+            }
+          } @catch (NSException *e) {}
+          @try {
+            if (_varispeed.engine == eng) {
+              [self.context detachNode:_varispeed fromEngine:eng];
+            }
+          } @catch (NSException *e) {}
+        }
+        [self stopPlaybackRateAutomationLink];
       }
     };
     if ([NSThread isMainThread]) {
@@ -1271,6 +1365,22 @@
       }
     }
   });
+}
+
+- (void)dealloc {
+  [self stopPlaybackRateAutomationLink];
+  if (_varispeed) {
+    AVAudioEngine *eng = self.context ? self.context.engine : nil;
+    if (eng) {
+      @try {
+        if (_varispeed.engine && _varispeed.engine != eng) {
+          @try { [self.context detachNode:_varispeed fromEngine:_varispeed.engine]; } @catch (NSException *e) {}
+        }
+      } @catch (NSException *e) {}
+      @try { if (_varispeed.engine == eng) { [self.context detachNode:_varispeed fromEngine:eng]; } } @catch (NSException *e) {}
+    }
+    _varispeed = nil;
+  }
 }
 
 @end

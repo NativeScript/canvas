@@ -112,6 +112,8 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, java.util.List<ParamEvent>> gainEvents = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>>> pannerEvents = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<Integer, java.util.List<ParamEvent>>> listenerEvents = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, String> voicePlaybackRateMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ConcurrentHashMap<Integer, String>> voicePlaybackRateMapByOutput = new ConcurrentHashMap<>();
 
 	private static class ParamEvent {
 		public final int type; // 0 = set, 1 = linearRamp
@@ -669,6 +671,14 @@ public class AudioContext {
 	private native void nativeAttachGain(String voiceId, String gainId);
 
 	private native void nativeAttachGain(String voiceId, String gainId, int output, int input);
+
+	private native void nativeAttachPlaybackRate(String voiceId, String playbackRateId);
+
+	private native void nativeAttachPlaybackRate(String voiceId, String playbackRateId, int output, int input);
+
+	private native void nativeDetachPlaybackRate(String playbackRateId);
+
+	private native void nativeReleasePlaybackRate(String playbackRateId);
 
 	private native void nativeDetachGain(String gainId);
 
@@ -1899,18 +1909,20 @@ public class AudioContext {
 		java.util.List<ParamEvent> lst = map.get(paramType);
 		if (lst == null) return;
 		synchronized (lst) {
-			lst.removeIf(ev -> ev.time >= time);
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				lst.removeIf(ev -> ev.time >= time);
+			} else {
+				Iterator<ParamEvent> it = lst.iterator();
+				while (it.hasNext()) if (it.next().time >= time) it.remove();
+			}
 		}
 	}
 
 	void cancelAndHoldListenerScheduledValues(String contextId, int paramType, int rate, double heldValue, double time) {
 		if (contextId == null) return;
 		long absNs = -1L;
-		String ctx = contextId;
-		if (ctx != null) {
-			Long startNs = contextStartNanos.get(ctx);
-			if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
-		}
+		Long startNs = contextStartNanos.get(contextId);
+		if (startNs != null) absNs = startNs + (long) (time * 1000000000.0);
 		if (nativeAvailable && absNs >= 0) {
 			nativeCancelAndHoldListenerEvents(contextId, paramType, rate, absNs, heldValue);
 		}
@@ -1924,7 +1936,12 @@ public class AudioContext {
 			lst = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 			map.put(paramType, lst);
 		}
-		lst.removeIf(ev -> ev.time >= time);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			lst.removeIf(ev -> ev.time >= time);
+		} else {
+			Iterator<ParamEvent> it = lst.iterator();
+			while (it.hasNext()) if (it.next().time >= time) it.remove();
+		}
 		lst.add(new ParamEvent(0, rate, time, heldValue));
 	}
 
@@ -2372,6 +2389,55 @@ public class AudioContext {
 		}
 	}
 
+	void detachPlaybackRate(String playbackRateId) {
+		if (playbackRateId == null) return;
+		if (nativeAvailable) {
+			nativeDetachPlaybackRate(playbackRateId);
+			return;
+		}
+
+		for (String vid : voicePlaybackRateMap.keySet()) {
+			String pid = voicePlaybackRateMap.get(vid);
+			if (pid != null && pid.equals(playbackRateId)) {
+				voicePlaybackRateMap.remove(vid);
+			}
+		}
+
+		for (String vid : voicePlaybackRateMapByOutput.keySet()) {
+			ConcurrentHashMap<Integer, String> map = voicePlaybackRateMapByOutput.get(vid);
+			if (map != null) {
+				for (Integer out : map.keySet()) {
+					String pid = map.get(out);
+					if (pid != null && pid.equals(playbackRateId)) map.remove(out);
+				}
+				if (map.isEmpty()) voicePlaybackRateMapByOutput.remove(vid);
+			}
+		}
+	}
+
+	void releasePlaybackRate(String id) {
+		if (id == null) return;
+		if (nativeAvailable) {
+			nativeReleasePlaybackRate(id);
+		}
+		for (String vid : voicePlaybackRateMap.keySet()) {
+			String pid = voicePlaybackRateMap.get(vid);
+			if (pid != null && pid.equals(id)) {
+				voicePlaybackRateMap.remove(vid);
+			}
+		}
+		for (String vid : voicePlaybackRateMapByOutput.keySet()) {
+			ConcurrentHashMap<Integer, String> map = voicePlaybackRateMapByOutput.get(vid);
+			if (map != null) {
+				for (Integer out : map.keySet()) {
+					String pid = map.get(out);
+					if (pid != null && pid.equals(id)) map.remove(out);
+				}
+				if (map.isEmpty()) voicePlaybackRateMapByOutput.remove(vid);
+			}
+		}
+	}
+
 	void attachGainToVoice(String voiceId, String gainId) {
 		if (voiceId == null || gainId == null) return;
 		if (nativeAvailable) {
@@ -2411,8 +2477,58 @@ public class AudioContext {
 		voiceGainMap.put(voiceId, gainId);
 	}
 
+	void attachPlaybackRateToVoice(String voiceId, String playbackRateId) {
+		if (voiceId == null || playbackRateId == null) return;
+		if (nativeAvailable) {
+			nativeAttachPlaybackRate(voiceId, playbackRateId);
+			return;
+		}
+		voicePlaybackRateMap.put(voiceId, playbackRateId);
+		try {
+			android.util.Log.d("AudioContext", "attachPlaybackRateToVoice: voice=" + voiceId + " pr=" + playbackRateId);
+		} catch (Throwable ignored) {
+		}
+	}
+
+	void attachPlaybackRateToVoice(String voiceId, String playbackRateId, int output, int input) {
+		if (voiceId == null || playbackRateId == null) return;
+		if (nativeAvailable) {
+			nativeAttachPlaybackRate(voiceId, playbackRateId, output, input);
+			return;
+		}
+
+		if (playbackRateId.isEmpty()) {
+			ConcurrentHashMap<Integer, String> map = voicePlaybackRateMapByOutput.get(voiceId);
+			if (map != null) {
+				map.remove(output);
+				if (map.isEmpty()) voicePlaybackRateMapByOutput.remove(voiceId);
+			}
+			if (output == 0) voicePlaybackRateMap.remove(voiceId);
+			return;
+		}
+		ConcurrentHashMap<Integer, String> map = voicePlaybackRateMapByOutput.get(voiceId);
+		if (map == null) {
+			map = new ConcurrentHashMap<>();
+			voicePlaybackRateMapByOutput.put(voiceId, map);
+		}
+		map.put(output, playbackRateId);
+
+		voicePlaybackRateMap.put(voiceId, playbackRateId);
+	}
+
 	public AudioBufferSourceNode createBufferSource(AudioContextInstance context, @Nullable AudioBuffer buffer) {
-		return new AudioBufferSourceNode(createBufferSource(context.getId(), buffer), buffer);
+		String id = createBufferSource(context.getId(), buffer);
+		GainNode pr = createGain(context);
+		attachPlaybackRateToVoice(id, pr.getId());
+		return new AudioBufferSourceNode(id, buffer, pr.getId());
+	}
+
+	public ExternalPcmSourceNode createExternalPcmSource(AudioContextInstance context, int sampleRate, int channels) {
+		String id = createExternalPcmSource(sampleRate, channels);
+		if (id == null) return null;
+		GainNode pr = createGain(context);
+		attachPlaybackRateToVoice(id, pr.getId());
+		return new ExternalPcmSourceNode(id, sampleRate, channels, pr.getId());
 	}
 
 	public String createExternalPcmSource(int sampleRate, int channels) {

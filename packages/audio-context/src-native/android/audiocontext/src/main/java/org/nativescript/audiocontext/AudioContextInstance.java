@@ -95,9 +95,32 @@ public class AudioContextInstance {
 	}
 
 	public ExternalPcmSourceNode createExternalPcmSource(int sampleRate, int channels) {
-		String id = AudioContext.getInstance().createExternalPcmSource(sampleRate, channels);
-		if (id == null) return null;
-		return new ExternalPcmSourceNode(id, sampleRate, channels);
+		return AudioContext.getInstance().createExternalPcmSource(this, sampleRate, channels);
+	}
+
+	public ExternalPcmSourceNode createSourceNodeFromMediaPlayer(Object player) {
+		if (player == null) return null;
+		int sampleRate = AudioContext.getInstance().getSampleRate(this.id);
+		int channels = 2;
+		ExternalPcmSourceNode node = AudioContext.getInstance().createExternalPcmSource(this, sampleRate, channels);
+		if (node == null) return null;
+		try {
+			if (player instanceof android.media.MediaPlayer) {
+				android.media.MediaPlayer mp = (android.media.MediaPlayer) player;
+				boolean ok = org.nativescript.audiocontext.MediaPlayerAudioTapAdapter.attachToNode(mp, node);
+				if (!ok) {
+					try { node.endStream(); } catch (Throwable ignored) {}
+					return null;
+				}
+			} else {
+				try { node.endStream(); } catch (Throwable ignored) {}
+				return null;
+			}
+		} catch (Throwable t) {
+			try { node.endStream(); } catch (Throwable ignored) {}
+			return null;
+		}
+		return node;
 	}
 
 	public GainNode getDestination() {
@@ -114,5 +137,13 @@ public class AudioContextInstance {
 
 	String[] getContextTrackIds() {
 		return AudioContext.getInstance().getContextTrackIds(this.id);
+	}
+
+	public void detachSource(ExternalPcmSourceNode source) {
+		if (source == null) return;
+		try {
+			org.nativescript.audiocontext.MediaPlayerAudioTapAdapter.detachByNode(source);
+		} catch (Throwable ignored) {}
+		try { source.stop(); } catch (Throwable ignored) {}
 	}
 }

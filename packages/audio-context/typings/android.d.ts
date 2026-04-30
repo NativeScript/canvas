@@ -1,5 +1,3 @@
-/// <reference path="android-declarations.d.ts"/>
-
 declare module org {
 	export module nativescript {
 		export module audiocontext {
@@ -104,6 +102,8 @@ declare module org {
 				public disconnect(param0: org.nativescript.audiocontext.AudioNode): void;
 				public getId(): string;
 				public release(): void;
+				public constructor(id: string, buffer: org.nativescript.audiocontext.AudioBuffer, playbackRateId: string);
+				public getPlaybackRateParam(): org.nativescript.audiocontext.AudioParam;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public getBuffer(): org.nativescript.audiocontext.AudioBuffer;
 				public connect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
@@ -148,6 +148,7 @@ declare module org {
 				public getContextCurrentTime(this_: string): number;
 				public pushPcmFrames(p: string, this_: java.nio.FloatBuffer): void;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance, type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
+				public createExternalPcmSource(context: org.nativescript.audiocontext.AudioContextInstance, sampleRate: number, channels: number): org.nativescript.audiocontext.ExternalPcmSourceNode;
 				public createOscillator(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.AudioOscillatorNode;
 				public decodeAudioDataFromByteArrayAsync(data: androidNative.Array<number>, context: org.nativescript.audiocontext.AudioContextInstance, cb: org.nativescript.audiocontext.DecodeCallback): void;
 				public createConvolver(context: org.nativescript.audiocontext.AudioContextInstance): org.nativescript.audiocontext.ConvolverNode;
@@ -268,17 +269,14 @@ declare module org {
 		export module audiocontext {
 			export class AudioContextInstance {
 				public static class: java.lang.Class<org.nativescript.audiocontext.AudioContextInstance>;
-				public getDestination(): org.nativescript.audiocontext.GainNode;
 				public setSinkId(deviceId: string): boolean;
 				public getId(): string;
 				public setListenerParams(positionX: number, positionY: number, positionZ: number, forwardX: number, forwardY: number, forwardZ: number, upX: number, upY: number, upZ: number): void;
 				public getListenerForwardYParam(): org.nativescript.audiocontext.AudioParam;
-				public release(): void;
 				public getListenerUpXParam(): org.nativescript.audiocontext.AudioParam;
 				public getListenerUpYParam(): org.nativescript.audiocontext.AudioParam;
 				public resumeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public suspendAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
-				public getListenerPositionXParam(): org.nativescript.audiocontext.AudioParam;
 				public constructor();
 				public createOscillatorNodeFrequency(type: string, frequency: number): org.nativescript.audiocontext.AudioOscillatorNode;
 				public getListenerPositionZParam(): org.nativescript.audiocontext.AudioParam;
@@ -287,7 +285,12 @@ declare module org {
 				public closeAsync(cb: org.nativescript.audiocontext.AudioContext.AsyncCallback): void;
 				public getListenerForwardZParam(): org.nativescript.audiocontext.AudioParam;
 				public renderOfflineAsync(frames: number, sampleRate: number, channels: number, cb: org.nativescript.audiocontext.DecodeCallback): void;
+				public createSourceNodeFromMediaPlayer(ok: any): org.nativescript.audiocontext.ExternalPcmSourceNode;
 				public getListenerPositionYParam(): org.nativescript.audiocontext.AudioParam;
+				public getDestination(): org.nativescript.audiocontext.GainNode;
+				public release(): void;
+				public detachSource(source: org.nativescript.audiocontext.ExternalPcmSourceNode): void;
+				public getListenerPositionXParam(): org.nativescript.audiocontext.AudioParam;
 				public createExternalPcmSource(sampleRate: number, channels: number): org.nativescript.audiocontext.ExternalPcmSourceNode;
 				public getCurrentTime(): number;
 				public getListenerForwardXParam(): org.nativescript.audiocontext.AudioParam;
@@ -623,12 +626,14 @@ declare module org {
 				public getId(): string;
 				public release(): void;
 				public pushFrames(data: java.nio.FloatBuffer): void;
+				public getPlaybackRateParam(): org.nativescript.audiocontext.AudioParam;
 				public connect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public connect(destId: org.nativescript.audiocontext.AudioNode, this_: number, node: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number): void;
 				public disconnect(destId: org.nativescript.audiocontext.AudioNode, this_: number): void;
 				public constructor(id: string, sampleRate: number, channels: number);
 				public stop(): void;
+				public constructor(id: string, sampleRate: number, channels: number, playbackRateId: string);
 				public getSampleRate(): number;
 				public disconnect(): void;
 				public disconnect(output: number): void;
@@ -666,6 +671,20 @@ declare module org {
 				public disconnect(output: number): void;
 				public disconnect(node: org.nativescript.audiocontext.AudioNode, output: number, input: number): void;
 				public disconnect(sources: org.nativescript.audiocontext.AudioNode, context: number, object: number): void;
+			}
+		}
+	}
+}
+
+declare module org {
+	export module nativescript {
+		export module audiocontext {
+			export class MediaPlayerAudioTapAdapter {
+				public static class: java.lang.Class<org.nativescript.audiocontext.MediaPlayerAudioTapAdapter>;
+				public static attachToNode(push: globalAndroid.media.MediaPlayer, end: any): boolean;
+				public static detachByNode(externalNode: any): void;
+				public static attach(adapter: globalAndroid.media.MediaPlayer, node: any): any;
+				public static detach(e: globalAndroid.media.MediaPlayer): void;
 			}
 		}
 	}

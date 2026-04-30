@@ -469,158 +469,43 @@ export interface MediaElementLike extends MediaElementTapProvider {
 	[k: string]: any;
 }
 
-const PLAYER_REF_ = Symbol('[[playerRef]]');
+const usedMediaElements: WeakSet<MediaElementLike> = new WeakSet();
 
-export abstract class MediaElementAudioSourceBase {
-	protected [context_]: BaseAudioContext;
-	protected [PLAYER_REF_]: MediaElementLike;
-	protected _internalGain: any = null;
-	protected _activeSource: any = null;
-	protected _decoded: any = null;
-	protected _decodingFor: string | null = null;
-	protected _wasMuted = false;
-	protected _originalVolume = 1;
-	protected _onPlayBound: () => void;
-	protected _onPauseBound: () => void;
-	protected _onEndedBound: () => void;
-	protected _tapNode: any = null;
-	protected _usingTap = false;
+export function resolveNativePlayer(mediaElement: MediaElementLike): any {
+	const m = mediaElement as any;
+	return m?.helper?.player ?? m?.player ?? m?._player ?? null;
+}
 
-	constructor(context: BaseAudioContext, mediaElement: MediaElementLike) {
-		if (!(context instanceof BaseAudioContext)) throw new TypeError('MediaElementAudioSourceNode: invalid context');
-		if (!mediaElement || (typeof mediaElement.play !== 'function' && typeof mediaElement.src !== 'string')) {
-			throw new TypeError('MediaElementAudioSourceNode: requires a media element with `src` and `play()`');
+export function assertMediaElementUsable(context: BaseAudioContext, mediaElement: MediaElementLike): void {
+	if (!(context instanceof BaseAudioContext)) {
+		throw new TypeError('MediaElementAudioSourceNode: invalid context');
+	}
+	if (!mediaElement || (typeof mediaElement.play !== 'function' && typeof mediaElement.src !== 'string')) {
+		throw new TypeError('MediaElementAudioSourceNode: requires a media element with `src` and `play()`');
+	}
+	if (usedMediaElements.has(mediaElement)) {
+		if (typeof DOMException !== 'undefined') {
+			throw new DOMException('The media element has already been connected to an AudioContext', 'InvalidStateError');
 		}
-		this[context_] = context;
-		this[PLAYER_REF_] = mediaElement;
-		this._internalGain = this._createGainNode();
-
-		if (typeof mediaElement.attachAudioContextTap === 'function') {
-			try {
-				const tapNative = mediaElement.attachAudioContextTap((this.context as any).native);
-				if (tapNative) {
-					this._tapNode = this._wrapTapNative(tapNative);
-					if (this._tapNode) {
-						this._tapNode.connect(this._internalGain);
-						this._usingTap = true;
-					}
-				}
-			} catch (e) {}
-		}
-
-		this._onPlayBound = () => this._handlePlay();
-		this._onPauseBound = () => this._handlePause();
-		this._onEndedBound = () => this._handleEnded();
-		mediaElement.addEventListener?.('play', this._onPlayBound);
-		mediaElement.addEventListener?.('pause', this._onPauseBound);
-		mediaElement.addEventListener?.('ended', this._onEndedBound);
+		throw new Error('The media element has already been connected to an AudioContext');
 	}
-	protected abstract _wrapTapNative(tapNative: any): { connect(t: any): void; disconnect(t?: any): void; stop?(): void } | null;
+}
 
-	get mediaElement(): MediaElementLike {
-		return this[PLAYER_REF_];
-	}
+export function markMediaElementUsed(mediaElement: MediaElementLike): void {
+	try {
+		usedMediaElements.add(mediaElement);
+	} catch (e) {}
+}
 
-	get context(): BaseAudioContext {
-		return this[context_];
-	}
+export function unmarkMediaElementUsed(mediaElement: MediaElementLike): void {
+	try {
+		usedMediaElements.delete(mediaElement);
+	} catch (e) {}
+}
 
-	get _outputNode() {
-		return this._internalGain;
+export function throwInvalidMediaElement(): never {
+	if (typeof DOMException !== 'undefined') {
+		throw new DOMException('Failed to attach a native source for the media element', 'InvalidStateError');
 	}
-
-	connect(target: any, output?: number, input?: number) {
-		return this._internalGain.connect(target, output, input);
-	}
-	disconnect(target?: any, output?: number, input?: number) {
-		return this._internalGain.disconnect(target, output, input);
-	}
-
-	disposeMediaElementSource() {
-		const el = this[PLAYER_REF_];
-		try {
-			el.removeEventListener?.('play', this._onPlayBound);
-			el.removeEventListener?.('pause', this._onPauseBound);
-			el.removeEventListener?.('ended', this._onEndedBound);
-		} catch (e) {}
-		if (this._usingTap) {
-			try {
-				el.detachAudioContextTap?.();
-			} catch (e) {}
-			try {
-				this._tapNode?.disconnect?.();
-			} catch (e) {}
-			this._tapNode = null;
-			this._usingTap = false;
-		}
-		this._stopActive();
-		this._restoreVolume();
-	}
-
-	protected abstract _createGainNode(): any;
-	protected abstract _createBufferSource(buffer: any): any;
-	protected abstract _decodeFromUrl(src: string): Promise<any>;
-
-	protected async _handlePlay() {
-		if (this._usingTap) return;
-		const el = this[PLAYER_REF_];
-		const src = el.src ?? '';
-		if (!src) return;
-		try {
-			if (this._decoded == null || this._decodingFor !== src) {
-				this._decodingFor = src;
-				this._decoded = await this._decodeFromUrl(src);
-			}
-			this._muteOriginal();
-			this._stopActive();
-			const source = this._createBufferSource(this._decoded);
-			source.loop = !!el.loop;
-			source.connect(this._internalGain);
-			source.start();
-			this._activeSource = source;
-		} catch (e) {}
-	}
-
-	protected _handlePause() {
-		if (this._usingTap) return;
-		this._stopActive();
-		this._restoreVolume();
-	}
-
-	protected _handleEnded() {
-		if (this._usingTap) return;
-		this._stopActive();
-		this._restoreVolume();
-	}
-
-	protected _stopActive() {
-		const s = this._activeSource;
-		this._activeSource = null;
-		if (!s) return;
-		try {
-			s.stop?.();
-			s.disconnect?.();
-		} catch (e) {}
-	}
-
-	protected _muteOriginal() {
-		if (this._wasMuted) return;
-		const el = this[PLAYER_REF_];
-		if (typeof el.volume === 'number') {
-			this._originalVolume = el.volume;
-			try {
-				el.volume = 0;
-				this._wasMuted = true;
-			} catch (e) {}
-		}
-	}
-
-	protected _restoreVolume() {
-		if (!this._wasMuted) return;
-		const el = this[PLAYER_REF_];
-		try {
-			el.volume = this._originalVolume;
-		} catch (e) {}
-		this._wasMuted = false;
-	}
+	throw new Error('Failed to attach a native source for the media element');
 }

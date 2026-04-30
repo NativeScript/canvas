@@ -2,6 +2,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "NSCAudioScheduledSourceNode.h"
 #import "NSCAudioBuffer.h"
+#import "NSCAudioParam.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -11,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, nullable) NSCAudioBuffer *buffer;
 @property (nonatomic) BOOL loop;
+
+- (NSCAudioParam *)getPlaybackRateParam;
 
 - (instancetype)initWithContext:(NSCAudioContext *)context
                          buffer:(nullable NSCAudioBuffer *)buffer NS_DESIGNATED_INITIALIZER;

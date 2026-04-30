@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import "NSCAudioParam.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
                                 context:(NSCAudioContext *)context;
 
 - (void)detach;
+
+- (nullable NSCAudioParam *)getPlaybackRateParam;
 
 @end
 

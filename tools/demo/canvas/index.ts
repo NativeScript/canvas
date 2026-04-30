@@ -728,8 +728,8 @@ fn main() -> @location(0) vec4f {
 		// const instancedCube = require('./webgpu/instancedCube');
 		// instancedCube.run(this.canvas);
 
-		// const computeBoids = require('./webgpu/gpgpu/computeBoids');
-		// computeBoids.run(this.canvas);
+		const computeBoids = require('./webgpu/gpgpu/computeBoids');
+		computeBoids.run(this.canvas);
 
 		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
 		// twoCubes.run(this.canvas);
@@ -852,7 +852,7 @@ fn main() -> @location(0) vec4f {
 		// miterLimit(this.canvas);
 		//shadowBlur(this.canvas);
 		//shadowColor(this.canvas);
-		this.vulkan(this.canvas);
+		//this.vulkan(this.canvas);
 		//texImage3DDemo(this.canvas);
 		//texSubImage3DDemo(this.canvas);
 		//videoTex3DDemo(this.canvas);

@@ -130,9 +130,8 @@ public class AudioHelper implements Player.Listener {
 
     public AudioHelper(Context context, String cacheRoot) {
         File cacheDir = new File(cacheRoot, "MEDIA_PLAYER_CACHE");
-        if (!cacheDir.exists()) {
-            cacheDir.mkdirs();
-        }
+        if (!cacheDir.exists()) { cacheDir.mkdirs(); }
+        
 
         Looper looper1 = Looper.myLooper();
         if (looper1 == null) {

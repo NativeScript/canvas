@@ -1,16 +1,25 @@
 package org.nativescript.audiocontext;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class ExternalPcmSourceNode extends AudioScheduledSourceNode {
 	private final int sampleRate;
 	private final int channels;
 	private boolean ended = false;
 
+	@Nullable
+	private String playbackRateId;
+
 	public ExternalPcmSourceNode(@NonNull String id, int sampleRate, int channels) {
+		this(id, sampleRate, channels, null);
+	}
+
+	public ExternalPcmSourceNode(@NonNull String id, int sampleRate, int channels, @Nullable String playbackRateId) {
 		super(id);
 		this.sampleRate = sampleRate <= 0 ? 48000 : sampleRate;
 		this.channels = channels <= 0 ? 2 : channels;
+		this.playbackRateId = playbackRateId;
 	}
 
 	public int getSampleRate() {
@@ -19,6 +28,12 @@ public class ExternalPcmSourceNode extends AudioScheduledSourceNode {
 
 	public int getChannels() {
 		return channels;
+	}
+
+	@Nullable
+	public AudioParam getPlaybackRateParam() {
+		if (playbackRateId == null) return null;
+		return new AudioParam(playbackRateId);
 	}
 
 	public void pushFrames(@NonNull float[] data) {

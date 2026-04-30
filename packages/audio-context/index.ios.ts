@@ -1,4 +1,39 @@
-import { AnalyserOptions, AudioContextOptions, AudioNodeBase, AudioParamBase, AudioParamHooks, BaseAudioContext, ConstantSourceOptions, ConvolverOptions, DelayOptions, distanceModelFromNumber, distanceModelToNumber, DistanceModelType, IIRFilterOptions, MediaElementAudioSourceBase, MediaElementLike, panningModelFromNumber, panningModelToNumber, PanningModelType, PannerOptions, PeriodicWaveOptions, StereoPannerOptions, WaveShaperOptions, context_, looksLikePath, native_, nativeCtor_, normalizeSourcePath, resolveLatencyHint, resolvePannerOptions, AudioListenerBase } from './common';
+import {
+	AnalyserOptions,
+	AudioContextOptions,
+	AudioNodeBase,
+	AudioParamBase,
+	AudioParamHooks,
+	BaseAudioContext,
+	ConstantSourceOptions,
+	ConvolverOptions,
+	DelayOptions,
+	distanceModelFromNumber,
+	distanceModelToNumber,
+	DistanceModelType,
+	IIRFilterOptions,
+	MediaElementLike,
+	panningModelFromNumber,
+	panningModelToNumber,
+	PanningModelType,
+	PannerOptions,
+	PeriodicWaveOptions,
+	StereoPannerOptions,
+	WaveShaperOptions,
+	context_,
+	looksLikePath,
+	native_,
+	nativeCtor_,
+	normalizeSourcePath,
+	resolveLatencyHint,
+	resolvePannerOptions,
+	AudioListenerBase,
+	assertMediaElementUsable,
+	markMediaElementUsed,
+	unmarkMediaElementUsed,
+	resolveNativePlayer,
+	throwInvalidMediaElement,
+} from './common';
 
 type NativeBaseAudioContext = BaseAudioContext & { native: NSCAudioContext };
 
@@ -629,6 +664,7 @@ export class ConvolverNode extends AudioNode {
 	set buffer(v: AudioBuffer | null) {
 		this.native.buffer = v?.native ?? (null as never);
 	}
+
 	get normalize() {
 		return this.native.normalize;
 	}
@@ -677,41 +713,83 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	set buffer(v: AudioBuffer | null) {
 		this.native.buffer = v?.native ?? (null as never);
 	}
-
-	protected _scheduledDuration(): number {
-		const b = this.native.buffer;
-		if (!b || this.native.loop) return 0;
-		return b.duration || 0;
-	}
 }
 
-export class MediaElementAudioSourceNode extends MediaElementAudioSourceBase {
-	constructor(context: AudioContext, mediaElement: MediaElementLike) {
-		super(context, mediaElement);
+export class MediaElementAudioSourceNode extends AudioNode {
+	private [native_]: NSCAudioNode;
+	private _mediaElement: MediaElementLike;
+	private _playbackRateParam: AudioParam | null = null;
+
+	constructor(context: AudioContext, mediaElement: MediaElementLike, preExistingNative?: NSCAudioNode) {
+		super(context as unknown as NativeBaseAudioContext);
+		assertMediaElementUsable(context, mediaElement);
+
+		const native = preExistingNative ?? MediaElementAudioSourceNode._createNative(context, mediaElement);
+		if (!native) throwInvalidMediaElement();
+
+		this._mediaElement = mediaElement;
+		this[native_] = native;
+		markMediaElementUsed(mediaElement);
+	}
+
+	private static _createNative(context: AudioContext, mediaElement: MediaElementLike): NSCAudioNode | null {
+		const ctxNative = context.native;
+		if (!ctxNative) return null;
+		const player = resolveNativePlayer(mediaElement);
+		if (player && typeof ctxNative.createSourceNodeFromMediaPlayer === 'function') {
+			try {
+				const node = ctxNative.createSourceNodeFromMediaPlayer(player);
+				if (node instanceof NSCAudioNode) return node;
+			} catch (e) {}
+		}
+		if (typeof mediaElement.attachAudioContextTap === 'function') {
+			try {
+				const node = mediaElement.attachAudioContextTap(ctxNative);
+				if (node instanceof NSCAudioNode) return node;
+			} catch (e) {}
+		}
+		return null;
 	}
 
 	get context() {
 		return this[context_] as AudioContext;
 	}
 
-	protected _wrapTapNative(tapNative: any) {
-		if (!tapNative || !(tapNative instanceof NSCAudioNode)) {
-			return null;
-		}
-		const ctx = this.context;
-		const node = Object.create(AudioNode.prototype) as AudioNode & { native: NSCAudioNode };
-		(node as any)[context_] = ctx;
-		(node as any).native = tapNative;
-		return node;
+	get native() {
+		return this[native_];
 	}
-	protected _createGainNode() {
-		return this.context.createGain();
+
+	get mediaElement(): MediaElementLike {
+		return this._mediaElement;
 	}
-	protected _createBufferSource(buffer: AudioBuffer) {
-		return this.context.createBufferSource({ buffer });
+
+	get playbackRate(): AudioParam | null {
+		if (this._playbackRateParam) return this._playbackRateParam;
+		const native: any = this[native_];
+		try {
+			const param = typeof native?.getPlaybackRateParam === 'function' ? native.getPlaybackRateParam() : null;
+			if (param instanceof NSCAudioParam) {
+				this._playbackRateParam = new AudioParam(nativeCtor_, param);
+				return this._playbackRateParam;
+			}
+		} catch (e) {}
+		return null;
 	}
-	protected _decodeFromUrl(src: string): Promise<AudioBuffer> {
-		return this.context.decodeAudioData(src);
+
+	disposeMediaElementSource() {
+		const native = this[native_];
+		const el = this._mediaElement;
+		try {
+			const ctxNative = (this.context as any)?.native;
+			if (native && ctxNative && typeof ctxNative.detachSource === 'function') {
+				ctxNative.detachSource(native);
+			} else if (typeof el?.detachAudioContextTap === 'function') {
+				el.detachAudioContextTap();
+			}
+		} catch (e) {}
+		this._playbackRateParam = null;
+		this[native_] = null as never;
+		unmarkMediaElementUsed(el);
 	}
 }
 
@@ -738,6 +816,19 @@ export class AudioContext extends BaseAudioContext {
 
 	createMediaElementSource(mediaElement: MediaElementLike): MediaElementAudioSourceNode {
 		return new MediaElementAudioSourceNode(this, mediaElement);
+	}
+
+	createSourceNodeFromPlayer(playerNative: any): MediaElementAudioSourceNode | null {
+		try {
+			const native = this.native;
+			if (!native || !playerNative || typeof native.createSourceNodeFromMediaPlayer !== 'function') return null;
+			const tapNative = native.createSourceNodeFromMediaPlayer(playerNative);
+			if (!(tapNative instanceof NSCAudioNode)) return null;
+			const stub: MediaElementLike = { src: '', play() {}, pause() {} };
+			return new MediaElementAudioSourceNode(this, stub, tapNative);
+		} catch (e) {
+			return null;
+		}
 	}
 
 	get listener() {

@@ -106,6 +106,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSCIIRFilterNode *)createIIRFilterNode:(NSArray<NSNumber *> *)feedforward feedback:(NSArray<NSNumber *> *)feedback;
 - (NSCConvolverNode *)createConvolverNode;
 - (nullable NSCAudioNode *)createSourceNodeFromMediaPlayer:(AVPlayer *)player;
+- (void)detachSource:(NSCAudioNode *)source;
 
 
 FOUNDATION_EXPORT void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double delay);

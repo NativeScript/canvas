@@ -3,9 +3,14 @@
 #import "NSCAudioNode.h"
 #import "NSCAudioLog.h"
 
+#import "NSCAudioParam.h"
+
 #import <MediaToolbox/MediaToolbox.h>
 #import <stdatomic.h>
 #import <string.h>
+#import <objc/runtime.h>
+
+static void *kNSCMediaElementSourceTapPlayerKey = &kNSCMediaElementSourceTapPlayerKey;
 
 #pragma mark - SPSC byte ring
 
@@ -233,6 +238,10 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
     AVMutableAudioMix *_audioMix;
     AVPlayerItem *_attachedItem;
     BOOL _observingPlayer;
+
+    NSCAudioParam *_playbackRateParam;
+    AVAudioUnitVarispeed *_varispeed;
+    dispatch_source_t _playbackRateAutomationTimer;
 }
 
 - (void)applyMixToCurrentItem {
@@ -263,6 +272,12 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
         return nil;
     }
 
+    id existing = objc_getAssociatedObject(player, kNSCMediaElementSourceTapPlayerKey);
+    if (existing) {
+        NSCLogDebug(@"NSCMediaElementSourceTap: player already has a tap attached; refusing second attach.");
+        return nil;
+    }
+
     AVAssetTrack *audioTrack = nil;
     for (AVAssetTrack *t in item.asset.tracks) {
         if ([t.mediaType isEqualToString:AVMediaTypeAudio]) { audioTrack = t; break; }
@@ -276,6 +291,7 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
     if (!self_) return nil;
 
     self_->_player = player;
+    objc_setAssociatedObject(player, kNSCMediaElementSourceTapPlayerKey, self_, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     self_->_context = context;
     self_->_attachedItem = item;
 
@@ -353,13 +369,94 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
         }];
     self_->_sourceNode = sourceNode;
 
-    [context.engine attachNode:sourceNode];
+        [context.engine attachNode:sourceNode];
 
-    [context.engine connect:sourceNode
-                         to:context.engine.mainMixerNode
-                     format:outFormat];
+        // insert a varispeed node between the source node and main mixer so we can
+        // control playbackRate via an NSCAudioParam (automation)
+        AVAudioUnitVarispeed *vs = [[AVAudioUnitVarispeed alloc] init];
+        self_->_varispeed = vs;
+        @try {
+            [context.engine attachNode:vs];
+        } @catch (NSException *e) { self_->_varispeed = nil; }
+
+        if (self_->_varispeed) {
+            @try {
+                [context.engine connect:sourceNode to:self_->_varispeed format:outFormat];
+                [context.engine connect:self_->_varispeed to:context.engine.mainMixerNode format:outFormat];
+            } @catch (NSException *e) {
+                // fallback to direct connect if varispeed connect failed
+                @try { [context.engine connect:sourceNode to:context.engine.mainMixerNode format:outFormat]; } @catch (NSException *e2) {}
+            }
+        } else {
+            @try { [context.engine connect:sourceNode to:context.engine.mainMixerNode format:outFormat]; } @catch (NSException *e) {}
+        }
 
     return self_;
+}
+
+
+- (nullable NSCAudioParam *)getPlaybackRateParam {
+    if (!_playbackRateParam) {
+        _playbackRateParam = [[NSCAudioParam alloc] initWithContext:self.context defaultValue:1.0];
+        __weak typeof(self) weakSelf = self;
+        _playbackRateParam.onScheduleChanged = ^(NSCAudioParam *p) {
+            __strong typeof(weakSelf) s = weakSelf;
+            if (!s) return;
+            [s ensurePlaybackRateAutomationLink];
+        };
+    }
+    return _playbackRateParam;
+}
+
+- (BOOL)_playbackRateHasFutureEvents {
+    NSCAudioContext *ctx = self.context;
+    double t = ctx ? ctx.currentTime : 0.0;
+    return _playbackRateParam && [_playbackRateParam hasEventsAfter:t];
+}
+
+- (void)ensurePlaybackRateAutomationLink {
+    if ([NSThread isMainThread] == NO) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(dispatch_get_main_queue(), ^{ __strong typeof(weakSelf) s = weakSelf; if (s) [s ensurePlaybackRateAutomationLink]; });
+        return;
+    }
+    if (_playbackRateAutomationTimer) return;
+    if (![self _playbackRateHasFutureEvents]) return;
+    uint64_t intervalNs = (uint64_t)(NSEC_PER_SEC / 60.0);
+    uint64_t leeway = (uint64_t)(NSEC_PER_SEC / 240.0);
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNs, leeway);
+    __weak typeof(self) weakSelf = self;
+    dispatch_source_set_event_handler(timer, ^{
+        __strong typeof(weakSelf) s = weakSelf;
+        if (!s) return;
+        [s _applyPlaybackRateAutomationOnce];
+        if (![s _playbackRateHasFutureEvents]) [s stopPlaybackRateAutomationLink];
+    });
+    _playbackRateAutomationTimer = timer;
+    dispatch_resume(_playbackRateAutomationTimer);
+}
+
+- (void)stopPlaybackRateAutomationLink {
+    if (!_playbackRateAutomationTimer) return;
+    dispatch_source_cancel(_playbackRateAutomationTimer);
+    _playbackRateAutomationTimer = nil;
+}
+
+- (void)_applyPlaybackRateAutomationOnce {
+    NSCAudioContext *ctx = self.context;
+    double t = ctx ? ctx.currentTime : 0.0;
+    double pr = _playbackRateParam ? [_playbackRateParam valueAtTime:t] : 1.0;
+    AVAudioUnitVarispeed *vs = _varispeed;
+    if (!vs) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            float v = (float)pr;
+            if (isnan(v)) v = 1.0f;
+            if (v < 0.0f) v = 0.0f;
+            vs.rate = v;
+        } @catch (NSException *e) {}
+    });
 }
 
 - (void)detach {
@@ -375,6 +472,10 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
         _attachedItem.audioMix = nil;
         _attachedItem = nil;
     }
+    
+    if (_player) {
+        objc_setAssociatedObject(_player, kNSCMediaElementSourceTapPlayerKey, nil, OBJC_ASSOCIATION_ASSIGN);
+    }
     if (_sourceNode) {
         @try {
             [_context.engine disconnectNodeOutput:_sourceNode];
@@ -384,6 +485,20 @@ static void NSCTapProcess(MTAudioProcessingTapRef tap, CMItemCount numberFrames,
         }
         _sourceNode = nil;
     }
+    if (_playbackRateAutomationTimer) {
+        dispatch_source_cancel(_playbackRateAutomationTimer);
+        _playbackRateAutomationTimer = nil;
+    }
+    if (_varispeed) {
+        @try {
+            [_context.engine disconnectNodeOutput:_varispeed];
+            [_context detachNode:_varispeed fromEngine:_context.engine];
+        } @catch (NSException *ex) {
+            NSCLogDebug(@"NSCMediaElementSourceTap: detach varispeed disconnect failed: %@", ex);
+        }
+        _varispeed = nil;
+    }
+    _playbackRateParam = nil;
     if (_tap) {
         CFRelease(_tap);
         _tap = NULL;

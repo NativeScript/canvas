@@ -248,6 +248,64 @@ Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain(JNIEnv *env, jo
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeAttachPlaybackRate(JNIEnv *env, jobject thiz,
+                                                                         jstring jvoiceId,
+                                                                         jstring jplaybackRateId) {
+    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
+    const char *pid = env->GetStringUTFChars(jplaybackRateId, nullptr);
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_ATTACH_PLAYBACK_RATE;
+    cmd.id = vid ? vid : std::string();
+    cmd.playbackRateId = pid ? pid : std::string();
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
+    if (pid) env->ReleaseStringUTFChars(jplaybackRateId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeAttachPlaybackRate__Ljava_lang_String_2Ljava_lang_String_2II(
+        JNIEnv *env, jobject thiz,
+        jstring jvoiceId,
+        jstring jplaybackRateId,
+        jint joutput,
+        jint jinput) {
+    const char *vid = env->GetStringUTFChars(jvoiceId, nullptr);
+    const char *pid = env->GetStringUTFChars(jplaybackRateId, nullptr);
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_ATTACH_PLAYBACK_RATE;
+    cmd.id = vid ? vid : std::string();
+    cmd.playbackRateId = pid ? pid : std::string();
+    cmd.outputIndex = static_cast<int>(joutput);
+    cmd.inputIndex = static_cast<int>(jinput);
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+    if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
+    if (pid) env->ReleaseStringUTFChars(jplaybackRateId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeDetachPlaybackRate(JNIEnv *env, jobject thiz,
+                                                                         jstring jplaybackRateId) {
+    const char *pid = env->GetStringUTFChars(jplaybackRateId, nullptr);
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_DETACH_PLAYBACK_RATE;
+    cmd.id = pid ? pid : std::string();
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+    if (pid) env->ReleaseStringUTFChars(jplaybackRateId, pid);
+}
+
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeReleasePlaybackRate(JNIEnv *env, jobject thiz,
+                                                                          jstring jplaybackRateId) {
+    const char *pid = env->GetStringUTFChars(jplaybackRateId, nullptr);
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_FREE_PLAYBACK_RATE;
+    cmd.id = pid ? pid : std::string();
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+    if (pid) env->ReleaseStringUTFChars(jplaybackRateId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeAttachGain__Ljava_lang_String_2Ljava_lang_String_2II(
         JNIEnv *env, jobject thiz,
         jstring jvoiceId,

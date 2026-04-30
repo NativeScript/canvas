@@ -8,6 +8,7 @@
 
 #import "NSCAudioContext.h"
 #import "NSCMediaElementSourceTap.h"
+#import "NSCMediaElementAudioSourceNode.h"
 
 #import "NSCAudioSessionManager.h"
 #import "NSCAnalyserNode.h"
@@ -537,11 +538,35 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     if (!player) return nil;
     NSCMediaElementSourceTap *tap = [NSCMediaElementSourceTap attachToPlayer:player context:self];
     if (!tap) return nil;
-    NSCAudioNode *wrapper = [[NSCAudioNode alloc] initWithContext:self node:tap.sourceNode];
-    objc_setAssociatedObject(wrapper, "NSCMediaElementSourceTap",
-                             tap, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSCMediaElementAudioSourceNode *wrapper = [[NSCMediaElementAudioSourceNode alloc] initWithContext:self node:tap.sourceNode tap:tap];
     [self registerNodeWrapper:wrapper];
     return wrapper;
+}
+
+- (void)detachSource:(NSCAudioNode *)source {
+    if (!source) return;
+    @try {
+        if ([source respondsToSelector:@selector(detach)]) {
+            @try { [(id)source detach]; } @catch (NSException *ex) { NSCLogDebug(@"NSCAudioContext: detachSource: source.detach threw: %@", ex); }
+        } else {
+            id tap = objc_getAssociatedObject(source, "NSCMediaElementSourceTap");
+            if (tap && [tap respondsToSelector:@selector(detach)]) {
+                @try { [(NSCMediaElementSourceTap *)tap detach]; } @catch (NSException *ex) { NSCLogDebug(@"NSCAudioContext: detachSource: tap detach threw: %@", ex); }
+            }
+            objc_setAssociatedObject(source, "NSCMediaElementSourceTap", nil, OBJC_ASSOCIATION_ASSIGN);
+        }
+
+        AVAudioNode *av = source.avNode;
+        if (av && av.engine) {
+            @try { [self detachNode:av fromEngine:av.engine]; } @catch (NSException *ex) { NSCLogDebug(@"NSCAudioContext: detachSource: detachNode threw: %@", ex); }
+        }
+        if (av) {
+            NSValue *key = [NSValue valueWithPointer:(__bridge const void *)(av)];
+            @synchronized(_nodeWrappers) {
+                if (_nodeWrappers) [_nodeWrappers removeObjectForKey:key];
+            }
+        }
+    } @catch (NSException *e) {}
 }
 
 - (void)ensureEnvironmentNodeAttached {

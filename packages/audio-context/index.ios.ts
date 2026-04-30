@@ -690,6 +690,7 @@ export class PeriodicWave {
 }
 
 export class AudioBufferSourceNode extends AudioScheduledSourceNode {
+	private _playbackRateParam: AudioParam | null = null;
 	constructor(context: NativeBaseAudioContext, options: { buffer?: AudioBuffer } = {}) {
 		const param: NSCAudioBuffer | null = options?.buffer != null ? options.buffer.native : null;
 		super(context, context.native.createBufferSourceNode(param as never));
@@ -712,6 +713,12 @@ export class AudioBufferSourceNode extends AudioScheduledSourceNode {
 	}
 	set buffer(v: AudioBuffer | null) {
 		this.native.buffer = v?.native ?? (null as never);
+	}
+
+	get playbackRate(): AudioParam | null {
+		if (this._playbackRateParam) return this._playbackRateParam;
+		this._playbackRateParam = new AudioParam(nativeCtor_, this.native.getPlaybackRateParam());
+		return this._playbackRateParam;
 	}
 }
 

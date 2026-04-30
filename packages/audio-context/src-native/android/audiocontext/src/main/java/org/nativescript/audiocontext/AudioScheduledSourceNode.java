@@ -1,7 +1,7 @@
 package org.nativescript.audiocontext;
 
 public class AudioScheduledSourceNode implements NativeObject, AudioNode {
-	public final String id;
+	public String id;
 
 	public AudioScheduledSourceNode(String id) {
 		this.id = id;

@@ -2581,40 +2581,42 @@ public class AudioContext {
 
 	private native void nativeEndExternalPcmSource(String trackId);
 
-	void switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
-		if (trackId == null) return;
+	@Nullable
+	String switchBufferSource(String trackId, @Nullable AudioBuffer buffer) {
+		if (trackId == null) return null;
 		stopTrack(trackId);
 
 		if (buffer == null) {
 			directBuffers.remove(trackId + "::buffer");
-			return;
+			return null;
 		}
 
 		if (nativeAvailable) {
 			java.nio.ByteBuffer src = directBuffers.get(buffer.id);
-			if (src != null) {
-				try {
-					int sampleRate = sampleRates.containsKey(buffer.id) ? sampleRates.get(buffer.id) : 48000;
-					int channels = bufferChannels.containsKey(buffer.id) ? bufferChannels.get(buffer.id) : 1;
-					int byteLen = src.capacity();
-					int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
-					java.nio.ByteBuffer srcView = src.duplicate();
-					srcView.position(src.position());
-					srcView.limit(src.limit());
-					java.nio.ByteBuffer srcSlice = srcView.slice();
-					nativeCreateBufferSourceDirect(srcSlice, sampleRate, channels, bytesPerSample);
-					directBuffers.put(trackId, src);
-					getOrCreate(trackId).incrementAndGet();
-					sampleRates.put(trackId, sampleRate);
-					bufferChannels.put(trackId, channels);
-				} catch (Throwable ignored) {
-				}
+			if (src == null) return null;
+			try {
+				int sampleRate = sampleRates.containsKey(buffer.id) ? sampleRates.get(buffer.id) : 48000;
+				int channels = bufferChannels.containsKey(buffer.id) ? bufferChannels.get(buffer.id) : 1;
+				int byteLen = src.capacity();
+				int bytesPerSample = (byteLen % 4 == 0) ? 4 : 2;
+				java.nio.ByteBuffer srcView = src.duplicate();
+				srcView.position(src.position());
+				srcView.limit(src.limit());
+				java.nio.ByteBuffer srcSlice = srcView.slice();
+				String newId = nativeCreateBufferSourceDirect(srcSlice, sampleRate, channels, bytesPerSample);
+				if (newId == null || newId.isEmpty()) return null;
+				directBuffers.put(newId, src);
+				getOrCreate(newId).incrementAndGet();
+				sampleRates.put(newId, sampleRate);
+				bufferChannels.put(newId, channels);
+				return newId;
+			} catch (Throwable ignored) {
+				return null;
 			}
-			return;
 		}
 
 		java.nio.ByteBuffer src = directBuffers.get(buffer.id);
-		if (src == null) return;
+		if (src == null) return null;
 		String bufferId = buffer.id;
 		int sampleRate = sampleRates.containsKey(bufferId) ? sampleRates.get(bufferId) : 48000;
 		int srcChannels = bufferChannels.containsKey(bufferId) ? bufferChannels.get(bufferId) : 1;
@@ -2635,6 +2637,7 @@ public class AudioContext {
 		monoBb.position(0);
 		directBuffers.put(trackId + "::buffer", monoBb);
 		sampleRates.put(trackId, sampleRate);
+		return null;
 	}
 
 	String createBufferSource(String contextId, @Nullable AudioBuffer buffer) {

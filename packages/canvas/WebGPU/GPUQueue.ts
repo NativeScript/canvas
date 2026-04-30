@@ -144,52 +144,45 @@ export class GPUQueue {
 		return (n + 3) & ~3;
 	}
 
-	private padDataForWriteBuffer(data: ArrayBuffer | Uint8Array, size: number, dataOffset: number = 0): Uint8Array {
-		let src: Uint8Array;
-		if (data instanceof Uint8Array) {
-			src = data;
-		} else {
-			src = new Uint8Array(data as ArrayBuffer);
-		}
-		const available = src.byteLength - dataOffset;
-		const copySize = Math.min(size, available);
-		const padded = new Uint8Array(this.alignTo4(size));
-		padded.set(src.subarray(dataOffset, dataOffset + copySize));
-		return padded;
-	}
-
 	writeBuffer(buffer: GPUBuffer, bufferOffset: number, data: BufferSource | Array<number>, dataOffset: number = 0, size?: number) {
-		let nativeData: Uint8Array | ArrayBuffer | BufferSource;
+		// WebGPU spec: when `data` is a TypedArray, `dataOffset` and `size` are in
+		// elements. When `data` is an ArrayBuffer or DataView, they are in bytes.
+		// Native expects bytes — so we normalize here.
+		let view: ArrayBufferView;
 		if (Array.isArray(data)) {
-			nativeData = new Uint8Array(data);
+			view = new Uint8Array(data);
+		} else if (data instanceof ArrayBuffer) {
+			view = new Uint8Array(data);
 		} else {
-			nativeData = data as BufferSource;
+			view = data as ArrayBufferView;
 		}
 
-		let actualSize = size;
-		let totalLength = 0;
-		if (nativeData instanceof Uint8Array) {
-			totalLength = nativeData.byteLength;
-		} else if (nativeData instanceof ArrayBuffer) {
-			totalLength = nativeData.byteLength;
-		} else if (ArrayBuffer.isView(nativeData)) {
-			totalLength = (nativeData as ArrayBufferView).byteLength;
-		}
-		if (actualSize == null) {
-			actualSize = totalLength - dataOffset;
-		}
+		const isTyped = ArrayBuffer.isView(view) && !(view instanceof DataView);
+		const elemSize = isTyped ? ((view as any).BYTES_PER_ELEMENT ?? 1) : 1;
 
-		if (actualSize < 0) actualSize = 0;
 		if (dataOffset < 0) dataOffset = 0;
+		const dataByteOffset = dataOffset * elemSize;
+		const availableBytes = Math.max(0, view.byteLength - dataByteOffset);
+		let writeBytes = size === undefined ? availableBytes : size * elemSize;
+		if (writeBytes < 0) writeBytes = 0;
+		if (writeBytes > availableBytes) writeBytes = availableBytes;
 
-		if (actualSize % 4 !== 0 || bufferOffset % 4 !== 0 || dataOffset % 4 !== 0) {
-			const paddedData = this.padDataForWriteBuffer(nativeData as any, actualSize, dataOffset);
-			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, paddedData, 0, this.alignTo4(actualSize));
+		if (writeBytes === 0) return;
+
+		// Build a contiguous byte view at the requested offset (no copy).
+		const u8 = new Uint8Array(view.buffer, view.byteOffset + dataByteOffset, writeBytes);
+
+		// wgpu requires 4-byte alignment of bufferOffset and total size.
+		const needsPad = (bufferOffset & 3) !== 0 || (writeBytes & 3) !== 0;
+		if (needsPad) {
+			const padded = new Uint8Array(this.alignTo4(writeBytes));
+			padded.set(u8);
+			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, padded, 0, padded.byteLength);
 		} else {
-			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, nativeData, dataOffset ?? 0, actualSize);
+			this[native_].writeBuffer(buffer?.[native_], bufferOffset ?? 0, u8, 0, writeBytes);
 		}
 
-		void nativeData;
+		void view;
 	}
 
 	writeTexture(destination: GPUImageCopyTexture, data: BufferSource, dataLayout: GPUImageDataLayout, size: GPUExtent3D) {

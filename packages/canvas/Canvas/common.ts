@@ -497,8 +497,24 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 		return this.parent !== null && this.parent !== undefined;
 	}
 
+	private _ownerDocumentShim: any;
 	get ownerDocument() {
-		return window?.document ?? doc;
+		if (!this._ownerDocumentShim) {
+			const self = this;
+			const doc_: any = (typeof window !== 'undefined' && (window as any)?.document) || doc;
+			this._ownerDocumentShim = {
+				defaultView: doc_?.defaultView ?? doc.defaultView,
+				body: doc_?.body ?? null,
+				documentElement: doc_?.documentElement ?? null,
+				addEventListener(type: string, cb: any, opts?: any) {
+					self.addEventListener(type, cb, opts);
+				},
+				removeEventListener(type: string, cb: any, opts?: any) {
+					self.removeEventListener(type, cb, opts);
+				},
+			};
+		}
+		return this._ownerDocumentShim;
 	}
 
 	emit() {}
@@ -685,7 +701,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						},
 					});
 
-					for (const callback of this._pointerMoveCallbacks) {
+					for (const callback of this._pointerMoveCallbacks.slice()) {
 						callback(event);
 					}
 				}
@@ -722,7 +738,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._touchMoveCallbacks) {
+				for (const callback of this._touchMoveCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -746,7 +762,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 							preventDefault = true;
 						},
 					});
-					for (const callback of this._mouseMoveCallbacks) {
+					for (const callback of this._mouseMoveCallbacks.slice()) {
 						callback(event);
 					}
 				}
@@ -755,7 +771,10 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 	}
 
 	private _upCallback(ptrId: number, x: number, y: number, isPrimary: boolean = false) {
-		const hasPointerCallbacks = this._pointerUpCallbacks.length > 0 || this._pointerOutCallbacks.length > 0 || this._pointerLeaveCallbacks.length > 0;
+		const upSubs = this._pointerUpCallbacks.slice();
+		const outSubs = this._pointerOutCallbacks.slice();
+		const leaveSubs = this._pointerLeaveCallbacks.slice();
+		const hasPointerCallbacks = upSubs.length > 0 || outSubs.length > 0 || leaveSubs.length > 0;
 		const hasMouseCallbacks = this._mouseUpCallbacks.length > 0;
 		const hasTouchCallbacks = this._touchEndCallbacks.length > 0;
 		const pointerId = ptrId;
@@ -803,15 +822,15 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					target: this.__target ?? this,
 				});
 
-				for (const callback of this._pointerUpCallbacks) {
+				for (const callback of upSubs) {
 					callback(up);
 				}
 
-				for (const callback of this._pointerOutCallbacks) {
+				for (const callback of outSubs) {
 					callback(out);
 				}
 
-				for (const callback of this._pointerLeaveCallbacks) {
+				for (const callback of leaveSubs) {
 					callback(leave);
 				}
 			}
@@ -843,7 +862,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._touchEndCallbacks) {
+				for (const callback of this._touchEndCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -862,7 +881,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._mouseUpCallbacks) {
+				for (const callback of this._mouseUpCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -904,7 +923,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._pointerDownCallbacks) {
+				for (const callback of this._pointerDownCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -935,7 +954,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._touchStartCallbacks) {
+				for (const callback of this._touchStartCallbacks.slice()) {
 					callback(touchEvent);
 				}
 			}
@@ -954,7 +973,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._mouseDownCallbacks) {
+				for (const callback of this._mouseDownCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -989,7 +1008,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._pointerCancelCallbacks) {
+				for (const callback of this._pointerCancelCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -1020,7 +1039,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._touchCancelCallbacks) {
+				for (const callback of this._touchCancelCallbacks.slice()) {
 					callback(touchEvent);
 				}
 			}
@@ -1084,7 +1103,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						},
 					});
 
-					for (const callback of this._pointerMoveCallbacks) {
+					for (const callback of this._pointerMoveCallbacks.slice()) {
 						callback(event);
 					}
 				}
@@ -1121,7 +1140,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 					},
 				});
 
-				for (const callback of this._touchMoveCallbacks) {
+				for (const callback of this._touchMoveCallbacks.slice()) {
 					callback(event);
 				}
 			}
@@ -1148,7 +1167,7 @@ export abstract class CanvasBase extends View implements ICanvasBase {
 						},
 					});
 
-					for (const callback of this._mouseMoveCallbacks) {
+					for (const callback of this._mouseMoveCallbacks.slice()) {
 						callback(event);
 					}
 				}

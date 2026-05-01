@@ -11,15 +11,13 @@ export function canvasReady(args: EventData) {
 	const page = canvas.page as Page;
 	const ctx = page.bindingContext as any;
 	if (ctx && ctx.initVisualizer) ctx.initVisualizer(canvas);
-	setTimeout(() => {
-		playSample(args);
-	}, 6000);
 }
 
 export function playSample(args: EventData) {
 	const page = (<any>args.object).page as Page;
 	const ctx = page.bindingContext as any;
-	const testPath = '~/assets/file-assets/audio/gs-16b-1c-44100hz.wav';
+	// const testPath = '~/assets/file-assets/audio/gs-16b-1c-44100hz.wav';
+	const testPath = '~/assets/file-assets/audio/ogg_sample.ogg';
 	const resolvedPath = testPath.startsWith('~/') ? testPath.replace('~/', knownFolders.currentApp().path + '/') : testPath;
 	if (ctx && ctx.playUrl) {
 		const p = ctx.playUrl(resolvedPath);

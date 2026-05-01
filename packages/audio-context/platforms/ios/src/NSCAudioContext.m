@@ -7,6 +7,8 @@
 #import <AudioToolbox/AudioToolbox.h>
 
 #import "NSCAudioContext.h"
+#import "NSCAudioFileStreamDecoder.h"
+#import <AudioContextNative/AudioContextNative.h>
 #import "NSCMediaElementSourceTap.h"
 #import "NSCMediaElementAudioSourceNode.h"
 
@@ -428,7 +430,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     }
     @try {
         BOOL shouldDetach = NO;
-        NSArray *attached = nil;
+        NSSet<AVAudioNode *> *attached = nil;
         if ([engine respondsToSelector:@selector(attachedNodes)]) {
             @try {
                 attached = [engine attachedNodes];
@@ -470,14 +472,83 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 
 - (nullable NSCAudioBuffer *)decodeAudioDataFromFile:(NSString *)path {
     if (!path) return nil;
+
+    NSString *lower = [path.lowercaseString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([lower hasSuffix:@".ogg"] || [lower hasSuffix:@".opus"]) {
+        AVAudioPCMBuffer *pcm = [NSCOpusDecoder decodeOpusFile:path];
+        if (pcm) return [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:pcm];
+    }
     NSURL *url = nil;
     if ([path hasPrefix:@"file://"]) url = [NSURL URLWithString:path];
     else url = [NSURL fileURLWithPath:path];
     return [self _decodeAudioFileAtURL:url];
 }
 
+
 - (nullable NSCAudioBuffer *)decodeAudioDataFromData:(NSData *)data {
     if (!data || data.length == 0) return nil;
+
+
+    if (data.length > 4) {
+        const uint8_t *bytes = (const uint8_t *)data.bytes;
+        if (bytes[0] == 'O' && bytes[1] == 'g' && bytes[2] == 'g' && bytes[3] == 'S') {
+            AVAudioPCMBuffer *pcm = [NSCOpusDecoder decodeOpusData:data];
+            if (pcm) return [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:pcm];
+
+            NSData *d = data;
+            NSData *vorbisNeedle = [NSData dataWithBytes:"vorbis" length:6];
+            NSRange searchRange = NSMakeRange(0, (NSUInteger)MIN((size_t)1024, d.length));
+            NSRange found = [d rangeOfData:vorbisNeedle options:0 range:searchRange];
+            if (found.location != NSNotFound) {
+                AVAudioPCMBuffer *vpcm = [NSCVorbisDecoder decodeVorbisData:data];
+                if (vpcm) return [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:vpcm];
+            }
+        }
+    }
+
+    NSError *streamErr = nil;
+    AVAudioPCMBuffer *streamPCM = [NSCAudioFileStreamDecoder decodeDataToPCMBuffer:data error:&streamErr];
+    if (streamPCM) {
+        NSCAudioBuffer *wrapper = [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:streamPCM];
+        return wrapper;
+    }
+
+    NSError *playerErr = nil;
+    AVAudioPlayer *player = [[AVAudioPlayer alloc] initWithData:data error:&playerErr];
+    if (player && [player prepareToPlay]) {
+        AVAudioFormat *format = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatFloat32
+                                                                 sampleRate:player.format.sampleRate
+                                                                   channels:player.format.channelCount
+                                                                interleaved:NO];
+        AVAudioEngine *engine = [[AVAudioEngine alloc] init];
+        AVAudioPlayerNode *playerNode = [[AVAudioPlayerNode alloc] init];
+        [engine attachNode:playerNode];
+        [engine connect:playerNode to:engine.mainMixerNode format:format];
+        NSError *engineErr = nil;
+        [engine startAndReturnError:&engineErr];
+        AVAudioPCMBuffer *pcmBuffer = nil;
+
+        AVAudioFile *tmpFile = nil;
+        NSString *tmpName = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"nsc_decode_%@.caf", [[NSUUID UUID] UUIDString]]];
+        BOOL ok = [data writeToFile:tmpName atomically:YES];
+        if (ok) {
+            NSURL *url = [NSURL fileURLWithPath:tmpName];
+            tmpFile = [[AVAudioFile alloc] initForReading:url error:nil];
+            if (tmpFile) {
+                AVAudioFrameCount frameCount = (AVAudioFrameCount)tmpFile.length;
+                pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:tmpFile.processingFormat frameCapacity:frameCount];
+                NSError *readErr = nil;
+                [tmpFile readIntoBuffer:pcmBuffer error:&readErr];
+                if (!readErr) {
+                    NSCAudioBuffer *wrapper = [[NSCAudioBuffer alloc] initWithContext:self id:[[NSUUID UUID] UUIDString] buffer:pcmBuffer];
+                    @try { [[NSFileManager defaultManager] removeItemAtPath:tmpName error:NULL]; } @catch (NSException *e) {}
+                    return wrapper;
+                }
+            }
+            @try { [[NSFileManager defaultManager] removeItemAtPath:tmpName error:NULL]; } @catch (NSException *e) {}
+        }
+    }
+
     NSString *tmpName = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"nsc_decode_%@.tmp", [[NSUUID UUID] UUIDString]]];
     BOOL ok = [data writeToFile:tmpName atomically:YES];
     if (!ok) return nil;

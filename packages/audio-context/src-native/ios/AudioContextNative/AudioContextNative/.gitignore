@@ -1,0 +1,5 @@
+/build_xc
+/dist
+/third_party/**
+!/third_party/Makefile
+!/third_party/README.md

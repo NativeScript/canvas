@@ -1,1 +1,1 @@
-OTHER_LDFLAGS = $(inherited) -framework "AVFoundation" -framework "Accelerate" -framework "MediaToolbox" -framework "AudioToolbox" -framework "CoreMedia"
+OTHER_LDFLAGS = $(inherited) -framework "AVFoundation" -framework "Accelerate" -framework "MediaToolbox" -framework "AudioToolbox" -framework "CoreMedia" -framework "AudioContextNative"

@@ -96,22 +96,58 @@ declare const jp, GDPerformanceMonitor, android, java, UIColor;
 let monitor;
 import { Application, path as filePath, knownFolders, Utils, path as nsPath, ImageSource, Trace, Screen, Color } from '@nativescript/core';
 
+function describeAppError(value: unknown): string {
+	if (value == null) {
+		return '';
+	}
+
+	try {
+		if (typeof value === 'string') {
+			return value;
+		}
+
+		const maybeError = value as { message?: unknown; stack?: unknown };
+		const message = typeof maybeError?.message === 'string' ? maybeError.message : '';
+		const stack = typeof maybeError?.stack === 'string' ? maybeError.stack : '';
+
+		if (message && stack) {
+			return `${message} ${stack}`;
+		}
+
+		if (message) {
+			return message;
+		}
+
+		if (stack) {
+			return stack;
+		}
+
+		return String(value);
+	} catch {
+		return 'unknown error';
+	}
+}
+
+function logAppError(label: string, value?: unknown) {
+	try {
+		const detail = describeAppError(value);
+		console.log(detail ? `${label} ${detail}` : label);
+	} catch {}
+}
+
 // Canvas.useSurface = false;
 // Canvas.forceGL = false;
 Application.on('discardedError', (args) => {
-	console.log('discardedError', args.error, args);
+	logAppError('discardedError', args.error);
+	logAppError('discardedError platform', args.android ?? args.ios);
 });
 
 Application.on('uncaughtError', (args) => {
-	console.log('uncaughtError', args.error, args);
+	logAppError('uncaughtError', args.error);
+	logAppError('uncaughtError platform', args.android ?? args.ios);
 });
 // global.process = {} as any;
 // global.process.env = {} as any;
-
-Application.on('uncaughtError', (args) => {
-	console.log('uncaughtError: error', args.error);
-	console.log('uncaughtError: platform error', args.android ?? args.ios);
-});
 
 Application.on('launch', (args) => {
 	//require('@nativescript/canvas-polyfill');

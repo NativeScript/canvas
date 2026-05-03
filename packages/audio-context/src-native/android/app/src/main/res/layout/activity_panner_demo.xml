@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Start Oscillator" />
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stop" />
+
+    <Button
+        android:id="@+id/btn_sweep_pan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Pan Sweep (L→R)" />
+
+    <Button
+        android:id="@+id/btn_sweep_pos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Position Sweep (L→R)" />
+
+    <TextView
+        android:id="@+id/tv_pan_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pan: 0.00"
+        android:paddingTop="12dp" />
+
+    <SeekBar
+        android:id="@+id/seek_pan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp" />
+
+</LinearLayout>

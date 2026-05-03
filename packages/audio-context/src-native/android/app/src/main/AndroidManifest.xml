@@ -14,12 +14,25 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
+        <activity
+            android:name="org.nativescript.audiocontext.examples.PannerDemoActivity"
+            android:exported="true"
+            android:label="Panner Demo" />
+        <activity
+            android:name="org.nativescript.audiocontext.examples.VisualizerActivity"
+            android:exported="true"
+            android:label="Visualizer" />
+        <activity
+            android:name="org.nativescript.audiocontext.examples.ExampleChooserActivity"
+            android:exported="true"
+            android:label="Examples" >
+					<intent-filter>
+						<action android:name="android.intent.action.MAIN" />
+
+						<category android:name="android.intent.category.LAUNCHER" />
+					</intent-filter>
+				</activity>
     </application>
 
 </manifest>

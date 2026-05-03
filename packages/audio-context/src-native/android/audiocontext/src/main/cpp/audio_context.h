@@ -15,6 +15,8 @@
 
 #include "kiss_fft.h"
 
+struct HRTFConvolver;
+
 #ifdef HAS_OBOE
 
 #include <oboe/Oboe.h>
@@ -67,6 +69,7 @@ public:
     void freeBuffer(const std::string &id);
 
     std::string createExternalPcmSource(int sampleRate, int channels);
+    void configureExternalPcmSource(const std::string &id, int sampleRate, int channels);
     void pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount);
     void endExternalPcmSource(const std::string &id);
 
@@ -137,7 +140,7 @@ private:
     struct Voice {
         enum Type {
             Oscillator, BufferSource, ExternalPCM
-        } type;
+        } voiceType;
         std::string id;
         std::string waveform = "sine";
         double frequency = 440.0;
@@ -204,12 +207,15 @@ public:
         CMD_RESUME,
         CMD_SUSPEND,
         CMD_CREATE_EXTERNAL_PCM,
+        CMD_CONFIGURE_EXTERNAL_PCM,
         CMD_PUSH_EXTERNAL_PCM,
         CMD_END_EXTERNAL_PCM
         ,
         CMD_ATTACH_PLAYBACK_RATE,
         CMD_DETACH_PLAYBACK_RATE,
-        CMD_FREE_PLAYBACK_RATE
+        CMD_FREE_PLAYBACK_RATE,
+        CMD_SET_PANNER_HRIR,
+        CMD_SET_PANNER_PARTITION_SIZE
     };
 
     struct Command {
@@ -259,6 +265,10 @@ public:
         std::shared_ptr<std::vector<int16_t>> pcm;
         std::shared_ptr<std::vector<float>> pcmFloat;
         std::shared_ptr<ExternalRing> externalRing;
+        std::shared_ptr<std::vector<float>> hrirLeft;
+        std::shared_ptr<std::vector<float>> hrirRight;
+        bool clearHrir = false;
+        int pannerPartitionSize = 0;
         bool loop = false;
         std::shared_ptr<std::promise<void>> completion;
         int outputIndex = 0;
@@ -271,6 +281,7 @@ public:
         std::string periodicWaveId;
         std::vector<float> waveShaperCurve;
         std::string waveShaperOversample;
+        std::string pannerBiquadId;
     };
 
     void enqueueCommand(Command &&cmd);
@@ -377,6 +388,9 @@ public:
         double coneOuterAngle = 360.0;
         double coneOuterGain = 0.0;
         std::string contextId;
+        HRTFConvolver *hrtf = nullptr;
+        int hrtfPartitionSize = 0;
+        std::string biquadId;
     };
     std::unordered_map<std::string, Panner> panners_;
 

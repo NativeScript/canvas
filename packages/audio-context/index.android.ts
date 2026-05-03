@@ -64,7 +64,6 @@ function makeAndroidHooks(native: org.nativescript.audiocontext.AudioParam): Aud
 		},
 	};
 }
-
 export class AudioParam extends AudioParamBase {
 	private [native_]: org.nativescript.audiocontext.AudioParam;
 
@@ -102,6 +101,8 @@ export class AudioNode extends AudioNodeBase {
 		} catch (e) {
 			console.warn('AudioNode.connect failed:', e);
 		}
+
+		if (!(node instanceof AudioParamBase)) return node;
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {

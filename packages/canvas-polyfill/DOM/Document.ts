@@ -16,6 +16,7 @@ import { HTMLHtmlElement } from './HTMLHtmlElement';
 import { HTMLHeadElement } from './HTMLHeadElement';
 import { HTMLBodyElement } from './HTMLBodyElement';
 import { domGetElementsByClassName, domGetElementsByTagName } from './domUtils';
+import { HTMLAudioElement } from './HTMLAudioElement';
 
 export class Document extends Node {
 	readonly body: Element = null;
@@ -93,6 +94,8 @@ export class Document extends Node {
 			}
 		}
 		switch ((tagName || '').toLowerCase()) {
+			case 'audio':
+				return new HTMLAudioElement();
 			case 'div':
 				return new HTMLDivElement();
 			case 'video':

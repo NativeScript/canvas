@@ -511,6 +511,8 @@ declare class NSCMediaElementSourceTap extends NSObject {
 
 	readonly player: AVPlayer;
 
+	readonly outputNode: AVAudioNode;
+
 	readonly sourceNode: AVAudioSourceNode;
 
 	detach(): void;

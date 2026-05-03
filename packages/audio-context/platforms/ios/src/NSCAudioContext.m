@@ -609,7 +609,12 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     if (!player) return nil;
     NSCMediaElementSourceTap *tap = [NSCMediaElementSourceTap attachToPlayer:player context:self];
     if (!tap) return nil;
-    NSCMediaElementAudioSourceNode *wrapper = [[NSCMediaElementAudioSourceNode alloc] initWithContext:self node:tap.sourceNode tap:tap];
+    AVAudioNode *node = tap.outputNode ?: tap.sourceNode;
+    if (!node) {
+        @try { [tap detach]; } @catch (NSException *ex) {}
+        return nil;
+    }
+    NSCMediaElementAudioSourceNode *wrapper = [[NSCMediaElementAudioSourceNode alloc] initWithContext:self node:node tap:tap];
     [self registerNodeWrapper:wrapper];
     return wrapper;
 }
@@ -643,9 +648,29 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (void)ensureEnvironmentNodeAttached {
     if (_environmentNode) return;
     if (!_engine) return;
+    if (![NSThread isMainThread]) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [self ensureEnvironmentNodeAttached];
+        });
+        return;
+    }
     @try {
         _environmentNode = [[AVAudioEnvironmentNode alloc] init];
         [_engine attachNode:_environmentNode];
+
+        @try {
+            AVAudioMixerNode *mainMixer = _engine.mainMixerNode;
+            AVAudioFormat *fmt = nil;
+            @try { fmt = [mainMixer outputFormatForBus:0]; } @catch (NSException *inner) { fmt = _format; }
+            if (!fmt) fmt = _format;
+            if (mainMixer) {
+                @try {
+                    [_engine connect:_environmentNode to:mainMixer format:fmt];
+                } @catch (NSException *e2) {
+                    @try { [_engine connect:_environmentNode to:mainMixer format:nil]; } @catch (NSException *e3) {}
+                }
+            }
+        } @catch (NSException *e) {}
     } @catch (NSException *e) {
         _environmentNode = nil;
     }

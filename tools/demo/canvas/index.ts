@@ -68,6 +68,7 @@ import { breathe } from './canvas2d/breathe';
 import { lines } from './canvas2d/lines';
 import { Svg } from '@nativescript/canvas-svg';
 import { videoFrame2DDemo, videoFrameWebGLDemo } from './webgl/video-frame';
+import { initDemo as webglPanner } from '../webgl-panner';
 var Vex;
 export class DemoSharedCanvas extends DemoSharedBase {
 	private canvas: any;
@@ -696,6 +697,7 @@ fn main() -> @location(0) vec4f {
 	}
 
 	draw() {
+		webglPanner(this.canvas);
 		//videoFrame2DDemo(this.canvas);
 		//videoFrameWebGLDemo(this.canvas);
 		//this.remoteFont(this.canvas);
@@ -728,8 +730,8 @@ fn main() -> @location(0) vec4f {
 		// const instancedCube = require('./webgpu/instancedCube');
 		// instancedCube.run(this.canvas);
 
-		const computeBoids = require('./webgpu/gpgpu/computeBoids');
-		computeBoids.run(this.canvas);
+		// const computeBoids = require('./webgpu/gpgpu/computeBoids');
+		// computeBoids.run(this.canvas);
 
 		// const twoCubes = require('./webgpu/basicGraphics/twoCubes');
 		// twoCubes.run(this.canvas);

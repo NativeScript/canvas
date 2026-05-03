@@ -144,6 +144,7 @@ try {
 	defineGlobalIfAbsent('OscillatorNode', canvasMedia.OscillatorNode, true);
 	defineGlobalIfAbsent('StereoPannerNode', canvasMedia.StereoPannerNode, true);
 	defineGlobalIfAbsent('AudioContext', canvasMedia.AudioContext, true);
+	defineGlobalIfAbsent('webkitAudioContext', canvasMedia.AudioContext, true);
 	defineGlobalIfAbsent('DelayNode', canvasMedia.DelayNode, true);
 	defineGlobalIfAbsent('ConstantSourceNode', canvasMedia.ConstantSourceNode, true);
 	defineGlobalIfAbsent('AnalyserNode', canvasMedia.AnalyserNode, true);

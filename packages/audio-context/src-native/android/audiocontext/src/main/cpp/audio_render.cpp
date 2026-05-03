@@ -1,13 +1,16 @@
 #include "audio_context.h"
 #include "audio_internal.h"
+#include "hrtf_convolver.h"
 
 #include <android/log.h>
 #include <jni.h>
 #include <string>
+#include <array>
 #include <vector>
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <unordered_set>
 #include <atomic>
 #include <chrono>
@@ -16,7 +19,9 @@
 #include "kiss_fft.h"
 
 #ifdef HAS_OBOE
+
 #include <oboe/Oboe.h>
+
 #endif
 
 #ifdef HAS_OBOE
@@ -99,6 +104,124 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     if (!audioData) return oboe::DataCallbackResult::Continue;
     auto *out = reinterpret_cast<float *>(audioData);
     const int channels = streamChannels_ > 0 ? streamChannels_ : 2;
+    auto resolveExternalChannelCount = [&](const Voice &voice,
+                                           const std::shared_ptr<ExternalRing> &ring) -> int {
+        if (!ring || ring->capacity == 0 || ring->data.empty()) return 0;
+
+        int resolved = ring->channels > 0 ? ring->channels : voice.bufferChannels;
+        if (resolved <= 0) resolved = 1;
+
+        if (voice.bufferChannels > 0) {
+            resolved = std::min(resolved, voice.bufferChannels);
+        }
+
+        size_t scratchChannels = std::min(voice.externalPrev.size(), voice.externalCurr.size());
+        if (scratchChannels == 0) return 0;
+        resolved = std::min(resolved, static_cast<int>(scratchChannels));
+
+        size_t dataChannels = ring->data.size() / static_cast<size_t>(ring->capacity);
+        if (dataChannels == 0) return 0;
+        resolved = std::min(resolved, static_cast<int>(dataChannels));
+
+        return resolved > 0 ? resolved : 0;
+    };
+
+    auto hydrateVoicePannerDefaults = [&](Voice &voice) {
+        auto vpIt = voicePannerByOutput_.find(voice.id);
+        if (vpIt == voicePannerByOutput_.end()) return;
+        auto mapIt = vpIt->second.find(0);
+        if (mapIt == vpIt->second.end() || mapIt->second.empty()) return;
+
+        const std::string &mappedPannerId = mapIt->second;
+        voice.panId = mappedPannerId;
+
+        auto pit = panners_.find(mappedPannerId);
+        if (pit == panners_.end()) return;
+
+        voice.pan = static_cast<float>(pit->second.pan);
+
+        const std::string &pbid = pit->second.biquadId;
+        if (!pbid.empty() && voice.filterId.empty()) {
+            voice.filterId = pbid;
+            int ch = streamChannels_ > 0 ? streamChannels_ : 2;
+            auto iit = iirs_.find(pbid);
+            if (iit != iirs_.end()) {
+                size_t nb = iit->second.feedforward.size();
+                size_t na = iit->second.feedback.size();
+                size_t stateSize = 0;
+                if (std::max(nb, na) >= 1) stateSize = std::max(nb, na) - 1;
+                voice.iirState.assign(ch, std::vector<double>(stateSize, 0.0));
+            } else {
+                voice.filterState.assign(ch, NativeEngine::BiquadState());
+            }
+        }
+    };
+
+    const bool traceEnabled = g_audioThreadLoggingEnabled.load(std::memory_order_relaxed);
+
+    auto countMappedRefs = [&](const std::unordered_map<std::string, std::unordered_map<int, std::string>> &mapByVoice,
+                               const std::string &targetId) -> size_t {
+        if (!traceEnabled || targetId.empty()) return 0;
+        size_t count = 0;
+        for (const auto &voiceEntry: mapByVoice) {
+            for (const auto &outEntry: voiceEntry.second) {
+                if (outEntry.second == targetId) ++count;
+            }
+        }
+        return count;
+    };
+
+    auto voiceTypeName = [](Voice::Type type) -> const char * {
+        switch (type) {
+            case Voice::Oscillator:
+                return "osc";
+            case Voice::BufferSource:
+                return "buffer";
+            case Voice::ExternalPCM:
+                return "external-pcm";
+            default:
+                return "unknown";
+        }
+    };
+
+    auto countVoiceFieldRefs = [&](const std::string &targetId,
+                                   const std::function<const std::string &(const Voice &)> &selector) -> size_t {
+        if (!traceEnabled || targetId.empty()) return 0;
+        size_t count = 0;
+        for (const auto &voiceEntry: audioVoices_) {
+            if (selector(voiceEntry.second) == targetId) ++count;
+        }
+        return count;
+    };
+
+    auto logRingState = [&](unsigned long long seq,
+                            const char *label,
+                            const std::string &voiceId,
+                            const std::shared_ptr<ExternalRing> &ring,
+                            int voiceChannels,
+                            int voiceSampleRate,
+                            bool playing) {
+        if (!traceEnabled) return;
+        if (!ring) {
+            audioThreadLog(ANDROID_LOG_INFO,
+                           "GRAPH_TRACE seq=%llu %s voice=%s ring=null voiceCh=%d sr=%d playing=%d",
+                           seq, label, voiceId.c_str(), voiceChannels, voiceSampleRate,
+                           playing ? 1 : 0);
+            return;
+        }
+        uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
+        uint32_t r = ring->readIdx.load(std::memory_order_acquire);
+        uint32_t queued = w >= r ? (w - r) : 0;
+        audioThreadLog(ANDROID_LOG_INFO,
+                       "GRAPH_TRACE seq=%llu %s voice=%s ring=%p cap=%u mask=%u ringCh=%d voiceCh=%d sr=%d data=%zu w=%u r=%u queued=%u ended=%d playing=%d",
+                       seq, label, voiceId.c_str(), static_cast<void *>(ring.get()),
+                       ring->capacity, ring->mask, ring->channels, voiceChannels,
+                       voiceSampleRate, ring->data.size(), w, r, queued,
+                       ring->ended.load(std::memory_order_acquire) ? 1 : 0,
+                       playing ? 1 : 0);
+    };
+
+    static std::atomic<unsigned long long> sGraphTraceSeq{0};
 
     {
 
@@ -125,7 +248,51 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         std::lock_guard<std::mutex> cl(commandMutex_);
         cmds.swap(pendingCommands_);
     }
+
+    if (traceEnabled && !cmds.empty()) {
+        size_t cmdCreateExternalPcm = 0;
+        size_t cmdConfigureExternalPcm = 0;
+        size_t cmdPushExternalPcm = 0;
+        size_t cmdEndExternalPcm = 0;
+        size_t cmdStopTrack = 0;
+        size_t cmdFreeGain = 0;
+
+        for (const auto &cmd: cmds) {
+            switch (cmd.type) {
+                case NativeEngine::CMD_CREATE_EXTERNAL_PCM:
+                    ++cmdCreateExternalPcm;
+                    break;
+                case NativeEngine::CMD_CONFIGURE_EXTERNAL_PCM:
+                    ++cmdConfigureExternalPcm;
+                    break;
+                case NativeEngine::CMD_PUSH_EXTERNAL_PCM:
+                    ++cmdPushExternalPcm;
+                    break;
+                case NativeEngine::CMD_END_EXTERNAL_PCM:
+                    ++cmdEndExternalPcm;
+                    break;
+                case NativeEngine::CMD_STOP_TRACK:
+                    ++cmdStopTrack;
+                    break;
+                case NativeEngine::CMD_FREE_GAIN:
+                    ++cmdFreeGain;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        audioThreadLog(ANDROID_LOG_INFO,
+                       "GRAPH_TRACE batch commands=%zu activeVoices=%zu gains=%zu panners=%zu biquads=%zu iirs=%zu extCreate=%zu extCfg=%zu extPush=%zu extEnd=%zu stopTrack=%zu freeGain=%zu",
+                       cmds.size(), audioVoices_.size(), gains_.size(), panners_.size(),
+                       biquads_.size(), iirs_.size(), cmdCreateExternalPcm,
+                       cmdConfigureExternalPcm, cmdPushExternalPcm,
+                       cmdEndExternalPcm, cmdStopTrack, cmdFreeGain);
+    }
+
     for (auto &c: cmds) {
+        const unsigned long long traceSeq =
+                sGraphTraceSeq.fetch_add(1, std::memory_order_relaxed) + 1;
         switch (c.type) {
             case NativeEngine::CMD_CREATE_BUFFER_DIRECT: {
                 BufferData bd;
@@ -139,8 +306,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 bd.nativeOwned = false;
                 audioBuffers_[c.id] = bd;
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: create direct buffer %s sr=%d ch=%d", c.id.c_str(),
-                                    bd.sampleRate, bd.channels);
+                               "CMD: create direct buffer %s sr=%d ch=%d", c.id.c_str(),
+                               bd.sampleRate, bd.channels);
                 if (jvm_ && audioContextClassGlobalRef && onNativeBufferHeldMethod) {
                     JNIEnv *env = nullptr;
                     bool attached = false;
@@ -166,12 +333,12 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 bd.nativeOwned = true;
                 audioBuffers_[c.id] = std::move(bd);
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: create copy buffer %s sr=%d ch=%d",
-                                    c.id.c_str(), c.sampleRate, c.channels);
+                               c.id.c_str(), c.sampleRate, c.channels);
                 break;
             }
             case NativeEngine::CMD_CREATE_OSC: {
                 Voice v;
-                v.type = Voice::Oscillator;
+                v.voiceType = Voice::Oscillator;
                 v.id = c.id;
                 v.waveform = c.waveform;
                 v.frequency = c.frequency;
@@ -193,7 +360,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             case NativeEngine::CMD_CREATE_GAIN: {
                 gains_[c.id] = c.gainValue > 0.0 ? c.gainValue : 1.0;
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: create gain %s value=%f",
-                                    c.id.c_str(), gains_[c.id]);
+                               c.id.c_str(), gains_[c.id]);
                 break;
             }
             case NativeEngine::CMD_SET_GAIN: {
@@ -205,9 +372,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
 
-                for (const auto &vgKv : voiceGainByOutput_) {
+                for (const auto &vgKv: voiceGainByOutput_) {
                     const std::string &voiceId = vgKv.first;
-                    for (const auto &entry : vgKv.second) {
+                    for (const auto &entry: vgKv.second) {
                         if (entry.second == c.id) {
                             auto vit2 = audioVoices_.find(voiceId);
                             if (vit2 != audioVoices_.end()) vit2->second.gain = v;
@@ -215,23 +382,24 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: set gain %s value=%f",
-                                    c.id.c_str(), v);
+                               c.id.c_str(), v);
 
                 for (const auto &av: audioVoices_) {
                     const std::string &voiceId = av.first;
                     const Voice &voice = av.second;
                     if (voice.gainId == c.id) {
                         audioThreadLog(ANDROID_LOG_INFO,
-                                            "VOICE_GAIN_FIELD voice=%s gainId=%s voiceGain=%f",
-                                            voiceId.c_str(), voice.gainId.c_str(), voice.gain);
+                                       "VOICE_GAIN_FIELD voice=%s gainId=%s voiceGain=%f",
+                                       voiceId.c_str(), voice.gainId.c_str(), voice.gain);
                     }
                     auto vgIt = voiceGainByOutput_.find(voiceId);
                     if (vgIt != voiceGainByOutput_.end()) {
                         for (const auto &entry: vgIt->second) {
                             if (entry.second == c.id) {
                                 audioThreadLog(ANDROID_LOG_INFO,
-                                                    "VOICE_GAIN_MAP voice=%s out=%d mapsToGain=%s currentVoiceGain=%f",
-                                                    voiceId.c_str(), entry.first, entry.second.c_str(), voice.gain);
+                                               "VOICE_GAIN_MAP voice=%s out=%d mapsToGain=%s currentVoiceGain=%f",
+                                               voiceId.c_str(), entry.first, entry.second.c_str(),
+                                               voice.gain);
                             }
                         }
                     }
@@ -240,7 +408,10 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
             }
             case NativeEngine::CMD_ATTACH_GAIN: {
                 auto vit = audioVoices_.find(c.id);
+                std::string prevGainId;
+                bool voiceExists = vit != audioVoices_.end();
                 if (vit != audioVoices_.end()) {
+                    prevGainId = vit->second.gainId;
                     vit->second.gainId = c.gainId;
                     auto git = gains_.find(c.gainId);
                     if (git != gains_.end()) vit->second.gain = git->second;
@@ -258,8 +429,23 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
 
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: attach gain %s -> voice %s (out=%d in=%d)",
-                                    c.gainId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                               "CMD: attach gain %s -> voice %s (out=%d in=%d)",
+                               c.gainId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                if (traceEnabled) {
+                    size_t mappedRefs = countMappedRefs(voiceGainByOutput_, c.gainId);
+                    size_t fieldRefs = countVoiceFieldRefs(c.gainId,
+                                                           [](const Voice &voice) -> const std::string & {
+                                                               return voice.gainId;
+                                                           });
+                    size_t outputsForVoice = 0;
+                    auto vgDbg = voiceGainByOutput_.find(c.id);
+                    if (vgDbg != voiceGainByOutput_.end()) outputsForVoice = vgDbg->second.size();
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu ATTACH_GAIN voice=%s exists=%d prev=%s new=%s out=%d in=%d mappedRefs=%zu fieldRefs=%zu outputsForVoice=%zu",
+                                   traceSeq, c.id.c_str(), voiceExists ? 1 : 0,
+                                   prevGainId.c_str(), c.gainId.c_str(), c.outputIndex,
+                                   c.inputIndex, mappedRefs, fieldRefs, outputsForVoice);
+                }
                 break;
             }
             case NativeEngine::CMD_ATTACH_PLAYBACK_RATE: {
@@ -279,8 +465,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
 
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: attach playbackRate %s -> voice %s (out=%d in=%d)",
-                                    c.playbackRateId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                               "CMD: attach playbackRate %s -> voice %s (out=%d in=%d)",
+                               c.playbackRateId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
                 break;
             }
             case NativeEngine::CMD_DETACH_PLAYBACK_RATE: {
@@ -302,6 +488,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_DETACH_GAIN: {
+                size_t fieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                             [](const Voice &voice) -> const std::string & {
+                                                                 return voice.gainId;
+                                                             });
+                size_t mappedRefsBefore = countMappedRefs(voiceGainByOutput_, c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.gainId == c.id) {
                         kv.second.gainId.clear();
@@ -309,9 +500,33 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: detach gain %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.gainId;
+                                                                });
+                    size_t mappedRefsAfter = countMappedRefs(voiceGainByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu DETACH_GAIN gain=%s fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), fieldRefsBefore, fieldRefsAfter,
+                                   mappedRefsBefore, mappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_FREE_GAIN: {
+                size_t fieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                             [](const Voice &voice) -> const std::string & {
+                                                                 return voice.gainId;
+                                                             });
+                size_t mappedRefsBefore = countMappedRefs(voiceGainByOutput_, c.id);
+                bool hadGain = gains_.find(c.id) != gains_.end();
+                bool hadWaveShaper = waveShapers_.find(c.id) != waveShapers_.end();
+                if (traceEnabled && !hadGain) {
+                    audioThreadLog(ANDROID_LOG_WARN,
+                                   "GRAPH_TRACE seq=%llu FREE_GAIN_DUPLICATE gain=%s mappedRefsBefore=%zu fieldRefsBefore=%zu",
+                                   traceSeq, c.id.c_str(), mappedRefsBefore,
+                                   fieldRefsBefore);
+                }
                 gains_.erase(c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.gainId == c.id) {
@@ -322,6 +537,18 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
 
                 waveShapers_.erase(c.id);
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: free gain %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.gainId;
+                                                                });
+                    size_t mappedRefsAfter = countMappedRefs(voiceGainByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu FREE_GAIN gain=%s hadGain=%d hadWaveShaper=%d fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), hadGain ? 1 : 0,
+                                   hadWaveShaper ? 1 : 0, fieldRefsBefore, fieldRefsAfter,
+                                   mappedRefsBefore, mappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_CREATE_BIQUAD: {
@@ -332,9 +559,9 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
                 biquads_[c.id] = bc;
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: create biquad %s type=%s f=%f Q=%f g=%f", c.id.c_str(),
-                                    c.biquadType.c_str(), c.biquadFrequency, c.biquadQ,
-                                    c.biquadGain);
+                               "CMD: create biquad %s type=%s f=%f Q=%f g=%f", c.id.c_str(),
+                               c.biquadType.c_str(), c.biquadFrequency, c.biquadQ,
+                               c.biquadGain);
                 break;
             }
             case NativeEngine::CMD_SET_BIQUAD_PARAMS: {
@@ -346,12 +573,15 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
                 biquads_[c.id] = bc;
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: set biquad %s f=%f Q=%f g=%f",
-                                    c.id.c_str(), c.biquadFrequency, c.biquadQ, c.biquadGain);
+                               c.id.c_str(), c.biquadFrequency, c.biquadQ, c.biquadGain);
                 break;
             }
             case NativeEngine::CMD_ATTACH_BIQUAD: {
                 auto vit = audioVoices_.find(c.id);
+                std::string prevFilterId;
+                bool voiceExists = vit != audioVoices_.end();
                 if (vit != audioVoices_.end()) {
+                    prevFilterId = vit->second.filterId;
                     vit->second.filterId = c.biquadId;
                     int ch = streamChannels_ > 0 ? streamChannels_ : 2;
                     auto iit = iirs_.find(c.biquadId);
@@ -377,11 +607,28 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
 
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: attach biquad/iir %s -> voice %s (out=%d in=%d)",
-                                    c.biquadId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                               "CMD: attach biquad/iir %s -> voice %s (out=%d in=%d)",
+                               c.biquadId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                if (traceEnabled) {
+                    size_t mappedRefs = countMappedRefs(voiceFilterByOutput_, c.biquadId);
+                    size_t fieldRefs = countVoiceFieldRefs(c.biquadId,
+                                                           [](const Voice &voice) -> const std::string & {
+                                                               return voice.filterId;
+                                                           });
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu ATTACH_FILTER voice=%s exists=%d prev=%s new=%s out=%d in=%d mappedRefs=%zu fieldRefs=%zu",
+                                   traceSeq, c.id.c_str(), voiceExists ? 1 : 0,
+                                   prevFilterId.c_str(), c.biquadId.c_str(), c.outputIndex,
+                                   c.inputIndex, mappedRefs, fieldRefs);
+                }
                 break;
             }
             case NativeEngine::CMD_DETACH_BIQUAD: {
+                size_t fieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                             [](const Voice &voice) -> const std::string & {
+                                                                 return voice.filterId;
+                                                             });
+                size_t mappedRefsBefore = countMappedRefs(voiceFilterByOutput_, c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.filterId == c.id) {
                         kv.second.filterId.clear();
@@ -390,9 +637,26 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: detach biquad %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.filterId;
+                                                                });
+                    size_t mappedRefsAfter = countMappedRefs(voiceFilterByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu DETACH_FILTER id=%s fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), fieldRefsBefore, fieldRefsAfter,
+                                   mappedRefsBefore, mappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_FREE_BIQUAD: {
+                bool hadBiquad = biquads_.find(c.id) != biquads_.end();
+                size_t fieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                             [](const Voice &voice) -> const std::string & {
+                                                                 return voice.filterId;
+                                                             });
+                size_t mappedRefsBefore = countMappedRefs(voiceFilterByOutput_, c.id);
                 biquads_.erase(c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.filterId == c.id) {
@@ -402,6 +666,18 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: free biquad %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.filterId;
+                                                                });
+                    size_t mappedRefsAfter = countMappedRefs(voiceFilterByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu FREE_FILTER id=%s hadBiquad=%d fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), hadBiquad ? 1 : 0,
+                                   fieldRefsBefore, fieldRefsAfter, mappedRefsBefore,
+                                   mappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_CREATE_IIR: {
@@ -416,10 +692,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
                 NativeEngine::getInstance().iirs_[c.id] = d;
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: create iir %s ff=%zu fb=%zu",
-                                    c.id.c_str(), d.feedforward.size(), d.feedback.size());
+                               c.id.c_str(), d.feedforward.size(), d.feedback.size());
                 break;
             }
             case NativeEngine::CMD_FREE_IIR: {
+                bool hadIir = NativeEngine::getInstance().iirs_.find(c.id) !=
+                               NativeEngine::getInstance().iirs_.end();
+                size_t fieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                             [](const Voice &voice) -> const std::string & {
+                                                                 return voice.filterId;
+                                                             });
+                size_t mappedRefsBefore = countMappedRefs(voiceFilterByOutput_, c.id);
                 NativeEngine::getInstance().iirs_.erase(c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.filterId == c.id) {
@@ -429,6 +712,18 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: free iir %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t fieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.filterId;
+                                                                });
+                    size_t mappedRefsAfter = countMappedRefs(voiceFilterByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu FREE_IIR id=%s hadIir=%d fieldRefsBefore=%zu fieldRefsAfter=%zu mappedRefsBefore=%zu mappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), hadIir ? 1 : 0,
+                                   fieldRefsBefore, fieldRefsAfter, mappedRefsBefore,
+                                   mappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_CREATE_PERIODICWAVE: {
@@ -438,8 +733,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 d.disableNormalization = c.periodicDisableNormalization;
                 NativeEngine::getInstance().periodicWaves_[c.id] = d;
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: create periodic %s real=%zu imag=%zu", c.id.c_str(),
-                                    d.real.size(), d.imag.size());
+                               "CMD: create periodic %s real=%zu imag=%zu", c.id.c_str(),
+                               d.real.size(), d.imag.size());
                 break;
             }
             case NativeEngine::CMD_ATTACH_PERIODICWAVE: {
@@ -448,7 +743,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     vit->second.periodicWaveId = c.periodicWaveId;
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: attach periodic %s -> voice %s",
-                                    c.periodicWaveId.c_str(), c.id.c_str());
+                               c.periodicWaveId.c_str(), c.id.c_str());
                 break;
             }
             case NativeEngine::CMD_FREE_PERIODICWAVE: {
@@ -475,11 +770,12 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (!c.waveShaperOversample.empty()) it->second.oversample = d.oversample;
                 }
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: set waveshaper %s curve=%zu oversample=%s",
-                                    c.id.c_str(), (size_t) d.curve.size(), d.oversample.c_str());
+                               "CMD: set waveshaper %s curve=%zu oversample=%s",
+                               c.id.c_str(), (size_t) d.curve.size(), d.oversample.c_str());
                 break;
             }
             case NativeEngine::CMD_CREATE_PANNER: {
+                bool replaced = panners_.find(c.id) != panners_.end();
                 NativeEngine::Panner p;
                 p.positionX = c.pannerPositionX;
                 p.positionY = c.pannerPositionY;
@@ -497,13 +793,34 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 p.coneOuterAngle = c.pannerConeOuterAngle;
                 p.coneOuterGain = c.pannerConeOuterGain;
                 p.contextId = c.contextId;
+                p.biquadId = "";
                 panners_[c.id] = p;
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: create panner %s", c.id.c_str());
+                if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu CREATE_PANNER id=%s replaced=%d context=%s pos=(%.3f,%.3f,%.3f) pan=%.3f distModel=%d panModel=%d",
+                                   traceSeq, c.id.c_str(), replaced ? 1 : 0,
+                                   c.contextId.c_str(), c.pannerPositionX,
+                                   c.pannerPositionY, c.pannerPositionZ, c.pannerPan,
+                                   c.pannerDistanceModel, c.pannerPanningModel);
+                }
                 break;
             }
             case NativeEngine::CMD_SET_PANNER_PARAMS: {
                 auto it = panners_.find(c.id);
                 if (it != panners_.end()) {
+                    if (!c.pannerBiquadId.empty()) {
+                        std::string prevBiquadId = it->second.biquadId;
+                        it->second.biquadId = c.pannerBiquadId;
+                        audioThreadLog(ANDROID_LOG_INFO, "CMD: attach biquad %s -> panner %s", c.pannerBiquadId.c_str(), c.id.c_str());
+                        if (traceEnabled) {
+                            audioThreadLog(ANDROID_LOG_INFO,
+                                           "GRAPH_TRACE seq=%llu SET_PANNER_BIQUAD panner=%s prevBiquad=%s newBiquad=%s",
+                                           traceSeq, c.id.c_str(), prevBiquadId.c_str(),
+                                           c.pannerBiquadId.c_str());
+                        }
+                        break;
+                    }
                     auto &p = it->second;
                     p.positionX = c.pannerPositionX;
                     p.positionY = c.pannerPositionY;
@@ -520,8 +837,103 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     p.coneInnerAngle = c.pannerConeInnerAngle;
                     p.coneOuterAngle = c.pannerConeOuterAngle;
                     p.coneOuterGain = c.pannerConeOuterGain;
+                } else if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_WARN,
+                                   "GRAPH_TRACE seq=%llu SET_PANNER_MISSING panner=%s",
+                                   traceSeq, c.id.c_str());
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: set panner %s", c.id.c_str());
+                if (traceEnabled && it != panners_.end()) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu SET_PANNER_PARAMS panner=%s pos=(%.3f,%.3f,%.3f) orient=(%.3f,%.3f,%.3f) pan=%.3f ref=%.3f max=%.3f rolloff=%.3f",
+                                   traceSeq, c.id.c_str(), c.pannerPositionX,
+                                   c.pannerPositionY, c.pannerPositionZ,
+                                   c.pannerOrientationX, c.pannerOrientationY,
+                                   c.pannerOrientationZ, c.pannerPan,
+                                   c.pannerRefDistance, c.pannerMaxDistance,
+                                   c.pannerRolloffFactor);
+                }
+                break;
+            }
+            case NativeEngine::CMD_SET_PANNER_PARTITION_SIZE: {
+                auto it = panners_.find(c.id);
+                if (it == panners_.end()) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu SET_PANNER_PARTITION_MISSING panner=%s size=%d",
+                                       traceSeq, c.id.c_str(), c.pannerPartitionSize);
+                    }
+                    break;
+                }
+
+                if (c.pannerPartitionSize > 0) {
+                    it->second.hrtfPartitionSize = c.pannerPartitionSize;
+                    if (it->second.hrtf) {
+                        it->second.hrtf->setPartitionSize(c.pannerPartitionSize);
+                    }
+                }
+
+                if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu SET_PANNER_PARTITION panner=%s size=%d hasHrtf=%d",
+                                   traceSeq, c.id.c_str(), it->second.hrtfPartitionSize,
+                                   it->second.hrtf ? 1 : 0);
+                }
+                break;
+            }
+            case NativeEngine::CMD_SET_PANNER_HRIR: {
+                auto it = panners_.find(c.id);
+                if (it == panners_.end()) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu SET_PANNER_HRIR_MISSING panner=%s clear=%d",
+                                       traceSeq, c.id.c_str(), c.clearHrir ? 1 : 0);
+                    }
+                    break;
+                }
+
+                if (c.clearHrir || !c.hrirLeft || !c.hrirRight ||
+                    c.hrirLeft->empty() || c.hrirRight->empty()) {
+                    bool hadHrtf = it->second.hrtf != nullptr;
+                    if (it->second.hrtf) {
+                        delete it->second.hrtf;
+                        it->second.hrtf = nullptr;
+                    }
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_INFO,
+                                       "GRAPH_TRACE seq=%llu SET_PANNER_HRIR_CLEAR panner=%s hadHrtf=%d",
+                                       traceSeq, c.id.c_str(), hadHrtf ? 1 : 0);
+                    }
+                    break;
+                }
+
+                size_t count = std::min(c.hrirLeft->size(), c.hrirRight->size());
+                if (count == 0) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu SET_PANNER_HRIR_EMPTY panner=%s left=%zu right=%zu",
+                                       traceSeq, c.id.c_str(), c.hrirLeft->size(),
+                                       c.hrirRight->size());
+                    }
+                    break;
+                }
+
+                HRTFConvolver *convolver = it->second.hrtf;
+                if (!convolver) {
+                    convolver = new HRTFConvolver();
+                }
+                if (it->second.hrtfPartitionSize > 0) {
+                    convolver->setPartitionSize(it->second.hrtfPartitionSize);
+                }
+                convolver->init(c.hrirLeft->data(), c.hrirRight->data(), count, 48000);
+                it->second.hrtf = convolver;
+
+                if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu SET_PANNER_HRIR panner=%s samples=%zu part=%d",
+                                   traceSeq, c.id.c_str(), count,
+                                   it->second.hrtfPartitionSize);
+                }
                 break;
             }
             case NativeEngine::CMD_SET_LISTENER_PARAMS: {
@@ -536,7 +948,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     L.upX = c.listenerUpX;
                     L.upY = c.listenerUpY;
                     L.upZ = c.listenerUpZ;
-                    audioThreadLog(ANDROID_LOG_INFO, "CMD: set listener[%s] pos=(%f,%f,%f) fwd=(%f,%f,%f)", c.contextId.c_str(), c.listenerPositionX, c.listenerPositionY, c.listenerPositionZ, c.listenerForwardX, c.listenerForwardY, c.listenerForwardZ);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "CMD: set listener[%s] pos=(%f,%f,%f) fwd=(%f,%f,%f)",
+                                   c.contextId.c_str(), c.listenerPositionX, c.listenerPositionY,
+                                   c.listenerPositionZ, c.listenerForwardX, c.listenerForwardY,
+                                   c.listenerForwardZ);
                 } else {
                     listener_.positionX = c.listenerPositionX;
                     listener_.positionY = c.listenerPositionY;
@@ -547,17 +963,54 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     listener_.upX = c.listenerUpX;
                     listener_.upY = c.listenerUpY;
                     listener_.upZ = c.listenerUpZ;
-                    audioThreadLog(ANDROID_LOG_INFO, "CMD: set listener pos=(%f,%f,%f) fwd=(%f,%f,%f)", c.listenerPositionX, c.listenerPositionY, c.listenerPositionZ, c.listenerForwardX, c.listenerForwardY, c.listenerForwardZ);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "CMD: set listener pos=(%f,%f,%f) fwd=(%f,%f,%f)",
+                                   c.listenerPositionX, c.listenerPositionY, c.listenerPositionZ,
+                                   c.listenerForwardX, c.listenerForwardY, c.listenerForwardZ);
                 }
                 break;
             }
             case NativeEngine::CMD_ATTACH_PANNER: {
                 auto vit = audioVoices_.find(c.id);
+                bool voiceExists = vit != audioVoices_.end();
+                std::string prevPanId;
+                std::string prevFilterId;
                 if (vit != audioVoices_.end()) {
+                    prevPanId = vit->second.panId;
+                    prevFilterId = vit->second.filterId;
                     vit->second.panId = c.pannerId;
                     auto pit = panners_.find(c.pannerId);
                     if (pit != panners_.end())
                         vit->second.pan = static_cast<float>(pit->second.pan);
+                }
+
+                bool pannerExists = false;
+                std::string pannerBiquadId;
+                if (!c.pannerId.empty()) {
+                    auto pit2 = panners_.find(c.pannerId);
+                    if (pit2 != panners_.end()) {
+                        pannerExists = true;
+                        const std::string &pbid = pit2->second.biquadId;
+                        pannerBiquadId = pbid;
+                        if (!pbid.empty()) {
+                            auto vit2 = audioVoices_.find(c.id);
+                            if (vit2 != audioVoices_.end()) {
+                                vit2->second.filterId = pbid;
+                                int ch = streamChannels_ > 0 ? streamChannels_ : 2;
+                                auto iit = iirs_.find(pbid);
+                                if (iit != iirs_.end()) {
+                                    size_t nb = iit->second.feedforward.size();
+                                    size_t na = iit->second.feedback.size();
+                                    size_t stateSize = 0;
+                                    if (std::max(nb, na) >= 1) stateSize = std::max(nb, na) - 1;
+                                    vit2->second.iirState.assign(ch, std::vector<double>(stateSize, 0.0));
+                                } else {
+                                    vit2->second.filterState.assign(ch, NativeEngine::BiquadState());
+                                }
+                                voiceFilterByOutput_[c.id][c.outputIndex] = pbid;
+                            }
+                        }
+                    }
                 }
 
                 if (!c.pannerId.empty()) {
@@ -571,11 +1024,45 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 }
 
                 audioThreadLog(ANDROID_LOG_INFO,
-                                    "CMD: attach panner %s -> voice %s (out=%d in=%d)",
-                                    c.pannerId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                               "CMD: attach panner %s -> voice %s (out=%d in=%d)",
+                               c.pannerId.c_str(), c.id.c_str(), c.outputIndex, c.inputIndex);
+                if (traceEnabled) {
+                    size_t panMappedRefs = countMappedRefs(voicePannerByOutput_, c.pannerId);
+                    size_t panFieldRefs = countVoiceFieldRefs(c.pannerId,
+                                                              [](const Voice &voice) -> const std::string & {
+                                                                  return voice.panId;
+                                                              });
+                    size_t outputsForVoice = 0;
+                    auto vpDbg = voicePannerByOutput_.find(c.id);
+                    if (vpDbg != voicePannerByOutput_.end()) outputsForVoice = vpDbg->second.size();
+
+                    size_t filterMappedRefs = 0;
+                    size_t filterFieldRefs = 0;
+                    if (!pannerBiquadId.empty()) {
+                        filterMappedRefs = countMappedRefs(voiceFilterByOutput_, pannerBiquadId);
+                        filterFieldRefs = countVoiceFieldRefs(pannerBiquadId,
+                                                              [](const Voice &voice) -> const std::string & {
+                                                                  return voice.filterId;
+                                                              });
+                    }
+
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu ATTACH_PANNER voice=%s exists=%d prevPan=%s newPan=%s prevFilter=%s pannerExists=%d pannerBiquad=%s out=%d in=%d panMappedRefs=%zu panFieldRefs=%zu filterMappedRefs=%zu filterFieldRefs=%zu outputsForVoice=%zu",
+                                   traceSeq, c.id.c_str(), voiceExists ? 1 : 0,
+                                   prevPanId.c_str(), c.pannerId.c_str(),
+                                   prevFilterId.c_str(), pannerExists ? 1 : 0,
+                                   pannerBiquadId.c_str(), c.outputIndex, c.inputIndex,
+                                   panMappedRefs, panFieldRefs, filterMappedRefs,
+                                   filterFieldRefs, outputsForVoice);
+                }
                 break;
             }
             case NativeEngine::CMD_DETACH_PANNER: {
+                size_t panFieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.panId;
+                                                                });
+                size_t panMappedRefsBefore = countMappedRefs(voicePannerByOutput_, c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.panId == c.id) {
                         kv.second.panId.clear();
@@ -583,9 +1070,57 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: detach panner %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t panFieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                   [](const Voice &voice) -> const std::string & {
+                                                                       return voice.panId;
+                                                                   });
+                    size_t panMappedRefsAfter = countMappedRefs(voicePannerByOutput_, c.id);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu DETACH_PANNER id=%s panFieldRefsBefore=%zu panFieldRefsAfter=%zu panMappedRefsBefore=%zu panMappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), panFieldRefsBefore,
+                                   panFieldRefsAfter, panMappedRefsBefore,
+                                   panMappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_FREE_PANNER: {
+                bool hadPanner = panners_.find(c.id) != panners_.end();
+                size_t panFieldRefsBefore = countVoiceFieldRefs(c.id,
+                                                                [](const Voice &voice) -> const std::string & {
+                                                                    return voice.panId;
+                                                                });
+                size_t panMappedRefsBefore = countMappedRefs(voicePannerByOutput_, c.id);
+
+                bool hadHrtf = false;
+                std::string bid;
+                size_t filterFieldRefsBefore = 0;
+                size_t filterMappedRefsBefore = 0;
+
+                auto pitf = panners_.find(c.id);
+                if (pitf != panners_.end()) {
+                    hadHrtf = pitf->second.hrtf != nullptr;
+                    if (pitf->second.hrtf) {
+                        delete pitf->second.hrtf;
+                        pitf->second.hrtf = nullptr;
+                    }
+                    bid = pitf->second.biquadId;
+                    if (!bid.empty()) {
+                        filterFieldRefsBefore = countVoiceFieldRefs(bid,
+                                                                    [](const Voice &voice) -> const std::string & {
+                                                                        return voice.filterId;
+                                                                    });
+                        filterMappedRefsBefore = countMappedRefs(voiceFilterByOutput_, bid);
+                        biquads_.erase(bid);
+                        for (auto &kv: audioVoices_) {
+                            if (kv.second.filterId == bid) {
+                                kv.second.filterId.clear();
+                                kv.second.filterState.clear();
+                                kv.second.iirState.clear();
+                            }
+                        }
+                    }
+                }
                 panners_.erase(c.id);
                 for (auto &kv: audioVoices_) {
                     if (kv.second.panId == c.id) {
@@ -594,13 +1129,39 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
                 }
                 audioThreadLog(ANDROID_LOG_INFO, "CMD: free panner %s", c.id.c_str());
+                if (traceEnabled) {
+                    size_t panFieldRefsAfter = countVoiceFieldRefs(c.id,
+                                                                   [](const Voice &voice) -> const std::string & {
+                                                                       return voice.panId;
+                                                                   });
+                    size_t panMappedRefsAfter = countMappedRefs(voicePannerByOutput_, c.id);
+
+                    size_t filterFieldRefsAfter = 0;
+                    size_t filterMappedRefsAfter = 0;
+                    if (!bid.empty()) {
+                        filterFieldRefsAfter = countVoiceFieldRefs(bid,
+                                                                   [](const Voice &voice) -> const std::string & {
+                                                                       return voice.filterId;
+                                                                   });
+                        filterMappedRefsAfter = countMappedRefs(voiceFilterByOutput_, bid);
+                    }
+
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu FREE_PANNER id=%s hadPanner=%d hadHrtf=%d pannerBiquad=%s panFieldRefsBefore=%zu panFieldRefsAfter=%zu panMappedRefsBefore=%zu panMappedRefsAfter=%zu filterFieldRefsBefore=%zu filterFieldRefsAfter=%zu filterMappedRefsBefore=%zu filterMappedRefsAfter=%zu",
+                                   traceSeq, c.id.c_str(), hadPanner ? 1 : 0,
+                                   hadHrtf ? 1 : 0, bid.c_str(), panFieldRefsBefore,
+                                   panFieldRefsAfter, panMappedRefsBefore,
+                                   panMappedRefsAfter, filterFieldRefsBefore,
+                                   filterFieldRefsAfter, filterMappedRefsBefore,
+                                   filterMappedRefsAfter);
+                }
                 break;
             }
             case NativeEngine::CMD_START_OSC: {
                 Voice v;
                 auto it = audioVoices_.find(c.id);
                 if (it == audioVoices_.end()) {
-                    v.type = Voice::Oscillator;
+                    v.voiceType = Voice::Oscillator;
                     v.id = c.id;
                     v.waveform = c.waveform;
                     v.frequency = c.frequency;
@@ -621,10 +1182,41 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     auto git2 = gains_.find(v.gainId);
                     if (git2 != gains_.end()) v.gain = git2->second;
                 }
+
+                hydrateVoicePannerDefaults(v);
                 audioVoices_[c.id] = v;
                 break;
             }
             case NativeEngine::CMD_STOP_TRACK: {
+                auto vit = audioVoices_.find(c.id);
+                bool existed = vit != audioVoices_.end();
+                size_t gainOutputsForVoice = 0;
+                size_t pannerOutputsForVoice = 0;
+                size_t filterOutputsForVoice = 0;
+                if (traceEnabled && existed) {
+                    auto vg = voiceGainByOutput_.find(c.id);
+                    if (vg != voiceGainByOutput_.end()) gainOutputsForVoice = vg->second.size();
+                    auto vp = voicePannerByOutput_.find(c.id);
+                    if (vp != voicePannerByOutput_.end()) pannerOutputsForVoice = vp->second.size();
+                    auto vf = voiceFilterByOutput_.find(c.id);
+                    if (vf != voiceFilterByOutput_.end()) filterOutputsForVoice = vf->second.size();
+
+                    if (vit->second.voiceType == Voice::ExternalPCM) {
+                        logRingState(traceSeq, "STOP_TRACK_BEFORE", c.id,
+                                     vit->second.externalRing,
+                                     vit->second.bufferChannels,
+                                     vit->second.bufferSampleRate,
+                                     vit->second.playing);
+                    }
+
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu STOP_TRACK voice=%s existed=%d type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
+                                   traceSeq, c.id.c_str(), existed ? 1 : 0,
+                                   voiceTypeName(vit->second.voiceType),
+                                   vit->second.gainId.c_str(), vit->second.panId.c_str(),
+                                   vit->second.filterId.c_str(), gainOutputsForVoice,
+                                   pannerOutputsForVoice, filterOutputsForVoice);
+                }
                 audioVoices_.erase(c.id);
                 break;
             }
@@ -632,7 +1224,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 auto bit = audioBuffers_.find(c.id);
                 if (bit == audioBuffers_.end()) break;
                 Voice v;
-                v.type = Voice::BufferSource;
+                v.voiceType = Voice::BufferSource;
                 v.id = c.id;
                 v.bufferId = c.id;
                 v.position = 0.0;
@@ -660,9 +1252,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     v.playbackRateId = mapIt4->second;
                     auto git4 = gains_.find(v.playbackRateId);
                     if (git4 != gains_.end()) {
-                        // nothing else to set on voice; gains_ holds fallback value
+                        
                     }
                 }
+
+                hydrateVoicePannerDefaults(v);
                 audioVoices_[c.id] = v;
                 break;
             }
@@ -711,21 +1305,30 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 break;
             }
             case NativeEngine::CMD_CREATE_EXTERNAL_PCM: {
-                if (!c.externalRing) break;
+                if (!c.externalRing) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu CREATE_EXTERNAL_PCM voice=%s ring=null",
+                                       traceSeq, c.id.c_str());
+                    }
+                    break;
+                }
+                bool replacedVoice = audioVoices_.find(c.id) != audioVoices_.end();
                 Voice v;
-                v.type = Voice::ExternalPCM;
+                v.voiceType = Voice::ExternalPCM;
                 v.id = c.id;
                 v.position = 0.0;
                 v.loop = false;
                 v.gain = 1.0;
-                v.playing = true;
+                v.playing = false;
                 v.bufferChannels = c.channels > 0 ? c.channels : 2;
                 v.bufferSampleRate = c.sampleRate > 0 ? c.sampleRate : 48000;
-                double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+                double sr =
+                        streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
                 v.increment = static_cast<double>(v.bufferSampleRate) / sr;
                 v.externalRing = c.externalRing;
-                v.externalPrev.assign((size_t)v.bufferChannels, 0.0f);
-                v.externalCurr.assign((size_t)v.bufferChannels, 0.0f);
+                v.externalPrev.assign((size_t) v.bufferChannels, 0.0f);
+                v.externalCurr.assign((size_t) v.bufferChannels, 0.0f);
                 v.externalSubPos = 0.0;
                 v.externalPrimed = false;
 
@@ -738,37 +1341,160 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (git != gains_.end()) v.gain = git->second;
                 }
                 audioVoices_[c.id] = v;
+                if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu CREATE_EXTERNAL_PCM voice=%s replaced=%d gainId=%s increment=%f",
+                                   traceSeq, c.id.c_str(), replacedVoice ? 1 : 0,
+                                   v.gainId.c_str(), v.increment);
+                    logRingState(traceSeq, "CREATE_EXTERNAL_PCM_RING", c.id, v.externalRing,
+                                 v.bufferChannels, v.bufferSampleRate, v.playing);
+                }
+                break;
+            }
+            case NativeEngine::CMD_CONFIGURE_EXTERNAL_PCM: {
+                auto vit = audioVoices_.find(c.id);
+                if (vit == audioVoices_.end() || vit->second.voiceType != Voice::ExternalPCM) {
+                    if (traceEnabled) {
+                        const char *foundType = vit == audioVoices_.end()
+                                                ? "missing"
+                                                : voiceTypeName(vit->second.voiceType);
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu CONFIG_EXTERNAL_PCM_SKIPPED voice=%s found=%s",
+                                       traceSeq, c.id.c_str(), foundType);
+                    }
+                    break;
+                }
+
+                Voice &v = vit->second;
+                if (traceEnabled) {
+                    logRingState(traceSeq, "CONFIG_EXTERNAL_PCM_BEFORE", c.id, v.externalRing,
+                                 v.bufferChannels, v.bufferSampleRate, v.playing);
+                }
+                int channelsForVoice = c.channels > 0 ? c.channels : 2;
+                int sampleRateForVoice = c.sampleRate > 0 ? c.sampleRate : 48000;
+                double sr = streamSampleRate_ > 0 ? static_cast<double>(streamSampleRate_) : 48000.0;
+
+                v.bufferChannels = channelsForVoice;
+                v.bufferSampleRate = sampleRateForVoice;
+                v.increment = static_cast<double>(sampleRateForVoice) / sr;
+                v.externalPrev.assign(static_cast<size_t>(channelsForVoice), 0.0f);
+                v.externalCurr.assign(static_cast<size_t>(channelsForVoice), 0.0f);
+                v.externalSubPos = 0.0;
+                v.externalPrimed = false;
+
+                auto &ring = v.externalRing;
+                if (ring) {
+                    ring->channels = channelsForVoice;
+                    ring->data.assign(static_cast<size_t>(ring->capacity) * static_cast<size_t>(channelsForVoice), 0.0f);
+                    ring->writeIdx.store(0, std::memory_order_release);
+                    ring->readIdx.store(0, std::memory_order_release);
+                    ring->ended.store(false, std::memory_order_release);
+                    v.playing = false;
+                }
+
+                audioThreadLog(ANDROID_LOG_INFO,
+                               "CMD: configure external pcm %s sr=%d ch=%d",
+                               c.id.c_str(), sampleRateForVoice, channelsForVoice);
+                if (traceEnabled) {
+                    logRingState(traceSeq, "CONFIG_EXTERNAL_PCM_AFTER", c.id, v.externalRing,
+                                 v.bufferChannels, v.bufferSampleRate, v.playing);
+                }
                 break;
             }
             case NativeEngine::CMD_PUSH_EXTERNAL_PCM: {
                 auto vit = audioVoices_.find(c.id);
-                if (vit == audioVoices_.end() || vit->second.type != Voice::ExternalPCM) break;
+                if (vit == audioVoices_.end() || vit->second.voiceType != Voice::ExternalPCM) {
+                    if (traceEnabled) {
+                        const char *foundType = vit == audioVoices_.end()
+                                                ? "missing"
+                                                : voiceTypeName(vit->second.voiceType);
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_SKIPPED voice=%s found=%s",
+                                       traceSeq, c.id.c_str(), foundType);
+                    }
+                    break;
+                }
                 auto &ring = vit->second.externalRing;
-                if (!ring || !c.pcmFloat || c.pcmFloat->empty()) break;
+                if (!ring || !c.pcmFloat || c.pcmFloat->empty()) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_WARN,
+                                       "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_EMPTY voice=%s ring=%p hasPcm=%d size=%zu",
+                                       traceSeq, c.id.c_str(), static_cast<void *>(ring.get()),
+                                       c.pcmFloat ? 1 : 0,
+                                       c.pcmFloat ? c.pcmFloat->size() : 0U);
+                    }
+                    break;
+                }
 
                 const std::vector<float> &src = *c.pcmFloat;
-                int chs = ring->channels;
-                if (chs <= 0) break;
-                size_t framesIn = src.size() / (size_t)chs;
+                int chs = resolveExternalChannelCount(vit->second, ring);
+                if (chs <= 0) {
+                    if (traceEnabled) {
+                        audioThreadLog(ANDROID_LOG_ERROR,
+                                       "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_BAD_LAYOUT voice=%s ring=%p ringCh=%d voiceCh=%d prev=%zu curr=%zu capacity=%u data=%zu",
+                                       traceSeq, c.id.c_str(), static_cast<void *>(ring.get()),
+                                       ring->channels, vit->second.bufferChannels,
+                                       vit->second.externalPrev.size(),
+                                       vit->second.externalCurr.size(), ring->capacity,
+                                       ring->data.size());
+                    }
+                    break;
+                }
+                if (traceEnabled && (src.size() % static_cast<size_t>(chs) != 0)) {
+                    audioThreadLog(ANDROID_LOG_WARN,
+                                   "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_PARTIAL voice=%s samples=%zu channels=%d remainder=%zu",
+                                   traceSeq, c.id.c_str(), src.size(), chs,
+                                   src.size() % static_cast<size_t>(chs));
+                }
+                size_t framesIn = src.size() / (size_t) chs;
                 if (framesIn == 0) break;
 
                 uint32_t w = ring->writeIdx.load(std::memory_order_relaxed);
                 uint32_t r = ring->readIdx.load(std::memory_order_acquire);
                 uint32_t avail = ring->capacity - (w - r);
-                uint32_t writeFrames = framesIn > avail ? avail : (uint32_t)framesIn;
+                uint32_t writeFrames = framesIn > avail ? avail : (uint32_t) framesIn;
+                if (writeFrames > 0) {
+                    vit->second.playing = true;
+                }
                 for (uint32_t i = 0; i < writeFrames; i++) {
                     uint32_t pos = (w + i) & ring->mask;
                     for (int ch = 0; ch < chs; ch++) {
-                        ring->data[(size_t)pos * chs + ch] = src[(size_t)i * chs + ch];
+                        ring->data[(size_t) pos * chs + ch] = src[(size_t) i * chs + ch];
                     }
                 }
-                ring->writeIdx.store(w + writeFrames, std::memory_order_release);
+                uint32_t nextW = w + writeFrames;
+                ring->writeIdx.store(nextW, std::memory_order_release);
+                if (traceEnabled && writeFrames < framesIn) {
+                    audioThreadLog(ANDROID_LOG_WARN,
+                                   "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_DROPPED voice=%s requested=%zu written=%u dropped=%zu avail=%u w=%u r=%u cap=%u",
+                                   traceSeq, c.id.c_str(), framesIn, writeFrames,
+                                   framesIn - writeFrames, avail, w, r, ring->capacity);
+                }
+                if (traceEnabled && writeFrames > 0 && ((traceSeq & 0x3fULL) == 0ULL)) {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu PUSH_EXTERNAL_PCM_OK voice=%s requested=%zu written=%u w=%u r=%u nextW=%u cap=%u",
+                                   traceSeq, c.id.c_str(), framesIn, writeFrames,
+                                   w, r, nextW, ring->capacity);
+                }
                 break;
             }
             case NativeEngine::CMD_END_EXTERNAL_PCM: {
                 auto vit = audioVoices_.find(c.id);
                 if (vit != audioVoices_.end() && vit->second.externalRing) {
                     vit->second.externalRing->ended.store(true, std::memory_order_release);
+                    if (traceEnabled) {
+                        logRingState(traceSeq, "END_EXTERNAL_PCM", c.id,
+                                     vit->second.externalRing,
+                                     vit->second.bufferChannels,
+                                     vit->second.bufferSampleRate,
+                                     vit->second.playing);
+                    }
+                } else if (traceEnabled) {
+                    audioThreadLog(ANDROID_LOG_WARN,
+                                   "GRAPH_TRACE seq=%llu END_EXTERNAL_PCM_SKIPPED voice=%s hasVoice=%d hasRing=%d",
+                                   traceSeq, c.id.c_str(), vit != audioVoices_.end() ? 1 : 0,
+                                   (vit != audioVoices_.end() && vit->second.externalRing) ? 1
+                                                                                          : 0);
                 }
                 break;
             }
@@ -782,7 +1508,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     for (auto &kv: audioVoices_) {
         if (kv.second.playing) {
             localVoices.push_back(kv.second);
-            if (kv.second.type == Voice::BufferSource) {
+            if (kv.second.voiceType == Voice::BufferSource) {
                 auto it = audioBuffers_.find(kv.second.bufferId);
                 if (it != audioBuffers_.end()) localBuffers[kv.second.bufferId] = it->second;
             }
@@ -985,17 +1711,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         }
 
         std::unordered_set<std::string> usedContexts;
-        for (const auto &pid : usedPanners) {
+        for (const auto &pid: usedPanners) {
             auto pit = panners_.find(pid);
             if (pit != panners_.end()) usedContexts.insert(pit->second.contextId);
         }
 
-        for (const auto &ctxId : usedContexts) {
+        for (const auto &ctxId: usedContexts) {
             auto it = scheduledListenerSnapshot.find(ctxId);
             if (it == scheduledListenerSnapshot.end()) continue;
             const auto &inner = it->second;
             std::unordered_map<int, std::vector<double>> paramMap;
-            for (const auto &pkv : inner) {
+            for (const auto &pkv: inner) {
                 int paramType = pkv.first;
                 const auto &evts = pkv.second;
                 std::vector<double> env((size_t) numFrames);
@@ -1006,27 +1732,49 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                 if (lit != listeners_.end()) LptrFallback = &lit->second;
                 const auto &Lfb = *LptrFallback;
                 switch (paramType) {
-                    case kListenerParamPositionX: fallback = Lfb.positionX; break;
-                    case kListenerParamPositionY: fallback = Lfb.positionY; break;
-                    case kListenerParamPositionZ: fallback = Lfb.positionZ; break;
-                    case kListenerParamForwardX: fallback = Lfb.forwardX; break;
-                    case kListenerParamForwardY: fallback = Lfb.forwardY; break;
-                    case kListenerParamForwardZ: fallback = Lfb.forwardZ; break;
-                    case kListenerParamUpX: fallback = Lfb.upX; break;
-                    case kListenerParamUpY: fallback = Lfb.upY; break;
-                    case kListenerParamUpZ: fallback = Lfb.upZ; break;
-                    default: fallback = 0.0; break;
+                    case kListenerParamPositionX:
+                        fallback = Lfb.positionX;
+                        break;
+                    case kListenerParamPositionY:
+                        fallback = Lfb.positionY;
+                        break;
+                    case kListenerParamPositionZ:
+                        fallback = Lfb.positionZ;
+                        break;
+                    case kListenerParamForwardX:
+                        fallback = Lfb.forwardX;
+                        break;
+                    case kListenerParamForwardY:
+                        fallback = Lfb.forwardY;
+                        break;
+                    case kListenerParamForwardZ:
+                        fallback = Lfb.forwardZ;
+                        break;
+                    case kListenerParamUpX:
+                        fallback = Lfb.upX;
+                        break;
+                    case kListenerParamUpY:
+                        fallback = Lfb.upY;
+                        break;
+                    case kListenerParamUpZ:
+                        fallback = Lfb.upZ;
+                        break;
+                    default:
+                        fallback = 0.0;
+                        break;
                 }
 
                 int rate = evts.empty() ? NativeEngine::RATE_A : evts[0].rate;
                 if (rate == NativeEngine::RATE_K) {
-                    float v = getScheduledGainValueAt(evts, static_cast<int64_t>(audioStartNs), fallback);
+                    float v = getScheduledGainValueAt(evts, static_cast<int64_t>(audioStartNs),
+                                                      fallback);
                     for (int f = 0; f < numFrames; ++f) env[(size_t) f] = v;
                 } else {
                     size_t nextIdx = 0;
                     int prevIdx = -1;
                     for (int f = 0; f < numFrames; ++f) {
-                        auto tNs = static_cast<int64_t>(audioStartNs + static_cast<double>(f) * sampleDurationNs);
+                        auto tNs = static_cast<int64_t>(audioStartNs +
+                                                        static_cast<double>(f) * sampleDurationNs);
                         while (nextIdx < evts.size() && evts[nextIdx].timeNs <= tNs) {
                             prevIdx = static_cast<int>(nextIdx);
                             ++nextIdx;
@@ -1042,7 +1790,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             if (next.type == 1) {
                                 if (next.timeNs <= prev.timeNs) val = next.value;
                                 else {
-                                    double ratio = double(tNs - prev.timeNs) / double(next.timeNs - prev.timeNs);
+                                    double ratio = double(tNs - prev.timeNs) /
+                                                   double(next.timeNs - prev.timeNs);
                                     if (ratio < 0.0) ratio = 0.0;
                                     if (ratio > 1.0) ratio = 1.0;
                                     val = prev.value + (next.value - prev.value) * ratio;
@@ -1062,13 +1811,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
     }
 
     for (int frame = 0; frame < numFrames; ++frame) {
+        std::unordered_map<std::string, std::array<float, 2>> stereoInputCache;
+        stereoInputCache.reserve(localVoices.size());
+        std::unordered_map<std::string, std::array<float, 2>> hrtfOutputCache;
+        hrtfOutputCache.reserve(localVoices.size());
         for (int ch = 0; ch < channels; ++ch) {
             float mixed = 0.0f;
             int64_t sampleTimeNs = static_cast<int64_t>(audioStartNs + static_cast<double>(frame) *
                                                                        sampleDurationNs);
             for (auto &v: localVoices) {
                 if (!v.playing) continue;
-                if (v.type == Voice::Oscillator) {
+                if (v.voiceType == Voice::Oscillator) {
                     double s = 0.0;
                     if (!v.periodicWaveId.empty()) {
                         auto pwIt = periodicWaves_.find(v.periodicWaveId);
@@ -1154,95 +1907,32 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (!effPanId.empty()) {
                         auto pit = panners_.find(effPanId);
                         if (pit != panners_.end()) {
-                            NativeEngine::Panner pcopy = pit->second;
-                            auto spIt = scheduledPannerEnvelopes.find(effPanId);
-                            if (spIt != scheduledPannerEnvelopes.end()) {
-                                auto &paramMap = spIt->second;
-                                auto itPosX = paramMap.find(kPannerParamPositionX);
-                                if (itPosX != paramMap.end())
-                                    pcopy.positionX = itPosX->second[(size_t) frame];
-                                auto itPosY = paramMap.find(kPannerParamPositionY);
-                                if (itPosY != paramMap.end())
-                                    pcopy.positionY = itPosY->second[(size_t) frame];
-                                auto itPosZ = paramMap.find(kPannerParamPositionZ);
-                                if (itPosZ != paramMap.end())
-                                    pcopy.positionZ = itPosZ->second[(size_t) frame];
-                                auto itOriX = paramMap.find(kPannerParamOrientationX);
-                                if (itOriX != paramMap.end())
-                                    pcopy.orientationX = itOriX->second[(size_t) frame];
-                                auto itOriY = paramMap.find(kPannerParamOrientationY);
-                                if (itOriY != paramMap.end())
-                                    pcopy.orientationY = itOriY->second[(size_t) frame];
-                                auto itOriZ = paramMap.find(kPannerParamOrientationZ);
-                                if (itOriZ != paramMap.end())
-                                    pcopy.orientationZ = itOriZ->second[(size_t) frame];
-                                auto itPan = paramMap.find(kPannerParamPan);
-                                if (itPan != paramMap.end())
-                                    pcopy.pan = itPan->second[(size_t) frame];
-                            }
-                            {
-                                NativeEngine::Panner ptrans = pcopy;
-                                const NativeEngine::Listener *Lptr = &listener_;
-                                if (!pit->second.contextId.empty()) {
-                                    auto lit = listeners_.find(pit->second.contextId);
-                                    if (lit != listeners_.end()) Lptr = &lit->second;
-                                }
-                                double listenerPosX = Lptr->positionX;
-                                double listenerPosY = Lptr->positionY;
-                                double listenerPosZ = Lptr->positionZ;
-                                double fx = Lptr->forwardX;
-                                double fy = Lptr->forwardY;
-                                double fz = Lptr->forwardZ;
-                                double ux = Lptr->upX;
-                                double uy = Lptr->upY;
-                                double uz = Lptr->upZ;
+                            NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
+                                    pit->second, scheduledPannerEnvelopes, effPanId, frame);
+                            NativeEngine::Listener resolvedListener = resolveListenerForFrame(
+                                    pit->second.contextId, listener_, listeners_,
+                                    scheduledListenerEnvelopes, frame);
+                            computePannerGains(resolvedPanner, resolvedListener, false,
+                                               leftGain, rightGain, distanceAtt);
 
-                                auto lEnvIt = scheduledListenerEnvelopes.find(pit->second.contextId);
-                                if (lEnvIt != scheduledListenerEnvelopes.end()) {
-                                    auto &lparamMap = lEnvIt->second;
-                                    auto itLPx = lparamMap.find(kListenerParamPositionX);
-                                    if (itLPx != lparamMap.end()) listenerPosX = itLPx->second[(size_t) frame];
-                                    auto itLPy = lparamMap.find(kListenerParamPositionY);
-                                    if (itLPy != lparamMap.end()) listenerPosY = itLPy->second[(size_t) frame];
-                                    auto itLPz = lparamMap.find(kListenerParamPositionZ);
-                                    if (itLPz != lparamMap.end()) listenerPosZ = itLPz->second[(size_t) frame];
-                                    auto itLFX = lparamMap.find(kListenerParamForwardX);
-                                    if (itLFX != lparamMap.end()) fx = itLFX->second[(size_t) frame];
-                                    auto itLFY = lparamMap.find(kListenerParamForwardY);
-                                    if (itLFY != lparamMap.end()) fy = itLFY->second[(size_t) frame];
-                                    auto itLFZ = lparamMap.find(kListenerParamForwardZ);
-                                    if (itLFZ != lparamMap.end()) fz = itLFZ->second[(size_t) frame];
-                                    auto itLUX = lparamMap.find(kListenerParamUpX);
-                                    if (itLUX != lparamMap.end()) ux = itLUX->second[(size_t) frame];
-                                    auto itLUY = lparamMap.find(kListenerParamUpY);
-                                    if (itLUY != lparamMap.end()) uy = itLUY->second[(size_t) frame];
-                                    auto itLUZ = lparamMap.find(kListenerParamUpZ);
-                                    if (itLUZ != lparamMap.end()) uz = itLUZ->second[(size_t) frame];
-                                }
-                                double rx = pcopy.positionX - listenerPosX;
-                                double ry = pcopy.positionY - listenerPosY;
-                                double rz = pcopy.positionZ - listenerPosZ;
-                                double fl = std::sqrt(fx*fx + fy*fy + fz*fz);
-                                if (fl <= 1e-12) { fx = 0; fy = 0; fz = -1; fl = 1; } else { fx /= fl; fy /= fl; fz /= fl; }
-                                double ul = std::sqrt(ux*ux + uy*uy + uz*uz);
-                                if (ul <= 1e-12) { ux = 0; uy = 1; uz = 0; ul = 1; } else { ux /= ul; uy /= ul; uz /= ul; }
-
-                                double rxv = fy*uz - fz*uy;
-                                double ryv = fz*ux - fx*uz;
-                                double rzv = fx*uy - fy*ux;
-                                double rl = std::sqrt(rxv*rxv + ryv*ryv + rzv*rzv);
-                                if (rl <= 1e-12) { rxv = 1; ryv = 0; rzv = 0; rl = 1; } else { rxv /= rl; ryv /= rl; rzv /= rl; }
-
-                                double ux2 = ryv * fz - rzv * fy;
-                                double uy2 = rzv * fx - rxv * fz;
-                                double uz2 = rxv * fy - ryv * fx;
-                                double localX = rx * rxv + ry * ryv + rz * rzv;
-                                double localY = rx * ux2 + ry * uy2 + rz * uz2;
-                                double localZ = rx * fx + ry * fy + rz * fz;
-                                ptrans.positionX = localX;
-                                ptrans.positionY = localY;
-                                ptrans.positionZ = localZ;
-                                computePannerGains(ptrans, leftGain, rightGain, distanceAtt);
+                            double lowFreq = 800.0;
+                            double highFreq = 22050.0;
+                            double g = distanceAtt;
+                            if (g < 0.0) g = 0.0;
+                            if (g > 1.0) g = 1.0;
+                            double cutoff = lowFreq + (highFreq - lowFreq) * std::pow(g, 0.5);
+                            std::string pbid = pit->second.biquadId;
+                            if (!pbid.empty()) {
+                                NativeEngine::Command ub;
+                                ub.type = NativeEngine::CMD_SET_BIQUAD_PARAMS;
+                                ub.id = pbid;
+                                ub.biquadFrequency = cutoff;
+                                ub.biquadQ = 0.707;
+                                ub.biquadGain = 0.0;
+                                audioThreadLog(ANDROID_LOG_INFO,
+                                               "PANNER_CUTOFF panner=%s gain=%f cutoff=%f",
+                                               pit->first.c_str(), g, cutoff);
+                                NativeEngine::getInstance().enqueueCommand(std::move(ub));
                             }
                         }
                     }
@@ -1309,7 +1999,8 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                         v.phase += v.phaseIncrement;
                         if (v.phase >= 1.0) v.phase -= 1.0;
                     }
-                } else if (v.type == Voice::BufferSource || v.type == Voice::ExternalPCM) {
+                } else if (v.voiceType == Voice::BufferSource ||
+                           v.voiceType == Voice::ExternalPCM) {
                     int bufChannels = 1;
                     int bufFrames = 0;
                     int chIdx = ch;
@@ -1319,7 +2010,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     int idx1_dbg = 0;
                     const BufferData *bd_dbg = nullptr;
 
-                    if (v.type == Voice::BufferSource) {
+                    if (v.voiceType == Voice::BufferSource) {
                         auto bit = localBuffers.find(v.bufferId);
                         if (bit == localBuffers.end()) continue;
                         const BufferData &bd = bit->second;
@@ -1377,69 +2068,169 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     } else /* ExternalPCM */ {
                         auto &ring = v.externalRing;
                         if (!ring) continue;
-                        bufChannels = ring->channels > 0 ? ring->channels : 1;
-                        bufFrames = INT32_MAX;
-                        if (bufChannels == 1) chIdx = 0;
-                        else if (bufChannels >= channels) chIdx = ch;
-                        else chIdx = ch % bufChannels;
-
-                        uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
-                        uint32_t r = ring->readIdx.load(std::memory_order_relaxed);
-                        if (!v.externalPrimed && (w - r) >= 1) {
-                            uint32_t p = r & ring->mask;
-                            for (int c = 0; c < bufChannels; c++) {
-                                v.externalCurr[(size_t)c] = ring->data[(size_t)p * bufChannels + c];
-                            }
-                            ring->readIdx.store(r + 1, std::memory_order_release);
-                            v.externalPrimed = true;
-                        }
-
-                        if (v.externalPrimed) {
-                            float prev = v.externalPrev[(size_t)chIdx];
-                            float curr = v.externalCurr[(size_t)chIdx];
-                            auto t = static_cast<float>(v.externalSubPos);
-                            sample = prev * (1.0f - t) + curr * t;
-                        } else {
+                        int externalChannels = resolveExternalChannelCount(v, ring);
+                        if (externalChannels <= 0) {
+                            bufChannels = 0;
                             sample = 0.0f;
+                            v.externalPrimed = false;
                             if (ring->ended.load(std::memory_order_acquire) &&
                                 ring->writeIdx.load(std::memory_order_acquire) ==
                                 ring->readIdx.load(std::memory_order_relaxed)) {
                                 v.playing = false;
                             }
-                        }
-                    }
-
-                    std::string effFilterId2 = v.filterId;
-                    auto vfIt2 = voiceFilterByOutput_.find(v.id);
-                    if (vfIt2 != voiceFilterByOutput_.end()) {
-                        auto fIt3 = vfIt2->second.find(ch);
-                        if (fIt3 != vfIt2->second.end()) effFilterId2 = fIt3->second;
-                    }
-                    if (!effFilterId2.empty()) {
-                        auto bcit = biquads_.find(effFilterId2);
-                        if (bcit != biquads_.end()) {
-                            int fsIndex = chIdx;
-                            if (v.filterState.size() <= static_cast<size_t>(fsIndex))
-                                v.filterState.assign(channels, NativeEngine::BiquadState());
-                            sample = processBiquadSample(bcit->second, v.filterState[fsIndex],
-                                                         sample);
                         } else {
-                            auto iit = iirs_.find(effFilterId2);
-                            if (iit != iirs_.end()) {
-                                int fsIndex = chIdx;
-                                auto chCount = static_cast<size_t>(channels);
-                                if (v.iirState.size() <= chCount)
-                                    v.iirState.assign(chCount, std::vector<double>());
-                                if (v.iirState.size() <= static_cast<size_t>(fsIndex))
-                                    v.iirState.assign(chCount, std::vector<double>());
-                                sample = processIIRSample(iit->second,
-                                                          v.iirState[static_cast<size_t>(fsIndex)],
-                                                          sample);
+                            bufChannels = externalChannels;
+                            bufFrames = INT32_MAX;
+                            if (bufChannels == 1) chIdx = 0;
+                            else if (bufChannels >= channels) chIdx = ch;
+                            else chIdx = ch % bufChannels;
+
+                            uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
+                            uint32_t r = ring->readIdx.load(std::memory_order_relaxed);
+                            if (!v.externalPrimed && (w - r) >= 1) {
+                                uint32_t p = r & ring->mask;
+                                for (int c = 0; c < bufChannels; c++) {
+                                    v.externalCurr[(size_t) c] =
+                                            ring->data[(size_t) p * bufChannels + c];
+                                }
+                                ring->readIdx.store(r + 1, std::memory_order_release);
+                                v.externalPrimed = true;
+                            }
+
+                            if (v.externalPrimed) {
+                                size_t safeChannel = static_cast<size_t>(chIdx);
+                                float prev = v.externalPrev[safeChannel];
+                                float curr = v.externalCurr[safeChannel];
+                                auto t = static_cast<float>(v.externalSubPos);
+                                sample = prev * (1.0f - t) + curr * t;
+                            } else {
+                                sample = 0.0f;
+                                if (ring->ended.load(std::memory_order_acquire) &&
+                                    ring->writeIdx.load(std::memory_order_acquire) ==
+                                    ring->readIdx.load(std::memory_order_relaxed)) {
+                                    v.playing = false;
+                                }
                             }
                         }
                     }
 
+                    auto resolveVoiceFilterId = [&](int outputChannelIndex) -> std::string {
+                        std::string filterId = v.filterId;
+                        auto vfItLocal = voiceFilterByOutput_.find(v.id);
+                        if (vfItLocal != voiceFilterByOutput_.end()) {
+                            auto filterIt = vfItLocal->second.find(outputChannelIndex);
+                            if (filterIt != vfItLocal->second.end()) filterId = filterIt->second;
+                        }
+                        return filterId;
+                    };
+                    auto applyVoiceFilter = [&](float inputSample,
+                                                int outputChannelIndex) -> float {
+                        std::string filterId = resolveVoiceFilterId(outputChannelIndex);
+                        if (filterId.empty()) return inputSample;
+
+                        auto bcit = biquads_.find(filterId);
+                        if (bcit != biquads_.end()) {
+                            int fsIndex = outputChannelIndex;
+                            if (v.filterState.size() <= static_cast<size_t>(fsIndex)) {
+                                v.filterState.assign(channels, NativeEngine::BiquadState());
+                            }
+                            return processBiquadSample(bcit->second,
+                                                       v.filterState[static_cast<size_t>(fsIndex)],
+                                                       inputSample);
+                        }
+
+                        auto iit = iirs_.find(filterId);
+                        if (iit != iirs_.end()) {
+                            int fsIndex = outputChannelIndex;
+                            auto chCount = static_cast<size_t>(channels);
+                            if (v.iirState.size() <= chCount) {
+                                v.iirState.assign(chCount, std::vector<double>());
+                            }
+                            if (v.iirState.size() <= static_cast<size_t>(fsIndex)) {
+                                v.iirState.assign(chCount, std::vector<double>());
+                            }
+                            return processIIRSample(iit->second,
+                                                    v.iirState[static_cast<size_t>(fsIndex)],
+                                                    inputSample);
+                        }
+
+                        return inputSample;
+                    };
+                    auto sampleInputChannel = [&](int inputChannelIndex) -> float {
+                        if (bufChannels <= 1) inputChannelIndex = 0;
+                        else if (inputChannelIndex < 0) inputChannelIndex = 0;
+                        else if (inputChannelIndex >= bufChannels)
+                            inputChannelIndex = bufChannels - 1;
+
+                        if (v.voiceType == Voice::BufferSource) {
+                            if (!bd_dbg || bufFrames <= 0) return 0.0f;
+                            const BufferData &bd = *bd_dbg;
+                            double pos = v.position;
+                            int i0 = static_cast<int>(std::floor(pos));
+                            double frac = pos - i0;
+                            int idx0 = (i0 % bufFrames) * bufChannels + inputChannelIndex;
+                            int idx1 = ((i0 + 1) % bufFrames) * bufChannels + inputChannelIndex;
+                            float fs0 = 0.0f;
+                            float fs1 = 0.0f;
+                            if (bd.isDirect && bd.directPtr) {
+                                if (bd.bytesPerSample == 4) {
+                                    const auto *fptr = reinterpret_cast<const float *>(bd.directPtr);
+                                    int maxIndex = static_cast<int>((bd.byteLength / 4) - 1);
+                                    int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                    int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                    fs0 = fptr[safe0];
+                                    fs1 = fptr[safe1];
+                                } else {
+                                    const auto *iptr = reinterpret_cast<const int16_t *>(bd.directPtr);
+                                    int maxIndex = static_cast<int>((bd.byteLength / 2) - 1);
+                                    int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                    int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                    fs0 = static_cast<float>(iptr[safe0]) / 32768.0f;
+                                    fs1 = static_cast<float>(iptr[safe1]) / 32768.0f;
+                                }
+                            } else {
+                                int maxIndex = static_cast<int>(bd.pcm.size()) - 1;
+                                int safe0 = std::max(0, std::min(maxIndex, idx0));
+                                int safe1 = std::max(0, std::min(maxIndex, idx1));
+                                fs0 = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
+                                fs1 = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
+                            }
+                            return fs0 * (1.0f - static_cast<float>(frac)) +
+                                   fs1 * static_cast<float>(frac);
+                        }
+
+                        auto &ring = v.externalRing;
+                        if (!ring || !v.externalPrimed || bufChannels <= 0) return 0.0f;
+                        size_t safeChannel = static_cast<size_t>(inputChannelIndex);
+                        float prev = v.externalPrev[safeChannel];
+                        float curr = v.externalCurr[safeChannel];
+                        auto t = static_cast<float>(v.externalSubPos);
+                        return prev * (1.0f - t) + curr * t;
+                    };
+
+                    bool stereoInput = bufChannels > 1 && channels > 1;
+                    float inputLeft = sample;
+                    float inputRight = sample;
+                    bool hrtfModel = false;
+                    HRTFConvolver *hrtfConvolver = nullptr;
+                    if (stereoInput && ch < 2) {
+                        auto cacheIt = stereoInputCache.find(v.id);
+                        if (cacheIt == stereoInputCache.end()) {
+                            std::array<float, 2> cached{{
+                                    applyVoiceFilter(sampleInputChannel(0), 0),
+                                    applyVoiceFilter(sampleInputChannel(1), 1),
+                            }};
+                            cacheIt = stereoInputCache.emplace(v.id, cached).first;
+                        }
+                        inputLeft = cacheIt->second[0];
+                        inputRight = cacheIt->second[1];
+                        sample = ch == 0 ? inputLeft : inputRight;
+                    } else {
+                        sample = applyVoiceFilter(sample, chIdx);
+                    }
+
                     double leftGain = 1.0, rightGain = 1.0, distanceAtt = 1.0;
+                    bool steerLeftOrCenter = true;
                     std::string effPanId2 = v.panId;
                     auto vpIt2 = voicePannerByOutput_.find(v.id);
                     if (vpIt2 != voicePannerByOutput_.end()) {
@@ -1449,97 +2240,43 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     if (!effPanId2.empty()) {
                         auto pit = panners_.find(effPanId2);
                         if (pit != panners_.end()) {
-                            NativeEngine::Panner pcopy = pit->second;
-                            auto spIt = scheduledPannerEnvelopes.find(effPanId2);
-                            if (spIt != scheduledPannerEnvelopes.end()) {
-                                auto &paramMap = spIt->second;
-                                auto itPosX = paramMap.find(kPannerParamPositionX);
-                                if (itPosX != paramMap.end())
-                                    pcopy.positionX = itPosX->second[(size_t) frame];
-                                auto itPosY = paramMap.find(kPannerParamPositionY);
-                                if (itPosY != paramMap.end())
-                                    pcopy.positionY = itPosY->second[(size_t) frame];
-                                auto itPosZ = paramMap.find(kPannerParamPositionZ);
-                                if (itPosZ != paramMap.end())
-                                    pcopy.positionZ = itPosZ->second[(size_t) frame];
-                                auto itOriX = paramMap.find(kPannerParamOrientationX);
-                                if (itOriX != paramMap.end())
-                                    pcopy.orientationX = itOriX->second[(size_t) frame];
-                                auto itOriY = paramMap.find(kPannerParamOrientationY);
-                                if (itOriY != paramMap.end())
-                                    pcopy.orientationY = itOriY->second[(size_t) frame];
-                                auto itOriZ = paramMap.find(kPannerParamOrientationZ);
-                                if (itOriZ != paramMap.end())
-                                    pcopy.orientationZ = itOriZ->second[(size_t) frame];
-                                auto itPan = paramMap.find(kPannerParamPan);
-                                if (itPan != paramMap.end())
-                                    pcopy.pan = itPan->second[(size_t) frame];
-                            }
-                            {
-                                NativeEngine::Panner ptrans = pcopy;
-                                const NativeEngine::Listener *Lptr = &listener_;
-                                if (!pit->second.contextId.empty()) {
-                                    auto lit = listeners_.find(pit->second.contextId);
-                                    if (lit != listeners_.end()) Lptr = &lit->second;
-                                }
-                                double listenerPosX = Lptr->positionX;
-                                double listenerPosY = Lptr->positionY;
-                                double listenerPosZ = Lptr->positionZ;
-                                double fx = Lptr->forwardX;
-                                double fy = Lptr->forwardY;
-                                double fz = Lptr->forwardZ;
-                                double ux = Lptr->upX;
-                                double uy = Lptr->upY;
-                                double uz = Lptr->upZ;
-                                auto lEnvIt = scheduledListenerEnvelopes.find(pit->second.contextId);
-                                if (lEnvIt != scheduledListenerEnvelopes.end()) {
-                                    auto &lparamMap = lEnvIt->second;
-                                    auto itLPx = lparamMap.find(kListenerParamPositionX);
-                                    if (itLPx != lparamMap.end()) listenerPosX = itLPx->second[(size_t) frame];
-                                    auto itLPy = lparamMap.find(kListenerParamPositionY);
-                                    if (itLPy != lparamMap.end()) listenerPosY = itLPy->second[(size_t) frame];
-                                    auto itLPz = lparamMap.find(kListenerParamPositionZ);
-                                    if (itLPz != lparamMap.end()) listenerPosZ = itLPz->second[(size_t) frame];
-                                    auto itLFX = lparamMap.find(kListenerParamForwardX);
-                                    if (itLFX != lparamMap.end()) fx = itLFX->second[(size_t) frame];
-                                    auto itLFY = lparamMap.find(kListenerParamForwardY);
-                                    if (itLFY != lparamMap.end()) fy = itLFY->second[(size_t) frame];
-                                    auto itLFZ = lparamMap.find(kListenerParamForwardZ);
-                                    if (itLFZ != lparamMap.end()) fz = itLFZ->second[(size_t) frame];
-                                    auto itLUX = lparamMap.find(kListenerParamUpX);
-                                    if (itLUX != lparamMap.end()) ux = itLUX->second[(size_t) frame];
-                                    auto itLUY = lparamMap.find(kListenerParamUpY);
-                                    if (itLUY != lparamMap.end()) uy = itLUY->second[(size_t) frame];
-                                    auto itLUZ = lparamMap.find(kListenerParamUpZ);
-                                    if (itLUZ != lparamMap.end()) uz = itLUZ->second[(size_t) frame];
-                                }
-                                double rx = pcopy.positionX - listenerPosX;
-                                double ry = pcopy.positionY - listenerPosY;
-                                double rz = pcopy.positionZ - listenerPosZ;
-                                double fl = std::sqrt(fx*fx + fy*fy + fz*fz);
-                                if (fl <= 1e-12) { fx = 0; fy = 0; fz = -1; fl = 1; } else { fx /= fl; fy /= fl; fz /= fl; }
-                                double ul = std::sqrt(ux*ux + uy*uy + uz*uz);
-                                if (ul <= 1e-12) { ux = 0; uy = 1; uz = 0; ul = 1; } else { ux /= ul; uy /= ul; uz /= ul; }
-                                double rxv = fy*uz - fz*uy;
-                                double ryv = fz*ux - fx*uz;
-                                double rzv = fx*uy - fy*ux;
-                                double rl = std::sqrt(rxv*rxv + ryv*ryv + rzv*rzv);
-                                if (rl <= 1e-12) { rxv = 1; ryv = 0; rzv = 0; rl = 1; } else { rxv /= rl; ryv /= rl; rzv /= rl; }
-                                double ux2 = ryv * fz - rzv * fy;
-                                double uy2 = rzv * fx - rxv * fz;
-                                double uz2 = rxv * fy - ryv * fx;
-                                double localX = rx * rxv + ry * ryv + rz * rzv;
-                                double localY = rx * ux2 + ry * uy2 + rz * uz2;
-                                double localZ = rx * fx + ry * fy + rz * fz;
-                                ptrans.positionX = localX;
-                                ptrans.positionY = localY;
-                                ptrans.positionZ = localZ;
-                                computePannerGains(ptrans, leftGain, rightGain, distanceAtt);
-                            }
+                            NativeEngine::Panner resolvedPanner = resolvePannerForFrame(
+                                    pit->second, scheduledPannerEnvelopes, effPanId2, frame);
+                            hrtfModel = resolvedPanner.panningModel == NativeEngine::PANNING_HRTF;
+                            if (hrtfModel) hrtfConvolver = pit->second.hrtf;
+                            NativeEngine::Listener resolvedListener = resolveListenerForFrame(
+                                    pit->second.contextId, listener_, listeners_,
+                                    scheduledListenerEnvelopes, frame);
+                            bool useStereoPanningLaw =
+                                    stereoInput && (!hrtfModel || hrtfConvolver == nullptr);
+                            computePannerGains(resolvedPanner, resolvedListener,
+                                               useStereoPanningLaw,
+                                               leftGain, rightGain, distanceAtt,
+                                               &steerLeftOrCenter);
                         }
                     }
 
-                    if (v.type == Voice::BufferSource && bd_dbg &&
+                    bool useHrtfConvolution =
+                            hrtfModel && hrtfConvolver != nullptr && channels > 1;
+                    bool treatStereoAsMono = stereoInput && useHrtfConvolution;
+                    if (useHrtfConvolution && ch < 2) {
+                        auto hrtfIt = hrtfOutputCache.find(v.id);
+                        if (hrtfIt == hrtfOutputCache.end()) {
+                            float monoInput = stereoInput
+                                              ? 0.5f * (inputLeft + inputRight)
+                                              : sample;
+                            float monoFrame[1]{monoInput};
+                            std::array<float, 2> hrtfFrame{{monoInput, monoInput}};
+                            hrtfConvolver->process(monoFrame, 1, &hrtfFrame[0],
+                                                   &hrtfFrame[1]);
+                            hrtfIt = hrtfOutputCache.emplace(v.id, hrtfFrame).first;
+                        }
+                        sample = ch == 0 ? hrtfIt->second[0] : hrtfIt->second[1];
+                    } else if (treatStereoAsMono) {
+                        sample = 0.5f * (inputLeft + inputRight);
+                    }
+
+                    if (v.voiceType == Voice::BufferSource && bd_dbg &&
                         g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) {
                         if (debugLoggedVoices_.find(v.id) == debugLoggedVoices_.end()) {
                             debugLoggedVoices_.insert(v.id);
@@ -1579,12 +2316,17 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                                 fs0Other = static_cast<float>(bd.pcm[safe0]) / 32768.0f;
                                 fs1Other = static_cast<float>(bd.pcm[safe1]) / 32768.0f;
                             }
-                            sampleOther = fs0Other * (1.0f - static_cast<float>(frac)) + fs1Other * static_cast<float>(frac);
-                            (void)sampleOther;
-                            (void)idx0; (void)idx1;
+                            sampleOther = fs0Other * (1.0f - static_cast<float>(frac)) +
+                                          fs1Other * static_cast<float>(frac);
+                            (void) sampleOther;
+                            (void) idx0;
+                            (void) idx1;
                             audioThreadLog(ANDROID_LOG_INFO,
-                                                "VOICE_DEBUG id=%s buffer=%s bufCh=%d streamCh=%d ch0_chIdx=%d ch0_idx0=%d ch0_idx1=%d ch0_sample=%f ch1_chIdx=%d ch1_idx0=%d ch1_idx1=%d ch1_sample=%f leftGain=%f rightGain=%f panId=%s",
-                                                v.id.c_str(), v.bufferId.c_str(), bufChannels, channels, chIdx, idx0, idx1, sample, chIdxOther, idx0Other, idx1Other, sampleOther, leftGain, rightGain, v.panId.c_str());
+                                           "VOICE_DEBUG id=%s buffer=%s bufCh=%d streamCh=%d ch0_chIdx=%d ch0_idx0=%d ch0_idx1=%d ch0_sample=%f ch1_chIdx=%d ch1_idx0=%d ch1_idx1=%d ch1_sample=%f leftGain=%f rightGain=%f panId=%s",
+                                           v.id.c_str(), v.bufferId.c_str(), bufChannels, channels,
+                                           chIdx, idx0, idx1, sample, chIdxOther, idx0Other,
+                                           idx1Other, sampleOther, leftGain, rightGain,
+                                           v.panId.c_str());
                         }
                     }
 
@@ -1630,7 +2372,34 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             }
                         }
                         double g = static_cast<double>(scheduled) * distanceAtt;
-                        if (ch == 0) mixed += static_cast<float>(sample * g * leftGain);
+                        if (stereoInput && !treatStereoAsMono) {
+                            if (ch == 0) {
+                                double outputL = steerLeftOrCenter
+                                                 ? inputLeft + inputRight * leftGain
+                                                 : inputLeft * leftGain;
+                                mixed += static_cast<float>(outputL * g);
+                            } else if (ch == 1) {
+                                double outputR = steerLeftOrCenter
+                                                 ? inputRight * rightGain
+                                                 : inputRight + inputLeft * rightGain;
+                                mixed += static_cast<float>(outputR * g);
+                            } else {
+                                double avg = 0.5 * (leftGain + rightGain);
+                                mixed += static_cast<float>(sample * g * avg);
+                            }
+                        } else if (useHrtfConvolution) {
+                            if (ch <= 1) {
+                                mixed += static_cast<float>(sample * g);
+                            } else {
+                                auto hrtfIt = hrtfOutputCache.find(v.id);
+                                float hrtfAvg = sample;
+                                if (hrtfIt != hrtfOutputCache.end()) {
+                                    hrtfAvg =
+                                            0.5f * (hrtfIt->second[0] + hrtfIt->second[1]);
+                                }
+                                mixed += static_cast<float>(hrtfAvg * g);
+                            }
+                        } else if (ch == 0) mixed += static_cast<float>(sample * g * leftGain);
                         else if (ch == 1) mixed += static_cast<float>(sample * g * rightGain);
                         else {
                             double avg = 0.5 * (leftGain + rightGain);
@@ -1639,7 +2408,7 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                     }
 
                     if (ch == channels - 1) {
-                        if (v.type == Voice::BufferSource) {
+                        if (v.voiceType == Voice::BufferSource) {
                             double prScale = 1.0;
                             std::string effPRId;
                             auto vprIt2 = voicePlaybackRateByOutput_.find(v.id);
@@ -1651,13 +2420,14 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             if (effPRId.empty()) effPRId = v.playbackRateId;
                             if (!effPRId.empty()) {
                                 auto eit = scheduledEnvelopes.find(effPRId);
-                                if (eit != scheduledEnvelopes.end()) prScale = eit->second[(size_t) frame];
+                                if (eit != scheduledEnvelopes.end())
+                                    prScale = eit->second[(size_t) frame];
                                 else {
                                     auto git = gains_.find(effPRId);
                                     if (git != gains_.end()) prScale = git->second;
                                 }
                             }
-                            if (prScale < 0.0) prScale = 0.0; // avoid reverse playback for now
+                            if (prScale < 0.0) prScale = 0.0;
                             double incr = v.increment * prScale;
                             v.position += incr;
                             if (v.position >= bufFrames) {
@@ -1666,19 +2436,19 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             }
                         } else /* ExternalPCM */ {
                             auto &ring = v.externalRing;
-                            if (ring && v.externalPrimed) {
+                            if (ring && v.externalPrimed && bufChannels > 0) {
                                 v.externalSubPos += v.increment;
                                 while (v.externalSubPos >= 1.0) {
                                     for (int c = 0; c < bufChannels; c++) {
-                                        v.externalPrev[(size_t)c] = v.externalCurr[(size_t)c];
+                                        v.externalPrev[(size_t) c] = v.externalCurr[(size_t) c];
                                     }
                                     uint32_t w = ring->writeIdx.load(std::memory_order_acquire);
                                     uint32_t r = ring->readIdx.load(std::memory_order_relaxed);
                                     if ((w - r) >= 1) {
                                         uint32_t p = r & ring->mask;
                                         for (int c = 0; c < bufChannels; c++) {
-                                            v.externalCurr[(size_t)c] =
-                                                ring->data[(size_t)p * bufChannels + c];
+                                            v.externalCurr[(size_t) c] =
+                                                    ring->data[(size_t) p * bufChannels + c];
                                         }
                                         ring->readIdx.store(r + 1, std::memory_order_release);
                                         v.externalSubPos -= 1.0;
@@ -1717,6 +2487,34 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         auto it = audioVoices_.find(lv.id);
         if (it == audioVoices_.end()) continue;
         if (!lv.playing) {
+            if (traceEnabled) {
+                auto vg = voiceGainByOutput_.find(lv.id);
+                auto vp = voicePannerByOutput_.find(lv.id);
+                auto vf = voiceFilterByOutput_.find(lv.id);
+                size_t gainOutputs = vg != voiceGainByOutput_.end() ? vg->second.size() : 0;
+                size_t panOutputs = vp != voicePannerByOutput_.end() ? vp->second.size() : 0;
+                size_t filterOutputs = vf != voiceFilterByOutput_.end()
+                                       ? vf->second.size()
+                                       : 0;
+
+                if (lv.voiceType == Voice::ExternalPCM) {
+                    const unsigned long long seq =
+                            sGraphTraceSeq.fetch_add(1, std::memory_order_relaxed) + 1;
+                    logRingState(seq, "VOICE_AUTO_STOP", lv.id, lv.externalRing,
+                                 lv.bufferChannels, lv.bufferSampleRate, lv.playing);
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE seq=%llu VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
+                                   seq, lv.id.c_str(), voiceTypeName(lv.voiceType),
+                                   lv.gainId.c_str(), lv.panId.c_str(), lv.filterId.c_str(),
+                                   gainOutputs, panOutputs, filterOutputs);
+                } else {
+                    audioThreadLog(ANDROID_LOG_INFO,
+                                   "GRAPH_TRACE VOICE_AUTO_STOP voice=%s type=%s gainId=%s panId=%s filterId=%s gainOutputs=%zu panOutputs=%zu filterOutputs=%zu",
+                                   lv.id.c_str(), voiceTypeName(lv.voiceType),
+                                   lv.gainId.c_str(), lv.panId.c_str(), lv.filterId.c_str(),
+                                   gainOutputs, panOutputs, filterOutputs);
+                }
+            }
             audioVoices_.erase(it);
         } else {
             it->second.phase = lv.phase;

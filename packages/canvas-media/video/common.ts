@@ -1,6 +1,12 @@
 import { Screen, Application, Utils, CSSType, PercentLength } from '@nativescript/core';
 import { MediaBase } from '../common';
 
+function warnVideoListener(label: string, _error?: unknown) {
+	try {
+		console.warn(label);
+	} catch {}
+}
+
 @CSSType('Video')
 export abstract class VideoBase extends MediaBase {
 	public abstract controls: boolean;
@@ -74,9 +80,14 @@ export abstract class VideoBase extends MediaBase {
 			for (let i = 0; i < size; i++) {
 				const item = capturedEvents[i];
 				if (typeof item === 'function') {
-					item();
+					this._invokeListener(type, item, 'captured');
 				}
 			}
+		}
+
+		const handler = this[`on${type}`];
+		if (typeof handler === 'function') {
+			this._invokeListener(type, handler, 'property');
 		}
 
 		const events = this._listeners[type];
@@ -84,13 +95,18 @@ export abstract class VideoBase extends MediaBase {
 			const size = events.length;
 			for (let i = 0; i < size; i++) {
 				const item = events[i];
-				if (typeof this[type] === 'function') {
-					this[type]();
-				}
 				if (typeof item === 'function') {
-					item();
+					this._invokeListener(type, item, 'registered');
 				}
 			}
+		}
+	}
+
+	_invokeListener(type: string, listener: Function, source: string) {
+		try {
+			listener.call(this);
+		} catch (error) {
+			warnVideoListener(`Video.${type} ${source} listener failed`, error);
 		}
 	}
 	_removeListener(type: string, listener: Function, listeners: any) {
@@ -194,7 +210,7 @@ export abstract class VideoBase extends MediaBase {
 		if (this._videoFrameCallbacks.length !== 0) {
 			const toRemove = this._videoFrameCallbacks.length;
 			this._videoFrameCallbacks.forEach((cb) => {
-				cb();
+				this._invokeListener('videoframe', cb, 'registered');
 			});
 			this._videoFrameCallbacks.splice(0, toRemove);
 		}

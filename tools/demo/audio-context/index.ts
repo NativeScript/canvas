@@ -15,7 +15,7 @@ export class DemoSharedAudioContext extends DemoSharedBase {
 
 	async initAudio() {
 		if (this.ctx) return;
-		this.ctx = new AudioContext();
+		this.ctx = __ANDROID__ ? new AudioContext({ latencyHint: 'playback' }) : new AudioContext();
 		this.gainNode = this.ctx.createGain({ gain: 0.8 });
 		this.analyser = this.ctx.createAnalyser();
 		this.analyser.fftSize = 2048;
@@ -64,7 +64,8 @@ export class DemoSharedAudioContext extends DemoSharedBase {
 				// simple sine with a small decay
 				data[i] = Math.sin(2 * Math.PI * freq * t) * 0.6 * Math.exp((-3 * t) / duration);
 			}
-			const src = this.ctx!.createBufferSource({ buffer });
+			const src = this.ctx!.createBufferSource();
+			src.buffer = buffer;
 			src.connect(this.gainNode);
 			const ok = await this._attachAndStartSource(src);
 			if (!ok) {

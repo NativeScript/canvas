@@ -12,6 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, readonly, nullable) NSCAudioContext *context;
 @property (nonatomic, strong, readonly, nullable) AVPlayer *player;
 @property (nonatomic, strong, readonly, nullable) AVAudioSourceNode *sourceNode;
+@property (nonatomic, strong, readonly, nullable) AVAudioNode *outputNode;
 
 
 + (nullable instancetype)attachToPlayer:(AVPlayer *)player

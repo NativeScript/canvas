@@ -12,14 +12,28 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.PlaybackException;
+import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
+import androidx.media3.common.DeviceInfo;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MediaMetadata;
+import androidx.media3.common.Metadata;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
+import androidx.media3.common.Timeline;
+import androidx.media3.common.TrackSelectionParameters;
+import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.text.CueGroup;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.common.util.Util;
+
+
+
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.datasource.cache.CacheDataSource;
@@ -63,35 +77,32 @@ public class AudioHelper implements Player.Listener {
     private volatile int _tapNodeChannels;
     private volatile Method _tapNodePushFrames;
     private volatile Method _tapNodeEndStream;
+    private volatile Method _tapNodeConfigureFormat;
     private volatile Method _ctxCreateExternalPcm;
+    private volatile boolean _tapSuppressesDirectOutput = false;
+    private volatile boolean _muted = false;
+    private static final int MAX_TAP_REFLECTION_FAILURES = 8;
+    private final Object _tapStateLock = new Object();
+    private volatile int _tapReflectionFailures = 0;
 
     private final AudioContextTapProcessor.Sink _tapSink = new AudioContextTapProcessor.Sink() {
         @Override
         public void onPcmFrames(float[] interleaved, int sampleCount, int sampleRate, int channels) {
             Object node = _tapSourceNode;
-            if (node == null || sampleCount == 0) return;
+            Method push = _tapNodePushFrames;
+            if (node == null || push == null || sampleCount == 0 || sampleRate <= 0 || channels <= 0) return;
 
             if (_tapNodeSampleRate != sampleRate || _tapNodeChannels != channels) {
-                Object ctx = _attachedContext;
-                Method create = _ctxCreateExternalPcm;
-                Method end = _tapNodeEndStream;
-                if (ctx == null || create == null) return;
-                Object replacement;
+                Method configure = _tapNodeConfigureFormat;
+                if (configure == null) return;
                 try {
-                    replacement = create.invoke(ctx, sampleRate, channels);
+                    configure.invoke(node, sampleRate, channels);
+                    _tapNodeSampleRate = sampleRate;
+                    _tapNodeChannels = channels;
                 } catch (Throwable t) {
-                    android.util.Log.w("AudioHelper", "createExternalPcmSource reflection failed", t);
+                    handleTapReflectionFailure("configureFormat reflection failed", t);
                     return;
                 }
-                if (replacement == null) return;
-                Object old = _tapSourceNode;
-                if (old != null && end != null) {
-                    try { end.invoke(old); } catch (Throwable ignored) {}
-                }
-                _tapSourceNode = replacement;
-                _tapNodeSampleRate = sampleRate;
-                _tapNodeChannels = channels;
-                node = replacement;
             }
 
             float[] payload = interleaved;
@@ -100,9 +111,10 @@ public class AudioHelper implements Player.Listener {
                 System.arraycopy(interleaved, 0, payload, 0, sampleCount);
             }
             try {
-                _tapNodePushFrames.invoke(node, (Object) payload);
+                push.invoke(node, (Object) payload);
+                _tapReflectionFailures = 0;
             } catch (Throwable t) {
-                android.util.Log.w("AudioHelper", "pushFrames reflection failed", t);
+                handleTapReflectionFailure("pushFrames reflection failed", t);
             }
         }
 
@@ -111,6 +123,15 @@ public class AudioHelper implements Player.Listener {
             return _tapSourceNode != null;
         }
     };
+
+    private void handleTapReflectionFailure(String label, Throwable t) {
+        int failures = ++_tapReflectionFailures;
+        android.util.Log.w("AudioHelper", label, t);
+        if (failures >= MAX_TAP_REFLECTION_FAILURES) {
+            android.util.Log.w("AudioHelper", "disabling audio context tap after repeated failures");
+            detachAudioContextTap();
+        }
+    }
 
     public interface Callback {
         void onDurationChange(long duration);
@@ -127,6 +148,40 @@ public class AudioHelper implements Player.Listener {
     }
 
     Handler handler;
+
+    private void safeInvoke(String label, Runnable action) {
+        try {
+            action.run();
+        } catch (Throwable t) {
+            android.util.Log.w("AudioHelper", label + " failed", t);
+        }
+    }
+
+    private void dispatchOnHandler(String label, Runnable action) {
+        Handler currentHandler = handler;
+        if (currentHandler == null) {
+            safeInvoke(label, action);
+            return;
+        }
+
+        Looper targetLooper = currentHandler.getLooper();
+        if (targetLooper != null && targetLooper == Looper.myLooper()) {
+            safeInvoke(label, action);
+            return;
+        }
+
+        currentHandler.post(() -> safeInvoke(label, action));
+    }
+
+    private void updateEffectivePlayerVolume() {
+        try {
+            if (_player != null) {
+                _player.setVolume((_muted || _tapSuppressesDirectOutput) ? 0f : 1f);
+            }
+        } catch (Throwable t) {
+            android.util.Log.w("AudioHelper", "updateEffectivePlayerVolume failed", t);
+        }
+    }
 
     public AudioHelper(Context context, String cacheRoot) {
         File cacheDir = new File(cacheRoot, "MEDIA_PLAYER_CACHE");
@@ -179,6 +234,7 @@ public class AudioHelper implements Player.Listener {
         _player = builder.build();
         _player.addListener(this);
        _player.setAudioAttributes(AudioAttributes.DEFAULT, true);
+                updateEffectivePlayerVolume();
 
          _container = new LinearLayout(context);
             _container.setOrientation(LinearLayout.VERTICAL);
@@ -200,94 +256,223 @@ public class AudioHelper implements Player.Listener {
     @Override
     public void onIsPlayingChanged(boolean isPlaying) {
         long duration = this._player.getDuration();
-        if (this._callback != null) {
-            this._callback.onDurationChange(duration);
-        }
-        this._playing = isPlaying;
-        if (isPlaying) {
+        dispatchOnHandler("onIsPlayingChanged", () -> {
             if (this._callback != null) {
-                this._callback.onPlaying();
-                this._callback.onLoadedData();
+                safeInvoke("onDurationChange callback", () -> this._callback.onDurationChange(duration));
             }
-            if (this._audioView != null) {
-                this._audioView.setPlaying(true);
-                this._audioView.setDuration(duration);
-            }
-            if (_timer != null) {
-                _timer.cancel();
-                _timer = null;
-            }
-            _timer = new Timer();
-            AudioHelper that = this;
-            _timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    handler.post(() -> {
-                        long current = _player.getCurrentPosition();
-                        if (that._callback != null) {
-                            that._callback.onCurrentTimeChanged(current);
-                        }
-                        if (that._audioView != null) {
-                            that._audioView.setCurrentTime(current);
-                        }
-                    });
+            this._playing = isPlaying;
+            if (isPlaying) {
+                if (this._callback != null) {
+                    safeInvoke("onPlaying callback", () -> this._callback.onPlaying());
+                    safeInvoke("onLoadedData callback", () -> this._callback.onLoadedData());
                 }
-            }, 0, 1000);
-        } else {
-            if (_timer != null) {
-                _timer.cancel();
-                _timer = null;
-            }
-            if (this._callback != null) {
-                this._callback.onCurrentTimeChanged(this._player.getCurrentPosition());
-            }
-            if (this._audioView != null) {
-                this._audioView.setPlaying(false);
-                this._audioView.setCurrentTime(this._player.getCurrentPosition());
-            }
-        }
+                if (this._audioView != null) {
+                    this._audioView.setPlaying(true);
+                    this._audioView.setDuration(duration);
+                }
+                if (_timer != null) {
+                    _timer.cancel();
+                    _timer = null;
+                }
+                _timer = new Timer();
+                AudioHelper that = this;
+                _timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dispatchOnHandler("onCurrentTimeChanged", () -> {
+                            long current = _player.getCurrentPosition();
+                            if (that._callback != null) {
+                                safeInvoke("onCurrentTimeChanged callback", () -> that._callback.onCurrentTimeChanged(current));
+                            }
+                            if (that._audioView != null) {
+                                that._audioView.setCurrentTime(current);
+                            }
+                        });
+                    }
+                }, 0, 1000);
+            } else {
+                if (_timer != null) {
+	                _timer.cancel();
+	                _timer = null;
+	            }
+	            long currentTime = this._player.getCurrentPosition();
+	            if (this._callback != null) {
+	                safeInvoke("onCurrentTimeChanged callback", () -> this._callback.onCurrentTimeChanged(currentTime));
+	            }
+	            if (this._audioView != null) {
+	                this._audioView.setPlaying(false);
+	                this._audioView.setCurrentTime(currentTime);
+	            }
+	        }
+        });
     }
 
     @Override
     public void onPlayerError(PlaybackException error) {
-        if (this._callback != null) {
-            this._callback.onError(error == null ? "Playback error" : error.getMessage());
-        }
+        final String message = error == null ? "Playback error" : error.getMessage();
+        dispatchOnHandler("onPlayerError", () -> {
+            if (this._callback != null) {
+                safeInvoke("onError callback", () -> this._callback.onError(message));
+            }
+        });
     }
 
     @Override
     public void onEvents(Player player, Player.Events events) { }
 
+    	@Override
+	public void  onTimelineChanged(Timeline timeline, @Player.TimelineChangeReason int reason) {}
+
+
+	@Override
+	public void  onMediaItemTransition(
+		@Nullable MediaItem mediaItem, @Player.MediaItemTransitionReason int reason) {}
+
+
+	@Override
+	public void onTracksChanged(Tracks tracks) {}
+	
+	@Override
+	public void onMediaMetadataChanged(MediaMetadata mediaMetadata) {}
+	
+	@Override
+	public void  onPlaylistMetadataChanged(MediaMetadata mediaMetadata) {}
+	
+	@Override
+	public void  onIsLoadingChanged(boolean isLoading) {}
+	
+	@Deprecated
+	@UnstableApi
+	@Override
+	public void  onLoadingChanged(boolean isLoading) {}
+	
+	@Override
+	public void  onAvailableCommandsChanged(Player.Commands availableCommands) {}
+	
+	@Override
+	public void  onTrackSelectionParametersChanged(TrackSelectionParameters parameters) {}
+	
+	@Deprecated
+	@UnstableApi
+	@Override
+	public void  onPlayerStateChanged(boolean playWhenReady, @Player.State int playbackState) {}
+
+
+
     @Override
     public void onPlaybackStateChanged(@Player.State int playbackState) {
         if (playbackState == Player.STATE_READY) {
-            if (!this._canPlayFired) {
-                this._canPlayFired = true;
-                if (this._callback != null) {
-                    this._callback.onCanPlay();
+            dispatchOnHandler("onPlaybackStateChanged", () -> {
+                if (!this._canPlayFired) {
+                    this._canPlayFired = true;
+                    if (this._callback != null) {
+                        safeInvoke("onCanPlay callback", () -> this._callback.onCanPlay());
+                    }
                 }
-            }
 
-            if (this._loadedDataFired.compareAndSet(false, true)) {
-                if (this._callback != null) {
-                    this._callback.onLoadedData();
+                if (this._loadedDataFired.compareAndSet(false, true)) {
+                    if (this._callback != null) {
+                        safeInvoke("onLoadedData callback", () -> this._callback.onLoadedData());
+                    }
                 }
-            }
 
-            long duration = this._player.getDuration();
-            long buffered = this._player.getBufferedPosition();
-            if (this._audioView != null) {
-                this._audioView.setDuration(duration);
-                this._audioView.setCurrentTime(this._player.getCurrentPosition());
-            }
-            if (duration > 0 && buffered >= duration - 1000 && !this._canPlayThroughFired) {
-                this._canPlayThroughFired = true;
-                if (this._callback != null) {
-                    this._callback.onCanPlayThrough();
+                long duration = this._player.getDuration();
+                long buffered = this._player.getBufferedPosition();
+                if (this._audioView != null) {
+                    this._audioView.setDuration(duration);
+                    this._audioView.setCurrentTime(this._player.getCurrentPosition());
                 }
-            }
+                if (duration > 0 && buffered >= duration - 1000 && !this._canPlayThroughFired) {
+                    this._canPlayThroughFired = true;
+                    if (this._callback != null) {
+                        safeInvoke("onCanPlayThrough callback", () -> this._callback.onCanPlayThrough());
+                    }
+                }
+            });
         }
     }
+
+
+
+@Override
+	public void  onPlayWhenReadyChanged(
+		boolean playWhenReady, @Player.PlayWhenReadyChangeReason int reason) {}
+	
+	@Override
+	public void  onPlaybackSuppressionReasonChanged(
+		@Player.PlaybackSuppressionReason int playbackSuppressionReason) {}
+	
+	@Override
+	public void  onRepeatModeChanged(@Player.RepeatMode int repeatMode) {}
+	
+	@Override
+	public void  onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {}
+	
+	@Override
+	public void  onPlayerErrorChanged(@Nullable PlaybackException error) {}
+	
+	@Deprecated
+	@UnstableApi
+	@Override
+	public void  onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {}
+	
+	@Override
+	public void  onPositionDiscontinuity(
+		Player.PositionInfo oldPosition, Player.PositionInfo newPosition, @Player.DiscontinuityReason int reason) {}
+	
+	@Override
+	public void  onPlaybackParametersChanged(PlaybackParameters playbackParameters) {}
+	
+	@Override
+	public void  onSeekBackIncrementChanged(long seekBackIncrementMs) {}
+	
+	@Override
+	public void  onSeekForwardIncrementChanged(long seekForwardIncrementMs) {}
+	
+	@Override
+	public void  onMaxSeekToPreviousPositionChanged(long maxSeekToPreviousPositionMs) {}
+	
+	@UnstableApi
+	@Override
+	public void  onAudioSessionIdChanged(int audioSessionId) {}
+	
+	@Override
+	public void  onAudioAttributesChanged(AudioAttributes audioAttributes) {}
+	
+	@Override
+	public void  onVolumeChanged(float volume) {}
+	
+	@Override
+	public void  onSkipSilenceEnabledChanged(boolean skipSilenceEnabled) {}
+	
+	@Override
+	public void  onDeviceInfoChanged(DeviceInfo deviceInfo) {}
+	
+	@Override
+	public void  onDeviceVolumeChanged(int volume, boolean muted) {}
+	
+	@Override
+	public void  onSurfaceSizeChanged(int width, int height) {}
+	
+	@Override
+	public void  onRenderedFirstFrame() {}
+
+	
+	@Deprecated
+	@UnstableApi
+	@Override
+	public void  onCues(List<Cue> cues) {}
+	
+	@Override
+	public void  onCues(CueGroup cueGroup) {}
+
+
+	@UnstableApi
+	public void onMetadata(Metadata metadata) {}
+
+
+
+
 
     public void play() {
         try {
@@ -306,14 +491,21 @@ public class AudioHelper implements Player.Listener {
 
             Method push = node.getClass().getMethod("pushFrames", float[].class);
             Method end = node.getClass().getMethod("endStream");
+            Method configure = node.getClass().getMethod("configureFormat", int.class, int.class);
 
-            _attachedContext = contextNative;
-            _ctxCreateExternalPcm = create;
-            _tapSourceNode = node;
-            _tapNodePushFrames = push;
-            _tapNodeEndStream = end;
-            _tapNodeSampleRate = 48000;
-            _tapNodeChannels = 2;
+            synchronized (_tapStateLock) {
+                _attachedContext = contextNative;
+                _ctxCreateExternalPcm = create;
+                _tapNodePushFrames = push;
+                _tapNodeEndStream = end;
+                _tapNodeConfigureFormat = configure;
+                _tapNodeSampleRate = 48000;
+                _tapNodeChannels = 2;
+                _tapReflectionFailures = 0;
+                _tapSuppressesDirectOutput = true;
+                _tapSourceNode = node;
+            }
+            updateEffectivePlayerVolume();
             return node;
         } catch (NoSuchMethodException e) {
             android.util.Log.w("AudioHelper", "attachAudioContextTap: contextNative missing expected surface", e);
@@ -325,13 +517,23 @@ public class AudioHelper implements Player.Listener {
     }
 
     public void detachAudioContextTap() {
-        Object node = _tapSourceNode;
-        Method end = _tapNodeEndStream;
-        _tapSourceNode = null;
-        _attachedContext = null;
-        _ctxCreateExternalPcm = null;
-        _tapNodePushFrames = null;
-        _tapNodeEndStream = null;
+        Object node;
+        Method end;
+        synchronized (_tapStateLock) {
+            node = _tapSourceNode;
+            end = _tapNodeEndStream;
+            _tapSourceNode = null;
+            _attachedContext = null;
+            _ctxCreateExternalPcm = null;
+            _tapNodePushFrames = null;
+            _tapNodeEndStream = null;
+            _tapNodeConfigureFormat = null;
+            _tapNodeSampleRate = 0;
+            _tapNodeChannels = 0;
+            _tapReflectionFailures = 0;
+            _tapSuppressesDirectOutput = false;
+        }
+        updateEffectivePlayerVolume();
         if (node != null && end != null) {
             try { end.invoke(node); } catch (Throwable ignored) {}
         }
@@ -351,11 +553,12 @@ public class AudioHelper implements Player.Listener {
     }
 
     public boolean getMuted() {
-        return this._player.getVolume() == 0f;
+        return this._muted;
     }
 
     public void setMuted(boolean value) {
-        this._player.setVolume(value ? 0f : 1f);
+        this._muted = value;
+        updateEffectivePlayerVolume();
     }
 
     public long getDuration() {

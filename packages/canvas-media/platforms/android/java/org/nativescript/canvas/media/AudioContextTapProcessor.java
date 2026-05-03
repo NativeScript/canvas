@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 
 @UnstableApi
@@ -33,6 +34,9 @@ public class AudioContextTapProcessor extends BaseAudioProcessor {
 
     @Override
     public AudioFormat onConfigure(AudioFormat inputFormat) throws UnhandledAudioFormatException {
+        if (bytesPerSample(inputFormat.encoding) <= 0) {
+            throw new UnhandledAudioFormatException(inputFormat);
+        }
         return inputFormat;
     }
 
@@ -47,32 +51,38 @@ public class AudioContextTapProcessor extends BaseAudioProcessor {
         int channels = fmt.channelCount;
         int sampleRate = fmt.sampleRate;
         int bytesPerSample = bytesPerSample(fmt.encoding);
-
-        ByteBuffer out = replaceOutputBuffer(remaining);
+        int sampleCount = bytesPerSample > 0 ? remaining / bytesPerSample : 0;
+        int bytesToCopy = sampleCount * bytesPerSample;
         int srcStart = inputBuffer.position();
-        out.put(inputBuffer);
-        out.flip();
 
-        if (sink != null && sink.isActive() && bytesPerSample > 0 && channels > 0) {
-            int sampleCount = remaining / bytesPerSample;
-            if (sampleCount > 0) {
-                if (_floatScratch.length < sampleCount) {
-                    _floatScratch = new float[Math.max(sampleCount, _floatScratch.length * 2)];
-                }
-                ByteBuffer src = inputBuffer.duplicate();
-                src.order(ByteOrder.nativeOrder());
-                src.position(srcStart);
-                src.limit(srcStart + remaining);
+        if (sink != null && sink.isActive() && sampleCount > 0 && channels > 0 && sampleRate > 0) {
+            if (_floatScratch.length < sampleCount) {
+                _floatScratch = new float[Math.max(sampleCount, _floatScratch.length * 2)];
+            }
+
+            ByteBuffer src = inputBuffer.duplicate();
+            src.order(byteOrderForEncoding(fmt.encoding));
+            src.position(srcStart);
+            src.limit(srcStart + bytesToCopy);
+
+            try {
                 copyToFloat(src, _floatScratch, sampleCount, fmt.encoding);
-                try {
-                    sink.onPcmFrames(_floatScratch, sampleCount, sampleRate, channels);
-                } catch (Throwable t) {
-                    android.util.Log.w("AudioContextTapProc", "sink threw", t);
-                }
+                sink.onPcmFrames(_floatScratch, sampleCount, sampleRate, channels);
+            } catch (Throwable t) {
+                android.util.Log.w("AudioContextTapProc", "sink threw", t);
             }
         }
-        
-        inputBuffer.position(srcStart + remaining);
+
+        ByteBuffer out = replaceOutputBuffer(remaining);
+        out.put(inputBuffer);
+        out.flip();
+    }
+
+    private static ByteOrder byteOrderForEncoding(int encoding) {
+        if (encoding == ENCODING_PCM_16BIT_BIG_ENDIAN) {
+            return ByteOrder.BIG_ENDIAN;
+        }
+        return ByteOrder.LITTLE_ENDIAN;
     }
 
     private static int bytesPerSample(int encoding) {
@@ -132,7 +142,7 @@ public class AudioContextTapProcessor extends BaseAudioProcessor {
                 break;
             }
             default: {
-                java.util.Arrays.fill(dst, 0, sampleCount, 0f);
+                Arrays.fill(dst, 0, sampleCount, 0f);
                 break;
             }
         }

@@ -42,6 +42,10 @@ inline constexpr int kListenerParamForwardZ = 17;
 inline constexpr int kListenerParamUpX = 18;
 inline constexpr int kListenerParamUpY = 19;
 inline constexpr int kListenerParamUpZ = 20;
+
+using ScheduledParamEnvelopeMap = std::unordered_map<int, std::vector<double>>;
+using ScheduledNodeEnvelopeMap = std::unordered_map<std::string, ScheduledParamEnvelopeMap>;
+
 inline void audioThreadLog(int prio, const char *fmt, ...) {
     if (!g_audioThreadLoggingEnabled.load(std::memory_order_relaxed)) return;
     va_list args;
@@ -226,78 +230,236 @@ applyWaveShaperSample(const NativeEngine::WaveShaperData &ws, float in) {
     return out;
 }
 
-inline void
-computePannerGains(const NativeEngine::Panner &p, double &leftGain, double &rightGain,
-                   double &distanceAtt) {
+inline double getEnvelopeFrameValue(const ScheduledParamEnvelopeMap *paramMap, int paramType,
+                                    int frame, double fallback) {
+    if (!paramMap || frame < 0) return fallback;
+    auto it = paramMap->find(paramType);
+    if (it == paramMap->end()) return fallback;
+    auto index = static_cast<size_t>(frame);
+    if (index >= it->second.size()) return fallback;
+    return it->second[index];
+}
+
+inline NativeEngine::Panner resolvePannerForFrame(const NativeEngine::Panner &base,
+                                                  const ScheduledNodeEnvelopeMap &envelopes,
+                                                  const std::string &pannerId,
+                                                  int frame) {
+    NativeEngine::Panner resolved = base;
+    auto envIt = envelopes.find(pannerId);
+    const ScheduledParamEnvelopeMap *paramMap = envIt == envelopes.end() ? nullptr : &envIt->second;
+    resolved.positionX = getEnvelopeFrameValue(paramMap, kPannerParamPositionX, frame,
+                                               resolved.positionX);
+    resolved.positionY = getEnvelopeFrameValue(paramMap, kPannerParamPositionY, frame,
+                                               resolved.positionY);
+    resolved.positionZ = getEnvelopeFrameValue(paramMap, kPannerParamPositionZ, frame,
+                                               resolved.positionZ);
+    resolved.orientationX = getEnvelopeFrameValue(paramMap, kPannerParamOrientationX, frame,
+                                                  resolved.orientationX);
+    resolved.orientationY = getEnvelopeFrameValue(paramMap, kPannerParamOrientationY, frame,
+                                                  resolved.orientationY);
+    resolved.orientationZ = getEnvelopeFrameValue(paramMap, kPannerParamOrientationZ, frame,
+                                                  resolved.orientationZ);
+    resolved.pan = getEnvelopeFrameValue(paramMap, kPannerParamPan, frame, resolved.pan);
+    return resolved;
+}
+
+inline NativeEngine::Listener resolveListenerForFrame(
+        const std::string &contextId,
+        const NativeEngine::Listener &fallback,
+        const std::unordered_map<std::string, NativeEngine::Listener> &listeners,
+        const ScheduledNodeEnvelopeMap &envelopes,
+        int frame) {
+    NativeEngine::Listener resolved = fallback;
+    if (!contextId.empty()) {
+        auto listenerIt = listeners.find(contextId);
+        if (listenerIt != listeners.end()) {
+            resolved = listenerIt->second;
+        }
+    }
+    auto envIt = envelopes.find(contextId);
+    const ScheduledParamEnvelopeMap *paramMap = envIt == envelopes.end() ? nullptr : &envIt->second;
+    resolved.positionX = getEnvelopeFrameValue(paramMap, kListenerParamPositionX, frame,
+                                               resolved.positionX);
+    resolved.positionY = getEnvelopeFrameValue(paramMap, kListenerParamPositionY, frame,
+                                               resolved.positionY);
+    resolved.positionZ = getEnvelopeFrameValue(paramMap, kListenerParamPositionZ, frame,
+                                               resolved.positionZ);
+    resolved.forwardX = getEnvelopeFrameValue(paramMap, kListenerParamForwardX, frame,
+                                              resolved.forwardX);
+    resolved.forwardY = getEnvelopeFrameValue(paramMap, kListenerParamForwardY, frame,
+                                              resolved.forwardY);
+    resolved.forwardZ = getEnvelopeFrameValue(paramMap, kListenerParamForwardZ, frame,
+                                              resolved.forwardZ);
+    resolved.upX = getEnvelopeFrameValue(paramMap, kListenerParamUpX, frame, resolved.upX);
+    resolved.upY = getEnvelopeFrameValue(paramMap, kListenerParamUpY, frame, resolved.upY);
+    resolved.upZ = getEnvelopeFrameValue(paramMap, kListenerParamUpZ, frame, resolved.upZ);
+    return resolved;
+}
+
+inline NativeEngine::Panner transformPannerToListenerSpace(const NativeEngine::Panner &p,
+                                                           const NativeEngine::Listener &listener) {
+    NativeEngine::Panner transformed = p;
+    double rx = p.positionX - listener.positionX;
+    double ry = p.positionY - listener.positionY;
+    double rz = p.positionZ - listener.positionZ;
+
+    double fx = listener.forwardX;
+    double fy = listener.forwardY;
+    double fz = listener.forwardZ;
+    double ux = listener.upX;
+    double uy = listener.upY;
+    double uz = listener.upZ;
+
+    double fl = std::sqrt(fx * fx + fy * fy + fz * fz);
+    if (fl <= 1e-12) {
+        fx = 0.0;
+        fy = 0.0;
+        fz = -1.0;
+    } else {
+        fx /= fl;
+        fy /= fl;
+        fz /= fl;
+    }
+
+    double ul = std::sqrt(ux * ux + uy * uy + uz * uz);
+    if (ul <= 1e-12) {
+        ux = 0.0;
+        uy = 1.0;
+        uz = 0.0;
+    } else {
+        ux /= ul;
+        uy /= ul;
+        uz /= ul;
+    }
+
+    double rxv = fy * uz - fz * uy;
+    double ryv = fz * ux - fx * uz;
+    double rzv = fx * uy - fy * ux;
+    double rl = std::sqrt(rxv * rxv + ryv * ryv + rzv * rzv);
+    if (rl <= 1e-12) {
+        rxv = 1.0;
+        ryv = 0.0;
+        rzv = 0.0;
+    } else {
+        rxv /= rl;
+        ryv /= rl;
+        rzv /= rl;
+    }
+
+    double ux2 = ryv * fz - rzv * fy;
+    double uy2 = rzv * fx - rxv * fz;
+    double uz2 = rxv * fy - ryv * fx;
+
+    transformed.positionX = rx * rxv + ry * ryv + rz * rzv;
+    transformed.positionY = rx * ux2 + ry * uy2 + rz * uz2;
+    transformed.positionZ = rx * fx + ry * fy + rz * fz;
+    return transformed;
+}
+
+inline double wrapPannerAzimuthDegrees(double azimuth) {
+    azimuth = std::max(-180.0, std::min(180.0, azimuth));
+    if (azimuth < -90.0) azimuth = -180.0 - azimuth;
+    else if (azimuth > 90.0) azimuth = 180.0 - azimuth;
+    return azimuth;
+}
+
+inline double computeDistanceAttenuation(const NativeEngine::Panner &p,
+                                         const NativeEngine::Listener &listener) {
+    double dx = p.positionX - listener.positionX;
+    double dy = p.positionY - listener.positionY;
+    double dz = p.positionZ - listener.positionZ;
+    double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    double ref = std::max(1e-6, p.refDistance);
+    double maxd = std::max(ref, p.maxDistance);
+    double rf = std::max(0.0, p.rolloffFactor);
+    double d = std::min(std::max(dist, ref), maxd);
+
+    if (p.distanceModel == NativeEngine::DISTANCE_LINEAR) {
+        if (maxd <= ref) return dist > maxd ? 0.0 : 1.0;
+        double gain = 1.0 - rf * (d - ref) / (maxd - ref);
+        return std::max(0.0, std::min(1.0, gain));
+    }
+
+    double gain = 1.0;
+    if (p.distanceModel == NativeEngine::DISTANCE_INVERSE) {
+        gain = ref / (ref + rf * (d - ref));
+    } else {
+        gain = std::pow(d / ref, -rf);
+    }
+    return std::max(0.0, std::min(1.0, gain));
+}
+
+inline double computeConeAttenuation(const NativeEngine::Panner &p,
+                                     const NativeEngine::Listener &listener) {
+    double ox = p.orientationX;
+    double oy = p.orientationY;
+    double oz = p.orientationZ;
+    double olen = std::sqrt(ox * ox + oy * oy + oz * oz);
+    if (olen <= 1e-12) {
+        ox = 1.0;
+        oy = 0.0;
+        oz = 0.0;
+        olen = 1.0;
+    }
+
+    double sx = listener.positionX - p.positionX;
+    double sy = listener.positionY - p.positionY;
+    double sz = listener.positionZ - p.positionZ;
+    double slen = std::sqrt(sx * sx + sy * sy + sz * sz);
+    if (slen <= 1e-12) return 1.0;
+
+    if (p.coneInnerAngle == 360.0 && p.coneOuterAngle == 360.0) return 1.0;
+
+    double dot = (ox * sx + oy * sy + oz * sz) / (olen * slen);
+    if (dot > 1.0) dot = 1.0;
+    if (dot < -1.0) dot = -1.0;
+
+    double angle = std::acos(dot) * 180.0 / M_PI;
+    double inner = std::max(0.0, std::min(360.0, p.coneInnerAngle)) * 0.5;
+    double outer = std::max(0.0, std::min(360.0, p.coneOuterAngle)) * 0.5;
+    if (outer < inner) inner = outer;
+    double outerGain = std::max(0.0, std::min(1.0, p.coneOuterGain));
+
+    if (angle <= inner) return 1.0;
+    if (angle >= outer) return outerGain;
+
+    double denom = outer - inner;
+    if (denom <= 0.0) return outerGain;
+    double t = (angle - inner) / denom;
+    return (1.0 - t) + t * outerGain;
+}
+
+inline void computePannerGains(const NativeEngine::Panner &p,
+                               const NativeEngine::Listener &listener,
+                               bool stereoInput,
+                               double &leftGain,
+                               double &rightGain,
+                               double &distanceAtt,
+                               bool *steerLeftOrCenter = nullptr) {
     leftGain = 1.0;
     rightGain = 1.0;
-    distanceAtt = 1.0;
+    distanceAtt = computeDistanceAttenuation(p, listener) * computeConeAttenuation(p, listener);
 
-    double panVal = p.pan;
-    if (panVal == 0.0 && (p.positionX != 0.0 || p.positionZ != 0.0)) {
-        double az = std::atan2(p.positionX, p.positionZ);
-        panVal = std::sin(az);
+    bool steerLeft = true;
+    double x = 0.5;
+    if (std::abs(p.pan) > 1e-12) {
+        double pan = std::max(-1.0, std::min(1.0, p.pan));
+        steerLeft = pan <= 0.0;
+        x = stereoInput ? (steerLeft ? pan + 1.0 : pan) : (pan + 1.0) * 0.5;
+    } else {
+        NativeEngine::Panner local = transformPannerToListenerSpace(p, listener);
+        double azimuth = wrapPannerAzimuthDegrees(
+                std::atan2(local.positionX, local.positionZ) * 180.0 / M_PI);
+        steerLeft = azimuth <= 0.0;
+        x = stereoInput ? (steerLeft ? (azimuth + 90.0) / 90.0 : azimuth / 90.0)
+                        : (azimuth + 90.0) / 180.0;
     }
 
-    double angle = (panVal + 1.0) * (M_PI / 4.0);
-    leftGain = std::cos(angle);
-    rightGain = std::sin(angle);
+    x = std::max(0.0, std::min(1.0, x));
 
-    double dx = p.positionX;
-    double dy = p.positionY;
-    double dz = p.positionZ;
-    double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-    double ref = p.refDistance > 0.0 ? p.refDistance : 1.0;
-    double maxd = p.maxDistance > 0.0 ? p.maxDistance : 10000.0;
-    double rf = p.rolloffFactor > 0.0 ? p.rolloffFactor : 1.0;
-    if (dist <= ref) distanceAtt = 1.0;
-    else {
-        if (p.distanceModel == NativeEngine::DISTANCE_INVERSE) {
-            distanceAtt = ref / (ref + rf * (dist - ref));
-        } else if (p.distanceModel == NativeEngine::DISTANCE_LINEAR) {
-            if (dist >= maxd) distanceAtt = 0.0;
-            else distanceAtt = 1.0 - rf * (dist - ref) / (maxd - ref);
-        } else {
-            distanceAtt = std::pow(dist / ref, -rf);
-        }
-    }
-    if (distanceAtt < 0.0) distanceAtt = 0.0;
-    if (distanceAtt > 1.0) distanceAtt = 1.0;
-
-    double coneAtt = 1.0;
-    double sx = -p.positionX;
-    double sy = -p.positionY;
-    double sz = -p.positionZ;
-    double slen = std::sqrt(sx * sx + sy * sy + sz * sz);
-    if (slen > 1e-12) {
-        double ox = p.orientationX;
-        double oy = p.orientationY;
-        double oz = p.orientationZ;
-        double olen = std::sqrt(ox * ox + oy * oy + oz * oz);
-        if (olen <= 1e-12) {
-            ox = 1.0; oy = 0.0; oz = 0.0; olen = 1.0;
-        }
-        double dot = (ox * sx + oy * sy + oz * sz) / (olen * slen);
-        if (dot > 1.0) dot = 1.0;
-        if (dot < -1.0) dot = -1.0;
-        double angDeg = std::acos(dot) * 180.0 / M_PI;
-        double inner = p.coneInnerAngle;
-        double outer = p.coneOuterAngle;
-        double outGain = p.coneOuterGain;
-        if (angDeg <= inner) {
-            coneAtt = 1.0;
-        } else if (angDeg >= outer) {
-            coneAtt = outGain;
-        } else {
-            double denom = outer - inner;
-            if (denom <= 0.0) coneAtt = outGain;
-            else {
-                double t = (angDeg - inner) / denom;
-                coneAtt = (1.0 - t) + t * outGain;
-            }
-        }
-    }
-    distanceAtt *= coneAtt;
+    leftGain = std::cos(x * M_PI / 2.0);
+    rightGain = std::sin(x * M_PI / 2.0);
+    if (steerLeftOrCenter) *steerLeftOrCenter = steerLeft;
 }
 
 inline void insertSortedByTime(std::vector<NativeEngine::ParamEvent> &vec,

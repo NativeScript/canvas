@@ -45,6 +45,15 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain);
 	}
 
+	public void setHRTFPartitionSize(int size) {
+		AudioContext.getInstance().setPannerPartitionSize(this, size);
+	}
+
+	public void setHRTF(java.nio.FloatBuffer left, java.nio.FloatBuffer right) {
+		AudioContext.getInstance().setPannerHRIRFromData(this.getId(), left, right);
+	}
+
+
 	public int getDistanceModel() { return this._distanceModel; }
 	public void setDistanceModel(int v) { this._distanceModel = v; AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain); }
 
@@ -95,7 +104,7 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 			case PANNER_POSITION_Z: this._positionZ = v; break;
 			default: break;
 		}
-		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, 0, 0, 1.0, 10000.0, 1.0, 360.0, 360.0, 0.0);
+		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain);
 	}
 
 	void __setOrientationComponent(AudioParam.Type t, double v) {
@@ -105,7 +114,7 @@ public class AudioPannerNode implements NativeObject, AudioNode {
 			case PANNER_ORIENTATION_Z: this._orientationZ = v; break;
 			default: break;
 		}
-		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, 0, 0, 1.0, 10000.0, 1.0, 360.0, 360.0, 0.0);
+		AudioContext.getInstance().setPannerParams(id, this._positionX, this._positionY, this._positionZ, this._orientationX, this._orientationY, this._orientationZ, this._pan, this._distanceModel, this._panningModel, this._refDistance, this._maxDistance, this._rolloffFactor, this._coneInnerAngle, this._coneOuterAngle, this._coneOuterGain);
 	}
 
 	public void attachToVoice(String voiceId) {

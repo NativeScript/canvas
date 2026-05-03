@@ -126,8 +126,8 @@ export interface PannerOptions {
 	orientationY?: number;
 	orientationZ?: number;
 	pan?: number;
-	distanceModel?: number;
-	panningModel?: number;
+	distanceModel?: DistanceModelType | number;
+	panningModel?: PanningModelType | number;
 	refDistance?: number;
 	maxDistance?: number;
 	rolloffFactor?: number;
@@ -163,8 +163,8 @@ export function resolvePannerOptions(o: PannerOptions = {}): ResolvedPannerOptio
 		orientationY: typeof o.orientationY === 'number' ? o.orientationY : 0.0,
 		orientationZ: typeof o.orientationZ === 'number' ? o.orientationZ : 0.0,
 		pan: typeof o.pan === 'number' ? o.pan : 0.0,
-		distanceModel: typeof o.distanceModel === 'number' ? o.distanceModel : 0,
-		panningModel: typeof o.panningModel === 'number' ? o.panningModel : 0,
+		distanceModel: distanceModelToNumber(o.distanceModel ?? 'inverse'),
+		panningModel: panningModelToNumber(o.panningModel ?? 'equalpower'),
 		refDistance: typeof o.refDistance === 'number' ? o.refDistance : 1.0,
 		maxDistance: typeof o.maxDistance === 'number' ? o.maxDistance : 10000.0,
 		rolloffFactor: typeof o.rolloffFactor === 'number' ? o.rolloffFactor : 1.0,
@@ -427,25 +427,27 @@ export class AudioListenerBase {
 export type DistanceModelType = 'linear' | 'inverse' | 'exponential';
 export type PanningModelType = 'equalpower' | 'HRTF';
 
-const DISTANCE_MODEL_NAMES: DistanceModelType[] = ['linear', 'inverse', 'exponential'];
+const DISTANCE_MODEL_NAMES: DistanceModelType[] = ['inverse', 'linear', 'exponential'];
 const PANNING_MODEL_NAMES: PanningModelType[] = ['equalpower', 'HRTF'];
 
 export function distanceModelToNumber(value: DistanceModelType | number | null | undefined): number {
 	if (typeof value === 'number') return value;
 	if (typeof value !== 'string') return 0;
-	const i = DISTANCE_MODEL_NAMES.indexOf(value as DistanceModelType);
+	const i = DISTANCE_MODEL_NAMES.indexOf(value.toLowerCase() as DistanceModelType);
 	return i === -1 ? 0 : i;
 }
 
 export function distanceModelFromNumber(value: number): DistanceModelType {
-	return DISTANCE_MODEL_NAMES[value | 0] ?? 'linear';
+	return DISTANCE_MODEL_NAMES[value | 0] ?? 'inverse';
 }
 
 export function panningModelToNumber(value: PanningModelType | number | null | undefined): number {
 	if (typeof value === 'number') return value;
 	if (typeof value !== 'string') return 0;
-	const i = PANNING_MODEL_NAMES.indexOf(value as PanningModelType);
-	return i === -1 ? 0 : i;
+	const normalized = value.toLowerCase();
+	if (normalized === 'equalpower') return 0;
+	if (normalized === 'hrtf') return 1;
+	return 0;
 }
 
 export function panningModelFromNumber(value: number): PanningModelType {
@@ -473,7 +475,7 @@ const usedMediaElements: WeakSet<MediaElementLike> = new WeakSet();
 
 export function resolveNativePlayer(mediaElement: MediaElementLike): any {
 	const m = mediaElement as any;
-	return m?.helper?.player ?? m?.player ?? m?._player ?? null;
+	return m?.helper?.player ?? m?.player ?? m?._player ?? m?._audio ?? null;
 }
 
 export function assertMediaElementUsable(context: BaseAudioContext, mediaElement: MediaElementLike): void {

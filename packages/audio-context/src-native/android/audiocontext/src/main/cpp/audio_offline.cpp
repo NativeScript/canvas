@@ -11,7 +11,9 @@
 #include <atomic>
 
 #ifdef HAS_OBOE
+
 #include <oboe/Oboe.h>
+
 #endif
 
 std::string
@@ -62,7 +64,7 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
             auto it = audioVoices_.find(tid);
             if (it == audioVoices_.end()) continue;
             localVoices[tid] = it->second;
-            if (it->second.type == Voice::BufferSource) {
+            if (it->second.voiceType == Voice::BufferSource) {
                 auto bit = audioBuffers_.find(it->second.bufferId);
                 if (bit != audioBuffers_.end()) {
                     localBuffers[it->second.bufferId] = bit->second;
@@ -128,7 +130,7 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
             int i0 = 0;
             double frac = 0.0;
 
-            if (v.type == Voice::Oscillator) {
+            if (v.voiceType == Voice::Oscillator) {
                 double s = 0.0;
                 if (!v.periodicWaveId.empty()) {
                     auto pwIt = localPeriodicWaves.find(v.periodicWaveId);
@@ -168,7 +170,7 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                     }
                 }
                 oscillatorSample = static_cast<float>(s);
-            } else if (v.type == Voice::BufferSource) {
+            } else if (v.voiceType == Voice::BufferSource) {
                 auto bit = localBuffers.find(v.bufferId);
                 if (bit == localBuffers.end()) continue;
                 bufferData = &bit->second;
@@ -189,7 +191,7 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                 float sample = oscillatorSample;
                 int sampleChannelIndex = c;
 
-                if (v.type == Voice::BufferSource) {
+                if (v.voiceType == Voice::BufferSource) {
                     if (bufChannels == 1) sampleChannelIndex = 0;
                     else if (bufChannels >= ch) sampleChannelIndex = c;
                     else sampleChannelIndex = c % bufChannels;
@@ -237,7 +239,7 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                     auto bcit = localBiquads.find(effectFilterId);
                     if (bcit != localBiquads.end()) {
                         const int filterStateIndex =
-                                v.type == Voice::BufferSource ? sampleChannelIndex : c;
+                            v.voiceType == Voice::BufferSource ? sampleChannelIndex : c;
                         if (v.filterState.size() <= static_cast<size_t>(filterStateIndex)) {
                             v.filterState.assign(std::max(ch, bufChannels > 0 ? bufChannels : ch),
                                                  NativeEngine::BiquadState());
@@ -247,8 +249,8 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                     } else {
                         auto iit = localIirs.find(effectFilterId);
                         if (iit != localIirs.end()) {
-                            const int filterStateIndex =
-                                    v.type == Voice::BufferSource ? sampleChannelIndex : c;
+                                const int filterStateIndex =
+                                    v.voiceType == Voice::BufferSource ? sampleChannelIndex : c;
                             auto chCount = static_cast<size_t>(std::max(ch, bufChannels > 0
                                                                             ? bufChannels : ch));
                             if (v.iirState.size() <= chCount)
@@ -274,7 +276,8 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                 if (!effectPanId.empty()) {
                     auto pit = localPanners.find(effectPanId);
                     if (pit != localPanners.end()) {
-                        computePannerGains(pit->second, leftGain, rightGain, distanceAtt);
+                        computePannerGains(pit->second, listener_, false, leftGain, rightGain,
+                                           distanceAtt);
                     }
                 }
 
@@ -316,10 +319,10 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
                 }
             }
 
-            if (v.type == Voice::Oscillator) {
+            if (v.voiceType == Voice::Oscillator) {
                 v.phase += v.frequency / sr;
                 if (v.phase >= 1.0) v.phase -= 1.0;
-            } else if (v.type == Voice::BufferSource) {
+            } else if (v.voiceType == Voice::BufferSource) {
                 v.position += v.increment;
                 if (v.position >= bufFrames) {
                     if (v.loop) v.position = std::fmod(v.position, bufFrames);
@@ -347,8 +350,5 @@ NativeEngine::renderOfflineForTracks(const std::vector<std::string> &trackIds, i
         std::lock_guard<std::recursive_mutex> lock(mutex_);
         audioBuffers_[id] = std::move(bd);
     }
-    __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "renderOfflineForTracks: created buffer %s frames=%d sr=%d ch=%d",
-                        id.c_str(), frames, sampleRate, ch);
     return id;
 }

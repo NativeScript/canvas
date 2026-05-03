@@ -28,8 +28,9 @@ public class MediaPlayerAudioTapAdapter {
             Method create = contextNative.getClass().getMethod("createExternalPcmSource", int.class, int.class);
             int sampleRate;
             try { sampleRate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC); } catch (Throwable t) { sampleRate = 44100; }
-            int channels = 1;
+            int channels = 2;
             Object replacement = create.invoke(contextNative, sampleRate, channels);
+            final int capChannels = channels;
             if (replacement == null) return null;
 
             Method push = replacement.getClass().getMethod("pushFrames", float[].class);
@@ -58,12 +59,22 @@ public class MediaPlayerAudioTapAdapter {
                 final Object n = this.node;
                 vis.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
                     @Override
-                    public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform, int samplingRate) {
-                        if (waveform == null) return;
-                        float[] floats = new float[waveform.length];
-                        for (int i = 0; i < waveform.length; i++) floats[i] = waveform[i] / 128.0f;
-                        try { if (pm != null) pm.invoke(n, new Object[] { floats }); } catch (Throwable t) { Log.w("MediaPlayerTap", "pushFrames failed", t); }
-                    }
+                        public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform, int samplingRate) {
+                            if (waveform == null) return;
+                            if (capChannels == 2) {
+                                float[] floats = new float[waveform.length * 2];
+                                for (int i = 0; i < waveform.length; i++) {
+                                    float v = waveform[i] / 128.0f;
+                                    floats[i * 2] = v;
+                                    floats[i * 2 + 1] = v;
+                                }
+                                try { if (pm != null) pm.invoke(n, new Object[] { floats }); } catch (Throwable t) { Log.w("MediaPlayerTap", "pushFrames failed", t); }
+                            } else {
+                                float[] floats = new float[waveform.length];
+                                for (int i = 0; i < waveform.length; i++) floats[i] = waveform[i] / 128.0f;
+                                try { if (pm != null) pm.invoke(n, new Object[] { floats }); } catch (Throwable t) { Log.w("MediaPlayerTap", "pushFrames failed", t); }
+                            }
+                        }
 
                     @Override
                     public void onFftDataCapture(Visualizer visualizer, byte[] fft, int samplingRate) { }
@@ -119,7 +130,6 @@ public class MediaPlayerAudioTapAdapter {
         synchronized (map) {
             MediaPlayerAudioTapAdapter adapter = map.remove(player);
             if (adapter != null) adapter.detachAudioContextTap();
-            // remove any node->player mappings for this player
             synchronized (nodeToPlayer) {
                 java.util.Iterator<Map.Entry<Object, MediaPlayer>> it = nodeToPlayer.entrySet().iterator();
                 while (it.hasNext()) {

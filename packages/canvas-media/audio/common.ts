@@ -1,6 +1,12 @@
 import { CSSType } from '@nativescript/core';
 import { MediaBase } from '../common';
 
+function warnAudioListener(label: string, _error?: unknown) {
+	try {
+		console.warn(label);
+	} catch {}
+}
+
 @CSSType('Audio')
 export abstract class AudioBase extends MediaBase {
 	public abstract controls: boolean;
@@ -56,25 +62,33 @@ export abstract class AudioBase extends MediaBase {
 		this._removeListener(type, listener, target);
 	}
 
+	private _invokeListener(type: string, listener: Function, source: string) {
+		try {
+			listener.call(this);
+		} catch (error) {
+			warnAudioListener(`Audio.${type} ${source} listener failed`, error);
+		}
+	}
+
 	_notifyListener(type: string) {
 		const captured = this._capturedListeners?.[type];
 		if (Array.isArray(captured)) {
 			for (let i = 0; i < captured.length; i++) {
 				const cb = captured[i];
-				if (typeof cb === 'function') cb();
+				if (typeof cb === 'function') this._invokeListener(type, cb, 'captured');
 			}
+		}
+
+		const handler = (this as any)[`on${type}`];
+		if (typeof handler === 'function') {
+			this._invokeListener(type, handler, 'property');
 		}
 
 		const events = this._listeners?.[type];
 		if (Array.isArray(events)) {
 			for (let i = 0; i < events.length; i++) {
 				const cb = events[i];
-				if (typeof this[type] === 'function') {
-					try {
-						(this as any)[type]();
-					} catch (e) {}
-				}
-				if (typeof cb === 'function') cb();
+				if (typeof cb === 'function') this._invokeListener(type, cb, 'registered');
 			}
 		}
 	}

@@ -27,13 +27,17 @@ export declare class AudioNode {
 
 	readonly context: BaseAudioContext;
 
-	connect();
+	connect(): void;
 
-	connect(destination: AudioNode | AudioParam);
+	connect(destination: AudioNode): AudioNode;
 
-	connect(destination: AudioNode | AudioParam, outputIndex: number);
+	connect(destination: AudioNode, outputIndex: number): AudioNode;
 
-	connect(destination: AudioNode | AudioParam, outputIndex: number, inputIndex: number);
+	connect(destination: AudioNode, outputIndex: number, inputIndex: number): AudioNode;
+
+	connect(destination: AudioParam): void;
+
+	connect(destination: AudioParam, outputIndex: number): void;
 
 	disconnect();
 
@@ -191,11 +195,11 @@ export declare class AudioContext extends BaseAudioContext {
 	readonly destination: AudioDestinationNode;
 
 	createGain(options?: { gain?: number }): GainNode;
-	createBiquad(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;
+	createBiquadFilter(options?: { type?: string; frequency?: number; Q?: number; gain?: number }): BiquadFilterNode;
 	createPanner(options?: PannerOptions): PannerNode;
 	createOscillator(options?: { type?: string; frequency?: number }): OscillatorNode;
 	createBuffer(options: { length: number; numberOfChannels: number; sampleRate: number }): AudioBuffer;
-	createBufferSource(options?: { buffer?: AudioBuffer }): AudioBufferSourceNode;
+	createBufferSource(): AudioBufferSourceNode;
 	createStereoPanner(options?: StereoPannerOptions): StereoPannerNode;
 	createDelay(options?: DelayOptions): DelayNode;
 	createConstantSource(options?: ConstantSourceOptions): ConstantSourceNode;

@@ -4,8 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class ExternalPcmSourceNode extends AudioScheduledSourceNode {
-	private final int sampleRate;
-	private final int channels;
+	private int sampleRate;
+	private int channels;
 	private boolean ended = false;
 
 	@Nullable
@@ -28,6 +28,13 @@ public class ExternalPcmSourceNode extends AudioScheduledSourceNode {
 
 	public int getChannels() {
 		return channels;
+	}
+
+	public void configureFormat(int sampleRate, int channels) {
+		if (ended) return;
+		this.sampleRate = sampleRate <= 0 ? 48000 : sampleRate;
+		this.channels = channels <= 0 ? 2 : channels;
+		AudioContext.getInstance().configureExternalPcmSource(id, this.sampleRate, this.channels);
 	}
 
 	@Nullable

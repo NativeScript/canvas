@@ -40,32 +40,7 @@ import { knownFolders } from '@nativescript/core';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 
-// ConstNode patch — mirrors react-native-webgpu's constNodePatch.js.
-//
-// Problem: ThreeJS wraps plain JS numbers in ConstNodes with type 'float' (JS
-// has no integer primitive). When such a node is output in a 'uint' context
-// (e.g. the mipLevel arg of textureLoad), the default ConstNode.generate()
-// calls builder.generateConst('uint', value) which appends a 'u' suffix → '0u'.
-// If the surrounding WGSL expression expects i32 this creates a type-mismatch
-// that silently poisons the shader module; createRenderPipeline then returns
-// null and nothing renders. Abstract integer literals (no suffix) are compatible
-// with every numeric WGSL type, so plain '0' is always safe here.
-//
-// We pull ConstNode off the already-imported THREE namespace (= three.webgpu.js
-// via webpack alias) so the prototype patch applies to the exact class used
-// internally by WebGPURenderer — NOT a second isolated copy from three/src/...
-(function patchConstNode() {
-	const ConstNode = (THREE as any).ConstNode;
-	if (!ConstNode?.prototype) return; // guard against future API changes
-	const _orig = ConstNode.prototype.generate;
-	ConstNode.prototype.generate = function (builder: any, output: string) {
-		const type: string = this.getNodeType(builder);
-		if (type === 'float' && (output === 'int' || output === 'uint')) {
-			return `${Math.round(parseFloat(this.generateConst(builder)))}`;
-		}
-		return _orig.call(this, builder, output);
-	};
-})();
+import { PositionalAudioHelper } from 'three/addons/helpers/PositionalAudioHelper';
 
 // import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
@@ -109,9 +84,9 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//x jet game
 		//this.webgpu_backdrop(this.canvas);
 		//this.webgpu_1m_particles(this.canvas);
-		//this.webgpu_cube(args.object).catch((err) => console.error('webgpu_cube failed:', err));
+		//this.webgpu_cube(args.object);
 		//this.webGPUGtlfLoader(this.canvas);
-		this.webgpu_tsl_galaxy(this.canvas);
+		//this.webgpu_tsl_galaxy(this.canvas);
 		//webgl_materials_lightmap(this.canvas);
 		//webgl_shadow_contact(this.canvas);
 		//webgl_shadowmap(this.canvas);
@@ -166,6 +141,217 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		//this.ao(this.canvas);
 		//the_frantic_run_of_the_valorous_rabbit(this.canvas,this.canvas.parent);
 		//ghost_card(this.canvas);
+		this.webgl_orientation(this.canvas);
+	}
+
+	async webgl_orientation(canvas) {
+		let scene, camera, renderer;
+		let animationLoopStarted = false;
+
+		const logOrientationError = (scope: string, error: unknown) => {
+			console.error(`webgl_orientation ${scope} error:`, error);
+		};
+
+		const startAnimationLoop = () => {
+			if (!renderer || animationLoopStarted) return;
+			animationLoopStarted = true;
+			renderer.setAnimationLoop(animate);
+		};
+
+		const stopAnimationLoop = () => {
+			if (!renderer || !animationLoopStarted) return;
+			animationLoopStarted = false;
+			renderer.setAnimationLoop(null);
+		};
+
+		canvas.width = canvas.clientWidth * window.devicePixelRatio;
+		canvas.height = canvas.clientHeight * window.devicePixelRatio;
+
+		// const startButton = document.getElementById( 'startButton' );
+		// startButton.addEventListener( 'click', init );
+
+		let init = () => {
+			// const overlay = document.getElementById( 'overlay' );
+			// overlay.remove();
+
+			// const container = document.getElementById( 'container' );
+
+			//
+
+			camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+			camera.position.set(3, 2, 3);
+
+			const reflectionCube = new THREE.CubeTextureLoader().setPath(this.root + '/textures/cube/SwedishRoyalCastle/').load(['px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg']);
+
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xa0a0a0);
+			scene.fog = new THREE.Fog(0xa0a0a0, 2, 20);
+
+			//
+
+			const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, 3);
+			hemiLight.position.set(0, 20, 0);
+			scene.add(hemiLight);
+
+			const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+			dirLight.position.set(5, 5, 0);
+			dirLight.castShadow = true;
+			dirLight.shadow.camera.top = 1;
+			dirLight.shadow.camera.bottom = -1;
+			dirLight.shadow.camera.left = -1;
+			dirLight.shadow.camera.right = 1;
+			dirLight.shadow.camera.near = 0.1;
+			dirLight.shadow.camera.far = 20;
+			scene.add(dirLight);
+
+			// scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
+
+			//
+
+			const mesh = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshPhongMaterial({ color: 0xcbcbcb, depthWrite: false }));
+			mesh.rotation.x = -Math.PI / 2;
+			mesh.receiveShadow = true;
+			scene.add(mesh);
+
+			const grid = new THREE.GridHelper(50, 50, 0xc1c1c1, 0xc1c1c1);
+			scene.add(grid);
+
+			//
+
+			const listener = new THREE.AudioListener();
+			camera.add(listener);
+
+			const audioElement = document.createElement('audio');
+			audioElement.src = `${this.root}/sounds/376737_Skullbeatz___Bad_Cat_Maste.${__ANDROID__ ? 'ogg' : 'mp3'}`;
+
+			const positionalAudio = new THREE.PositionalAudio(listener);
+			let mediaSourceAttached = false;
+			try {
+				positionalAudio.setMediaElementSource(audioElement);
+				mediaSourceAttached = true;
+			} catch (error) {
+				logOrientationError('setMediaElementSource', error);
+			}
+			positionalAudio.setRefDistance(1);
+
+			if (mediaSourceAttached) {
+				try {
+					const context = listener.context;
+					const resumeResult = context?.state !== 'running' && typeof context?.resume === 'function' ? context.resume() : null;
+					if (resumeResult && typeof (resumeResult as any).catch === 'function') {
+						(resumeResult as Promise<void>).catch((error) => {
+							logOrientationError('audioContext.resume', error);
+						});
+					}
+				} catch (error) {
+					logOrientationError('audioContext.resume', error);
+				}
+			}
+
+			try {
+				const playResult = audioElement.play();
+				if (playResult && typeof (playResult as any).catch === 'function') {
+					(playResult as Promise<void>).catch((error) => {
+						logOrientationError('audioElement.play', error);
+					});
+				}
+			} catch (error) {
+				logOrientationError('audioElement.play', error);
+			}
+
+			// Always enable directional cone for positional occlusion
+			positionalAudio.setDirectionalCone(180, 230, 0.1);
+
+			const helper = new PositionalAudioHelper(positionalAudio, 0.1);
+			positionalAudio.add(helper);
+
+			//
+
+			renderer = new WebGPURenderer({ canvas: canvas as any, antialias: true });
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+			renderer.shadowMap.enabled = true;
+			//container.appendChild( renderer.domElement );
+
+			const gltfLoader = new GLTFLoader();
+			gltfLoader.load(
+				this.root + '/models/gltf/BoomBox.glb',
+				function (gltf) {
+					try {
+						const boomBox = gltf.scene;
+						boomBox.position.set(0, 0.2, 0);
+						boomBox.scale.set(20, 20, 20);
+
+						boomBox.traverse(function (object) {
+							if (object.isMesh) {
+								object.material.envMap = reflectionCube;
+								object.geometry.rotateY(-Math.PI);
+								object.castShadow = true;
+							}
+						});
+
+						boomBox.add(positionalAudio);
+						scene.add(boomBox);
+					} catch (error) {
+						logOrientationError('gltf onLoad', error);
+					} finally {
+						startAnimationLoop();
+					}
+				},
+				undefined,
+				function (error) {
+					logOrientationError('gltf load', error);
+					startAnimationLoop();
+				},
+			);
+
+			// sound is damped behind this wall
+
+			const wallGeometry = new THREE.BoxGeometry(2, 1, 0.1);
+			const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
+
+			const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+			wall.position.set(0, 0.5, -0.5);
+			scene.add(wall);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.target.set(0, 0.1, 0);
+			controls.update();
+			controls.minDistance = 2;
+			controls.maxDistance = 10;
+			controls.maxPolarAngle = 0.5 * Math.PI;
+
+			//		controls.target.set(0, 0, -0.2);
+
+			//
+
+			window.addEventListener('resize', onWindowResize);
+			startAnimationLoop();
+		};
+
+		function onWindowResize() {
+			if (!camera || !renderer) return;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		}
+
+		function animate() {
+			try {
+				if (!renderer || !scene || !camera) return;
+				renderer.render(scene, camera);
+			} catch (error) {
+				logOrientationError('render', error);
+				stopAnimationLoop();
+			}
+		}
+
+		try {
+			init();
+		} catch (error) {
+			console.error('Error initializing WebGL orientation demo:', error);
+		}
 	}
 
 	async webgpu_cube(canvas: Canvas) {
@@ -181,8 +367,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		canvas.width = canvas.clientWidth * window.devicePixelRatio;
 		canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-		console.log('Initializing cube demo with canvas', canvas, 'size', canvas.width, canvas.height);
-
 		const innerWidth = canvas.clientWidth;
 		const innerHeight = canvas.clientHeight;
 
@@ -196,33 +380,26 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 		scene.add(mesh);
 
 		//@ts-ignore
-		renderer = new WebGPURenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
+		renderer = new THREE.WebGLRenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
 
-		try {
-			await renderer.init();
-			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setAnimationLoop(animate);
-		} catch (err: any) {
-			console.error('webgpu_cube: renderer.init() failed:', err?.message ?? err);
-			return;
-		}
+		await renderer.init();
+		renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setAnimationLoop(animate);
 	}
 
 	async webgpu_tsl_galaxy(canvas: Canvas) {
-		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn } = require('three');
+		const THREE = require('three/webgpu');
+		const { color, cos, float, mix, range, sin, timerLocal, uniform, uv, vec3, vec4, PI, PI2, Fn, TWO_PI, time } = require('three/tsl');
 
 		let camera, scene, renderer, controls, context;
-
-		init();
 
 		async function init() {
 			canvas.width = canvas.clientWidth * window.devicePixelRatio;
 			canvas.height = canvas.clientHeight * window.devicePixelRatio;
 
-			camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
 			camera.position.set(4, 2, 5);
-			//camera.position.set( 0,0, 5);
 
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color(0x201919);
@@ -230,7 +407,6 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			// galaxy
 
 			const material = new THREE.SpriteNodeMaterial({
-				transparent: true,
 				depthWrite: false,
 				blending: THREE.AdditiveBlending,
 			});
@@ -238,27 +414,16 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const size = uniform(0.08);
 			material.scaleNode = range(0, 1).mul(size);
 
-			const time = timerLocal();
-
 			const radiusRatio = range(0, 1);
 			const radius = radiusRatio.pow(1.5).mul(5).toVar();
 
 			const branches = 3;
-			const branchAngle = range(0, branches).floor().mul(PI2.div(branches));
+			const branchAngle = range(0, branches).floor().mul(TWO_PI.div(branches));
 			const angle = branchAngle.add(time.mul(radiusRatio.oneMinus()));
 
 			const position = vec3(cos(angle), 0, sin(angle)).mul(radius);
 
-			const sphericalToVec3 = Fn(([phi, theta]) => {
-				const sinPhiRadius = sin(phi);
-
-				return vec3(sinPhiRadius.mul(sin(theta)), cos(phi), sinPhiRadius.mul(cos(theta)));
-			});
-
-			const phi = range(0, PI2);
-			const theta = range(0, PI);
-			const offsetRadius = range(0, 1).pow(2).mul(radiusRatio).mul(1.25);
-			const randomOffset = sphericalToVec3(phi, theta).mul(offsetRadius);
+			const randomOffset = range(vec3(-1), vec3(1)).pow3().mul(radiusRatio).add(0.2);
 
 			material.positionNode = position.add(randomOffset);
 
@@ -271,41 +436,48 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material, 20000);
 			scene.add(mesh);
 
-			// debug
-			/*
-				const gui = new GUI();
-
-				gui.add( size, 'value', 0, 1, 0.001 ).name( 'size' );
-
-				gui.addColor( { color: colorInside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
-					.name( 'colorInside' )
-					.onChange( function ( value ) {
-
-						colorInside.value.set( value );
-
-					} );
-
-				gui.addColor( { color: colorOutside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
-					.name( 'colorOutside' )
-					.onChange( function ( value ) {
-
-						colorOutside.value.set( value );
-
-					} );
-
-					*/
-
 			// renderer
-			renderer = new WebGPURenderer({ canvas, antialias: false });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-			try {
-				await renderer.init();
-			} catch (error) {
-				console.error('Error initializing WebGPURenderer:', error);
-			}
 
+			// renderer = new THREE.WebGPURenderer( { antialias: true } );
+			// renderer.setPixelRatio( window.devicePixelRatio );
+			// renderer.setSize( window.innerWidth, window.innerHeight );
+			// renderer.setAnimationLoop( animate );
+			//	renderer.inspector = new Inspector();
+			//	document.body.appendChild( renderer.domElement );
+
+			// events
+
+			//				window.addEventListener( 'resize', onWindowResize );
+
+			// debug
+
+			// const gui = renderer.inspector.createParameters( 'Parameters' );
+
+			// gui.add( size, 'value', 0, 1, 0.001 ).name( 'size' );
+
+			// gui.addColor( { color: colorInside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
+			// 	.name( 'colorInside' )
+			// 	.onChange( function ( value ) {
+
+			// 		colorInside.value.set( value );
+
+			// 	} );
+
+			// gui.addColor( { color: colorOutside.value.getHex( THREE.SRGBColorSpace ) }, 'color' )
+			// 	.name( 'colorOutside' )
+			// 	.onChange( function ( value ) {
+
+			// 		colorOutside.value.set( value );
+
+			// 	} );
+
+			renderer = new WebGPURenderer({ canvas, outputBufferType: THREE.UnsignedByteType });
+
+			//await renderer.init();
+			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setAnimationLoop(animate);
+
 			// document.body.appendChild( renderer.domElement );
 
 			controls = new OrbitControls(camera, renderer.domElement);
@@ -542,73 +714,69 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 	}
 
 	async webgpu_1m_particles(canvas: Canvas) {
-		const { Fn, uniform, texture, instanceIndex, float, hash, vec3, storage, If, StorageInstancedBufferAttribute, SpriteNodeMaterial } = require('three');
+		const THREE = require('three/webgpu');
+		const { Fn, If, uniform, float, uv, vec3, hash, shapeCircle, instancedArray, instanceIndex } = require('three/tsl');
 
-		const particleCount = 100; //0000;
+		const root = this.root;
 
-		const gravity = uniform(-0.0098);
+		const particleCount = 200000;
+
+		const gravity = uniform(-0.00098);
 		const bounce = uniform(0.8);
 		const friction = uniform(0.99);
-		const size = uniform(1);
+		const size = uniform(0.12);
 
 		const clickPosition = uniform(new THREE.Vector3());
 
 		let camera, scene, renderer;
-		let controls, stats;
+		let controls;
 		let computeParticles;
-		var context;
-		var innerWidth, innerHeight;
 
-		//const timestamps = document.getElementById('timestamps');
+		let isOrbitControlsActive: boolean;
 
-		const root = this.root;
+		init();
 
 		async function init() {
-			canvas.width = canvas.clientWidth * window.devicePixelRatio;
-			canvas.height = canvas.clientHeight * window.devicePixelRatio;
+			const { clientWidth, clientHeight } = canvas;
 
-			innerWidth = canvas.clientWidth as number;
-			innerHeight = canvas.clientHeight as number;
-
-			camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-			camera.position.set(15, 30, 30);
+			camera = new THREE.PerspectiveCamera(50, clientWidth / clientHeight, 0.1, 1000);
+			camera.position.set(0, 5, 20);
 
 			scene = new THREE.Scene();
 
-			// textures
+			//
 
-			const textureLoader = new THREE.TextureLoader();
-			// textureLoader.setPath(root);
-			const map = textureLoader.load(root + '/textures/sprite1.png');
-
-			const createBuffer = () => storage(new THREE.StorageInstancedBufferAttribute(particleCount, 3), 'vec3', particleCount);
-
-			const positionBuffer = createBuffer();
-			const velocityBuffer = createBuffer();
-			const colorBuffer = createBuffer();
+			const positions = instancedArray(particleCount, 'vec3');
+			const velocities = instancedArray(particleCount, 'vec3');
+			const colors = instancedArray(particleCount, 'vec3');
 
 			// compute
 
+			const separation = 0.2;
+			const amount = Math.sqrt(particleCount);
+			const offset = float(amount / 2);
+
 			const computeInit = Fn(() => {
-				const position = positionBuffer.element(instanceIndex);
-				const color = colorBuffer.element(instanceIndex);
+				const position = positions.element(instanceIndex);
+				const color = colors.element(instanceIndex);
 
-				const randX = hash(instanceIndex);
-				const randY = hash(instanceIndex.add(2));
-				const randZ = hash(instanceIndex.add(3));
+				const x = instanceIndex.mod(amount);
+				const z = instanceIndex.div(amount);
 
-				position.x = randX.mul(100).add(-50);
-				position.y = 0; // randY.mul( 10 );
-				position.z = randZ.mul(100).add(-50);
+				position.x = offset.sub(x).mul(separation);
+				position.z = offset.sub(z).mul(separation);
 
-				color.assign(vec3(randX, randY, randZ));
-			})().compute(particleCount);
+				color.x = hash(instanceIndex);
+				color.y = hash(instanceIndex.add(2));
+			})()
+				.compute(particleCount)
+				.setName('Init Particles');
 
 			//
 
 			const computeUpdate = Fn(() => {
-				const position = positionBuffer.element(instanceIndex);
-				const velocity = velocityBuffer.element(instanceIndex);
+				const position = positions.element(instanceIndex);
+				const velocity = velocities.element(instanceIndex);
 
 				velocity.addAssign(vec3(0.0, gravity, 0.0));
 				position.addAssign(velocity);
@@ -628,33 +796,29 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				});
 			});
 
-			computeParticles = computeUpdate().compute(particleCount);
-
-			// create nodes
-
-			const textureNode = texture(map);
+			computeParticles = computeUpdate().compute(particleCount).setName('Update Particles');
 
 			// create particles
 
-			const particleMaterial = new THREE.SpriteNodeMaterial();
-			particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
-			particleMaterial.positionNode = positionBuffer.toAttribute();
-			particleMaterial.scaleNode = size;
-			particleMaterial.depthWrite = false;
-			particleMaterial.depthTest = true;
-			particleMaterial.transparent = true;
+			const material = new THREE.SpriteNodeMaterial();
+			material.colorNode = uv().mul(colors.element(instanceIndex));
+			material.positionNode = positions.toAttribute();
+			material.scaleNode = size;
+			material.opacityNode = shapeCircle();
+			material.alphaToCoverage = true;
+			material.transparent = true;
 
-			const particles = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), particleMaterial);
+			const particles = new THREE.Sprite(material);
 			particles.count = particleCount;
 			particles.frustumCulled = false;
 			scene.add(particles);
 
 			//
 
-			const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
+			const helper = new THREE.GridHelper(90, 45, 0x303030, 0x303030);
 			scene.add(helper);
 
-			const geometry = new THREE.PlaneGeometry(1000, 1000);
+			const geometry = new THREE.PlaneGeometry(200, 200);
 			geometry.rotateX(-Math.PI / 2);
 
 			const plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ visible: false }));
@@ -663,47 +827,49 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 			const raycaster = new THREE.Raycaster();
 			const pointer = new THREE.Vector2();
 
-			renderer = new WebGPURenderer({ antialias: true, trackTimestamp: true, canvas });
+			//
+
+			renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-			await renderer.init();
 			renderer.setAnimationLoop(animate);
+			//	renderer.inspector = new Inspector();
+			//	document.body.appendChild( renderer.domElement );
 
-			//document.body.appendChild(renderer.domElement);
-
-			// stats = new Stats();
-			// document.body.appendChild(stats.dom);
+			await renderer.init();
 
 			//
 
-			// click event
+			renderer.compute(computeInit);
+
+			// Hit
 
 			const computeHit = Fn(() => {
-				const position = positionBuffer.element(instanceIndex);
-				const velocity = velocityBuffer.element(instanceIndex);
+				const position = positions.element(instanceIndex);
+				const velocity = velocities.element(instanceIndex);
 
 				const dist = position.distance(clickPosition);
 				const direction = position.sub(clickPosition).normalize();
-				const distArea = float(6).sub(dist).max(0);
+				const distArea = float(3).sub(dist).max(0);
 
 				const power = distArea.mul(0.01);
-				const relativePower = power.mul(instanceIndex.hash().mul(0.5).add(0.5));
+				const relativePower = power.mul(hash(instanceIndex).mul(1.5).add(0.5));
 
 				velocity.assign(velocity.add(direction.mul(relativePower)));
-			})().compute(particleCount);
-
-			renderer.compute(computeInit);
+			})()
+				.compute(particleCount)
+				.setName('Hit Particles');
 
 			//
 
 			function onMove(event) {
-				const x = event.clientX; //* window.devicePixelRatio;
-				const y = event.clientY; //* window.devicePixelRatio;
-				pointer.set((x / canvas.width) * 2 - 1, -(y / canvas.height) * 2 + 1);
+				if (isOrbitControlsActive) return;
+
+				pointer.set((event.clientX / canvas.clientWidth) * 2 - 1, -(event.clientY / canvas.clientHeight) * 2 + 1);
 
 				raycaster.setFromCamera(pointer, camera);
 
-				const intersects = raycaster.intersectObjects([plane], false);
+				const intersects = raycaster.intersectObject(plane, false);
 
 				if (intersects.length > 0) {
 					const { point } = intersects[0];
@@ -719,17 +885,30 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 				}
 			}
 
-			// events
+			// controls
 
-			canvas.addEventListener('pointermove', onMove);
-			//
+			const domElement = canvas.toHTMLCanvas();
 
-			controls = new OrbitControls(camera, canvas as never);
-			controls.enabled = true;
+			domElement.addEventListener('pointermove', onMove);
+
+			controls = new OrbitControls(camera, domElement);
+			controls.enableDamping = true;
 			controls.minDistance = 5;
 			controls.maxDistance = 200;
-			controls.target.set(0, 0, 0);
+			controls.target.set(0, -8, 0);
 			controls.update();
+
+			controls.addEventListener('start', () => {
+				isOrbitControlsActive = true;
+			});
+			controls.addEventListener('end', () => {
+				isOrbitControlsActive = false;
+			});
+
+			controls.touches = {
+				ONE: null,
+				TWO: THREE.TOUCH.DOLLY_PAN,
+			};
 
 			//
 
@@ -737,40 +916,28 @@ export class DemoSharedCanvasThree extends DemoSharedBase {
 
 			// gui
 
-			// const gui = new GUI();
+			const gui = renderer.inspector.createParameters('Settings');
 
-			// gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
-			// gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
-			// gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
-			// gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
+			gui.add(gravity, 'value', -0.0098, 0, 0.0001).name('gravity');
+			gui.add(bounce, 'value', 0.1, 1, 0.01).name('bounce');
+			gui.add(friction, 'value', 0.96, 0.99, 0.01).name('friction');
+			gui.add(size, 'value', 0.12, 0.5, 0.01).name('size');
 		}
 
 		function onWindowResize() {
-			camera.aspect = innerWidth / innerHeight;
+			const { clientWidth, clientHeight } = canvas;
+
+			camera.aspect = clientWidth / clientHeight;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize(innerWidth, innerHeight, false);
+			renderer.setSize(clientWidth, clientHeight, false);
 		}
 
-		async function animate() {
-			//	stats.update();
+		function animate() {
+			controls.update();
 
-			await renderer.computeAsync(computeParticles);
-
-			await renderer.renderAsync(scene, camera);
-
-			// throttle the logging
-
-			// if (renderer.hasFeature('timestamp-query')) {
-			// 	if (renderer.info.render.calls % 5 === 0) {
-			// 		timestamps.innerHTML = `
-
-			// 				Compute ${renderer.info.compute.frameCalls} pass in ${renderer.info.compute.timestamp.toFixed(6)}ms<br>
-			// 				Draw ${renderer.info.render.drawCalls} pass in ${renderer.info.render.timestamp.toFixed(6)}ms`;
-			// 	}
-			// } else {
-			// 	timestamps.innerHTML = 'Timestamp queries not supported';
-			// }
+			renderer.computeAsync(computeParticles);
+			renderer.render(scene, camera);
 		}
 
 		init();

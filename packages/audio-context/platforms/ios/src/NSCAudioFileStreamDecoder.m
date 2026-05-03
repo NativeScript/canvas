@@ -3,6 +3,7 @@
 //
 
 #import "NSCAudioFileStreamDecoder.h"
+#import "NSCAudioLog.h"
 #import <AudioToolbox/AudioToolbox.h>
 
 #ifndef kAudioConverterErr_NoMoreInputData
@@ -12,6 +13,7 @@
 @interface NSCAudioFileStreamDecoderContext : NSObject
 @property (nonatomic, strong) NSMutableData *compData;
 @property (nonatomic, strong) NSMutableData *packetDescData;
+@property (nonatomic, strong) NSMutableData *adjPacketDescData;
 @property (nonatomic, assign) AudioStreamBasicDescription asbd;
 @property (nonatomic, assign) BOOL hasASBD;
 @property (nonatomic, strong) NSData *magicCookie;
@@ -75,11 +77,29 @@ static void packetsProc(void *inClientData,
             [ctx.packetDescData appendBytes:&pd length:sizeof(pd)];
         }
     } else if (inNumberBytes > 0) {
-        AudioStreamPacketDescription pd;
-        pd.mStartOffset = (SInt64)base;
-        pd.mDataByteSize = inNumberBytes;
-        pd.mVariableFramesInPacket = 0;
-        [ctx.packetDescData appendBytes:&pd length:sizeof(pd)];
+        UInt32 bytesPerPacket = 0;
+        if (ctx.hasASBD) bytesPerPacket = (UInt32)ctx.asbd.mBytesPerPacket;
+
+        if (bytesPerPacket > 0) {
+            UInt32 remaining = inNumberBytes;
+            UInt32 offset = 0;
+            while (remaining > 0) {
+                UInt32 thisSize = remaining < bytesPerPacket ? remaining : bytesPerPacket;
+                AudioStreamPacketDescription pd;
+                pd.mStartOffset = (SInt64)(base + offset);
+                pd.mDataByteSize = thisSize;
+                pd.mVariableFramesInPacket = 0;
+                [ctx.packetDescData appendBytes:&pd length:sizeof(pd)];
+                offset += thisSize;
+                remaining -= thisSize;
+            }
+        } else {
+            AudioStreamPacketDescription pd;
+            pd.mStartOffset = (SInt64)base;
+            pd.mDataByteSize = inNumberBytes;
+            pd.mVariableFramesInPacket = 0;
+            [ctx.packetDescData appendBytes:&pd length:sizeof(pd)];
+        }
     }
 
     ctx.packetCount = (UInt32)(ctx.packetDescData.length / sizeof(AudioStreamPacketDescription));
@@ -98,25 +118,73 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
 
     UInt32 packetsRequested = *ioNumberDataPackets;
     UInt32 packetsRemaining = ctx.packetCount - ctx.packetIndex;
-    UInt32 packetsToProvide = packetsRequested < packetsRemaining ? packetsRequested : packetsRemaining;
+    UInt32 packetsToConsider = packetsRequested < packetsRemaining ? packetsRequested : packetsRemaining;
 
     AudioStreamPacketDescription *pd = (AudioStreamPacketDescription *)ctx.packetDescData.bytes;
     AudioStreamPacketDescription *startDesc = &pd[ctx.packetIndex];
 
-    UInt32 bytes = 0;
-    for (UInt32 i = 0; i < packetsToProvide; ++i) bytes += pd[ctx.packetIndex + i].mDataByteSize;
+    uint64_t compLen = (uint64_t)ctx.compData.length;
+    int64_t firstOffset = startDesc->mStartOffset;
+    if (firstOffset < 0 || (uint64_t)firstOffset >= compLen) {
+        *ioNumberDataPackets = 0;
+        return kAudioConverterErr_NoMoreInputData;
+    }
+
+    UInt32 accumulatedBytes = 0;
+    UInt32 actualPackets = 0;
+    uint64_t expectedOffset = (uint64_t)firstOffset;
+    for (UInt32 i = 0; i < packetsToConsider; ++i) {
+        AudioStreamPacketDescription *cur = &pd[ctx.packetIndex + i];
+        if ((uint64_t)cur->mStartOffset != expectedOffset) break;
+        uint64_t end = (uint64_t)cur->mStartOffset + (uint64_t)cur->mDataByteSize;
+        if (end > compLen) break;
+        accumulatedBytes += (UInt32)cur->mDataByteSize;
+        expectedOffset = end;
+        actualPackets++;
+    }
+
+    if (actualPackets == 0) {
+        *ioNumberDataPackets = 0;
+        return kAudioConverterErr_NoMoreInputData;
+    }
 
     ioData->mNumberBuffers = 1;
     ioData->mBuffers[0].mNumberChannels = ctx.asbd.mChannelsPerFrame;
-    ioData->mBuffers[0].mData = (void *)((uint8_t *)ctx.compData.bytes + startDesc->mStartOffset);
-    ioData->mBuffers[0].mDataByteSize = bytes;
+    ioData->mBuffers[0].mData = (void *)((uint8_t *)ctx.compData.bytes + (size_t)firstOffset);
+    ioData->mBuffers[0].mDataByteSize = accumulatedBytes;
 
-    if (outDataPacketDescription) {
-        *outDataPacketDescription = startDesc;
+
+    UInt32 bytesPerPacket = ctx.asbd.mBytesPerPacket;
+    if (bytesPerPacket > 0) {
+        UInt32 maxPacketsByBytes = ioData->mBuffers[0].mDataByteSize / bytesPerPacket;
+        if (maxPacketsByBytes < actualPackets) {
+            UInt32 newAccum = 0;
+            for (UInt32 i = 0; i < maxPacketsByBytes; ++i) {
+                AudioStreamPacketDescription *cur = &pd[ctx.packetIndex + i];
+                newAccum += cur->mDataByteSize;
+            }
+            NSCLogDebug(@"NSCAudioFileStreamDecoder: trimmed packets %u -> %u to match bytes (%u bytesPerPkt)", actualPackets, maxPacketsByBytes, bytesPerPacket);
+            actualPackets = maxPacketsByBytes;
+            ioData->mBuffers[0].mDataByteSize = newAccum;
+            accumulatedBytes = newAccum;
+        }
     }
 
-    *ioNumberDataPackets = packetsToProvide;
-    ctx.packetIndex += packetsToProvide;
+    if (outDataPacketDescription) {
+        size_t need = sizeof(AudioStreamPacketDescription) * (size_t)actualPackets;
+        if (!ctx.adjPacketDescData) ctx.adjPacketDescData = [NSMutableData dataWithLength:need];
+        else ctx.adjPacketDescData.length = need;
+        AudioStreamPacketDescription *adj = (AudioStreamPacketDescription *)ctx.adjPacketDescData.mutableBytes;
+        for (UInt32 i = 0; i < actualPackets; ++i) {
+            AudioStreamPacketDescription *src = &pd[ctx.packetIndex + i];
+            adj[i] = *src;
+            adj[i].mStartOffset = (SInt64)((uint64_t)src->mStartOffset - (uint64_t)firstOffset);
+        }
+        *outDataPacketDescription = adj;
+    }
+
+    *ioNumberDataPackets = actualPackets;
+    ctx.packetIndex += actualPackets;
     return noErr;
 }
 
@@ -131,6 +199,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
         _ctx = [[NSCAudioFileStreamDecoderContext alloc] init];
         _ctx.compData = [NSMutableData data];
         _ctx.packetDescData = [NSMutableData data];
+        _ctx.adjPacketDescData = [NSMutableData data];
         _ctx.hasASBD = NO;
         _ctx.packetCount = 0;
         _ctx.packetIndex = 0;
@@ -149,6 +218,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     _ctx = [[NSCAudioFileStreamDecoderContext alloc] init];
     _ctx.compData = [NSMutableData data];
     _ctx.packetDescData = [NSMutableData data];
+    _ctx.adjPacketDescData = [NSMutableData data];
     _ctx.hasASBD = NO;
     _ctx.packetCount = 0;
     _ctx.packetIndex = 0;

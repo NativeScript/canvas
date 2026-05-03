@@ -24,6 +24,26 @@ export class HTMLAudioElement extends HTMLElement {
 		}
 	}
 
+	attachAudioContextTap(ctx: any) {
+		if (this._audio) {
+			try {
+				return this._audio.attachAudioContextTap(ctx);
+			} catch (error) {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	detachAudioContextTap(ctx: any) {
+		if (this._audio) {
+			try {
+				this._audio.detachAudioContextTap(ctx);
+			} catch (error) {}
+		}
+		return null;
+	}
+
 	canPlayType(type: string): '' | 'probably' | 'maybe' {
 		if (!this._audio) return '';
 		return this._audio.canPlayType(type);

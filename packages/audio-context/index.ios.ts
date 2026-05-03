@@ -99,7 +99,6 @@ function makeIOSHooks(native: NSCAudioParam): AudioParamHooks {
 		},
 	};
 }
-
 export class AudioParam extends AudioParamBase {
 	private [native_]: NSCAudioParam;
 
@@ -131,6 +130,7 @@ export class AudioNode extends AudioNodeBase {
 		} catch (e) {
 			console.warn(`AudioNode.connect failed:`, e);
 		}
+		if (!(node instanceof AudioParamBase)) return node;
 	}
 
 	disconnect(destinationOrOutput?: any, output?: number, input?: number) {
@@ -731,7 +731,7 @@ export class MediaElementAudioSourceNode extends AudioNode {
 		super(context as unknown as NativeBaseAudioContext);
 		assertMediaElementUsable(context, mediaElement);
 
-		const native = preExistingNative ?? MediaElementAudioSourceNode._createNative(context, mediaElement);
+		const native = preExistingNative ?? MediaElementAudioSourceNode._createNative(context, mediaElement?._audio ?? mediaElement);
 		if (!native) throwInvalidMediaElement();
 
 		this._mediaElement = mediaElement;

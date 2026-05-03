@@ -1,5 +1,6 @@
 #include "audio_context.h"
 #include "audio_internal.h"
+#include "hrtf_convolver.h"
 
 #include <android/log.h>
 #include <jni.h>
@@ -12,7 +13,9 @@
 #include <chrono>
 
 #ifdef HAS_OBOE
+
 #include <oboe/Oboe.h>
+
 #endif
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -415,6 +418,13 @@ extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeSetAudioThreadLoggingEnabled(JNIEnv *env,
                                                                                    jobject thiz,
                                                                                    jboolean jenabled) {
+    g_audioThreadLoggingEnabled.store(jenabled != JNI_FALSE, std::memory_order_relaxed);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetGlobalAudioThreadLoggingEnabled(JNIEnv *env,
+                                                                                         jclass clazz,
+                                                                                         jboolean jenabled) {
     g_audioThreadLoggingEnabled.store(jenabled != JNI_FALSE, std::memory_order_relaxed);
 }
 
@@ -984,13 +994,17 @@ Java_org_nativescript_audiocontext_AudioContext_nativeScheduleListenerSet(JNIEnv
                                                                           jdouble value) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (cid) {
-        NativeEngine::getInstance().scheduleListenerEvent(std::string(cid), static_cast<int>(jparamType), 0, static_cast<int>(jrate), value, static_cast<int64_t>(timeNs));
+        NativeEngine::getInstance().scheduleListenerEvent(std::string(cid),
+                                                          static_cast<int>(jparamType), 0,
+                                                          static_cast<int>(jrate), value,
+                                                          static_cast<int64_t>(timeNs));
         env->ReleaseStringUTFChars(jcontextId, cid);
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeScheduleListenerRamp(JNIEnv *env, jobject thiz,
+Java_org_nativescript_audiocontext_AudioContext_nativeScheduleListenerRamp(JNIEnv *env,
+                                                                           jobject thiz,
                                                                            jstring jcontextId,
                                                                            jint jparamType,
                                                                            jint jrate,
@@ -998,13 +1012,17 @@ Java_org_nativescript_audiocontext_AudioContext_nativeScheduleListenerRamp(JNIEn
                                                                            jdouble value) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (cid) {
-        NativeEngine::getInstance().scheduleListenerEvent(std::string(cid), static_cast<int>(jparamType), 1, static_cast<int>(jrate), value, static_cast<int64_t>(timeNs));
+        NativeEngine::getInstance().scheduleListenerEvent(std::string(cid),
+                                                          static_cast<int>(jparamType), 1,
+                                                          static_cast<int>(jrate), value,
+                                                          static_cast<int64_t>(timeNs));
         env->ReleaseStringUTFChars(jcontextId, cid);
     }
 }
 
 extern "C" JNIEXPORT jdoubleArray JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValues(JNIEnv *env, jobject thiz,
+Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValues(JNIEnv *env,
+                                                                             jobject thiz,
                                                                              jstring jcontextId,
                                                                              jint jparamType,
                                                                              jlong jstartNs,
@@ -1012,7 +1030,11 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValues(JNI
                                                                              jint frameCount) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (!cid) return nullptr;
-    std::vector<double> vals = NativeEngine::getInstance().getListenerParamValues(std::string(cid), static_cast<int>(jparamType), static_cast<int64_t>(jstartNs), static_cast<double>(sampleRate), static_cast<int>(frameCount));
+    std::vector<double> vals = NativeEngine::getInstance().getListenerParamValues(std::string(cid),
+                                                                                  static_cast<int>(jparamType),
+                                                                                  static_cast<int64_t>(jstartNs),
+                                                                                  static_cast<double>(sampleRate),
+                                                                                  static_cast<int>(frameCount));
     env->ReleaseStringUTFChars(jcontextId, cid);
     jdoubleArray arr = env->NewDoubleArray(static_cast<jsize>(vals.size()));
     if (!arr) return nullptr;
@@ -1021,19 +1043,23 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValues(JNI
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeCancelListenerEvents(JNIEnv *env, jobject thiz,
-                                                                            jstring jcontextId,
-                                                                            jint jparamType,
-                                                                            jlong timeNs) {
+Java_org_nativescript_audiocontext_AudioContext_nativeCancelListenerEvents(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jstring jcontextId,
+                                                                           jint jparamType,
+                                                                           jlong timeNs) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (cid) {
-        NativeEngine::getInstance().cancelListenerEvents(std::string(cid), static_cast<int>(jparamType), static_cast<int64_t>(timeNs));
+        NativeEngine::getInstance().cancelListenerEvents(std::string(cid),
+                                                         static_cast<int>(jparamType),
+                                                         static_cast<int64_t>(timeNs));
         env->ReleaseStringUTFChars(jcontextId, cid);
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldListenerEvents(JNIEnv *env, jobject thiz,
+Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldListenerEvents(JNIEnv *env,
+                                                                                  jobject thiz,
                                                                                   jstring jcontextId,
                                                                                   jint jparamType,
                                                                                   jint jrate,
@@ -1041,18 +1067,24 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCancelAndHoldListenerEvent
                                                                                   jdouble value) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (cid) {
-        NativeEngine::getInstance().cancelAndHoldListenerEvents(std::string(cid), static_cast<int>(jparamType), static_cast<int>(jrate), static_cast<double>(value), static_cast<int64_t>(timeNs));
+        NativeEngine::getInstance().cancelAndHoldListenerEvents(std::string(cid),
+                                                                static_cast<int>(jparamType),
+                                                                static_cast<int>(jrate),
+                                                                static_cast<double>(value),
+                                                                static_cast<int64_t>(timeNs));
         env->ReleaseStringUTFChars(jcontextId, cid);
     }
 }
 
 extern "C" JNIEXPORT jdouble JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValue(JNIEnv *env, jobject thiz,
-                                                                             jstring jcontextId,
-                                                                             jint jparamType) {
+Java_org_nativescript_audiocontext_AudioContext_nativeGetListenerParamValue(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jstring jcontextId,
+                                                                            jint jparamType) {
     const char *cid = env->GetStringUTFChars(jcontextId, nullptr);
     if (!cid) return 0.0;
-    double v = NativeEngine::getInstance().getListenerParamValue(std::string(cid), static_cast<int>(jparamType));
+    double v = NativeEngine::getInstance().getListenerParamValue(std::string(cid),
+                                                                 static_cast<int>(jparamType));
     env->ReleaseStringUTFChars(jcontextId, cid);
     return static_cast<jdouble>(v);
 }
@@ -1070,6 +1102,23 @@ Java_org_nativescript_audiocontext_AudioContext_nativeAttachPanner(JNIEnv *env, 
     NativeEngine::getInstance().enqueueCommand(std::move(cmd));
     if (vid) env->ReleaseStringUTFChars(jvoiceId, vid);
     if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeAttachBiquadToPanner(JNIEnv *env, jobject thiz,
+                                                                          jstring jpannerId,
+                                                                          jstring jbiquadId) {
+    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
+    const char *bid = env->GetStringUTFChars(jbiquadId, nullptr);
+    if (pid && bid) {
+        NativeEngine::Command cmd;
+        cmd.type = NativeEngine::CMD_SET_PANNER_PARAMS;
+        cmd.id = std::string(pid);
+        cmd.pannerBiquadId = std::string(bid);
+        NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+    }
+    if (pid) env->ReleaseStringUTFChars(jpannerId, pid);
+    if (bid) env->ReleaseStringUTFChars(jbiquadId, bid);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -1194,10 +1243,133 @@ Java_org_nativescript_audiocontext_AudioContext_nativeResume(JNIEnv *env, jobjec
 
 extern "C" JNIEXPORT void JNICALL
 Java_org_nativescript_audiocontext_AudioContext_nativeSetOutputDeviceId(JNIEnv *env, jobject thiz,
-                                                                         jint deviceId) {
+                                                                        jint deviceId) {
     (void) env;
     (void) thiz;
     NativeEngine::getInstance().setOutputDeviceId(static_cast<int>(deviceId));
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerHRIR(JNIEnv *env, jobject thiz,
+                                                                    jstring jpannerId,
+                                                                    jfloatArray jleft,
+                                                                    jfloatArray jright) {
+    if (!jpannerId) return;
+    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
+    if (!pid) return;
+    std::string pannerId(pid);
+
+    jsize leftLen = jleft ? env->GetArrayLength(jleft) : 0;
+    jsize rightLen = jright ? env->GetArrayLength(jright) : 0;
+    if (leftLen <= 0 || rightLen <= 0 || leftLen != rightLen) {
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    jfloat *leftArr = (jfloat *) env->GetPrimitiveArrayCritical(jleft, nullptr);
+    jfloat *rightArr = (jfloat *) env->GetPrimitiveArrayCritical(jright, nullptr);
+    if (!leftArr || !rightArr) {
+        if (leftArr) env->ReleasePrimitiveArrayCritical(jleft, leftArr, JNI_ABORT);
+        if (rightArr) env->ReleasePrimitiveArrayCritical(jright, rightArr, JNI_ABORT);
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    std::vector<float> left(static_cast<size_t>(leftLen));
+    std::vector<float> right(static_cast<size_t>(rightLen));
+    std::memcpy(left.data(), leftArr, static_cast<size_t>(leftLen) * sizeof(float));
+    std::memcpy(right.data(), rightArr, static_cast<size_t>(rightLen) * sizeof(float));
+
+    env->ReleasePrimitiveArrayCritical(jleft, leftArr, JNI_ABORT);
+    env->ReleasePrimitiveArrayCritical(jright, rightArr, JNI_ABORT);
+
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
+    cmd.id = pannerId;
+    cmd.hrirLeft = std::make_shared<std::vector<float>>(std::move(left));
+    cmd.hrirRight = std::make_shared<std::vector<float>>(std::move(right));
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+
+    env->ReleaseStringUTFChars(jpannerId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerHRIRDirect(JNIEnv *env, jobject thiz,
+                                                                          jstring jpannerId,
+                                                                          jobject jleft,
+                                                                          jobject jright) {
+    if (!jpannerId) return;
+    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
+    if (!pid) return;
+    std::string pannerId(pid);
+
+    if (jleft == nullptr && jright == nullptr) {
+        NativeEngine::Command cmd;
+        cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
+        cmd.id = pannerId;
+        cmd.clearHrir = true;
+        NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    jlong leftCap = jleft ? env->GetDirectBufferCapacity(jleft) : 0;
+    jlong rightCap = jright ? env->GetDirectBufferCapacity(jright) : 0;
+    if (leftCap <= 0 || rightCap <= 0 || leftCap != rightCap) {
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    float *leftArr = reinterpret_cast<float *>(env->GetDirectBufferAddress(jleft));
+    float *rightArr = reinterpret_cast<float *>(env->GetDirectBufferAddress(jright));
+    if (!leftArr || !rightArr) {
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    size_t count = static_cast<size_t>(std::min(leftCap, rightCap));
+    if (count == 0) {
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    std::vector<float> left(count);
+    std::vector<float> right(count);
+    std::memcpy(left.data(), leftArr, count * sizeof(float));
+    std::memcpy(right.data(), rightArr, count * sizeof(float));
+
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_PANNER_HRIR;
+    cmd.id = pannerId;
+    cmd.hrirLeft = std::make_shared<std::vector<float>>(std::move(left));
+    cmd.hrirRight = std::make_shared<std::vector<float>>(std::move(right));
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+
+    env->ReleaseStringUTFChars(jpannerId, pid);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeSetPannerPartitionSize(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jstring jpannerId,
+                                                                             jint jpartitionSize) {
+    if (!jpannerId) return;
+    const char *pid = env->GetStringUTFChars(jpannerId, nullptr);
+    if (!pid) return;
+
+    int part = static_cast<int>(jpartitionSize);
+    if (part <= 0) {
+        env->ReleaseStringUTFChars(jpannerId, pid);
+        return;
+    }
+
+    NativeEngine::Command cmd;
+    cmd.type = NativeEngine::CMD_SET_PANNER_PARTITION_SIZE;
+    cmd.id = pid;
+    cmd.pannerPartitionSize = part;
+    NativeEngine::getInstance().enqueueCommand(std::move(cmd));
+
+    env->ReleaseStringUTFChars(jpannerId, pid);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -1296,12 +1468,16 @@ Java_org_nativescript_audiocontext_AudioContext_nativeReleaseAnalyser(JNIEnv *en
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_nativescript_audiocontext_AudioContext_nativeSetAnalyserDecibels(JNIEnv *env, jobject thiz, jstring jid, jfloat jminDb, jfloat jmaxDb) {
+Java_org_nativescript_audiocontext_AudioContext_nativeSetAnalyserDecibels(JNIEnv *env, jobject thiz,
+                                                                          jstring jid,
+                                                                          jfloat jminDb,
+                                                                          jfloat jmaxDb) {
     (void) thiz;
     if (jid == nullptr) return;
     const char *id = env->GetStringUTFChars(jid, nullptr);
     if (!id) return;
-    NativeEngine::getInstance().setAnalyserDecibels(std::string(id), (double)jminDb, (double)jmaxDb);
+    NativeEngine::getInstance().setAnalyserDecibels(std::string(id), (double) jminDb,
+                                                    (double) jmaxDb);
     env->ReleaseStringUTFChars(jid, id);
 }
 
@@ -1401,8 +1577,8 @@ Java_org_nativescript_audiocontext_AudioContext_nativeGetAnalyserByteFrequencyDa
     const char *id = env->GetStringUTFChars(jid, nullptr);
     if (!id) return JNI_FALSE;
     int n = NativeEngine::getInstance()
-                    .getAnalyserByteFrequencyDataInto(id, dest, (int) cap,
-                                                     (float) jminDb, (float) jmaxDb);
+            .getAnalyserByteFrequencyDataInto(id, dest, (int) cap,
+                                              (float) jminDb, (float) jmaxDb);
     env->ReleaseStringUTFChars(jid, id);
     return n > 0 ? JNI_TRUE : JNI_FALSE;
 }
@@ -1485,6 +1661,21 @@ Java_org_nativescript_audiocontext_AudioContext_nativeCreateExternalPcmSource(JN
     std::string id = NativeEngine::getInstance().createExternalPcmSource(
             static_cast<int>(sampleRate), static_cast<int>(channels));
     return env->NewStringUTF(id.c_str());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_org_nativescript_audiocontext_AudioContext_nativeConfigureExternalPcmSource(JNIEnv *env,
+                                                                                 jobject thiz,
+                                                                                 jstring jid,
+                                                                                 jint sampleRate,
+                                                                                 jint channels) {
+    if (!jid) return;
+    const char *idChars = env->GetStringUTFChars(jid, nullptr);
+    if (!idChars) return;
+    NativeEngine::getInstance().configureExternalPcmSource(std::string(idChars),
+                                                           static_cast<int>(sampleRate),
+                                                           static_cast<int>(channels));
+    env->ReleaseStringUTFChars(jid, idChars);
 }
 
 extern "C" JNIEXPORT void JNICALL

@@ -72,6 +72,18 @@ public class AudioContext {
 		}
 	}
 
+	public void setPannerPartitionSize(AudioPannerNode panner, int partitionSize) {
+		if (panner == null) return;
+		String id = panner.getId();
+		if (id == null) return;
+		if (nativeAvailable) {
+			try {
+				nativeSetPannerPartitionSize(id, partitionSize);
+			} catch (Throwable ignored) {
+			}
+		}
+	}
+
 	public void removeEndedListener(String trackId, @NonNull EndedListener listener) {
 		if (trackId == null) return;
 		java.util.concurrent.CopyOnWriteArrayList<EndedListener> list = trackEndedListeners.get(trackId);
@@ -138,6 +150,9 @@ public class AudioContext {
 	private final ConcurrentHashMap<String, float[]> waveShaperCurves = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, java.nio.FloatBuffer> waveShaperCurveBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> waveShaperOversamples = new ConcurrentHashMap<>();
+
+	private final ConcurrentHashMap<String, java.nio.FloatBuffer> pannerHrirLeftBuffers = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, java.nio.FloatBuffer> pannerHrirRightBuffers = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Set<String>> contextPanners = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> pannerContexts = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, String> contextDestination = new ConcurrentHashMap<>();
@@ -190,6 +205,10 @@ public class AudioContext {
 	}
 
 	private static native void nativeInit();
+
+	private static native void nativeSetGlobalAudioThreadLoggingEnabled(boolean enabled);
+
+	private native void nativeAttachBiquadToPanner(String pannerId, String biquadId);
 
 	private native void nativeCancelGainEvents(String gainId, long timeNs);
 
@@ -701,6 +720,8 @@ public class AudioContext {
 																						double refDistance, double maxDistance, double rolloffFactor,
 																						double coneInnerAngle, double coneOuterAngle, double coneOuterGain);
 
+	private native void nativeSetPannerPartitionSize(String pannerId, int partitionSize);
+
 	private native void nativeSetListenerParams(String contextId, double positionX, double positionY, double positionZ,
 																							double forwardX, double forwardY, double forwardZ,
 																							double upX, double upY, double upZ);
@@ -742,6 +763,8 @@ public class AudioContext {
 	private native void nativeSetWaveShaperCurveArray(String id, float[] curve, String oversample);
 
 	private native void nativeSetWaveShaperCurveDirect(String id, java.nio.FloatBuffer data, String oversample);
+
+	private native void nativeSetPannerHRIRDirect(String pannerId, java.nio.FloatBuffer left, java.nio.FloatBuffer right);
 
 	private native String nativeCreateAnalyser(int fftSize, double smoothingTimeConstant, double minDecibels, double maxDecibels);
 
@@ -1787,6 +1810,12 @@ public class AudioContext {
 			pannerContexts.put(id, contextId);
 		}
 
+		if (nativeAvailable) {
+			try {
+				attachLowpassBiquadToPanner(id);
+			} catch (Throwable ignored) {}
+		}
+
 		return new AudioPannerNode(id);
 	}
 
@@ -2027,10 +2056,6 @@ public class AudioContext {
 			nativeSetGain(id, value);
 		}
 		gains.put(id, value);
-		try {
-			android.util.Log.d("AudioContext", "setGain: id=" + id + " value=" + value);
-		} catch (Throwable ignored) {
-		}
 	}
 
 	void setAudioThreadLoggingEnabled(boolean enabled) {
@@ -2074,6 +2099,57 @@ public class AudioContext {
 			nativeSetPannerParams(id, positionX, positionY, positionZ, orientationX, orientationY, orientationZ, pan, distanceModel, panningModel, refDistance, maxDistance, rolloffFactor, coneInnerAngle, coneOuterAngle, coneOuterGain);
 		}
 	}
+
+
+	void setPannerHRIRFromData(String id, java.nio.FloatBuffer left, java.nio.FloatBuffer right) {
+		if (id == null) return;
+		if (left == null || right == null) {
+			pannerHrirLeftBuffers.remove(id);
+			pannerHrirRightBuffers.remove(id);
+			if (nativeAvailable) {
+				try {
+					nativeSetPannerHRIRDirect(id, null, null);
+				} catch (Throwable ignored) {
+				}
+			}
+			return;
+		}
+
+		if (left.isDirect() && right.isDirect()) {
+			try {
+				java.nio.FloatBuffer lview = left.duplicate();
+				lview.position(left.position());
+				lview.limit(left.limit());
+				java.nio.FloatBuffer lslice = lview.slice();
+
+				java.nio.FloatBuffer rview = right.duplicate();
+				rview.position(right.position());
+				rview.limit(right.limit());
+				java.nio.FloatBuffer rslice = rview.slice();
+
+				int lcap = lslice.remaining();
+				int rcap = rslice.remaining();
+				if (lcap <= 0 || rcap <= 0 || lcap != rcap) return;
+
+				if (nativeAvailable) {
+					try {
+						nativeSetPannerHRIRDirect(id, lslice, rslice);
+					} catch (Throwable ignored) {
+					}
+				}
+
+				java.nio.FloatBuffer ldup = left.duplicate();
+				ldup.rewind();
+				java.nio.FloatBuffer rdup = right.duplicate();
+				rdup.rewind();
+				pannerHrirLeftBuffers.put(id, ldup);
+				pannerHrirRightBuffers.put(id, rdup);
+				return;
+			} catch (Throwable ignored) {
+			}
+		}
+	}
+
 
 	void cancelGainScheduledValues(String id, double time) {
 		if (id == null) return;
@@ -2285,6 +2361,19 @@ public class AudioContext {
 		}
 	}
 
+	void attachLowpassBiquadToPanner(String pannerId) {
+		if (pannerId == null) return;
+		if (!nativeAvailable) return;
+		try {
+			String bid = nativeCreateBiquad("lowpass", 22050.0, 0.707, 0.0);
+			if (bid != null) {
+				addToContextSet(contextBiquads, pannerContexts.get(pannerId), bid);
+				nativeAttachBiquadToPanner(pannerId, bid);
+			}
+		} catch (Throwable ignored) {
+		}
+	}
+
 	void attachPannerToVoice(String voiceId, String pannerId, int output, int input) {
 		if (voiceId == null || pannerId == null) return;
 		if (nativeAvailable) {
@@ -2445,10 +2534,6 @@ public class AudioContext {
 			return;
 		}
 		voiceGainMap.put(voiceId, gainId);
-		try {
-			android.util.Log.d("AudioContext", "attachGainToVoice: voice=" + voiceId + " gain=" + gainId);
-		} catch (Throwable ignored) {
-		}
 	}
 
 	void attachGainToVoice(String voiceId, String gainId, int output, int input) {
@@ -2484,10 +2569,6 @@ public class AudioContext {
 			return;
 		}
 		voicePlaybackRateMap.put(voiceId, playbackRateId);
-		try {
-			android.util.Log.d("AudioContext", "attachPlaybackRateToVoice: voice=" + voiceId + " pr=" + playbackRateId);
-		} catch (Throwable ignored) {
-		}
 	}
 
 	void attachPlaybackRateToVoice(String voiceId, String playbackRateId, int output, int input) {
@@ -2538,6 +2619,13 @@ public class AudioContext {
 		return null;
 	}
 
+	public void configureExternalPcmSource(String trackId, int sampleRate, int channels) {
+		if (trackId == null) return;
+		if (nativeAvailable) {
+			nativeConfigureExternalPcmSource(trackId, sampleRate, channels);
+		}
+	}
+
 	public void pushPcmFrames(String trackId, float[] data) {
 		if (trackId == null || data == null || data.length == 0) return;
 		if (nativeAvailable) {
@@ -2574,6 +2662,8 @@ public class AudioContext {
 	}
 
 	private native String nativeCreateExternalPcmSource(int sampleRate, int channels);
+
+	private native void nativeConfigureExternalPcmSource(String trackId, int sampleRate, int channels);
 
 	private native void nativePushPcmFramesFloatArray(String trackId, float[] data, int frames);
 

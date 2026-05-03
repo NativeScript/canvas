@@ -4,9 +4,13 @@
   </Page.actionBar>
 
   <GridLayout androidOverflowEdge="none" rows="auto,220,auto,auto" class="p-12">
-    <StackLayout row="0" orientation="horizontal" spacing="10" class="top-controls">
+    <StackLayout row="0" orientation="vertical" spacing="10" class="top-controls">
       <Button text="Play Sample" tap="playSample" class="btn btn-primary" />
       <Button text="Stop" tap="stopTap" class="btn btn-secondary" />
+      <Button text="Pan Sweep" tap="panSweepTap" class="btn btn-secondary" />
+      <Button text="Position Sweep" tap="positionSweepTap" class="btn btn-secondary" />
+      <Button text="Pan Left" tap="testPanLeft" class="btn btn-secondary" />
+      <Button text="Pan Right" tap="testPanRight" class="btn btn-secondary" />
     </StackLayout>
     <canvas:Canvas id="visualizer" row="1" ready="canvasReady"  style="width:100%; height:100%;" />
 

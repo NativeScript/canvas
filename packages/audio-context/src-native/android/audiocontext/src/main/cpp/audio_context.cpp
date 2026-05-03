@@ -1,5 +1,6 @@
 #include "audio_context.h"
 #include "audio_internal.h"
+#include "hrtf_convolver.h"
 
 
 NativeEngine &NativeEngine::getInstance() {
@@ -8,6 +9,25 @@ NativeEngine &NativeEngine::getInstance() {
 }
 
 NativeEngine::NativeEngine() = default;
+
+static inline double defaultListenerParamValueForType(int paramType) {
+    switch (paramType) {
+        case kListenerParamPositionX:
+        case kListenerParamPositionY:
+        case kListenerParamPositionZ:
+        case kListenerParamForwardX:
+        case kListenerParamForwardY:
+        case kListenerParamUpX:
+        case kListenerParamUpZ:
+            return 0.0;
+        case kListenerParamForwardZ:
+            return -1.0;
+        case kListenerParamUpY:
+            return 1.0;
+        default:
+            return 0.0;
+    }
+}
 
 void NativeEngine::registerContextStart(const std::string &contextId, int64_t startNanos) {
     std::lock_guard<std::mutex> lock(contextMutex_);
@@ -185,7 +205,7 @@ NativeEngine::getListenerParamValues(const std::string &contextId, int paramType
         auto it = cit->second.find(paramType);
         if (it != cit->second.end()) evts = it->second;
     }
-    double fallback = 0.0;
+    double fallback = defaultListenerParamValueForType(paramType);
     auto lit = listeners_.find(contextId);
     if (lit != listeners_.end()) {
         const Listener &L = lit->second;
@@ -226,7 +246,7 @@ NativeEngine::getListenerParamValues(const std::string &contextId, int paramType
 double NativeEngine::getListenerParamValue(const std::string &contextId, int paramType) {
     std::lock_guard<std::mutex> lock(scheduledEventsMutex_);
     auto lit = listeners_.find(contextId);
-    if (lit == listeners_.end()) return 0.0;
+    if (lit == listeners_.end()) return defaultListenerParamValueForType(paramType);
     const Listener &L = lit->second;
     switch (paramType) {
         case kListenerParamPositionX: return L.positionX;
@@ -339,6 +359,14 @@ NativeEngine::~NativeEngine() {
             bd.javaBufferId.clear();
         }
         audioBuffers_.clear();
+
+        for (auto &pkv: panners_) {
+            if (pkv.second.hrtf) {
+                delete pkv.second.hrtf;
+                pkv.second.hrtf = nullptr;
+            }
+        }
+        panners_.clear();
     }
 
     if (jvm_ && audioContextClassGlobalRef) {
@@ -434,9 +462,6 @@ std::string NativeEngine::decodeAudioDataFromDirect(const uint8_t *data, size_t 
     cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
     cmd.channels = numChannels > 0 ? numChannels : 1;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "decodeAudioDataFromDirect: enqueued direct buffer %s (sr=%d ch=%d)",
-                        id.c_str(), sampleRate, numChannels);
     return id;
 }
 
@@ -455,9 +480,6 @@ NativeEngine::createBufferSourceFromDirect(const void *ptr, size_t byteLen, int 
     cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
     cmd.channels = channels > 0 ? channels : 1;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "createBufferSourceFromDirect: enqueued direct %s bytes=%zu sr=%d ch=%d",
-                        id.c_str(), byteLen, cmd.sampleRate, cmd.channels);
     return id;
 }
 
@@ -471,8 +493,6 @@ std::string NativeEngine::createBufferSourceFromExisting(const std::string &buff
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto it = audioBuffers_.find(bufferId);
     if (it == audioBuffers_.end()) return {};
-    __android_log_print(ANDROID_LOG_INFO, TAG, "createBufferSourceFromExisting: reused buffer %s",
-                        bufferId.c_str());
     return bufferId;
 }
 
@@ -518,9 +538,6 @@ std::string NativeEngine::decodeAudioData(const std::vector<uint8_t> &data) {
     cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
     cmd.channels = numChannels > 0 ? numChannels : 1;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "decodeAudioData: enqueued copy buffer %s (sr=%d ch=%d)", id.c_str(),
-                        cmd.sampleRate, cmd.channels);
     return id;
 }
 
@@ -532,8 +549,6 @@ std::string NativeEngine::createOscillator(const std::string &type, double frequ
     cmd.waveform = type;
     cmd.frequency = frequency;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "createOscillator enqueued %s type=%s freq=%f",
-                        id.c_str(), type.c_str(), frequency);
     return id;
 }
 
@@ -587,7 +602,6 @@ NativeEngine::createAnalyser(int fftSize, double smoothingTimeConstant, double m
     d.maxDecibels = maxDecibels;
     rebuildAnalyserCaches(d);
     analysers_.emplace(id, std::move(d));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "createAnalyser: %s fft=%d", id.c_str(), p);
     return id;
 }
 
@@ -821,8 +835,6 @@ NativeEngine::startOscillator(const std::string &id, const std::string &type, do
     cmd.waveform = type;
     cmd.frequency = frequency;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "startOscillator enqueued %s type=%s freq=%f",
-                        id.c_str(), type.c_str(), frequency);
 }
 
 void NativeEngine::stopTrack(const std::string &id) {
@@ -830,7 +842,6 @@ void NativeEngine::stopTrack(const std::string &id) {
     cmd.type = NativeEngine::CMD_STOP_TRACK;
     cmd.id = id;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "stopTrack enqueued %s", id.c_str());
 }
 
 std::string
@@ -844,8 +855,6 @@ NativeEngine::createBufferSource(std::vector<int16_t> &&pcm, int sampleRate, int
     cmd.sampleRate = sampleRate > 0 ? sampleRate : 48000;
     cmd.channels = channels > 0 ? channels : 1;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "createBufferSource enqueued %s sr=%d ch=%d",
-                        id.c_str(), cmd.sampleRate, cmd.channels);
     return id;
 }
 
@@ -854,7 +863,6 @@ void NativeEngine::freeBuffer(const std::string &id) {
     cmd.type = NativeEngine::CMD_FREE_BUFFER;
     cmd.id = id;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "freeBuffer enqueued %s", id.c_str());
 }
 
 std::string NativeEngine::createExternalPcmSource(int sampleRate, int channels) {
@@ -875,10 +883,20 @@ std::string NativeEngine::createExternalPcmSource(int sampleRate, int channels) 
     cmd.channels = channels;
     cmd.externalRing = ring;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG,
-                        "createExternalPcmSource enqueued %s sr=%d ch=%d",
-                        id.c_str(), sampleRate, channels);
     return id;
+}
+
+void NativeEngine::configureExternalPcmSource(const std::string &id, int sampleRate, int channels) {
+    if (id.empty()) return;
+    if (channels <= 0) channels = 2;
+    if (sampleRate <= 0) sampleRate = 48000;
+
+    NativeEngine::Command cmd;
+    cmd.type = CMD_CONFIGURE_EXTERNAL_PCM;
+    cmd.id = id;
+    cmd.sampleRate = sampleRate;
+    cmd.channels = channels;
+    enqueueCommand(std::move(cmd));
 }
 
 void NativeEngine::pushPcmFrames(const std::string &id, const float *interleaved, size_t sampleCount) {
@@ -897,7 +915,6 @@ void NativeEngine::endExternalPcmSource(const std::string &id) {
     cmd.type = CMD_END_EXTERNAL_PCM;
     cmd.id = id;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "endExternalPcmSource enqueued %s", id.c_str());
 }
 
 void NativeEngine::startBufferSource(const std::string &id, bool loop) {
@@ -906,8 +923,6 @@ void NativeEngine::startBufferSource(const std::string &id, bool loop) {
     cmd.id = id;
     cmd.loop = loop;
     enqueueCommand(std::move(cmd));
-    __android_log_print(ANDROID_LOG_INFO, TAG, "startBufferSource enqueued %s loop=%d", id.c_str(),
-                        loop ? 1 : 0);
 }
 
 

@@ -78,30 +78,33 @@
     dispatch_async(_decodeQueue, ^{
         __strong typeof(weakSelf) s = weakSelf; if (!s) return;
         NSError *e = nil;
-        NSArray<AVAudioPCMBuffer *> *finalBuffers = [s->_decoder finalizeAndDecodeWithError:&e];
-        if (finalBuffers && finalBuffers.count > 0) {
-            for (AVAudioPCMBuffer *buf in finalBuffers) {
-                @synchronized (s->_pendingBuffers) { [s->_pendingBuffers addObject:buf]; }
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    @try {
-                        [s->_player scheduleBuffer:buf completionHandler:^{
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                @synchronized (s->_pendingBuffers) {
-                                    if (s->_pendingBuffers.count > 0) [s->_pendingBuffers removeObjectAtIndex:0];
-                                    BOOL nothingLeft = (s->_pendingBuffers.count == 0);
-                                    if (s->_finalized && nothingLeft) {
-                                        if (s.onended) s.onended();
-                                    }
+        AVAudioPCMBuffer *finalBuffer = [s->_decoder finalizeAndDecodeWithError:&e];
+        if (finalBuffer) {
+            @synchronized (s->_pendingBuffers) { [s->_pendingBuffers addObject:finalBuffer]; }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                @try {
+                    [s->_player scheduleBuffer:finalBuffer completionHandler:^{
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            @synchronized (s->_pendingBuffers) {
+                                if (s->_pendingBuffers.count > 0) [s->_pendingBuffers removeObjectAtIndex:0];
+                                BOOL nothingLeft = (s->_pendingBuffers.count == 0);
+                                if (s->_finalized && nothingLeft) {
+                                    if (s.onended) s.onended();
                                 }
-                            });
-                        }];
-                    } @catch (NSException *ex) {
-                        NSCLogError(@"NSCAudioStreamingSourceNode: scheduleBuffer(final) exception: %@", ex);
-                    }
-                });
-            }
+                            }
+                        });
+                    }];
+                } @catch (NSException *ex) {
+                    NSCLogError(@"NSCAudioStreamingSourceNode: scheduleBuffer(final) exception: %@", ex);
+                }
+            });
         }
         s->_finalized = YES;
+        @synchronized (s->_pendingBuffers) {
+            if (s->_pendingBuffers.count == 0 && s.onended) {
+                dispatch_async(dispatch_get_main_queue(), ^{ s.onended(); });
+            }
+        }
     });
 }
 

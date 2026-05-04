@@ -3,7 +3,9 @@
 //  CanvasMedia
 //
 #import "NSCAudioHelper.h"
-#import <MobileCoreServices/MobileCoreServices.h>
+#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#endif
 #import "NSCAudioView.h"
 
 @implementation NSCAudioHelper {
@@ -614,17 +616,15 @@
     }
     mime = [mime stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
-    @try {
-        CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (__bridge CFStringRef)mime, NULL);
-        if (uti) {
-            if (UTTypeConformsTo(uti, kUTTypeAudio) || UTTypeConformsTo(uti, kUTTypeAudiovisualContent) || UTTypeConformsTo(uti, kUTTypeMovie)) {
-                CFRelease(uti);
-                if ([mime containsString:@"ogg"] || [mime containsString:@"webm"] || [mime containsString:@"opus"]) return @"maybe";
-                return @"probably";
-            }
-            CFRelease(uti);
+#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
+    if (@available(iOS 14.0, *)) {
+        UTType *utType = [UTType typeWithMIMEType:mime];
+        if (utType && ([utType conformsToType:UTTypeAudio] || [utType conformsToType:UTTypeAudiovisualContent] || [utType conformsToType:UTTypeMovie])) {
+            if ([mime containsString:@"ogg"] || [mime containsString:@"webm"] || [mime containsString:@"opus"]) return @"maybe";
+            return @"probably";
         }
-    } @catch (NSException *ex) {}
+    }
+#endif
 
     if ([mime containsString:@"mp3"] || [mime containsString:@"mpeg"] || [mime containsString:@"wav"] || [mime containsString:@"aac"] || [mime containsString:@"m4a"] || [mime containsString:@"flac"]) return @"probably";
     if ([mime containsString:@"ogg"] || [mime containsString:@"opus"] || [mime containsString:@"webm"]) return @"maybe";

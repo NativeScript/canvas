@@ -424,7 +424,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
     width: u32,
     height: u32,
 ) -> *const CanvasGPUCanvasContext {
-    if instance.is_null() {
+    if instance.is_null() || window.is_null() || width == 0 || height == 0 {
         return std::ptr::null_mut();
     }
 
@@ -434,8 +434,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_create(
 
     let display_handle = RawDisplayHandle::Android(raw_window_handle::AndroidDisplayHandle::new());
 
-    let handle =
-        raw_window_handle::AndroidNdkWindowHandle::new(std::ptr::NonNull::new_unchecked(window));
+    let Some(window_handle_ptr) = std::ptr::NonNull::new(window) else {
+        return std::ptr::null_mut();
+    };
+
+    let handle = raw_window_handle::AndroidNdkWindowHandle::new(window_handle_ptr);
     let window_handle = RawWindowHandle::AndroidNdk(handle);
 
     match global.instance_create_surface(Some(display_handle), window_handle, None) {
@@ -467,7 +470,7 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
     width: u32,
     height: u32,
 ) {
-    if context.is_null() {
+    if context.is_null() || window.is_null() || width == 0 || height == 0 {
         return;
     }
 
@@ -479,8 +482,11 @@ pub unsafe extern "C" fn canvas_native_webgpu_context_resize(
 
     let display_handle = RawDisplayHandle::Android(raw_window_handle::AndroidDisplayHandle::new());
 
-    let handle =
-        raw_window_handle::AndroidNdkWindowHandle::new(std::ptr::NonNull::new_unchecked(window));
+    let Some(window_handle_ptr) = std::ptr::NonNull::new(window) else {
+        return;
+    };
+
+    let handle = raw_window_handle::AndroidNdkWindowHandle::new(window_handle_ptr);
     let window_handle = RawWindowHandle::AndroidNdk(handle);
 
     let mut surface = context.surface.lock();

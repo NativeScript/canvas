@@ -2,8 +2,8 @@
 triple:          'x86_64-apple-darwin'
 binary-path:     '/Users/triniwiz/Documents/GitHub/canvas/packages/canvas/src-native/canvas-ios/dist/Release-iphonesimulator/CanvasNative.framework/CanvasNative'
 relocations:
-  - { offset: 0xE8AC0, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionString, symObjAddr: 0x0, symBinAddr: 0x9EB000, symSize: 0x0 }
-  - { offset: 0xE8AF5, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionNumber, symObjAddr: 0x38, symBinAddr: 0x9EB038, symSize: 0x0 }
+  - { offset: 0xE8AC0, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionString, symObjAddr: 0x0, symBinAddr: 0x9C7000, symSize: 0x0 }
+  - { offset: 0xE8AF5, size: 0x8, addend: 0x0, symName: _CanvasNativeVersionNumber, symObjAddr: 0x38, symBinAddr: 0x9C7038, symSize: 0x0 }
   - { offset: 0xE8B32, size: 0x8, addend: 0x0, symName: '-[NSCMTLView canvasView]', symObjAddr: 0x0, symBinAddr: 0x1D00, symSize: 0x20 }
   - { offset: 0xE8C17, size: 0x8, addend: 0x0, symName: '-[NSCMTLView canvasView]', symObjAddr: 0x0, symBinAddr: 0x1D00, symSize: 0x20 }
   - { offset: 0xE8C61, size: 0x8, addend: 0x0, symName: '+[NSCMTLView layerClass]', symObjAddr: 0x20, symBinAddr: 0x1D20, symSize: 0x20 }
@@ -163,7 +163,7 @@ relocations:
   - { offset: 0xEEABD, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC9codedRectSo6CGRectVvg', symObjAddr: 0x870, symBinAddr: 0x6750, symSize: 0x60 }
   - { offset: 0xEEB58, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC11visibleRectSo6CGRectVvg', symObjAddr: 0x8D0, symBinAddr: 0x67B0, symSize: 0xA0 }
   - { offset: 0xEEC88, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfC', symObjAddr: 0x970, symBinAddr: 0x6850, symSize: 0x20 }
-  - { offset: 0xEEC9C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x990, symBinAddr: 0x9C8D40, symSize: 0x30 }
+  - { offset: 0xEEC9C, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfc', symObjAddr: 0x990, symBinAddr: 0x8D7840, symSize: 0x30 }
   - { offset: 0xEECF5, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCACycfcTo', symObjAddr: 0x9C0, symBinAddr: 0x6870, symSize: 0x30 }
   - { offset: 0xEED54, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameCfD', symObjAddr: 0x9F0, symBinAddr: 0x68A0, symSize: 0x30 }
   - { offset: 0xEED77, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative13NSCVideoFrameC0cD6FormatO8rawValueAESgs6UInt32V_tcfCTf4nd_n', symObjAddr: 0xA40, symBinAddr: 0x68F0, symSize: 0x20 }
@@ -451,7 +451,7 @@ relocations:
   - { offset: 0xFAE43, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsC6updateyySSF', symObjAddr: 0x9D0, symBinAddr: 0x10B60, symSize: 0x2F0 }
   - { offset: 0xFB09F, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsC13setFontWeightyySSF', symObjAddr: 0xCE0, symBinAddr: 0x10E70, symSize: 0x350 }
   - { offset: 0xFB6E0, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsC12setFontStyleyySSF', symObjAddr: 0x1050, symBinAddr: 0x111E0, symSize: 0x2A0 }
-  - { offset: 0xFB90B, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsCACycfc', symObjAddr: 0x1370, symBinAddr: 0x9C8D70, symSize: 0x30 }
+  - { offset: 0xFB90B, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsCACycfc', symObjAddr: 0x1370, symBinAddr: 0x8D7870, symSize: 0x30 }
   - { offset: 0xFB964, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsCACycfcTo', symObjAddr: 0x13A0, symBinAddr: 0x11500, symSize: 0x30 }
   - { offset: 0xFBA00, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsC10CodingKeys33_E45E5FE6A22AB8B52DEEC06407FAE9A2LLO11stringValueSSvg', symObjAddr: 0x13D0, symBinAddr: 0x11530, symSize: 0x130 }
   - { offset: 0xFBA50, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative18NSCFontDescriptorsC10CodingKeys33_E45E5FE6A22AB8B52DEEC06407FAE9A2LLOs0E3KeyAAsAGP11stringValueSSvgTW', symObjAddr: 0x15B0, symBinAddr: 0x11660, symSize: 0x10 }
@@ -535,7 +535,7 @@ relocations:
   - { offset: 0xFE5EA, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceC8loadSyncyyySSSgcFy10Foundation4DataVSg_So13NSURLResponseCSgs5Error_pSgtYbcfU_', symObjAddr: 0x66B0, symBinAddr: 0x16750, symSize: 0xD0 }
   - { offset: 0xFE6A5, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceC4loadyyySSSgcF', symObjAddr: 0x67E0, symBinAddr: 0x16880, symSize: 0x240 }
   - { offset: 0xFE7A3, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceCACycfC', symObjAddr: 0x6AA0, symBinAddr: 0x16B40, symSize: 0x20 }
-  - { offset: 0xFE7B7, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceCACycfc', symObjAddr: 0x6AC0, symBinAddr: 0x9C8DA0, symSize: 0x30 }
+  - { offset: 0xFE7B7, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceCACycfc', symObjAddr: 0x6AC0, symBinAddr: 0x8D78A0, symSize: 0x30 }
   - { offset: 0xFE812, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative11NSCFontFaceCACycfcTo', symObjAddr: 0x6AF0, symBinAddr: 0x16B60, symSize: 0x30 }
   - { offset: 0xFE873, size: 0x8, addend: 0x0, symName: '_$sSo19NSRegularExpressionC7pattern7optionsABSS_So0aB7OptionsVtKcfcTO', symObjAddr: 0x6BF0, symBinAddr: 0x16C60, symSize: 0xD0 }
   - { offset: 0xFE895, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative14NSCFontDisplayO8rawValueACSgSi_tcfCTf4nd_n', symObjAddr: 0x7720, symBinAddr: 0x17790, symSize: 0x20 }
@@ -780,7 +780,7 @@ relocations:
   - { offset: 0x10EBD5, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC14deleteDrawableyyFTo', symObjAddr: 0xA70, symBinAddr: 0x29DF0, symSize: 0x60 }
   - { offset: 0x10EC74, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC7glkView_6drawInySo0C0C_So6CGRectVtFTo', symObjAddr: 0xAE0, symBinAddr: 0x29E50, symSize: 0x10 }
   - { offset: 0x10EC93, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfC', symObjAddr: 0xAF0, symBinAddr: 0x29E60, symSize: 0x90 }
-  - { offset: 0x10ECA7, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfc', symObjAddr: 0xB80, symBinAddr: 0x9C8DD0, symSize: 0x30 }
+  - { offset: 0x10ECA7, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfc', symObjAddr: 0xB80, symBinAddr: 0x8D78D0, symSize: 0x30 }
   - { offset: 0x10ED25, size: 0x8, addend: 0x0, symName: '_$s12CanvasNative0A7GLKViewC5frame7contextACSo6CGRectV_So11EAGLContextCtcfcTo', symObjAddr: 0xBB0, symBinAddr: 0x29EF0, symSize: 0x30 }
   - { offset: 0x10EDF6, size: 0x8, addend: 0x0, symName: '_$sSo7GLKViewC12CanvasNativeE16snapshotWithDatayy10Foundation0F0VF', symObjAddr: 0xC20, symBinAddr: 0x29F60, symSize: 0x2C0 }
   - { offset: 0x10F104, size: 0x8, addend: 0x0, symName: '_$sSaySayxGqd__c7ElementQyd__RszSTRd__lufCs5UInt8V_10Foundation4DataVTt0g5', symObjAddr: 0xEE0, symBinAddr: 0x2A220, symSize: 0x120 }

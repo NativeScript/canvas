@@ -453,10 +453,6 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
     double rzv = fx * uy - fy * ux;
     NSCNormalizeVector3(&rxv, &ryv, &rzv, 1.0, 0.0, 0.0);
 
-    double ux2 = ryv * fz - rzv * fy;
-    double uy2 = rzv * fx - rxv * fz;
-    double uz2 = rxv * fy - ryv * fx;
-
     double relX = (double)_positionX - listenerX;
     double relY = (double)_positionY - listenerY;
     double relZ = (double)_positionZ - listenerZ;
@@ -614,7 +610,7 @@ static inline double NSCWrapPannerAzimuthDegrees(double azimuth) {
                     NSCLogDebug(@"NSCAudioPannerNode: attachSource mixer connect fallback threw: %@", e2);
                 }
             }
-            if (connected) NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> panMixer (bus=%d)", NSStringFromClass([source.avNode class]), ((AVAudioMixerNode *)_panMixer).nextAvailableInputBus - 1);
+            if (connected) NSCLogDebug(@"NSCAudioPannerNode: attachSource connected source=%@ -> panMixer (bus=%lu)", NSStringFromClass([source.avNode class]), (unsigned long)(((AVAudioMixerNode *)_panMixer).nextAvailableInputBus - 1));
             if (!connected) {
                 NSCLogDebug(@"NSCAudioPannerNode: attachSource failed mixer fallback source=%@", NSStringFromClass([source.avNode class]));
                 return;

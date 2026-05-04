@@ -5,7 +5,9 @@
 //  Created by Osei Fortune on 20/05/2025.
 //
 #import "NSCVideoHelper.h"
-#import <MobileCoreServices/MobileCoreServices.h>
+#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#endif
 #import "NSCVideoHelper+Internal.h"
 
 @implementation NSCVideoHelper {
@@ -79,21 +81,30 @@
     __weak typeof(self) weakSelf = self;
     [self.asset loadValuesAsynchronouslyForKeys:keys completionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
-					__strong typeof(self) strongSelf = weakSelf;
-					if (!strongSelf) return;
-					
-            AVAssetTrack *videoTrack = [[weakSelf.asset tracksWithMediaType:AVMediaTypeVideo] firstObject];
-					strongSelf->_videoSize = videoTrack.naturalSize;
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) return;
 
-            float fps = videoTrack.nominalFrameRate ?: 30.0;
+            AVAssetTrack *videoTrack = [[strongSelf.asset tracksWithMediaType:AVMediaTypeVideo] firstObject];
+            strongSelf->_videoSize = videoTrack ? videoTrack.naturalSize : CGSizeZero;
+
+            float fps = (videoTrack && videoTrack.nominalFrameRate > 0) ? videoTrack.nominalFrameRate : 30.0f;
             CMTime interval = CMTimeMake(1, (int32_t)fps);
-            weakSelf.playbackFramesObserver = [weakSelf.player addPeriodicTimeObserverForInterval:interval queue:nil usingBlock:^(CMTime time) {
-                if (weakSelf.state == NSCPlayerStatePlaying) {
-                    [weakSelf.listener onVideoFrameCallback];
+
+            if (strongSelf.playbackFramesObserver) {
+                [strongSelf.player removeTimeObserver:strongSelf.playbackFramesObserver];
+                strongSelf.playbackFramesObserver = nil;
+            }
+
+            __weak typeof(strongSelf) weakFrameSelf = strongSelf;
+            strongSelf.playbackFramesObserver = [strongSelf.player addPeriodicTimeObserverForInterval:interval queue:nil usingBlock:^(CMTime time) {
+                __strong typeof(weakFrameSelf) frameSelf = weakFrameSelf;
+                if (!frameSelf) return;
+                if (frameSelf.state == NSCPlayerStatePlaying) {
+                    [frameSelf.listener onVideoFrameCallback];
                 }
             }];
 
-            AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:weakSelf.asset];
+            AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:strongSelf.asset];
 
             strongSelf->_currentItem = item;
 
@@ -112,10 +123,11 @@
             [item addObserver:strongSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
             [item addObserver:strongSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
 
+            __weak typeof(strongSelf) weakPlayEndSelf = strongSelf;
             strongSelf->_playEndNotificationId = [[NSNotificationCenter defaultCenter]
                                                  addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
                                                  object:item queue:nil usingBlock:^(NSNotification *note) {
-                __strong typeof(strongSelf) innerSelf = strongSelf;
+                __strong typeof(weakPlayEndSelf) innerSelf = weakPlayEndSelf;
                 if (!innerSelf) return;
                 if (innerSelf->_isLoop) {
                     [innerSelf->_player seekToTime:kCMTimeZero];
@@ -132,27 +144,6 @@
             [strongSelf performSelectorOnMainThread:@selector(_scheduleFirstFrameCheck) withObject:nil waitUntilDone:NO];
             if (strongSelf.autoplay) {
                 [strongSelf play];
-            }
-
-            [item addObserver:strongSelf forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-            [item addObserver:strongSelf forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
-
-					strongSelf->_playEndNotificationId = [[NSNotificationCenter defaultCenter]
-                                                 addObserverForName:AVPlayerItemDidPlayToEndTimeNotification
-                                                 object:item queue:nil usingBlock:^(NSNotification *note) {
-                if (weakSelf != NULL && weakSelf.isLoop) {
-                    [weakSelf.player seekToTime:kCMTimeZero];
-                    [weakSelf.player play];
-                    weakSelf.state = NSCPlayerStatePlaying;
-                    [weakSelf.listener onStateChange:NSCPlayerStatePlaying];
-                }
-            }];
-
-            [weakSelf.player replaceCurrentItemWithPlayerItem:item];
-            weakSelf.readyState = NSCPlayerReadyStateHaveMetadata;
-            [weakSelf performSelectorOnMainThread:@selector(_scheduleFirstFrameCheck) withObject:nil waitUntilDone:NO];
-            if (weakSelf.autoplay) {
-                [weakSelf play];
             }
         });
     }];
@@ -219,17 +210,15 @@
     }
     mime = [mime stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
-    @try {
-        CFStringRef uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (__bridge CFStringRef)mime, NULL);
-        if (uti) {
-            if (UTTypeConformsTo(uti, kUTTypeVideo) || UTTypeConformsTo(uti, kUTTypeAudiovisualContent)) {
-                CFRelease(uti);
-                if ([mime containsString:@"webm"] || [mime containsString:@"vp8"] || [mime containsString:@"vp9"] || [mime containsString:@"ogg"]) return @"maybe";
-                return @"probably";
-            }
-            CFRelease(uti);
+#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
+    if (@available(iOS 14.0, *)) {
+        UTType *utType = [UTType typeWithMIMEType:mime];
+        if (utType && ([utType conformsToType:UTTypeVideo] || [utType conformsToType:UTTypeAudiovisualContent])) {
+            if ([mime containsString:@"webm"] || [mime containsString:@"vp8"] || [mime containsString:@"vp9"] || [mime containsString:@"ogg"]) return @"maybe";
+            return @"probably";
         }
-    } @catch (NSException *ex) {}
+    }
+#endif
 
     if ([mime containsString:@"mp4"] || [mime containsString:@"mpeg"] || [mime containsString:@"h264"] || [mime containsString:@"video/mp4"]) return @"probably";
     if ([mime containsString:@"webm"] || [mime containsString:@"vp8"] || [mime containsString:@"vp9"] || [mime containsString:@"video/webm"]) return @"maybe";
@@ -320,46 +309,49 @@
 }
 
 - (void)load {
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
         @try {
-            [self pause];
+            [strongSelf pause];
 
-            if (self.playbackTimeObserver) {
-                [self.player removeTimeObserver:self.playbackTimeObserver];
-                self.playbackTimeObserver = nil;
+            if (strongSelf.playbackTimeObserver) {
+                [strongSelf.player removeTimeObserver:strongSelf.playbackTimeObserver];
+                strongSelf.playbackTimeObserver = nil;
             }
 
-            if (self.playbackFramesObserver) {
-                [self.player removeTimeObserver:self.playbackFramesObserver];
-                self.playbackFramesObserver = nil;
+            if (strongSelf.playbackFramesObserver) {
+                [strongSelf.player removeTimeObserver:strongSelf.playbackFramesObserver];
+                strongSelf.playbackFramesObserver = nil;
             }
 
-            if (_playEndNotificationId) {
-                [[NSNotificationCenter defaultCenter] removeObserver:_playEndNotificationId];
-                _playEndNotificationId = nil;
+            if (strongSelf->_playEndNotificationId) {
+                [[NSNotificationCenter defaultCenter] removeObserver:strongSelf->_playEndNotificationId];
+                strongSelf->_playEndNotificationId = nil;
             }
 
-            if (self.currentItem) {
+            if (strongSelf.currentItem) {
                 @try {
-                    [self.currentItem removeObserver:self forKeyPath:@"status"];
+                    [strongSelf.currentItem removeObserver:strongSelf forKeyPath:@"status"];
                 } @catch (NSException *exception) {}
                 @try {
-                    [self.currentItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
+                    [strongSelf.currentItem removeObserver:strongSelf forKeyPath:@"loadedTimeRanges"];
                 } @catch (NSException *exception) {}
             }
 
-            if (self.assetOutput) {
-                [self.assetOutput setDelegate:nil queue:NULL];
+            if (strongSelf.assetOutput) {
+                [strongSelf.assetOutput setDelegate:nil queue:NULL];
             }
 
-            [self.player replaceCurrentItemWithPlayerItem:nil];
+            [strongSelf.player replaceCurrentItemWithPlayerItem:nil];
 
-            self.loadedDataFired = NO;
+            strongSelf.loadedDataFired = NO;
 
-            if (self.currentSrc && self.currentSrc.length > 0) {
-                NSString *src = [self.currentSrc copy];
-                self.currentSrc = nil;
-                [self setSrc:src];
+            if (strongSelf.currentSrc && strongSelf.currentSrc.length > 0) {
+                NSString *src = [strongSelf.currentSrc copy];
+                strongSelf.currentSrc = nil;
+                [strongSelf setSrc:src];
             }
         } @catch (NSException *ex) {
             NSLog(@"NSCVideoHelper load() error: %@", ex);

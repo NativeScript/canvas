@@ -90,6 +90,12 @@ struct Dimensions {
     height: i32,
 }
 
+#[inline]
+fn non_zero_size(value: i32) -> NonZeroU32 {
+    let clamped = value.max(1) as u32;
+    NonZeroU32::new(clamped).expect("clamped dimension must be non-zero")
+}
+
 #[derive(Default)]
 pub(crate) struct GLContextInner {
     surface: Option<SurfaceHelper>,
@@ -366,8 +372,8 @@ impl GLContext {
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
                                     window,
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
+                                    non_zero_size(width),
+                                    non_zero_size(height),
                                 );
 
                         let surface = display
@@ -542,8 +548,8 @@ impl GLContext {
                             glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                 .build(
                                     window,
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
+                                    non_zero_size(width),
+                                    non_zero_size(height),
                                 );
 
                         let surface = display
@@ -730,8 +736,8 @@ impl GLContext {
                                 glutin::surface::SurfaceAttributesBuilder::<WindowSurface>::new()
                                     .build(
                                         window,
-                                        NonZeroU32::try_from(width as u32).unwrap(),
-                                        NonZeroU32::try_from(height as u32).unwrap(),
+                                        non_zero_size(width),
+                                        non_zero_size(height),
                                     );
 
                             let surface = display
@@ -790,8 +796,8 @@ impl GLContext {
                 let cfg = cfg
                     .with_surface_type(ConfigSurfaceTypes::PBUFFER)
                     .with_pbuffer_sizes(
-                        (width as u32).try_into().unwrap(),
-                        (height as u32).try_into().unwrap(),
+                        non_zero_size(width),
+                        non_zero_size(height),
                     )
                     .build();
 
@@ -829,8 +835,8 @@ impl GLContext {
 
                     let surface_attr =
                         glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new().build(
-                            NonZeroU32::try_from(width as u32).unwrap(),
-                            NonZeroU32::try_from(height as u32).unwrap(),
+                            non_zero_size(width),
+                            non_zero_size(height),
                         );
 
                     let surface = display
@@ -871,8 +877,8 @@ impl GLContext {
                 let cfg = cfg
                     .with_surface_type(ConfigSurfaceTypes::PBUFFER)
                     .with_pbuffer_sizes(
-                        (width as u32).try_into().unwrap(),
-                        (height as u32).try_into().unwrap(),
+                        non_zero_size(width),
+                        non_zero_size(height),
                     )
                     .build();
 
@@ -946,8 +952,8 @@ impl GLContext {
                     let cfg = cfg
                         .with_surface_type(ConfigSurfaceTypes::PBUFFER)
                         .with_pbuffer_sizes(
-                            (width as u32).try_into().unwrap(),
-                            (height as u32).try_into().unwrap(),
+                            non_zero_size(width),
+                            non_zero_size(height),
                         )
                         .build();
 
@@ -988,8 +994,8 @@ impl GLContext {
                         let surface_attr =
                             glutin::surface::SurfaceAttributesBuilder::<PbufferSurface>::new()
                                 .build(
-                                    NonZeroU32::try_from(width as u32).unwrap(),
-                                    NonZeroU32::try_from(height as u32).unwrap(),
+                                    non_zero_size(width),
+                                    non_zero_size(height),
                                 );
 
                         let surface = display

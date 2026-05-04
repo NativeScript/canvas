@@ -1810,7 +1810,11 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
         }
     }
 
+    std::unordered_map<std::string, double> pannerCutoffByBiquad;
+    pannerCutoffByBiquad.reserve(localVoices.size());
+
     for (int frame = 0; frame < numFrames; ++frame) {
+        pannerCutoffByBiquad.clear();
         std::unordered_map<std::string, std::array<float, 2>> stereoInputCache;
         stereoInputCache.reserve(localVoices.size());
         std::unordered_map<std::string, std::array<float, 2>> hrtfOutputCache;
@@ -1923,16 +1927,25 @@ NativeEngine::onAudioReady(oboe::AudioStream *stream, void *audioData, int32_t n
                             double cutoff = lowFreq + (highFreq - lowFreq) * std::pow(g, 0.5);
                             std::string pbid = pit->second.biquadId;
                             if (!pbid.empty()) {
-                                NativeEngine::Command ub;
-                                ub.type = NativeEngine::CMD_SET_BIQUAD_PARAMS;
-                                ub.id = pbid;
-                                ub.biquadFrequency = cutoff;
-                                ub.biquadQ = 0.707;
-                                ub.biquadGain = 0.0;
-                                audioThreadLog(ANDROID_LOG_INFO,
-                                               "PANNER_CUTOFF panner=%s gain=%f cutoff=%f",
-                                               pit->first.c_str(), g, cutoff);
-                                NativeEngine::getInstance().enqueueCommand(std::move(ub));
+                                auto cacheIt = pannerCutoffByBiquad.find(pbid);
+                                const bool shouldUpdate =
+                                        cacheIt == pannerCutoffByBiquad.end() ||
+                                        std::fabs(cacheIt->second - cutoff) >= 1.0;
+                                if (shouldUpdate) {
+                                    auto bit = biquads_.find(pbid);
+                                    if (bit != biquads_.end()) {
+                                        bit->second = computeBiquadCoeffs(
+                                                "lowpass",
+                                                cutoff,
+                                                0.707,
+                                                0.0,
+                                                streamSampleRate_ > 0 ? streamSampleRate_ : 48000);
+                                        pannerCutoffByBiquad[pbid] = cutoff;
+                                        audioThreadLog(ANDROID_LOG_INFO,
+                                                       "PANNER_CUTOFF panner=%s gain=%f cutoff=%f",
+                                                       pit->first.c_str(), g, cutoff);
+                                    }
+                                }
                             }
                         }
                     }

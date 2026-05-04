@@ -127,14 +127,17 @@
 }
 
 - (void)setPlaying:(BOOL)playing {
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
         UIImage *img = nil;
-        if (playing ? _customPauseImage : _customPlayImage) {
-            img = playing ? _customPauseImage : _customPlayImage;
+        if (playing ? strongSelf->_customPauseImage : strongSelf->_customPlayImage) {
+            img = playing ? strongSelf->_customPauseImage : strongSelf->_customPlayImage;
             if (img) {
                 UIImage *templ = [img imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-                [_playButton setImage:templ forState:UIControlStateNormal];
-                if (_iconTintColor) _playButton.tintColor = _iconTintColor;
+                [strongSelf->_playButton setImage:templ forState:UIControlStateNormal];
+                if (strongSelf->_iconTintColor) strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
                 return;
             }
         }
@@ -143,62 +146,71 @@
             img = [UIImage systemImageNamed:(playing ? @"pause.fill" : @"play.fill")];
             if (img) {
                 UIImage *templ = [img imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-                [_playButton setImage:templ forState:UIControlStateNormal];
-                if (_iconTintColor) _playButton.tintColor = _iconTintColor;
+                [strongSelf->_playButton setImage:templ forState:UIControlStateNormal];
+                if (strongSelf->_iconTintColor) strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
                 return;
             }
         }
 			
-        UIColor *c = _iconTintColor ?: [UIColor blackColor];
-        UIImage *fallback = playing ? [self _pauseIconWithSize:CGSizeMake(40,40) color:c] : [self _playIconWithSize:CGSizeMake(40,40) color:c];
+        UIColor *c = strongSelf->_iconTintColor ?: [UIColor blackColor];
+        UIImage *fallback = playing ? [strongSelf _pauseIconWithSize:CGSizeMake(40,40) color:c] : [strongSelf _playIconWithSize:CGSizeMake(40,40) color:c];
         if (fallback) {
-            [_playButton setImage:[fallback imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-            if (_iconTintColor) _playButton.tintColor = _iconTintColor;
+            [strongSelf->_playButton setImage:[fallback imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+            if (strongSelf->_iconTintColor) strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
         }
     });
 }
 
 - (void)setPlayImage:(UIImage *)image {
     _customPlayImage = image;
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
         BOOL playing = NO;
-        if (_helper) {
-            playing = ([_helper state] == NSCPlayerStatePlaying);
+        if (strongSelf->_helper) {
+            playing = ([strongSelf->_helper state] == NSCPlayerStatePlaying);
         }
-        if (!playing && _customPlayImage) {
-            UIImage *img = [_customPlayImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-            [_playButton setImage:img forState:UIControlStateNormal];
-            if (_iconTintColor) _playButton.tintColor = _iconTintColor;
+        if (!playing && strongSelf->_customPlayImage) {
+            UIImage *img = [strongSelf->_customPlayImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            [strongSelf->_playButton setImage:img forState:UIControlStateNormal];
+            if (strongSelf->_iconTintColor) strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
         }
     });
 }
 
 - (void)setPauseImage:(UIImage *)image {
     _customPauseImage = image;
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
         BOOL playing = NO;
-        if (_helper) {
-            playing = ([_helper state] == NSCPlayerStatePlaying);
+        if (strongSelf->_helper) {
+            playing = ([strongSelf->_helper state] == NSCPlayerStatePlaying);
         }
-        if (playing && _customPauseImage) {
-            UIImage *img = [_customPauseImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-            [_playButton setImage:img forState:UIControlStateNormal];
-            if (_iconTintColor) _playButton.tintColor = _iconTintColor;
+        if (playing && strongSelf->_customPauseImage) {
+            UIImage *img = [strongSelf->_customPauseImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            [strongSelf->_playButton setImage:img forState:UIControlStateNormal];
+            if (strongSelf->_iconTintColor) strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
         }
     });
 }
 
 - (void)setIconTintColor:(UIColor *)color {
     _iconTintColor = color;
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (_iconTintColor) {
-            _playButton.tintColor = _iconTintColor;
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        if (strongSelf->_iconTintColor) {
+            strongSelf->_playButton.tintColor = strongSelf->_iconTintColor;
         }
         BOOL playing = NO;
-        if (_helper) {
-            playing = ([_helper state] == NSCPlayerStatePlaying);
+        if (strongSelf->_helper) {
+            playing = ([strongSelf->_helper state] == NSCPlayerStatePlaying);
         }
-        [self setPlaying:playing];
+        [strongSelf setPlaying:playing];
     });
 }
 
@@ -243,17 +255,20 @@
 }
 
 - (void)setDuration:(double)seconds {
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        _slider.minimumValue = 0;
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        strongSelf->_slider.minimumValue = 0;
         if (seconds > 0) {
-            _slider.maximumValue = (float)seconds;
+            strongSelf->_slider.maximumValue = (float)seconds;
         } else {
-            _slider.maximumValue = 1.0f;
+            strongSelf->_slider.maximumValue = 1.0f;
         }
-        _durationSeconds = seconds;
-        _slider.enabled = (!isnan(seconds) && seconds > 0);
-        if (_slider.value > _slider.maximumValue) _slider.value = _slider.maximumValue;
-        [self updateTimeLabelWithCurrent:_slider.value duration:_durationSeconds];
+        strongSelf->_durationSeconds = seconds;
+        strongSelf->_slider.enabled = (!isnan(seconds) && seconds > 0);
+        if (strongSelf->_slider.value > strongSelf->_slider.maximumValue) strongSelf->_slider.value = strongSelf->_slider.maximumValue;
+        [strongSelf updateTimeLabelWithCurrent:strongSelf->_slider.value duration:strongSelf->_durationSeconds];
     });
 }
 

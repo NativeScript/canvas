@@ -64,14 +64,20 @@ pub extern "system" fn nativeInitWebGPU(
     width: jint,
     height: jint,
 ) -> jlong {
+    if instance == 0 || width <= 0 || height <= 0 {
+        return 0;
+    }
+
     unsafe {
         let interface = env.get_native_interface();
         if let Some(window) = NativeWindow::from_surface(interface, surface) {
-            let ptr = window.ptr().as_ptr();
+            let Some(ptr) = NonNull::new(window.ptr().as_ptr() as *mut c_void) else {
+                return 0;
+            };
             let instance: *mut CanvasWebGPUInstance = instance as _;
             let ret = canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_create(
                 instance,
-                ptr as *mut c_void,
+                ptr.as_ptr(),
                 width as u32,
                 height as u32,
             );
@@ -91,16 +97,22 @@ pub extern "system" fn nativeResizeWebGPU(
     width: jint,
     height: jint,
 ) {
+    if context == 0 || width <= 0 || height <= 0 {
+        return;
+    }
+
     unsafe {
         let interface = env.get_native_interface();
         if let Some(window) = NativeWindow::from_surface(interface, surface) {
-            let ptr = window.ptr().as_ptr();
+            let Some(ptr) = NonNull::new(window.ptr().as_ptr() as *mut c_void) else {
+                return;
+            };
             let context: *mut canvas_c::webgpu::gpu_canvas_context::CanvasGPUCanvasContext =
                 context as _;
             #[cfg(any(target_os = "android"))]
             canvas_c::webgpu::gpu_canvas_context::canvas_native_webgpu_context_resize(
                 context,
-                ptr as *mut c_void,
+                ptr.as_ptr(),
                 width as u32,
                 height as u32,
             );
@@ -170,6 +182,9 @@ pub extern "system" fn nativeInitWebGL(
     unsafe {
         let interface = env.get_native_interface();
         if let Some(window) = NativeWindow::from_surface(interface, surface) {
+            if window.width() <= 0 || window.height() <= 0 {
+                return 0;
+            }
             if version == 2 && !GLContext::has_gl2support() {
                 return 0;
             }
@@ -225,6 +240,9 @@ pub extern "system" fn nativeInitWebGLNoSurface(
     if version == 2 && !GLContext::has_gl2support() {
         return 0;
     }
+
+    let width = width.max(1);
+    let height = height.max(1);
 
     if let Ok(power_preference) = PowerPreference::try_from(power_preference) {
         let context = canvas_c::canvas_native_webgl_create_no_window(
@@ -718,8 +736,9 @@ pub extern "system" fn nativeCustomWithBitmapFlush(
                 let context = context as *mut canvas_c::CanvasRenderingContext2D;
                 let context = unsafe { &mut *context };
 
-                let mut surface =
-                    skia_safe::surfaces::wrap_pixels(&info, image_data, None, None).unwrap();
+                let Some(mut surface) = skia_safe::surfaces::wrap_pixels(&info, image_data, None, None) else {
+                    return;
+                };
                 let canvas = surface.canvas();
                 let mut paint = skia_safe::Paint::default();
                 paint.set_anti_alias(true);

@@ -1,4 +1,4 @@
-<Page xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
+<Page enableSwipeBackNavigation="false" loaded="pageLoaded" xmlns:canvas="@nativescript/canvas" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="navigatingTo"
       class="page">
   <Page.actionBar>
     <ActionBar title="Canvas Three WebGPU" class="bg-black text-white" >

@@ -175,14 +175,14 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
 - (void)registerPendingNode:(NSCAudioBufferSourceNode *)node {
     if (!node) return;
     dispatch_async(_pendingQueue, ^{
-        [_pendingNodes addObject:node];
+        [self->_pendingNodes addObject:node];
     });
 }
 
 - (void)unregisterPendingNode:(NSCAudioBufferSourceNode *)node {
     if (!node) return;
     dispatch_async(_pendingQueue, ^{
-        [_pendingNodes removeObject:node];
+        [self->_pendingNodes removeObject:node];
     });
 }
 
@@ -684,7 +684,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     if (_listenerPositionZParam) [_listenerPositionZParam setValue:@(z)];
     dispatch_async(dispatch_get_main_queue(), ^{
         @try {
-            _environmentNode.listenerPosition = AVAudioMake3DPoint(x, y, z);
+            self->_environmentNode.listenerPosition = AVAudioMake3DPoint(x, y, z);
         } @catch (NSException *e) {}
     });
 }
@@ -702,7 +702,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         @try {
             AVAudio3DVector f = AVAudioMake3DVector(forwardX, forwardY, forwardZ);
             AVAudio3DVector u = AVAudioMake3DVector(upX, upY, upZ);
-            _environmentNode.listenerVectorOrientation = AVAudioMake3DVectorOrientation(f, u);
+            self->_environmentNode.listenerVectorOrientation = AVAudioMake3DVectorOrientation(f, u);
         } @catch (NSException *e) {}
     });
 }
@@ -938,6 +938,7 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
     __block double delay = 0.02;
     __weak AVAudioEngine *weakEngine = engine;
     __block void (^attemptBlock)(void) = nil;
+    __block __weak void (^weakAttemptBlock)(void) = nil;
     attemptBlock = ^{
         AVAudioEngine *eng = weakEngine;
         if (!eng) { if (completion) completion(NO); return; }
@@ -969,9 +970,14 @@ void NSCAudioContext_scheduleResumeOnEngineStart(AVAudioEngine *engine, double d
         remaining -= 1;
         if (remaining <= 0) { if (completion) completion(NO); return; }
         delay = MIN(1.0, delay * 2.0);
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), attemptBlock);
+        void (^nextAttempt)(void) = weakAttemptBlock;
+        if (!nextAttempt) { if (completion) completion(NO); return; }
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), nextAttempt);
     };
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), attemptBlock);
+    weakAttemptBlock = attemptBlock;
+    if (weakAttemptBlock) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), weakAttemptBlock);
+    }
     return NO;
 }
 

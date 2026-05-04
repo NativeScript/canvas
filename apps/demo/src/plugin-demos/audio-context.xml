@@ -1,4 +1,4 @@
-<Page xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:canvas="@nativescript/canvas" navigatingTo="navigatingTo" class="page audio-page">
+<Page enableSwipeBackNavigation="false" xmlns="http://schemas.nativescript.org/tns.xsd" xmlns:canvas="@nativescript/canvas" navigatingTo="navigatingTo" class="page audio-page">
   <Page.actionBar>
     <ActionBar title="Audio — WebAudio Demo" class="action-bar" />
   </Page.actionBar>

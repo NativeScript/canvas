@@ -1,4 +1,4 @@
-import { EventData, ImageSource, Page, Screen, View, WebView } from '@nativescript/core';
+import { Device, EventData, ImageSource, Page, Screen, View, WebView } from '@nativescript/core';
 import { DemoSharedCanvas } from '@demo/shared';
 import { ImageAsset } from '@nativescript/canvas';
 import { Dom, Group, Rect, drawAsImage } from '@nativescript/canvas/Dom';
@@ -6,6 +6,14 @@ import { Dom, Group, Rect, drawAsImage } from '@nativescript/canvas/Dom';
 export function navigatingTo(args: EventData) {
 	const page = <Page>args.object;
 	page.bindingContext = new DemoModel();
+}
+
+export function pageLoaded(args) {
+	if (__IOS__) {
+		if (parseFloat(Device.osVersion) >= 26.0) {
+			args.object.viewController.navigationController.interactiveContentPopGestureRecognizer.enabled = false;
+		}
+	}
 }
 
 export function loaded(args) {

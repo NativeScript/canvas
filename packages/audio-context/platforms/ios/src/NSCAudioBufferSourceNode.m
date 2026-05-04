@@ -3,6 +3,9 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-retain-self"
+
 @implementation NSCAudioBufferSourceNode {
   AVAudioPlayerNode *_player;
   NSCAudioBuffer *_buffer;
@@ -268,6 +271,7 @@
       __weak typeof(self) weakSelf2 = self;
       __block int pollAttempts = 8;
       __block void (^pollBlock)(void) = nil;
+      __block __weak void (^weakPollBlock)(void) = nil;
       pollBlock = ^{
         __strong typeof(weakSelf2) strongSelf = weakSelf2;
         if (!strongSelf)
@@ -548,17 +552,23 @@
 
         pollAttempts -= 1;
         if (pollAttempts > 0) {
-          dispatch_after(
-              dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-              dispatch_get_main_queue(), pollBlock);
+          void (^nextPoll)(void) = weakPollBlock;
+          if (nextPoll) {
+            dispatch_after(
+                dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
+                dispatch_get_main_queue(), nextPoll);
+          }
           return;
         }
 
         [strongSelf scheduleRetryWithContext:ctx];
       };
-      dispatch_after(
-          dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-          dispatch_get_main_queue(), pollBlock);
+      weakPollBlock = pollBlock;
+      if (weakPollBlock) {
+        dispatch_after(
+            dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
+            dispatch_get_main_queue(), weakPollBlock);
+      }
       return YES;
     }
 
@@ -589,6 +599,7 @@
   __weak typeof(self) weakSelf3 = self;
   __block int pollAttempts2 = 8;
   __block void (^pollBlock2)(void) = nil;
+  __block __weak void (^weakPollBlock2)(void) = nil;
   pollBlock2 = ^{
     __strong typeof(weakSelf3) strongSelf = weakSelf3;
     if (!strongSelf)
@@ -842,17 +853,23 @@
 
     pollAttempts2 -= 1;
     if (pollAttempts2 > 0) {
-      dispatch_after(
-          dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-          dispatch_get_main_queue(), pollBlock2);
+      void (^nextPoll2)(void) = weakPollBlock2;
+      if (nextPoll2) {
+        dispatch_after(
+            dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
+            dispatch_get_main_queue(), nextPoll2);
+      }
       return;
     }
 
     [strongSelf scheduleRetryWithContext:ctx];
   };
-  dispatch_after(
-      dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
-      dispatch_get_main_queue(), pollBlock2);
+  weakPollBlock2 = pollBlock2;
+  if (weakPollBlock2) {
+    dispatch_after(
+        dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)),
+        dispatch_get_main_queue(), weakPollBlock2);
+  }
   return YES;
 }
 
@@ -1384,3 +1401,5 @@
 }
 
 @end
+
+#pragma clang diagnostic pop

@@ -359,7 +359,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     pcm.frameLength = totalFrames;
 
     for (UInt32 c = 0; c < numChannels; ++c) {
-        void *src = channelAcc[c].bytes;
+        const void *src = channelAcc[c].bytes;
         memcpy(pcm.floatChannelData[c], src, channelAcc[c].length);
     }
 
@@ -479,7 +479,7 @@ static OSStatus audioConverterInputProc(AudioConverterRef inAudioConverter,
     pcm.frameLength = totalFrames;
 
     for (UInt32 c = 0; c < numChannels; ++c) {
-        void *src = channelAcc[c].bytes;
+        const void *src = channelAcc[c].bytes;
         memcpy(pcm.floatChannelData[c], src, channelAcc[c].length);
     }
 

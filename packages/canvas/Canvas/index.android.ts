@@ -154,6 +154,23 @@ export class Canvas extends CanvasBase {
 		this._canvas.setEnabled(value);
 	}
 
+	onLoaded(): void {
+		super.onLoaded();
+		if (this.__native__context && this._didPause) {
+			this.__native__context.__startRaf();
+			this._didPause = false;
+		}
+	}
+
+	onUnloaded(): void {
+		super.onUnloaded();
+		if (!this.__native__context) {
+			return;
+		}
+		this._didPause = true;
+		this.__native__context.__stopRaf();
+	}
+
 	// @ts-ignore
 	get android() {
 		return this._canvas;

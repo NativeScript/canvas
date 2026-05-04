@@ -86,19 +86,19 @@ export class Canvas extends CanvasBase {
 			this._readyListener = listener.new();
 			this._canvas.setListener(this._readyListener);
 			this._canvas.enterBackgroundListener = () => {
-				if (!this.native) {
+				if (!this.__native__context) {
 					return;
 				}
-				this.native.__stopRaf();
+				this.__native__context.__stopRaf();
 			};
 
 			(global as any).__canvasLoaded = true;
 
 			this._canvas.becomeActiveListener = () => {
-				if (!this.native) {
+				if (!this.__native__context) {
 					return;
 				}
-				this.native.__startRaf();
+				this.__native__context.__startRaf();
 			};
 
 			this._canvas.touchEventListener = (event, recognizer) => {
@@ -130,6 +130,23 @@ export class Canvas extends CanvasBase {
 	[isUserInteractionEnabledProperty.setNative](value: boolean) {
 		this._canvas.ignoreTouchEvents = !value;
 		this._canvas.userInteractionEnabled = value;
+	}
+
+	onLoaded(): void {
+		super.onLoaded();
+		if (this.__native__context && this._didPause) {
+			this.__native__context.__startRaf();
+			this._didPause = false;
+		}
+	}
+
+	onUnloaded(): void {
+		super.onUnloaded();
+		if (!this.__native__context) {
+			return;
+		}
+		this._didPause = true;
+		this.__native__context.__stopRaf();
 	}
 
 	// @ts-ignore
